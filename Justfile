@@ -28,8 +28,16 @@ clippy:
 test:
     cargo test --workspace
 
+# Elm's first build in a fresh elm-stuff writes d.dat twice: once from a
+# background thread after resolving dependencies and again when the build
+# finishes. On a slow disk the two collide ("d.dat: withBinaryFile: resource
+# busy (file is locked)"). A bare `elm make` resolves and writes the
+# dependencies, then stops for want of input files; its exit status is ignored
+# because a real dependency problem resurfaces in the build that follows.
+#
 # Compile the conformance harness, and run the Elm tests if there are any.
 elm-check:
+    -@cd conformance/harness && elm make --output=/dev/null >/dev/null 2>&1
     cd conformance/harness && elm make src/*.elm --output=/dev/null
     @if [ -d tests ]; then elm-test-rs; else echo "elm-check: no tests/ yet; skipping elm-test-rs"; fi
 
