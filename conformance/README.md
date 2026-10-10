@@ -6,6 +6,8 @@ The conformance corpus pins what the generator emits (`docs/design.md`
 ```
 cases/<case>/
   input/                 .proto files; all of them are compiled and generated
+  include/               optional: .proto files the input may import, which
+                         are compiled but not generated
   expected/
     <Module/Path>.elm    the Elm generated from the input, one file per module
   or
@@ -13,8 +15,9 @@ cases/<case>/
 ```
 
 A case expects either modules or `diagnostics.txt`, never both. Inputs are
-compiled with protox, with `input/` as the only include path, and every
-input file is in the generate set.
+compiled with protox, with `input/` and `include/` as the include paths,
+and every file under `input/` is in the generate set; nothing under
+`include/` is.
 
 ## The checks
 
