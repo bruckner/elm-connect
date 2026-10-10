@@ -44,8 +44,15 @@ use super::ast::{
 
 /// Print a whole module, ending in a single newline.
 pub fn print_module(module: &Module) -> String {
-    let mut out = format!(
-        "module {} exposing {}\n",
+    // elm-format puts two blank lines between a comment above the header
+    // and the header.
+    let mut out = match &module.header {
+        Some(comment) => format!("-- {comment}\n\n\n"),
+        None => String::new(),
+    };
+    let _ = writeln!(
+        out,
+        "module {} exposing {}",
         module.name,
         exposing(&module.exposing)
     );
