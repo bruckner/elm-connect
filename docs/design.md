@@ -220,8 +220,12 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
 | `string` | `String` | |
 | `bytes` | `String` (base64, as on the wire) | *(Proposed.)* Alternative: `Bytes.Bytes` via elm/bytes with base64 in the runtime. Rejected for 1.0: adds a dependency and a decode step for a field most JSON APIs never use. |
 
+Encoders emit every field, default values included, which proto3 JSON
+allows. *(Current rule, not yet reviewed.)*
+
 64-bit as `String` is *(Proposed)* with an option `int64=int` for users
-who accept the 2^53 limit and want arithmetic. Decoding under the
+who accept the 2^53 limit and want arithmetic. Their zero value is
+`"0"`, which re-encodes as a valid int64. Decoding under the
 option accepts both JSON number and string forms.
 
 ### 3.5 Well-known types
@@ -392,7 +396,11 @@ shared.
 
 ## 7. Conformance  *(Decided)*
 
-- `conformance/<case>/input/*.proto` and `expected/*.elm`. A test
+The harness is *(Decided and built)*: `conformance/cases/` and the
+`conformance` test of `elm-connect-gen`, described in
+`conformance/README.md`.
+
+- `conformance/cases/<case>/input/*.proto` and `expected/*.elm`. A test
   regenerates and diffs; a second test runs `elm make` over all expected
   output against the runtime at the repo's version; a third runs
   `elm-format --validate`.
