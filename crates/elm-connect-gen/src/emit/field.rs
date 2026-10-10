@@ -47,22 +47,32 @@ impl Emitter {
         message: &Message,
         field: &'m Field,
     ) -> Option<FieldShape<'m>> {
-        let element = || format!("{}.{}", message.proto_full_name, field.proto_name);
-        let value = match &field.ty {
-            TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(*kind)),
-            TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
-            TypeRef::Message(name) => ValueShape::Message(name),
-            TypeRef::WellKnown(_) => {
-                self.unimplemented(&element(), "a field of a well-known type");
-                return None;
-            }
-        };
+        let element = format!("{}.{}", message.proto_full_name, field.proto_name);
+        let value = self.value_shape(&element, &field.ty)?;
         Some(match (field.cardinality, value) {
             (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
             (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
             (Cardinality::Repeated, value) => FieldShape::List(value),
             (Cardinality::Map(_), _) => {
-                self.unimplemented(&element(), "a map field");
+                self.unimplemented(&element, "a map field");
+                return None;
+            }
+        })
+    }
+
+    /// The shape of one value of type `ty`, held by `element` (a proto full
+    /// name, for the report), or `None` once it is reported.
+    pub(super) fn value_shape<'m>(
+        &mut self,
+        element: &str,
+        ty: &'m TypeRef,
+    ) -> Option<ValueShape<'m>> {
+        Some(match ty {
+            TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(*kind)),
+            TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
+            TypeRef::Message(name) => ValueShape::Message(name),
+            TypeRef::WellKnown(_) => {
+                self.unimplemented(element, "a field of a well-known type");
                 return None;
             }
         })
