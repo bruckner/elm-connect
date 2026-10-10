@@ -1,7 +1,7 @@
 # Recipes for working on elm-connect. `just` lists them.
 
-# Elm sources elm-format owns: the harness, and the runtime once it exists.
-elm_dirs := "conformance/harness/src" + if path_exists("src") == "true" { " src" } else { "" }
+# Elm sources elm-format owns: the harness, the runtime package and its tests.
+elm_dirs := "conformance/harness/src src tests"
 
 [private]
 default:
@@ -33,13 +33,18 @@ test:
 # finishes. On a slow disk the two collide ("d.dat: withBinaryFile: resource
 # busy (file is locked)"). A bare `elm make` resolves and writes the
 # dependencies, then stops for want of input files; its exit status is ignored
-# because a real dependency problem resurfaces in the build that follows.
+# because a real dependency problem resurfaces in the build that follows (in
+# a package, the bare `elm make` also builds the exposed modules).
 #
-# Compile the conformance harness, and run the Elm tests if there are any.
+# Compile the runtime package with its documentation checked (`--docs`
+# rejects an exposed value without docs, as publishing would), compile the
+# conformance harness, and run the runtime's tests.
 elm-check:
+    -@elm make --output=/dev/null >/dev/null 2>&1
+    elm make --docs=elm-stuff/docs.json
     -@cd conformance/harness && elm make --output=/dev/null >/dev/null 2>&1
     cd conformance/harness && elm make src/*.elm --output=/dev/null
-    @if [ -d tests ]; then elm-test-rs; else echo "elm-check: no tests/ yet; skipping elm-test-rs"; fi
+    elm-test-rs
 
 # Remove build output.
 clean:
