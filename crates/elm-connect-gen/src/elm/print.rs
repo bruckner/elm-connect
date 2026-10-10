@@ -30,6 +30,8 @@
 //! no literal for either.
 
 mod layout;
+#[cfg(test)]
+mod tests;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
