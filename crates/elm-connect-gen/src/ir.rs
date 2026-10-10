@@ -119,7 +119,8 @@ pub struct Message {
     /// The fields outside any real oneof, in declaration order. Proto3
     /// `optional` fields are here, as [`Cardinality::Optional`].
     pub fields: Vec<Field>,
-    /// The real oneofs, in declaration order.
+    /// The real oneofs, in declaration order; each records its
+    /// [`Oneof::position`] among `fields`.
     pub oneofs: Vec<Oneof>,
     /// Whether the message reaches itself through singular, optional,
     /// repeated or map-value message fields, directly or through other
@@ -341,8 +342,26 @@ pub struct Oneof {
     pub elm_type_name: String,
     /// The constructor for the unset case, such as `NoteEventKindUnset`.
     pub unset_ctor: String,
+    /// Where the oneof sits among the message's record fields: the number
+    /// of [`Message::fields`] declared before its first member. Oneofs
+    /// with the same position keep their declaration order.
+    pub position: usize,
     /// One constructor per member field, in declaration order.
     pub variants: Vec<OneofVariant>,
+}
+
+impl Oneof {
+    /// The Elm name of the oneof's JSON encoder, such as
+    /// `encodeNoteEventKind`.
+    pub fn encoder_name(&self) -> String {
+        crate::naming::encoder_name(&self.elm_type_name)
+    }
+
+    /// The Elm name of the oneof's JSON decoder, such as
+    /// `decodeNoteEventKind`.
+    pub fn decoder_name(&self) -> String {
+        crate::naming::decoder_name(&self.elm_type_name)
+    }
 }
 
 /// One member field of a oneof: one constructor of the oneof's custom type,

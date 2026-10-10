@@ -319,6 +319,7 @@ mod tests {
             elm_field_name: "kind".into(),
             elm_type_name: "OKind".into(),
             unset_ctor: "OKindUnset".into(),
+            position: 0,
             variants: Vec::new(),
         });
         let fields = message(

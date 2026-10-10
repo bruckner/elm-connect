@@ -415,6 +415,7 @@ impl Builder {
                     elm_field_name,
                     elm_type_name,
                     unset_ctor,
+                    position: fields.len(),
                     variants,
                 });
                 continue;
