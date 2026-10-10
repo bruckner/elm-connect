@@ -1,0 +1,22 @@
+# The single toolchain pin for this repository: `mise install` provides
+# everything `just check` needs, locally and in CI.
+
+[tools]
+rust = { version = "1.99.0", components = "rustfmt,clippy" }
+
+# Elm comes from the official release. Upstream names its assets
+# `elm-<version>-{mac-arm,mac-x64,linux-arm,linux-x64,windows-x64}.gz`;
+# mise's github backend does not recognise `arm` as arm64 and fails on
+# linux/arm64 with "No matching asset found", so each platform names its
+# asset explicitly and `bin` names the gunzipped executable.
+"github:elm/compiler" = { version = "0.19.2", bin = "elm", platforms = { linux-arm64 = { asset_pattern = "elm-*-linux-arm.gz" }, linux-x64 = { asset_pattern = "elm-*-linux-x64.gz" }, macos-arm64 = { asset_pattern = "elm-*-mac-arm.gz" }, macos-x64 = { asset_pattern = "elm-*-mac-x64.gz" }, windows-x64 = { asset_pattern = "elm-*-windows-x64.gz" } } }
+"github:avh4/elm-format" = "0.8.8"
+"npm:elm-test-rs" = "3.2.0-0"
+# npm installs the npm-backed tools, and elm-test-rs runs its compiled
+# test runner under node.
+node = "24.21.0"
+just = "1.58.0"
+
+[settings]
+# Newer mise runs npm tools via a node launcher; elm-test-rs's native binary breaks that (SyntaxError).
+npm.package_manager = "npm"

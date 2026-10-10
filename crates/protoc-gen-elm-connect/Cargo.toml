@@ -1,0 +1,12 @@
+[package]
+name = "protoc-gen-elm-connect"
+description = "protoc plugin that generates Elm clients for protobuf APIs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+elm-connect-gen.workspace = true
+prost.workspace = true
+prost-types.workspace = true
