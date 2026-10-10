@@ -18,6 +18,11 @@
 //!   `OuterInner`).
 //! - Proto3 `optional` fields are [`Cardinality::Optional`] fields, never
 //!   [`Oneof`]s; only real oneofs appear as oneofs.
+//! - Every cycle of message references is marked: each field that closes
+//!   a cycle of record fields is [`Field::cyclic`], its target has a
+//!   [`Message::wrapper`], and each oneof member that closes any other
+//!   cycle is [`OneofVariant::cyclic`]. Cycles never cross packages, since
+//!   packages that refer to each other in a cycle are a diagnostic.
 //! - Every [`TypeName`] refers to a type in a package of the same build,
 //!   and the packages' references to each other form no cycle.
 //! - `google.protobuf` is never a package; its supported types appear as
@@ -122,12 +127,34 @@ pub struct Message {
     /// The real oneofs, in declaration order; each records its
     /// [`Oneof::position`] among `fields`.
     pub oneofs: Vec<Oneof>,
-    /// Whether the message reaches itself through singular, optional,
+    /// The wrapper of a recursive message: `Some` when the message reaches itself through singular, optional,
     /// repeated or map-value message fields, directly or through other
-    /// messages. Elm rejects a recursive type alias, so the emitter wraps
-    /// these. References through a oneof do not count: a oneof is a custom
-    /// type, which already breaks an Elm alias cycle.
-    pub recursive: bool,
+    /// messages. Elm rejects a recursive type alias, so the fields that
+    /// close such a cycle ([`Field::cyclic`]) hold the message wrapped in
+    /// a one-constructor custom type (design §3.2).
+    /// References through a oneof do not count: a oneof is a custom type,
+    /// which already breaks an Elm alias cycle.
+    pub wrapper: Option<Wrapper>,
+}
+
+/// The wrapper of a recursive message: `type Node_ = Node_ Node`, a custom
+/// type whose one constructor has the type's name.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Wrapper {
+    /// The Elm name of the type and of its constructor, such as `Node_`.
+    pub elm_name: String,
+}
+
+impl Wrapper {
+    /// The Elm name of the wrapper's JSON encoder, such as `encodeNode_`.
+    pub fn encoder_name(&self) -> String {
+        crate::naming::encoder_name(&self.elm_name)
+    }
+
+    /// The Elm name of the wrapper's JSON decoder, such as `decodeNode_`.
+    pub fn decoder_name(&self) -> String {
+        crate::naming::decoder_name(&self.elm_name)
+    }
 }
 
 impl Message {
@@ -160,6 +187,11 @@ pub struct Field {
     /// The type of each value: the element type of a repeated field, the
     /// value type of a map.
     pub ty: TypeRef,
+    /// Whether the field closes a cycle of record fields: its message type
+    /// reaches back to the message holding it through fields alone. Such a
+    /// field holds that type's [`Message::wrapper`] rather than its record,
+    /// and its values decode lazily.
+    pub cyclic: bool,
 }
 
 /// How many values a field holds. The value type is the field's
@@ -377,6 +409,11 @@ pub struct OneofVariant {
     pub elm_ctor: String,
     /// The type of the value the constructor carries.
     pub ty: TypeRef,
+    /// Whether the member closes a cycle: its message type reaches back to
+    /// the message holding the oneof, through fields or oneof members. The
+    /// types need nothing (a oneof is a custom type), but the decoders
+    /// would define each other directly, so this member decodes lazily.
+    pub cyclic: bool,
 }
 
 /// An enum: one Elm custom type with a constructor per value.

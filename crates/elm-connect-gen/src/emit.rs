@@ -211,7 +211,7 @@ impl Emitter {
     /// `None` once every unsupported construct in it is reported.
     fn message_shape<'m>(&mut self, message: &'m Message) -> Option<MessageShape<'m>> {
         let before = self.diagnostics.len();
-        if message.recursive {
+        if message.wrapper.is_some() {
             self.unimplemented(&message.proto_full_name, "a recursive message");
         }
         let fields: Vec<_> = message
@@ -338,7 +338,7 @@ mod tests {
             elm_name: name.into(),
             fields,
             oneofs: Vec::new(),
-            recursive: false,
+            wrapper: None,
         }
     }
 
@@ -350,6 +350,7 @@ mod tests {
             elm_name: name.into(),
             cardinality,
             ty,
+            cyclic: false,
         }
     }
 
@@ -397,7 +398,9 @@ mod tests {
     #[test]
     fn unsupported_constructs_are_diagnostics() {
         let mut recursive = message("R", Vec::new());
-        recursive.recursive = true;
+        recursive.wrapper = Some(crate::ir::Wrapper {
+            elm_name: "R_".into(),
+        });
         let problems = problems(&package(vec![recursive]));
         assert_eq!(
             problems,
