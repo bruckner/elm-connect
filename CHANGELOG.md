@@ -34,3 +34,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   one record field at the oneof's declared position, with the `oneofs`
   conformance case. The runtime gains `Connect.Json.oneof`, `member` and
   `memberEither`.
+- Generation of map fields as `Dict String V` (string and 64-bit integer
+  keys) or `Dict Int V` (32-bit integer keys), with `Connect.Json.intDict`
+  and the `maps` conformance case. A `bool` map key is the
+  `types::map_key` diagnostic (`map_bool_key` case), the corpus's first
+  diagnostics case.

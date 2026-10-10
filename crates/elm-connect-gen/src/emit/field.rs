@@ -1,10 +1,10 @@
 //! A field's shape, and the Elm type, encoder and decoder that follow
 //! from it.
 
-use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, scalar};
+use super::{CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, scalar};
 use crate::elm::ast::{Expr, Type};
-use crate::elm::build::{apply, list, ty, var};
-use crate::ir::{Cardinality, Field, Message, ScalarKind, TypeName, TypeRef};
+use crate::elm::build::{apply, list, qualified, ty, var};
+use crate::ir::{Cardinality, Field, MapKey, Message, ScalarKind, TypeName, TypeRef};
 
 /// A field as the emitter supports it: what [`Emitter::field`] classifies
 /// an IR field into once, so that the type, the encoder and the decoder of
@@ -19,6 +19,38 @@ pub(super) enum FieldShape<'p> {
     Maybe(ValueShape<'p>),
     /// `List`: a repeated field, `[]` when absent or `null`.
     List(ValueShape<'p>),
+    /// `Dict`: a map field, `Dict.empty` when absent or `null`.
+    Dict(KeyShape, ValueShape<'p>),
+}
+
+/// The keys of a map field, as Elm holds them. JSON object keys are
+/// strings whatever the proto key type.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum KeyShape {
+    /// `String`: `string` keys, and 64-bit integer keys held as decimal
+    /// strings like 64-bit values (design §3.4).
+    String,
+    /// `Int`: 32-bit integer keys, read from and written as their decimal
+    /// strings.
+    Int,
+}
+
+impl KeyShape {
+    fn of(key: MapKey) -> Self {
+        match key {
+            MapKey::String
+            | MapKey::Int64
+            | MapKey::UInt64
+            | MapKey::SInt64
+            | MapKey::Fixed64
+            | MapKey::SFixed64 => KeyShape::String,
+            MapKey::Int32
+            | MapKey::UInt32
+            | MapKey::SInt32
+            | MapKey::Fixed32
+            | MapKey::SFixed32 => KeyShape::Int,
+        }
+    }
 }
 
 /// The type of a field's values, as the emitter supports it.
@@ -53,10 +85,7 @@ impl Emitter {
             (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
             (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
             (Cardinality::Repeated, value) => FieldShape::List(value),
-            (Cardinality::Map(_), _) => {
-                self.unimplemented(&element, "a map field");
-                return None;
-            }
+            (Cardinality::Map(key), value) => FieldShape::Dict(KeyShape::of(key), value),
         })
     }
 
@@ -84,6 +113,14 @@ impl Emitter {
             FieldShape::Plain(zeroed) => self.value_type(ValueShape::Zeroed(zeroed)),
             FieldShape::Maybe(value) => ty("Maybe", [self.value_type(value)]),
             FieldShape::List(value) => ty("List", [self.value_type(value)]),
+            FieldShape::Dict(key, value) => {
+                let key = match key {
+                    KeyShape::String => ty("String", []),
+                    KeyShape::Int => ty("Int", []),
+                };
+                let value = self.value_type(value);
+                self.exposed_type(CORE_DICT, "Dict", [key, value])
+            }
         }
     }
 
@@ -99,6 +136,14 @@ impl Emitter {
             FieldShape::List(value) => {
                 let value = self.value_encoder(value);
                 apply(self.reference((JSON_ENCODE, "list")), [value])
+            }
+            FieldShape::Dict(key, value) => {
+                let value = self.value_encoder(value);
+                let key = match key {
+                    KeyShape::String => var("identity"),
+                    KeyShape::Int => qualified(CORE_STRING, "fromInt"),
+                };
+                apply(self.reference((JSON_ENCODE, "dict")), [key, value])
             }
         }
     }
@@ -128,6 +173,14 @@ impl Emitter {
                     apply(self.reference((JSON_DECODE, "list")), [value]),
                     list([]),
                 )
+            }
+            FieldShape::Dict(key, value) => {
+                let value = self.value_decoder(value);
+                let dict = match key {
+                    KeyShape::String => self.reference((JSON_DECODE, "dict")),
+                    KeyShape::Int => self.reference((CONNECT_JSON, "intDict")),
+                };
+                (apply(dict, [value]), self.reference((CORE_DICT, "empty")))
             }
         }
     }
