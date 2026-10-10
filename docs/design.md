@@ -428,6 +428,26 @@ Built *(Proposed in its details)*:
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
 
+Built, as the `naming` and `naming_collision` cases show:
+
+- The reserved words are the fourteen of Elm 0.19.2's parser (`if`,
+  `then`, `else`, `case`, `of`, `let`, `in`, `type`, `module`, `where`,
+  `import`, `exposing`, `as`, `port`). `alias` and `infix` are legal
+  field names and stay as they are. Oneof names follow the field rule
+  (`oneof case` → `case_`); member constructors are PascalCase, so a
+  reserved word needs no escape there (`TagCaseThen`).
+- Casing keeps digits and capitals as written: `http_url` → `httpUrl`,
+  `v2_count` → `v2Count`; enum value `SHAPE_2D` → `Shape2d`,
+  `SHAPE_V3_MESH` → `ShapeV3Mesh`. A value without the conventional
+  prefix gains the enum's name (`CUBE` → `ShapeCube`); the prefix of a
+  multi-word enum is matched word by word (`HTTP_METHOD_GET` →
+  `HttpMethodGet`).
+- Two plain fields cannot collide in practice: protoc and protox reject
+  a message whose fields' JSON names clash, and the Elm name is the
+  default JSON name. The collision a user meets is a field and a oneof
+  (`display_name` and `oneof displayName`), which
+  `naming::field_collision` reports with both sites.
+
 ## 4. Method descriptors  *(Proposed)*
 
 ```elm

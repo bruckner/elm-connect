@@ -1,0 +1,18 @@
+naming::field_collision
+
+  × The message `clash.v1.Profile` has two fields that both become
+  │ `displayName` in Elm.
+    ╭─[clash.proto:9:10]
+  8 │ message Profile {
+  9 │   string display_name = 1;
+    ·          ──────┬─────
+    ·                ╰── field `display_name` becomes `displayName`
+ 10 │   oneof displayName {
+    ·         ─────┬─────
+    ·              ╰── and so does oneof `displayName`
+ 11 │     string nickname = 2;
+    ╰────
+  help: Elm record fields are the proto field names in lowerCamelCase, so
+        names that differ only in underscores or reserved-word escaping end up
+        the same, and a record cannot have two fields with one name. Rename
+        one of them in the proto.

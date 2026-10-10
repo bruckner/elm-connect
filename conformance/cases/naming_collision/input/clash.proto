@@ -1,0 +1,14 @@
+// A field and a oneof whose names meet after casing: protoc rejects two
+// fields whose JSON names clash, but a oneof has no JSON name, so this is
+// the collision a user can reach.
+syntax = "proto3";
+
+package clash.v1;
+
+message Profile {
+  string display_name = 1;
+  oneof displayName {
+    string nickname = 2;
+    string legal_name = 3;
+  }
+}
