@@ -1,0 +1,14 @@
+[package]
+name = "elm-connect-gen"
+description = "Generate Elm clients for protobuf APIs: the library behind protoc-gen-elm-connect and elm-connect"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+miette.workspace = true
+prost.workspace = true
+prost-reflect.workspace = true
+prost-types.workspace = true
+protox.workspace = true

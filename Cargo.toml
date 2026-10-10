@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "crates/elm-connect-gen",
+    "crates/protoc-gen-elm-connect",
+    "crates/elm-connect",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/bruckner/elm-connect"
+
+[workspace.dependencies]
+elm-connect-gen = { path = "crates/elm-connect-gen", version = "0.1.0" }
+clap = { version = "4.6", features = ["derive"] }
+miette = { version = "7.6", features = ["fancy"] }
+prost = "0.14"
+prost-reflect = "0.16"
+prost-types = "0.14"
+protox = "0.10"
