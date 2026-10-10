@@ -12,7 +12,7 @@
 //! - Every Elm name is a valid Elm identifier, and names that share an Elm
 //!   namespace are unique: record fields within a message, types within a
 //!   module, constructors within a module. A clash is a diagnostic from
-//!   the builder, never a silent rename.
+//!   [`build`], never a silent rename.
 //! - Nested messages and enums are flattened into their package, their Elm
 //!   names prefixed by the enclosing names (`Outer.Inner` becomes
 //!   `OuterInner`).
@@ -23,7 +23,12 @@
 //! - `google.protobuf` is never a package; its supported types appear as
 //!   [`TypeRef::WellKnown`].
 
+mod build;
+mod graph;
+
 use std::fmt;
+
+pub use build::build;
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.

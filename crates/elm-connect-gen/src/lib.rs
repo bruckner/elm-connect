@@ -1,6 +1,7 @@
-//! Descriptors to Elm. Today this crate holds the typed intermediate
-//! representation ([`ir`]), the Elm naming rules ([`naming`]) and what the
-//! plugin and the CLI share; emitting Elm is not implemented yet.
+//! Descriptors to Elm. Today this crate turns a descriptor pool into a
+//! typed intermediate representation ([`ir`]) under the Elm naming rules
+//! ([`naming`]), reporting what has no Elm form ([`diagnostics`]); emitting
+//! Elm from it is not implemented yet.
 
 pub mod diagnostics;
 pub mod ir;
