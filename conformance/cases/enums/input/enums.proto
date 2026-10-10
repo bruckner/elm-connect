@@ -1,0 +1,31 @@
+// Enums: a custom type per enum, the zero value first; encoded by name,
+// decoded by name or number, an unknown value read as the zero value.
+syntax = "proto3";
+
+package enums.v1;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_ARCHIVED = 2;
+}
+
+// Values without the conventional prefix, a negative number, and an
+// alias: two names for one number, each its own constructor.
+enum Priority {
+  option allow_alias = true;
+  NONE = 0;
+  LOW = 1;
+  HIGH = 2;
+  URGENT = 2;
+  BELOW_ZERO = -1;
+}
+
+message Task {
+  // Without presence, an enum field reads absence as its zero value.
+  Status status = 1;
+  // With presence, it is a Maybe.
+  optional Priority priority = 2;
+  repeated Status history = 3;
+  Status previous_status = 4;
+}

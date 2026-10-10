@@ -1,0 +1,83 @@
+//! An enum's three declarations: its custom type, its encoder and its
+//! decoder (design §3.3).
+
+use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE};
+use crate::elm::ast::{Decl, Expr, Type, Variant};
+use crate::elm::build::{apply, case, int, list, pctor, pvar, string, ty, var};
+use crate::ir::Enum;
+use crate::naming::ENCODER_ARGUMENT;
+
+impl Emitter {
+    /// `type Status = StatusUnspecified | ...`, one constructor per value,
+    /// the zero value first.
+    pub(super) fn enum_type(&mut self, enumeration: &Enum) -> Decl {
+        Decl::CustomType {
+            doc: None,
+            name: enumeration.elm_name.clone(),
+            type_params: Vec::new(),
+            variants: enumeration
+                .values()
+                .map(|value| Variant {
+                    name: value.elm_ctor.clone(),
+                    args: Vec::new(),
+                })
+                .collect(),
+        }
+    }
+
+    /// `encodeStatus : Status -> Json.Encode.Value`: a `case` giving each
+    /// constructor its proto name as a JSON string.
+    pub(super) fn enum_encoder(&mut self, enumeration: &Enum) -> Decl {
+        let branches: Vec<_> = enumeration
+            .values()
+            .map(|value| {
+                let encode = self.reference((JSON_ENCODE, "string"));
+                (
+                    pctor(value.elm_ctor.clone(), []),
+                    apply(encode, [string(value.proto_name.clone())]),
+                )
+            })
+            .collect();
+        let value_type = self.library_type(JSON_ENCODE, "Value", []);
+        Decl::Value {
+            doc: None,
+            name: enumeration.encoder_name(),
+            annotation: Type::Function(
+                Box::new(ty(enumeration.elm_name.clone(), [])),
+                Box::new(value_type),
+            ),
+            params: vec![pvar(ENCODER_ARGUMENT)],
+            body: case(var(ENCODER_ARGUMENT), branches),
+        }
+    }
+
+    /// `decodeStatus : Json.Decode.Decoder Status`: `Connect.Json.enum`
+    /// with the zero value and a `( name, number, constructor )` row per
+    /// value.
+    pub(super) fn enum_decoder(&mut self, enumeration: &Enum) -> Decl {
+        let rows = enumeration.values().map(|value| {
+            Expr::Tuple(vec![
+                string(value.proto_name.clone()),
+                int(value.number.into()),
+                var(value.elm_ctor.clone()),
+            ])
+        });
+        let decode = self.reference((CONNECT_JSON, "enum"));
+        let body = apply(
+            decode,
+            [var(enumeration.zero().elm_ctor.clone()), list(rows)],
+        );
+        let annotation = self.library_type(
+            JSON_DECODE,
+            "Decoder",
+            [ty(enumeration.elm_name.clone(), [])],
+        );
+        Decl::Value {
+            doc: None,
+            name: enumeration.decoder_name(),
+            annotation,
+            params: Vec::new(),
+            body,
+        }
+    }
+}

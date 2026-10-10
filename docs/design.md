@@ -208,6 +208,22 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   **Starting position (2026-10-10):** (a), as the best guess; to be
   reviewed against the corpus output. A generator option for (b) stays
   on the table.
+  Built as (a): the `enums` conformance case shows the output to
+  review.
+- Generated shape *(Proposed; built)*: the encoder is a `case` with one
+  `Json.Encode.string "NAME"` branch per constructor, so the compiler
+  checks it is total. The decoder is one call to the runtime's
+  `Connect.Json.enum`, given the zero constructor and a
+  `( "NAME", number, Constructor )` row per value. Inlined, the decoder
+  would need two `case` expressions (one over names, one over numbers)
+  with a fallback branch each, about three times the lines per value
+  and nothing a reader learns from them.
+- Aliases (`allow_alias`): each value name is its own constructor and
+  encodes as its own name. A number decodes to the first value declared
+  with it, so `URGENT = 2` after `HIGH = 2` decodes from `2` as `HIGH`
+  but from `"URGENT"` as `URGENT`.
+- Values are in declaration order, the zero value first, whatever their
+  numbers.
 
 ### 3.4 Scalars
 
