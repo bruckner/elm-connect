@@ -581,6 +581,50 @@ fn exprs_module() -> Module {
         ),
         value("single", ty("List", [int_t()]), vec![], list([int(1)])),
         value(
+            "lastArgumentSpansLines",
+            ty("List", [int_t()]),
+            vec![],
+            apply(
+                var("List.map2"),
+                [
+                    var("max"),
+                    list([int(1), int(2)]),
+                    apply(
+                        var("List.map"),
+                        [apply(var("max"), [int(0)]), list([int(3), int(4)])],
+                    ),
+                ],
+            ),
+        ),
+        value(
+            "lastArgumentIsALambda",
+            ty_fn([ty("List", [int_t()])], ty("List", [int_t()])),
+            vec![],
+            apply(
+                var("List.map"),
+                [lambda(
+                    [pvar("x")],
+                    case(var("x"), [(Pattern::Wildcard, int(0))]),
+                )],
+            ),
+        ),
+        value(
+            "leadingArgumentsThenALambda",
+            ty("List", [int_t()]),
+            vec![],
+            apply(
+                var("List.foldl"),
+                [
+                    lambda(
+                        [pvar("x"), pvar("acc")],
+                        case(var("x"), [(Pattern::Wildcard, var("acc"))]),
+                    ),
+                    list([]),
+                    list([int(1), int(2)]),
+                ],
+            ),
+        ),
+        value(
             "nested",
             ty("Maybe", [int_t()]),
             vec![],

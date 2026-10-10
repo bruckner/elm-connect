@@ -79,9 +79,17 @@ fn application_parenthesizes_compound_arguments() {
 }
 
 #[test]
-fn application_with_a_multiline_argument_puts_each_argument_on_a_line() {
+fn application_with_a_multiline_last_argument_keeps_the_others_on_the_first_line() {
     let e = apply(var("f"), [var("a"), list([int(1), int(2)])]);
-    assert_eq!(print_expr(&e), "f\n    a\n    [ 1\n    , 2\n    ]");
+    assert_eq!(print_expr(&e), "f a\n    [ 1\n    , 2\n    ]");
+    let only = apply(var("f"), [list([int(1), int(2)])]);
+    assert_eq!(print_expr(&only), "f\n    [ 1\n    , 2\n    ]");
+}
+
+#[test]
+fn application_with_a_multiline_argument_before_the_last_puts_each_argument_on_a_line() {
+    let e = apply(var("f"), [list([int(1), int(2)]), var("a")]);
+    assert_eq!(print_expr(&e), "f\n    [ 1\n    , 2\n    ]\n    a");
 }
 
 #[test]
