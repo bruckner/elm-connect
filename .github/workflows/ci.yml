@@ -28,3 +28,23 @@ jobs:
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: just check
+
+  elm-0-19-1:
+    # Design section 8: Elm 0.19.2 is the development target and 0.19.1 is
+    # checked here. The runtime package and every case's expected output
+    # must compile with it too.
+    name: Elm 0.19.1 (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Elm 0.19.1
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/elm.gz" \
+            https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+          echo "e44af52bb27f725a973478e589d990a6428e115fe1bb14f03833134d6c0f155c  $RUNNER_TEMP/elm.gz" \
+            | sha256sum --check
+          gunzip "$RUNNER_TEMP/elm.gz"
+          chmod +x "$RUNNER_TEMP/elm"
+      - run: conformance/compile-with.sh "$RUNNER_TEMP/elm"
