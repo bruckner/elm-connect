@@ -95,6 +95,18 @@ pub struct TypeName {
     pub name: String,
 }
 
+impl TypeName {
+    /// The Elm name of the type's JSON encoder, such as `encodeNote`.
+    pub fn encoder_name(&self) -> String {
+        crate::naming::encoder_name(&self.name)
+    }
+
+    /// The Elm name of the type's JSON decoder, such as `decodeNote`.
+    pub fn decoder_name(&self) -> String {
+        crate::naming::decoder_name(&self.name)
+    }
+}
+
 /// A message: one Elm record type alias.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Message {
