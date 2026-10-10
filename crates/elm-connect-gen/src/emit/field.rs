@@ -7,7 +7,11 @@ use super::{
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
-use crate::ir::{Cardinality, Field, MapKey, ScalarKind, TypeName, TypeRef, WellKnown};
+use std::collections::HashMap;
+
+use crate::ir::{
+    Cardinality, Field, MapKey, Message, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
+};
 
 /// A field as the emitter supports it: what [`field_shape`] classifies an
 /// IR field into once, so that the type, the encoder and the decoder of
@@ -85,6 +89,9 @@ pub(super) enum Zeroed<'p> {
 pub(super) enum Present<'p> {
     /// A generated message.
     Message(&'p TypeName),
+    /// A recursive message, held in its wrapper because the field closes a
+    /// cycle of record fields ([`Field::cyclic`]).
+    Wrapped(&'p Wrapper),
     /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
     /// is `null` on the wire when unset.
     Wrapper(ScalarKind),
@@ -217,6 +224,7 @@ impl Emitter {
             }
             ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
             ValueShape::Present(Present::Empty) => Type::Unit,
+            ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
         }
     }
 
@@ -249,6 +257,7 @@ impl Emitter {
                 self.reference((CONNECT_JSON, "encodeFieldMask"))
             }
             ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
+            ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
     }
 
@@ -266,13 +275,30 @@ impl Emitter {
             ValueShape::Present(Present::Duration) => self.reference((CONNECT_JSON, "duration")),
             ValueShape::Present(Present::FieldMask) => self.reference((CONNECT_JSON, "fieldMask")),
             ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "empty")),
+            ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }
     }
 }
 
-/// The shape of `field`.
-pub(super) fn field_shape(field: &Field) -> FieldShape<'_> {
-    match (field.cardinality, value_shape(&field.ty)) {
+/// The shape of `field`. `by_name` holds the messages of the field's
+/// package, where a field that closes a cycle finds its target's wrapper.
+pub(super) fn field_shape<'m>(
+    field: &'m Field,
+    by_name: &HashMap<&str, &'m Message>,
+) -> FieldShape<'m> {
+    let value = match &field.ty {
+        TypeRef::Message(name) if field.cyclic => {
+            // A cycle never leaves its package (the IR's invariants), and
+            // every message on one has a wrapper.
+            let wrapper = by_name[name.name.as_str()]
+                .wrapper
+                .as_ref()
+                .expect("a message on a cycle has a wrapper");
+            ValueShape::Present(Present::Wrapped(wrapper))
+        }
+        ty => value_shape(ty),
+    };
+    match (field.cardinality, value) {
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
         (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
         (Cardinality::Repeated, value) => FieldShape::List(value),

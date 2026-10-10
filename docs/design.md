@@ -195,9 +195,43 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   An absent or `null` map decodes as `Dict.empty`.
 - Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
 - Recursive messages: `type alias Node = { children : List Node }` is
-  illegal in Elm. Wrap with a custom type as protoc-gen-elm does
-  (`type Node_ = Node_ Node`). *(Proposed.)* Diagnostic when a recursive
-  message is detected, pointing at the wrapper in the output.
+  illegal in Elm. Wrap with a custom type as protoc-gen-elm does.
+  *(Decided, 2026-10-10.)* The shape:
+
+  ```elm
+  type alias Node =
+      { label : String
+      , children : List Node_
+      }
+
+  type Node_
+      = Node_ Node
+  ```
+
+  - A message is recursive when it reaches itself through fields
+    (singular, optional, repeated or map values), directly or through
+    other messages. Each recursive message gets the wrapper `<Name>_`,
+    whose one constructor has the same name, with `encode<Name>_` and
+    `decode<Name>_`. Generated type names never contain an underscore
+    otherwise, so the name is always free.
+  - Exactly the fields that close a cycle hold the wrapper: a field
+    whose message type reaches back to the message holding it. In a
+    mutual pair (`Person.employer : Maybe Company_`,
+    `Company.staff : List Person_`) both sides are wrapped, so the rule
+    needs no choice of where to cut. A message off the cycle that refers
+    to a recursive one (`Forest.trees : List Node`) holds the plain
+    record.
+  - The wrapper's decoder reads the message through
+    `Json.Decode.lazy`, which keeps the decoders of a cycle from being
+    defined directly in terms of each other.
+  - A cycle through a oneof member needs no wrapper (the oneof's custom
+    type already breaks the alias cycle), but its decoders still refer
+    to each other, so the member that closes the cycle decodes through
+    `Json.Decode.lazy`.
+  - No diagnostic: the wrapper is in the generated output, where the
+    Elm compiler points at it the first time a record is built without
+    it. A note at generation time would repeat what the types already
+    say.
 
 ### 3.3 Enums
 
@@ -506,8 +540,9 @@ shared.
   of Elm's compiler. First catalogue: route variable names a field the
   request does not have; route body names a non-message field; map key
   of an unsupported type (built: `types::map_key`, for `bool`); package
-  import cycle; name collision after
-  casing; `Any` field; recursive message (informational).
+  import cycle; name collision after casing; `Any` field. A recursive
+  message was listed as an informational diagnostic; it is dropped,
+  since the wrapper type in the output says the same (§3.2).
 
 ## 7. Conformance  *(Decided)*
 

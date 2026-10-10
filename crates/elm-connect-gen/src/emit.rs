@@ -1,19 +1,21 @@
-//! The emitter: one IR [`Package`] to one Elm [`Module`] of record types
-//! and their proto3 JSON codecs (design §2 layer 1, §3).
+//! The emitter: one IR [`Package`] to one Elm [`Module`] of types and
+//! their proto3 JSON codecs (design §2 layer 1, §3).
 //!
 //! Invariant: every name comes from the IR, every layout from the printer.
 //! The emitter chooses which declarations exist and what their bodies say;
-//! the Elm names of types, fields and codecs come from [`crate::ir`] (which
-//! takes them from [`crate::naming`]), and the text is
+//! the Elm names of types, fields, constructors and codecs come from
+//! [`crate::ir`] (which takes them from [`crate::naming`]), and the text is
 //! [`crate::elm::print`]'s. The only names written here are those of the
-//! libraries generated code calls: elm/json and the runtime package.
+//! libraries generated code calls: elm/core, elm/json, elm/time and the
+//! runtime package.
 //!
-//! The rules the emitter applies today:
+//! The rules the emitter applies:
 //!
 //! - A module opens with a generated-file notice, imports exactly the
 //!   modules its code refers to (beyond those Elm imports by default),
-//!   and holds three sections in order: types, encoders, decoders. Each section has the enums, then the messages,
-//!   each followed by its oneofs.
+//!   and holds three sections in order: types, encoders, decoders. Each
+//!   section has the enums, then the messages, each followed by its
+//!   recursion wrapper and its oneofs.
 //! - A message is a record type alias, an encoder
 //!   (`Foo -> Json.Encode.Value`) and a decoder (`Json.Decode.Decoder Foo`).
 //! - Encoders emit every field, default values included. proto3 JSON lets
@@ -30,43 +32,40 @@
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array; absent or `null` decodes as `[]`. Both reuse the one
 //!   `Connect.Json.field` step with `Nothing` or `[]` as its zero value.
-//!
+//! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
+//!   keys) or `Int` (32-bit integer keys), encoded with
+//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Connect.Json.enum`
 //!   decoder that reads a name or a number, an unknown one as the zero
 //!   value (design §3.3).
-//!
 //! - A oneof is a custom type whose first constructor is the unset case,
 //!   held in one record field where its first member was declared. Its
 //!   encoder gives the set member's key and value for the message's
 //!   object; its decoder tries each member with `Json.Decode.oneOf` and
 //!   falls back to unset (design §3.6).
-//!
-//! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
-//!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
-//!
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
 //!   `List String` (field masks), `()` (`Empty`), `Json.Encode.Value`
 //!   (`Struct`, `Value`, `ListValue`) and the wrappers' scalars (design
 //!   §3.5). The first four and the wrappers are messages, held with
 //!   presence; JSON is held directly, `null` when absent.
-//!
-//! Everything but recursive messages is emitted so far. Every other construct
-//! is reported as [`Code::Unimplemented`](crate::diagnostics::Code) through
-//! [`crate::diagnostics`], never a panic, so a user meets an ordinary
-//! diagnostic until its emitter lands.
+//! - A recursive message also gets a wrapper, `type Node_ = Node_ Node`,
+//!   with an encoder and a decoder; a field that closes a cycle of record
+//!   fields holds the wrapper, and the wrapper's decoder reads the message
+//!   through `Json.Decode.lazy`. A oneof member that closes a cycle decodes
+//!   through `Json.Decode.lazy` too (design §3.2).
 
 mod enumeration;
 mod field;
 mod message;
 mod oneof;
+mod recursion;
 mod scalar;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::VERSION;
-use crate::diagnostics::{Diagnostics, Problem};
+use crate::diagnostics::Diagnostics;
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, TypeName};
@@ -96,18 +95,15 @@ const CONNECT_DURATION: &str = "Connect.Duration";
 #[non_exhaustive]
 pub struct Options {}
 
-/// The Elm module for `package`, or every construct in it that has no
-/// emitter yet.
+/// The Elm module for `package`. Every construct a built IR holds has an
+/// emitter, so this does not fail today; the error is the problems found,
+/// for constructs to come (services) whose emitters may report some.
 pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics> {
     let mut emitter = Emitter {
         module: package.module.clone(),
         imports: BTreeMap::new(),
-        diagnostics: Diagnostics::new(),
     };
     let decls = emitter.package(package);
-    if !emitter.diagnostics.is_empty() {
-        return Err(emitter.diagnostics);
-    }
     Ok(Module {
         header: Some(format!(
             "Generated by elm-connect {VERSION} from {}. Do not edit; regenerate instead.",
@@ -166,22 +162,57 @@ struct OneofShape<'m> {
     variants: Vec<(&'m OneofVariant, ValueShape<'m>)>,
 }
 
-/// The state of emitting one module: the library modules its code refers
-/// to so far, and the problems found.
+/// `message` with the shape of each of its fields and oneof members.
+/// `by_name` holds every message of the package, for the wrappers of
+/// cyclic fields.
+fn message_shape<'m>(
+    message: &'m Message,
+    by_name: &HashMap<&str, &'m Message>,
+) -> MessageShape<'m> {
+    let fields = message
+        .fields
+        .iter()
+        .map(|field| (field, field::field_shape(field, by_name)))
+        .collect();
+    let oneofs = message
+        .oneofs
+        .iter()
+        .map(|oneof| OneofShape {
+            oneof,
+            variants: oneof
+                .variants
+                .iter()
+                .map(|variant| (variant, field::value_shape(&variant.ty)))
+                .collect(),
+        })
+        .collect();
+    MessageShape {
+        message,
+        fields,
+        oneofs,
+    }
+}
+
+/// The state of emitting one module: the modules its code refers to so
+/// far.
 struct Emitter {
     module: IrModule,
     /// Each module imported, with the types its import exposes.
     imports: BTreeMap<String, BTreeSet<String>>,
-    diagnostics: Diagnostics,
 }
 
 impl Emitter {
     /// The declarations of `package`, by section.
     fn package(&mut self, package: &Package) -> Vec<Decl> {
+        let by_name: HashMap<&str, &Message> = package
+            .messages
+            .iter()
+            .map(|message| (message.elm_name.as_str(), message))
+            .collect();
         let messages: Vec<_> = package
             .messages
             .iter()
-            .filter_map(|message| self.message_shape(message))
+            .map(|message| message_shape(message, &by_name))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
             return Vec::new();
@@ -198,6 +229,11 @@ impl Emitter {
             types.push(self.message_alias(shape));
             encoders.push(self.message_encoder(shape));
             decoders.push(self.message_decoder(shape));
+            if let Some(wrapper) = &shape.message.wrapper {
+                types.push(self.wrapper_type(shape.message, wrapper));
+                encoders.push(self.wrapper_encoder(shape.message, wrapper));
+                decoders.push(self.wrapper_decoder(shape.message, wrapper));
+            }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(oneof));
                 encoders.push(self.oneof_encoder(oneof));
@@ -205,37 +241,6 @@ impl Emitter {
             }
         }
         types.into_iter().chain(encoders).chain(decoders).collect()
-    }
-
-    /// `message` with the shape of each of its fields and oneof members, or
-    /// `None` once every unsupported construct in it is reported.
-    fn message_shape<'m>(&mut self, message: &'m Message) -> Option<MessageShape<'m>> {
-        let before = self.diagnostics.len();
-        if message.wrapper.is_some() {
-            self.unimplemented(&message.proto_full_name, "a recursive message");
-        }
-        let fields: Vec<_> = message
-            .fields
-            .iter()
-            .map(|field| (field, field::field_shape(field)))
-            .collect();
-        let oneofs = message
-            .oneofs
-            .iter()
-            .map(|oneof| OneofShape {
-                oneof,
-                variants: oneof
-                    .variants
-                    .iter()
-                    .map(|variant| (variant, field::value_shape(&variant.ty)))
-                    .collect(),
-            })
-            .collect();
-        (self.diagnostics.len() == before).then_some(MessageShape {
-            message,
-            fields,
-            oneofs,
-        })
     }
 
     /// A generated type, qualified (and its module imported) when it is
@@ -296,11 +301,6 @@ impl Emitter {
         self.imports.entry(module.to_owned()).or_default();
         ty_qualified(module, name, args)
     }
-
-    fn unimplemented(&mut self, element: &str, construct: &str) {
-        self.diagnostics
-            .push(Problem::unimplemented(element, construct));
-    }
 }
 
 /// `f args`, where `f` may already be a partial application: the
@@ -319,7 +319,6 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::diagnostics::Code;
     use crate::ir::{Cardinality, ScalarKind, TypeRef};
 
     fn package(messages: Vec<Message>) -> Package {
@@ -354,14 +353,6 @@ mod tests {
         }
     }
 
-    fn problems(package: &Package) -> Vec<(Code, String)> {
-        let diagnostics = emit(package, &Options::default()).expect_err("unsupported");
-        diagnostics
-            .iter()
-            .map(|p| (p.code(), p.message().to_owned()))
-            .collect()
-    }
-
     #[test]
     fn header_names_the_package_files() {
         let module = emit(&package(Vec::new()), &Options::default()).expect("emits");
@@ -393,22 +384,6 @@ mod tests {
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(imports, ["Json.Decode", "Json.Encode"]);
-    }
-
-    #[test]
-    fn unsupported_constructs_are_diagnostics() {
-        let mut recursive = message("R", Vec::new());
-        recursive.wrapper = Some(crate::ir::Wrapper {
-            elm_name: "R_".into(),
-        });
-        let problems = problems(&package(vec![recursive]));
-        assert_eq!(
-            problems,
-            [(
-                Code::Unimplemented,
-                "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.".into()
-            )]
-        );
     }
 
     #[test]

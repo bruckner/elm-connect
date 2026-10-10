@@ -64,13 +64,17 @@ impl Emitter {
     /// `decodeFooKind : Json.Decode.Decoder FooKind`: `Json.Decode.oneOf`
     /// over a `Connect.Json.member` per member, in declaration order, then
     /// `Json.Decode.succeed FooKindUnset`. A member present as `null` is
-    /// skipped, so it reads as unset.
+    /// skipped, so it reads as unset. A member that closes a cycle decodes
+    /// through `Json.Decode.lazy`.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
         let mut alternatives: Vec<Expr> = shape
             .variants
             .iter()
             .map(|&(variant, value)| {
-                let decode = self.value_decoder(value);
+                let mut decode = self.value_decoder(value);
+                if variant.cyclic {
+                    decode = self.lazy(decode);
+                }
                 let map = self.reference((JSON_DECODE, "map"));
                 let decoder = apply(map, [var(variant.elm_ctor.clone()), decode]);
                 let step = if variant.json_name == variant.proto_name {

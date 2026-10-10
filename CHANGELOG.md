@@ -45,3 +45,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Connect.Duration` (an exact, opaque duration with proto3 JSON's
   `"1.5s"` form), and `Connect.Json` codecs for timestamps, durations,
   field masks and `Empty`; it now depends on elm/time.
+- Generation of recursive messages: a field that closes a cycle of record
+  fields holds the target's wrapper type (`type Node_ = Node_ Node`),
+  decoded lazily, as are oneof members that close a cycle, with the
+  `nesting` conformance case. Every construct of the type layer is now
+  generated; nothing reports `generate::unimplemented`.
