@@ -25,20 +25,33 @@ serving a production Elm client since early 2026. This repository is the
 portable, public rewrite: the generator in Rust, the runtime as an Elm
 package.
 
-## Layout (planned)
+## Layout
 
 ```
-elm.json            the Elm runtime package  (bruckner/elm-connect)
-src/                Connect.elm, Transcode.elm, and internals
-tests/
 Cargo.toml          Rust workspace
 crates/
-  elm-connect-gen/        descriptors → IR → Elm, with diagnostics
+  elm-connect-gen/        the shared library (generation not yet written)
   protoc-gen-elm-connect/ the protoc plugin
   elm-connect/            standalone CLI (no protoc needed)
-conformance/        .proto fixtures and golden Elm output
+conformance/
+  harness/          Elm application the expected output will compile in
 docs/               design and decisions
+mise.toml           toolchain pin
+Justfile            task recipes; `just` lists them
 ```
+
+Both binaries build and parse their input, then stop with "type
+generation is not implemented yet". The Elm runtime package (`elm.json`,
+`src/`, `tests/` at the root) and the conformance fixtures come later.
+
+## Developing
+
+```sh
+mise install    # Rust, Elm, elm-format, elm-test-rs, node, just
+just check      # the gate CI runs
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
 
 ## License
 
