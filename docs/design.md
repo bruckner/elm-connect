@@ -43,7 +43,9 @@ a second transport and a public interface designed to be kept.
   method over a transport it does not support is a compile error.
 - Diagnostics in the register of Elm's own compiler: the proto source
   with the problem underlined, and a sentence saying what was expected.
-- One binary, no protoc required, on every platform Elm runs on.
+- One binary, no protoc required, on every platform Elm runs on. And
+  a conventional protoc plugin from the same library, for build chains
+  already built around protoc or Buf. Both entry points are first-class.
 - A conformance corpus that pins the generated output and the routes it
   produces, so a server-side transcoder and this client cannot drift.
 
@@ -197,7 +199,9 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   - (b) add an `StatusUnrecognized String` constructor. Faithful and
     forward-tolerant, re-encodes what was received, but every `case` on
     an enum gains a branch nobody wants to think about.
-  Leaning (a) with a generator option for (b). Needs discussion.
+  **Starting position (2026-10-10):** (a), as the best guess; to be
+  reviewed against the corpus output. A generator option for (b) stays
+  on the table.
 
 ### 3.4 Scalars
 
@@ -235,7 +239,7 @@ the parser lives there and `Time.Posix` is the right type.
 
 ### 3.6 Oneof
 
-*(Open.)* Two shapes:
+*(Decided; see below.)* Two shapes were considered:
 
 - (a) A custom type with an `Unset` constructor, field typed as the
   custom type: `message : NoteEventKind` where
@@ -243,7 +247,10 @@ the parser lives there and `Time.Posix` is the right type.
 - (b) A custom type without `Unset`, field typed `Maybe NoteEventKind`.
 
 (b) is more idiomatic Elm and composes with `Maybe.map`. (a) puts every
-case in one `case`. The in-house generator uses (a). Leaning (b).
+case in one `case`. The in-house generator uses (a).
+
+**Decided (2026-10-10):** (a). A plain union with the unset case as a
+constructor of the union itself, no `Maybe` wrapper.
 
 ### 3.7 Naming
 
@@ -284,6 +291,13 @@ transcoding case (`Transcode.Call req res`) so call sites pass one
 thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
 
 ## 5. Runtime  *(Proposed)*
+
+**Status of the package itself (2026-10-10):** the type layer is being
+built against a runtime package from day one, because the JSON pipeline
+helpers and the well-known-type codecs would otherwise be inlined into
+every generated module. Whether the package is *kept* is an open
+question: once it exists, we look at what it contains and what that buys
+over inlining, and decide. Nothing below assumes the answer.
 
 ### 5.1 Config
 
@@ -379,7 +393,9 @@ shared.
 
 ## 8. Compatibility and versioning
 
-- Elm 0.19.1 and 0.19.2.
+- Elm 0.19.2 is the development target; 0.19.1 is checked in CI.
+  *(Decided.)* Decoders for messages with more than eight fields use the
+  runtime's pipeline helpers rather than `map8` chunking.
 - Generated code states the runtime major it needs in a header comment;
   a mismatch surfaces as an Elm compile error against the runtime's
   types. Generator major == runtime major. *(Decided.)*
@@ -388,8 +404,8 @@ shared.
 
 ## 9. Open questions, collected
 
-1. Enum unknown values (§3.3): zero-value or `Unrecognized` variant.
-2. Oneof shape (§3.6): `Unset` constructor or `Maybe`.
+1. Enum unknown values (§3.3): starting with zero-value; review pending.
+2. Whether the runtime package is kept (§5) once its contents exist.
 3. Fuse method and route for transcoding (§4).
 4. Connect GET for idempotent methods: default on or off (§5.2).
 5. Naming of additional-binding routes (§4).
