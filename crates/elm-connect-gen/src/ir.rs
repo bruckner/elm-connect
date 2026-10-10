@@ -379,3 +379,38 @@ pub struct EnumValue {
     /// The constructor, such as `StatusActive`.
     pub elm_ctor: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn module_names_hold_only_valid_segments() {
+        let new = |segments: &[&str]| {
+            ModuleName::new(segments.iter().map(|s| s.to_string()).collect())
+                .map(|module| module.to_string())
+        };
+        assert_eq!(new(&["Notes", "V1"]).as_deref(), Some("Notes.V1"));
+        assert_eq!(new(&["A_b2"]).as_deref(), Some("A_b2"));
+        assert_eq!(new(&[]), None);
+        assert_eq!(new(&["notes"]), None);
+        assert_eq!(new(&["1V"]), None);
+        assert_eq!(new(&["No-tes"]), None);
+        assert_eq!(new(&[""]), None);
+    }
+
+    #[test]
+    fn an_enum_starts_at_zero() {
+        let value = |number| EnumValue {
+            proto_name: format!("V{number}"),
+            number,
+            elm_ctor: format!("EV{number}"),
+        };
+        let e = Enum::new("t.E".into(), "E".into(), value(0), vec![value(1), value(2)])
+            .expect("zero first");
+        let numbers: Vec<_> = e.values().map(|v| v.number).collect();
+        assert_eq!(numbers, [0, 1, 2]);
+        assert_eq!(e.zero().number, 0);
+        assert_eq!(Enum::new("t.E".into(), "E".into(), value(1), vec![]), None);
+    }
+}
