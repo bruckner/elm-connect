@@ -369,7 +369,11 @@ shared.
 - Output is produced from a typed Elm AST and a Wadler-style pretty
   printer tuned to match `elm-format`. The conformance suite runs
   `elm-format --validate` on every golden file to keep that true.
-  *(Proposed.)*
+  *(Proposed.)* Built so far (`elm-connect-gen::elm`): no Wadler-style
+  printer was needed; fixed rules choose one line or several per
+  construct, laid out on a port of elm-format's own block model (text,
+  tab stops, prefix, indent), and a corpus test holds the output to
+  `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags):
   `transports=connect,transcode` (default both; limits emitted
   descriptors and imports), `module_prefix=`, `int64=string|int`,
