@@ -221,7 +221,40 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
 | `bytes` | `String` (base64, as on the wire) | *(Proposed.)* Alternative: `Bytes.Bytes` via elm/bytes with base64 in the runtime. Rejected for 1.0: adds a dependency and a decode step for a field most JSON APIs never use. |
 
 Encoders emit every field, default values included, which proto3 JSON
-allows. *(Current rule, not yet reviewed.)*
+allows. *(Current rule, not yet reviewed.)* A field with presence
+(`Maybe`) encodes `Nothing` as `null`, which parsers read as absent.
+
+Decoders accept every form proto3 JSON requires a parser to accept, not
+just the form encoders write. *(Proposed; built.)*
+
+- 32-bit integers as numbers or strings, in exponent notation too
+  (`42`, `"42"`, `1e2`, `"1e2"`), through `Connect.Json.int32`. A
+  fractional value fails; the range of the proto type is not checked.
+- Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
+  `"-Infinity"`; 64-bit integers as strings or numbers. A 64-bit string
+  in exponent notation (`"1e2"`) is not accepted yet.
+- A field under its JSON name or under its proto field name. The
+  generated step names the field once when the two are equal and twice
+  when they differ, JSON name first:
+
+  ```elm
+  |> Connect.Json.field "title" "" Json.Decode.string
+  |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+  ```
+
+  When an object has both keys, the JSON name wins. The two names are
+  equal only for one-word fields without an explicit `json_name`, so in
+  practice most multi-word fields use `fieldEither`. A list of names
+  (`field [ "title" ]`) was the alternative; it puts brackets on every
+  line to serve the minority case, and two names are the most there can
+  be.
+- One step serves every cardinality. Its second argument is the value
+  an absent or `null` field reads as, so a field with presence reads
+  `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
+  repeated one `field "tags" [] (Json.Decode.list Json.Decode.string)`.
+  Separate `optional` and `list` steps would read a little shorter but
+  double the step functions (each needs a two-name form too) and hide
+  the zero value the reader otherwise sees.
 
 64-bit as `String` is *(Proposed)* with an option `int64=int` for users
 who accept the 2^53 limit and want arithmetic. Their zero value is

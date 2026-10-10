@@ -86,7 +86,7 @@ pub(super) fn encoder(kind: ScalarKind) -> (&'static str, &'static str) {
 pub(super) fn decoder(kind: ScalarKind) -> (&'static str, &'static str) {
     match repr(kind) {
         Repr::Float => (CONNECT_JSON, "float"),
-        Repr::Int => (JSON_DECODE, "int"),
+        Repr::Int => (CONNECT_JSON, "int32"),
         Repr::Int64 => (CONNECT_JSON, "int64"),
         Repr::Bool => (JSON_DECODE, "bool"),
         Repr::String => (JSON_DECODE, "string"),

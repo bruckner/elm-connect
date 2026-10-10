@@ -18,3 +18,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   reported as `generate::unimplemented`. The runtime package
   `bruckner/elm-connect` starts with `Connect.Json`, and the conformance
   corpus with its first case, `scalars`.
+- Generation of proto3 `optional` fields and singular message fields as
+  `Maybe`, and repeated fields as `List`, with the `cardinality`
+  conformance case. Decoders accept a field under its proto name as well
+  as its JSON name (`Connect.Json.fieldEither`), and 32-bit integers as
+  strings and in exponent notation (`Connect.Json.int32`);
+  `Connect.Json.encodeMaybe` encodes `Nothing` as `null`.

@@ -22,8 +22,16 @@
 //! - Decoders are a pipeline of `Connect.Json.field` steps from
 //!   `Json.Decode.succeed`, so they read the same at any field count
 //!   (design §8). A missing or `null` field reads as its proto3 zero value.
+//!   A field whose JSON name differs from its proto name uses
+//!   `Connect.Json.fieldEither`, which accepts both keys (design §3.4).
+//! - A field with presence (proto3 `optional`, or message-typed) is a
+//!   `Maybe`: `Nothing` encodes as `null`, and an absent or `null` field
+//!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
+//!   array; absent or `null` decodes as `[]`. Both reuse the one
+//!   `Connect.Json.field` step with `Nothing` or `[]` as its zero value.
 //!
-//! Only singular scalar fields are emitted so far. Every other construct
+//! Singular, optional and repeated fields of scalars and generated
+//! messages are emitted so far. Every other construct
 //! is reported as [`Code::Unimplemented`](crate::diagnostics::Code) through
 //! [`crate::diagnostics`], never a panic, so a user meets an ordinary
 //! diagnostic until its emitter lands.
@@ -36,8 +44,10 @@ use std::collections::BTreeSet;
 use crate::VERSION;
 use crate::diagnostics::{Diagnostics, Problem};
 use crate::elm::ast::{Decl, Exposing, Expr, Import, Module, ModuleName, Type};
-use crate::elm::build::{qualified, ty_qualified};
-use crate::ir::{Cardinality, Field, Message, Package, ScalarKind, TypeRef};
+use crate::elm::build::{apply, list, qualified, ty, ty_qualified, var};
+use crate::ir::{
+    Cardinality, Field, Message, ModuleName as IrModule, Package, ScalarKind, TypeName, TypeRef,
+};
 
 /// elm/json's decoders.
 const JSON_DECODE: &str = "Json.Decode";
@@ -56,6 +66,7 @@ pub struct Options {}
 /// emitter yet.
 pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics> {
     let mut emitter = Emitter {
+        module: package.module.clone(),
         imports: BTreeSet::new(),
         diagnostics: Diagnostics::new(),
     };
@@ -87,17 +98,33 @@ pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics
 /// The state of emitting one module: the library modules its code refers
 /// to so far, and the problems found.
 struct Emitter {
-    imports: BTreeSet<&'static str>,
+    module: IrModule,
+    imports: BTreeSet<String>,
     diagnostics: Diagnostics,
 }
 
-/// A field's values as the emitter supports them: what [`Emitter::field`]
-/// classifies an IR field into once, so that the type, the encoder and
-/// the decoder of the field match on a closed set and report nothing.
+/// A field as the emitter supports it: what [`Emitter::field`] classifies
+/// an IR field into once, so that the type, the encoder and the decoder of
+/// the field match on a closed set and report nothing.
 #[derive(Clone, Copy, Debug)]
-enum FieldShape {
-    /// A singular scalar: the zero value when absent.
+enum FieldShape<'p> {
+    /// One value without presence: a singular scalar, the zero value when
+    /// absent or `null`.
+    Plain(ScalarKind),
+    /// `Maybe`: a field with presence (proto3 `optional`, or
+    /// message-typed), `Nothing` when absent or `null`.
+    Maybe(ValueShape<'p>),
+    /// `List`: a repeated field, `[]` when absent or `null`.
+    List(ValueShape<'p>),
+}
+
+/// The type of a field's values, as the emitter supports it.
+#[derive(Clone, Copy, Debug)]
+enum ValueShape<'p> {
+    /// A proto scalar.
     Scalar(ScalarKind),
+    /// A generated message.
+    Message(&'p TypeName),
 }
 
 impl Emitter {
@@ -130,7 +157,7 @@ impl Emitter {
     fn message_shape<'m>(
         &mut self,
         message: &'m Message,
-    ) -> Option<(&'m Message, Vec<(&'m Field, FieldShape)>)> {
+    ) -> Option<(&'m Message, Vec<(&'m Field, FieldShape<'m>)>)> {
         let before = self.diagnostics.len();
         if message.recursive {
             self.unimplemented(&message.proto_full_name, "a recursive message");
@@ -150,55 +177,133 @@ impl Emitter {
     }
 
     /// The shape of `field`, or `None` once it is reported.
-    fn field(&mut self, message: &Message, field: &Field) -> Option<FieldShape> {
-        let construct = match (field.cardinality, &field.ty) {
-            (Cardinality::Singular, TypeRef::Scalar(kind)) => {
-                return Some(FieldShape::Scalar(*kind));
+    fn field<'m>(&mut self, message: &Message, field: &'m Field) -> Option<FieldShape<'m>> {
+        let element = || format!("{}.{}", message.proto_full_name, field.proto_name);
+        let value = match &field.ty {
+            TypeRef::Scalar(kind) => ValueShape::Scalar(*kind),
+            TypeRef::Message(name) => ValueShape::Message(name),
+            TypeRef::Enum(_) => {
+                self.unimplemented(&element(), "an enum-typed field");
+                return None;
             }
-            (Cardinality::Optional, _) => "a proto3 `optional` field",
-            (Cardinality::Repeated, _) => "a repeated field",
-            (Cardinality::Map(_), _) => "a map field",
-            (Cardinality::Singular, TypeRef::Message(_)) => "a message-typed field",
-            (Cardinality::Singular, TypeRef::Enum(_)) => "an enum-typed field",
-            (Cardinality::Singular, TypeRef::WellKnown(_)) => "a field of a well-known type",
+            TypeRef::WellKnown(_) => {
+                self.unimplemented(&element(), "a field of a well-known type");
+                return None;
+            }
         };
-        self.unimplemented(
-            &format!("{}.{}", message.proto_full_name, field.proto_name),
-            construct,
-        );
-        None
+        Some(match (field.cardinality, value) {
+            (Cardinality::Singular, ValueShape::Scalar(kind)) => FieldShape::Plain(kind),
+            (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
+            (Cardinality::Repeated, value) => FieldShape::List(value),
+            (Cardinality::Map(_), _) => {
+                self.unimplemented(&element(), "a map field");
+                return None;
+            }
+        })
     }
 
     /// The Elm type of a field.
     fn field_type(&mut self, shape: FieldShape) -> Type {
         match shape {
-            FieldShape::Scalar(kind) => scalar::elm_type(kind),
+            FieldShape::Plain(kind) => scalar::elm_type(kind),
+            FieldShape::Maybe(value) => ty("Maybe", [self.value_type(value)]),
+            FieldShape::List(value) => ty("List", [self.value_type(value)]),
         }
     }
 
-    /// The encoder of a field's value: a function from it to
-    /// `Json.Encode.Value`.
+    /// The encoder of a field: a function from its Elm value to
+    /// `Json.Encode.Value`, possibly partially applied.
     fn field_encoder(&mut self, shape: FieldShape) -> Expr {
         match shape {
-            FieldShape::Scalar(kind) => self.reference(scalar::encoder(kind)),
+            FieldShape::Plain(kind) => self.reference(scalar::encoder(kind)),
+            FieldShape::Maybe(value) => {
+                let value = self.value_encoder(value);
+                apply(self.reference((CONNECT_JSON, "encodeMaybe")), [value])
+            }
+            FieldShape::List(value) => {
+                let value = self.value_encoder(value);
+                apply(self.reference((JSON_ENCODE, "list")), [value])
+            }
         }
     }
 
-    /// The decoder of a field's value, and the value an absent field reads
-    /// as.
+    /// The decoder of a field, and the value an absent or `null` field
+    /// reads as.
     fn field_decoder(&mut self, shape: FieldShape) -> (Expr, Expr) {
         match shape {
-            FieldShape::Scalar(kind) => (
+            FieldShape::Plain(kind) => (
                 self.reference(scalar::decoder(kind)),
                 scalar::zero_value(kind),
             ),
+            FieldShape::Maybe(value) => {
+                let value = self.value_decoder(value);
+                let map = self.reference((JSON_DECODE, "map"));
+                (apply(map, [var("Just"), value]), var("Nothing"))
+            }
+            FieldShape::List(value) => {
+                let value = self.value_decoder(value);
+                (
+                    apply(self.reference((JSON_DECODE, "list")), [value]),
+                    list([]),
+                )
+            }
+        }
+    }
+
+    /// The Elm type of one value.
+    fn value_type(&mut self, value: ValueShape) -> Type {
+        match value {
+            ValueShape::Scalar(kind) => scalar::elm_type(kind),
+            ValueShape::Message(name) => self.generated_type(name),
+        }
+    }
+
+    /// The encoder of one value.
+    fn value_encoder(&mut self, value: ValueShape) -> Expr {
+        match value {
+            ValueShape::Scalar(kind) => self.reference(scalar::encoder(kind)),
+            ValueShape::Message(name) => self.generated_value(&name.module, name.encoder_name()),
+        }
+    }
+
+    /// The decoder of one value.
+    fn value_decoder(&mut self, value: ValueShape) -> Expr {
+        match value {
+            ValueShape::Scalar(kind) => self.reference(scalar::decoder(kind)),
+            ValueShape::Message(name) => self.generated_value(&name.module, name.decoder_name()),
+        }
+    }
+
+    /// A generated type, qualified (and its module imported) when it is
+    /// defined in another module than the one being emitted.
+    fn generated_type(&mut self, name: &TypeName) -> Type {
+        if name.module == self.module {
+            ty(name.name.clone(), [])
+        } else {
+            self.imports.insert(name.module.to_string());
+            ty_qualified(
+                ModuleName::new(name.module.to_string()),
+                name.name.clone(),
+                [],
+            )
+        }
+    }
+
+    /// A generated value, qualified (and its module imported) when it is
+    /// defined in another module than the one being emitted.
+    fn generated_value(&mut self, module: &IrModule, name: String) -> Expr {
+        if *module == self.module {
+            var(name)
+        } else {
+            self.imports.insert(module.to_string());
+            qualified(ModuleName::new(module.to_string()), name)
         }
     }
 
     /// A reference to `name` in the library module `module`, which the
     /// module then imports.
     fn reference(&mut self, (module, name): (&'static str, &str)) -> Expr {
-        self.imports.insert(module);
+        self.imports.insert(module.to_owned());
         qualified(module, name)
     }
 
@@ -209,7 +314,7 @@ impl Emitter {
         name: &str,
         args: impl IntoIterator<Item = Type>,
     ) -> Type {
-        self.imports.insert(module);
+        self.imports.insert(module.to_owned());
         ty_qualified(module, name, args)
     }
 
@@ -219,11 +324,24 @@ impl Emitter {
     }
 }
 
+/// `f args`, where `f` may already be a partial application: the
+/// arguments join it (`Json.Encode.list Json.Encode.int` applied to `xs`
+/// is `Json.Encode.list Json.Encode.int xs`, not a parenthesized call).
+fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
+    match f {
+        Expr::Apply(f, mut first) => {
+            first.extend(args);
+            Expr::Apply(f, first)
+        }
+        f => apply(f, args),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::diagnostics::Code;
-    use crate::ir::{ModuleName as IrModule, Oneof, TypeName};
+    use crate::ir::{MapKey, Oneof};
 
     fn package(messages: Vec<Message>) -> Package {
         Package {
@@ -325,6 +443,7 @@ mod tests {
                     Cardinality::Singular,
                     TypeRef::Message(other.clone()),
                 ),
+                field("map", Cardinality::Map(MapKey::String), string),
                 field("en", Cardinality::Singular, TypeRef::Enum(other)),
             ],
         );
@@ -340,11 +459,44 @@ mod tests {
             [
                 "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.",
                 "`t.v1.O.kind` is a oneof, which elm-connect cannot generate yet.",
-                "`t.v1.F.opt` is a proto3 `optional` field, which elm-connect cannot generate yet.",
-                "`t.v1.F.rep` is a repeated field, which elm-connect cannot generate yet.",
-                "`t.v1.F.msg` is a message-typed field, which elm-connect cannot generate yet.",
+                "`t.v1.F.map` is a map field, which elm-connect cannot generate yet.",
                 "`t.v1.F.en` is an enum-typed field, which elm-connect cannot generate yet.",
             ]
+        );
+    }
+
+    #[test]
+    fn other_modules_are_qualified_and_imported() {
+        let elsewhere = TypeName {
+            module: IrModule::new(vec!["Other".into(), "V1".into()]).expect("valid"),
+            name: "B".into(),
+        };
+        let module = emit(
+            &package(vec![message(
+                "A",
+                vec![field(
+                    "b",
+                    Cardinality::Singular,
+                    TypeRef::Message(elsewhere),
+                )],
+            )]),
+            &Options::default(),
+        )
+        .expect("emits");
+        let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
+        assert_eq!(
+            imports,
+            ["Connect.Json", "Json.Decode", "Json.Encode", "Other.V1"]
+        );
+        let printed = crate::elm::print::print_module(&module);
+        assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
+        assert!(
+            printed.contains("Connect.Json.encodeMaybe Other.V1.encodeB value.b"),
+            "{printed}"
+        );
+        assert!(
+            printed.contains("(Json.Decode.map Just Other.V1.decodeB)"),
+            "{printed}"
         );
     }
 }

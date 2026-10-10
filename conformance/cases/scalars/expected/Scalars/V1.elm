@@ -72,21 +72,21 @@ encodeEmpty _ =
 decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Json.Decode.succeed Scalars
-        |> Connect.Json.field "doubleValue" 0.0 Connect.Json.float
-        |> Connect.Json.field "floatValue" 0.0 Connect.Json.float
-        |> Connect.Json.field "int32Value" 0 Json.Decode.int
-        |> Connect.Json.field "int64Value" "0" Connect.Json.int64
-        |> Connect.Json.field "uint32Value" 0 Json.Decode.int
-        |> Connect.Json.field "uint64Value" "0" Connect.Json.int64
-        |> Connect.Json.field "sint32Value" 0 Json.Decode.int
-        |> Connect.Json.field "sint64Value" "0" Connect.Json.int64
-        |> Connect.Json.field "fixed32Value" 0 Json.Decode.int
-        |> Connect.Json.field "fixed64Value" "0" Connect.Json.int64
-        |> Connect.Json.field "sfixed32Value" 0 Json.Decode.int
-        |> Connect.Json.field "sfixed64Value" "0" Connect.Json.int64
-        |> Connect.Json.field "boolValue" False Json.Decode.bool
-        |> Connect.Json.field "text" "" Json.Decode.string
-        |> Connect.Json.field "bytesValue" "" Connect.Json.bytes
+        |> Connect.Json.fieldEither "doubleValue" "double_value" 0.0 Connect.Json.float
+        |> Connect.Json.fieldEither "floatValue" "float_value" 0.0 Connect.Json.float
+        |> Connect.Json.fieldEither "int32Value" "int32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "int64Value" "int64_value" "0" Connect.Json.int64
+        |> Connect.Json.fieldEither "uint32Value" "uint32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "uint64Value" "uint64_value" "0" Connect.Json.int64
+        |> Connect.Json.fieldEither "sint32Value" "sint32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "sint64Value" "sint64_value" "0" Connect.Json.int64
+        |> Connect.Json.fieldEither "fixed32Value" "fixed32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "fixed64Value" "fixed64_value" "0" Connect.Json.int64
+        |> Connect.Json.fieldEither "sfixed32Value" "sfixed32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "sfixed64Value" "sfixed64_value" "0" Connect.Json.int64
+        |> Connect.Json.fieldEither "boolValue" "bool_value" False Json.Decode.bool
+        |> Connect.Json.fieldEither "text" "string_value" "" Json.Decode.string
+        |> Connect.Json.fieldEither "bytesValue" "bytes_value" "" Connect.Json.bytes
 
 
 decodeEmpty : Json.Decode.Decoder Empty

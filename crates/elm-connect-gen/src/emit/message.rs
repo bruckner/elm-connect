@@ -1,7 +1,7 @@
 //! A message's three declarations: its record type alias, its encoder and
 //! its decoder.
 
-use super::{CONNECT_JSON, Emitter, FieldShape, JSON_DECODE, JSON_ENCODE};
+use super::{CONNECT_JSON, Emitter, FieldShape, JSON_DECODE, JSON_ENCODE, call};
 use crate::elm::ast::{Decl, Expr, Pattern, Type};
 use crate::elm::build::{access, apply, list, pipeline, pvar, record, string, tuple2, ty, var};
 use crate::ir::{Field, Message};
@@ -39,7 +39,7 @@ impl Emitter {
                 let value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
                 tuple2(
                     string(field.json_name.clone()),
-                    apply(self.field_encoder(shape), [value]),
+                    call(self.field_encoder(shape), [value]),
                 )
             })
             .collect::<Vec<_>>();
@@ -63,8 +63,29 @@ impl Emitter {
         }
     }
 
+    /// A decoding pipeline step reading the field `json_name`, also
+    /// accepted under `proto_name` as proto3 JSON requires:
+    /// `Connect.Json.field json_name ...` when the two are equal, else
+    /// `Connect.Json.fieldEither json_name proto_name ...`, followed by
+    /// `args`.
+    fn field_step(
+        &mut self,
+        json_name: &str,
+        proto_name: &str,
+        args: impl IntoIterator<Item = Expr>,
+    ) -> Expr {
+        let step = if json_name == proto_name {
+            let field = self.reference((CONNECT_JSON, "field"));
+            apply(field, [string(json_name)])
+        } else {
+            let field = self.reference((CONNECT_JSON, "fieldEither"));
+            apply(field, [string(json_name), string(proto_name)])
+        };
+        call(step, args)
+    }
+
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Json.Decode.succeed Foo`
-    /// with one `Connect.Json.field` step per field, in record order.
+    /// with one [`Emitter::field_step`] per field, in record order.
     pub(super) fn message_decoder(
         &mut self,
         message: &Message,
@@ -79,8 +100,7 @@ impl Emitter {
                 .iter()
                 .map(|&(field, shape)| {
                     let (decoder, zero) = self.field_decoder(shape);
-                    let step = self.reference((CONNECT_JSON, "field"));
-                    apply(step, [string(field.json_name.clone()), zero, decoder])
+                    self.field_step(&field.json_name, &field.proto_name, [zero, decoder])
                 })
                 .collect();
             pipeline(apply(succeed, [var(message.elm_name.clone())]), steps)
