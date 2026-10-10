@@ -15,8 +15,10 @@ just check      # run the gate
 ## The gate
 
 `just check` runs formatting checks (`cargo fmt`, `elm-format
---validate`), `cargo clippy` with warnings as errors, the Rust tests,
-and an `elm make` of the conformance harness. CI runs the same recipe on
+--validate`), `cargo clippy` with warnings as errors, the Rust tests
+(the conformance corpus among them, see
+[`conformance/README.md`](conformance/README.md)), and the runtime
+package's build and Elm tests. CI runs the same recipe on
 Linux and macOS for every pull request and every push to `main`, so a
 green local `just check` is the bar for opening a PR. Formatting in the
 gate is check-only; `just fmt` fixes it.

@@ -129,8 +129,17 @@ fn assert_canonical(modules: &[(String, String)], scratch_name: &str) {
 
 fn assert_compiles(modules: &[(String, String)], scratch_name: &str) {
     let root = scratch(scratch_name);
+    // The harness's dependencies, with this scratch project's `src` as the
+    // only source directory.
     let harness = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../conformance/harness/elm.json");
-    fs::copy(&harness, root.join("elm.json")).expect("copy the harness elm.json");
+    let harness = fs::read_to_string(&harness).expect("read the harness elm.json");
+    let sources = harness
+        .find("\"source-directories\"")
+        .and_then(|start| Some(start..start + harness[start..].find(']')? + 1))
+        .expect("the harness elm.json lists source directories");
+    let mut elm_json = harness.clone();
+    elm_json.replace_range(sources, "\"source-directories\": [\"src\"]");
+    fs::write(root.join("elm.json"), elm_json).expect("write elm.json");
     let paths = write_modules(&root, modules);
     // A bare `elm make` resolves dependencies and writes elm-stuff before
     // the real build, avoiding the first-build d.dat race the Justfile

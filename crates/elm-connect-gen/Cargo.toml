@@ -12,3 +12,6 @@ prost.workspace = true
 prost-reflect.workspace = true
 prost-types.workspace = true
 protox.workspace = true
+
+[dev-dependencies]
+similar.workspace = true
