@@ -1,0 +1,14 @@
+// The package another package refers to: it generates on its own.
+syntax = "proto3";
+
+package users.v1;
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_EDITOR = 1;
+}
+
+message User {
+  string name = 1;
+  Role role = 2;
+}

@@ -163,6 +163,9 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   the strongly-connected packages into one module. Rejected for 1.0
   because it changes module names based on a property users cannot see
   in their protos.
+  Built as `generate::import_cycle` (`packages_cycle` case): it names
+  each package with its files and points at a reference along the
+  cycle in each.
 - An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)*
 - The set of files to generate must be closed under package references:
   a generated package may refer only to types in generated packages or
@@ -170,6 +173,11 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   a diagnostic naming both sides. The CLI generates the closure of its
   inputs; protoc users list all the files. *(Proposed.)* `google.protobuf`
   is never generated as a package.
+  Built as `generate::not_generated` (`packages_not_generated` case),
+  which points at the referring field and names the file to add. A
+  reference to another generated package is qualified with its module
+  (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
+  plainly, without an alias or an exposing list (`packages` case).
 
 ### 3.2 Messages
 

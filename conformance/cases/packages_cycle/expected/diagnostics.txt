@@ -1,0 +1,24 @@
+generate::import_cycle
+
+  × The packages `billing.v1` (billing/v1/invoice.proto) and `shop.v1` (shop/
+  │ v1/customer.proto, shop/v1/order.proto) refer to each other in a cycle.
+    ╭─[billing/v1/invoice.proto:9:3]
+  8 │   string number = 1;
+  9 │   shop.v1.Customer billed_to = 2;
+    ·   ────────┬───────
+    ·           ╰── `billing.v1` refers to `shop.v1` here
+ 10 │ }
+    ╰────
+  help: Each proto package becomes one Elm module, and Elm modules cannot
+        import each other in a cycle. Move the types that refer to each other
+        into one package.
+
+Advice:
+  ☞ and in `shop/v1/order.proto`:
+    ╭─[shop/v1/order.proto:12:3]
+ 11 │   string id = 1;
+ 12 │   billing.v1.Invoice invoice = 2;
+    ·   ─────────┬────────
+    ·            ╰── `shop.v1` refers to `billing.v1` here
+ 13 │ }
+    ╰────

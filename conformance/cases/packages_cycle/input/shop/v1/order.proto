@@ -1,0 +1,13 @@
+// `shop.v1` refers to `billing.v1` here, and `billing.v1` refers back to
+// `shop.v1` in billing/v1/invoice.proto. The files form no import cycle,
+// but the packages do, and Elm modules cannot import each other in one.
+syntax = "proto3";
+
+package shop.v1;
+
+import "billing/v1/invoice.proto";
+
+message Order {
+  string id = 1;
+  billing.v1.Invoice invoice = 2;
+}

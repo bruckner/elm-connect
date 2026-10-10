@@ -1,0 +1,20 @@
+// A package referring to another: every reference is qualified with the
+// other module's name, which the module imports.
+syntax = "proto3";
+
+package notes.v1;
+
+import "users/v1/user.proto";
+
+message Note {
+  string title = 1;
+  users.v1.User author = 2;
+  // A plain enum field reads absence as the other module's zero value.
+  users.v1.Role required_role = 3;
+  repeated users.v1.User readers = 4;
+  map<string, users.v1.Role> roles = 5;
+  oneof owner {
+    users.v1.User user = 6;
+    string team = 7;
+  }
+}

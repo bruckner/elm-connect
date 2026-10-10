@@ -50,3 +50,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   decoded lazily, as are oneof members that close a cycle, with the
   `nesting` conformance case. Every construct of the type layer is now
   generated; nothing reports `generate::unimplemented`.
+- The `packages` conformance case (qualified references to another
+  generated package and its import), and diagnostics cases for a generate
+  set that is not closed (`packages_not_generated`) and a package cycle
+  (`packages_cycle`). A case may now hold an `include/` directory of protos
+  that are imported but not generated. Rendered diagnostics carry no
+  trailing whitespace.
