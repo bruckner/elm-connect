@@ -1,6 +1,7 @@
 module Connect.JsonTest exposing (suite)
 
 import Connect.Json
+import Dict
 import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode
@@ -15,6 +16,7 @@ suite =
         , presenceTests
         , oneofTests
         , enumTests
+        , intDictTests
         , int32Tests
         , int64Tests
         , floatTests
@@ -222,6 +224,34 @@ enumTests =
                     )
                     """{"status":null}"""
                     StatusUnspecified
+        ]
+
+
+intDictTests : Test
+intDictTests =
+    describe "intDict"
+        [ test "decimal keys" <|
+            \_ ->
+                decodes (Connect.Json.intDict Json.Decode.string)
+                    """{"1":"a","-2":"b","0":"c"}"""
+                    (Dict.fromList [ ( 1, "a" ), ( -2, "b" ), ( 0, "c" ) ])
+        , test "an empty object" <|
+            \_ -> decodes (Connect.Json.intDict Json.Decode.string) "{}" Dict.empty
+        , test "a key that is not an integer fails" <|
+            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"a":"x"}"""
+        , test "a fractional key fails" <|
+            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
+        , test "a value of the wrong type fails" <|
+            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"1":2}"""
+        , test "round-trips through Json.Encode.dict String.fromInt" <|
+            \_ ->
+                let
+                    dict =
+                        Dict.fromList [ ( 3, "c" ), ( -1, "a" ) ]
+                in
+                Json.Encode.dict String.fromInt Json.Encode.string dict
+                    |> Json.Decode.decodeValue (Connect.Json.intDict Json.Decode.string)
+                    |> Expect.equal (Ok dict)
         ]
 
 

@@ -3,6 +3,7 @@ module Connect.Json exposing
     , encodeMaybe
     , oneof, member, memberEither
     , enum
+    , intDict
     , int32
     , int64, encodeInt64
     , float, encodeFloat
@@ -33,6 +34,11 @@ The module name is provisional and may change before the first release.
 # Enums
 
 @docs enum
+
+
+# Maps
+
+@docs intDict
 
 
 # 32-bit integers
@@ -264,6 +270,42 @@ enum zero values =
         , Json.Decode.int
             |> Json.Decode.map (\int -> lookup (\( _, number, _ ) -> number == int))
         ]
+
+
+{-| Decode a map with 32-bit integer keys. JSON object keys are strings, so
+proto3 JSON writes each key as its decimal string; a key that is not one fails.
+
+    Json.Decode.decodeString (intDict Json.Decode.string) """{"1":"a","-2":"b"}"""
+    -- Ok (Dict.fromList [ ( -2, "b" ), ( 1, "a" ) ])
+
+Encode one with `Json.Encode.dict String.fromInt`.
+
+-}
+intDict : Decoder a -> Decoder (Dict.Dict Int a)
+intDict decoder =
+    Json.Decode.keyValuePairs decoder
+        |> Json.Decode.andThen
+            (\pairs ->
+                List.foldr
+                    (\( key, value ) result ->
+                        Result.map2 (\int dict -> Dict.insert int value dict)
+                            (String.toInt key |> Result.fromMaybe key)
+                            result
+                    )
+                    (Ok Dict.empty)
+                    pairs
+                    |> fromKeyResult
+            )
+
+
+fromKeyResult : Result String (Dict.Dict Int a) -> Decoder (Dict.Dict Int a)
+fromKeyResult result =
+    case result of
+        Ok dict ->
+            Json.Decode.succeed dict
+
+        Err key ->
+            Json.Decode.fail ("Expecting an integer map key, but got \"" ++ key ++ "\"")
 
 
 {-| Decode a 32-bit integer (`int32`, `uint32`, `sint32`, `fixed32`,
