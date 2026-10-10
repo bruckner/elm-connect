@@ -37,12 +37,12 @@ impl Emitter {
             .variants
             .iter()
             .map(|&(variant, value)| {
-                let encode = self.value_encoder(value);
+                let encoded = self.encode_value(value, var(ONEOF_MEMBER));
                 (
                     pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
                     list([Expr::Tuple(vec![
                         string(variant.json_name.clone()),
-                        call(encode, [var(ONEOF_MEMBER)]),
+                        encoded,
                     ])]),
                 )
             })

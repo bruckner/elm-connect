@@ -39,3 +39,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   and the `maps` conformance case. A `bool` map key is the
   `types::map_key` diagnostic (`map_bool_key` case), the corpus's first
   diagnostics case.
+- Generation of the well-known types of design section 3.5, with the
+  `well_known` conformance case and the `any_field` diagnostics case. The
+  runtime gains `Connect.Timestamp` (RFC 3339 to and from `Time.Posix`),
+  `Connect.Duration` (an exact, opaque duration with proto3 JSON's
+  `"1.5s"` form), and `Connect.Json` codecs for timestamps, durations,
+  field masks and `Empty`; it now depends on elm/time.

@@ -46,8 +46,13 @@
 //!   keys) or `Int` (32-bit integer keys), encoded with
 //!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
 //!
-//! Singular, optional, repeated and map fields of scalars, enums and
-//! generated messages, and oneofs of them, are emitted so far. Every other construct
+//! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
+//!   `List String` (field masks), `()` (`Empty`), `Json.Encode.Value`
+//!   (`Struct`, `Value`, `ListValue`) and the wrappers' scalars (design
+//!   §3.5). The first four and the wrappers are messages, held with
+//!   presence; JSON is held directly, `null` when absent.
+//!
+//! Everything but recursive messages is emitted so far. Every other construct
 //! is reported as [`Code::Unimplemented`](crate::diagnostics::Code) through
 //! [`crate::diagnostics`], never a panic, so a user meets an ordinary
 //! diagnostic until its emitter lands.
@@ -79,6 +84,11 @@ const CONNECT_JSON: &str = "Connect.Json";
 const CORE_DICT: &str = "Dict";
 /// elm/core's `String`, which every Elm module imports by default.
 const CORE_STRING: &str = "String";
+/// elm/time's `Time`, for `Time.Posix`.
+const TIME: &str = "Time";
+/// The runtime package's `Duration`, imported as
+/// `import Connect.Duration exposing (Duration)`.
+const CONNECT_DURATION: &str = "Connect.Duration";
 
 /// How to generate. Nothing is configurable yet; the options design §6
 /// lists arrive with the features they control.
@@ -207,7 +217,7 @@ impl Emitter {
         let fields: Vec<_> = message
             .fields
             .iter()
-            .filter_map(|field| Some((field, self.field(message, field)?)))
+            .map(|field| (field, field::field_shape(field)))
             .collect();
         let oneofs = message
             .oneofs
@@ -217,13 +227,7 @@ impl Emitter {
                 variants: oneof
                     .variants
                     .iter()
-                    .filter_map(|variant| {
-                        let element = format!(
-                            "{}.{}.{}",
-                            message.proto_full_name, oneof.proto_name, variant.proto_name
-                        );
-                        Some((variant, self.value_shape(&element, &variant.ty)?))
-                    })
+                    .map(|variant| (variant, field::value_shape(&variant.ty)))
                     .collect(),
             })
             .collect();
@@ -316,7 +320,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 mod tests {
     use super::*;
     use crate::diagnostics::Code;
-    use crate::ir::{Cardinality, MapKey, ScalarKind, TypeRef, WellKnown};
+    use crate::ir::{Cardinality, ScalarKind, TypeRef};
 
     fn package(messages: Vec<Message>) -> Package {
         Package {
@@ -392,54 +396,15 @@ mod tests {
 
     #[test]
     fn unsupported_constructs_are_diagnostics() {
-        let other = TypeName {
-            module: IrModule::new(vec!["T".into(), "V1".into()]).expect("valid"),
-            name: "A".into(),
-        };
-        let string = TypeRef::Scalar(ScalarKind::String);
         let mut recursive = message("R", Vec::new());
         recursive.recursive = true;
-        let fields = message(
-            "F",
-            vec![
-                field("ok", Cardinality::Singular, string.clone()),
-                field("opt", Cardinality::Optional, string.clone()),
-                field("rep", Cardinality::Repeated, string.clone()),
-                field(
-                    "msg",
-                    Cardinality::Singular,
-                    TypeRef::Message(other.clone()),
-                ),
-                field("map", Cardinality::Map(MapKey::String), string),
-                field(
-                    "wk",
-                    Cardinality::Singular,
-                    TypeRef::WellKnown(WellKnown::Timestamp),
-                ),
-                field(
-                    "en",
-                    Cardinality::Singular,
-                    TypeRef::Enum {
-                        name: other,
-                        zero_ctor: "AZero".into(),
-                    },
-                ),
-            ],
-        );
-        let problems = problems(&package(vec![recursive, fields]));
-        let messages: Vec<&str> = problems.iter().map(|(_, m)| m.as_str()).collect();
-        assert!(
-            problems
-                .iter()
-                .all(|(code, _)| *code == Code::Unimplemented)
-        );
+        let problems = problems(&package(vec![recursive]));
         assert_eq!(
-            messages,
-            [
-                "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.",
-                "`t.v1.F.wk` is a field of a well-known type, which elm-connect cannot generate \
-                 yet.",
-            ]
+            problems,
+            [(
+                Code::Unimplemented,
+                "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.".into()
+            )]
         );
     }
 

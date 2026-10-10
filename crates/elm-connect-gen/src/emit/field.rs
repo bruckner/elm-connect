@@ -1,21 +1,24 @@
 //! A field's shape, and the Elm type, encoder and decoder that follow
 //! from it.
 
-use super::{CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, scalar};
+use super::{
+    CONNECT_DURATION, CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE,
+    TIME, call, scalar,
+};
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
-use crate::ir::{Cardinality, Field, MapKey, Message, ScalarKind, TypeName, TypeRef};
+use crate::ir::{Cardinality, Field, MapKey, ScalarKind, TypeName, TypeRef, WellKnown};
 
-/// A field as the emitter supports it: what [`Emitter::field`] classifies
-/// an IR field into once, so that the type, the encoder and the decoder of
+/// A field as the emitter supports it: what [`field_shape`] classifies an
+/// IR field into once, so that the type, the encoder and the decoder of
 /// the field match on a closed set and report nothing.
 #[derive(Clone, Copy, Debug)]
 pub(super) enum FieldShape<'p> {
     /// One value without presence, which reads as its zero value when
     /// absent or `null`.
     Plain(Zeroed<'p>),
-    /// `Maybe`: a field with presence (proto3 `optional`, or
-    /// message-typed), `Nothing` when absent or `null`.
+    /// `Maybe`: a field with presence (proto3 `optional`, or of a
+    /// [`Present`] type), `Nothing` when absent or `null`.
     Maybe(ValueShape<'p>),
     /// `List`: a repeated field, `[]` when absent or `null`.
     List(ValueShape<'p>),
@@ -56,57 +59,69 @@ impl KeyShape {
 /// The type of a field's values, as the emitter supports it.
 #[derive(Clone, Copy, Debug)]
 pub(super) enum ValueShape<'p> {
-    /// A type with a proto3 zero value.
+    /// A type with a zero value, held directly by a singular field.
     Zeroed(Zeroed<'p>),
-    /// A generated message.
-    Message(&'p TypeName),
+    /// A type a singular field holds with presence, as a `Maybe`.
+    Present(Present<'p>),
 }
 
-/// A type with a proto3 zero value, which a field without presence holds
-/// directly.
+/// A type with a zero value, which a singular field without presence
+/// holds directly and reads when absent or `null`.
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Zeroed<'p> {
-    /// A proto scalar.
+    /// A proto scalar, whose zero value is proto3's.
     Scalar(ScalarKind),
     /// A generated enum, whose zero value is this constructor.
     Enum(&'p TypeName, &'p str),
+    /// `google.protobuf.Struct`, `Value` or `ListValue`: JSON itself, held
+    /// as a `Json.Encode.Value`, whose zero value is `null` (design §3.5).
+    Json,
+}
+
+/// A message type, which a singular field holds with presence (design
+/// §3.2): a generated message, or a well-known type mapped to an Elm type
+/// of its own (design §3.5).
+#[derive(Clone, Copy, Debug)]
+pub(super) enum Present<'p> {
+    /// A generated message.
+    Message(&'p TypeName),
+    /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
+    /// is `null` on the wire when unset.
+    Wrapper(ScalarKind),
+    /// `google.protobuf.Timestamp`: `Time.Posix`.
+    Timestamp,
+    /// `google.protobuf.Duration`: the runtime's `Duration`.
+    Duration,
+    /// `google.protobuf.FieldMask`: its paths, a `List String`.
+    FieldMask,
+    /// `google.protobuf.Empty`: `()`.
+    Empty,
+}
+
+/// The shape of a well-known type's values.
+fn well_known(well_known: WellKnown) -> ValueShape<'static> {
+    let present = match well_known {
+        WellKnown::Struct | WellKnown::Value | WellKnown::ListValue => {
+            return ValueShape::Zeroed(Zeroed::Json);
+        }
+        WellKnown::Timestamp => Present::Timestamp,
+        WellKnown::Duration => Present::Duration,
+        WellKnown::FieldMask => Present::FieldMask,
+        WellKnown::Empty => Present::Empty,
+        WellKnown::DoubleValue => Present::Wrapper(ScalarKind::Double),
+        WellKnown::FloatValue => Present::Wrapper(ScalarKind::Float),
+        WellKnown::Int64Value => Present::Wrapper(ScalarKind::Int64),
+        WellKnown::UInt64Value => Present::Wrapper(ScalarKind::UInt64),
+        WellKnown::Int32Value => Present::Wrapper(ScalarKind::Int32),
+        WellKnown::UInt32Value => Present::Wrapper(ScalarKind::UInt32),
+        WellKnown::BoolValue => Present::Wrapper(ScalarKind::Bool),
+        WellKnown::StringValue => Present::Wrapper(ScalarKind::String),
+        WellKnown::BytesValue => Present::Wrapper(ScalarKind::Bytes),
+    };
+    ValueShape::Present(present)
 }
 
 impl Emitter {
-    /// The shape of `field`, or `None` once it is reported.
-    pub(super) fn field<'m>(
-        &mut self,
-        message: &Message,
-        field: &'m Field,
-    ) -> Option<FieldShape<'m>> {
-        let element = format!("{}.{}", message.proto_full_name, field.proto_name);
-        let value = self.value_shape(&element, &field.ty)?;
-        Some(match (field.cardinality, value) {
-            (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
-            (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
-            (Cardinality::Repeated, value) => FieldShape::List(value),
-            (Cardinality::Map(key), value) => FieldShape::Dict(KeyShape::of(key), value),
-        })
-    }
-
-    /// The shape of one value of type `ty`, held by `element` (a proto full
-    /// name, for the report), or `None` once it is reported.
-    pub(super) fn value_shape<'m>(
-        &mut self,
-        element: &str,
-        ty: &'m TypeRef,
-    ) -> Option<ValueShape<'m>> {
-        Some(match ty {
-            TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(*kind)),
-            TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
-            TypeRef::Message(name) => ValueShape::Message(name),
-            TypeRef::WellKnown(_) => {
-                self.unimplemented(element, "a field of a well-known type");
-                return None;
-            }
-        })
-    }
-
     /// The Elm type of a field.
     pub(super) fn field_type(&mut self, shape: FieldShape) -> Type {
         match shape {
@@ -124,28 +139,30 @@ impl Emitter {
         }
     }
 
-    /// The encoder of a field: a function from its Elm value to
-    /// `Json.Encode.Value`, possibly partially applied.
-    pub(super) fn field_encoder(&mut self, shape: FieldShape) -> Expr {
-        match shape {
-            FieldShape::Plain(zeroed) => self.value_encoder(ValueShape::Zeroed(zeroed)),
-            FieldShape::Maybe(value) => {
-                let value = self.value_encoder(value);
-                apply(self.reference((CONNECT_JSON, "encodeMaybe")), [value])
+    /// The JSON of a field whose Elm value is `value`.
+    pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
+        let encoder = match shape {
+            FieldShape::Plain(zeroed) => {
+                return self.encode_value(ValueShape::Zeroed(zeroed), value);
             }
-            FieldShape::List(value) => {
-                let value = self.value_encoder(value);
-                apply(self.reference((JSON_ENCODE, "list")), [value])
+            FieldShape::Maybe(inner) => {
+                let inner = self.value_encoder(inner);
+                apply(self.reference((CONNECT_JSON, "encodeMaybe")), [inner])
             }
-            FieldShape::Dict(key, value) => {
-                let value = self.value_encoder(value);
+            FieldShape::List(inner) => {
+                let inner = self.value_encoder(inner);
+                apply(self.reference((JSON_ENCODE, "list")), [inner])
+            }
+            FieldShape::Dict(key, inner) => {
+                let inner = self.value_encoder(inner);
                 let key = match key {
                     KeyShape::String => var("identity"),
                     KeyShape::Int => qualified(CORE_STRING, "fromInt"),
                 };
-                apply(self.reference((JSON_ENCODE, "dict")), [key, value])
+                apply(self.reference((JSON_ENCODE, "dict")), [key, inner])
             }
-        }
+        };
+        call(encoder, [value])
     }
 
     /// The decoder of a field, and the value an absent or `null` field
@@ -159,6 +176,7 @@ impl Emitter {
                     Zeroed::Enum(name, zero_ctor) => {
                         self.generated_value(&name.module, zero_ctor.to_owned())
                     }
+                    Zeroed::Json => self.reference((JSON_ENCODE, "null")),
                 };
                 (decoder, zero)
             }
@@ -188,30 +206,86 @@ impl Emitter {
     /// The Elm type of one value.
     pub(super) fn value_type(&mut self, value: ValueShape) -> Type {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind)) => scalar::elm_type(kind),
-            ValueShape::Zeroed(Zeroed::Enum(name, _)) | ValueShape::Message(name) => {
-                self.generated_type(name)
+            ValueShape::Zeroed(Zeroed::Scalar(kind))
+            | ValueShape::Present(Present::Wrapper(kind)) => scalar::elm_type(kind),
+            ValueShape::Zeroed(Zeroed::Enum(name, _))
+            | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
+            ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
+            ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
+            ValueShape::Present(Present::Duration) => {
+                self.exposed_type(CONNECT_DURATION, "Duration", [])
             }
+            ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
+            ValueShape::Present(Present::Empty) => Type::Unit,
+        }
+    }
+
+    /// The JSON of one value, `value`: its encoder applied to it, or the
+    /// value itself when it is JSON already.
+    pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
+        match shape {
+            ValueShape::Zeroed(Zeroed::Json) => value,
+            shape => call(self.value_encoder(shape), [value]),
         }
     }
 
     /// The encoder of one value.
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind)) => self.reference(scalar::encoder(kind)),
-            ValueShape::Zeroed(Zeroed::Enum(name, _)) | ValueShape::Message(name) => {
+            ValueShape::Zeroed(Zeroed::Scalar(kind))
+            | ValueShape::Present(Present::Wrapper(kind)) => self.reference(scalar::encoder(kind)),
+            ValueShape::Zeroed(Zeroed::Enum(name, _))
+            | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
+            ValueShape::Zeroed(Zeroed::Json) => var("identity"),
+            ValueShape::Present(Present::Timestamp) => {
+                self.reference((CONNECT_JSON, "encodeTimestamp"))
+            }
+            ValueShape::Present(Present::Duration) => {
+                self.reference((CONNECT_JSON, "encodeDuration"))
+            }
+            ValueShape::Present(Present::FieldMask) => {
+                self.reference((CONNECT_JSON, "encodeFieldMask"))
+            }
+            ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
         }
     }
 
     /// The decoder of one value.
     pub(super) fn value_decoder(&mut self, value: ValueShape) -> Expr {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind)) => self.reference(scalar::decoder(kind)),
-            ValueShape::Zeroed(Zeroed::Enum(name, _)) | ValueShape::Message(name) => {
+            ValueShape::Zeroed(Zeroed::Scalar(kind))
+            | ValueShape::Present(Present::Wrapper(kind)) => self.reference(scalar::decoder(kind)),
+            ValueShape::Zeroed(Zeroed::Enum(name, _))
+            | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.decoder_name())
             }
+            ValueShape::Zeroed(Zeroed::Json) => self.reference((JSON_DECODE, "value")),
+            ValueShape::Present(Present::Timestamp) => self.reference((CONNECT_JSON, "timestamp")),
+            ValueShape::Present(Present::Duration) => self.reference((CONNECT_JSON, "duration")),
+            ValueShape::Present(Present::FieldMask) => self.reference((CONNECT_JSON, "fieldMask")),
+            ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "empty")),
         }
+    }
+}
+
+/// The shape of `field`.
+pub(super) fn field_shape(field: &Field) -> FieldShape<'_> {
+    match (field.cardinality, value_shape(&field.ty)) {
+        (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
+        (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
+        (Cardinality::Repeated, value) => FieldShape::List(value),
+        (Cardinality::Map(key), value) => FieldShape::Dict(KeyShape::of(key), value),
+    }
+}
+
+/// The shape of one value of type `ty`.
+pub(super) fn value_shape(ty: &TypeRef) -> ValueShape<'_> {
+    match ty {
+        TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(*kind)),
+        TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
+        TypeRef::Message(name) => ValueShape::Present(Present::Message(name)),
+        TypeRef::WellKnown(known) => well_known(*known),
     }
 }
