@@ -13,6 +13,7 @@ suite =
         [ fieldTests
         , fieldEitherTests
         , presenceTests
+        , enumTests
         , int32Tests
         , int64Tests
         , floatTests
@@ -123,6 +124,53 @@ presenceTests =
             \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
         , test "encodeMaybe encodes Nothing as null" <|
             \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int Nothing) "null"
+        ]
+
+
+type Status
+    = StatusUnspecified
+    | StatusActive
+    | StatusStarted
+
+
+decodeStatus : Decoder Status
+decodeStatus =
+    Connect.Json.enum StatusUnspecified
+        [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
+        , ( "STATUS_ACTIVE", 1, StatusActive )
+        , ( "STATUS_STARTED", 1, StatusStarted )
+        ]
+
+
+enumTests : Test
+enumTests =
+    describe "enum"
+        [ test "a name" <|
+            \_ -> decodes decodeStatus "\"STATUS_ACTIVE\"" StatusActive
+        , test "a number" <|
+            \_ -> decodes decodeStatus "1" StatusActive
+        , test "zero by number" <|
+            \_ -> decodes decodeStatus "0" StatusUnspecified
+        , test "an alias by name" <|
+            \_ -> decodes decodeStatus "\"STATUS_STARTED\"" StatusStarted
+        , test "an unknown name is the zero value" <|
+            \_ -> decodes decodeStatus "\"STATUS_ARCHIVED\"" StatusUnspecified
+        , test "an unknown number is the zero value" <|
+            \_ -> decodes decodeStatus "7" StatusUnspecified
+        , test "a name is matched exactly" <|
+            \_ -> decodes decodeStatus "\"status_active\"" StatusUnspecified
+        , test "a fractional number fails" <|
+            \_ -> fails decodeStatus "1.5"
+        , test "a boolean fails" <|
+            \_ -> fails decodeStatus "true"
+        , test "a field holding an enum reads absence as the zero value" <|
+            \_ ->
+                decodes
+                    (Json.Decode.succeed identity
+                        |> Connect.Json.field "status" StatusUnspecified decodeStatus
+                    )
+                    """{"status":null}"""
+                    StatusUnspecified
         ]
 
 
