@@ -22,9 +22,6 @@ use miette::{
 
 pub use spans::{Columns, LineColSpan, Spans, tag};
 
-/// The message every entry point reports until generation exists.
-pub const NOT_IMPLEMENTED: &str = "elm-connect: type generation is not implemented yet";
-
 /// The kinds of problem the generator reports.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Code {

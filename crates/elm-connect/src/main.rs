@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use elm_connect_gen::diagnostics::NOT_IMPLEMENTED;
-use miette::miette;
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -33,12 +31,13 @@ fn main() -> miette::Result<()> {
         Command::Gen {
             files,
             includes,
-            out: _,
+            out,
         } => {
-            for name in elm_connect::compile(&files, &includes)? {
-                println!("{name}");
+            let generated = elm_connect::generate(&files, &includes)?;
+            for path in elm_connect::write(&generated, &out)? {
+                println!("{}", path.display());
             }
-            Err(miette!("{NOT_IMPLEMENTED}"))
+            Ok(())
         }
     }
 }
