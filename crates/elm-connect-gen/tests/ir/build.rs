@@ -285,6 +285,36 @@ fn enum_records_its_zero_value() {
 }
 
 #[test]
+fn enum_values_keep_declaration_order() {
+    let package = package(
+        r#"
+        syntax = "proto3";
+        package t;
+        enum Level {
+          option allow_alias = true;
+          LEVEL_NONE = 0; HIGH = 2; LOW = 1; TOP = 2; BELOW = -1;
+        }
+        message M { Level level = 1; }
+        "#,
+    );
+    let level = &package.enums[0];
+    let values: Vec<_> = level
+        .values()
+        .map(|v| (v.proto_name.as_str(), v.number))
+        .collect();
+    assert_eq!(
+        values,
+        [
+            ("LEVEL_NONE", 0),
+            ("HIGH", 2),
+            ("LOW", 1),
+            ("TOP", 2),
+            ("BELOW", -1)
+        ]
+    );
+}
+
+#[test]
 fn well_known_types_map() {
     let package = package(
         r#"
