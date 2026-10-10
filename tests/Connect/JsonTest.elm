@@ -11,6 +11,9 @@ suite : Test
 suite =
     describe "Connect.Json"
         [ fieldTests
+        , fieldEitherTests
+        , presenceTests
+        , int32Tests
         , int64Tests
         , floatTests
         , bytesTests
@@ -61,6 +64,95 @@ fieldTests =
             \_ -> fails decodePair """{"count":"three"}"""
         , test "a value that is not an object fails" <|
             \_ -> fails decodePair "[]"
+        ]
+
+
+type alias Named =
+    { displayName : String }
+
+
+decodeNamed : Decoder Named
+decodeNamed =
+    Json.Decode.succeed Named
+        |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+
+
+fieldEitherTests : Test
+fieldEitherTests =
+    describe "fieldEither"
+        [ test "the JSON name" <|
+            \_ -> decodes decodeNamed """{"displayName":"a"}""" (Named "a")
+        , test "the proto name" <|
+            \_ -> decodes decodeNamed """{"display_name":"b"}""" (Named "b")
+        , test "the JSON name wins over the proto name" <|
+            \_ -> decodes decodeNamed """{"display_name":"b","displayName":"a"}""" (Named "a")
+        , test "neither gives the default" <|
+            \_ -> decodes decodeNamed "{}" (Named "")
+        , test "null under the JSON name gives the default" <|
+            \_ -> decodes decodeNamed """{"displayName":null,"display_name":"b"}""" (Named "")
+        , test "null under the proto name gives the default" <|
+            \_ -> decodes decodeNamed """{"display_name":null}""" (Named "")
+        , test "a wrong type under the proto name fails" <|
+            \_ -> fails decodeNamed """{"display_name":1}"""
+        ]
+
+
+type alias Shapes =
+    { count : Maybe Int, tags : List String }
+
+
+decodeShapes : Decoder Shapes
+decodeShapes =
+    Json.Decode.succeed Shapes
+        |> Connect.Json.field "count" Nothing (Json.Decode.map Just Connect.Json.int32)
+        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+
+
+presenceTests : Test
+presenceTests =
+    describe "presence and repetition"
+        [ test "present values" <|
+            \_ -> decodes decodeShapes """{"count":0,"tags":["a","b"]}""" (Shapes (Just 0) [ "a", "b" ])
+        , test "missing keys give Nothing and []" <|
+            \_ -> decodes decodeShapes "{}" (Shapes Nothing [])
+        , test "null gives Nothing and []" <|
+            \_ -> decodes decodeShapes """{"count":null,"tags":null}""" (Shapes Nothing [])
+        , test "a null element of a list fails" <|
+            \_ -> fails decodeShapes """{"tags":[null]}"""
+        , test "encodeMaybe encodes a value" <|
+            \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
+        , test "encodeMaybe encodes Nothing as null" <|
+            \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int Nothing) "null"
+        ]
+
+
+int32Tests : Test
+int32Tests =
+    describe "int32"
+        [ test "a number" <|
+            \_ -> decodes Connect.Json.int32 "42" 42
+        , test "a negative number" <|
+            \_ -> decodes Connect.Json.int32 "-7" -7
+        , test "an integral number written with a fraction" <|
+            \_ -> decodes Connect.Json.int32 "4.0" 4
+        , test "a number in exponent notation" <|
+            \_ -> decodes Connect.Json.int32 "1e2" 100
+        , test "a string" <|
+            \_ -> decodes Connect.Json.int32 "\"42\"" 42
+        , test "a negative string" <|
+            \_ -> decodes Connect.Json.int32 "\"-42\"" -42
+        , test "a string in exponent notation" <|
+            \_ -> decodes Connect.Json.int32 "\"1e2\"" 100
+        , test "a fractional number fails" <|
+            \_ -> fails Connect.Json.int32 "4.5"
+        , test "a fractional string fails" <|
+            \_ -> fails Connect.Json.int32 "\"4.5\""
+        , test "an empty string fails" <|
+            \_ -> fails Connect.Json.int32 "\"\""
+        , test "\"Infinity\" fails" <|
+            \_ -> fails Connect.Json.int32 "\"Infinity\""
+        , test "a boolean fails" <|
+            \_ -> fails Connect.Json.int32 "true"
         ]
 
 
