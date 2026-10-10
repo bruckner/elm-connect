@@ -185,7 +185,13 @@ pub enum TypeRef {
     /// A generated message.
     Message(TypeName),
     /// A generated enum.
-    Enum(TypeName),
+    Enum {
+        /// The enum's type.
+        name: TypeName,
+        /// The constructor of its zero value, which a field of the enum
+        /// reads as when absent: [`Enum::zero`]'s, in the enum's module.
+        zero_ctor: String,
+    },
     /// A supported `google.protobuf` type.
     WellKnown(WellKnown),
 }
@@ -395,6 +401,18 @@ impl Enum {
     /// `allow_alias`, several values may share a number.
     pub fn values(&self) -> impl Iterator<Item = &EnumValue> {
         std::iter::once(&self.zero).chain(&self.rest)
+    }
+}
+
+impl Enum {
+    /// The Elm name of the enum's JSON encoder, such as `encodeStatus`.
+    pub fn encoder_name(&self) -> String {
+        crate::naming::encoder_name(&self.elm_name)
+    }
+
+    /// The Elm name of the enum's JSON decoder, such as `decodeStatus`.
+    pub fn decoder_name(&self) -> String {
+        crate::naming::decoder_name(&self.elm_name)
     }
 }
 

@@ -193,10 +193,13 @@ fn nested_types_flatten_with_a_prefix() {
     assert_eq!(kind.elm_name, "OuterKind");
     let ctors: Vec<_> = kind.values().map(|v| v.elm_ctor.as_str()).collect();
     assert_eq!(ctors, ["OuterKindUnspecified", "OuterKindDraft"]);
-    let TypeRef::Enum(name) = &field(message(&package, "OuterInnerDeepest"), "kind").ty else {
+    let TypeRef::Enum { name, zero_ctor } =
+        &field(message(&package, "OuterInnerDeepest"), "kind").ty
+    else {
         panic!("kind is an enum");
     };
     assert_eq!(name.name, "OuterKind");
+    assert_eq!(zero_ctor, "OuterKindUnspecified");
     let TypeRef::Message(name) = &field(message(&package, "Outer"), "inner").ty else {
         panic!("inner is a message");
     };
@@ -312,6 +315,10 @@ fn enum_values_keep_declaration_order() {
             ("BELOW", -1)
         ]
     );
+    let TypeRef::Enum { zero_ctor, .. } = &field(message(&package, "M"), "level").ty else {
+        panic!("level is an enum");
+    };
+    assert_eq!(zero_ctor, "LevelNone");
 }
 
 #[test]
@@ -427,7 +434,7 @@ fn cross_package_references_name_their_module() {
     };
     assert_eq!(owner.module.to_string(), "Users.V1");
     assert_eq!(owner.name, "User");
-    let TypeRef::Enum(role) = &field(note, "ownerRole").ty else {
+    let TypeRef::Enum { name: role, .. } = &field(note, "ownerRole").ty else {
         panic!("ownerRole is an enum");
     };
     assert_eq!(role.module.to_string(), "Users.V1");

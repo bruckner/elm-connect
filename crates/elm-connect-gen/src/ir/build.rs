@@ -522,7 +522,8 @@ impl Builder {
         kind: Kind,
         through_oneof: bool,
     ) -> Option<TypeRef> {
-        let (full_name, package, defining_file, is_message) = match kind {
+        // For an enum, its proto name and the name of its zero value.
+        let (full_name, package, defining_file, enum_names) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
             Kind::Float => return Some(TypeRef::Scalar(ScalarKind::Float)),
             Kind::Int32 => return Some(TypeRef::Scalar(ScalarKind::Int32)),
@@ -542,15 +543,20 @@ impl Builder {
                 target.full_name().to_owned(),
                 target.package_name().to_owned(),
                 target.parent_file().name().to_owned(),
-                true,
+                None,
             ),
-            Kind::Enum(target) => (
-                target.full_name().to_owned(),
-                target.package_name().to_owned(),
-                target.parent_file().name().to_owned(),
-                false,
-            ),
+            Kind::Enum(target) => {
+                // Proto3 compilers reject an enum without values.
+                let zero = declared_values(&target).first()?.name().to_owned();
+                (
+                    target.full_name().to_owned(),
+                    target.package_name().to_owned(),
+                    target.parent_file().name().to_owned(),
+                    Some((target.name().to_owned(), zero)),
+                )
+            }
         };
+        let is_message = enum_names.is_none();
         let type_path = [field.path(), &[tag::FIELD_TYPE_NAME]].concat();
 
         if package == WELL_KNOWN_PACKAGE {
@@ -601,10 +607,12 @@ impl Builder {
             through_oneof,
             site,
         });
-        Some(if is_message {
-            TypeRef::Message(name)
-        } else {
-            TypeRef::Enum(name)
+        Some(match enum_names {
+            None => TypeRef::Message(name),
+            Some((enum_name, zero_value)) => TypeRef::Enum {
+                zero_ctor: naming::enum_constructor(&name.name, &enum_name, &zero_value),
+                name,
+            },
         })
     }
 

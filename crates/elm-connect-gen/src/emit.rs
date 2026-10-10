@@ -182,7 +182,7 @@ impl Emitter {
         let value = match &field.ty {
             TypeRef::Scalar(kind) => ValueShape::Scalar(*kind),
             TypeRef::Message(name) => ValueShape::Message(name),
-            TypeRef::Enum(_) => {
+            TypeRef::Enum { .. } => {
                 self.unimplemented(&element(), "an enum-typed field");
                 return None;
             }
@@ -444,7 +444,14 @@ mod tests {
                     TypeRef::Message(other.clone()),
                 ),
                 field("map", Cardinality::Map(MapKey::String), string),
-                field("en", Cardinality::Singular, TypeRef::Enum(other)),
+                field(
+                    "en",
+                    Cardinality::Singular,
+                    TypeRef::Enum {
+                        name: other,
+                        zero_ctor: "AZero".into(),
+                    },
+                ),
             ],
         );
         let problems = problems(&package(vec![recursive, with_oneof, fields]));
