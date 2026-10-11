@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package billing.v1;
+
+import "shop/v1/customer.proto";
+
+message Invoice {
+  string number = 1;
+  shop.v1.Customer billed_to = 2;
+}

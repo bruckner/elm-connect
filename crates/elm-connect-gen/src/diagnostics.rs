@@ -579,9 +579,9 @@ impl Diagnostic for Diagnostics {
 pub const NARROW_WIDTH: usize = 80;
 
 /// Renders every problem with miette's graphical handler, without colour
-/// or links, wrapped at [`NARROW_WIDTH`] columns, separated by blank lines. The
-/// output depends only on the diagnostics, not on the terminal, so tests
-/// can pin it.
+/// or links, wrapped at [`NARROW_WIDTH`] columns, without trailing
+/// whitespace, separated by blank lines. The output depends only on the
+/// diagnostics, not on the terminal, so tests can pin it.
 pub fn render_narrow(diagnostics: &Diagnostics) -> String {
     let handler = GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor())
         .with_width(NARROW_WIDTH)
@@ -594,7 +594,10 @@ pub fn render_narrow(diagnostics: &Diagnostics) -> String {
             handler
                 .render_report(&mut out, problem)
                 .expect("rendering into a String cannot fail");
-            out.trim_end().to_owned() + "\n"
+            // miette pads some lines (a related note's `Advice: ` header)
+            // with trailing spaces, which are noise in a pinned file.
+            let lines: Vec<&str> = out.trim_end().lines().map(str::trim_end).collect();
+            lines.join("\n") + "\n"
         })
         .collect();
     rendered.join("\n")

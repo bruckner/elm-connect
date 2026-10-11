@@ -1,0 +1,8 @@
+// Compiled, but not in the generate set.
+syntax = "proto3";
+
+package users.v1;
+
+message User {
+  string name = 1;
+}

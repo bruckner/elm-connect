@@ -4,6 +4,7 @@
 //! layout.
 //!
 //! A case is `input/` (proto files, compiled with protox and all
+//! generated), an optional `include/` (protos the input may import, not
 //! generated) and `expected/`, holding either the Elm modules generated
 //! from the input, at their module paths, or `diagnostics.txt`, the
 //! narrow rendering of the problems generating reports instead.
@@ -84,15 +85,24 @@ fn files_under(dir: &Path) -> Vec<String> {
 }
 
 /// What generating a case's input gives: the files, or the narrow
-/// rendering of the problems, with the proto sources attached.
+/// rendering of the problems, with the proto sources attached. Protos in
+/// the case's optional `include/` can be imported but are not generated.
 fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
     let input = case.join("input");
-    let names: Vec<String> = files_under(&input)
-        .into_iter()
-        .filter(|name| name.ends_with(".proto"))
-        .collect();
+    let include = case.join("include");
+    let protos = |dir: &Path| -> Vec<String> {
+        files_under(dir)
+            .into_iter()
+            .filter(|name| name.ends_with(".proto"))
+            .collect()
+    };
+    let names = protos(&input);
     assert!(!names.is_empty(), "{} has no input protos", input.display());
-    let mut compiler = protox::Compiler::new([&input]).expect("an include path");
+    let mut include_paths = vec![input.clone()];
+    if include.is_dir() {
+        include_paths.push(include.clone());
+    }
+    let mut compiler = protox::Compiler::new(&include_paths).expect("an include path");
     compiler.include_source_info(true).include_imports(true);
     compiler
         .open_files(&names)
@@ -104,13 +114,13 @@ fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
         &Options::default(),
     )
     .map_err(|mut diagnostics| {
-        let sources: HashMap<String, String> = names
-            .iter()
-            .map(|name| {
-                let text = fs::read_to_string(input.join(name)).expect("read an input proto");
-                (name.clone(), text)
-            })
-            .collect();
+        let mut sources = HashMap::new();
+        for dir in &include_paths {
+            for name in protos(dir) {
+                let text = fs::read_to_string(dir.join(&name)).expect("read a proto");
+                sources.entry(name).or_insert(text);
+            }
+        }
         diagnostics.attach_sources(&sources, Columns::Bytes);
         render_narrow(&diagnostics)
     })
