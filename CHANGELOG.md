@@ -122,3 +122,7 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `"007"` reads as `"7"`), worked out as text so no digit is lost past
   2^53. A value that is not an integer, or has more than 20 digits,
   fails.
+- Design: sub-millisecond timestamp precision is recorded as a dead
+  end; nested messages stay flattened (`OuterInner`); the runtime
+  package is kept; `google.protobuf.Any` is in scope, its design
+  pending.

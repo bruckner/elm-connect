@@ -419,7 +419,7 @@ argument.)*
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
 | `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | unsupported; diagnostic | needs a type registry; no demand |
+| `google.protobuf.Any` | in scope; a diagnostic until designed | needs the descriptor layer (§9) |
 
 The in-house generator mapped `Timestamp` to `String` to avoid a
 dependency. With a runtime package required anyway (for the transports),
@@ -473,7 +473,9 @@ Built as proposed, with these details *(each Proposed)*:
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
-- `Any` is the `types::any` diagnostic (`any_field` case).
+- `Any` is in scope for the library *(Decided, 2026-10-11)*, its
+  design pending the descriptor layer (§9); until then a field of it is
+  the `types::any` diagnostic (`any_field` case).
 
 ### 3.6 Oneof
 
@@ -538,6 +540,12 @@ Built *(Proposed in its details)*:
   underscore (`type` → `type_`). *(Decided.)*
 - Collisions after casing (`foo_bar` and `fooBar` in one message) are a
   diagnostic, not a silent rename. *(Decided.)*
+- Nested messages and enums are flattened into their package's module,
+  prefixed with the names of the messages enclosing them:
+  `Outer.Inner` → `OuterInner`, `Outer.Inner.Kind` → `OuterInnerKind`.
+  *(Decided, 2026-10-11.)* A submodule per message (`Pkg.Outer.Inner`)
+  was considered and rejected: a parent referring to its own nested
+  type would be an Elm module cycle.
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
 
@@ -639,12 +647,15 @@ thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
 
 ## 5. Runtime  *(Proposed)*
 
-**Status of the package itself (2026-10-10):** the type layer is being
+**The package is kept.** *(Decided, 2026-10-11.)* The type layer was
 built against a runtime package from day one, because the JSON pipeline
 helpers and the well-known-type codecs would otherwise be inlined into
-every generated module. Whether the package is *kept* is an open
-question: once it exists, we look at what it contains and what that buys
-over inlining, and decide. Nothing below assumes the answer.
+every generated module, with the question of keeping it left open until
+its contents existed. They settle it: a shared type (`Duration`)
+must be one type across every generated module and the application,
+which inlining cannot give; the codecs for timestamps as `Time.Posix`
+and the `Int64` helpers are one copy rather than one per module; and
+the coming transports belong in it too.
 
 ### 5.1 Config
 
@@ -680,7 +691,7 @@ type Code = Canceled | Unknown | InvalidArgument | ... | Unauthenticated
 - Errors follow the protocol's JSON body; a non-200 without a parsable
   body maps from HTTP status as the spec says.
 - Error details are kept as raw JSON values. Typed details need
-  `google.protobuf.Any`, which §3.5 excludes.
+  `google.protobuf.Any`, which is not designed yet (§3.5, §9).
 
 ### 5.3 Transcode
 
@@ -773,18 +784,19 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 9. Open questions, collected
 
-1. Whether the runtime package is kept (§5) once its contents exist.
-2. Fuse method and route for transcoding (§4).
-3. Connect GET for idempotent methods: default on or off (§5.2).
-4. Naming of additional-binding routes (§4).
-5. Presence as companion data: instead of `Maybe` fields, generated
+1. Fuse method and route for transcoding (§4).
+2. Connect GET for idempotent methods: default on or off (§5.2).
+3. Naming of additional-binding routes (§4).
+4. Presence as companion data: instead of `Maybe` fields, generated
    records could carry a presence set plus helpers (`hasBar`), a
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not
    decided; raised during the type-layer review.
+5. `Any` (§3.5): the shape of pack and unpack, and its relation to the
+   generated descriptors (§4). The operator has prior notes.
 
 ## 10. Out of scope but recorded
 
-Streaming (both transports), binary protobuf, gRPC-web, proto2, `Any`,
+Streaming (both transports), binary protobuf, gRPC-web, proto2,
 interceptors, retries, server generation. Each has a sentence above
 saying why; none is a permanent no.
