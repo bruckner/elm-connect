@@ -36,6 +36,8 @@ type NoteEventKind
     | NoteEventKindTitleChanged String
     | NoteEventKindRecolored Color
     | NoteEventKindDeletedAt String
+    | NoteEventKindArchived
+    | NoteEventKindClearedAll
 
 
 type NoteEventSource
@@ -103,6 +105,12 @@ encodeNoteEventKind value =
         NoteEventKindDeletedAt member ->
             [ ( "deletedAt", Connect.Json.encodeInt64 member ) ]
 
+        NoteEventKindArchived ->
+            [ ( "archived", Json.Encode.object [] ) ]
+
+        NoteEventKindClearedAll ->
+            [ ( "clearedAll", Json.Encode.object [] ) ]
+
 
 encodeNoteEventSource : NoteEventSource -> List ( String, Json.Encode.Value )
 encodeNoteEventSource value =
@@ -169,6 +177,8 @@ decodeNoteEventKind =
         , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Json.Decode.string)
         , Connect.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
         , Connect.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Connect.Json.int64)
+        , Connect.Json.emptyMember "archived" NoteEventKindArchived
+        , Connect.Json.emptyMemberEither "clearedAll" "cleared_all" NoteEventKindClearedAll
         , Json.Decode.succeed NoteEventKindUnset
         ]
 

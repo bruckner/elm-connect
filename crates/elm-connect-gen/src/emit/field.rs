@@ -81,6 +81,11 @@ pub(super) enum Zeroed<'p> {
     /// `google.protobuf.Struct`, `Value` or `ListValue`: JSON itself, held
     /// as a `Json.Encode.Value`, whose zero value is `null` (design §3.5).
     Json,
+    /// `google.protobuf.Empty`: `()`, which carries nothing, so a singular
+    /// field of it has no presence either: absent, `null` and `{}` all read
+    /// as `()` (design §3.5). A oneof member of it is a constructor without
+    /// arguments.
+    Empty,
 }
 
 /// A message type, which a singular field holds with presence (design
@@ -102,8 +107,6 @@ pub(super) enum Present<'p> {
     Duration,
     /// `google.protobuf.FieldMask`: its paths, a `List String`.
     FieldMask,
-    /// `google.protobuf.Empty`: `()`.
-    Empty,
 }
 
 /// The shape of a well-known type's values; `int64` says how the 64-bit
@@ -117,7 +120,7 @@ fn well_known(well_known: WellKnown, int64: Int64) -> ValueShape<'static> {
         WellKnown::Timestamp => Present::Timestamp,
         WellKnown::Duration => Present::Duration,
         WellKnown::FieldMask => Present::FieldMask,
-        WellKnown::Empty => Present::Empty,
+        WellKnown::Empty => return ValueShape::Zeroed(Zeroed::Empty),
         WellKnown::DoubleValue => wrapper(ScalarKind::Double),
         WellKnown::FloatValue => wrapper(ScalarKind::Float),
         WellKnown::Int64Value => wrapper(ScalarKind::Int64),
@@ -187,6 +190,7 @@ impl Emitter {
                         self.generated_value(&name.module, zero_ctor.to_owned())
                     }
                     Zeroed::Json => self.reference((JSON_ENCODE, "null")),
+                    Zeroed::Empty => Expr::Unit,
                 };
                 (decoder, zero)
             }
@@ -226,7 +230,7 @@ impl Emitter {
                 self.exposed_type(CONNECT_DURATION, "Duration", [])
             }
             ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
-            ValueShape::Present(Present::Empty) => Type::Unit,
+            ValueShape::Zeroed(Zeroed::Empty) => Type::Unit,
             ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
         }
     }
@@ -259,7 +263,7 @@ impl Emitter {
             ValueShape::Present(Present::FieldMask) => {
                 self.reference((CONNECT_JSON, "encodeFieldMask"))
             }
-            ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
+            ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
     }
@@ -277,7 +281,7 @@ impl Emitter {
             ValueShape::Present(Present::Timestamp) => self.reference((CONNECT_JSON, "timestamp")),
             ValueShape::Present(Present::Duration) => self.reference((CONNECT_JSON, "duration")),
             ValueShape::Present(Present::FieldMask) => self.reference((CONNECT_JSON, "fieldMask")),
-            ValueShape::Present(Present::Empty) => self.reference((CONNECT_JSON, "empty")),
+            ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "empty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }
     }
@@ -305,6 +309,11 @@ pub(super) fn field_shape<'m>(
         ty => value_shape(ty, field_int64(field.jstype, int64)),
     };
     match (field.cardinality, value) {
+        // `optional` adds no presence to a message type, and `Empty` has
+        // none to add.
+        (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Empty)) => {
+            FieldShape::Plain(Zeroed::Empty)
+        }
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
         (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
         (Cardinality::Repeated, value) => FieldShape::List(value),

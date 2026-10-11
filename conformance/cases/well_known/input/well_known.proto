@@ -1,5 +1,5 @@
 // Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
-// runtime's Duration, FieldMask as its paths, Empty as (), Struct, Value
+// runtime's Duration, FieldMask as its paths, Empty as () without presence, Struct, Value
 // and ListValue as JSON, and the wrappers as a Maybe of their scalar.
 syntax = "proto3";
 
@@ -17,6 +17,7 @@ message Event {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Duration timeout = 2;
   google.protobuf.FieldMask update_mask = 3;
+  // Empty carries nothing, presence included: (), never Maybe ().
   google.protobuf.Empty marker = 4;
   // JSON itself: no presence, null when absent.
   google.protobuf.Struct metadata = 5;
@@ -37,6 +38,9 @@ message Event {
   map<string, google.protobuf.Duration> limits = 18;
   repeated google.protobuf.Value values = 19;
   repeated google.protobuf.Int32Value counts = 20;
+  optional google.protobuf.Empty acked = 24;
+  repeated google.protobuf.Empty pings = 25;
+  map<string, google.protobuf.Empty> seen = 26;
   oneof when {
     google.protobuf.Timestamp at = 21;
     google.protobuf.Duration after = 22;

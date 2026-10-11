@@ -80,3 +80,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - `Connect.Json.bytes` validates base64 (standard or URL-safe alphabet,
   padding optional) and fails on anything else; the string is still kept
   as received.
+- `google.protobuf.Empty` carries nothing: a singular field of it is `()`
+  rather than `Maybe ()` (`{}` on the wire always, `()` when absent or
+  `null`), and a oneof member of it is a constructor without an argument,
+  decoded by the new `Connect.Json.emptyMember` and `emptyMemberEither`
+  (an object sets it; `null` is unset).
+  Design §3.8 starts a list of dead ends.

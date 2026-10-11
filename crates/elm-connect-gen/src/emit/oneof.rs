@@ -1,6 +1,7 @@
 //! A oneof's three declarations: its custom type, its encoder and its
 //! decoder (design §3.6).
 
+use super::field::{ValueShape, Zeroed};
 use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, call};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, var};
@@ -8,7 +9,8 @@ use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
 
 impl Emitter {
     /// `type FooKind = FooKindUnset | FooKindBar Bar | ...`: the unset case
-    /// first, then a constructor per member carrying its value.
+    /// first, then a constructor per member carrying its value, or nothing
+    /// for a member of `google.protobuf.Empty`.
     pub(super) fn oneof_type(&mut self, shape: &OneofShape) -> Decl {
         let unset = Variant {
             name: shape.oneof.unset_ctor.clone(),
@@ -16,7 +18,11 @@ impl Emitter {
         };
         let members = shape.variants.iter().map(|&(variant, value)| Variant {
             name: variant.elm_ctor.clone(),
-            args: vec![self.value_type(value)],
+            args: if is_empty(value) {
+                Vec::new()
+            } else {
+                vec![self.value_type(value)]
+            },
         });
         Decl::CustomType {
             doc: None,
@@ -30,16 +36,28 @@ impl Emitter {
 
     /// `encodeFooKind : FooKind -> List ( String, Json.Encode.Value )`: the
     /// set member under its JSON name, or nothing when unset, for the
-    /// message's encoder to add to its object.
+    /// message's encoder to add to its object. A member of
+    /// `google.protobuf.Empty` encodes as `{}`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
             .iter()
             .map(|&(variant, value)| {
-                let encoded = self.encode_value(value, var(ONEOF_MEMBER));
+                let (pattern, encoded) = if is_empty(value) {
+                    let object = self.reference((JSON_ENCODE, "object"));
+                    (
+                        pctor(variant.elm_ctor.clone(), []),
+                        apply(object, [list([])]),
+                    )
+                } else {
+                    (
+                        pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
+                        self.encode_value(value, var(ONEOF_MEMBER)),
+                    )
+                };
                 (
-                    pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
+                    pattern,
                     list([Expr::Tuple(vec![
                         string(variant.json_name.clone()),
                         encoded,
@@ -65,12 +83,32 @@ impl Emitter {
     /// over a `Connect.Json.member` per member, in declaration order, then
     /// `Json.Decode.succeed FooKindUnset`. A member present as `null` is
     /// skipped, so it reads as unset. A member that closes a cycle decodes
-    /// through `Json.Decode.lazy`.
+    /// through `Json.Decode.lazy`. A member of `google.protobuf.Empty` is
+    /// a `Connect.Json.emptyMember` (or `emptyMemberEither`) step, which
+    /// reads the key as set when it holds an object; `null` is unset, as
+    /// for any member.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
         let mut alternatives: Vec<Expr> = shape
             .variants
             .iter()
             .map(|&(variant, value)| {
+                if is_empty(value) {
+                    let ctor = var(variant.elm_ctor.clone());
+                    return if variant.json_name == variant.proto_name {
+                        let member = self.reference((CONNECT_JSON, "emptyMember"));
+                        apply(member, [string(variant.json_name.clone()), ctor])
+                    } else {
+                        let member = self.reference((CONNECT_JSON, "emptyMemberEither"));
+                        apply(
+                            member,
+                            [
+                                string(variant.json_name.clone()),
+                                string(variant.proto_name.clone()),
+                                ctor,
+                            ],
+                        )
+                    };
+                }
                 let mut decode = self.value_decoder(value);
                 if variant.cyclic {
                     decode = self.lazy(decode);
@@ -109,4 +147,10 @@ impl Emitter {
             body: apply(one_of, [list(alternatives)]),
         }
     }
+}
+
+/// Whether a member is of `google.protobuf.Empty`, which carries nothing,
+/// so its constructor takes no argument.
+fn is_empty(value: ValueShape) -> bool {
+    matches!(value, ValueShape::Zeroed(Zeroed::Empty))
 }
