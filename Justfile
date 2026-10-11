@@ -10,7 +10,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check zizmor
+check: fmt-check clippy test elm-check zizmor gitleaks
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -52,6 +52,12 @@ elm-check:
 # one zizmor runs offline and says so.
 zizmor:
     zizmor .github/workflows
+
+# Scan the history reachable from HEAD for committed secrets. CI fetches
+# the full history so the scan covers every commit a pull request would
+# land; locally it covers whatever the clone has.
+gitleaks:
+    gitleaks git --redact --log-opts=HEAD .
 
 # Compile the runtime package and the conformance corpus with another Elm
 # compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).

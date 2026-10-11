@@ -3,7 +3,7 @@
 ## Getting set up
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
-elm-format, elm-test-rs, node, just and zizmor. From the repository root:
+elm-format, elm-test-rs, node, just, zizmor and gitleaks. From the repository root:
 
 ```sh
 mise install    # install the pinned toolchain
@@ -18,8 +18,10 @@ just check      # run the gate
 --validate`), `cargo clippy` with warnings as errors, the Rust tests
 (the conformance corpus among them, see
 [`conformance/README.md`](conformance/README.md)), the runtime
-package's build and Elm tests, and a [zizmor](https://docs.zizmor.sh)
-audit of the GitHub Actions workflows. CI runs the same recipe on
+package's build and Elm tests, a [zizmor](https://docs.zizmor.sh)
+audit of the GitHub Actions workflows, and a
+[gitleaks](https://gitleaks.io) scan of the commit history for secrets.
+CI runs the same recipe on
 Linux and macOS for every pull request and every push to `main`, so a
 green local `just check` is the bar for opening a PR. Formatting in the
 gate is check-only; `just fmt` fixes it.
@@ -27,7 +29,9 @@ gate is check-only; `just fmt` fixes it.
 ## Branches and pull requests
 
 Work on a branch off `main` and open a pull request; nothing lands on
-`main` directly. Keep each commit one logical change, so the history
+`main` directly. A repository ruleset enforces this: `main` takes only
+merge commits from pull requests whose checks pass, and cannot be
+force-pushed or deleted. Keep each commit one logical change, so the history
 reads as a sequence of reasons.
 
 ## The design

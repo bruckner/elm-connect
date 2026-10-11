@@ -64,3 +64,5 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `just compile-with`).
 - The gate audits the GitHub Actions workflows with zizmor
   (`just zizmor`).
+- The gate scans the commit history for secrets with gitleaks
+  (`just gitleaks`).
