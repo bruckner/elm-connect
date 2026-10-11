@@ -2,8 +2,9 @@
 //! Elm: one [`Package`] per proto package, holding the messages and enums
 //! the Elm module for that package will define.
 //!
-//! The IR is the type layer only; services and methods are not represented
-//! yet. It keeps proto kinds (scalar kinds, map key kinds, well-known types)
+//! The IR holds the type layer (messages, enums, oneofs) and the method
+//! layer (services, their methods, and each method's `google.api.http`
+//! rule). It keeps proto kinds (scalar kinds, map key kinds, well-known types)
 //! and leaves their Elm spelling to the emitter, but every Elm *name* is
 //! decided here, by [`crate::naming`], so the emitter never invents one.
 //!
@@ -11,7 +12,8 @@
 //!
 //! - Every Elm name is a valid Elm identifier, and names that share an Elm
 //!   namespace are unique: record fields within a message, types within a
-//!   module, constructors within a module. A clash is a diagnostic from
+//!   module, constructors within a module, top-level values within a module
+//!   (codecs, defaults, method values and their HTTP calls). A clash is a diagnostic from
 //!   [`build`], never a silent rename.
 //! - Nested messages and enums are flattened into their package, their Elm
 //!   names prefixed by the enclosing names (`Outer.Inner` becomes
@@ -52,6 +54,103 @@ pub struct Package {
     pub messages: Vec<Message>,
     /// Every enum of the package, nested ones included, in the same order.
     pub enums: Vec<Enum>,
+    /// Every service of the package, in declaration order (files by name).
+    pub services: Vec<Service>,
+}
+
+/// A service: a group of methods. It has no Elm declaration of its own;
+/// its full name is part of each method's Connect path.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Service {
+    /// The fully-qualified proto name, such as `notes.v1.Notes`.
+    pub proto_full_name: String,
+    /// The methods, in declaration order. Streaming methods are
+    /// diagnostics, so every method here is unary.
+    pub methods: Vec<Method>,
+}
+
+/// A unary RPC method: one Elm value describing it (design §4), and one
+/// more per HTTP binding of its `google.api.http` rule.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Method {
+    /// The proto method name, such as `GetNote`; the last segment of its
+    /// Connect path.
+    pub proto_name: String,
+    /// The Elm value of its descriptor, such as `getNote`.
+    pub elm_name: String,
+    /// The request type: a [`TypeRef::Message`] or a
+    /// [`TypeRef::WellKnown`] message type, never a scalar or an enum.
+    pub input: TypeRef,
+    /// The response type, under the same rule as [`Method::input`].
+    pub output: TypeRef,
+    /// Whether the method declares `idempotency_level = NO_SIDE_EFFECTS`,
+    /// which lets Connect call it with GET.
+    pub idempotent: bool,
+    /// The method's `google.api.http` rule, if it has one.
+    pub http: Option<HttpRule>,
+}
+
+impl Method {
+    /// The Elm values of the method's HTTP bindings, the rule's own first
+    /// and then its additional bindings: `getNoteHttp`, `getNoteHttp2`.
+    pub fn http_call_names(&self) -> Vec<String> {
+        let count = self
+            .http
+            .as_ref()
+            .map_or(0, |rule| 1 + rule.additional_bindings.len());
+        (0..count)
+            .map(|binding| crate::naming::http_call_name(&self.elm_name, binding))
+            .collect()
+    }
+}
+
+/// A `google.api.http` rule as written: the verb and path template, the
+/// body and response body field names, and the additional bindings.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HttpRule {
+    /// The HTTP method.
+    pub verb: HttpVerb,
+    /// The path template, such as `/v1/{name=notes/*}`.
+    pub template: String,
+    /// The `body` field: empty for none, `*` for every field not in the
+    /// path, or a top-level field name.
+    pub body: String,
+    /// The `response_body` field: empty for the whole response, or a
+    /// top-level field name of the response.
+    pub response_body: String,
+    /// The `additional_bindings`, each with no bindings of its own.
+    pub additional_bindings: Vec<HttpRule>,
+}
+
+/// The HTTP method of a rule.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum HttpVerb {
+    /// `get`
+    Get,
+    /// `put`
+    Put,
+    /// `post`
+    Post,
+    /// `delete`
+    Delete,
+    /// `patch`
+    Patch,
+    /// `custom`, with its `kind`, such as `HEAD`.
+    Custom(String),
+}
+
+impl HttpVerb {
+    /// The method as sent on the wire: `GET`, or a custom kind as written.
+    pub fn as_str(&self) -> &str {
+        match self {
+            HttpVerb::Get => "GET",
+            HttpVerb::Put => "PUT",
+            HttpVerb::Post => "POST",
+            HttpVerb::Delete => "DELETE",
+            HttpVerb::Patch => "PATCH",
+            HttpVerb::Custom(kind) => kind,
+        }
+    }
 }
 
 /// An Elm module name, such as `Notes.V1`.

@@ -21,6 +21,8 @@ pub mod tag {
     pub const FILE_MESSAGE: i32 = 4;
     /// `FileDescriptorProto.enum_type`
     pub const FILE_ENUM: i32 = 5;
+    /// `FileDescriptorProto.service`
+    pub const FILE_SERVICE: i32 = 6;
     /// `FileDescriptorProto.syntax`
     pub const FILE_SYNTAX: i32 = 12;
     /// `DescriptorProto.name`
@@ -45,6 +47,23 @@ pub mod tag {
     pub const ENUM_VALUE: i32 = 2;
     /// `EnumValueDescriptorProto.name`
     pub const ENUM_VALUE_NAME: i32 = 1;
+    /// `ServiceDescriptorProto.method`
+    pub const SERVICE_METHOD: i32 = 2;
+    /// `MethodDescriptorProto.name`
+    pub const METHOD_NAME: i32 = 1;
+    /// `MethodDescriptorProto.input_type`
+    pub const METHOD_INPUT: i32 = 2;
+    /// `MethodDescriptorProto.output_type`
+    pub const METHOD_OUTPUT: i32 = 3;
+    /// `MethodDescriptorProto.options`
+    pub const METHOD_OPTIONS: i32 = 4;
+    /// `MethodDescriptorProto.client_streaming`
+    pub const METHOD_CLIENT_STREAMING: i32 = 5;
+    /// `MethodDescriptorProto.server_streaming`
+    pub const METHOD_SERVER_STREAMING: i32 = 6;
+    /// The `google.api.http` extension of `MethodOptions`
+    /// (`google/api/annotations.proto`).
+    pub const METHOD_OPTIONS_HTTP: i32 = 72_295_728;
 }
 
 /// How a compiler counted the columns in its `SourceCodeInfo`. The two

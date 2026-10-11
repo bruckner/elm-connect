@@ -126,3 +126,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   end; nested messages stay flattened (`OuterInner`); the runtime
   package is kept; `google.protobuf.Any` is in scope, its design
   pending.
+- The IR holds services and methods: each method's Elm value name, its
+  request and response types (messages or supported well-known types),
+  its idempotency, and its `google.api.http` rule as written. Streaming
+  methods are the `services::streaming` diagnostic, and a method value
+  that clashes with another top-level value is `naming::value_collision`
+  (`services_streaming` and `services_value_collision` cases). Nothing is
+  emitted for methods yet.
+- `google/api/http.proto` and `google/api/annotations.proto` are
+  embedded (Apache-2.0, `THIRD_PARTY.md`), so `elm-connect gen` compiles
+  protos that import them without a googleapis checkout. The protoc
+  plugin keeps extension options, which it used to drop.

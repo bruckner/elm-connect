@@ -80,6 +80,9 @@ at your option. The Elm package is published to the package index under
 MIT, since `elm.json` carries a single license identifier; that is one of
 the two options and changes nothing about your choice.
 
+The generator embeds two files from googleapis, under the Apache License
+2.0; see [THIRD_PARTY.md](THIRD_PARTY.md).
+
 Unless you explicitly state otherwise, any contribution intentionally
 submitted for inclusion in this work by you shall be dual-licensed as
 above, without any additional terms or conditions.

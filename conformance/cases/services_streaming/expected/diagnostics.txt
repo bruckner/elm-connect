@@ -1,0 +1,33 @@
+services::streaming
+
+  × The method `chat.v1.Chat.Listen` is server streaming, and streaming
+  │ methods are not supported.
+    ╭─[chat.proto:11:29]
+ 10 │   rpc Send(Line) returns (Line);
+ 11 │   rpc Listen(Line) returns (stream Line);
+    ·                             ───┬──
+    ·                                ╰── streams here
+ 12 │   rpc Talk(stream Line) returns (stream Line);
+    ╰────
+  help: elm-connect generates unary calls only: Connect streaming and the
+        transcoders' streaming each frame messages differently, and neither
+        has an Elm design yet. Move the streaming methods to a service in a
+        package you do not generate, or leave their files out of the files to
+        generate.
+
+services::streaming
+
+  × The method `chat.v1.Chat.Talk` is bidirectional streaming, and streaming
+  │ methods are not supported.
+    ╭─[chat.proto:12:12]
+ 11 │   rpc Listen(Line) returns (stream Line);
+ 12 │   rpc Talk(stream Line) returns (stream Line);
+    ·            ───┬──
+    ·               ╰── streams here
+ 13 │ }
+    ╰────
+  help: elm-connect generates unary calls only: Connect streaming and the
+        transcoders' streaming each frame messages differently, and neither
+        has an Elm design yet. Move the streaming methods to a service in a
+        package you do not generate, or leave their files out of the files to
+        generate.

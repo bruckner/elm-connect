@@ -191,6 +191,38 @@ pub const ENCODER_ARGUMENT: &str = "value";
 /// the name of a top-level value of a generated module.
 pub const ONEOF_MEMBER: &str = "member";
 
+/// The names a generated module binds or refers to unqualified other than
+/// its own top-level values: the encoders' argument, the oneof encoders'
+/// member variable, and `identity` from elm/core's `Basics`. A method value
+/// with one of these names would shadow it, so the IR builder refuses them.
+pub const RESERVED_VALUES: [&str; 3] = [ENCODER_ARGUMENT, ONEOF_MEMBER, "identity"];
+
+/// The Elm value for an RPC method: the method name with its first letter
+/// lowercased and underscores dropped as for a field (`GetNote` becomes
+/// `getNote`, `get_note` becomes `getNote`), an Elm reserved word gaining a
+/// trailing underscore (`Type` becomes `type_`).
+pub fn method_name(proto_name: &str) -> Result<String, NameError> {
+    let mut chars = proto_name.chars();
+    let lowered: String = chars
+        .next()
+        .map(|first| first.to_ascii_lowercase())
+        .into_iter()
+        .chain(chars)
+        .collect();
+    field_name(&lowered)
+}
+
+/// The transcoding call for a method's HTTP binding: the method's value
+/// name followed by `Http`, and by the binding's number from the second on
+/// (`getNoteHttp`, then `getNoteHttp2` for its first additional binding).
+pub fn http_call_name(method_elm_name: &str, binding: usize) -> String {
+    let base = method_elm_name.trim_end_matches('_');
+    match binding {
+        0 => format!("{base}Http"),
+        n => format!("{base}Http{}", n + 1),
+    }
+}
+
 /// PascalCase of one proto identifier: drop underscores and uppercase the
 /// first letter of every underscore-separated word, leaving the rest of
 /// each word as written (`foo_bar` becomes `FooBar`, `HTTPRequest` stays).
@@ -424,6 +456,34 @@ mod tests {
         for (elm, proto, value, expected) in cases {
             assert_eq!(enum_constructor(elm, proto, value), expected, "{value}");
         }
+    }
+
+    #[test]
+    fn method_names() {
+        let cases = [
+            ("GetNote", "getNote"),
+            ("getNote", "getNote"),
+            ("get_note", "getNote"),
+            ("HTTPGet", "hTTPGet"),
+            ("Type", "type_"),
+            ("V2Get", "v2Get"),
+        ];
+        for (proto, expected) in cases {
+            assert_eq!(method_name(proto).as_deref(), Ok(expected), "{proto}");
+        }
+        assert_eq!(method_name("_"), Err(NameError::Empty));
+        assert!(matches!(
+            method_name("_1"),
+            Err(NameError::WrongStart { .. })
+        ));
+    }
+
+    #[test]
+    fn http_call_names() {
+        assert_eq!(http_call_name("getNote", 0), "getNoteHttp");
+        assert_eq!(http_call_name("getNote", 1), "getNoteHttp2");
+        assert_eq!(http_call_name("getNote", 2), "getNoteHttp3");
+        assert_eq!(http_call_name("type_", 0), "typeHttp");
     }
 
     #[test]

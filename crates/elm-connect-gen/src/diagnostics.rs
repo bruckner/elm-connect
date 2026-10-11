@@ -53,6 +53,13 @@ pub enum Code {
     NotProto3,
     /// The protos use a construct the generator does not emit yet.
     Unimplemented,
+    /// A method streams requests or responses.
+    Streaming,
+    /// Two top-level values of a module, such as a method's value and a
+    /// codec, get the same Elm name.
+    ValueCollision,
+    /// A method has no valid Elm value name.
+    InvalidMethod,
 }
 
 impl Code {
@@ -72,6 +79,9 @@ impl Code {
             Code::UnknownFile => "generate::unknown_file",
             Code::NotProto3 => "generate::not_proto3",
             Code::Unimplemented => "generate::unimplemented",
+            Code::Streaming => "services::streaming",
+            Code::ValueCollision => "naming::value_collision",
+            Code::InvalidMethod => "naming::invalid_method",
         }
     }
 }
@@ -79,6 +89,34 @@ impl Code {
 impl fmt::Display for Code {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+/// What refers to a type, as a problem names it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Referrer {
+    /// A field (or oneof member) `field` of the message `message`.
+    Field {
+        /// The message's full name.
+        message: String,
+        /// The field's proto name.
+        field: String,
+    },
+    /// The request type of the method `method` (its full name).
+    Request(String),
+    /// The response type of the method `method` (its full name).
+    Response(String),
+}
+
+impl fmt::Display for Referrer {
+    /// The referrer as the subject of a sentence: "The field `title` of
+    /// `notes.v1.Note`", "The request of `notes.v1.Notes.GetNote`".
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Referrer::Field { message, field } => write!(f, "The field `{field}` of `{message}`"),
+            Referrer::Request(method) => write!(f, "The request of `{method}`"),
+            Referrer::Response(method) => write!(f, "The response of `{method}`"),
+        }
     }
 }
 
@@ -252,13 +290,12 @@ impl Problem {
         )
     }
 
-    /// The field `field` of `message` is a `google.protobuf.Any`.
-    pub fn any(message: &str, field: &str, site: Site) -> Self {
+    /// `referrer` is a `google.protobuf.Any`.
+    pub fn any(referrer: &Referrer, site: Site) -> Self {
         Problem::new(
             Code::Any,
             format!(
-                "The field `{field}` of `{message}` has type `google.protobuf.Any`, which \
-                 elm-connect does not support."
+                "{referrer} has type `google.protobuf.Any`, which elm-connect does not support."
             ),
             "Decoding an `Any` needs a registry of every type it might hold, and generated Elm \
              code has none. Use a oneof of the concrete messages instead, or \
@@ -267,14 +304,14 @@ impl Problem {
         )
     }
 
-    /// The field `field` of `message` uses `type_name`, a `google.protobuf`
-    /// type elm-connect has no mapping for.
-    pub fn unsupported_well_known(message: &str, field: &str, type_name: &str, site: Site) -> Self {
+    /// `referrer` uses `type_name`, a `google.protobuf` type elm-connect
+    /// has no mapping for.
+    pub fn unsupported_well_known(referrer: &Referrer, type_name: &str, site: Site) -> Self {
         Problem::new(
             Code::UnsupportedWellKnown,
             format!(
-                "The field `{field}` of `{message}` has type `{type_name}`, a well-known type \
-                 elm-connect has no Elm mapping for."
+                "{referrer} has type `{type_name}`, a well-known type elm-connect has no Elm \
+                 mapping for."
             ),
             "The supported well-known types are Timestamp, Duration, FieldMask, Empty, Struct, \
              Value, ListValue and the wrappers like Int32Value. Use one of those, or a message \
@@ -283,11 +320,10 @@ impl Problem {
         )
     }
 
-    /// The field `field` of `message` refers to `type_name`, whose package
-    /// `package` (declared in `file`) is not being generated.
+    /// `referrer` refers to `type_name`, whose package `package` (declared
+    /// in `file`) is not being generated.
     pub fn not_generated(
-        message: &str,
-        field: &str,
+        referrer: &Referrer,
         type_name: &str,
         package: &str,
         file: &str,
@@ -296,13 +332,79 @@ impl Problem {
         Problem::new(
             Code::NotGenerated,
             format!(
-                "The field `{field}` of `{message}` refers to `{type_name}`, but the package \
-                 `{package}` is not being generated."
+                "{referrer} refers to `{type_name}`, but the package `{package}` is not being \
+                 generated."
             ),
             format!(
                 "Generated Elm modules import the modules of every package they refer to, so \
                  those packages must be generated too. Add `{file}` to the files to generate."
             ),
+            vec![site],
+        )
+    }
+
+    /// The method `method` streams (`which`: "client", "server" or
+    /// "bidirectional").
+    pub fn streaming(method: &str, which: &str, site: Site) -> Self {
+        Problem::new(
+            Code::Streaming,
+            format!(
+                "The method `{method}` is {which} streaming, and streaming methods are not \
+                 supported."
+            ),
+            "elm-connect generates unary calls only: Connect streaming and the transcoders' \
+             streaming each frame messages differently, and neither has an Elm design yet. \
+             Move the streaming methods to a service in a package you do not generate, or \
+             leave their files out of the files to generate.",
+            vec![site],
+        )
+    }
+
+    /// Two top-level values of `package`'s module become the same Elm
+    /// name `elm_name`.
+    pub fn value_collision(package: &str, elm_name: &str, first: Site, second: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The package `{package}` has two definitions that both become the Elm value \
+                 `{elm_name}`."
+            ),
+            "A generated module defines one top-level value per method (its name in \
+             lowerCamelCase), one per HTTP binding of a method (`getNoteHttp`, \
+             `getNoteHttp2`), and the codecs and defaults of its types (`encodeNote`, \
+             `decodeNote`, `defaultNote`), all in one namespace with the names its code uses \
+             (`value`, `member`, `identity`). Rename the method in the proto.",
+            vec![first, second],
+        )
+    }
+
+    /// A top-level value of `package`'s module would be `elm_name`, a name
+    /// generated code uses for something else.
+    pub fn reserved_value(package: &str, elm_name: &str, site: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The package `{package}` has a definition that becomes the Elm value \
+                 `{elm_name}`, a name generated code uses for something else."
+            ),
+            "Generated code binds `value` and `member` as local variables and calls \
+             `identity` from elm/core, so no top-level value of a generated module may take \
+             those names. Rename the method in the proto.",
+            vec![site],
+        )
+    }
+
+    /// The method `method`'s name becomes `converted`, which is not an Elm
+    /// value name.
+    pub fn invalid_method(method: &str, converted: &str, site: Site) -> Self {
+        Problem::new(
+            Code::InvalidMethod,
+            format!(
+                "The method `{method}` becomes `{converted}` in Elm, which is not a valid Elm \
+                 value name."
+            ),
+            "A method's Elm value is its name with the first letter lowercased and \
+             underscores dropped, and must start with a letter. Rename the method.",
             vec![site],
         )
     }

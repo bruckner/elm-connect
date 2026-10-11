@@ -57,3 +57,25 @@ fn problems_render_against_the_proto_source() {
     assert!(rendered.contains("╭─[clash.proto:6:10]"), "{rendered}");
     assert!(rendered.contains("string display_name = 1;"), "{rendered}");
 }
+
+#[test]
+fn google_api_annotations_need_no_include_path() {
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-annotations");
+    fs::create_dir_all(&dir).expect("create the input directory");
+    fs::write(
+        dir.join("notes.proto"),
+        "syntax = \"proto3\";\npackage notes.v1;\nimport \"google/api/annotations.proto\";\n\
+         message Note { string name = 1; }\nservice Notes {\n  rpc GetNote(Note) returns (Note) {\n    \
+         option (google.api.http) = { get: \"/v1/{name=notes/*}\" };\n  }\n}\n",
+    )
+    .expect("write the input");
+    let compiled =
+        elm_connect::compile(&[PathBuf::from("notes.proto")], &[dir]).expect("it compiles");
+    assert_eq!(compiled.inputs, ["notes.proto"]);
+    let packages = elm_connect_gen::ir::build(&compiled.pool, &["notes.proto"]).expect("builds");
+    let rule = packages[0].services[0].methods[0].http.as_ref();
+    assert_eq!(
+        rule.map(|rule| rule.template.as_str()),
+        Some("/v1/{name=notes/*}")
+    );
+}

@@ -7,6 +7,7 @@
 pub mod diagnostics;
 pub mod elm;
 pub mod emit;
+pub mod googleapis;
 pub mod ir;
 pub mod naming;
 

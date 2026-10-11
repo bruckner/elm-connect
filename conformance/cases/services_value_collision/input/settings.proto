@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package settings.v1;
+
+import "google/api/annotations.proto";
+
+message Settings {
+  bool dark = 1;
+}
+
+service SettingsService {
+  // `defaultSettings` is the default value of the message `Settings`.
+  rpc DefaultSettings(Settings) returns (Settings);
+  rpc Fetch(Settings) returns (Settings) {
+    option (google.api.http) = {
+      get: "/v1/settings"
+    };
+  }
+  // `fetchHttp` is the transcoding call of `Fetch`.
+  rpc FetchHttp(Settings) returns (Settings);
+}

@@ -33,6 +33,7 @@ pub fn pool(files: &[(&str, &str)]) -> DescriptorPool {
     let mut resolver = ChainFileResolver::new();
     resolver.add(Memory(sources(files)));
     resolver.add(GoogleFileResolver::new());
+    resolver.add(elm_connect_gen::googleapis::GoogleApisResolver);
     let mut compiler = Compiler::with_file_resolver(resolver);
     compiler.include_source_info(true).include_imports(true);
     for (name, _) in files {

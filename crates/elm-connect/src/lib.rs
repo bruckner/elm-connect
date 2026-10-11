@@ -23,17 +23,22 @@ pub struct Compiled {
     pub sources: HashMap<String, String>,
 }
 
-/// Compiles `files` against the `includes` search path (`.` if empty).
+/// Compiles `files` against the `includes` search path (`.` if empty),
+/// then protox's bundled `google/protobuf` files and the googleapis files
+/// elm-connect embeds (`google/api/annotations.proto` and
+/// `google/api/http.proto`), so `google.api.http` needs no googleapis
+/// checkout.
 ///
 /// A compile error comes back as a `Report` carrying the proto source and the
 /// span at fault, so it renders with the offending line underlined.
 pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Report> {
-    let includes: Vec<&Path> = if includes.is_empty() {
-        vec![Path::new(".")]
+    let includes: Vec<PathBuf> = if includes.is_empty() {
+        vec![PathBuf::from(".")]
     } else {
-        includes.iter().map(PathBuf::as_path).collect()
+        includes.to_vec()
     };
-    let mut compiler = protox::Compiler::new(includes)?;
+    let mut compiler =
+        protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(includes));
     compiler.include_source_info(true).include_imports(true);
     compiler.open_files(files)?;
     let mut inputs = Vec::new();

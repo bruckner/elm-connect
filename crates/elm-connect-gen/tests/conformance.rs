@@ -118,7 +118,9 @@ fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
     if include.is_dir() {
         include_paths.push(include.clone());
     }
-    let mut compiler = protox::Compiler::new(&include_paths).expect("an include path");
+    let mut compiler = protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(
+        include_paths.clone(),
+    ));
     compiler.include_source_info(true).include_imports(true);
     compiler
         .open_files(&names)

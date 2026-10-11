@@ -10,16 +10,49 @@ use elm_connect_gen::diagnostics::render_narrow;
 use elm_connect_gen::{Options, generate};
 use prost::Message;
 use prost_reflect::DescriptorPool;
-use prost_types::FileDescriptorSet;
 use prost_types::compiler::code_generator_response::{Feature, File};
 use prost_types::compiler::{CodeGeneratorRequest, CodeGeneratorResponse};
 
-/// Answers one plugin request. Errors in the user's protos travel back to
-/// protoc in `error`; only a failure to talk to protoc is a process error.
+/// The request's `proto_file`s as protoc encoded them. Decoding them into
+/// `prost_types` would drop extension options such as `google.api.http`,
+/// which `prost_types::MethodOptions` has no field for, so the pool is
+/// built from these bytes instead.
+#[derive(Clone, PartialEq, prost::Message)]
+struct RawProtoFiles {
+    /// `CodeGeneratorRequest.proto_file`: every file to generate and
+    /// everything it imports, each after its imports.
+    #[prost(bytes = "vec", repeated, tag = "15")]
+    proto_file: Vec<Vec<u8>>,
+}
+
+/// The descriptor pool of the files in `request` (its encoded bytes), with
+/// extension options kept.
+fn pool(request: &[u8]) -> Result<DescriptorPool, String> {
+    let raw = RawProtoFiles::decode(request).map_err(|err| err.to_string())?;
+    let mut pool = DescriptorPool::new();
+    for file in &raw.proto_file {
+        pool.decode_file_descriptor_proto(file.as_slice())
+            .map_err(|err| err.to_string())?;
+    }
+    Ok(pool)
+}
+
+/// Answers one plugin request, given its encoded bytes. Errors in the
+/// user's protos travel back to protoc in `error`; only a failure to talk
+/// to protoc is a process error.
 ///
 /// protoc sends no proto sources, so problems render without snippets,
 /// naming the proto elements instead.
-fn run(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
+fn run(bytes: &[u8]) -> CodeGeneratorResponse {
+    let request = match CodeGeneratorRequest::decode(bytes) {
+        Ok(request) => request,
+        Err(err) => {
+            return CodeGeneratorResponse {
+                error: Some(format!("elm-connect: decoding the request: {err}")),
+                ..CodeGeneratorResponse::default()
+            };
+        }
+    };
     let response = |error: Option<String>, file: Vec<File>| CodeGeneratorResponse {
         error,
         supported_features: Some(Feature::Proto3Optional as u64),
@@ -34,9 +67,7 @@ fn run(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
             );
         }
     };
-    let pool = match DescriptorPool::from_file_descriptor_set(FileDescriptorSet {
-        file: request.proto_file,
-    }) {
+    let pool = match pool(bytes) {
         Ok(pool) => pool,
         Err(err) => {
             return response(
@@ -72,14 +103,7 @@ fn main() -> ExitCode {
         eprintln!("protoc-gen-elm-connect: reading the request: {err}");
         return ExitCode::FAILURE;
     }
-    let request = match CodeGeneratorRequest::decode(input.as_slice()) {
-        Ok(request) => request,
-        Err(err) => {
-            eprintln!("protoc-gen-elm-connect: decoding the request: {err}");
-            return ExitCode::FAILURE;
-        }
-    };
-    let output = run(request).encode_to_vec();
+    let output = run(&input).encode_to_vec();
     if let Err(err) = io::stdout().write_all(&output) {
         eprintln!("protoc-gen-elm-connect: writing the response: {err}");
         return ExitCode::FAILURE;
@@ -115,7 +139,7 @@ mod tests {
     }
 
     fn round_trip(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
-        let bytes = run(request).encode_to_vec();
+        let bytes = run(&request.encode_to_vec()).encode_to_vec();
         CodeGeneratorResponse::decode(bytes.as_slice()).expect("decode the response")
     }
 
@@ -166,5 +190,53 @@ mod tests {
         assert!(error.starts_with("generate::unknown_file\n"), "{error}");
         assert!(error.contains("`missing.proto`"), "{error}");
         assert!(response.file.is_empty());
+    }
+
+    /// A set's files as protox encoded them, options intact.
+    #[derive(Clone, PartialEq, prost::Message)]
+    struct RawSet {
+        #[prost(bytes = "vec", repeated, tag = "1")]
+        file: Vec<Vec<u8>>,
+    }
+
+    #[test]
+    fn extension_options_survive_the_request() {
+        let dir = std::env::temp_dir().join("protoc-gen-elm-connect-http");
+        std::fs::create_dir_all(&dir).expect("create");
+        std::fs::write(
+            dir.join("notes.proto"),
+            r#"syntax = "proto3";
+package notes.v1;
+import "google/api/annotations.proto";
+message Note { string name = 1; }
+service Notes {
+  rpc GetNote(Note) returns (Note) {
+    option (google.api.http) = { get: "/v1/{name=notes/*}" };
+  }
+}
+"#,
+        )
+        .expect("write");
+        let mut compiler =
+            protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([dir]));
+        compiler.include_imports(true);
+        compiler.open_file("notes.proto").expect("compiles");
+        let set = RawSet::decode(compiler.encode_file_descriptor_set().as_slice()).expect("set");
+        let mut request = CodeGeneratorRequest {
+            file_to_generate: vec!["notes.proto".into()],
+            ..CodeGeneratorRequest::default()
+        }
+        .encode_to_vec();
+        RawProtoFiles {
+            proto_file: set.file,
+        }
+        .encode(&mut request)
+        .expect("encode");
+
+        let pool = pool(&request).expect("a pool");
+        let packages = elm_connect_gen::ir::build(&pool, &["notes.proto"]).expect("the IR builds");
+        let method = &packages[0].services[0].methods[0];
+        let rule = method.http.as_ref().expect("the rule survives");
+        assert_eq!(rule.template, "/v1/{name=notes/*}");
     }
 }

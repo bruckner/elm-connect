@@ -615,7 +615,15 @@ case names it):
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
   case): Elm forbids import cycles.
 - **A generate set not closed under package references**
-  (`generate::not_generated`, `packages_not_generated` case).
+  (`generate::not_generated`, `packages_not_generated` case), the
+  request and response types of methods included.
+- **Streaming methods** (`services::streaming`, `services_streaming`
+  case): client, server and bidirectional (§1.3).
+- **Top-level values that collide**: a method whose value takes the name
+  of another method's, of an HTTP call, or of a codec or default
+  (`naming::value_collision`, `services_value_collision` case), and a
+  method named for a variable generated code binds (`value`, `member`)
+  or calls (`identity`).
 
 ## 4. Method descriptors  *(Proposed)*
 
@@ -644,6 +652,39 @@ type Route req               -- opaque; parsed google.api.http rule
 Open question whether to fuse method and route into one value for the
 transcoding case (`Transcode.Call req res`) so call sites pass one
 thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
+
+Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
+
+- Every service of a generated package, and each of its methods: the
+  proto name, the Elm value name, the request and response types, the
+  idempotency, and the `google.api.http` rule as written (verb, path
+  template, `body`, `response_body`, additional bindings).
+- A method's value is its name with the first letter lowercased and
+  underscores dropped as for a field (`GetNote` → `getNote`), a reserved
+  word escaped (`Type` → `type_`). The values of a module share one
+  namespace: method values, HTTP calls (`getNoteHttp`, `getNoteHttp2`)
+  and the codecs and defaults of its types. A clash is
+  `naming::value_collision`, never a rename, and it is checked whatever
+  the `transports` option, so an option never turns a clash on or off.
+  A method `DefaultSettings` beside a message `Settings` is the case in
+  point. Two services of one package with a method of the same name
+  clash too; prefixing the service name was the alternative, rejected
+  because it lengthens every call site for a rare case.
+- A method of `google.protobuf.Empty` or another supported well-known
+  type takes or gives that type's Elm form (`()` for `Empty`). Any other
+  type outside the generate set is `generate::not_generated`, worded for
+  the method ("The request of `notes.v1.Notes.Get` refers to ...").
+- A streaming method is `services::streaming`, pointing at its
+  `stream` keyword, rather than being skipped.
+- `google/api/http.proto` and `google/api/annotations.proto` are
+  embedded in `elm-connect-gen` (`googleapis` module; Apache-2.0,
+  `THIRD_PARTY.md`). The CLI resolves imports from its include paths
+  first, then protox's `google/protobuf` files, then these, so a proto
+  importing `google/api/annotations.proto` compiles without a googleapis
+  checkout. The protoc plugin needs no copy: protoc sends every import.
+  It builds its descriptor pool from the request's encoded files rather
+  than from `prost_types`, which drops extension options such as
+  `google.api.http`.
 
 ## 5. Runtime  *(Proposed)*
 
@@ -747,7 +788,8 @@ shared.
   request does not have; route body names a non-message field; map key
   of an unsupported type (dropped: every key proto allows has an Elm
   form, `bool` an association list, §3.2); package
-  import cycle; name collision after casing; `Any` field. A recursive
+  import cycle; name collision after casing; `Any` field; streaming
+  method; method value collision (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
 
