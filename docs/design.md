@@ -374,7 +374,7 @@ argument.)*
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
 | `google.protobuf.Duration` | `Connect.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
-| `google.protobuf.Empty` | `()` | |
+| `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
 | `google.protobuf.Struct`, `Value`, `ListValue` | `Json.Encode.Value` | they *are* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | unsupported; diagnostic | needs a type registry; no demand |
@@ -385,10 +385,19 @@ the parser lives there and `Time.Posix` is the right type.
 
 Built as proposed, with these details *(each Proposed)*:
 
-- A field of `Timestamp`, `Duration`, `FieldMask` or `Empty` is a
-  message field, so a singular one is a `Maybe` (§3.2): `Maybe
-  Time.Posix`, `Maybe Duration`, `Maybe (List String)`, `Maybe ()`.
-  A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
+- A field of `Timestamp`, `Duration` or `FieldMask` is a message
+  field, so a singular one is a `Maybe` (§3.2): `Maybe Time.Posix`,
+  `Maybe Duration`, `Maybe (List String)`.
+- `Empty` carries nothing, presence included. *(Decided.)* A singular
+  field of it, `optional` or not, is `()`: encoded as `{}` always,
+  decoded as `()` whether the key holds an object, holds `null` or is
+  absent. Repeated it is `List ()`, as a map value `Dict K ()`. A oneof
+  member of it is a constructor without an argument (`ActionClear`, not
+  `ActionClear ()`), encoded as `{"clear": {}}` and decoded from the
+  member's key holding an object or `null`
+  (`Connect.Json.emptyMember`). Whether such a field was sent is lost
+  (§3.8).
+- A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
 - `Struct`, `Value` and `ListValue` fields are `Json.Encode.Value`
   without `Maybe`: an absent field reads as `null`, and the value is
@@ -445,6 +454,10 @@ Built *(Proposed in its details)*:
   The message's decoder reads it with a `Connect.Json.oneof` step. A
   member present as `null` reads as unset, and when several members are
   present the first declared wins.
+- A member of `google.protobuf.Empty` is a constructor without an
+  argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
+  decoded by `Connect.Json.emptyMember`, which reads the key as set when
+  it holds an object or `null`. *(Decided; §3.5.)*
 - **Known weakness:** a member that is present but malformed
   (`{"title": 1}` for a string member) also reads as unset, because
   `Json.Decode.oneOf` moves on to the next alternative and the last one
@@ -483,6 +496,40 @@ Built, as the `naming` and `naming_collision` cases show:
   default JSON name. The collision a user meets is a field and a oneof
   (`display_name` and `oneof displayName`), which
   `naming::field_collision` reports with both sites.
+
+### 3.8 Dead ends
+
+Valid proto constructs whose Elm form drops a distinction the proto
+makes, or that the generator refuses with a diagnostic. This is a
+record of fact; the policy for them is not designed yet.
+
+Dropped distinctions:
+
+- **Presence of an `Empty` field.** A singular `google.protobuf.Empty`
+  field is `()` (§3.5), so a message that sent `{}` and one that left
+  the field out decode alike, and the encoder always sends `{}`.
+
+Refused (each a diagnostic, pinned in the conformance corpus where a
+case names it):
+
+- **Names that collide in Elm**: two types after nested-message
+  flattening (`naming::type_collision`), two constructors in one module,
+  such as enum values or oneof members (`naming::constructor_collision`),
+  and a field and a oneof of one message (`naming::field_collision`,
+  `naming_collision` case).
+- **Names with no Elm form**: a package segment, type or field whose
+  converted name is not a valid Elm identifier (`naming::invalid_module`,
+  `naming::invalid_type`, `naming::invalid_field`), and a file without a
+  package declaration (`naming::invalid_module`).
+- **`bool` map keys** (`types::map_key`, `map_bool_key` case): Elm's
+  `Bool` is not `comparable`.
+- **`google.protobuf.Any` fields** (`types::any`, `any_field` case), and
+  any other `google.protobuf` type without a mapping
+  (`types::unsupported_well_known`).
+- **Package import cycles** (`generate::import_cycle`, `packages_cycle`
+  case): Elm forbids import cycles.
+- **A generate set not closed under package references**
+  (`generate::not_generated`, `packages_not_generated` case).
 
 ## 4. Method descriptors  *(Proposed)*
 

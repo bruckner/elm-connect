@@ -182,6 +182,16 @@ oneofTests =
             \_ -> fails (Connect.Json.member "text" Json.Decode.string) "{}"
         , test "member fails on null" <|
             \_ -> fails (Connect.Json.member "text" Json.Decode.string) """{"text":null}"""
+        , test "emptyMember reads {}" <|
+            \_ -> decodes (Connect.Json.emptyMember "clear" "set") """{"clear":{}}""" "set"
+        , test "emptyMember reads null" <|
+            \_ -> decodes (Connect.Json.emptyMember "clear" "set") """{"clear":null}""" "set"
+        , test "emptyMember fails without the key" <|
+            \_ -> fails (Connect.Json.emptyMember "clear" "set") "{}"
+        , test "emptyMember fails on a value that is not an object" <|
+            \_ -> fails (Connect.Json.emptyMember "clear" "set") """{"clear":1}"""
+        , test "emptyMemberEither reads the proto name" <|
+            \_ -> decodes (Connect.Json.emptyMemberEither "clearAll" "clear_all" "set") """{"clear_all":{}}""" "set"
         ]
 
 

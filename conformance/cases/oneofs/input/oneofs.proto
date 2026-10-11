@@ -5,6 +5,8 @@ syntax = "proto3";
 
 package oneofs.v1;
 
+import "google/protobuf/empty.proto";
+
 message Created {
   string title = 1;
 }
@@ -23,6 +25,9 @@ message NoteEvent {
     string title_changed = 3;
     Color recolored = 4;
     int64 deleted_at = 5;
+    // Empty members carry nothing: constructors without an argument.
+    google.protobuf.Empty archived = 9;
+    google.protobuf.Empty cleared_all = 10;
   }
   // A second oneof in the same message.
   oneof source {

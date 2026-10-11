@@ -19,7 +19,7 @@ type alias Event =
     { createdAt : Maybe Time.Posix
     , timeout : Maybe Duration
     , updateMask : Maybe (List String)
-    , marker : Maybe ()
+    , marker : ()
     , metadata : Json.Encode.Value
     , payload : Json.Encode.Value
     , items : Json.Encode.Value
@@ -37,6 +37,9 @@ type alias Event =
     , values : List Json.Encode.Value
     , counts : List Int
     , when : EventWhen
+    , acked : ()
+    , pings : List ()
+    , seen : Dict String ()
     }
 
 
@@ -57,7 +60,7 @@ encodeEvent value =
         ([ ( "createdAt", Connect.Json.encodeMaybe Connect.Json.encodeTimestamp value.createdAt )
          , ( "timeout", Connect.Json.encodeMaybe Connect.Json.encodeDuration value.timeout )
          , ( "updateMask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.updateMask )
-         , ( "marker", Connect.Json.encodeMaybe Connect.Json.encodeEmpty value.marker )
+         , ( "marker", Connect.Json.encodeEmpty value.marker )
          , ( "metadata", value.metadata )
          , ( "payload", value.payload )
          , ( "items", value.items )
@@ -74,6 +77,9 @@ encodeEvent value =
          , ( "limits", Json.Encode.dict identity Connect.Json.encodeDuration value.limits )
          , ( "values", Json.Encode.list identity value.values )
          , ( "counts", Json.Encode.list Json.Encode.int value.counts )
+         , ( "acked", Connect.Json.encodeEmpty value.acked )
+         , ( "pings", Json.Encode.list Connect.Json.encodeEmpty value.pings )
+         , ( "seen", Json.Encode.dict identity Connect.Json.encodeEmpty value.seen )
          ]
             ++ encodeEventWhen value.when
         )
@@ -105,7 +111,7 @@ decodeEvent =
         |> Connect.Json.fieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Connect.Json.timestamp)
         |> Connect.Json.field "timeout" Nothing (Json.Decode.map Just Connect.Json.duration)
         |> Connect.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
-        |> Connect.Json.field "marker" Nothing (Json.Decode.map Just Connect.Json.empty)
+        |> Connect.Json.field "marker" () Connect.Json.empty
         |> Connect.Json.field "metadata" Json.Encode.null Json.Decode.value
         |> Connect.Json.field "payload" Json.Encode.null Json.Decode.value
         |> Connect.Json.field "items" Json.Encode.null Json.Decode.value
@@ -123,6 +129,9 @@ decodeEvent =
         |> Connect.Json.field "values" [] (Json.Decode.list Json.Decode.value)
         |> Connect.Json.field "counts" [] (Json.Decode.list Connect.Json.int32)
         |> Connect.Json.oneof decodeEventWhen
+        |> Connect.Json.field "acked" () Connect.Json.empty
+        |> Connect.Json.field "pings" [] (Json.Decode.list Connect.Json.empty)
+        |> Connect.Json.field "seen" Dict.empty (Json.Decode.dict Connect.Json.empty)
 
 
 decodeEventWhen : Json.Decode.Decoder EventWhen

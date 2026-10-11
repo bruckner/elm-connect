@@ -1,7 +1,7 @@
 module Connect.Json exposing
     ( field, fieldEither
     , encodeMaybe
-    , oneof, member, memberEither
+    , oneof, member, memberEither, emptyMember, emptyMemberEither
     , enum
     , intDict
     , int32, uint32
@@ -33,7 +33,7 @@ The module name is provisional and may change before the first release.
 
 # Oneofs
 
-@docs oneof, member, memberEither
+@docs oneof, member, memberEither, emptyMember, emptyMemberEither
 
 
 # Enums
@@ -242,6 +242,53 @@ name: the JSON name first, then the proto name, as in
 memberEither : String -> String -> Decoder a -> Decoder a
 memberEither jsonName protoName =
     present [ jsonName, protoName ]
+
+
+{-| Decode a oneof member of type `google.protobuf.Empty`, whose constructor
+carries nothing: succeeds with the constructor when the object holds the key,
+whether its value is an object (usually `{}`) or `null`.
+
+    type ActionKind
+        = ActionKindUnset
+        | ActionKindClear
+
+    decodeActionKind : Decoder ActionKind
+    decodeActionKind =
+        Json.Decode.oneOf
+            [ emptyMember "clear" ActionKindClear
+            , Json.Decode.succeed ActionKindUnset
+            ]
+
+-}
+emptyMember : String -> a -> Decoder a
+emptyMember name =
+    presentEmpty [ name ]
+
+
+{-| [`emptyMember`](#emptyMember) for a member whose JSON name differs from its
+proto name: the JSON name first, then the proto name.
+-}
+emptyMemberEither : String -> String -> a -> Decoder a
+emptyMemberEither jsonName protoName =
+    presentEmpty [ jsonName, protoName ]
+
+
+presentEmpty : List String -> a -> Decoder a
+presentEmpty names value =
+    Json.Decode.dict Json.Decode.value
+        |> Json.Decode.andThen
+            (\object ->
+                case firstPresent names object of
+                    Just ( name, raw ) ->
+                        if isNull raw then
+                            Json.Decode.succeed value
+
+                        else
+                            Json.Decode.field name (Json.Decode.map (\_ -> value) empty)
+
+                    Nothing ->
+                        Json.Decode.fail ("Expecting a key " ++ String.join " or " names)
+            )
 
 
 present : List String -> Decoder a -> Decoder a
@@ -795,7 +842,8 @@ snakeCase name =
         |> String.fromList
 
 
-{-| Decode a `google.protobuf.Empty`: any JSON object, usually `{}`.
+{-| Decode a `google.protobuf.Empty`: any JSON object, usually `{}`. A field
+of it reads as `()` when absent or `null` too, so its presence is not kept.
 -}
 empty : Decoder ()
 empty =
