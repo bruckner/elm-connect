@@ -1,0 +1,28 @@
+// Maps: `Dict String V` for string and 64-bit integer keys, `Dict Int V`
+// for 32-bit integer keys, read from and written as decimal strings.
+syntax = "proto3";
+
+package maps.v1;
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_OWNER = 1;
+}
+
+message Member {
+  string name = 1;
+}
+
+message Team {
+  map<string, string> labels = 1;
+  map<int32, string> by_seat = 2;
+  map<uint32, double> scores = 3;
+  map<sint32, bool> flags = 4;
+  map<fixed32, int64> totals = 5;
+  // 64-bit keys stay strings, like 64-bit values.
+  map<int64, string> by_id = 6;
+  map<uint64, int32> counts = 7;
+  // Message and enum values.
+  map<string, Member> members = 8;
+  map<int32, Role> roles = 9;
+}

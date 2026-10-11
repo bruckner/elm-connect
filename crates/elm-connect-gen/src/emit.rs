@@ -11,8 +11,8 @@
 //! The rules the emitter applies today:
 //!
 //! - A module opens with a generated-file notice, imports exactly the
-//!   modules its code refers to, and holds three sections in order: types,
-//!   encoders, decoders. Each section has the enums, then the messages,
+//!   modules its code refers to (beyond those Elm imports by default),
+//!   and holds three sections in order: types, encoders, decoders. Each section has the enums, then the messages,
 //!   each followed by its oneofs.
 //! - A message is a record type alias, an encoder
 //!   (`Foo -> Json.Encode.Value`) and a decoder (`Json.Decode.Decoder Foo`).
@@ -42,8 +42,12 @@
 //!   object; its decoder tries each member with `Json.Decode.oneOf` and
 //!   falls back to unset (design §3.6).
 //!
-//! Singular, optional and repeated fields of scalars, enums and generated
-//! messages, and oneofs of them, are emitted so far. Every other construct
+//! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
+//!   keys) or `Int` (32-bit integer keys), encoded with
+//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
+//!
+//! Singular, optional, repeated and map fields of scalars, enums and
+//! generated messages, and oneofs of them, are emitted so far. Every other construct
 //! is reported as [`Code::Unimplemented`](crate::diagnostics::Code) through
 //! [`crate::diagnostics`], never a panic, so a user meets an ordinary
 //! diagnostic until its emitter lands.
@@ -54,11 +58,11 @@ mod message;
 mod oneof;
 mod scalar;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::VERSION;
 use crate::diagnostics::{Diagnostics, Problem};
-use crate::elm::ast::{Decl, Exposing, Expr, Import, Module, ModuleName, Type};
+use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, TypeName};
 
@@ -70,6 +74,11 @@ const JSON_DECODE: &str = "Json.Decode";
 const JSON_ENCODE: &str = "Json.Encode";
 /// The runtime package's proto3 JSON helpers.
 const CONNECT_JSON: &str = "Connect.Json";
+/// elm/core's `Dict`, imported as `import Dict exposing (Dict)` so the
+/// type reads `Dict String V`, as Elm code conventionally writes it.
+const CORE_DICT: &str = "Dict";
+/// elm/core's `String`, which every Elm module imports by default.
+const CORE_STRING: &str = "String";
 
 /// How to generate. Nothing is configurable yet; the options design §6
 /// lists arrive with the features they control.
@@ -82,7 +91,7 @@ pub struct Options {}
 pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics> {
     let mut emitter = Emitter {
         module: package.module.clone(),
-        imports: BTreeSet::new(),
+        imports: BTreeMap::new(),
         diagnostics: Diagnostics::new(),
     };
     let decls = emitter.package(package);
@@ -100,10 +109,11 @@ pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics
         imports: emitter
             .imports
             .into_iter()
-            .map(|module| Import {
+            .map(|(module, types)| Import {
                 module: ModuleName::new(module),
                 alias: None,
-                exposing: None,
+                exposing: (!types.is_empty())
+                    .then(|| Exposing::Explicit(types.into_iter().map(Exposed::Type).collect())),
             })
             .collect(),
         decls,
@@ -150,7 +160,8 @@ struct OneofShape<'m> {
 /// to so far, and the problems found.
 struct Emitter {
     module: IrModule,
-    imports: BTreeSet<String>,
+    /// Each module imported, with the types its import exposes.
+    imports: BTreeMap<String, BTreeSet<String>>,
     diagnostics: Diagnostics,
 }
 
@@ -229,7 +240,7 @@ impl Emitter {
         if name.module == self.module {
             ty(name.name.clone(), [])
         } else {
-            self.imports.insert(name.module.to_string());
+            self.imports.entry(name.module.to_string()).or_default();
             ty_qualified(
                 ModuleName::new(name.module.to_string()),
                 name.name.clone(),
@@ -244,7 +255,7 @@ impl Emitter {
         if *module == self.module {
             var(name)
         } else {
-            self.imports.insert(module.to_string());
+            self.imports.entry(module.to_string()).or_default();
             qualified(ModuleName::new(module.to_string()), name)
         }
     }
@@ -252,8 +263,23 @@ impl Emitter {
     /// A reference to `name` in the library module `module`, which the
     /// module then imports.
     fn reference(&mut self, (module, name): (&'static str, &str)) -> Expr {
-        self.imports.insert(module.to_owned());
+        self.imports.entry(module.to_owned()).or_default();
         qualified(module, name)
+    }
+
+    /// The library type `name args`, unqualified, exposed by the module's
+    /// import of `module`.
+    fn exposed_type(
+        &mut self,
+        module: &'static str,
+        name: &str,
+        args: impl IntoIterator<Item = Type>,
+    ) -> Type {
+        self.imports
+            .entry(module.to_owned())
+            .or_default()
+            .insert(name.to_owned());
+        ty(name, args)
     }
 
     /// The library type `module.name args`, which the module then imports.
@@ -263,7 +289,7 @@ impl Emitter {
         name: &str,
         args: impl IntoIterator<Item = Type>,
     ) -> Type {
-        self.imports.insert(module.to_owned());
+        self.imports.entry(module.to_owned()).or_default();
         ty_qualified(module, name, args)
     }
 
@@ -290,7 +316,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 mod tests {
     use super::*;
     use crate::diagnostics::Code;
-    use crate::ir::{Cardinality, MapKey, ScalarKind, TypeRef};
+    use crate::ir::{Cardinality, MapKey, ScalarKind, TypeRef, WellKnown};
 
     fn package(messages: Vec<Message>) -> Package {
         Package {
@@ -386,6 +412,11 @@ mod tests {
                 ),
                 field("map", Cardinality::Map(MapKey::String), string),
                 field(
+                    "wk",
+                    Cardinality::Singular,
+                    TypeRef::WellKnown(WellKnown::Timestamp),
+                ),
+                field(
                     "en",
                     Cardinality::Singular,
                     TypeRef::Enum {
@@ -406,7 +437,8 @@ mod tests {
             messages,
             [
                 "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.",
-                "`t.v1.F.map` is a map field, which elm-connect cannot generate yet.",
+                "`t.v1.F.wk` is a field of a well-known type, which elm-connect cannot generate \
+                 yet.",
             ]
         );
     }

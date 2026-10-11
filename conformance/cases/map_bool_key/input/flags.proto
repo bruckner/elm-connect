@@ -1,0 +1,8 @@
+// A map with `bool` keys has no Elm `Dict`: `Bool` is not comparable.
+syntax = "proto3";
+
+package flags.v1;
+
+message Flags {
+  map<bool, string> by_value = 1;
+}

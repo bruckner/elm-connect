@@ -26,9 +26,8 @@ case; `just check` runs them with the other Rust tests.
   unified diff.
 - **diagnostics**: generating each `diagnostics.txt` case fails, and the
   problems, rendered narrow (80 columns, no colour) with the proto sources
-  attached, are exactly `diagnostics.txt`. The corpus has no such case
-  yet; a unit test in the same file exercises the mechanism on a
-  throwaway case.
+  attached, are exactly `diagnostics.txt`. A unit test in the same file
+  also exercises the mismatch and blessing paths on a throwaway case.
 - **compiles**: every case's expected modules compile with `elm make` in
   `harness/`, an Elm application whose source directories are the runtime
   package's `../../src` and a scratch `generated/` (gitignored) the test

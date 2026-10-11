@@ -184,6 +184,15 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
 - `repeated` → `List`. `map<K, V>` → `Dict K V` with `K` restricted to
   `String` and `Int` as proto allows. *(Decided.)* Note that `int64`
   map keys will become `Dict String V` under §3.4.
+  Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
+  integer keys `Dict Int V`. JSON object keys are strings, so integer
+  keys are read from their decimal strings (`Connect.Json.intDict`, which
+  fails on any other key) and written with `String.fromInt`. A `bool`
+  key has no `Dict` (Elm's `Bool` is not `comparable`) and is the
+  `types::map_key` diagnostic; mapping it to `Dict String V` with keys
+  `"true"` and `"false"` would work but hide the proto type, and `bool`
+  map keys are rare enough that asking for a `string` key costs little.
+  An absent or `null` map decodes as `Dict.empty`.
 - Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
 - Recursive messages: `type alias Node = { children : List Node }` is
   illegal in Elm. Wrap with a custom type as protoc-gen-elm does
@@ -464,7 +473,8 @@ shared.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
   of Elm's compiler. First catalogue: route variable names a field the
   request does not have; route body names a non-message field; map key
-  of an unsupported type; package import cycle; name collision after
+  of an unsupported type (built: `types::map_key`, for `bool`); package
+  import cycle; name collision after
   casing; `Any` field; recursive message (informational).
 
 ## 7. Conformance  *(Decided)*

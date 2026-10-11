@@ -43,9 +43,9 @@ Justfile            task recipes; `just` lists them
 ```
 
 Both binaries generate record types and JSON codecs for messages whose
-fields are scalars, enums or messages, singular, `optional` or repeated,
-and custom types for enums and oneofs; every other construct is reported
-as not generated yet. The runtime package holds only the JSON helpers those
+fields are scalars, enums or messages, singular, `optional`, repeated or
+in maps, and custom types for enums and oneofs; every other construct is
+reported as not generated yet. The runtime package holds only the JSON helpers those
 codecs call.
 
 ## Developing

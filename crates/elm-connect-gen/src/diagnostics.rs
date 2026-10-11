@@ -41,6 +41,8 @@ pub enum Code {
     InvalidField,
     /// A field uses `google.protobuf.Any`.
     Any,
+    /// A map field has a key type Elm's `Dict` cannot hold.
+    MapKey,
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown,
     /// A generated package refers to a type in a package not generated.
@@ -66,6 +68,7 @@ impl Code {
             Code::InvalidType => "naming::invalid_type",
             Code::InvalidField => "naming::invalid_field",
             Code::Any => "types::any",
+            Code::MapKey => "types::map_key",
             Code::UnsupportedWellKnown => "types::unsupported_well_known",
             Code::NotGenerated => "generate::not_generated",
             Code::ImportCycle => "generate::import_cycle",
@@ -263,6 +266,21 @@ impl Problem {
             "Decoding an `Any` needs a registry of every type it might hold, and generated Elm \
              code has none. Use a oneof of the concrete messages instead, or \
              `google.protobuf.Struct` for free-form JSON.",
+            vec![site],
+        )
+    }
+
+    /// The map field `field` of `message` has `bool` keys.
+    pub fn map_bool_key(message: &str, field: &str, site: Site) -> Self {
+        Problem::new(
+            Code::MapKey,
+            format!(
+                "The map field `{field}` of `{message}` has `bool` keys, which elm-connect cannot \
+                 put in an Elm `Dict`."
+            ),
+            "A map becomes a `Dict`, whose keys must be `comparable`, and Elm's `Bool` is not. \
+             Use `string` keys (\"true\" and \"false\", as proto3 JSON writes them), or two \
+             fields.",
             vec![site],
         )
     }

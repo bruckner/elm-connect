@@ -84,7 +84,6 @@ fn cardinalities_and_maps() {
           repeated string labels = 3;
           map<string, Tag> tags_by_name = 4;
           map<int64, int32> counts = 5;
-          map<bool, string> flags = 6;
           Tag primary_tag = 7;
           repeated Tag all_tags = 8;
         }
@@ -116,11 +115,6 @@ fn cardinalities_and_maps() {
             "counts",
             Cardinality::Map(MapKey::Int64),
             TypeRef::Scalar(ScalarKind::Int32),
-        ),
-        (
-            "flags",
-            Cardinality::Map(MapKey::Bool),
-            TypeRef::Scalar(ScalarKind::String),
         ),
         ("primaryTag", Cardinality::Singular, tag.clone()),
         ("allTags", Cardinality::Repeated, tag),
@@ -534,6 +528,17 @@ message M { google.protobuf.Any payload = 1; }
 "#;
     let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
     assert_eq!(codes(&diagnostics), [Code::Any]);
+}
+
+#[test]
+fn bool_map_keys_are_errors() {
+    let source = r#"
+syntax = "proto3";
+package t;
+message M { map<bool, string> flags = 1; map<string, bool> ok = 2; }
+"#;
+    let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
+    assert_eq!(codes(&diagnostics), [Code::MapKey]);
 }
 
 #[test]

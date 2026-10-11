@@ -346,9 +346,9 @@ fn formatted() {
     );
 }
 
-/// The diagnostics mechanism on a throwaway case, until the corpus has a
-/// diagnostics case of its own: a mismatch fails with a diff, blessing
-/// writes the rendering, a case that generates fails.
+/// The diagnostics mechanism on a throwaway case, for the paths the corpus
+/// never takes: a mismatch fails with a diff, blessing writes the
+/// rendering, a case that generates fails.
 #[test]
 fn diagnostics_cases_compare_and_bless() {
     let case = Path::new(env!("CARGO_TARGET_TMPDIR")).join("conformance-diagnostics-case");
