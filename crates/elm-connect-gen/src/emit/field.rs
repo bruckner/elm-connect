@@ -78,8 +78,8 @@ pub(super) enum Zeroed<'p> {
     Scalar(Repr),
     /// A generated enum, whose zero value is this constructor.
     Enum(&'p TypeName, &'p str),
-    /// `google.protobuf.Struct`, `Value` or `ListValue`: JSON itself, held
-    /// as a `Json.Encode.Value`, whose zero value is `null` (design §3.5).
+    /// `google.protobuf.Value`: any JSON, held as a `Json.Encode.Value`,
+    /// whose zero value is `null` (design §3.5).
     Json,
     /// `google.protobuf.Empty`: `()`, which carries nothing, so a singular
     /// field of it has no presence either: absent, `null` and `{}` all read
@@ -107,6 +107,12 @@ pub(super) enum Present<'p> {
     Duration,
     /// `google.protobuf.FieldMask`: its paths, a `List String`.
     FieldMask,
+    /// `google.protobuf.Struct`: a JSON object, a
+    /// `Dict String Json.Encode.Value`.
+    Struct,
+    /// `google.protobuf.ListValue`: a JSON array, a
+    /// `List Json.Encode.Value`.
+    ListValue,
 }
 
 /// The shape of a well-known type's values; `int64` says how the 64-bit
@@ -114,9 +120,9 @@ pub(super) enum Present<'p> {
 fn well_known(well_known: WellKnown, int64: Int64) -> ValueShape<'static> {
     let wrapper = |kind| Present::Wrapper(scalar::repr(kind, int64));
     let present = match well_known {
-        WellKnown::Struct | WellKnown::Value | WellKnown::ListValue => {
-            return ValueShape::Zeroed(Zeroed::Json);
-        }
+        WellKnown::Value => return ValueShape::Zeroed(Zeroed::Json),
+        WellKnown::Struct => Present::Struct,
+        WellKnown::ListValue => Present::ListValue,
         WellKnown::Timestamp => Present::Timestamp,
         WellKnown::Duration => Present::Duration,
         WellKnown::FieldMask => Present::FieldMask,
@@ -230,6 +236,13 @@ impl Emitter {
                 self.exposed_type(CONNECT_DURATION, "Duration", [])
             }
             ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
+            ValueShape::Present(Present::Struct) => {
+                let value = self.library_type(JSON_ENCODE, "Value", []);
+                self.exposed_type(CORE_DICT, "Dict", [ty("String", []), value])
+            }
+            ValueShape::Present(Present::ListValue) => {
+                ty("List", [self.library_type(JSON_ENCODE, "Value", [])])
+            }
             ValueShape::Zeroed(Zeroed::Empty) => Type::Unit,
             ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
         }
@@ -263,6 +276,10 @@ impl Emitter {
             ValueShape::Present(Present::FieldMask) => {
                 self.reference((CONNECT_JSON, "encodeFieldMask"))
             }
+            ValueShape::Present(Present::Struct) => self.reference((CONNECT_JSON, "encodeStruct")),
+            ValueShape::Present(Present::ListValue) => {
+                self.reference((CONNECT_JSON, "encodeListValue"))
+            }
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
@@ -281,6 +298,8 @@ impl Emitter {
             ValueShape::Present(Present::Timestamp) => self.reference((CONNECT_JSON, "timestamp")),
             ValueShape::Present(Present::Duration) => self.reference((CONNECT_JSON, "duration")),
             ValueShape::Present(Present::FieldMask) => self.reference((CONNECT_JSON, "fieldMask")),
+            ValueShape::Present(Present::Struct) => self.reference((CONNECT_JSON, "struct")),
+            ValueShape::Present(Present::ListValue) => self.reference((CONNECT_JSON, "listValue")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "empty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }

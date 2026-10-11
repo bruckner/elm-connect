@@ -86,3 +86,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   decoded by the new `Connect.Json.emptyMember` and `emptyMemberEither`
   (an object sets it; `null` is unset).
   Design §3.8 starts a list of dead ends.
+- `google.protobuf.Struct` is `Dict String Json.Encode.Value` and
+  `ListValue` is `List Json.Encode.Value`, with presence like any message
+  field (`Maybe` when singular). The runtime gains `Connect.Json.struct`,
+  `encodeStruct`, `listValue` and `encodeListValue`; the decoders fail on
+  JSON of the wrong shape. `Value` stays `Json.Encode.Value`.

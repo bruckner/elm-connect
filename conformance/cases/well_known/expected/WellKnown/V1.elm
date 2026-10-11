@@ -20,9 +20,9 @@ type alias Event =
     , timeout : Maybe Duration
     , updateMask : Maybe (List String)
     , marker : ()
-    , metadata : Json.Encode.Value
+    , metadata : Maybe (Dict String Json.Encode.Value)
     , payload : Json.Encode.Value
-    , items : Json.Encode.Value
+    , items : Maybe (List Json.Encode.Value)
     , ratio : Maybe Float
     , weight : Maybe Float
     , bigCount : Maybe String
@@ -40,6 +40,8 @@ type alias Event =
     , acked : ()
     , pings : List ()
     , seen : Dict String ()
+    , records : List (Dict String Json.Encode.Value)
+    , columns : Dict String (List Json.Encode.Value)
     }
 
 
@@ -48,6 +50,8 @@ type EventWhen
     | EventWhenAt Time.Posix
     | EventWhenAfter Duration
     | EventWhenWhenever Json.Encode.Value
+    | EventWhenSchedule (Dict String Json.Encode.Value)
+    | EventWhenDates (List Json.Encode.Value)
 
 
 
@@ -61,9 +65,9 @@ encodeEvent value =
          , ( "timeout", Connect.Json.encodeMaybe Connect.Json.encodeDuration value.timeout )
          , ( "updateMask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.updateMask )
          , ( "marker", Connect.Json.encodeEmpty value.marker )
-         , ( "metadata", value.metadata )
+         , ( "metadata", Connect.Json.encodeMaybe Connect.Json.encodeStruct value.metadata )
          , ( "payload", value.payload )
-         , ( "items", value.items )
+         , ( "items", Connect.Json.encodeMaybe Connect.Json.encodeListValue value.items )
          , ( "ratio", Connect.Json.encodeMaybe Connect.Json.encodeFloat value.ratio )
          , ( "weight", Connect.Json.encodeMaybe Connect.Json.encodeFloat value.weight )
          , ( "bigCount", Connect.Json.encodeMaybe Connect.Json.encodeInt64 value.bigCount )
@@ -80,6 +84,8 @@ encodeEvent value =
          , ( "acked", Connect.Json.encodeEmpty value.acked )
          , ( "pings", Json.Encode.list Connect.Json.encodeEmpty value.pings )
          , ( "seen", Json.Encode.dict identity Connect.Json.encodeEmpty value.seen )
+         , ( "records", Json.Encode.list Connect.Json.encodeStruct value.records )
+         , ( "columns", Json.Encode.dict identity Connect.Json.encodeListValue value.columns )
          ]
             ++ encodeEventWhen value.when
         )
@@ -100,6 +106,12 @@ encodeEventWhen value =
         EventWhenWhenever member ->
             [ ( "whenever", member ) ]
 
+        EventWhenSchedule member ->
+            [ ( "schedule", Connect.Json.encodeStruct member ) ]
+
+        EventWhenDates member ->
+            [ ( "dates", Connect.Json.encodeListValue member ) ]
+
 
 
 -- DECODERS
@@ -112,9 +124,9 @@ decodeEvent =
         |> Connect.Json.field "timeout" Nothing (Json.Decode.map Just Connect.Json.duration)
         |> Connect.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
         |> Connect.Json.field "marker" () Connect.Json.empty
-        |> Connect.Json.field "metadata" Json.Encode.null Json.Decode.value
+        |> Connect.Json.field "metadata" Nothing (Json.Decode.map Just Connect.Json.struct)
         |> Connect.Json.field "payload" Json.Encode.null Json.Decode.value
-        |> Connect.Json.field "items" Json.Encode.null Json.Decode.value
+        |> Connect.Json.field "items" Nothing (Json.Decode.map Just Connect.Json.listValue)
         |> Connect.Json.field "ratio" Nothing (Json.Decode.map Just Connect.Json.float)
         |> Connect.Json.field "weight" Nothing (Json.Decode.map Just Connect.Json.float)
         |> Connect.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Connect.Json.int64)
@@ -132,6 +144,8 @@ decodeEvent =
         |> Connect.Json.field "acked" () Connect.Json.empty
         |> Connect.Json.field "pings" [] (Json.Decode.list Connect.Json.empty)
         |> Connect.Json.field "seen" Dict.empty (Json.Decode.dict Connect.Json.empty)
+        |> Connect.Json.field "records" [] (Json.Decode.list Connect.Json.struct)
+        |> Connect.Json.field "columns" Dict.empty (Json.Decode.dict Connect.Json.listValue)
 
 
 decodeEventWhen : Json.Decode.Decoder EventWhen
@@ -140,5 +154,7 @@ decodeEventWhen =
         [ Connect.Json.member "at" (Json.Decode.map EventWhenAt Connect.Json.timestamp)
         , Connect.Json.member "after" (Json.Decode.map EventWhenAfter Connect.Json.duration)
         , Connect.Json.member "whenever" (Json.Decode.map EventWhenWhenever Json.Decode.value)
+        , Connect.Json.member "schedule" (Json.Decode.map EventWhenSchedule Connect.Json.struct)
+        , Connect.Json.member "dates" (Json.Decode.map EventWhenDates Connect.Json.listValue)
         , Json.Decode.succeed EventWhenUnset
         ]
