@@ -1,0 +1,221 @@
+module Connect.Duration exposing
+    ( Duration
+    , fromSeconds, seconds
+    , fromMilliseconds, milliseconds
+    , fromString, toString
+    )
+
+{-| `google.protobuf.Duration`: a signed span of time, exact to the
+nanosecond, between about -10,000 and 10,000 years.
+
+@docs Duration
+
+
+# Seconds
+
+@docs fromSeconds, seconds
+
+
+# Milliseconds
+
+@docs fromMilliseconds, milliseconds
+
+
+# proto3 JSON
+
+@docs fromString, toString
+
+-}
+
+
+{-| A duration, held as protobuf holds it: whole seconds and nanoseconds, both
+with the duration's sign. Two durations are `==` when they are the same span.
+-}
+type Duration
+    = Duration { seconds : Int, nanos : Int }
+
+
+{-| The duration of so many seconds, rounded to the nanosecond. Past 2^53
+nanoseconds (about 104 days) a `Float` holds fewer than nine decimal places, so
+the nanoseconds of a longer duration are only as exact as the `Float`.
+
+    fromSeconds 1.5 |> toString == "1.5s"
+
+-}
+fromSeconds : Float -> Duration
+fromSeconds value =
+    let
+        whole =
+            towardZero value
+    in
+    normalize whole (Basics.round ((value - toFloat whole) * 1.0e9))
+
+
+{-| The duration in seconds. Past 2^53 nanoseconds, as for
+[`fromSeconds`](#fromSeconds), the result is the nearest `Float`.
+-}
+seconds : Duration -> Float
+seconds (Duration parts) =
+    toFloat parts.seconds + toFloat parts.nanos / 1.0e9
+
+
+{-| The duration of so many milliseconds, exactly.
+-}
+fromMilliseconds : Int -> Duration
+fromMilliseconds value =
+    normalize (towardZero (toFloat value / 1000)) (remainderBy 1000 value * 1000000)
+
+
+{-| The duration in whole milliseconds, rounded toward zero, as
+`Process.sleep` and `Time.posixToMillis` count them.
+-}
+milliseconds : Duration -> Int
+milliseconds (Duration parts) =
+    parts.seconds * 1000 + towardZero (toFloat parts.nanos / 1.0e6)
+
+
+{-| Read a duration as proto3 JSON writes one: seconds with an optional
+fraction of up to nine digits, followed by `s`, such as `"1.5s"`, `"-0.25s"`
+or `"3s"`. Durations beyond ±315,576,000,000 seconds, protobuf's limit, are
+`Nothing`.
+
+    fromString "-1.5s" == Just (fromSeconds -1.5)
+
+-}
+fromString : String -> Maybe Duration
+fromString text =
+    let
+        ( negative, unsigned ) =
+            if String.startsWith "-" text then
+                ( True, String.dropLeft 1 text )
+
+            else
+                ( False, text )
+
+        sign value =
+            if negative then
+                negate value
+
+            else
+                value
+    in
+    if String.endsWith "s" unsigned then
+        case String.split "." (String.dropRight 1 unsigned) of
+            [ whole ] ->
+                Maybe.map (\s -> make (sign s) 0) (digits whole)
+                    |> Maybe.andThen identity
+
+            [ whole, fraction ] ->
+                if String.length fraction >= 1 && String.length fraction <= 9 then
+                    Maybe.map2 (\s n -> make (sign s) (sign n))
+                        (digits whole)
+                        (digits (String.padRight 9 '0' fraction))
+                        |> Maybe.andThen identity
+
+                else
+                    Nothing
+
+            _ ->
+                Nothing
+
+    else
+        Nothing
+
+
+{-| Write a duration as proto3 JSON does: seconds followed by `s`, with
+nothing, three, six or nine fractional digits, whichever is the fewest that
+keep every nanosecond.
+
+    toString (fromMilliseconds 1500) == "1.500s"
+
+    toString (fromSeconds -0.000001) == "-0.000001s"
+
+    toString (fromSeconds 0) == "0s"
+
+-}
+toString : Duration -> String
+toString (Duration parts) =
+    let
+        sign =
+            if parts.seconds < 0 || parts.nanos < 0 then
+                "-"
+
+            else
+                ""
+
+        nanos =
+            abs parts.nanos
+
+        fraction =
+            if nanos == 0 then
+                ""
+
+            else if remainderBy 1000000 nanos == 0 then
+                "." ++ String.padLeft 3 '0' (String.fromInt (nanos // 1000000))
+
+            else if remainderBy 1000 nanos == 0 then
+                "." ++ String.padLeft 6 '0' (String.fromInt (nanos // 1000))
+
+            else
+                "." ++ String.padLeft 9 '0' (String.fromInt nanos)
+    in
+    sign ++ String.fromInt (abs parts.seconds) ++ fraction ++ "s"
+
+
+
+-- INTERNAL
+
+
+{-| Seconds and nanoseconds of the same sign, if within protobuf's range.
+-}
+make : Int -> Int -> Maybe Duration
+make wholeSeconds nanos =
+    if abs wholeSeconds <= 315576000000 then
+        Just (Duration { seconds = wholeSeconds, nanos = nanos })
+
+    else
+        Nothing
+
+
+{-| Seconds and nanoseconds brought to the same sign, with `abs nanos` below
+one second.
+-}
+normalize : Int -> Int -> Duration
+normalize wholeSeconds nanos =
+    let
+        carried =
+            wholeSeconds + towardZero (toFloat nanos / 1.0e9)
+
+        rest =
+            remainderBy 1000000000 nanos
+    in
+    if carried > 0 && rest < 0 then
+        Duration { seconds = carried - 1, nanos = rest + 1000000000 }
+
+    else if carried < 0 && rest > 0 then
+        Duration { seconds = carried + 1, nanos = rest - 1000000000 }
+
+    else
+        Duration { seconds = carried, nanos = rest }
+
+
+{-| Elm's `truncate` works in 32 bits; this rounds toward zero at any size.
+-}
+towardZero : Float -> Int
+towardZero value =
+    if value < 0 then
+        ceiling value
+
+    else
+        floor value
+
+
+{-| A string of ASCII digits as a number; anything else is `Nothing`.
+-}
+digits : String -> Maybe Int
+digits text =
+    if not (String.isEmpty text) && String.all Char.isDigit text then
+        String.toInt text
+
+    else
+        Nothing

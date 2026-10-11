@@ -1,11 +1,13 @@
 module Connect.JsonTest exposing (suite)
 
+import Connect.Duration
 import Connect.Json
 import Dict
 import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Test exposing (Test, describe, test)
+import Time
 
 
 suite : Test
@@ -21,6 +23,7 @@ suite =
         , int64Tests
         , floatTests
         , bytesTests
+        , wellKnownTests
         ]
 
 
@@ -361,3 +364,42 @@ encodesTo : Json.Encode.Value -> String -> Expect.Expectation
 encodesTo value json =
     Json.Encode.encode 0 value
         |> Expect.equal json
+
+
+wellKnownTests : Test
+wellKnownTests =
+    describe "well-known types"
+        [ test "a timestamp" <|
+            \_ -> decodes Connect.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
+        , test "a malformed timestamp fails" <|
+            \_ -> fails Connect.Json.timestamp "\"yesterday\""
+        , test "a timestamp as a number fails" <|
+            \_ -> fails Connect.Json.timestamp "1500"
+        , test "encodes a timestamp" <|
+            \_ -> encodesTo (Connect.Json.encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
+        , test "a duration" <|
+            \_ -> decodes Connect.Json.duration "\"-1.5s\"" (Connect.Duration.fromSeconds -1.5)
+        , test "a malformed duration fails" <|
+            \_ -> fails Connect.Json.duration "\"1.5\""
+        , test "encodes a duration" <|
+            \_ -> encodesTo (Connect.Json.encodeDuration (Connect.Duration.fromSeconds 1.5)) "\"1.500s\""
+        , test "a field mask comes back with proto field names" <|
+            \_ ->
+                decodes Connect.Json.fieldMask
+                    "\"displayName,author.emailAddress,id\""
+                    [ "display_name", "author.email_address", "id" ]
+        , test "the empty field mask" <|
+            \_ -> decodes Connect.Json.fieldMask "\"\"" []
+        , test "encodes a field mask in lowerCamelCase" <|
+            \_ ->
+                encodesTo (Connect.Json.encodeFieldMask [ "display_name", "author.email_address" ])
+                    "\"displayName,author.emailAddress\""
+        , test "encodes the empty field mask" <|
+            \_ -> encodesTo (Connect.Json.encodeFieldMask []) "\"\""
+        , test "Empty is any object" <|
+            \_ -> decodes Connect.Json.empty """{"ignored":1}""" ()
+        , test "Empty is not an array" <|
+            \_ -> fails Connect.Json.empty "[]"
+        , test "encodes Empty as {}" <|
+            \_ -> encodesTo (Connect.Json.encodeEmpty ()) "{}"
+        ]

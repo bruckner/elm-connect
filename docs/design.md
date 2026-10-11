@@ -305,6 +305,38 @@ The in-house generator mapped `Timestamp` to `String` to avoid a
 dependency. With a runtime package required anyway (for the transports),
 the parser lives there and `Time.Posix` is the right type.
 
+Built as proposed, with these details *(each Proposed)*:
+
+- A field of `Timestamp`, `Duration`, `FieldMask` or `Empty` is a
+  message field, so a singular one is a `Maybe` (§3.2): `Maybe
+  Time.Posix`, `Maybe Duration`, `Maybe (List String)`, `Maybe ()`.
+  A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
+  `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
+- `Struct`, `Value` and `ListValue` fields are `Json.Encode.Value`
+  without `Maybe`: an absent field reads as `null`, and the value is
+  passed through as received (`Json.Decode.value`, written back as is).
+  A `Value` member of a oneof that arrives as `null` reads as unset,
+  like any other member, although proto3 JSON reads it as `NullValue`.
+- `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
+  of up to nine digits and `Z` or an offset, which is applied; years 1
+  to 9999. `Time.Posix` counts milliseconds, so finer digits are dropped
+  (toward the past) and a timestamp prints with no fraction or three
+  digits; protobuf's six and nine never arise. A leap second
+  (`23:59:60`), which proto3 JSON parsers must accept, is read as
+  `23:59:59` with its fraction.
+- `Duration` (`Connect.Duration`, opaque): held exactly, as seconds and
+  nanoseconds like protobuf, rather than as a `Float` of seconds. The
+  `Float` views (`fromSeconds`, `seconds`) are exact to the nanosecond
+  only below 2^53 ns (about 104 days); `fromMilliseconds` and
+  `milliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
+  digits, the fewest that keep every nanosecond, as protobuf does;
+  `-0s` reads as zero and prints `0s`. The range is protobuf's,
+  ±315,576,000,000 s.
+- `FieldMask`: the Elm list holds paths with proto field names
+  (`"author.email_address"`); the wire form joins them with commas and
+  writes each field name in lowerCamelCase, as proto3 JSON requires.
+- `Any` is the `types::any` diagnostic (`any_field` case).
+
 ### 3.6 Oneof
 
 *(Decided; see below.)* Two shapes were considered:

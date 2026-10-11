@@ -45,7 +45,7 @@ impl Emitter {
                 let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
                 tuple2(
                     string(field.json_name.clone()),
-                    call(self.field_encoder(value), [field_value]),
+                    self.encode_field(value, field_value),
                 )
             })
             .collect();
