@@ -589,9 +589,14 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 8. Compatibility and versioning
 
-- Elm 0.19.2 is the development target; 0.19.1 is checked in CI.
-  *(Decided.)* Decoders for messages with more than eight fields use the
-  runtime's pipeline helpers rather than `map8` chunking.
+- Elm 0.19.2 is the development target; 0.19.0 and 0.19.1 are checked
+  in CI. *(Decided.)* Built: a CI job per earlier release installs the
+  official Linux binary (checksum pinned) and runs
+  `conformance/compile-with.sh`, which compiles the runtime package (with
+  `--docs`) and every case's expected output against a copy of the
+  harness set to that release. Nothing the 0.19.2 output needs is refused
+  by 0.19.0 or 0.19.1 so far. Decoders for messages with more than eight
+  fields use the runtime's pipeline helpers rather than `map8` chunking.
 - Generated code states the runtime major it needs in a header comment;
   a mismatch surfaces as an Elm compile error against the runtime's
   types. Generator major == runtime major. *(Decided.)*

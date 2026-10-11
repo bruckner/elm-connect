@@ -46,6 +46,11 @@ elm-check:
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
 
+# Compile the runtime package and the conformance corpus with another Elm
+# compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).
+compile-with elm:
+    conformance/compile-with.sh {{elm}}
+
 # Rewrite the conformance corpus's expected output (modules, or
 # diagnostics.txt) to what the generator produces now. Review the diff
 # before committing it.
