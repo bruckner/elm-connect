@@ -102,3 +102,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   fails (`fieldEither` and every two-name helper). `member`,
   `memberEither`, `emptyMember` and `emptyMemberEither` now build a
   `Member` rather than a `Decoder`.
+- `map<bool, V>` fields are generated as `List ( Bool, V )`, encoded as
+  an object keyed `"true"` and `"false"` and decoded by the new
+  `Connect.Json.boolMap` (any other key fails), with
+  `Connect.Json.encodeBoolMap`. The `types::map_key` diagnostic and the
+  `map_bool_key` case are gone; the `maps` case covers a `bool` key.

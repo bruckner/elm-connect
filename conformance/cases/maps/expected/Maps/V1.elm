@@ -33,6 +33,7 @@ type alias Team =
     , counts : Dict String Int
     , members : Dict String Member
     , roles : Dict Int Role
+    , byFlag : List ( Bool, String )
     }
 
 
@@ -67,6 +68,7 @@ encodeTeam value =
         , ( "counts", Json.Encode.dict identity Json.Encode.int value.counts )
         , ( "members", Json.Encode.dict identity encodeMember value.members )
         , ( "roles", Json.Encode.dict String.fromInt encodeRole value.roles )
+        , ( "byFlag", Connect.Json.encodeBoolMap Json.Encode.string value.byFlag )
         ]
 
 
@@ -100,3 +102,4 @@ decodeTeam =
         |> Connect.Json.field "counts" Dict.empty (Json.Decode.dict Connect.Json.int32)
         |> Connect.Json.field "members" Dict.empty (Json.Decode.dict decodeMember)
         |> Connect.Json.field "roles" Dict.empty (Connect.Json.intDict decodeRole)
+        |> Connect.Json.fieldEither "byFlag" "by_flag" [] (Connect.Json.boolMap Json.Decode.string)

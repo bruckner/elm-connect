@@ -4,7 +4,7 @@ module Connect.Json exposing
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , enum
-    , intDict
+    , intDict, boolMap, encodeBoolMap
     , int32, uint32
     , int64, encodeInt64
     , int64AsInt, encodeInt64AsInt
@@ -47,7 +47,7 @@ The module name is provisional and may change before the first release.
 
 # Maps
 
-@docs intDict
+@docs intDict, boolMap, encodeBoolMap
 
 
 # 32-bit integers
@@ -488,6 +488,78 @@ fromKeyResult result =
 
         Err key ->
             Json.Decode.fail ("Expecting an integer map key, but got \"" ++ key ++ "\"")
+
+
+{-| Decode a map with `bool` keys as an association list, since Elm's `Bool`
+is not `comparable` and so cannot key a `Dict`. proto3 JSON writes each key as
+`"true"` or `"false"`; any other key fails. The pairs come in the object's key
+order, and a map has at most two.
+
+    Json.Decode.decodeString (boolMap Json.Decode.string) """{"true":"on","false":"off"}"""
+    -- Ok [ ( True, "on" ), ( False, "off" ) ]
+
+-}
+boolMap : Decoder a -> Decoder (List ( Bool, a ))
+boolMap decoder =
+    Json.Decode.keyValuePairs decoder
+        |> Json.Decode.andThen
+            (\pairs ->
+                List.foldr
+                    (\( key, value ) result ->
+                        Result.map2 (\bool rest -> ( bool, value ) :: rest)
+                            (boolKey key)
+                            result
+                    )
+                    (Ok [])
+                    pairs
+                    |> fromResult
+            )
+
+
+boolKey : String -> Result String Bool
+boolKey key =
+    case key of
+        "true" ->
+            Ok True
+
+        "false" ->
+            Ok False
+
+        _ ->
+            Err ("Expecting a bool map key (\"true\" or \"false\"), but got \"" ++ key ++ "\"")
+
+
+fromResult : Result String a -> Decoder a
+fromResult result =
+    case result of
+        Ok value ->
+            Json.Decode.succeed value
+
+        Err problem ->
+            Json.Decode.fail problem
+
+
+{-| Encode a map with `bool` keys, held as an association list, as a JSON
+object keyed `"true"` and `"false"`. When a key appears twice, the later pair
+is the one a parser keeps.
+
+    encodeBoolMap Json.Encode.string [ ( True, "on" ) ] -- {"true":"on"}
+
+-}
+encodeBoolMap : (a -> Value) -> List ( Bool, a ) -> Value
+encodeBoolMap encode pairs =
+    pairs
+        |> List.map
+            (\( key, value ) ->
+                ( if key then
+                    "true"
+
+                  else
+                    "false"
+                , encode value
+                )
+            )
+        |> Json.Encode.object
 
 
 {-| Decode a signed 32-bit integer (`int32`, `sint32`, `sfixed32`).

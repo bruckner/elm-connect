@@ -38,7 +38,10 @@
 //!   option either way.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
+//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`. A map
+//!   with `bool` keys, which Elm cannot put in a `Dict`, is a
+//!   `List ( Bool, v )` read and written by `Connect.Json.boolMap` and
+//!   `encodeBoolMap`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Connect.Json.enum`
 //!   decoder that reads a name or a number, an unknown one as the zero
