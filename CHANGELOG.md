@@ -56,3 +56,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   (`packages_cycle`). A case may now hold an `include/` directory of protos
   that are imported but not generated. Rendered diagnostics carry no
   trailing whitespace.
+- The `naming` conformance case (reserved-word fields and oneofs, a
+  `json_name` override, enum values with and without the conventional
+  prefix and with digits) and the `naming_collision` diagnostics case.

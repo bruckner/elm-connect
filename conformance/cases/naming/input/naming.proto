@@ -1,0 +1,42 @@
+// The naming rules of design section 3.7.
+syntax = "proto3";
+
+package naming.v1;
+
+// Values with the conventional prefix lose it; values without it gain
+// the enum's name; digits stay as written.
+enum Shape {
+  SHAPE_UNSPECIFIED = 0;
+  SHAPE_2D = 1;
+  CUBE = 2;
+  SHAPE_V3_MESH = 3;
+}
+
+// A multi-word enum name: its prefix is matched word by word.
+enum HttpMethod {
+  HTTP_METHOD_UNSPECIFIED = 0;
+  HTTP_METHOD_GET = 1;
+  POST = 2;
+}
+
+message Tag {
+  // Elm reserved words gain a trailing underscore; the wire keeps the
+  // proto name.
+  string type = 1;
+  bool if = 2;
+  int32 port = 3;
+  // A word Elm does not reserve keeps its name.
+  string alias = 4;
+  // `json_name` changes the wire name only.
+  string display_name = 5 [json_name = "screenName"];
+  // Digits and acronyms are cased as written.
+  string http_url = 6;
+  int32 v2_count = 7;
+  Shape shape = 8;
+  HttpMethod method = 9;
+  // A oneof named by a reserved word, with reserved-word members.
+  oneof case {
+    string then = 10;
+    int32 of = 11;
+  }
+}
