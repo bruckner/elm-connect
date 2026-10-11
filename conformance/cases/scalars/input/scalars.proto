@@ -1,4 +1,5 @@
 // Every proto3 scalar type, singular, and a message with no fields.
+// 64-bit integers are Strings by default (design §3.4).
 syntax = "proto3";
 
 package scalars.v1;
@@ -20,6 +21,10 @@ message Scalars {
   // An explicit json_name changes the wire name, never the Elm name.
   string string_value = 14 [json_name = "text"];
   bytes bytes_value = 15;
+  // jstype overrides the int64 option per field: JS_NUMBER makes an Int
+  // decoded within ±(2^53 − 1), JS_STRING (the default here) a String.
+  int64 small_count = 16 [jstype = JS_NUMBER];
+  uint64 exact_total = 17 [jstype = JS_STRING];
 }
 
 message Empty {}

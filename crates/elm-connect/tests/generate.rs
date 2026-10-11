@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use elm_connect_gen::Options;
 use miette::{GraphicalReportHandler, GraphicalTheme};
 
 fn scalars_case() -> PathBuf {
@@ -13,8 +14,12 @@ fn scalars_case() -> PathBuf {
 #[test]
 fn scalars_case_generates_its_expected_output() {
     let case = scalars_case();
-    let generated = elm_connect::generate(&[PathBuf::from("scalars.proto")], &[case.join("input")])
-        .unwrap_or_else(|report| panic!("{report:?}"));
+    let generated = elm_connect::generate(
+        &[PathBuf::from("scalars.proto")],
+        &[case.join("input")],
+        &Options::default(),
+    )
+    .unwrap_or_else(|report| panic!("{report:?}"));
     let out = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-scalars");
     let _ = fs::remove_dir_all(&out);
     let written = elm_connect::write(&generated, &out).expect("write the output");
@@ -39,8 +44,9 @@ fn problems_render_against_the_proto_source() {
          oneof displayName {\n    string text = 2;\n  }\n}\n",
     )
     .expect("write the input");
-    let report = elm_connect::generate(&[PathBuf::from("clash.proto")], &[dir])
-        .expect_err("two fields become `displayName`");
+    let report =
+        elm_connect::generate(&[PathBuf::from("clash.proto")], &[dir], &Options::default())
+            .expect_err("two fields become `displayName`");
     let mut rendered = String::new();
     GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor())
         .with_width(80)

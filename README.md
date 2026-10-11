@@ -49,6 +49,17 @@ enums and oneofs. Services are not generated yet. The runtime package
 holds the JSON helpers those codecs call and the timestamp and duration
 types.
 
+## Options
+
+Both binaries take the same options: the protoc plugin as
+`--elm-connect_opt=key=value,key=value`, the CLI as flags.
+
+| Option | CLI flag | Values | Effect |
+|---|---|---|---|
+| `int64` | `--int64` | `string` (default), `int` | How 64-bit integers are held. `string` is exact; `int` gives Elm `Int`s, and a value outside ±(2^53 − 1) fails to decode. A field's `jstype` option (`JS_NUMBER`, `JS_STRING`) overrides it. |
+
+[`docs/design.md`](docs/design.md) §3.4 has the details.
+
 ## Developing
 
 ```sh

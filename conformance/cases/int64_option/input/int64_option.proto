@@ -1,0 +1,30 @@
+// Generated with the `int64=int` option (options.txt): 64-bit integers are
+// Elm Ints, decoded only within ±(2^53 − 1) and encoded as decimal
+// strings, wherever they appear, unless a field's jstype says otherwise.
+syntax = "proto3";
+
+package int64_option.v1;
+
+import "google/protobuf/wrappers.proto";
+
+message Counters {
+  int64 int64_value = 1;
+  uint64 uint64_value = 2;
+  sint64 sint64_value = 3;
+  fixed64 fixed64_value = 4;
+  sfixed64 sfixed64_value = 5;
+  // JS_STRING keeps a field a String under the option.
+  int64 exact_id = 6 [jstype = JS_STRING];
+  // JS_NORMAL defers to the option.
+  int64 normal = 7 [jstype = JS_NORMAL];
+  optional int64 maybe_count = 8;
+  repeated int64 samples = 9;
+  repeated uint64 exact_samples = 10 [jstype = JS_STRING];
+  // Map keys stay strings, whatever the option; values follow it.
+  map<int64, int64> by_id = 11;
+  google.protobuf.Int64Value wrapped = 12;
+  oneof limit {
+    int64 at_most = 13;
+    int64 exactly = 14 [jstype = JS_STRING];
+  }
+}

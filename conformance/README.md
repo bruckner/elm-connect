@@ -5,6 +5,8 @@ The conformance corpus pins what the generator emits (`docs/design.md`
 
 ```
 cases/<case>/
+  options.txt            optional: the generator's options, as a protoc
+                         plugin parameter on one line (`int64=int`)
   input/                 .proto files; all of them are compiled and generated
   include/               optional: .proto files the input may import, which
                          are compiled but not generated
@@ -17,7 +19,8 @@ cases/<case>/
 A case expects either modules or `diagnostics.txt`, never both. Inputs are
 compiled with protox, with `input/` and `include/` as the include paths,
 and every file under `input/` is in the generate set; nothing under
-`include/` is.
+`include/` is. Without `options.txt` a case is generated with the default
+options.
 
 ## The checks
 

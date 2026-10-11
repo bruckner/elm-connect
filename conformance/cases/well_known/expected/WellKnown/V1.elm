@@ -114,7 +114,7 @@ decodeEvent =
         |> Connect.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Connect.Json.int64)
         |> Connect.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Connect.Json.int64)
         |> Connect.Json.field "count" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.field "total" Nothing (Json.Decode.map Just Connect.Json.int32)
+        |> Connect.Json.field "total" Nothing (Json.Decode.map Just Connect.Json.uint32)
         |> Connect.Json.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Connect.Json.field "nickname" Nothing (Json.Decode.map Just Json.Decode.string)
         |> Connect.Json.field "avatar" Nothing (Json.Decode.map Just Connect.Json.bytes)

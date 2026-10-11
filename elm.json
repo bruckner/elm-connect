@@ -6,6 +6,7 @@
     "version": "1.0.0",
     "exposed-modules": [
         "Connect.Json",
+        "Connect.Int64",
         "Connect.Duration",
         "Connect.Timestamp"
     ],

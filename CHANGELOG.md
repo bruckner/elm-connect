@@ -66,3 +66,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   (`just zizmor`).
 - The gate scans the commit history for secrets with gitleaks
   (`just gitleaks`).
+- The `int64` option (`--elm-connect_opt=int64=int`, `elm-connect gen
+  --int64 int`): 64-bit integers become `Int`, decoded only within
+  ±(2^53 − 1) (`Connect.Json.int64AsInt`) and encoded as decimal strings
+  (`Connect.Json.encodeInt64AsInt`). A field's `jstype` option overrides
+  it either way. The runtime gains `Connect.Int64` (`toInt`, `fromInt`).
+  The `int64_option` conformance case; a case may set options in
+  `options.txt`.
+- 32-bit integer decoders check the proto type's range:
+  `Connect.Json.int32` fails outside −2^31 to 2^31 − 1, and the new
+  `Connect.Json.uint32` (for `uint32` and `fixed32`) outside 0 to
+  2^32 − 1.

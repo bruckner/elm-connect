@@ -28,6 +28,8 @@ type alias Scalars =
     , boolValue : Bool
     , stringValue : String
     , bytesValue : String
+    , smallCount : Int
+    , exactTotal : String
     }
 
 
@@ -57,6 +59,8 @@ encodeScalars value =
         , ( "boolValue", Json.Encode.bool value.boolValue )
         , ( "text", Json.Encode.string value.stringValue )
         , ( "bytesValue", Connect.Json.encodeBytes value.bytesValue )
+        , ( "smallCount", Connect.Json.encodeInt64AsInt value.smallCount )
+        , ( "exactTotal", Connect.Json.encodeInt64 value.exactTotal )
         ]
 
 
@@ -76,17 +80,19 @@ decodeScalars =
         |> Connect.Json.fieldEither "floatValue" "float_value" 0.0 Connect.Json.float
         |> Connect.Json.fieldEither "int32Value" "int32_value" 0 Connect.Json.int32
         |> Connect.Json.fieldEither "int64Value" "int64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "uint32Value" "uint32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "uint32Value" "uint32_value" 0 Connect.Json.uint32
         |> Connect.Json.fieldEither "uint64Value" "uint64_value" "0" Connect.Json.int64
         |> Connect.Json.fieldEither "sint32Value" "sint32_value" 0 Connect.Json.int32
         |> Connect.Json.fieldEither "sint64Value" "sint64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "fixed32Value" "fixed32_value" 0 Connect.Json.int32
+        |> Connect.Json.fieldEither "fixed32Value" "fixed32_value" 0 Connect.Json.uint32
         |> Connect.Json.fieldEither "fixed64Value" "fixed64_value" "0" Connect.Json.int64
         |> Connect.Json.fieldEither "sfixed32Value" "sfixed32_value" 0 Connect.Json.int32
         |> Connect.Json.fieldEither "sfixed64Value" "sfixed64_value" "0" Connect.Json.int64
         |> Connect.Json.fieldEither "boolValue" "bool_value" False Json.Decode.bool
         |> Connect.Json.fieldEither "text" "string_value" "" Json.Decode.string
         |> Connect.Json.fieldEither "bytesValue" "bytes_value" "" Connect.Json.bytes
+        |> Connect.Json.fieldEither "smallCount" "small_count" 0 Connect.Json.int64AsInt
+        |> Connect.Json.fieldEither "exactTotal" "exact_total" "0" Connect.Json.int64
 
 
 decodeEmpty : Json.Decode.Decoder Empty

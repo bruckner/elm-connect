@@ -4,8 +4,9 @@ module Connect.Json exposing
     , oneof, member, memberEither
     , enum
     , intDict
-    , int32
+    , int32, uint32
     , int64, encodeInt64
+    , int64AsInt, encodeInt64AsInt
     , float, encodeFloat
     , bytes, encodeBytes
     , timestamp, encodeTimestamp
@@ -47,12 +48,19 @@ The module name is provisional and may change before the first release.
 
 # 32-bit integers
 
-@docs int32
+Encode them with `Json.Encode.int`.
+
+@docs int32, uint32
 
 
 # 64-bit integers
 
+By default a 64-bit integer is held as its decimal string. Code generated with
+the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
+`Int` instead.
+
 @docs int64, encodeInt64
+@docs int64AsInt, encodeInt64AsInt
 
 
 # Floating point
@@ -79,6 +87,7 @@ Struct, Value and ListValue need no helpers: they are JSON, held as a
 -}
 
 import Connect.Duration exposing (Duration)
+import Connect.Int64
 import Connect.Timestamp
 import Dict
 import Json.Decode exposing (Decoder)
@@ -327,45 +336,100 @@ fromKeyResult result =
             Json.Decode.fail ("Expecting an integer map key, but got \"" ++ key ++ "\"")
 
 
-{-| Decode a 32-bit integer (`int32`, `uint32`, `sint32`, `fixed32`,
-`sfixed32`).
+{-| Decode a signed 32-bit integer (`int32`, `sint32`, `sfixed32`).
 
 proto3 JSON writes these as numbers, and a parser must also accept a string
 and exponent notation: `42`, `"42"`, `1e2` and `"1e2"` all decode, as does
-`4.0`. A value with a fractional part fails. The range of the proto type is not
-checked.
+`4.0`. A value with a fractional part fails, and so does one outside the
+type's range, -2147483648 to 2147483647.
 
 -}
 int32 : Decoder Int
 int32 =
+    boundedInt "an int32 (-2147483648 to 2147483647)" -2147483648 2147483647
+
+
+{-| Decode an unsigned 32-bit integer (`uint32`, `fixed32`): the forms
+[`int32`](#int32) accepts, within 0 to 4294967295.
+-}
+uint32 : Decoder Int
+uint32 =
+    boundedInt "a uint32 (0 to 4294967295)" 0 4294967295
+
+
+{-| A JSON number, or a JSON string that should hold one.
+-}
+type Numeric
+    = NumberForm Float
+    | StringForm String
+
+
+numeric : Decoder Numeric
+numeric =
     Json.Decode.oneOf
-        [ Json.Decode.int
-        , Json.Decode.string |> Json.Decode.andThen int32String
+        [ Json.Decode.map NumberForm Json.Decode.float
+        , Json.Decode.map StringForm Json.Decode.string
         ]
 
 
-int32String : String -> Decoder Int
-int32String text =
-    case String.toInt text of
-        Just number ->
-            Json.Decode.succeed number
+showNumeric : Numeric -> String
+showNumeric form =
+    case form of
+        NumberForm number ->
+            String.fromFloat number
+
+        StringForm text ->
+            "\"" ++ text ++ "\""
+
+
+{-| An integer in any form proto3 JSON allows for one, within `low` to
+`high`; the bounds are compared as `Float`s, which hold them exactly.
+-}
+boundedInt : String -> Float -> Float -> Decoder Int
+boundedInt what low high =
+    numeric
+        |> Json.Decode.andThen
+            (\form ->
+                case integral form of
+                    Err problem ->
+                        Json.Decode.fail problem
+
+                    Ok number ->
+                        if number < low || number > high then
+                            Json.Decode.fail ("Expecting " ++ what ++ ", but got " ++ showNumeric form)
+
+                        else
+                            Json.Decode.succeed (round number)
+            )
+
+
+{-| The integral value of a number, or of a string holding one in decimal or
+exponent notation.
+-}
+integral : Numeric -> Result String Float
+integral form =
+    let
+        number =
+            case form of
+                NumberForm value ->
+                    Just value
+
+                StringForm text ->
+                    String.toFloat text
+
+        notInteger =
+            Err ("Expecting an integer, but got " ++ showNumeric form)
+    in
+    case number of
+        Just value ->
+            if isNaN value || isInfinite value || toFloat (round value) /= value then
+                notInteger
+
+            else
+                Ok value
 
         Nothing ->
-            case String.toFloat text of
-                Just number ->
-                    integral number
-
-                Nothing ->
-                    Json.Decode.fail ("Expecting an integer, but got \"" ++ text ++ "\"")
-
-
-integral : Float -> Decoder Int
-integral number =
-    if isNaN number || isInfinite number || toFloat (round number) /= number then
-        Json.Decode.fail ("Expecting an integer, but got " ++ String.fromFloat number)
-
-    else
-        Json.Decode.succeed (round number)
+            notInteger
 
 
 {-| Decode a 64-bit integer (`int64`, `uint64`, `sint64`, `fixed64`,
@@ -388,6 +452,15 @@ int64 =
 
 decimal : String -> Decoder String
 decimal text =
+    if isDecimal text then
+        Json.Decode.succeed text
+
+    else
+        Json.Decode.fail ("Expecting a decimal integer, but got \"" ++ text ++ "\"")
+
+
+isDecimal : String -> Bool
+isDecimal text =
     let
         digits =
             if String.startsWith "-" text then
@@ -396,11 +469,7 @@ decimal text =
             else
                 text
     in
-    if not (String.isEmpty digits) && String.all Char.isDigit digits then
-        Json.Decode.succeed text
-
-    else
-        Json.Decode.fail ("Expecting a decimal integer, but got \"" ++ text ++ "\"")
+    not (String.isEmpty digits) && String.all Char.isDigit digits
 
 
 {-| Encode a 64-bit integer, held as its decimal string, as proto3 JSON does:
@@ -409,6 +478,68 @@ as a JSON string.
 encodeInt64 : String -> Value
 encodeInt64 =
     Json.Encode.string
+
+
+{-| Decode a 64-bit integer as an `Int`, for code generated with the
+`int64=int` option or for a field marked `[jstype = JS_NUMBER]`.
+
+It accepts a JSON number or a decimal string, as proto3 JSON requires, and
+fails on a value that is not an integer or lies outside ±9007199254740991,
+where Elm's `Int` stops being exact; see
+[`Connect.Int64.toInt`](Connect-Int64#toInt). A number past that range was
+already rounded when the JSON was parsed, and fails too.
+
+-}
+int64AsInt : Decoder Int
+int64AsInt =
+    numeric |> Json.Decode.andThen int64Form
+
+
+int64Form : Numeric -> Decoder Int
+int64Form form =
+    let
+        outOfRange =
+            Json.Decode.fail
+                ("Expecting an integer from -9007199254740991 to 9007199254740991, "
+                    ++ "the 64-bit integers an Elm Int holds exactly, but got "
+                    ++ showNumeric form
+                )
+    in
+    case form of
+        NumberForm number ->
+            case integral form of
+                Err problem ->
+                    Json.Decode.fail problem
+
+                Ok _ ->
+                    if abs number > 9007199254740991 then
+                        outOfRange
+
+                    else
+                        Json.Decode.succeed (round number)
+
+        StringForm text ->
+            if isDecimal text then
+                case Connect.Int64.toInt text of
+                    Just int ->
+                        Json.Decode.succeed int
+
+                    Nothing ->
+                        outOfRange
+
+            else
+                Json.Decode.fail ("Expecting a decimal integer, but got \"" ++ text ++ "\"")
+
+
+{-| Encode a 64-bit integer held as an `Int` as proto3 JSON writes one: its
+decimal string, as a JSON string.
+
+    encodeInt64AsInt 42 -- "42"
+
+-}
+encodeInt64AsInt : Int -> Value
+encodeInt64AsInt int =
+    Json.Encode.string (Connect.Int64.fromInt int)
 
 
 {-| Decode a `double` or `float`. proto3 JSON writes a finite value as a

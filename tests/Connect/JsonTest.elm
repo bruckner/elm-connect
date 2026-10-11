@@ -20,7 +20,9 @@ suite =
         , enumTests
         , intDictTests
         , int32Tests
+        , uint32Tests
         , int64Tests
+        , int64AsIntTests
         , floatTests
         , bytesTests
         , wellKnownTests
@@ -285,6 +287,50 @@ int32Tests =
             \_ -> fails Connect.Json.int32 "\"Infinity\""
         , test "a boolean fails" <|
             \_ -> fails Connect.Json.int32 "true"
+        , test "the bounds decode" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.int32 "2147483647" 2147483647
+                    , \_ -> decodes Connect.Json.int32 "-2147483648" -2147483648
+                    , \_ -> decodes Connect.Json.int32 "\"-2147483648\"" -2147483648
+                    ]
+                    ()
+        , test "past the upper bound fails" <|
+            \_ -> fails Connect.Json.int32 "2147483648"
+        , test "past the lower bound fails" <|
+            \_ -> fails Connect.Json.int32 "\"-2147483649\""
+        , test "a huge number fails" <|
+            \_ -> fails Connect.Json.int32 "1e30"
+        , test "says why it fails" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.int32 "2147483648"
+                    |> Result.mapError Json.Decode.errorToString
+                    |> Result.mapError (String.contains "Expecting an int32 (-2147483648 to 2147483647), but got 2147483648")
+                    |> Expect.equal (Err True)
+        ]
+
+
+uint32Tests : Test
+uint32Tests =
+    describe "uint32"
+        [ test "a number" <|
+            \_ -> decodes Connect.Json.uint32 "42" 42
+        , test "a string" <|
+            \_ -> decodes Connect.Json.uint32 "\"42\"" 42
+        , test "the bounds decode" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.uint32 "0" 0
+                    , \_ -> decodes Connect.Json.uint32 "4294967295" 4294967295
+                    , \_ -> decodes Connect.Json.uint32 "\"4294967295\"" 4294967295
+                    ]
+                    ()
+        , test "a negative number fails" <|
+            \_ -> fails Connect.Json.uint32 "-1"
+        , test "past the upper bound fails" <|
+            \_ -> fails Connect.Json.uint32 "4294967296"
+        , test "a fractional number fails" <|
+            \_ -> fails Connect.Json.uint32 "1.5"
         ]
 
 
@@ -312,6 +358,50 @@ int64Tests =
                 Connect.Json.encodeInt64 "9007199254740993"
                     |> Json.Encode.encode 0
                     |> Expect.equal "\"9007199254740993\""
+        ]
+
+
+int64AsIntTests : Test
+int64AsIntTests =
+    describe "int64AsInt"
+        [ test "a number" <|
+            \_ -> decodes Connect.Json.int64AsInt "42" 42
+        , test "a string" <|
+            \_ -> decodes Connect.Json.int64AsInt "\"-42\"" -42
+        , test "the largest exact Int, as a string and a number" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.int64AsInt "\"9007199254740991\"" 9007199254740991
+                    , \_ -> decodes Connect.Json.int64AsInt "9007199254740991" 9007199254740991
+                    , \_ -> decodes Connect.Json.int64AsInt "\"-9007199254740991\"" -9007199254740991
+                    , \_ -> decodes Connect.Json.int64AsInt "-9007199254740991" -9007199254740991
+                    ]
+                    ()
+        , test "2^53 as a string fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"9007199254740992\""
+        , test "2^53 as a number fails" <|
+            \_ -> fails Connect.Json.int64AsInt "9007199254740992"
+        , test "-2^53 fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"-9007199254740992\""
+        , test "a fractional number fails" <|
+            \_ -> fails Connect.Json.int64AsInt "4.5"
+        , test "a string in exponent notation fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"1e3\""
+        , test "an empty string fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"\""
+        , test "a boolean fails" <|
+            \_ -> fails Connect.Json.int64AsInt "true"
+        , test "says why it fails" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.int64AsInt "\"9007199254740992\""
+                    |> Result.mapError Json.Decode.errorToString
+                    |> Result.mapError (String.contains "Expecting an integer from -9007199254740991 to 9007199254740991, the 64-bit integers an Elm Int holds exactly, but got \"9007199254740992\"")
+                    |> Expect.equal (Err True)
+        , test "encodes as a decimal string" <|
+            \_ ->
+                Connect.Json.encodeInt64AsInt -9007199254740991
+                    |> Json.Encode.encode 0
+                    |> Expect.equal "\"-9007199254740991\""
         ]
 
 
