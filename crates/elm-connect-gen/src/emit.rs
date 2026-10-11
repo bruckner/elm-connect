@@ -527,10 +527,17 @@ mod tests {
             proto_name: name.into(),
             number,
             elm_ctor: name.into(),
+            aliases: Vec::new(),
         };
         enums_only.enums.push(
-            crate::ir::Enum::new("t.v1.E".into(), "E".into(), value("EZero", 0), Vec::new())
-                .expect("zero first"),
+            crate::ir::Enum::new(
+                "t.v1.E".into(),
+                "E".into(),
+                "E".into(),
+                value("EZero", 0),
+                Vec::new(),
+            )
+            .expect("zero first"),
         );
         assert_eq!(sections(&enums_only), ["TYPES", "ENCODERS", "DECODERS"]);
     }

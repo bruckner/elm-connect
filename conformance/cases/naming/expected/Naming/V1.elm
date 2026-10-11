@@ -133,7 +133,8 @@ encodeTagCase value =
 
 decodeShape : Json.Decode.Decoder Shape
 decodeShape =
-    Connect.Json.enum ShapeUnspecified
+    Connect.Json.enum "Shape"
+        ShapeUnspecified
         [ ( "SHAPE_UNSPECIFIED", 0, ShapeUnspecified )
         , ( "SHAPE_2D", 1, Shape2d )
         , ( "CUBE", 2, ShapeCube )
@@ -143,7 +144,8 @@ decodeShape =
 
 decodeHttpMethod : Json.Decode.Decoder HttpMethod
 decodeHttpMethod =
-    Connect.Json.enum HttpMethodUnspecified
+    Connect.Json.enum "HttpMethod"
+        HttpMethodUnspecified
         [ ( "HTTP_METHOD_UNSPECIFIED", 0, HttpMethodUnspecified )
         , ( "HTTP_METHOD_GET", 1, HttpMethodGet )
         , ( "POST", 2, HttpMethodPost )

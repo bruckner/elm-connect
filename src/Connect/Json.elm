@@ -416,11 +416,14 @@ valueMemberEither jsonName protoName constructor =
         }
 
 
-{-| Decode an enum, given its zero value and every value's proto name,
-number and constructor. proto3 JSON writes an enum as its value's name, and a
-parser must also accept the number. A name or number the table does not hold,
-such as a value added to the server's proto after this client was generated,
-decodes as the zero value.
+{-| Decode an enum, given its proto name, its zero value and a row per value
+name: the name, its number and its constructor. proto3 JSON writes an enum as
+its value's name, and a parser must also accept the number.
+
+A number the rows do not hold, such as one added to the server's proto after
+this client was generated, decodes as the zero value. A name the rows do not
+hold fails, as protobuf's own parsers do:
+`Expecting a value of enum "Status", but got "STATUS_PAUSED"`.
 
     type Status
         = StatusUnspecified
@@ -428,30 +431,47 @@ decodes as the zero value.
 
     decodeStatus : Decoder Status
     decodeStatus =
-        enum StatusUnspecified
+        enum "Status"
+            StatusUnspecified
             [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
             , ( "STATUS_ACTIVE", 1, StatusActive )
+            , ( "STATUS_LIVE", 1, StatusActive )
             ]
 
-When two entries share a name or a number, the first wins.
+An alias (`allow_alias`) is a second row for the same constructor, so both
+names decode to it. When two rows share a name or a number, the first wins.
 
 -}
-enum : a -> List ( String, Int, a ) -> Decoder a
-enum zero values =
+enum : String -> a -> List ( String, Int, a ) -> Decoder a
+enum enumName zero values =
     let
         lookup matches =
             values
                 |> List.filter matches
                 |> List.head
                 |> Maybe.map (\( _, _, value ) -> value)
-                |> Maybe.withDefault zero
     in
     Json.Decode.oneOf
-        [ Json.Decode.string
-            |> Json.Decode.map (\text -> lookup (\( name, _, _ ) -> name == text))
-        , Json.Decode.int
-            |> Json.Decode.map (\int -> lookup (\( _, number, _ ) -> number == int))
+        [ Json.Decode.map Ok Json.Decode.string
+        , Json.Decode.map Err Json.Decode.int
         ]
+        |> Json.Decode.andThen
+            (\form ->
+                case form of
+                    Ok text ->
+                        case lookup (\( name, _, _ ) -> name == text) of
+                            Just value ->
+                                Json.Decode.succeed value
+
+                            Nothing ->
+                                Json.Decode.fail
+                                    ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ quote text)
+
+                    Err int ->
+                        lookup (\( _, number, _ ) -> number == int)
+                            |> Maybe.withDefault zero
+                            |> Json.Decode.succeed
+            )
 
 
 {-| Decode a map with 32-bit integer keys. JSON object keys are strings, so

@@ -174,7 +174,8 @@ encodeChoiceValue value =
 
 decodeColor : Json.Decode.Decoder Color
 decodeColor =
-    Connect.Json.enum ColorUnspecified
+    Connect.Json.enum "Color"
+        ColorUnspecified
         [ ( "COLOR_UNSPECIFIED", 0, ColorUnspecified )
         , ( "COLOR_RED", 1, ColorRed )
         ]

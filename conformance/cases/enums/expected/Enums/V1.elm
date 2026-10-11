@@ -22,7 +22,6 @@ type Priority
     = PriorityNone
     | PriorityLow
     | PriorityHigh
-    | PriorityUrgent
     | PriorityBelowZero
 
 
@@ -76,9 +75,6 @@ encodePriority value =
         PriorityHigh ->
             Json.Encode.string "HIGH"
 
-        PriorityUrgent ->
-            Json.Encode.string "URGENT"
-
         PriorityBelowZero ->
             Json.Encode.string "BELOW_ZERO"
 
@@ -99,7 +95,8 @@ encodeTask value =
 
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
-    Connect.Json.enum StatusUnspecified
+    Connect.Json.enum "Status"
+        StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
         , ( "STATUS_ARCHIVED", 2, StatusArchived )
@@ -108,11 +105,14 @@ decodeStatus =
 
 decodePriority : Json.Decode.Decoder Priority
 decodePriority =
-    Connect.Json.enum PriorityNone
+    Connect.Json.enum "Priority"
+        PriorityNone
         [ ( "NONE", 0, PriorityNone )
+        , ( "UNSET", 0, PriorityNone )
         , ( "LOW", 1, PriorityLow )
+        , ( "PRIORITY_LOW", 1, PriorityLow )
         , ( "HIGH", 2, PriorityHigh )
-        , ( "URGENT", 2, PriorityUrgent )
+        , ( "URGENT", 2, PriorityHigh )
         , ( "BELOW_ZERO", -1, PriorityBelowZero )
         ]
 
