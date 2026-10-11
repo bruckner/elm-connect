@@ -4,7 +4,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use prost_reflect::{
-    DescriptorPool, EnumDescriptor, FieldDescriptor, FileDescriptor, Kind, MessageDescriptor,
+    DescriptorPool, EnumDescriptor, EnumValueDescriptor, FieldDescriptor, FileDescriptor, Kind,
+    MessageDescriptor,
 };
 
 use super::graph::strongly_connected;
@@ -314,7 +315,7 @@ impl Builder {
         self.claim_type(types, package, &elm_name, origin);
 
         let mut values = Vec::new();
-        for value in enumeration.values() {
+        for value in declared_values(enumeration) {
             let elm_ctor = naming::enum_constructor(&elm_name, enumeration.name(), value.name());
             let what = format!("enum value `{}`", value.name());
             let origin = self.origin(file, value.path(), tag::ENUM_VALUE_NAME, what);
@@ -521,7 +522,8 @@ impl Builder {
         kind: Kind,
         through_oneof: bool,
     ) -> Option<TypeRef> {
-        let (full_name, package, defining_file, is_message) = match kind {
+        // For an enum, its proto name and the name of its zero value.
+        let (full_name, package, defining_file, enum_names) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
             Kind::Float => return Some(TypeRef::Scalar(ScalarKind::Float)),
             Kind::Int32 => return Some(TypeRef::Scalar(ScalarKind::Int32)),
@@ -541,15 +543,20 @@ impl Builder {
                 target.full_name().to_owned(),
                 target.package_name().to_owned(),
                 target.parent_file().name().to_owned(),
-                true,
+                None,
             ),
-            Kind::Enum(target) => (
-                target.full_name().to_owned(),
-                target.package_name().to_owned(),
-                target.parent_file().name().to_owned(),
-                false,
-            ),
+            Kind::Enum(target) => {
+                // Proto3 compilers reject an enum without values.
+                let zero = declared_values(&target).first()?.name().to_owned();
+                (
+                    target.full_name().to_owned(),
+                    target.package_name().to_owned(),
+                    target.parent_file().name().to_owned(),
+                    Some((target.name().to_owned(), zero)),
+                )
+            }
         };
+        let is_message = enum_names.is_none();
         let type_path = [field.path(), &[tag::FIELD_TYPE_NAME]].concat();
 
         if package == WELL_KNOWN_PACKAGE {
@@ -600,10 +607,12 @@ impl Builder {
             through_oneof,
             site,
         });
-        Some(if is_message {
-            TypeRef::Message(name)
-        } else {
-            TypeRef::Enum(name)
+        Some(match enum_names {
+            None => TypeRef::Message(name),
+            Some((enum_name, zero_value)) => TypeRef::Enum {
+                zero_ctor: naming::enum_constructor(&name.name, &enum_name, &zero_value),
+                name,
+            },
         })
     }
 
@@ -732,6 +741,18 @@ fn all_enums(file: &FileDescriptor) -> Vec<EnumDescriptor> {
                 .iter()
                 .flat_map(|message| message.child_enums()),
         )
+        .collect()
+}
+
+/// The values of `enumeration` in declaration order, so the zero value
+/// proto3 requires first is first. prost-reflect's `values()` iterates in
+/// number order, which puts a negative value before it.
+fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDescriptor> {
+    enumeration
+        .enum_descriptor_proto()
+        .value
+        .iter()
+        .filter_map(|value| enumeration.get_value_by_name(value.name()))
         .collect()
 }
 

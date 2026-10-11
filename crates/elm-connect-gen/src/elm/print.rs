@@ -13,8 +13,10 @@
 //! - A chain containing `|>` puts each operator at the start of its own
 //!   line, indented one step.
 //! - Anything else stays on one line unless a part of it spans lines; then
-//!   it breaks the way elm-format would (an application puts each
-//!   argument on its own line, a lambda puts its body under it, and so on).
+//!   it breaks the way elm-format would (an application whose last
+//!   argument alone spans lines keeps the others on the first line and
+//!   puts that one under them; otherwise it puts each argument on its own
+//!   line; a lambda puts its body under it; and so on).
 //!
 //! Parentheses come from precedence and position, never from the tree:
 //! application binds tightest, operators follow their `infix` declarations
@@ -472,8 +474,21 @@ fn expression(expr: &Expr) -> Block {
                 .iter()
                 .map(|a| expression_at(a, Position::Arg))
                 .collect();
+            let leading_single = args
+                .split_last()
+                .is_some_and(|(_, leading)| leading.iter().all(Block::is_single));
             if f.is_single() && args.iter().all(Block::is_single) {
                 Block::row(std::iter::once(f).chain(args), " ")
+            } else if f.is_single() && leading_single && args.len() > 1 {
+                // Only the last argument spans lines: the others stay on
+                // the first line with the function, as in `Html.div [ a ]`
+                // followed by its children.
+                let mut args = args;
+                let last = args.pop().expect("an application has arguments");
+                Block::stack([
+                    Block::row(std::iter::once(f).chain(args), " "),
+                    last.indent(),
+                ])
             } else {
                 Block::stack(std::iter::once(f).chain(args.into_iter().map(Block::indent)))
             }

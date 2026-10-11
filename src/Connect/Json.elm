@@ -1,6 +1,7 @@
 module Connect.Json exposing
     ( field, fieldEither
     , encodeMaybe
+    , enum
     , int32
     , int64, encodeInt64
     , float, encodeFloat
@@ -21,6 +22,11 @@ The module name is provisional and may change before the first release.
 # Presence
 
 @docs encodeMaybe
+
+
+# Enums
+
+@docs enum
 
 
 # 32-bit integers
@@ -147,6 +153,44 @@ encodeMaybe encode maybe =
 
         Nothing ->
             Json.Encode.null
+
+
+{-| Decode an enum, given its zero value and every value's proto name,
+number and constructor. proto3 JSON writes an enum as its value's name, and a
+parser must also accept the number. A name or number the table does not hold,
+such as a value added to the server's proto after this client was generated,
+decodes as the zero value.
+
+    type Status
+        = StatusUnspecified
+        | StatusActive
+
+    decodeStatus : Decoder Status
+    decodeStatus =
+        enum StatusUnspecified
+            [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
+            , ( "STATUS_ACTIVE", 1, StatusActive )
+            ]
+
+When two entries share a name or a number, the first wins.
+
+-}
+enum : a -> List ( String, Int, a ) -> Decoder a
+enum zero values =
+    let
+        lookup matches =
+            values
+                |> List.filter matches
+                |> List.head
+                |> Maybe.map (\( _, _, value ) -> value)
+                |> Maybe.withDefault zero
+    in
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.map (\text -> lookup (\( name, _, _ ) -> name == text))
+        , Json.Decode.int
+            |> Json.Decode.map (\int -> lookup (\( _, number, _ ) -> number == int))
+        ]
 
 
 {-| Decode a 32-bit integer (`int32`, `uint32`, `sint32`, `fixed32`,

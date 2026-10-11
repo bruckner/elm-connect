@@ -24,3 +24,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   as its JSON name (`Connect.Json.fieldEither`), and 32-bit integers as
   strings and in exponent notation (`Connect.Json.int32`);
   `Connect.Json.encodeMaybe` encodes `Nothing` as `null`.
+- Generation of enums as custom types, encoded by name and decoded by name
+  or number through `Connect.Json.enum`, an unknown value reading as the
+  zero value, with the `enums` conformance case. Enum values keep their
+  declaration order in the IR; a negative value no longer drops its enum.
+- The printer keeps an application's leading arguments on its first line
+  when only the last argument spans lines.
