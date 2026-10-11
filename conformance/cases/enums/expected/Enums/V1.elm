@@ -35,6 +35,19 @@ type alias Task =
 
 
 
+-- DEFAULTS
+
+
+defaultTask : Task
+defaultTask =
+    { status = StatusUnspecified
+    , priority = Nothing
+    , history = []
+    , previousStatus = StatusUnspecified
+    }
+
+
+
 -- ENCODERS
 
 

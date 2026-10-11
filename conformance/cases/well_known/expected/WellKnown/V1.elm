@@ -55,6 +55,41 @@ type EventWhen
 
 
 
+-- DEFAULTS
+
+
+defaultEvent : Event
+defaultEvent =
+    { createdAt = Nothing
+    , timeout = Nothing
+    , updateMask = Nothing
+    , marker = ()
+    , metadata = Nothing
+    , payload = Json.Encode.null
+    , items = Nothing
+    , ratio = Nothing
+    , weight = Nothing
+    , bigCount = Nothing
+    , bigTotal = Nothing
+    , count = Nothing
+    , total = Nothing
+    , enabled = Nothing
+    , nickname = Nothing
+    , avatar = Nothing
+    , history = []
+    , limits = Dict.empty
+    , values = []
+    , counts = []
+    , when = EventWhenUnset
+    , acked = ()
+    , pings = []
+    , seen = Dict.empty
+    , records = []
+    , columns = Dict.empty
+    }
+
+
+
 -- ENCODERS
 
 

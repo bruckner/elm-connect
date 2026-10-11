@@ -37,6 +37,28 @@ type CountersLimit
 
 
 
+-- DEFAULTS
+
+
+defaultCounters : Counters
+defaultCounters =
+    { int64Value = 0
+    , uint64Value = 0
+    , sint64Value = 0
+    , fixed64Value = 0
+    , sfixed64Value = 0
+    , exactId = "0"
+    , normal = 0
+    , maybeCount = Nothing
+    , samples = []
+    , exactSamples = []
+    , byId = Dict.empty
+    , wrapped = Nothing
+    , limit = CountersLimitUnset
+    }
+
+
+
 -- ENCODERS
 
 

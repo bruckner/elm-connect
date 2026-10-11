@@ -58,6 +58,31 @@ type ChoiceValue
 
 
 
+-- DEFAULTS
+
+
+defaultCreated : Created
+defaultCreated =
+    { title = ""
+    }
+
+
+defaultNoteEvent : NoteEvent
+defaultNoteEvent =
+    { id = ""
+    , kind = NoteEventKindUnset
+    , source = NoteEventSourceUnset
+    , tags = []
+    }
+
+
+defaultChoice : Choice
+defaultChoice =
+    { value = ChoiceValueUnset
+    }
+
+
+
 -- ENCODERS
 
 

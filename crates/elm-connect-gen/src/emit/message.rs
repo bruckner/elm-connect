@@ -1,5 +1,5 @@
-//! A message's three declarations: its record type alias, its encoder and
-//! its decoder.
+//! A message's four declarations: its record type alias, its default
+//! value, its encoder and its decoder.
 
 use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, RecordField, call};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
@@ -30,6 +30,34 @@ impl Emitter {
             name: shape.message.elm_name.clone(),
             type_params: Vec::new(),
             body: Type::Record(body),
+        }
+    }
+
+    /// `defaultFoo : Foo`: every field at its proto3 default, the value it
+    /// reads as when absent (design §3.2), and every oneof unset. A field
+    /// that closes a cycle is a `Maybe`, `List` or `Dict` of the wrapper,
+    /// whose default is empty, so a recursive message's default needs no
+    /// laziness and its wrapper no default of its own.
+    pub(super) fn message_default(&mut self, shape: &MessageShape) -> Decl {
+        let fields: Vec<(String, Expr)> = shape
+            .record()
+            .into_iter()
+            .map(|field| match field {
+                RecordField::Field(field, value) => {
+                    (field.elm_name.clone(), self.field_default(value))
+                }
+                RecordField::Oneof(oneof) => (
+                    oneof.oneof.elm_field_name.clone(),
+                    var(oneof.oneof.unset_ctor.clone()),
+                ),
+            })
+            .collect();
+        Decl::Value {
+            doc: None,
+            name: shape.message.default_name(),
+            annotation: ty(shape.message.elm_name.clone(), []),
+            params: Vec::new(),
+            body: record(fields),
         }
     }
 

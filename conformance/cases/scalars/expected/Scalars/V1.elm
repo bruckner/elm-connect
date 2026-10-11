@@ -38,6 +38,37 @@ type alias Empty =
 
 
 
+-- DEFAULTS
+
+
+defaultScalars : Scalars
+defaultScalars =
+    { doubleValue = 0.0
+    , floatValue = 0.0
+    , int32Value = 0
+    , int64Value = "0"
+    , uint32Value = 0
+    , uint64Value = "0"
+    , sint32Value = 0
+    , sint64Value = "0"
+    , fixed32Value = 0
+    , fixed64Value = "0"
+    , sfixed32Value = 0
+    , sfixed64Value = "0"
+    , boolValue = False
+    , stringValue = ""
+    , bytesValue = ""
+    , smallCount = 0
+    , exactTotal = "0"
+    }
+
+
+defaultEmpty : Empty
+defaultEmpty =
+    {}
+
+
+
 -- ENCODERS
 
 

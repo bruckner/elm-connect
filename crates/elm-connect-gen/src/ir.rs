@@ -167,6 +167,12 @@ impl Message {
     pub fn decoder_name(&self) -> String {
         crate::naming::decoder_name(&self.elm_name)
     }
+
+    /// The Elm name of the message's default value, such as
+    /// `defaultNote`.
+    pub fn default_name(&self) -> String {
+        crate::naming::default_name(&self.elm_name)
+    }
 }
 
 /// A message field outside any real oneof: one Elm record field.

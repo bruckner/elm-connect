@@ -24,6 +24,17 @@ type alias User =
 
 
 
+-- DEFAULTS
+
+
+defaultUser : User
+defaultUser =
+    { name = ""
+    , role = RoleUnspecified
+    }
+
+
+
 -- ENCODERS
 
 

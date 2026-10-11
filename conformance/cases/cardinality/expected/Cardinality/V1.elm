@@ -35,6 +35,34 @@ type alias Note =
 
 
 
+-- DEFAULTS
+
+
+defaultAuthor : Author
+defaultAuthor =
+    { name = ""
+    }
+
+
+defaultNote : Note
+defaultNote =
+    { subtitle = Nothing
+    , stars = Nothing
+    , score = Nothing
+    , views = Nothing
+    , author = Nothing
+    , editor = Nothing
+    , tags = []
+    , counts = []
+    , weights = []
+    , reviewers = []
+    , title = ""
+    , relatedLinks = []
+    , isDraft = Nothing
+    }
+
+
+
 -- ENCODERS
 
 
