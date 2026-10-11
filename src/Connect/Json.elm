@@ -1,5 +1,7 @@
 module Connect.Json exposing
-    ( field
+    ( field, fieldEither
+    , encodeMaybe
+    , int32
     , int64, encodeInt64
     , float, encodeFloat
     , bytes, encodeBytes
@@ -13,7 +15,17 @@ The module name is provisional and may change before the first release.
 
 # Fields
 
-@docs field
+@docs field, fieldEither
+
+
+# Presence
+
+@docs encodeMaybe
+
+
+# 32-bit integers
+
+@docs int32
 
 
 # 64-bit integers
@@ -48,26 +60,49 @@ must satisfy the decoder.
     decodeNote =
         Json.Decode.succeed Note
             |> field "title" "" Json.Decode.string
-            |> field "stars" 0 Json.Decode.int
+            |> field "stars" 0 int32
 
 The value being decoded must be a JSON object.
+
+The default says what absence means, so one step serves every field shape: a
+field with presence (a message-typed or proto3 `optional` field) defaults to
+`Nothing` and maps its decoder with `Just`, a repeated field defaults to `[]`
+and decodes with `Json.Decode.list`.
+
+    |> field "author" Nothing (Json.Decode.map Just decodeAuthor)
+    |> field "tags" [] (Json.Decode.list Json.Decode.string)
 
 -}
 field : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
 field name default decoder =
-    Json.Decode.map2 (|>) (member name default decoder)
+    Json.Decode.map2 (|>) (member [ name ] default decoder)
 
 
-member : String -> a -> Decoder a -> Decoder a
-member name default decoder =
+{-| [`field`](#field) for a field whose JSON name differs from its proto name:
+the JSON name first, then the proto name. proto3 JSON parsers accept either
+key; when both are present, the JSON name wins.
+
+    |> fieldEither "displayName" "display_name" "" Json.Decode.string
+
+-}
+fieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
+fieldEither jsonName protoName default decoder =
+    Json.Decode.map2 (|>) (member [ jsonName, protoName ] default decoder)
+
+
+{-| The value under the first of `names` the object holds, decoded; `default`
+when it holds none of them or holds `null`.
+-}
+member : List String -> a -> Decoder a -> Decoder a
+member names default decoder =
     Json.Decode.dict Json.Decode.value
         |> Json.Decode.andThen
             (\object ->
-                case Dict.get name object of
+                case firstPresent names object of
                     Nothing ->
                         Json.Decode.succeed default
 
-                    Just raw ->
+                    Just ( name, raw ) ->
                         if isNull raw then
                             Json.Decode.succeed default
 
@@ -76,9 +111,83 @@ member name default decoder =
             )
 
 
+firstPresent : List String -> Dict.Dict String Value -> Maybe ( String, Value )
+firstPresent names object =
+    case names of
+        [] ->
+            Nothing
+
+        name :: rest ->
+            case Dict.get name object of
+                Just raw ->
+                    Just ( name, raw )
+
+                Nothing ->
+                    firstPresent rest object
+
+
 isNull : Value -> Bool
 isNull raw =
     Json.Decode.decodeValue (Json.Decode.null ()) raw == Ok ()
+
+
+{-| Encode a field with presence: `Nothing` as JSON `null`, which proto3 JSON
+reads as an absent field, and a value with the given encoder.
+
+    encodeMaybe Json.Encode.int (Just 3) -- 3
+
+    encodeMaybe Json.Encode.int Nothing -- null
+
+-}
+encodeMaybe : (a -> Value) -> Maybe a -> Value
+encodeMaybe encode maybe =
+    case maybe of
+        Just value ->
+            encode value
+
+        Nothing ->
+            Json.Encode.null
+
+
+{-| Decode a 32-bit integer (`int32`, `uint32`, `sint32`, `fixed32`,
+`sfixed32`).
+
+proto3 JSON writes these as numbers, and a parser must also accept a string
+and exponent notation: `42`, `"42"`, `1e2` and `"1e2"` all decode, as does
+`4.0`. A value with a fractional part fails. The range of the proto type is not
+checked.
+
+-}
+int32 : Decoder Int
+int32 =
+    Json.Decode.oneOf
+        [ Json.Decode.int
+        , Json.Decode.string |> Json.Decode.andThen int32String
+        ]
+
+
+int32String : String -> Decoder Int
+int32String text =
+    case String.toInt text of
+        Just number ->
+            Json.Decode.succeed number
+
+        Nothing ->
+            case String.toFloat text of
+                Just number ->
+                    integral number
+
+                Nothing ->
+                    Json.Decode.fail ("Expecting an integer, but got \"" ++ text ++ "\"")
+
+
+integral : Float -> Decoder Int
+integral number =
+    if isNaN number || isInfinite number || toFloat (round number) /= number then
+        Json.Decode.fail ("Expecting an integer, but got " ++ String.fromFloat number)
+
+    else
+        Json.Decode.succeed (round number)
 
 
 {-| Decode a 64-bit integer (`int64`, `uint64`, `sint64`, `fixed64`,

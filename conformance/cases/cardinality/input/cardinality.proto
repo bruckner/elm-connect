@@ -1,0 +1,30 @@
+// Presence and repetition: proto3 `optional` scalars and messages,
+// singular message fields, and repeated scalars and messages.
+syntax = "proto3";
+
+package cardinality.v1;
+
+message Author {
+  string name = 1;
+}
+
+message Note {
+  // Scalars with explicit presence become `Maybe`.
+  optional string subtitle = 1;
+  optional int32 stars = 2;
+  optional double score = 3;
+  optional int64 views = 4;
+  // A singular message field has presence too, `optional` or not.
+  Author author = 5;
+  optional Author editor = 6;
+  // Repeated fields become lists.
+  repeated string tags = 7;
+  repeated int32 counts = 8;
+  repeated float weights = 9;
+  repeated Author reviewers = 10;
+  // A JSON name that differs from the proto name: parsers accept both.
+  repeated string related_links = 12;
+  optional bool is_draft = 13;
+  // A one-word name: the JSON name is the proto name.
+  string title = 11;
+}
