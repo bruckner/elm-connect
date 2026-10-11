@@ -1,0 +1,59 @@
+// Nesting and recursion: nested messages and enums are flattened into the
+// module with the enclosing names as a prefix; a field that closes a
+// cycle of record fields holds the target's wrapper type.
+syntax = "proto3";
+
+package nesting.v1;
+
+message Outer {
+  message Inner {
+    enum Kind {
+      KIND_UNSPECIFIED = 0;
+      KIND_DRAFT = 1;
+    }
+    message Deepest {
+      Kind kind = 1;
+    }
+    Deepest deepest = 1;
+  }
+  Inner inner = 1;
+  Inner.Kind kind = 2;
+  repeated Inner.Deepest all = 3;
+}
+
+// A message that refers to itself.
+message Node {
+  string label = 1;
+  repeated Node children = 2;
+  // A map value closes the cycle too.
+  map<string, Node> by_name = 3;
+}
+
+// Two messages that refer to each other.
+message Person {
+  string name = 1;
+  optional Company employer = 2;
+}
+
+message Company {
+  string name = 1;
+  repeated Person staff = 2;
+}
+
+// Off any cycle, referring to a recursive message: no wrapper needed.
+message Forest {
+  repeated Node trees = 1;
+}
+
+// A cycle through a oneof needs no wrapper type, but its decoders read the
+// member lazily.
+message Expr {
+  oneof value {
+    int64 number = 1;
+    Sum sum = 2;
+  }
+}
+
+message Sum {
+  repeated Expr terms = 1;
+}

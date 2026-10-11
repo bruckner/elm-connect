@@ -141,6 +141,15 @@ pub fn oneof_unset_constructor(oneof_type_name: &str) -> String {
     format!("{oneof_type_name}Unset")
 }
 
+/// The wrapper type of a recursive message, which is also its only
+/// constructor: the message's Elm name followed by an underscore
+/// (`Node` becomes `Node_`). No other generated type or constructor ends in
+/// an underscore, since [`pascal_case`] drops every one, so the name is
+/// free in both namespaces.
+pub fn recursive_wrapper(message_elm_name: &str) -> String {
+    format!("{message_elm_name}_")
+}
+
 /// The JSON encoder for a generated type: `encode` followed by the type's
 /// Elm name (`Note` becomes `encodeNote`). Type names are unique within a
 /// module, so encoder names are too.
@@ -392,6 +401,13 @@ mod tests {
         for (elm, proto, value, expected) in cases {
             assert_eq!(enum_constructor(elm, proto, value), expected, "{value}");
         }
+    }
+
+    #[test]
+    fn recursive_wrappers() {
+        assert_eq!(recursive_wrapper("Node"), "Node_");
+        assert_eq!(encoder_name(&recursive_wrapper("Node")), "encodeNode_");
+        assert!(!pascal_case("node_").ends_with('_'));
     }
 
     #[test]

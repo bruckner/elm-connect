@@ -36,7 +36,7 @@ fn package_becomes_a_module() {
     assert_eq!(package.files, ["test.proto"]);
     let a = message(&package, "A");
     assert_eq!(a.proto_full_name, "foo_bar.v2beta1.A");
-    assert!(a.fields.is_empty() && a.oneofs.is_empty() && !a.recursive);
+    assert!(a.fields.is_empty() && a.oneofs.is_empty() && a.wrapper.is_none());
 }
 
 #[test]
@@ -498,24 +498,57 @@ fn recursion_is_flagged_direct_and_mutual() {
         message Tree { oneof shape { Tree branch = 1; string tip = 2; } }
         "#,
     );
-    let recursive: Vec<_> = package
+    let wrappers: Vec<_> = package
         .messages
         .iter()
-        .map(|m| (m.elm_name.as_str(), m.recursive))
+        .map(|m| {
+            let wrapper = m.wrapper.as_ref().map(|w| w.elm_name.as_str());
+            (m.elm_name.as_str(), wrapper)
+        })
         .collect();
     assert_eq!(
-        recursive,
+        wrappers,
         [
-            ("Node", true),
-            ("Parent", true),
-            ("Child", true),
-            ("Graph", true),
-            ("Vertex", true),
-            ("Leaf", false),
-            ("Holder", false),
-            ("Tree", false),
+            ("Node", Some("Node_")),
+            ("Parent", Some("Parent_")),
+            ("Child", Some("Child_")),
+            ("Graph", Some("Graph_")),
+            ("Vertex", Some("Vertex_")),
+            ("Leaf", None),
+            ("Holder", None),
+            ("Tree", None),
         ]
     );
+    let cyclic =
+        |message: &str, field: &str| self::field(self::message(&package, message), field).cyclic;
+    assert!(cyclic("Node", "children"));
+    assert!(cyclic("Parent", "child") && cyclic("Child", "parent"));
+    assert!(cyclic("Graph", "vertices") && cyclic("Vertex", "owner"));
+    // Holder refers to a recursive message without being on its cycle.
+    assert!(!cyclic("Holder", "root") && !cyclic("Holder", "leaf"));
+    let shape = &message(&package, "Tree").oneofs[0];
+    let members: Vec<_> = shape
+        .variants
+        .iter()
+        .map(|v| (v.proto_name.as_str(), v.cyclic))
+        .collect();
+    assert_eq!(members, [("branch", true), ("tip", false)]);
+}
+
+#[test]
+fn a_cycle_through_a_oneof_marks_only_the_member() {
+    let package = package(
+        r#"
+        syntax = "proto3";
+        package t;
+        message Expr { Call call = 1; }
+        message Call { oneof arg { Expr expr = 1; string name = 2; } }
+        "#,
+    );
+    assert!(package.messages.iter().all(|m| m.wrapper.is_none()));
+    assert!(!field(message(&package, "Expr"), "call").cyclic);
+    let arg = &message(&package, "Call").oneofs[0];
+    assert!(arg.variants[0].cyclic && !arg.variants[1].cyclic);
 }
 
 #[test]
