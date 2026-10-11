@@ -271,10 +271,10 @@ decodeExpr =
 
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =
-    Json.Decode.oneOf
+    Connect.Json.members "value"
+        ExprValueUnset
         [ Connect.Json.member "number" (Json.Decode.map ExprValueNumber Connect.Json.int64)
         , Connect.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeSum)))
-        , Json.Decode.succeed ExprValueUnset
         ]
 
 

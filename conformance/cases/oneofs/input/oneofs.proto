@@ -1,6 +1,6 @@
 // Oneofs: a custom type per oneof whose first constructor is the unset
 // case, held in one record field. Encoded as the set member alone;
-// decoded from the first member present and not null, else unset.
+// decoded from the one member present and not null, else unset.
 syntax = "proto3";
 
 package oneofs.v1;

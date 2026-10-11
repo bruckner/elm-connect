@@ -150,11 +150,11 @@ decodeEvent =
 
 decodeEventWhen : Json.Decode.Decoder EventWhen
 decodeEventWhen =
-    Json.Decode.oneOf
+    Connect.Json.members "when"
+        EventWhenUnset
         [ Connect.Json.member "at" (Json.Decode.map EventWhenAt Connect.Json.timestamp)
         , Connect.Json.member "after" (Json.Decode.map EventWhenAfter Connect.Json.duration)
-        , Connect.Json.member "whenever" (Json.Decode.map EventWhenWhenever Json.Decode.value)
+        , Connect.Json.valueMember "whenever" EventWhenWhenever
         , Connect.Json.member "schedule" (Json.Decode.map EventWhenSchedule Connect.Json.struct)
         , Connect.Json.member "dates" (Json.Decode.map EventWhenDates Connect.Json.listValue)
-        , Json.Decode.succeed EventWhenUnset
         ]

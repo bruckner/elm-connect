@@ -91,3 +91,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   field (`Maybe` when singular). The runtime gains `Connect.Json.struct`,
   `encodeStruct`, `listValue` and `encodeListValue`; the decoders fail on
   JSON of the wrong shape. `Value` stays `Json.Encode.Value`.
+- Oneofs and two-name fields decode strictly, as protobuf-go's protojson
+  does. A oneof's decoder is the new `Connect.Json.members`, given the
+  oneof's name, its unset value and a `Connect.Json.Member` per member:
+  a malformed member fails the message instead of reading as unset, and
+  two members present fail, naming the keys. A member present as `null`
+  is absent, except a `google.protobuf.Value` member, which holds `null`
+  (the new `Connect.Json.valueMember` and `valueMemberEither`). An object
+  holding a field or member under both its JSON name and its proto name
+  fails (`fieldEither` and every two-name helper). `member`,
+  `memberEither`, `emptyMember` and `emptyMemberEither` now build a
+  `Member` rather than a `Decoder`.
