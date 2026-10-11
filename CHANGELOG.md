@@ -62,3 +62,5 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - CI compiles the runtime package and the conformance corpus with Elm
   0.19.0 and 0.19.1 as well (`conformance/compile-with.sh`,
   `just compile-with`).
+- The gate audits the GitHub Actions workflows with zizmor
+  (`just zizmor`).

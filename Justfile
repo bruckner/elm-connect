@@ -10,7 +10,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check
+check: fmt-check clippy test elm-check zizmor
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -45,6 +45,13 @@ elm-check:
     -@elm make --output=/dev/null >/dev/null 2>&1
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
+
+# Audit the GitHub Actions workflows for template injection, unpinned
+# or vulnerable actions, leaked credentials and the like. The audits
+# that consult GitHub run only when GH_TOKEN is set (CI sets it); without
+# one zizmor runs offline and says so.
+zizmor:
+    zizmor .github/workflows
 
 # Compile the runtime package and the conformance corpus with another Elm
 # compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).
