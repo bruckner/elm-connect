@@ -440,11 +440,48 @@ floatTests =
 
 bytesTests : Test
 bytesTests =
+    let
+        accepts text =
+            test ("accepts \"" ++ text ++ "\"") <|
+                \_ -> decodes Connect.Json.bytes ("\"" ++ text ++ "\"") text
+
+        rejects text =
+            test ("rejects \"" ++ text ++ "\"") <|
+                \_ -> fails Connect.Json.bytes ("\"" ++ text ++ "\"")
+    in
     describe "bytes"
-        [ test "a string passes through" <|
-            \_ -> decodes Connect.Json.bytes "\"aGk=\"" "aGk="
+        [ accepts ""
+        , accepts "aGk="
+        , accepts "aGk"
+        , accepts "aA=="
+        , accepts "aA"
+        , accepts "aGVsbG8h"
+        , accepts "+/+/"
+        , accepts "-_-_"
+        , accepts "-_8="
+        , accepts "+/8"
+        , rejects "a"
+        , rejects "aGVsbG8hA"
+        , rejects "a==="
+        , rejects "aGk=="
+        , rejects "aA="
+        , rejects "aGVs="
+        , rejects "aGVsbG8h===="
+        , rejects "=="
+        , rejects "aG=k"
+        , rejects "aG k"
+        , rejects "aGk!"
+        , rejects "+/-_"
+        , rejects "aGkß"
+        , test "keeps the string as received" <|
+            \_ -> decodes Connect.Json.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|
             \_ -> fails Connect.Json.bytes "1"
+        , test "says why it fails" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.bytes "\"a\""
+                    |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional), but got \"a\"")
+                    |> Expect.equal (Err True)
         , test "encodes as a string" <|
             \_ -> encodesTo (Connect.Json.encodeBytes "aGk=") "\"aGk=\""
         ]
