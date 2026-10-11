@@ -32,6 +32,10 @@
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array; absent or `null` decodes as `[]`. Both reuse the one
 //!   `Connect.Json.field` step with `Nothing` or `[]` as its zero value.
+//! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
+//!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
+//!   as strings under [`Int64::Int`], a field's `jstype` overriding the
+//!   option either way.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
 //!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`.
@@ -89,19 +93,78 @@ const TIME: &str = "Time";
 /// `import Connect.Duration exposing (Duration)`.
 const CONNECT_DURATION: &str = "Connect.Duration";
 
-/// How to generate. Nothing is configurable yet; the options design §6
-/// lists arrive with the features they control.
+/// How to generate (design §6). The options design §6 lists that are not
+/// here arrive with the features they control.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
-pub struct Options {}
+pub struct Options {
+    /// How 64-bit integer fields are held (`int64=`), unless a field's
+    /// `jstype` says otherwise (design §3.4).
+    pub int64: Int64,
+}
+
+impl Options {
+    /// The options a protoc plugin parameter sets: comma-separated
+    /// `key=value` pairs, such as `int64=int`, each option at most once.
+    /// The empty parameter is the defaults. An unknown key or value is an
+    /// error saying which.
+    pub fn from_parameter(parameter: &str) -> Result<Self, String> {
+        let mut options = Options::default();
+        let mut seen = BTreeSet::new();
+        for pair in parameter
+            .split(',')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        {
+            let Some((key, value)) = pair.split_once('=') else {
+                return Err(format!("expected `key=value`, got `{pair}`"));
+            };
+            let (key, value) = (key.trim(), value.trim());
+            if !seen.insert(key.to_owned()) {
+                return Err(format!("`{key}` is given more than once"));
+            }
+            match key {
+                "int64" => options.int64 = value.parse()?,
+                _ => return Err(format!("unknown option `{key}`; the options are: int64")),
+            }
+        }
+        Ok(options)
+    }
+}
+
+/// How 64-bit integers (`int64`, `uint64`, `sint64`, `fixed64`,
+/// `sfixed64`) are held in Elm (design §3.4).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Int64 {
+    /// `String`, the decimal integer as proto3 JSON writes it: exact for
+    /// every value.
+    #[default]
+    String,
+    /// `Int`, exact within ±(2^53 − 1); a value outside that range fails
+    /// to decode.
+    Int,
+}
+
+impl std::str::FromStr for Int64 {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "string" => Ok(Int64::String),
+            "int" => Ok(Int64::Int),
+            _ => Err(format!("`int64` is `string` or `int`, not `{value}`")),
+        }
+    }
+}
 
 /// The Elm module for `package`. Every construct a built IR holds has an
 /// emitter, so this does not fail today; the error is the problems found,
 /// for constructs to come (services) whose emitters may report some.
-pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics> {
+pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics> {
     let mut emitter = Emitter {
         module: package.module.clone(),
         imports: BTreeMap::new(),
+        int64: options.int64,
     };
     let decls = emitter.package(package);
     Ok(Module {
@@ -164,15 +227,16 @@ struct OneofShape<'m> {
 
 /// `message` with the shape of each of its fields and oneof members.
 /// `by_name` holds every message of the package, for the wrappers of
-/// cyclic fields.
+/// cyclic fields; `int64` is the generator's option.
 fn message_shape<'m>(
     message: &'m Message,
     by_name: &HashMap<&str, &'m Message>,
+    int64: Int64,
 ) -> MessageShape<'m> {
     let fields = message
         .fields
         .iter()
-        .map(|field| (field, field::field_shape(field, by_name)))
+        .map(|field| (field, field::field_shape(field, by_name, int64)))
         .collect();
     let oneofs = message
         .oneofs
@@ -182,7 +246,10 @@ fn message_shape<'m>(
             variants: oneof
                 .variants
                 .iter()
-                .map(|variant| (variant, field::value_shape(&variant.ty)))
+                .map(|variant| {
+                    let int64 = field::field_int64(variant.jstype, int64);
+                    (variant, field::value_shape(&variant.ty, int64))
+                })
                 .collect(),
         })
         .collect();
@@ -199,6 +266,8 @@ struct Emitter {
     module: IrModule,
     /// Each module imported, with the types its import exposes.
     imports: BTreeMap<String, BTreeSet<String>>,
+    /// How 64-bit integers are held where a field does not say.
+    int64: Int64,
 }
 
 impl Emitter {
@@ -212,7 +281,7 @@ impl Emitter {
         let messages: Vec<_> = package
             .messages
             .iter()
-            .map(|message| message_shape(message, &by_name))
+            .map(|message| message_shape(message, &by_name, self.int64))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
             return Vec::new();
@@ -350,7 +419,26 @@ mod tests {
             cardinality,
             ty,
             cyclic: false,
+            jstype: crate::ir::JsType::Normal,
         }
+    }
+
+    #[test]
+    fn options_come_from_a_plugin_parameter() {
+        assert_eq!(Options::from_parameter(""), Ok(Options::default()));
+        assert_eq!(
+            Options::from_parameter("int64=int").map(|o| o.int64),
+            Ok(Int64::Int)
+        );
+        assert_eq!(
+            Options::from_parameter(" int64 = string ,").map(|o| o.int64),
+            Ok(Int64::String)
+        );
+        let error = |parameter| Options::from_parameter(parameter).unwrap_err();
+        assert!(error("int64=long").contains("`string` or `int`"));
+        assert!(error("int64").contains("`key=value`"));
+        assert!(error("colour=red").contains("unknown option `colour`"));
+        assert!(error("int64=int,int64=string").contains("more than once"));
     }
 
     #[test]

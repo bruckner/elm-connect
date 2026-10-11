@@ -7,7 +7,9 @@
 //! generated), an optional `include/` (protos the input may import, not
 //! generated) and `expected/`, holding either the Elm modules generated
 //! from the input, at their module paths, or `diagnostics.txt`, the
-//! narrow rendering of the problems generating reports instead.
+//! narrow rendering of the problems generating reports instead. An
+//! optional `options.txt` holds the generator's options as a protoc plugin
+//! parameter.
 //!
 //! With `ELM_CONNECT_BLESS=1` the golden and diagnostics tests rewrite
 //! `expected/` to match the generator and pass; `just bless` does that.
@@ -27,6 +29,8 @@ use similar::TextDiff;
 
 /// The file in `expected/` that makes a case a diagnostics case.
 const DIAGNOSTICS: &str = "diagnostics.txt";
+/// The optional file in a case that sets the generator's options.
+const OPTIONS: &str = "options.txt";
 
 // The corpus.
 
@@ -84,9 +88,21 @@ fn files_under(dir: &Path) -> Vec<String> {
     out
 }
 
+/// The generator options of `case`: its optional `options.txt`, a protoc
+/// plugin parameter (`int64=int`) on one line, or the defaults.
+fn case_options(case: &Path) -> Options {
+    match fs::read_to_string(case.join(OPTIONS)) {
+        Ok(text) => Options::from_parameter(text.trim())
+            .unwrap_or_else(|e| panic!("{}: {e}", case.join(OPTIONS).display())),
+        Err(e) if e.kind() == ErrorKind::NotFound => Options::default(),
+        Err(e) => panic!("read {}: {e}", case.join(OPTIONS).display()),
+    }
+}
+
 /// What generating a case's input gives: the files, or the narrow
 /// rendering of the problems, with the proto sources attached. Protos in
 /// the case's optional `include/` can be imported but are not generated.
+/// The case's `options.txt`, if any, sets the generator's options.
 fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
     let input = case.join("input");
     let include = case.join("include");
@@ -111,7 +127,7 @@ fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
     generate(
         &compiler.descriptor_pool(),
         &generate_set,
-        &Options::default(),
+        &case_options(case),
     )
     .map_err(|mut diagnostics| {
         let mut sources = HashMap::new();

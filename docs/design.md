@@ -282,7 +282,7 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
 |---|---|---|
 | `double`, `float` | `Float` | |
 | `int32`, `sint32`, `sfixed32`, `uint32`, `fixed32` | `Int` | |
-| `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 |
+| `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String`, or `Int` under `int64=int` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 *(Decided; see below)* |
 | `bool` | `Bool` | |
 | `string` | `String` | |
 | `bytes` | `String` (base64, as on the wire) | *(Proposed.)* Alternative: `Bytes.Bytes` via elm/bytes with base64 in the runtime. Rejected for 1.0: adds a dependency and a decode step for a field most JSON APIs never use. |
@@ -295,8 +295,10 @@ Decoders accept every form proto3 JSON requires a parser to accept, not
 just the form encoders write. *(Proposed; built.)*
 
 - 32-bit integers as numbers or strings, in exponent notation too
-  (`42`, `"42"`, `1e2`, `"1e2"`), through `Connect.Json.int32`. A
-  fractional value fails; the range of the proto type is not checked.
+  (`42`, `"42"`, `1e2`, `"1e2"`), through `Connect.Json.int32` (`int32`,
+  `sint32`, `sfixed32`) and `Connect.Json.uint32` (`uint32`, `fixed32`).
+  A fractional value fails, and so does one outside the proto type's
+  range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`; 64-bit integers as strings or numbers. A 64-bit string
   in exponent notation (`"1e2"`) is not accepted yet.
@@ -323,10 +325,31 @@ just the form encoders write. *(Proposed; built.)*
   double the step functions (each needs a two-name form too) and hide
   the zero value the reader otherwise sees.
 
-64-bit as `String` is *(Proposed)* with an option `int64=int` for users
-who accept the 2^53 limit and want arithmetic. Their zero value is
-`"0"`, which re-encodes as a valid int64. Decoding under the
-option accepts both JSON number and string forms.
+**64-bit integers** *(Decided.)* The rule:
+
+- By default the five 64-bit kinds are `String`, the decimal integer,
+  exact for every value. Their zero value is `"0"`, which re-encodes as
+  a valid int64. The runtime's `Connect.Int64` converts (`toInt`, which
+  gives `Nothing` outside ±(2^53 − 1), and `fromInt`).
+- The option `int64=int` makes them `Int`. The decoder
+  (`Connect.Json.int64AsInt`) accepts a JSON number or a decimal string
+  and fails on a non-integer or a value outside ±(2^53 − 1), where Elm's
+  `Int` stops being exact; it never rounds silently. The encoder
+  (`Connect.Json.encodeInt64AsInt`) writes the decimal string, proto3
+  JSON's canonical form. The zero value is `0`.
+- The standard field option `jstype` overrides the option per field:
+  `[jstype = JS_NUMBER]` makes the field `Int` (range-checked) under
+  `int64=string`, `[jstype = JS_STRING]` keeps it `String` under
+  `int64=int`, and `JS_NORMAL` defers to the option. It applies to
+  singular, `optional` and repeated fields and oneof members; protobuf
+  allows it only on 64-bit integer fields, and the generator ignores it
+  anywhere else.
+- The option reaches every 64-bit value without a `jstype`: map values
+  and the `Int64Value`/`UInt64Value` wrappers too. Map **keys** stay
+  `String` under either setting: they are strings on the wire, and a
+  `Dict String V` keyed by decimal text needs no range check.
+- The unsigned kinds share the signed range check (a negative `uint64`
+  decodes); the string form never checked sign either.
 
 ### 3.5 Well-known types
 
@@ -564,6 +587,11 @@ shared.
   `transports=connect,transcode` (default both; limits emitted
   descriptors and imports), `module_prefix=`, `int64=string|int`,
   `enum_unknown=zero|variant` (if §3.3 lands with an option).
+  Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
+  `elm-connect gen --int64 int`). The plugin parameter is
+  comma-separated `key=value` pairs; an unknown key or value, or a key
+  given twice, is an error. A conformance case sets options with an
+  `options.txt` holding that parameter.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
   of Elm's compiler. First catalogue: route variable names a field the
   request does not have; route body names a non-message field; map key

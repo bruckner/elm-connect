@@ -13,7 +13,7 @@ pub mod naming;
 use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
-pub use crate::emit::Options;
+pub use crate::emit::{Int64, Options};
 
 /// The version of the generator, stamped into everything it emits.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

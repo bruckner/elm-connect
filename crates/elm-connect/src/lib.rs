@@ -54,20 +54,23 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     })
 }
 
-/// Compiles `files` against `includes` and generates Elm from them.
+/// Compiles `files` against `includes` and generates Elm from them as
+/// `options` say.
 ///
 /// Problems in the protos come back as one `Report` whose snippets point
 /// into the proto sources.
-pub fn generate(files: &[PathBuf], includes: &[PathBuf]) -> Result<Vec<GeneratedFile>, Report> {
+pub fn generate(
+    files: &[PathBuf],
+    includes: &[PathBuf],
+    options: &Options,
+) -> Result<Vec<GeneratedFile>, Report> {
     let compiled = compile(files, includes)?;
     let inputs: Vec<&str> = compiled.inputs.iter().map(String::as_str).collect();
-    elm_connect_gen::generate(&compiled.pool, &inputs, &Options::default()).map_err(
-        |mut diagnostics| {
-            // protox records columns in bytes.
-            diagnostics.attach_sources(&compiled.sources, Columns::Bytes);
-            Report::new(diagnostics)
-        },
-    )
+    elm_connect_gen::generate(&compiled.pool, &inputs, options).map_err(|mut diagnostics| {
+        // protox records columns in bytes.
+        diagnostics.attach_sources(&compiled.sources, Columns::Bytes);
+        Report::new(diagnostics)
+    })
 }
 
 /// Writes each generated file under `out`, creating directories as

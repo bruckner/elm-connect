@@ -1,16 +1,17 @@
 //! A field's shape, and the Elm type, encoder and decoder that follow
 //! from it.
 
+use super::scalar::Repr;
 use super::{
-    CONNECT_DURATION, CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE,
-    TIME, call, scalar,
+    CONNECT_DURATION, CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE,
+    JSON_ENCODE, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
 use std::collections::HashMap;
 
 use crate::ir::{
-    Cardinality, Field, MapKey, Message, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
+    Cardinality, Field, JsType, MapKey, Message, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
 };
 
 /// A field as the emitter supports it: what [`field_shape`] classifies an
@@ -73,8 +74,8 @@ pub(super) enum ValueShape<'p> {
 /// holds directly and reads when absent or `null`.
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Zeroed<'p> {
-    /// A proto scalar, whose zero value is proto3's.
-    Scalar(ScalarKind),
+    /// A proto scalar, held as this, whose zero value is proto3's.
+    Scalar(Repr),
     /// A generated enum, whose zero value is this constructor.
     Enum(&'p TypeName, &'p str),
     /// `google.protobuf.Struct`, `Value` or `ListValue`: JSON itself, held
@@ -94,7 +95,7 @@ pub(super) enum Present<'p> {
     Wrapped(&'p Wrapper),
     /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
     /// is `null` on the wire when unset.
-    Wrapper(ScalarKind),
+    Wrapper(Repr),
     /// `google.protobuf.Timestamp`: `Time.Posix`.
     Timestamp,
     /// `google.protobuf.Duration`: the runtime's `Duration`.
@@ -105,8 +106,10 @@ pub(super) enum Present<'p> {
     Empty,
 }
 
-/// The shape of a well-known type's values.
-fn well_known(well_known: WellKnown) -> ValueShape<'static> {
+/// The shape of a well-known type's values; `int64` says how the 64-bit
+/// wrappers hold their value.
+fn well_known(well_known: WellKnown, int64: Int64) -> ValueShape<'static> {
+    let wrapper = |kind| Present::Wrapper(scalar::repr(kind, int64));
     let present = match well_known {
         WellKnown::Struct | WellKnown::Value | WellKnown::ListValue => {
             return ValueShape::Zeroed(Zeroed::Json);
@@ -115,15 +118,15 @@ fn well_known(well_known: WellKnown) -> ValueShape<'static> {
         WellKnown::Duration => Present::Duration,
         WellKnown::FieldMask => Present::FieldMask,
         WellKnown::Empty => Present::Empty,
-        WellKnown::DoubleValue => Present::Wrapper(ScalarKind::Double),
-        WellKnown::FloatValue => Present::Wrapper(ScalarKind::Float),
-        WellKnown::Int64Value => Present::Wrapper(ScalarKind::Int64),
-        WellKnown::UInt64Value => Present::Wrapper(ScalarKind::UInt64),
-        WellKnown::Int32Value => Present::Wrapper(ScalarKind::Int32),
-        WellKnown::UInt32Value => Present::Wrapper(ScalarKind::UInt32),
-        WellKnown::BoolValue => Present::Wrapper(ScalarKind::Bool),
-        WellKnown::StringValue => Present::Wrapper(ScalarKind::String),
-        WellKnown::BytesValue => Present::Wrapper(ScalarKind::Bytes),
+        WellKnown::DoubleValue => wrapper(ScalarKind::Double),
+        WellKnown::FloatValue => wrapper(ScalarKind::Float),
+        WellKnown::Int64Value => wrapper(ScalarKind::Int64),
+        WellKnown::UInt64Value => wrapper(ScalarKind::UInt64),
+        WellKnown::Int32Value => wrapper(ScalarKind::Int32),
+        WellKnown::UInt32Value => wrapper(ScalarKind::UInt32),
+        WellKnown::BoolValue => wrapper(ScalarKind::Bool),
+        WellKnown::StringValue => wrapper(ScalarKind::String),
+        WellKnown::BytesValue => wrapper(ScalarKind::Bytes),
     };
     ValueShape::Present(present)
 }
@@ -179,7 +182,7 @@ impl Emitter {
             FieldShape::Plain(zeroed) => {
                 let decoder = self.value_decoder(ValueShape::Zeroed(zeroed));
                 let zero = match zeroed {
-                    Zeroed::Scalar(kind) => scalar::zero_value(kind),
+                    Zeroed::Scalar(repr) => scalar::zero_value(repr),
                     Zeroed::Enum(name, zero_ctor) => {
                         self.generated_value(&name.module, zero_ctor.to_owned())
                     }
@@ -213,8 +216,8 @@ impl Emitter {
     /// The Elm type of one value.
     pub(super) fn value_type(&mut self, value: ValueShape) -> Type {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind))
-            | ValueShape::Present(Present::Wrapper(kind)) => scalar::elm_type(kind),
+            ValueShape::Zeroed(Zeroed::Scalar(repr))
+            | ValueShape::Present(Present::Wrapper(repr)) => scalar::elm_type(repr),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
             ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
@@ -240,8 +243,8 @@ impl Emitter {
     /// The encoder of one value.
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind))
-            | ValueShape::Present(Present::Wrapper(kind)) => self.reference(scalar::encoder(kind)),
+            ValueShape::Zeroed(Zeroed::Scalar(repr))
+            | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::encoder(repr)),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.encoder_name())
@@ -264,8 +267,8 @@ impl Emitter {
     /// The decoder of one value.
     pub(super) fn value_decoder(&mut self, value: ValueShape) -> Expr {
         match value {
-            ValueShape::Zeroed(Zeroed::Scalar(kind))
-            | ValueShape::Present(Present::Wrapper(kind)) => self.reference(scalar::decoder(kind)),
+            ValueShape::Zeroed(Zeroed::Scalar(repr))
+            | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::decoder(repr)),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.decoder_name())
@@ -281,10 +284,13 @@ impl Emitter {
 }
 
 /// The shape of `field`. `by_name` holds the messages of the field's
-/// package, where a field that closes a cycle finds its target's wrapper.
+/// package, where a field that closes a cycle finds its target's wrapper;
+/// `int64` is the generator's option, which the field's `jstype` may
+/// override.
 pub(super) fn field_shape<'m>(
     field: &'m Field,
     by_name: &HashMap<&str, &'m Message>,
+    int64: Int64,
 ) -> FieldShape<'m> {
     let value = match &field.ty {
         TypeRef::Message(name) if field.cyclic => {
@@ -296,7 +302,7 @@ pub(super) fn field_shape<'m>(
                 .expect("a message on a cycle has a wrapper");
             ValueShape::Present(Present::Wrapped(wrapper))
         }
-        ty => value_shape(ty),
+        ty => value_shape(ty, field_int64(field.jstype, int64)),
     };
     match (field.cardinality, value) {
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
@@ -306,12 +312,23 @@ pub(super) fn field_shape<'m>(
     }
 }
 
-/// The shape of one value of type `ty`.
-pub(super) fn value_shape(ty: &TypeRef) -> ValueShape<'_> {
+/// How a field with this `jstype` holds 64-bit integers, under the
+/// generator's `int64` option.
+pub(super) fn field_int64(jstype: JsType, int64: Int64) -> Int64 {
+    match jstype {
+        JsType::Normal => int64,
+        JsType::String => Int64::String,
+        JsType::Number => Int64::Int,
+    }
+}
+
+/// The shape of one value of type `ty`, holding 64-bit integers as
+/// `int64` says.
+pub(super) fn value_shape(ty: &TypeRef, int64: Int64) -> ValueShape<'_> {
     match ty {
-        TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(*kind)),
+        TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(scalar::repr(*kind, int64))),
         TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
         TypeRef::Message(name) => ValueShape::Present(Present::Message(name)),
-        TypeRef::WellKnown(known) => well_known(*known),
+        TypeRef::WellKnown(known) => well_known(*known, int64),
     }
 }

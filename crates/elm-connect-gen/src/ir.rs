@@ -192,6 +192,24 @@ pub struct Field {
     /// field holds that type's [`Message::wrapper`] rather than its record,
     /// and its values decode lazily.
     pub cyclic: bool,
+    /// The field's `jstype` option; [`JsType::Normal`] unless the field is
+    /// a 64-bit integer that sets it.
+    pub jstype: JsType,
+}
+
+/// The standard field option `jstype` of a 64-bit integer field, which
+/// overrides the generator's `int64` option for that field (design §3.4).
+/// Only fields whose values are 64-bit integer scalars carry anything but
+/// [`JsType::Normal`]; the option is ignored elsewhere.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum JsType {
+    /// No override (`JS_NORMAL`, or unset): the `int64` option decides.
+    #[default]
+    Normal,
+    /// `JS_STRING`: the field is a decimal `String`.
+    String,
+    /// `JS_NUMBER`: the field is an `Int`, range-checked when decoded.
+    Number,
 }
 
 /// How many values a field holds. The value type is the field's
@@ -414,6 +432,8 @@ pub struct OneofVariant {
     /// types need nothing (a oneof is a custom type), but the decoders
     /// would define each other directly, so this member decodes lazily.
     pub cyclic: bool,
+    /// The member's `jstype` option, as for [`Field::jstype`].
+    pub jstype: JsType,
 }
 
 /// An enum: one Elm custom type with a constructor per value.

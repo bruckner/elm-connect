@@ -1,5 +1,7 @@
 //! protoc plugin: reads a `CodeGeneratorRequest` on stdin and writes a
-//! `CodeGeneratorResponse` on stdout.
+//! `CodeGeneratorResponse` on stdout. Options arrive as the request's
+//! parameter (`--elm-connect_opt=int64=int`), comma-separated `key=value`
+//! pairs.
 
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
@@ -23,6 +25,15 @@ fn run(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
         supported_features: Some(Feature::Proto3Optional as u64),
         file,
     };
+    let options = match Options::from_parameter(request.parameter()) {
+        Ok(options) => options,
+        Err(err) => {
+            return response(
+                Some(format!("elm-connect: the plugin parameter: {err}")),
+                Vec::new(),
+            );
+        }
+    };
     let pool = match DescriptorPool::from_file_descriptor_set(FileDescriptorSet {
         file: request.proto_file,
     }) {
@@ -39,7 +50,7 @@ fn run(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
         .iter()
         .map(String::as_str)
         .collect();
-    match generate(&pool, &generate_set, &Options::default()) {
+    match generate(&pool, &generate_set, &options) {
         Ok(files) => response(
             None,
             files
@@ -128,6 +139,21 @@ mod tests {
             "the plugin's output differs from the blessed expected output; run the \
              conformance tests for a diff"
         );
+    }
+
+    #[test]
+    fn the_parameter_sets_options() {
+        let mut request = scalars_request();
+        request.parameter = Some("int64=int".into());
+        let response = round_trip(request);
+        assert_eq!(response.error, None);
+        let content = response.file[0].content.as_deref().expect("content");
+        assert!(content.contains("int64Value : Int"), "{content}");
+
+        let mut request = scalars_request();
+        request.parameter = Some("int64=long".into());
+        let error = round_trip(request).error.expect("an error");
+        assert!(error.contains("`string` or `int`"), "{error}");
     }
 
     #[test]

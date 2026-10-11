@@ -10,8 +10,8 @@ use prost_reflect::{
 
 use super::graph::strongly_connected;
 use super::{
-    Cardinality, Enum, EnumValue, Field, MapKey, Message, ModuleName, Oneof, OneofVariant, Package,
-    ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
+    Cardinality, Enum, EnumValue, Field, JsType, MapKey, Message, ModuleName, Oneof, OneofVariant,
+    Package, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
 };
 use crate::diagnostics::{Diagnostics, Problem, Site, Spans, tag};
 use crate::naming::{self, NameError};
@@ -403,6 +403,7 @@ impl Builder {
                             elm_ctor,
                             ty,
                             cyclic: false,
+                            jstype: jstype(&member),
                         });
                     }
                 }
@@ -441,6 +442,7 @@ impl Builder {
                     cardinality,
                     ty,
                     cyclic: false,
+                    jstype: jstype(&field),
                 });
             }
         }
@@ -799,6 +801,26 @@ fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDescriptor> {
         .iter()
         .filter_map(|value| enumeration.get_value_by_name(value.name()))
         .collect()
+}
+
+/// The `jstype` option of `field` when its values are 64-bit integers;
+/// [`JsType::Normal`] for any other field, where it means nothing.
+fn jstype(field: &FieldDescriptor) -> JsType {
+    use prost_types::field_options::JsType as Proto;
+    let int64 = matches!(
+        field.kind(),
+        Kind::Int64 | Kind::Uint64 | Kind::Sint64 | Kind::Fixed64 | Kind::Sfixed64
+    );
+    let option = field
+        .field_descriptor_proto()
+        .options
+        .as_ref()
+        .map(|options| options.jstype());
+    match option {
+        Some(Proto::JsString) if int64 => JsType::String,
+        Some(Proto::JsNumber) if int64 => JsType::Number,
+        _ => JsType::Normal,
+    }
 }
 
 fn map_key(kind: &Kind) -> Option<MapKey> {
