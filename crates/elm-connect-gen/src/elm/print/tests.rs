@@ -87,6 +87,12 @@ fn application_with_a_multiline_last_argument_keeps_the_others_on_the_first_line
 }
 
 #[test]
+fn application_with_a_multiline_last_argument_keeps_only_the_first_on_the_first_line() {
+    let e = apply(var("f"), [var("a"), var("b"), list([int(1), int(2)])]);
+    assert_eq!(print_expr(&e), "f a\n    b\n    [ 1\n    , 2\n    ]");
+}
+
+#[test]
 fn application_with_a_multiline_argument_before_the_last_puts_each_argument_on_a_line() {
     let e = apply(var("f"), [list([int(1), int(2)]), var("a")]);
     assert_eq!(print_expr(&e), "f\n    [ 1\n    , 2\n    ]\n    a");

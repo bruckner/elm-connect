@@ -625,6 +625,15 @@ fn exprs_module() -> Module {
             ),
         ),
         value(
+            "twoLeadingArgumentsThenAList",
+            ty("List", [int_t()]),
+            vec![],
+            apply(
+                var("List.foldl"),
+                [var("(::)"), list([]), list([int(1), int(2)])],
+            ),
+        ),
+        value(
             "nested",
             ty("Maybe", [int_t()]),
             vec![],
