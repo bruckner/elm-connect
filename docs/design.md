@@ -394,8 +394,8 @@ Built as proposed, with these details *(each Proposed)*:
   absent. Repeated it is `List ()`, as a map value `Dict K ()`. A oneof
   member of it is a constructor without an argument (`ActionClear`, not
   `ActionClear ()`), encoded as `{"clear": {}}` and decoded from the
-  member's key holding an object or `null`
-  (`Connect.Json.emptyMember`). Whether such a field was sent is lost
+  member's key holding an object; a member present as `null` reads as
+  unset, as for any member (`Connect.Json.emptyMember`). Whether such a field was sent is lost
   (§3.8).
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
@@ -457,7 +457,8 @@ Built *(Proposed in its details)*:
 - A member of `google.protobuf.Empty` is a constructor without an
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
   decoded by `Connect.Json.emptyMember`, which reads the key as set when
-  it holds an object or `null`. *(Decided; §3.5.)*
+  it holds an object; `null` reads as unset, as for any member.
+  *(Decided; §3.5.)*
 - **Known weakness:** a member that is present but malformed
   (`{"title": 1}` for a string member) also reads as unset, because
   `Json.Decode.oneOf` moves on to the next alternative and the last one

@@ -245,8 +245,9 @@ memberEither jsonName protoName =
 
 
 {-| Decode a oneof member of type `google.protobuf.Empty`, whose constructor
-carries nothing: succeeds with the constructor when the object holds the key,
-whether its value is an object (usually `{}`) or `null`.
+carries nothing: succeeds with the constructor when the object holds the key
+with an object as its value (usually `{}`). Like [`member`](#member), it fails
+when the key is missing or holds `null`, which proto3 JSON reads as unset.
 
     type ActionKind
         = ActionKindUnset
@@ -281,7 +282,7 @@ presentEmpty names value =
                 case firstPresent names object of
                     Just ( name, raw ) ->
                         if isNull raw then
-                            Json.Decode.succeed value
+                            Json.Decode.fail ("Expecting a value at " ++ name ++ ", but got null")
 
                         else
                             Json.Decode.field name (Json.Decode.map (\_ -> value) empty)

@@ -184,8 +184,8 @@ oneofTests =
             \_ -> fails (Connect.Json.member "text" Json.Decode.string) """{"text":null}"""
         , test "emptyMember reads {}" <|
             \_ -> decodes (Connect.Json.emptyMember "clear" "set") """{"clear":{}}""" "set"
-        , test "emptyMember reads null" <|
-            \_ -> decodes (Connect.Json.emptyMember "clear" "set") """{"clear":null}""" "set"
+        , test "emptyMember fails on null" <|
+            \_ -> fails (Connect.Json.emptyMember "clear" "set") """{"clear":null}"""
         , test "emptyMember fails without the key" <|
             \_ -> fails (Connect.Json.emptyMember "clear" "set") "{}"
         , test "emptyMember fails on a value that is not an object" <|

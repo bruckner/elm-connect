@@ -85,7 +85,8 @@ impl Emitter {
     /// skipped, so it reads as unset. A member that closes a cycle decodes
     /// through `Json.Decode.lazy`. A member of `google.protobuf.Empty` is
     /// a `Connect.Json.emptyMember` (or `emptyMemberEither`) step, which
-    /// reads the key as set whether it holds an object or `null`.
+    /// reads the key as set when it holds an object; `null` is unset, as
+    /// for any member.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
         let mut alternatives: Vec<Expr> = shape
             .variants
