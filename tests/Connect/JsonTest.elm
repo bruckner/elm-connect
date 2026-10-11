@@ -506,7 +506,33 @@ encodesTo value json =
 wellKnownTests : Test
 wellKnownTests =
     describe "well-known types"
-        [ test "a timestamp" <|
+        [ test "struct reads an object" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.struct """{"a":1,"b":null}"""
+                    |> Result.map (Dict.map (\_ value -> Json.Encode.encode 0 value) >> Dict.toList)
+                    |> Expect.equal (Ok [ ( "a", "1" ), ( "b", "null" ) ])
+        , test "struct fails on an array" <|
+            \_ -> fails Connect.Json.struct "[1]"
+        , test "struct fails on null" <|
+            \_ -> fails Connect.Json.struct "null"
+        , test "encodeStruct writes an object" <|
+            \_ ->
+                encodesTo
+                    (Connect.Json.encodeStruct (Dict.fromList [ ( "a", Json.Encode.int 1 ) ]))
+                    """{"a":1}"""
+        , test "listValue reads an array" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.listValue """[1,"x",null]"""
+                    |> Result.map (List.map (Json.Encode.encode 0))
+                    |> Expect.equal (Ok [ "1", "\"x\"", "null" ])
+        , test "listValue fails on an object" <|
+            \_ -> fails Connect.Json.listValue """{"a":1}"""
+        , test "encodeListValue writes an array" <|
+            \_ ->
+                encodesTo
+                    (Connect.Json.encodeListValue [ Json.Encode.int 1, Json.Encode.null ])
+                    "[1,null]"
+        , test "a timestamp" <|
             \_ -> decodes Connect.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
         , test "a malformed timestamp fails" <|
             \_ -> fails Connect.Json.timestamp "\"yesterday\""

@@ -49,12 +49,13 @@
 //!   object; its decoder tries each member with `Json.Decode.oneOf` and
 //!   falls back to unset (design §3.6).
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
-//!   `List String` (field masks), `()` (`Empty`), `Json.Encode.Value`
-//!   (`Struct`, `Value`, `ListValue`) and the wrappers' scalars (design
-//!   §3.5). The first three and the wrappers are messages, held with
-//!   presence; JSON is held directly, `null` when absent; `Empty` has no
-//!   presence, and a oneof member of it is a constructor without an
-//!   argument.
+//!   `List String` (field masks), `()` (`Empty`),
+//!   `Dict String Json.Encode.Value` (`Struct`), `List Json.Encode.Value`
+//!   (`ListValue`), `Json.Encode.Value` (`Value`) and the wrappers'
+//!   scalars (design §3.5). All but `Empty` and `Value` are messages, held
+//!   with presence; `Value` is held directly, `null` when absent; `Empty`
+//!   has no presence, and a oneof member of it is a constructor without
+//!   an argument.
 //! - A recursive message also gets a wrapper, `type Node_ = Node_ Node`,
 //!   with an encoder and a decoder; a field that closes a cycle of record
 //!   fields holds the wrapper, and the wrapper's decoder reads the message

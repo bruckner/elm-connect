@@ -375,7 +375,9 @@ argument.)*
 | `google.protobuf.Duration` | `Connect.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
-| `google.protobuf.Struct`, `Value`, `ListValue` | `Json.Encode.Value` | they *are* JSON |
+| `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
+| `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
+| `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | unsupported; diagnostic | needs a type registry; no demand |
 
@@ -399,10 +401,18 @@ Built as proposed, with these details *(each Proposed)*:
   (§3.8).
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
-- `Struct`, `Value` and `ListValue` fields are `Json.Encode.Value`
-  without `Maybe`: an absent field reads as `null`, and the value is
-  passed through as received (`Json.Decode.value`, written back as is).
-  A `Value` member of a oneof that arrives as `null` reads as unset,
+- `Struct` is `Dict String Json.Encode.Value` and `ListValue` is
+  `List Json.Encode.Value`. *(Decided.)* They are messages, so presence
+  is kept: a singular field of either is a `Maybe` like any message
+  field, and an absent or `null` field (`Nothing`) is distinct from an
+  empty object or array (`Just Dict.empty`, `Just []`). Their decoders
+  (`Connect.Json.struct`, `Connect.Json.listValue`) check the JSON shape
+  and fail on anything but an object or an array; their encoders are
+  `Connect.Json.encodeStruct` and `encodeListValue`. The members and
+  elements are passed through as received.
+- `Value` fields are `Json.Encode.Value` without `Maybe`: an absent
+  field reads as `null`, and the value is passed through as received
+  (`Json.Decode.value`, written back as is). A `Value` member of a oneof that arrives as `null` reads as unset,
   like any other member, although proto3 JSON reads it as `NullValue`.
 - `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
@@ -699,6 +709,11 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 3. Fuse method and route for transcoding (§4).
 4. Connect GET for idempotent methods: default on or off (§5.2).
 5. Naming of additional-binding routes (§4).
+6. Presence as companion data: instead of `Maybe` fields, generated
+   records could carry a presence set plus helpers (`hasBar`), a
+   pattern that would also give unknown fields a home; this trades
+   "simple, idiomatic Elm records" for an abstract structure. Not
+   decided; raised during the type-layer review.
 
 ## 10. Out of scope but recorded
 
