@@ -28,6 +28,9 @@ jobs:
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: just check
+        env:
+          # For zizmor's online audits; the token has only `contents: read`.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   elm-compat:
     # Design section 8: Elm 0.19.2 is the development target; every
