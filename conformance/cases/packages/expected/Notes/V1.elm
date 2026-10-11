@@ -77,8 +77,8 @@ decodeNote =
 
 decodeNoteOwner : Json.Decode.Decoder NoteOwner
 decodeNoteOwner =
-    Json.Decode.oneOf
+    Connect.Json.members "owner"
+        NoteOwnerUnset
         [ Connect.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
         , Connect.Json.member "team" (Json.Decode.map NoteOwnerTeam Json.Decode.string)
-        , Json.Decode.succeed NoteOwnerUnset
         ]

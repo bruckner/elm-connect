@@ -311,9 +311,13 @@ just the form encoders write. *(Proposed; built.)*
   |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
   ```
 
-  When an object has both keys, the JSON name wins. The two names are
-  equal only for one-word fields without an explicit `json_name`, so in
-  practice most multi-word fields use `fieldEither`. A list of names
+  An object holding both keys fails, naming them (`Expecting
+  "displayName" or "display_name", but got both`), even when one of them
+  is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
+  as a duplicate field. *(Decided.)* The same holds for every two-name
+  helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`). The
+  two names are equal only for one-word fields without an explicit
+  `json_name`, so in practice most multi-word fields use `fieldEither`. A list of names
   (`field [ "title" ]`) was the alternative; it puts brackets on every
   line to serve the minority case, and two names are the most there can
   be.
@@ -412,8 +416,9 @@ Built as proposed, with these details *(each Proposed)*:
   elements are passed through as received.
 - `Value` fields are `Json.Encode.Value` without `Maybe`: an absent
   field reads as `null`, and the value is passed through as received
-  (`Json.Decode.value`, written back as is). A `Value` member of a oneof that arrives as `null` reads as unset,
-  like any other member, although proto3 JSON reads it as `NullValue`.
+  (`Json.Decode.value`, written back as is). A `Value` member of a oneof
+  that arrives as `null` is set and holds `null`, as protojson reads it,
+  unlike any other member (§3.6).
 - `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
   to 9999. `Time.Posix` counts milliseconds, so finer digits are dropped
@@ -458,25 +463,37 @@ Built *(Proposed in its details)*:
   `( jsonName, value )`, or `[]` when unset, and the message's encoder
   appends it to its fields: `Json.Encode.object ([ ... ] ++
   encodeNoteEventKind value.kind)`.
-- The oneof's decoder is `Json.Decode.oneOf` over a
-  `Connect.Json.member` per member (`memberEither` when the JSON and
-  proto names differ), then `Json.Decode.succeed NoteEventKindUnset`.
-  The message's decoder reads it with a `Connect.Json.oneof` step. A
-  member present as `null` reads as unset, and when several members are
-  present the first declared wins.
+- The oneof's decoder is `Connect.Json.members "kind"
+  NoteEventKindUnset [ ... ]`, given the oneof's proto name (for error
+  messages), its unset constructor and a `Connect.Json.member` per
+  member (`memberEither` when the JSON and proto names differ). The
+  message's decoder reads it with a `Connect.Json.oneof` step.
+- Decoding is strict, as protobuf-go's protojson is. *(Decided.)*
+  - A member is present when its key holds a value other than `null`;
+    a member present as `null` reads as absent. The exception, as in
+    protojson, is a member of `google.protobuf.Value`: `null` is a
+    value of it, so a member present as `null` is set and holds the
+    JSON `null` (`Connect.Json.valueMember`).
+  - No member present decodes as the unset constructor.
+  - A member present with a value its decoder rejects (`{"title": 1}`
+    for a string member) fails the message, as a malformed plain field
+    does; it never reads as unset.
+  - More than one member present fails, naming the keys found, in
+    declaration order: `Expecting at most one member of oneof "kind",
+    but got "created" and "titleChanged"`. Members present as `null`
+    do not count (a `Value` member does).
+  - A member written under both its JSON name and its proto name fails
+    as a duplicate (§3.4).
 - A member of `google.protobuf.Empty` is a constructor without an
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
   decoded by `Connect.Json.emptyMember`, which reads the key as set when
-  it holds an object; `null` reads as unset, as for any member.
-  *(Decided; §3.5.)*
-- **Known weakness:** a member that is present but malformed
-  (`{"title": 1}` for a string member) also reads as unset, because
-  `Json.Decode.oneOf` moves on to the next alternative and the last one
-  always succeeds. A plain field with a malformed value fails the whole
-  message, so a oneof is the one place malformed input passes silently.
-  A fix that keeps `Json.Decode.oneOf` ends the list with a decoder that
-  succeeds only when no member key is present, instead of
-  `Json.Decode.succeed`. *(Open.)*
+  it holds an object; `null` reads as unset, as for any member, and any
+  other value fails. *(Decided; §3.5.)*
+- `Json.Decode.oneOf` over the members, ending in
+  `Json.Decode.succeed` the unset constructor, was the first build. It
+  let a malformed member read as unset and took the first of several
+  members, and it cannot see two members at once, so it gave way to
+  `members`.
 
 ### 3.7 Naming
 

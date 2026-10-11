@@ -2,7 +2,7 @@
 //! decoder (design §3.6).
 
 use super::field::{ValueShape, Zeroed};
-use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, call};
+use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, var};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
@@ -79,61 +79,56 @@ impl Emitter {
         }
     }
 
-    /// `decodeFooKind : Json.Decode.Decoder FooKind`: `Json.Decode.oneOf`
-    /// over a `Connect.Json.member` per member, in declaration order, then
-    /// `Json.Decode.succeed FooKindUnset`. A member present as `null` is
-    /// skipped, so it reads as unset. A member that closes a cycle decodes
-    /// through `Json.Decode.lazy`. A member of `google.protobuf.Empty` is
-    /// a `Connect.Json.emptyMember` (or `emptyMemberEither`) step, which
-    /// reads the key as set when it holds an object; `null` is unset, as
-    /// for any member.
+    /// `decodeFooKind : Json.Decode.Decoder FooKind`:
+    /// `Connect.Json.members "kind" FooKindUnset [ ... ]`, a member step per
+    /// member in declaration order, which reads the one member present
+    /// (absent or `null` being not present), unset when none is, and fails
+    /// on a malformed member or on more than one present (design §3.6).
+    ///
+    /// Each step is `Connect.Json.member`, or `memberEither` when the JSON
+    /// and proto names differ, with the member's decoder mapped onto its
+    /// constructor; a member that closes a cycle decodes through
+    /// `Json.Decode.lazy`. A member of `google.protobuf.Empty` is an
+    /// `emptyMember` step given its constructor, read as set when its key
+    /// holds an object. A member of `google.protobuf.Value` is a
+    /// `valueMember` step given its constructor, for which `null` is set,
+    /// as protobuf's parsers read it.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
-        let mut alternatives: Vec<Expr> = shape
+        let steps: Vec<Expr> = shape
             .variants
             .iter()
             .map(|&(variant, value)| {
-                if is_empty(value) {
-                    let ctor = var(variant.elm_ctor.clone());
-                    return if variant.json_name == variant.proto_name {
-                        let member = self.reference((CONNECT_JSON, "emptyMember"));
-                        apply(member, [string(variant.json_name.clone()), ctor])
-                    } else {
-                        let member = self.reference((CONNECT_JSON, "emptyMemberEither"));
-                        apply(
-                            member,
-                            [
-                                string(variant.json_name.clone()),
-                                string(variant.proto_name.clone()),
-                                ctor,
-                            ],
-                        )
-                    };
-                }
-                let mut decode = self.value_decoder(value);
-                if variant.cyclic {
-                    decode = self.lazy(decode);
-                }
-                let map = self.reference((JSON_DECODE, "map"));
-                let decoder = apply(map, [var(variant.elm_ctor.clone()), decode]);
-                let step = if variant.json_name == variant.proto_name {
-                    let member = self.reference((CONNECT_JSON, "member"));
-                    apply(member, [string(variant.json_name.clone())])
-                } else {
-                    let member = self.reference((CONNECT_JSON, "memberEither"));
-                    apply(
-                        member,
-                        [
-                            string(variant.json_name.clone()),
-                            string(variant.proto_name.clone()),
-                        ],
-                    )
+                let ctor = var(variant.elm_ctor.clone());
+                let (helper, arg) = match value {
+                    ValueShape::Zeroed(Zeroed::Empty) => ("emptyMember", ctor),
+                    ValueShape::Zeroed(Zeroed::Json) => ("valueMember", ctor),
+                    _ => {
+                        let mut decode = self.value_decoder(value);
+                        if variant.cyclic {
+                            decode = self.lazy(decode);
+                        }
+                        let map = self.reference((JSON_DECODE, "map"));
+                        ("member", apply(map, [ctor, decode]))
+                    }
                 };
-                call(step, [decoder])
+                let names = if variant.json_name == variant.proto_name {
+                    vec![string(variant.json_name.clone())]
+                } else {
+                    vec![
+                        string(variant.json_name.clone()),
+                        string(variant.proto_name.clone()),
+                    ]
+                };
+                let helper = if names.len() == 1 {
+                    helper.to_owned()
+                } else {
+                    format!("{helper}Either")
+                };
+                let step = self.reference((CONNECT_JSON, &helper));
+                apply(step, names.into_iter().chain([arg]))
             })
             .collect();
-        let succeed = self.reference((JSON_DECODE, "succeed"));
-        alternatives.push(apply(succeed, [var(shape.oneof.unset_ctor.clone())]));
-        let one_of = self.reference((JSON_DECODE, "oneOf"));
+        let members = self.reference((CONNECT_JSON, "members"));
         let annotation = self.library_type(
             JSON_DECODE,
             "Decoder",
@@ -144,7 +139,14 @@ impl Emitter {
             name: shape.oneof.decoder_name(),
             annotation,
             params: Vec::new(),
-            body: apply(one_of, [list(alternatives)]),
+            body: apply(
+                members,
+                [
+                    string(shape.oneof.proto_name.clone()),
+                    var(shape.oneof.unset_ctor.clone()),
+                    list(steps),
+                ],
+            ),
         }
     }
 }

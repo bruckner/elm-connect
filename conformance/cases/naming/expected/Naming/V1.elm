@@ -148,8 +148,8 @@ decodeTag =
 
 decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
-    Json.Decode.oneOf
+    Connect.Json.members "case"
+        TagCaseUnset
         [ Connect.Json.member "then" (Json.Decode.map TagCaseThen Json.Decode.string)
         , Connect.Json.member "of" (Json.Decode.map TagCaseOf Connect.Json.int32)
-        , Json.Decode.succeed TagCaseUnset
         ]

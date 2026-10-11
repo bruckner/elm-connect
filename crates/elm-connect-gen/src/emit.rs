@@ -46,8 +46,12 @@
 //! - A oneof is a custom type whose first constructor is the unset case,
 //!   held in one record field where its first member was declared. Its
 //!   encoder gives the set member's key and value for the message's
-//!   object; its decoder tries each member with `Json.Decode.oneOf` and
-//!   falls back to unset (design §3.6).
+//!   object; its decoder is `Connect.Json.members`, which reads the one
+//!   member present, unset when none is, and fails on a malformed member,
+//!   on two members present, and on a member written under both its names
+//!   (design §3.6).
+//! - A field or member whose JSON name differs from its proto name is
+//!   read under either, and an object holding both fails (design §3.4).
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
 //!   `List String` (field masks), `()` (`Empty`),
 //!   `Dict String Json.Encode.Value` (`Struct`), `List Json.Encode.Value`

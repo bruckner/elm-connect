@@ -1,7 +1,8 @@
 module Connect.Json exposing
     ( field, fieldEither
     , encodeMaybe
-    , oneof, member, memberEither, emptyMember, emptyMemberEither
+    , oneof, members, Member, member, memberEither
+    , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , enum
     , intDict
     , int32, uint32
@@ -35,7 +36,8 @@ The module name is provisional and may change before the first release.
 
 # Oneofs
 
-@docs oneof, member, memberEither, emptyMember, emptyMemberEither
+@docs oneof, members, Member, member, memberEither
+@docs emptyMember, emptyMemberEither, valueMember, valueMemberEither
 
 
 # Enums
@@ -130,29 +132,33 @@ field name default decoder =
 
 {-| [`field`](#field) for a field whose JSON name differs from its proto name:
 the JSON name first, then the proto name. proto3 JSON parsers accept either
-key; when both are present, the JSON name wins.
+key, but not both: an object holding both fails, even when one of them is
+`null`, as protobuf's own parsers reject a duplicate field.
 
     |> fieldEither "displayName" "display_name" "" Json.Decode.string
 
 -}
 fieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
 fieldEither jsonName protoName default decoder =
-    Json.Decode.map2 (|>) (valueAt [ jsonName, protoName ] default decoder)
+    Json.Decode.map2 (|>) (valueAt (spellings jsonName protoName) default decoder)
 
 
-{-| The value under the first of `names` the object holds, decoded; `default`
-when it holds none of them or holds `null`.
+{-| The value under whichever of `names`, the spellings of one field, the
+object holds, decoded; `default` when it holds none of them or holds `null`.
 -}
 valueAt : List String -> a -> Decoder a -> Decoder a
 valueAt names default decoder =
     Json.Decode.dict Json.Decode.value
         |> Json.Decode.andThen
             (\object ->
-                case firstPresent names object of
-                    Nothing ->
+                case spelledAs names object of
+                    Err problem ->
+                        Json.Decode.fail problem
+
+                    Ok Nothing ->
                         Json.Decode.succeed default
 
-                    Just ( name, raw ) ->
+                    Ok (Just ( name, raw )) ->
                         if isNull raw then
                             Json.Decode.succeed default
 
@@ -161,19 +167,37 @@ valueAt names default decoder =
             )
 
 
-firstPresent : List String -> Dict.Dict String Value -> Maybe ( String, Value )
-firstPresent names object =
-    case names of
+{-| The keys a field may be written under: its JSON name, then its proto name
+when that differs.
+-}
+spellings : String -> String -> List String
+spellings jsonName protoName =
+    if jsonName == protoName then
+        [ jsonName ]
+
+    else
+        [ jsonName, protoName ]
+
+
+{-| Which of `names`, the spellings of one field, the object holds, with its
+value; an error naming them when it holds more than one.
+-}
+spelledAs : List String -> Dict.Dict String Value -> Result String (Maybe ( String, Value ))
+spelledAs names object =
+    case List.filterMap (\name -> Dict.get name object |> Maybe.map (Tuple.pair name)) names of
         [] ->
-            Nothing
+            Ok Nothing
 
-        name :: rest ->
-            case Dict.get name object of
-                Just raw ->
-                    Just ( name, raw )
+        [ found ] ->
+            Ok (Just found)
 
-                Nothing ->
-                    firstPresent rest object
+        _ ->
+            Err ("Expecting " ++ String.join " or " (List.map quote names) ++ ", but got both")
+
+
+quote : String -> String
+quote text =
+    "\"" ++ text ++ "\""
 
 
 isNull : Value -> Bool
@@ -201,7 +225,7 @@ encodeMaybe encode maybe =
 
 {-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
 decoder reads the message object itself, since each member of a oneof is a
-key of the message.
+key of the message. The decoder is usually [`members`](#members).
 
     type NoteKind
         = NoteKindUnset
@@ -219,39 +243,132 @@ oneof decoder =
     Json.Decode.map2 (|>) decoder
 
 
-{-| Decode one member of a oneof: succeeds only when the object holds the key
-with a value other than `null`, which proto3 JSON reads as unset. A oneof's
-decoder tries each member in turn and falls back to its unset constructor:
+{-| Decode a oneof from the message object, given the oneof's proto name (for
+error messages), its unset value and its members:
 
     decodeNoteKind : Decoder NoteKind
     decodeNoteKind =
-        Json.Decode.oneOf
+        members "kind"
+            NoteKindUnset
             [ member "text" (Json.Decode.map NoteKindText Json.Decode.string)
-            , Json.Decode.succeed NoteKindUnset
+            , memberEither "pageCount" "page_count" (Json.Decode.map NoteKindPageCount int32)
             ]
 
-A member whose value does not satisfy its decoder fails too, so the oneof reads
-as unset.
+A member is present when the object holds its key with a value other than
+`null`, which proto3 JSON reads as absent; a [`valueMember`](#valueMember) is
+present when it holds `null` too. Then:
+
+  - no member present decodes as the unset value;
+  - one member present decodes as that member, and when its value does not
+    satisfy the member's decoder the oneof fails, and with it the message;
+  - more than one member present fails, naming the keys found:
+    `Expecting at most one member of oneof "kind", but got "text" and "pageCount"`.
+
+A member written under both its JSON name and its proto name fails, as a field
+does in [`fieldEither`](#fieldEither).
 
 -}
-member : String -> Decoder a -> Decoder a
+members : String -> a -> List (Member a) -> Decoder a
+members oneofName unset candidates =
+    Json.Decode.dict Json.Decode.value
+        |> Json.Decode.andThen
+            (\object ->
+                case presentMembers object candidates of
+                    Err problem ->
+                        Json.Decode.fail problem
+
+                    Ok [] ->
+                        Json.Decode.succeed unset
+
+                    Ok [ ( name, decoder ) ] ->
+                        Json.Decode.field name decoder
+
+                    Ok several ->
+                        Json.Decode.fail
+                            ("Expecting at most one member of oneof "
+                                ++ quote oneofName
+                                ++ ", but got "
+                                ++ listing (List.map (\( name, _ ) -> quote name) several)
+                            )
+            )
+
+
+{-| The members the object holds, each with the key it is written under.
+-}
+presentMembers : Dict.Dict String Value -> List (Member a) -> Result String (List ( String, Decoder a ))
+presentMembers object candidates =
+    case candidates of
+        [] ->
+            Ok []
+
+        (Member candidate) :: rest ->
+            case spelledAs candidate.names object of
+                Err problem ->
+                    Err problem
+
+                Ok found ->
+                    let
+                        here =
+                            case found of
+                                Just ( name, raw ) ->
+                                    if isNull raw && not candidate.nullIsSet then
+                                        []
+
+                                    else
+                                        [ ( name, candidate.decoder ) ]
+
+                                Nothing ->
+                                    []
+                    in
+                    Result.map ((++) here) (presentMembers object rest)
+
+
+{-| `"a" and "b"`, `"a", "b" and "c"`.
+-}
+listing : List String -> String
+listing items =
+    case List.reverse items of
+        last :: ((_ :: _) as before) ->
+            String.join ", " (List.reverse before) ++ " and " ++ last
+
+        _ ->
+            String.concat items
+
+
+{-| One member of a oneof, for [`members`](#members): the keys it may be
+written under and the decoder of its value.
+-}
+type Member a
+    = Member
+        { names : List String
+        , nullIsSet : Bool
+        , decoder : Decoder a
+        }
+
+
+{-| A member of a oneof: its key and the decoder of its value. A `null` value
+reads as absent.
+
+    member "text" (Json.Decode.map NoteKindText Json.Decode.string)
+
+-}
+member : String -> Decoder a -> Member a
 member name =
-    present [ name ]
+    memberEither name name
 
 
 {-| [`member`](#member) for a member whose JSON name differs from its proto
 name: the JSON name first, then the proto name, as in
 [`fieldEither`](#fieldEither).
 -}
-memberEither : String -> String -> Decoder a -> Decoder a
-memberEither jsonName protoName =
-    present [ jsonName, protoName ]
+memberEither : String -> String -> Decoder a -> Member a
+memberEither jsonName protoName decoder =
+    Member { names = spellings jsonName protoName, nullIsSet = False, decoder = decoder }
 
 
-{-| Decode a oneof member of type `google.protobuf.Empty`, whose constructor
-carries nothing: succeeds with the constructor when the object holds the key
-with an object as its value (usually `{}`). Like [`member`](#member), it fails
-when the key is missing or holds `null`, which proto3 JSON reads as unset.
+{-| A member of type `google.protobuf.Empty`, whose constructor carries
+nothing: present when its key holds an object (usually `{}`). `null` reads as
+absent, and any other value fails.
 
     type ActionKind
         = ActionKindUnset
@@ -259,59 +376,44 @@ when the key is missing or holds `null`, which proto3 JSON reads as unset.
 
     decodeActionKind : Decoder ActionKind
     decodeActionKind =
-        Json.Decode.oneOf
-            [ emptyMember "clear" ActionKindClear
-            , Json.Decode.succeed ActionKindUnset
-            ]
+        members "kind" ActionKindUnset [ emptyMember "clear" ActionKindClear ]
 
 -}
-emptyMember : String -> a -> Decoder a
+emptyMember : String -> a -> Member a
 emptyMember name =
-    presentEmpty [ name ]
+    emptyMemberEither name name
 
 
 {-| [`emptyMember`](#emptyMember) for a member whose JSON name differs from its
 proto name: the JSON name first, then the proto name.
 -}
-emptyMemberEither : String -> String -> a -> Decoder a
-emptyMemberEither jsonName protoName =
-    presentEmpty [ jsonName, protoName ]
+emptyMemberEither : String -> String -> a -> Member a
+emptyMemberEither jsonName protoName value =
+    memberEither jsonName protoName (Json.Decode.map (\_ -> value) empty)
 
 
-presentEmpty : List String -> a -> Decoder a
-presentEmpty names value =
-    Json.Decode.dict Json.Decode.value
-        |> Json.Decode.andThen
-            (\object ->
-                case firstPresent names object of
-                    Just ( name, raw ) ->
-                        if isNull raw then
-                            Json.Decode.fail ("Expecting a value at " ++ name ++ ", but got null")
+{-| A member of type `google.protobuf.Value`, given its constructor. Its value
+is any JSON, `null` included: unlike every other member, one present as `null`
+is set and holds the JSON `null`, as protobuf's own parsers read it.
 
-                        else
-                            Json.Decode.field name (Json.Decode.map (\_ -> value) empty)
+    valueMember "payload" NoteKindPayload
 
-                    Nothing ->
-                        Json.Decode.fail ("Expecting a key " ++ String.join " or " names)
-            )
+-}
+valueMember : String -> (Value -> a) -> Member a
+valueMember name =
+    valueMemberEither name name
 
 
-present : List String -> Decoder a -> Decoder a
-present names decoder =
-    Json.Decode.dict Json.Decode.value
-        |> Json.Decode.andThen
-            (\object ->
-                case firstPresent names object of
-                    Just ( name, raw ) ->
-                        if isNull raw then
-                            Json.Decode.fail ("Expecting a value at " ++ name ++ ", but got null")
-
-                        else
-                            Json.Decode.field name decoder
-
-                    Nothing ->
-                        Json.Decode.fail ("Expecting a key " ++ String.join " or " names)
-            )
+{-| [`valueMember`](#valueMember) for a member whose JSON name differs from its
+proto name: the JSON name first, then the proto name.
+-}
+valueMemberEither : String -> String -> (Value -> a) -> Member a
+valueMemberEither jsonName protoName constructor =
+    Member
+        { names = spellings jsonName protoName
+        , nullIsSet = True
+        , decoder = Json.Decode.map constructor Json.Decode.value
+        }
 
 
 {-| Decode an enum, given its zero value and every value's proto name,

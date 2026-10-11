@@ -97,8 +97,8 @@ decodeCounters =
 
 decodeCountersLimit : Json.Decode.Decoder CountersLimit
 decodeCountersLimit =
-    Json.Decode.oneOf
+    Connect.Json.members "limit"
+        CountersLimitUnset
         [ Connect.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Connect.Json.int64AsInt)
         , Connect.Json.member "exactly" (Json.Decode.map CountersLimitExactly Connect.Json.int64)
-        , Json.Decode.succeed CountersLimitUnset
         ]

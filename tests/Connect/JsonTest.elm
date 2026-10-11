@@ -93,12 +93,16 @@ fieldEitherTests =
             \_ -> decodes decodeNamed """{"displayName":"a"}""" (Named "a")
         , test "the proto name" <|
             \_ -> decodes decodeNamed """{"display_name":"b"}""" (Named "b")
-        , test "the JSON name wins over the proto name" <|
-            \_ -> decodes decodeNamed """{"display_name":"b","displayName":"a"}""" (Named "a")
+        , test "both names fail, naming them" <|
+            \_ -> failsWith decodeNamed """{"display_name":"b","displayName":"a"}""" "Expecting \"displayName\" or \"display_name\", but got both"
+        , test "both names fail even when one is null" <|
+            \_ -> fails decodeNamed """{"displayName":null,"display_name":"b"}"""
+        , test "equal names are one key" <|
+            \_ -> decodes (Json.Decode.succeed Named |> Connect.Json.fieldEither "id" "id" "" Json.Decode.string) """{"id":"a"}""" (Named "a")
         , test "neither gives the default" <|
             \_ -> decodes decodeNamed "{}" (Named "")
         , test "null under the JSON name gives the default" <|
-            \_ -> decodes decodeNamed """{"displayName":null,"display_name":"b"}""" (Named "")
+            \_ -> decodes decodeNamed """{"displayName":null}""" (Named "")
         , test "null under the proto name gives the default" <|
             \_ -> decodes decodeNamed """{"display_name":null}""" (Named "")
         , test "a wrong type under the proto name fails" <|
@@ -143,6 +147,8 @@ type EventKind
     = EventKindUnset
     | EventKindText String
     | EventKindTitleChanged String
+    | EventKindCleared
+    | EventKindPayload Json.Encode.Value
 
 
 decodeEvent : Decoder Event
@@ -154,16 +160,31 @@ decodeEvent =
 
 decodeEventKind : Decoder EventKind
 decodeEventKind =
-    Json.Decode.oneOf
+    Connect.Json.members "kind"
+        EventKindUnset
         [ Connect.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
         , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
-        , Json.Decode.succeed EventKindUnset
+        , Connect.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
+        , Connect.Json.valueMember "payload" EventKindPayload
         ]
+
+
+failsWith : Decoder a -> String -> String -> Expect.Expectation
+failsWith decoder json problem =
+    case Json.Decode.decodeString decoder json of
+        Ok value ->
+            Expect.fail ("expected a failure, decoded " ++ Debug.toString value)
+
+        Err error ->
+            Json.Decode.errorToString error
+                |> String.contains problem
+                |> Expect.equal True
+                |> Expect.onFail (Json.Decode.errorToString error ++ "\ndoes not contain\n" ++ problem)
 
 
 oneofTests : Test
 oneofTests =
-    describe "oneof and member"
+    describe "oneof and members"
         [ test "a member" <|
             \_ -> decodes decodeEvent """{"id":"a","text":"t"}""" (Event "a" (EventKindText "t"))
         , test "a member under its proto name" <|
@@ -172,26 +193,46 @@ oneofTests =
             \_ -> decodes decodeEvent """{"id":"a"}""" (Event "a" EventKindUnset)
         , test "a member present as null is unset" <|
             \_ -> decodes decodeEvent """{"text":null}""" (Event "" EventKindUnset)
-        , test "a null member falls through to the next" <|
+        , test "a null member does not count against another" <|
             \_ -> decodes decodeEvent """{"text":null,"titleChanged":"x"}""" (Event "" (EventKindTitleChanged "x"))
-        , test "two members: the first declared wins" <|
-            \_ -> decodes decodeEvent """{"titleChanged":"x","text":"t"}""" (Event "" (EventKindText "t"))
-        , test "a malformed member reads as unset" <|
-            \_ -> decodes decodeEvent """{"text":1}""" (Event "" EventKindUnset)
-        , test "member fails without the key" <|
-            \_ -> fails (Connect.Json.member "text" Json.Decode.string) "{}"
-        , test "member fails on null" <|
-            \_ -> fails (Connect.Json.member "text" Json.Decode.string) """{"text":null}"""
+        , test "a malformed member fails the message" <|
+            \_ -> fails decodeEvent """{"text":1}"""
+        , test "a malformed member under its proto name fails the message" <|
+            \_ -> fails decodeEvent """{"title_changed":false}"""
+        , test "two members fail, naming the keys" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"titleChanged":"x","text":"t"}"""
+                    "Expecting at most one member of oneof \"kind\", but got \"text\" and \"titleChanged\""
+        , test "three members fail, naming every key" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"title_changed":"x","text":"t","cleared_all":{}}"""
+                    "Expecting at most one member of oneof \"kind\", but got \"text\", \"title_changed\" and \"cleared_all\""
+        , test "a member under both its names fails, naming them" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"titleChanged":"x","title_changed":"x"}"""
+                    "Expecting \"titleChanged\" or \"title_changed\", but got both"
+        , test "a member under both its names fails even when one is null" <|
+            \_ -> fails decodeEvent """{"titleChanged":"x","title_changed":null}"""
         , test "emptyMember reads {}" <|
-            \_ -> decodes (Connect.Json.emptyMember "clear" "set") """{"clear":{}}""" "set"
-        , test "emptyMember fails on null" <|
-            \_ -> fails (Connect.Json.emptyMember "clear" "set") """{"clear":null}"""
-        , test "emptyMember fails without the key" <|
-            \_ -> fails (Connect.Json.emptyMember "clear" "set") "{}"
+            \_ -> decodes decodeEvent """{"cleared_all":{}}""" (Event "" EventKindCleared)
+        , test "emptyMember reads null as unset" <|
+            \_ -> decodes decodeEvent """{"clearedAll":null}""" (Event "" EventKindUnset)
         , test "emptyMember fails on a value that is not an object" <|
-            \_ -> fails (Connect.Json.emptyMember "clear" "set") """{"clear":1}"""
-        , test "emptyMemberEither reads the proto name" <|
-            \_ -> decodes (Connect.Json.emptyMemberEither "clearAll" "clear_all" "set") """{"clear_all":{}}""" "set"
+            \_ -> fails decodeEvent """{"clearedAll":1}"""
+        , test "valueMember holds any JSON" <|
+            \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Json.Encode.list Json.Encode.int [ 1 ])))
+        , test "valueMember reads null as set, holding null" <|
+            \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Json.Encode.null))
+        , test "a null valueMember counts against another member" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"payload":null,"text":"t"}"""
+                    "Expecting at most one member of oneof \"kind\", but got \"text\" and \"payload\""
+        , test "a oneof that is not an object fails" <|
+            \_ -> fails decodeEventKind "[]"
         ]
 
 

@@ -172,23 +172,23 @@ decodeNoteEvent =
 
 decodeNoteEventKind : Json.Decode.Decoder NoteEventKind
 decodeNoteEventKind =
-    Json.Decode.oneOf
+    Connect.Json.members "kind"
+        NoteEventKindUnset
         [ Connect.Json.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
         , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Json.Decode.string)
         , Connect.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
         , Connect.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Connect.Json.int64)
         , Connect.Json.emptyMember "archived" NoteEventKindArchived
         , Connect.Json.emptyMemberEither "clearedAll" "cleared_all" NoteEventKindClearedAll
-        , Json.Decode.succeed NoteEventKindUnset
         ]
 
 
 decodeNoteEventSource : Json.Decode.Decoder NoteEventSource
 decodeNoteEventSource =
-    Json.Decode.oneOf
+    Connect.Json.members "source"
+        NoteEventSourceUnset
         [ Connect.Json.member "user" (Json.Decode.map NoteEventSourceUser Json.Decode.string)
         , Connect.Json.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
-        , Json.Decode.succeed NoteEventSourceUnset
         ]
 
 
@@ -200,8 +200,8 @@ decodeChoice =
 
 decodeChoiceValue : Json.Decode.Decoder ChoiceValue
 decodeChoiceValue =
-    Json.Decode.oneOf
+    Connect.Json.members "value"
+        ChoiceValueUnset
         [ Connect.Json.member "number" (Json.Decode.map ChoiceValueNumber Connect.Json.float)
         , Connect.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Json.Decode.string)
-        , Json.Decode.succeed ChoiceValueUnset
         ]

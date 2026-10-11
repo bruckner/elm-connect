@@ -480,15 +480,17 @@ fn expression(expr: &Expr) -> Block {
             if f.is_single() && args.iter().all(Block::is_single) {
                 Block::row(std::iter::once(f).chain(args), " ")
             } else if f.is_single() && leading_single && args.len() > 1 {
-                // Only the last argument spans lines: the others stay on
+                // Only the last argument spans lines: the first stays on
                 // the first line with the function, as in `Html.div [ a ]`
-                // followed by its children.
-                let mut args = args;
-                let last = args.pop().expect("an application has arguments");
-                Block::stack([
-                    Block::row(std::iter::once(f).chain(args), " "),
-                    last.indent(),
-                ])
+                // followed by its children, and elm-format 0.8.8 puts each
+                // of the others on a line of its own.
+                let mut args = args.into_iter();
+                let first = args.next().expect("an application has arguments");
+                Block::stack(
+                    std::iter::once(Block::row([f, first], " "))
+                        .chain(args.map(Block::indent))
+                        .collect::<Vec<_>>(),
+                )
             } else {
                 Block::stack(std::iter::once(f).chain(args.into_iter().map(Block::indent)))
             }
