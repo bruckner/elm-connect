@@ -1,0 +1,393 @@
+//! The Elm naming rules (design §3.7): pure functions from proto names to
+//! Elm names.
+//!
+//! Every function here is total over proto identifiers and deterministic;
+//! the ones that can produce something Elm would reject return a
+//! [`NameError`] instead. Detecting *collisions* between the names these
+//! produce is the IR builder's job, since it needs the proto sources to
+//! report them.
+
+use crate::ir::ModuleName;
+
+/// The words Elm reserves, which cannot name a record field or a variable.
+///
+/// The list is `reservedWords` in `compiler/src/Parse/Variable.hs` of
+/// elm/compiler at tag 0.19.2 (unchanged since 0.19.0). `alias` and `infix`
+/// are not in it: both are legal record field names in Elm 0.19.2, so they
+/// are left alone.
+pub const ELM_RESERVED_WORDS: [&str; 14] = [
+    "if", "then", "else", "case", "of", "let", "in", "type", "module", "where", "import",
+    "exposing", "as", "port",
+];
+
+/// Why a proto name has no Elm spelling.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum NameError {
+    /// The proto file declares no package, so there is no module name.
+    EmptyPackage,
+    /// A package segment does not start with a letter once its
+    /// underscores are dropped (`1v`, `_2`), which every Elm module segment
+    /// must.
+    InvalidSegment {
+        /// The offending proto package segment.
+        segment: String,
+    },
+    /// The converted name is empty: the proto name was only underscores.
+    Empty,
+    /// The converted name starts with something other than the letter case
+    /// Elm requires: a type or constructor name must start with an uppercase
+    /// letter, a field name with a lowercase one.
+    WrongStart {
+        /// The converted name.
+        converted: String,
+    },
+}
+
+/// The Elm module for a proto package: each `.`-separated segment in
+/// PascalCase (`notes.v1` becomes `Notes.V1`, `foo_bar.v2beta1` becomes
+/// `FooBar.V2beta1`).
+pub fn module_name(package: &str) -> Result<ModuleName, NameError> {
+    if package.is_empty() {
+        return Err(NameError::EmptyPackage);
+    }
+    let mut segments = Vec::new();
+    for segment in package.split('.') {
+        let converted = pascal_case(segment);
+        if ModuleName::new(vec![converted.clone()]).is_none() {
+            return Err(NameError::InvalidSegment {
+                segment: segment.to_owned(),
+            });
+        }
+        segments.push(converted);
+    }
+    ModuleName::new(segments).ok_or(NameError::EmptyPackage)
+}
+
+/// The Elm type name for a message or enum, given its proto name and the
+/// names of the messages enclosing it, outermost first: each in PascalCase,
+/// joined (`["Outer", "Inner"]` becomes `OuterInner`).
+pub fn type_name(nested_path: &[&str]) -> Result<String, NameError> {
+    let converted: String = nested_path.iter().map(|name| pascal_case(name)).collect();
+    check_upper(converted)
+}
+
+/// The Elm record field name for a proto field (or oneof) name.
+///
+/// The conversion is protoc's default `json_name` rule, applied to the
+/// proto name and never to an explicit `json_name`: drop each underscore
+/// and capitalise the letter after it (`display_name` becomes
+/// `displayName`). It does not lowercase the first letter, so a proto name
+/// starting with an uppercase letter is an error rather than a silent
+/// change. An Elm reserved word gains a trailing underscore (`type`
+/// becomes `type_`).
+pub fn field_name(proto_name: &str) -> Result<String, NameError> {
+    let mut converted = String::with_capacity(proto_name.len());
+    let mut capitalise_next = false;
+    for c in proto_name.chars() {
+        if c == '_' {
+            capitalise_next = true;
+        } else if capitalise_next {
+            converted.push(c.to_ascii_uppercase());
+            capitalise_next = false;
+        } else {
+            converted.push(c);
+        }
+    }
+    match converted.chars().next() {
+        None => Err(NameError::Empty),
+        Some(first) if !first.is_ascii_lowercase() => Err(NameError::WrongStart { converted }),
+        Some(_) if ELM_RESERVED_WORDS.contains(&converted.as_str()) => Ok(converted + "_"),
+        Some(_) => Ok(converted),
+    }
+}
+
+/// The constructor for an enum value: the enum's Elm name followed by the
+/// value name in PascalCase, with the conventional prefix stripped.
+///
+/// The prefix is the enum's own proto name in `UPPER_SNAKE_CASE`, so
+/// `Status` + `STATUS_ACTIVE` and `Status` + `ACTIVE` both become
+/// `StatusActive`. It is matched word by word, ignoring case and
+/// underscores, so `HttpMethod` + `HTTP_METHOD_GET` becomes
+/// `HttpMethodGet`. A value that is nothing but the prefix keeps it. A
+/// value name without lowercase letters (the proto convention) is
+/// lowercased before casing, so `STATUS_ACTIVE` gives `Active`, not
+/// `ACTIVE`.
+pub fn enum_constructor(enum_elm_name: &str, enum_proto_name: &str, value_name: &str) -> String {
+    let stripped = strip_enum_prefix(enum_proto_name, value_name);
+    let value = if stripped.chars().any(|c| c.is_ascii_lowercase()) {
+        pascal_case(stripped)
+    } else {
+        pascal_case(&stripped.to_ascii_lowercase())
+    };
+    format!("{enum_elm_name}{value}")
+}
+
+/// The custom type for a oneof: the message's Elm name followed by the
+/// oneof name in PascalCase (`NoteEvent` + `kind` becomes `NoteEventKind`).
+pub fn oneof_type_name(message_elm_name: &str, oneof_name: &str) -> String {
+    format!("{message_elm_name}{}", pascal_case(oneof_name))
+}
+
+/// The constructor for one member of a oneof: the oneof's type name
+/// followed by the field name in PascalCase (`NoteEventKind` + `created`
+/// becomes `NoteEventKindCreated`).
+pub fn oneof_variant_constructor(oneof_type_name: &str, field_name: &str) -> String {
+    format!("{oneof_type_name}{}", pascal_case(field_name))
+}
+
+/// The constructor for a oneof's unset case: the oneof's type name followed
+/// by `Unset`.
+pub fn oneof_unset_constructor(oneof_type_name: &str) -> String {
+    format!("{oneof_type_name}Unset")
+}
+
+/// PascalCase of one proto identifier: drop underscores and uppercase the
+/// first letter of every underscore-separated word, leaving the rest of
+/// each word as written (`foo_bar` becomes `FooBar`, `HTTPRequest` stays).
+pub fn pascal_case(name: &str) -> String {
+    name.split('_')
+        .flat_map(|word| {
+            let mut chars = word.chars();
+            chars
+                .next()
+                .map(|first| first.to_ascii_uppercase())
+                .into_iter()
+                .chain(chars)
+        })
+        .collect()
+}
+
+fn starts_with_upper(name: &str) -> bool {
+    name.starts_with(|c: char| c.is_ascii_uppercase())
+}
+
+fn check_upper(converted: String) -> Result<String, NameError> {
+    if converted.is_empty() {
+        Err(NameError::Empty)
+    } else if starts_with_upper(&converted) {
+        Ok(converted)
+    } else {
+        Err(NameError::WrongStart { converted })
+    }
+}
+
+/// `value_name` without the enum's `UPPER_SNAKE_CASE` prefix and the
+/// underscore after it, when it has one and something follows it.
+fn strip_enum_prefix<'a>(enum_proto_name: &str, value_name: &'a str) -> &'a str {
+    let target: String = enum_proto_name
+        .chars()
+        .filter(|&c| c != '_')
+        .map(|c| c.to_ascii_uppercase())
+        .collect();
+    let mut seen = String::new();
+    for (index, c) in value_name.char_indices() {
+        if c == '_' {
+            if seen == target {
+                let rest = value_name[index..].trim_start_matches('_');
+                return if rest.is_empty() { value_name } else { rest };
+            }
+            if seen.len() > target.len() {
+                break;
+            }
+        } else {
+            seen.push(c.to_ascii_uppercase());
+        }
+    }
+    value_name
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn module_names() {
+        let cases = [
+            ("notes.v1", "Notes.V1"),
+            ("foo_bar.v2beta1", "FooBar.V2beta1"),
+            ("acme", "Acme"),
+            ("acme.Notes.v1", "Acme.Notes.V1"),
+            ("a.b.c", "A.B.C"),
+            ("_x.y", "X.Y"),
+        ];
+        for (package, expected) in cases {
+            let module = module_name(package).unwrap_or_else(|e| panic!("{package}: {e:?}"));
+            assert_eq!(module.to_string(), expected, "{package}");
+        }
+    }
+
+    #[test]
+    fn module_name_errors() {
+        let cases = [
+            ("", NameError::EmptyPackage),
+            (
+                "notes.1v",
+                NameError::InvalidSegment {
+                    segment: "1v".into(),
+                },
+            ),
+            (
+                "_1.x",
+                NameError::InvalidSegment {
+                    segment: "_1".into(),
+                },
+            ),
+        ];
+        for (package, expected) in cases {
+            assert_eq!(module_name(package), Err(expected), "{package}");
+        }
+    }
+
+    #[test]
+    fn type_names() {
+        let cases: [(&[&str], &str); 6] = [
+            (&["Note"], "Note"),
+            (&["Outer", "Inner"], "OuterInner"),
+            (&["note_event"], "NoteEvent"),
+            (&["HTTPRequest"], "HTTPRequest"),
+            (&["outer", "inner_thing"], "OuterInnerThing"),
+            (&["A", "B", "C"], "ABC"),
+        ];
+        for (path, expected) in cases {
+            assert_eq!(type_name(path).as_deref(), Ok(expected), "{path:?}");
+        }
+    }
+
+    #[test]
+    fn type_name_errors() {
+        assert_eq!(type_name(&["_"]), Err(NameError::Empty));
+        assert_eq!(
+            type_name(&["_1x"]),
+            Err(NameError::WrongStart {
+                converted: "1x".into()
+            })
+        );
+    }
+
+    #[test]
+    fn field_names() {
+        let cases = [
+            ("name", "name"),
+            ("display_name", "displayName"),
+            ("fooBar", "fooBar"),
+            ("foo_bar", "fooBar"),
+            ("foo__bar", "fooBar"),
+            ("foo_", "foo"),
+            ("_foo", "Foo_error"),
+            ("x_1", "x1"),
+            ("http_url", "httpUrl"),
+            ("type", "type_"),
+            ("module", "module_"),
+            ("port", "port_"),
+            ("alias", "alias"),
+            ("infix", "infix"),
+            ("as", "as_"),
+            ("types", "types"),
+        ];
+        for (proto, expected) in cases {
+            if let Some(converted) = expected.strip_suffix("_error") {
+                assert_eq!(
+                    field_name(proto),
+                    Err(NameError::WrongStart {
+                        converted: converted.into()
+                    }),
+                    "{proto}"
+                );
+            } else {
+                assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
+            }
+        }
+    }
+
+    #[test]
+    fn field_name_errors() {
+        assert_eq!(field_name("_"), Err(NameError::Empty));
+        assert_eq!(
+            field_name("Name"),
+            Err(NameError::WrongStart {
+                converted: "Name".into()
+            })
+        );
+        assert_eq!(
+            field_name("_1"),
+            Err(NameError::WrongStart {
+                converted: "1".into()
+            })
+        );
+    }
+
+    #[test]
+    fn every_reserved_word_is_escaped() {
+        for word in ELM_RESERVED_WORDS {
+            assert_eq!(field_name(word), Ok(format!("{word}_")));
+        }
+    }
+
+    #[test]
+    fn enum_constructors() {
+        let cases = [
+            ("Status", "Status", "STATUS_ACTIVE", "StatusActive"),
+            ("Status", "Status", "ACTIVE", "StatusActive"),
+            (
+                "Status",
+                "Status",
+                "STATUS_UNSPECIFIED",
+                "StatusUnspecified",
+            ),
+            ("Status", "Status", "STATUS", "StatusStatus"),
+            ("Status", "Status", "STATUSES_ON", "StatusStatusesOn"),
+            (
+                "HttpMethod",
+                "HttpMethod",
+                "HTTP_METHOD_GET",
+                "HttpMethodGet",
+            ),
+            ("HttpMethod", "HttpMethod", "GET", "HttpMethodGet"),
+            (
+                "HTTPMethod",
+                "HTTPMethod",
+                "HTTPMETHOD_GET",
+                "HTTPMethodGet",
+            ),
+            ("NoteKind", "Kind", "KIND_DRAFT", "NoteKindDraft"),
+            ("Color", "Color", "COLOR_LIGHT_BLUE", "ColorLightBlue"),
+            ("Color", "Color", "lightBlue", "ColorLightBlue"),
+            ("Color", "Color", "COLOR_2D", "Color2d"),
+        ];
+        for (elm, proto, value, expected) in cases {
+            assert_eq!(enum_constructor(elm, proto, value), expected, "{value}");
+        }
+    }
+
+    #[test]
+    fn oneof_names() {
+        let ty = oneof_type_name("NoteEvent", "kind");
+        assert_eq!(ty, "NoteEventKind");
+        assert_eq!(oneof_type_name("Note", "body_kind"), "NoteBodyKind");
+        assert_eq!(
+            oneof_variant_constructor(&ty, "created"),
+            "NoteEventKindCreated"
+        );
+        assert_eq!(
+            oneof_variant_constructor(&ty, "title_changed"),
+            "NoteEventKindTitleChanged"
+        );
+        assert_eq!(oneof_unset_constructor(&ty), "NoteEventKindUnset");
+    }
+
+    #[test]
+    fn pascal_cases() {
+        let cases = [
+            ("foo", "Foo"),
+            ("foo_bar", "FooBar"),
+            ("fooBar", "FooBar"),
+            ("HTTPRequest", "HTTPRequest"),
+            ("v2beta1", "V2beta1"),
+            ("__x__y", "XY"),
+            ("", ""),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(pascal_case(input), expected, "{input}");
+        }
+    }
+}

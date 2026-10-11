@@ -164,6 +164,12 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   because it changes module names based on a property users cannot see
   in their protos.
 - An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)*
+- The set of files to generate must be closed under package references:
+  a generated package may refer only to types in generated packages or
+  to supported well-known types, and a reference to any other package is
+  a diagnostic naming both sides. The CLI generates the closure of its
+  inputs; protoc users list all the files. *(Proposed.)* `google.protobuf`
+  is never generated as a package.
 
 ### 3.2 Messages
 
