@@ -619,6 +619,11 @@ case names it):
   request and response types of methods included.
 - **Streaming methods** (`services::streaming`, `services_streaming`
   case): client, server and bidirectional (§1.3).
+- **HTTP rules a client cannot follow** (`route::*`, `routes_invalid`
+  case): a template that does not parse or has a bare wildcard, a path
+  variable, `body` or `response_body` naming no suitable field, a
+  request field with no query form, nested additional bindings (§4,
+  §5.3).
 - **Method values that collide**: two methods of one service whose
   values have one name (`GetSettings` and `Get_Settings`;
   `naming::value_collision`, `services_value_collision` case).
@@ -706,6 +711,38 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   than from `prost_types`, which drops extension options such as
   `google.api.http`.
 
+Routes *(Proposed; built in `elm-connect-gen::route`)*: each binding of
+a rule (the rule's own, then each additional binding) is parsed and
+checked against the request and response messages at generation time,
+and becomes a `route::Route`: the verb, the path as literals and
+variables, the custom verb, the body, the response body and the query
+parameters, every field by its proto path and its JSON path. The runtime
+gets exactly this as data and never parses a template.
+
+- The template grammar is `google/api/http.proto`'s. A literal may not
+  hold `{`, `}`, `*`, `=` or `:`, nor be empty; a variable may not nest
+  another; `**` is the last segment only; the custom verb is the text
+  after the last `:` that follows the last `/` outside braces.
+- A bare `*` or `**` outside a variable is refused (`route::template`):
+  a server can match it, but a client has no field to fill it from.
+- A path variable names a non-repeated scalar or enum field, possibly
+  through singular fields of generated messages (`{sub.subfield}`); not
+  through a well-known type, whose fields have no JSON form of their own.
+  A field bound twice is refused. Each violation is `route::path_field`.
+- The client does not check a value against the variable's template
+  (`notes/42` against `notes/*`): the server matches, and a mismatch is
+  its 404.
+- `body` is empty, `*`, or a top-level singular message field
+  (`route::body_field` otherwise). A path variable inside the body field
+  (`patch: "/v1/{book.name=books/*}" body: "book"`, AIP-134's update
+  shape) is allowed: the field is in both, the body is sent whole, and
+  the server takes the path's value. That is the one way a field can be
+  in both, so "a field in both path and body" is not a diagnostic.
+- `response_body` is any top-level field of the response
+  (`route::response_body` otherwise).
+- Additional bindings follow the same rules and may not nest
+  (`route::rule`, as is a rule with no pattern).
+
 ## 5. Runtime  *(Proposed)*
 
 **The package is kept.** *(Decided, 2026-10-11.)* The type layer was
@@ -769,6 +806,24 @@ type Error
   parameters on GET and DELETE, omitting zero values. *(Decided for
   omission: the in-house generator sent them, which was harmless but
   noisy.)*
+- Query parameters, as built *(Proposed)*: unless `body` is `*`, every
+  leaf of the request that is not bound by the path and not under the
+  body field, in declaration order, depth first through singular
+  message fields (http.proto's rule, whatever the verb). A parameter is
+  named by the dotted proto field path (`sub.subfield`,
+  `page_size`), which http.proto prescribes and every transcoder
+  accepts; JSON names (`pageSize`) are accepted by grpc-gateway but not
+  by every transcoder. A field without presence is left out at its
+  proto3 default (`""`, `0`, `false`, an enum's zero value), a field
+  with presence (`optional`, a oneof member, a wrapper, a timestamp)
+  only when unset, and a repeated field sends one parameter per element.
+  Values are written as proto3 JSON writes them, unquoted: enums by
+  name, 64-bit integers in decimal, timestamps in RFC 3339, field masks
+  comma-joined.
+- Fields with no query form are refused rather than dropped
+  (`route::query_field`): maps, repeated messages, `Struct`, `Value`
+  and `ListValue`, and a message that contains itself. `Empty` carries
+  nothing and has no parameter.
 - Errors decode `google.rpc.Status` (integer `code`, `message`,
   `details`) as grpc-gateway and Envoy emit it.
 
@@ -809,7 +864,8 @@ shared.
   of an unsupported type (dropped: every key proto allows has an Elm
   form, `bool` an association list, §3.2); package
   import cycle; name collision after casing; `Any` field; streaming
-  method; method value collision (§4). A recursive
+  method; method value collision (§4); the `route::*` problems of
+  HTTP rules (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
 

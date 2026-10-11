@@ -64,6 +64,19 @@ pub enum Code {
     ModuleCollision,
     /// A service has no valid Elm module name.
     InvalidService,
+    /// An HTTP rule has no pattern, or nests additional bindings.
+    RouteRule,
+    /// An HTTP rule's path template does not parse, or has a wildcard
+    /// outside a variable.
+    RouteTemplate,
+    /// A path variable names no field a path can hold.
+    RoutePathField,
+    /// `body` names no message field of the request.
+    RouteBodyField,
+    /// `response_body` names no field of the response.
+    RouteResponseBody,
+    /// A request field that would be a query parameter has no query form.
+    RouteQueryField,
 }
 
 impl Code {
@@ -88,6 +101,12 @@ impl Code {
             Code::InvalidMethod => "naming::invalid_method",
             Code::ModuleCollision => "naming::module_collision",
             Code::InvalidService => "naming::invalid_service",
+            Code::RouteRule => "route::rule",
+            Code::RouteTemplate => "route::template",
+            Code::RoutePathField => "route::path_field",
+            Code::RouteBodyField => "route::body_field",
+            Code::RouteResponseBody => "route::response_body",
+            Code::RouteQueryField => "route::query_field",
         }
     }
 }
@@ -411,6 +430,77 @@ impl Problem {
              segment must start with a letter. Rename the service.",
             vec![site],
         )
+    }
+
+    /// `binding` (such as "The HTTP rule of `notes.v1.Notes.GetNote`")
+    /// does not resolve, for `error`.
+    pub fn route(binding: &str, error: &crate::route::RouteError, site: Site) -> Self {
+        use crate::route::RouteError as E;
+        let (code, message, help): (Code, String, &str) = match error {
+            E::NoPattern => (
+                Code::RouteRule,
+                format!("{binding} has no path."),
+                "A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path \
+                 template, or `custom` to a kind and a path.",
+            ),
+            E::NestedBindings => (
+                Code::RouteRule,
+                format!("{binding} has additional bindings of its own."),
+                "`google/api/http.proto` allows additional bindings one level deep only. Move \
+                 the nested bindings up into the rule's own `additional_bindings`.",
+            ),
+            E::Syntax { template, error } => (
+                Code::RouteTemplate,
+                format!("{binding} has the path `{template}`, which does not parse: {error}."),
+                "A path template is `/` and segments separated by `/`, each a literal, `*`, \
+                 `**` (last only) or a variable like `{name}` or `{name=messages/*}`, \
+                 optionally followed by a custom verb like `:cancel`.",
+            ),
+            E::UnboundWildcard { template } => (
+                Code::RouteTemplate,
+                format!("{binding} has the path `{template}`, with a wildcard outside a variable."),
+                "A client fills each path segment from a request field, and a bare `*` or `**` \
+                 names none. Bind it to a field, like `{name=*}`.",
+            ),
+            E::PathField { field, reason } => (
+                Code::RoutePathField,
+                format!("{binding} binds `{{{field}}}` in its path, but {reason}."),
+                "A path variable names a non-repeated scalar or enum field of the request, \
+                 possibly through singular message fields (`{book.name}`).",
+            ),
+            E::PathFieldTwice { field } => (
+                Code::RoutePathField,
+                format!("{binding} binds `{{{field}}}` in its path twice."),
+                "Each field can fill one path variable. Remove one of them.",
+            ),
+            E::BodyField { field, reason } => (
+                Code::RouteBodyField,
+                format!("{binding} has `body: \"{field}\"`, but {reason}."),
+                "`body` is `*` for every field not in the path, or the name of a top-level \
+                 singular message field of the request, or left out for no body.",
+            ),
+            E::ResponseBodyField { field } => (
+                Code::RouteResponseBody,
+                format!(
+                    "{binding} has `response_body: \"{field}\"`, but the response has no such \
+                     field."
+                ),
+                "`response_body` names a top-level field of the response, or is left out for \
+                 the whole response.",
+            ),
+            E::QueryField { field, reason } => (
+                Code::RouteQueryField,
+                format!(
+                    "{binding} sends `{field}` as a query parameter, but {reason}, which has no \
+                     query form."
+                ),
+                "Every request field outside the path and the body is a query parameter, and \
+                 a parameter holds scalars, enums and well-known types with a string form. \
+                 Send the field in the body (`body: \"*\"`, or a body field holding it), or \
+                 move it out of the request.",
+            ),
+        };
+        Problem::new(code, message, help, vec![site])
     }
 
     /// The method `method`'s name becomes `converted`, which is not an Elm

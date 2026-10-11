@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package library.v1;
+
+import "google/api/annotations.proto";
+
+message Book {
+  string name = 1;
+  repeated string authors = 2;
+  map<string, string> labels = 3;
+}
+
+message GetBookRequest {
+  string name = 1;
+}
+
+service Library {
+  // The variable names a field the request does not have.
+  rpc GetBook(GetBookRequest) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/{book_name=shelves/*/books/*}"
+    };
+  }
+  // The body names a field that is not a message.
+  rpc CreateBook(Book) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/books"
+      body: "name"
+    };
+  }
+  // A map cannot be a query parameter.
+  rpc FindBook(Book) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/books:find"
+    };
+  }
+  // A wildcard outside a variable has no field to fill it.
+  rpc ListBooks(GetBookRequest) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/*/books"
+      additional_bindings {
+        get: "/v1/books"
+        response_body: "title"
+      }
+    };
+  }
+}

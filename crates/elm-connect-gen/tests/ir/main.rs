@@ -4,4 +4,5 @@
 mod build;
 mod common;
 mod render;
+mod routes;
 mod services;

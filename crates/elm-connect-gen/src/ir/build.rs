@@ -16,6 +16,7 @@ use super::{
 };
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
+use crate::route::{self, Route};
 
 /// The package whose types are well-known types, never generated.
 const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
@@ -321,6 +322,65 @@ impl Builder {
         }
     }
 
+    /// The routes of `rule`, the method's own binding first; `None` after
+    /// reporting every problem in them, at the rule's option.
+    fn routes(
+        &mut self,
+        file: &FileDescriptor,
+        method: &MethodDescriptor,
+        rule: &HttpRule,
+    ) -> Option<Vec<Route>> {
+        let full_name = method.full_name();
+        let path = [
+            method.path(),
+            &[tag::METHOD_OPTIONS, tag::METHOD_OPTIONS_HTTP],
+        ]
+        .concat();
+        let bindings = std::iter::once((rule, false)).chain(
+            rule.additional_bindings
+                .iter()
+                .map(|binding| (binding, true)),
+        );
+        let mut routes = Vec::new();
+        let mut failed = false;
+        for (index, (binding, nested)) in bindings.enumerate() {
+            match route::resolve(binding, &method.input(), &method.output(), nested) {
+                Ok(route) => routes.push(route),
+                Err(errors) => {
+                    failed = true;
+                    let what = match index {
+                        0 => format!("The HTTP rule of `{full_name}`"),
+                        n => format!("Additional binding {n} of `{full_name}`"),
+                    };
+                    for error in errors {
+                        let site = self.site_within(file, &path, "in this rule".into());
+                        self.diagnostics.push(Problem::route(&what, &error, site));
+                    }
+                }
+            }
+        }
+        (!failed).then_some(routes)
+    }
+
+    /// A site at `path` in `file`, or at the nearest enclosing element the
+    /// compiler recorded a span for. Options written as one aggregate
+    /// (`option (google.api.http) = { ... }`) are recorded as a whole, not
+    /// field by field.
+    fn site_within(&mut self, file: &FileDescriptor, path: &[i32], label: String) -> Site {
+        let spans = self
+            .spans
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Spans::new(file.file_descriptor_proto()));
+        let span = (1..=path.len())
+            .rev()
+            .find_map(|len| spans.get(&path[..len]));
+        Site {
+            file: file.name().to_owned(),
+            span,
+            label,
+        }
+    }
+
     /// A unary method, named and with its types resolved; `None` after
     /// reporting why it has no Elm form. Its Elm value is claimed in
     /// `values`, the namespace of its service's methods.
@@ -376,6 +436,10 @@ impl Builder {
             }
         };
         let http = http_rule(method);
+        let routes = match &http {
+            Some(rule) => self.routes(file, method, rule)?,
+            None => Vec::new(),
+        };
         let built = Method {
             proto_name: method.name().to_owned(),
             elm_name,
@@ -383,6 +447,7 @@ impl Builder {
             output: output?,
             idempotent: idempotent(method),
             http,
+            routes,
         };
 
         let what = format!("method `{full_name}`");
