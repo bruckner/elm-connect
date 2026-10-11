@@ -77,3 +77,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Connect.Json.int32` fails outside −2^31 to 2^31 − 1, and the new
   `Connect.Json.uint32` (for `uint32` and `fixed32`) outside 0 to
   2^32 − 1.
+- `Connect.Json.bytes` validates base64 (standard or URL-safe alphabet,
+  padding optional) and fails on anything else; the string is still kept
+  as received.

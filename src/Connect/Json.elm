@@ -595,16 +595,77 @@ encodeFloat number =
 
 
 {-| Decode `bytes`, which proto3 JSON writes as a base64 string, as that
-string. No base64 validation happens: the string is passed through as it
-arrived.
+string, kept exactly as it arrived (not normalised to one alphabet or
+padding).
+
+The string must be base64, as proto3 JSON parsers accept it: the standard
+alphabet (`A`–`Z`, `a`–`z`, `0`–`9`, `+`, `/`) or the URL-safe one (`-` and
+`_` in place of `+` and `/`), not both in one string, with or without `=`
+padding. Anything else fails: another character, a length no base64 text has,
+or padding that does not fit the length.
+
+    Json.Decode.decodeString bytes "\"aGk=\"" -- Ok "aGk="
+
+    Json.Decode.decodeString bytes "\"aGk\"" -- Ok "aGk"
+
+    Json.Decode.decodeString bytes "\"a\"" -- Err ...
+
 -}
 bytes : Decoder String
 bytes =
     Json.Decode.string
+        |> Json.Decode.andThen
+            (\text ->
+                if isBase64 text then
+                    Json.Decode.succeed text
+
+                else
+                    Json.Decode.fail ("Expecting base64 (standard or URL-safe, padding optional), but got \"" ++ text ++ "\"")
+            )
 
 
-{-| Encode `bytes`, held as a base64 string, as that string. No base64
-validation happens.
+isBase64 : String -> Bool
+isBase64 text =
+    let
+        body =
+            dropPadding text
+
+        length =
+            String.length body
+
+        padding =
+            String.length text - length
+
+        partial =
+            modBy 4 length
+
+        standard =
+            String.any (\char -> char == '+' || char == '/') body
+
+        urlSafe =
+            String.any (\char -> char == '-' || char == '_') body
+    in
+    String.all isBase64Char body
+        && not (standard && urlSafe)
+        && (partial /= 1)
+        && (padding == 0 || (partial /= 0 && padding == 4 - partial))
+
+
+isBase64Char : Char -> Bool
+isBase64Char char =
+    Char.isAlphaNum char || char == '+' || char == '/' || char == '-' || char == '_'
+
+
+dropPadding : String -> String
+dropPadding text =
+    if String.endsWith "=" text then
+        dropPadding (String.dropRight 1 text)
+
+    else
+        text
+
+
+{-| Encode `bytes`, held as a base64 string, as that string, unchecked.
 -}
 encodeBytes : String -> Value
 encodeBytes =

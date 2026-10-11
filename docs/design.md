@@ -285,7 +285,7 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
 | `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String`, or `Int` under `int64=int` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 *(Decided; see below)* |
 | `bool` | `Bool` | |
 | `string` | `String` | |
-| `bytes` | `String` (base64, as on the wire) | *(Proposed.)* Alternative: `Bytes.Bytes` via elm/bytes with base64 in the runtime. Rejected for 1.0: adds a dependency and a decode step for a field most JSON APIs never use. |
+| `bytes` | `String` (base64, as on the wire) | *(Decided; see below.)* |
 
 Encoders emit every field, default values included, which proto3 JSON
 allows. *(Current rule, not yet reviewed.)* A field with presence
@@ -324,6 +324,19 @@ just the form encoders write. *(Proposed; built.)*
   Separate `optional` and `list` steps would read a little shorter but
   double the step functions (each needs a two-name form too) and hide
   the zero value the reader otherwise sees.
+
+**Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
+text exactly as received; nothing normalises it. `Connect.Json.bytes`
+validates it at decode time, with no new dependency: the standard
+alphabet (`A`–`Z`, `a`–`z`, `0`–`9`, `+`, `/`) or the URL-safe one (`-`,
+`_`), not both in one string, with or without `=` padding. It fails on
+any other character, on a length no base64 has (after stripping the
+padding, length mod 4 is 1), and on padding that does not complete the
+last group to four characters. The encoder writes the string unchecked.
+A `Bytes.Bytes`-typed option and `Connect.Bytes` helpers (base64 to and
+from elm/bytes) would live in a separate optional package, such as
+`elm-connect-bytes`, depending on elm/bytes, so the runtime keeps its
+dependencies; not prioritised.
 
 **64-bit integers** *(Decided.)* The rule:
 
@@ -638,7 +651,6 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 3. Fuse method and route for transcoding (§4).
 4. Connect GET for idempotent methods: default on or off (§5.2).
 5. Naming of additional-binding routes (§4).
-6. `bytes` as `String` versus `Bytes.Bytes` (§3.4).
 
 ## 10. Out of scope but recorded
 
