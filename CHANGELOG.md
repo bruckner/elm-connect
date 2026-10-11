@@ -60,4 +60,5 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `json_name` override, enum values with and without the conventional
   prefix and with digits) and the `naming_collision` diagnostics case.
 - CI compiles the runtime package and the conformance corpus with Elm
-  0.19.1 as well (`conformance/compile-with.sh`, `just compile-with`).
+  0.19.0 and 0.19.1 as well (`conformance/compile-with.sh`,
+  `just compile-with`).

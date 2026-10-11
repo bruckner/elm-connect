@@ -45,7 +45,7 @@ compiles check, and builds the runtime package, with another one:
 conformance/compile-with.sh path/to/elm   # or: just compile-with path/to/elm
 ```
 
-CI runs it with Elm 0.19.1 (design §8).
+CI runs it with Elm 0.19.0 and 0.19.1 (design §8).
 
 ## Blessing
 

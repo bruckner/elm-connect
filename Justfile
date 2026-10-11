@@ -47,7 +47,7 @@ elm-check:
     elm-test-rs
 
 # Compile the runtime package and the conformance corpus with another Elm
-# compiler, such as 0.19.1, which CI checks (design section 8).
+# compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).
 compile-with elm:
     conformance/compile-with.sh {{elm}}
 

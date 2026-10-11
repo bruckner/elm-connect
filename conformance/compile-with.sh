@@ -3,7 +3,7 @@
 # the Elm compiler given as the first argument, against a copy of the
 # harness whose `elm-version` is that compiler's. The conformance test
 # (`cargo test --test conformance`) does the same with the pinned
-# compiler; this script checks another one, such as 0.19.1 in CI
+# compiler; this script checks another one, such as 0.19.0 and 0.19.1 in CI
 # (design section 8).
 #
 #   conformance/compile-with.sh path/to/elm
