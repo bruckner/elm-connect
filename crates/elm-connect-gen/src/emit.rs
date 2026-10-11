@@ -12,7 +12,8 @@
 //!
 //! - A module opens with a generated-file notice, imports exactly the
 //!   modules its code refers to, and holds three sections in order: types,
-//!   encoders, decoders. Each section has the enums, then the messages.
+//!   encoders, decoders. Each section has the enums, then the messages,
+//!   each followed by its oneofs.
 //! - A message is a record type alias, an encoder
 //!   (`Foo -> Json.Encode.Value`) and a decoder (`Json.Decode.Decoder Foo`).
 //! - Encoders emit every field, default values included. proto3 JSON lets
@@ -35,8 +36,14 @@
 //!   decoder that reads a name or a number, an unknown one as the zero
 //!   value (design §3.3).
 //!
+//! - A oneof is a custom type whose first constructor is the unset case,
+//!   held in one record field where its first member was declared. Its
+//!   encoder gives the set member's key and value for the message's
+//!   object; its decoder tries each member with `Json.Decode.oneOf` and
+//!   falls back to unset (design §3.6).
+//!
 //! Singular, optional and repeated fields of scalars, enums and generated
-//! messages are emitted so far. Every other construct
+//! messages, and oneofs of them, are emitted so far. Every other construct
 //! is reported as [`Code::Unimplemented`](crate::diagnostics::Code) through
 //! [`crate::diagnostics`], never a panic, so a user meets an ordinary
 //! diagnostic until its emitter lands.
@@ -44,6 +51,7 @@
 mod enumeration;
 mod field;
 mod message;
+mod oneof;
 mod scalar;
 
 use std::collections::BTreeSet;
@@ -52,9 +60,9 @@ use crate::VERSION;
 use crate::diagnostics::{Diagnostics, Problem};
 use crate::elm::ast::{Decl, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
-use crate::ir::{Field, Message, ModuleName as IrModule, Package, TypeName};
+use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, TypeName};
 
-use self::field::FieldShape;
+use self::field::{FieldShape, ValueShape};
 
 /// elm/json's decoders.
 const JSON_DECODE: &str = "Json.Decode";
@@ -102,6 +110,42 @@ pub fn emit(package: &Package, _options: &Options) -> Result<Module, Diagnostics
     })
 }
 
+/// A message whose every field and oneof member has a shape.
+struct MessageShape<'m> {
+    message: &'m Message,
+    fields: Vec<(&'m Field, FieldShape<'m>)>,
+    oneofs: Vec<OneofShape<'m>>,
+}
+
+impl<'m> MessageShape<'m> {
+    /// The record's fields in declaration order: each oneof where its
+    /// first member was declared, among the plain fields.
+    fn record(&self) -> Vec<RecordField<'_, 'm>> {
+        let mut oneofs = self.oneofs.iter().peekable();
+        let mut record = Vec::new();
+        for (index, &(field, shape)) in self.fields.iter().enumerate() {
+            while let Some(oneof) = oneofs.next_if(|oneof| oneof.oneof.position <= index) {
+                record.push(RecordField::Oneof(oneof));
+            }
+            record.push(RecordField::Field(field, shape));
+        }
+        record.extend(oneofs.map(RecordField::Oneof));
+        record
+    }
+}
+
+/// One field of a message's record: a proto field, or a oneof.
+enum RecordField<'s, 'm> {
+    Field(&'m Field, FieldShape<'m>),
+    Oneof(&'s OneofShape<'m>),
+}
+
+/// A oneof whose every member has a shape.
+struct OneofShape<'m> {
+    oneof: &'m Oneof,
+    variants: Vec<(&'m OneofVariant, ValueShape<'m>)>,
+}
+
 /// The state of emitting one module: the library modules its code refers
 /// to so far, and the problems found.
 struct Emitter {
@@ -129,36 +173,54 @@ impl Emitter {
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
         }
-        for (message, fields) in &messages {
-            types.push(self.message_alias(message, fields));
-            encoders.push(self.message_encoder(message, fields));
-            decoders.push(self.message_decoder(message, fields));
+        for shape in &messages {
+            types.push(self.message_alias(shape));
+            encoders.push(self.message_encoder(shape));
+            decoders.push(self.message_decoder(shape));
+            for oneof in &shape.oneofs {
+                types.push(self.oneof_type(oneof));
+                encoders.push(self.oneof_encoder(oneof));
+                decoders.push(self.oneof_decoder(oneof));
+            }
         }
         types.into_iter().chain(encoders).chain(decoders).collect()
     }
 
-    /// `message` with the shape of each of its fields, or `None` once every
-    /// unsupported construct in it is reported.
-    fn message_shape<'m>(
-        &mut self,
-        message: &'m Message,
-    ) -> Option<(&'m Message, Vec<(&'m Field, FieldShape<'m>)>)> {
+    /// `message` with the shape of each of its fields and oneof members, or
+    /// `None` once every unsupported construct in it is reported.
+    fn message_shape<'m>(&mut self, message: &'m Message) -> Option<MessageShape<'m>> {
         let before = self.diagnostics.len();
         if message.recursive {
             self.unimplemented(&message.proto_full_name, "a recursive message");
-        }
-        for oneof in &message.oneofs {
-            self.unimplemented(
-                &format!("{}.{}", message.proto_full_name, oneof.proto_name),
-                "a oneof",
-            );
         }
         let fields: Vec<_> = message
             .fields
             .iter()
             .filter_map(|field| Some((field, self.field(message, field)?)))
             .collect();
-        (self.diagnostics.len() == before).then_some((message, fields))
+        let oneofs = message
+            .oneofs
+            .iter()
+            .map(|oneof| OneofShape {
+                oneof,
+                variants: oneof
+                    .variants
+                    .iter()
+                    .filter_map(|variant| {
+                        let element = format!(
+                            "{}.{}.{}",
+                            message.proto_full_name, oneof.proto_name, variant.proto_name
+                        );
+                        Some((variant, self.value_shape(&element, &variant.ty)?))
+                    })
+                    .collect(),
+            })
+            .collect();
+        (self.diagnostics.len() == before).then_some(MessageShape {
+            message,
+            fields,
+            oneofs,
+        })
     }
 
     /// A generated type, qualified (and its module imported) when it is
@@ -228,9 +290,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 mod tests {
     use super::*;
     use crate::diagnostics::Code;
-    use crate::ir::{
-        Cardinality, MapKey, ModuleName as IrModule, Oneof, ScalarKind, TypeName, TypeRef,
-    };
+    use crate::ir::{Cardinality, MapKey, ScalarKind, TypeRef};
 
     fn package(messages: Vec<Message>) -> Package {
         Package {
@@ -313,14 +373,6 @@ mod tests {
         let string = TypeRef::Scalar(ScalarKind::String);
         let mut recursive = message("R", Vec::new());
         recursive.recursive = true;
-        let mut with_oneof = message("O", Vec::new());
-        with_oneof.oneofs.push(Oneof {
-            proto_name: "kind".into(),
-            elm_field_name: "kind".into(),
-            elm_type_name: "OKind".into(),
-            unset_ctor: "OKindUnset".into(),
-            variants: Vec::new(),
-        });
         let fields = message(
             "F",
             vec![
@@ -343,7 +395,7 @@ mod tests {
                 ),
             ],
         );
-        let problems = problems(&package(vec![recursive, with_oneof, fields]));
+        let problems = problems(&package(vec![recursive, fields]));
         let messages: Vec<&str> = problems.iter().map(|(_, m)| m.as_str()).collect();
         assert!(
             problems
@@ -354,7 +406,6 @@ mod tests {
             messages,
             [
                 "`t.v1.R` is a recursive message, which elm-connect cannot generate yet.",
-                "`t.v1.O.kind` is a oneof, which elm-connect cannot generate yet.",
                 "`t.v1.F.map` is a map field, which elm-connect cannot generate yet.",
             ]
         );

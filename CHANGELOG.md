@@ -30,3 +30,7 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   declaration order in the IR; a negative value no longer drops its enum.
 - The printer keeps an application's leading arguments on its first line
   when only the last argument spans lines.
+- Generation of oneofs as custom types with an unset constructor, held in
+  one record field at the oneof's declared position, with the `oneofs`
+  conformance case. The runtime gains `Connect.Json.oneof`, `member` and
+  `memberEither`.

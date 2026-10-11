@@ -161,6 +161,11 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// today starts with `encode` or `decode`.
 pub const ENCODER_ARGUMENT: &str = "value";
 
+/// The variable a oneof's encoder binds the value of the set member to, in
+/// each branch of its `case`. Like [`ENCODER_ARGUMENT`], it must not be
+/// the name of a top-level value of a generated module.
+pub const ONEOF_MEMBER: &str = "member";
+
 /// PascalCase of one proto identifier: drop underscores and uppercase the
 /// first letter of every underscore-separated word, leaving the rest of
 /// each word as written (`foo_bar` becomes `FooBar`, `HTTPRequest` stays).
@@ -224,7 +229,10 @@ mod tests {
     fn codec_names() {
         assert_eq!(encoder_name("OuterInner"), "encodeOuterInner");
         assert_eq!(decoder_name("OuterInner"), "decodeOuterInner");
-        assert!(!ENCODER_ARGUMENT.starts_with("encode") && !ENCODER_ARGUMENT.starts_with("decode"));
+        for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
+            assert!(!local.starts_with("encode") && !local.starts_with("decode"));
+        }
+        assert_ne!(ENCODER_ARGUMENT, ONEOF_MEMBER);
     }
 
     #[test]

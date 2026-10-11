@@ -243,6 +243,8 @@ fn real_oneof_is_a_union_with_an_unset_case() {
     assert_eq!(kind.elm_field_name, "kind");
     assert_eq!(kind.elm_type_name, "NoteEventKind");
     assert_eq!(kind.unset_ctor, "NoteEventKindUnset");
+    // Declared after `note_id`, before `actor`.
+    assert_eq!(kind.position, 1);
     let variants: Vec<_> = kind
         .variants
         .iter()

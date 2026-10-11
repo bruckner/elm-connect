@@ -13,6 +13,7 @@ suite =
         [ fieldTests
         , fieldEitherTests
         , presenceTests
+        , oneofTests
         , enumTests
         , int32Tests
         , int64Tests
@@ -124,6 +125,56 @@ presenceTests =
             \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
         , test "encodeMaybe encodes Nothing as null" <|
             \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int Nothing) "null"
+        ]
+
+
+type alias Event =
+    { id : String, kind : EventKind }
+
+
+type EventKind
+    = EventKindUnset
+    | EventKindText String
+    | EventKindTitleChanged String
+
+
+decodeEvent : Decoder Event
+decodeEvent =
+    Json.Decode.succeed Event
+        |> Connect.Json.field "id" "" Json.Decode.string
+        |> Connect.Json.oneof decodeEventKind
+
+
+decodeEventKind : Decoder EventKind
+decodeEventKind =
+    Json.Decode.oneOf
+        [ Connect.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
+        , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
+        , Json.Decode.succeed EventKindUnset
+        ]
+
+
+oneofTests : Test
+oneofTests =
+    describe "oneof and member"
+        [ test "a member" <|
+            \_ -> decodes decodeEvent """{"id":"a","text":"t"}""" (Event "a" (EventKindText "t"))
+        , test "a member under its proto name" <|
+            \_ -> decodes decodeEvent """{"title_changed":"x"}""" (Event "" (EventKindTitleChanged "x"))
+        , test "no member is unset" <|
+            \_ -> decodes decodeEvent """{"id":"a"}""" (Event "a" EventKindUnset)
+        , test "a member present as null is unset" <|
+            \_ -> decodes decodeEvent """{"text":null}""" (Event "" EventKindUnset)
+        , test "a null member falls through to the next" <|
+            \_ -> decodes decodeEvent """{"text":null,"titleChanged":"x"}""" (Event "" (EventKindTitleChanged "x"))
+        , test "two members: the first declared wins" <|
+            \_ -> decodes decodeEvent """{"titleChanged":"x","text":"t"}""" (Event "" (EventKindText "t"))
+        , test "a malformed member reads as unset" <|
+            \_ -> decodes decodeEvent """{"text":1}""" (Event "" EventKindUnset)
+        , test "member fails without the key" <|
+            \_ -> fails (Connect.Json.member "text" Json.Decode.string) "{}"
+        , test "member fails on null" <|
+            \_ -> fails (Connect.Json.member "text" Json.Decode.string) """{"text":null}"""
         ]
 
 

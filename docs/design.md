@@ -311,6 +311,30 @@ case in one `case`. The in-house generator uses (a).
 **Decided (2026-10-10):** (a). A plain union with the unset case as a
 constructor of the union itself, no `Maybe` wrapper.
 
+Built *(Proposed in its details)*:
+
+- The record holds the oneof's field where its first member was
+  declared, so the record constructor's argument order follows the
+  proto.
+- The oneof's encoder gives the set member as a one-element list of
+  `( jsonName, value )`, or `[]` when unset, and the message's encoder
+  appends it to its fields: `Json.Encode.object ([ ... ] ++
+  encodeNoteEventKind value.kind)`.
+- The oneof's decoder is `Json.Decode.oneOf` over a
+  `Connect.Json.member` per member (`memberEither` when the JSON and
+  proto names differ), then `Json.Decode.succeed NoteEventKindUnset`.
+  The message's decoder reads it with a `Connect.Json.oneof` step. A
+  member present as `null` reads as unset, and when several members are
+  present the first declared wins.
+- **Known weakness:** a member that is present but malformed
+  (`{"title": 1}` for a string member) also reads as unset, because
+  `Json.Decode.oneOf` moves on to the next alternative and the last one
+  always succeeds. A plain field with a malformed value fails the whole
+  message, so a oneof is the one place malformed input passes silently.
+  A fix that keeps `Json.Decode.oneOf` ends the list with a decoder that
+  succeeds only when no member key is present, instead of
+  `Json.Decode.succeed`. *(Open.)*
+
 ### 3.7 Naming
 
 - Field names → lowerCamelCase from the proto name (not `json_name`;
