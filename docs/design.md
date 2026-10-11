@@ -328,8 +328,16 @@ just the form encoders write. *(Proposed; built.)*
   A fractional value fails, and so does one outside the proto type's
   range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
-  `"-Infinity"`; 64-bit integers as strings or numbers. A 64-bit string
-  in exponent notation (`"1e2"`) is not accepted yet.
+  `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
+  notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The
+  `String` form (`Connect.Json.int64`) is always the canonical decimal
+  string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
+  found by moving the decimal point as text, never through a `Float`,
+  so a string past 2^53 keeps every digit. A value that is not an
+  integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
+  past every 64-bit integer, which also bounds the text an exponent can
+  ask for. `Connect.Json.int64AsInt` reads the same forms within its
+  range. A 64-bit map key is kept as the text received (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
@@ -449,8 +457,8 @@ Built as proposed, with these details *(each Proposed)*:
   unlike any other member (§3.6).
 - `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
-  to 9999. `Time.Posix` counts milliseconds, so finer digits are dropped
-  (toward the past) and a timestamp prints with no fraction or three
+  to 9999. `Time.Posix` counts milliseconds, so finer digits are
+  truncated (toward the past, never rounded up; §3.8) and a timestamp prints with no fraction or three
   digits; protobuf's six and nine never arise. A leap second
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
   `23:59:59` with its fraction.
@@ -568,6 +576,12 @@ record of fact; the policy for them is not designed yet.
 
 Dropped distinctions:
 
+- **Sub-millisecond timestamp precision.** A `Timestamp` is
+  `Time.Posix`, which counts milliseconds (§3.5): a fraction of up to
+  nine digits is read and truncated, and the finer digits are not
+  re-emitted. An option mapping `Timestamp` to an exact seconds and
+  nanoseconds type, as `Duration` is held, could cover the rare case it
+  matters; not built.
 - **Unknown enum numbers** read as the zero value (§3.3), so a value
   the client does not know is indistinguishable from the zero value,
   and re-encoding sends the zero value's name.

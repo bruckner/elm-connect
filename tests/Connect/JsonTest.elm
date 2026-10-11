@@ -438,6 +438,59 @@ int64Tests =
             \_ -> decodes Connect.Json.int64 "-7" "-7"
         , test "a string that is not an integer fails" <|
             \_ -> fails Connect.Json.int64 "\"4.2\""
+        , test "a string in exponent notation" <|
+            \_ -> decodes Connect.Json.int64 "\"1e3\"" "1000"
+        , test "a string with a fraction and an exponent" <|
+            \_ -> decodes Connect.Json.int64 "\"1.5e3\"" "1500"
+        , test "a number in exponent notation" <|
+            \_ -> decodes Connect.Json.int64 "1E2" "100"
+        , test "a negative string with a zero exponent" <|
+            \_ -> decodes Connect.Json.int64 "\"-2e0\"" "-2"
+        , test "a signed exponent" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.int64 "\"15E+1\"" "150"
+                    , \_ -> decodes Connect.Json.int64 "\"1500e-2\"" "15"
+                    , \_ -> decodes Connect.Json.int64 "\"0.0025e4\"" "25"
+                    ]
+                    ()
+        , test "exponent notation keeps every digit past 2^53" <|
+            \_ -> decodes Connect.Json.int64 "\"9.223372036854775807e18\"" "9223372036854775807"
+        , test "an integral decimal fraction" <|
+            \_ -> decodes Connect.Json.int64 "\"4.0\"" "4"
+        , test "leading zeros and negative zero are made canonical" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.int64 "\"007\"" "7"
+                    , \_ -> decodes Connect.Json.int64 "\"-0\"" "0"
+                    , \_ -> decodes Connect.Json.int64 "\"0e999\"" "0"
+                    ]
+                    ()
+        , test "exponent notation that leaves a fraction fails" <|
+            \_ ->
+                failsWith Connect.Json.int64 "\"1.5e0\"" "Expecting an integer, but got \"1.5e0\""
+        , test "a negative exponent that leaves a fraction fails" <|
+            \_ -> fails Connect.Json.int64 "\"15e-2\""
+        , test "more than 20 digits fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith Connect.Json.int64 "\"1e21\"" "Expecting a 64-bit integer, but got \"1e21\""
+                    , \_ -> fails Connect.Json.int64 "\"1e999999999999\""
+                    , \_ -> fails Connect.Json.int64 "1e21"
+                    ]
+                    ()
+        , test "malformed exponent notation fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> fails Connect.Json.int64 "\"1e\""
+                    , \_ -> fails Connect.Json.int64 "\"e3\""
+                    , \_ -> fails Connect.Json.int64 "\"1.e3\""
+                    , \_ -> fails Connect.Json.int64 "\".5e1\""
+                    , \_ -> fails Connect.Json.int64 "\"1e+\""
+                    , \_ -> fails Connect.Json.int64 "\"1e3e1\""
+                    , \_ -> fails Connect.Json.int64 "\"--1\""
+                    ]
+                    ()
         , test "an empty string fails" <|
             \_ -> fails Connect.Json.int64 "\"\""
         , test "a fractional number fails" <|
@@ -476,8 +529,19 @@ int64AsIntTests =
             \_ -> fails Connect.Json.int64AsInt "\"-9007199254740992\""
         , test "a fractional number fails" <|
             \_ -> fails Connect.Json.int64AsInt "4.5"
-        , test "a string in exponent notation fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"1e3\""
+        , test "a string in exponent notation" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Connect.Json.int64AsInt "\"1e3\"" 1000
+                    , \_ -> decodes Connect.Json.int64AsInt "\"-4.2e1\"" -42
+                    , \_ -> decodes Connect.Json.int64AsInt "1.5E3" 1500
+                    , \_ -> decodes Connect.Json.int64AsInt "\"9.007199254740991e15\"" 9007199254740991
+                    ]
+                    ()
+        , test "exponent notation out of range fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"9.007199254740992e15\""
+        , test "exponent notation that leaves a fraction fails" <|
+            \_ -> fails Connect.Json.int64AsInt "\"1.5e0\""
         , test "an empty string fails" <|
             \_ -> fails Connect.Json.int64AsInt "\"\""
         , test "a boolean fails" <|

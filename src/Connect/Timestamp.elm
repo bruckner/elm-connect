@@ -4,8 +4,9 @@ module Connect.Timestamp exposing (fromString, toString)
 RFC 3339 date and time such as `"2026-10-10T17:19:45.250Z"`.
 
 `Time.Posix` counts milliseconds, so a timestamp keeps millisecond precision:
-finer fractions are read and dropped (rounded toward the past), and none are
-ever written.
+a fraction of up to nine digits is read and truncated to the millisecond
+(`.9999999` reads as `.999`, never rounded up to the next second), and finer
+digits are never written.
 
 @docs fromString, toString
 

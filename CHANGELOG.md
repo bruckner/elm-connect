@@ -116,3 +116,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   enum's proto name first. Aliases (`allow_alias`) collapse into the
   constructor of the first value declared with their number, which the
   encoder writes; the decoder reads every alias name.
+- `Connect.Json.int64` and `int64AsInt` accept a 64-bit integer string
+  in exponent notation (`"1e3"`, `"1.5e3"`, `"-2e0"`), and `int64`
+  always gives the canonical decimal string (`"1000"`, `"1500"`, `"-2"`;
+  `"007"` reads as `"7"`), worked out as text so no digit is lost past
+  2^53. A value that is not an integer, or has more than 20 digits,
+  fails.
