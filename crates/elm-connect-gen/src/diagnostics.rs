@@ -22,9 +22,6 @@ use miette::{
 
 pub use spans::{Columns, LineColSpan, Spans, tag};
 
-/// The message every entry point reports until generation exists.
-pub const NOT_IMPLEMENTED: &str = "elm-connect: type generation is not implemented yet";
-
 /// The kinds of problem the generator reports.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Code {
@@ -54,6 +51,8 @@ pub enum Code {
     UnknownFile,
     /// A file to generate is not proto3.
     NotProto3,
+    /// The protos use a construct the generator does not emit yet.
+    Unimplemented,
 }
 
 impl Code {
@@ -72,6 +71,7 @@ impl Code {
             Code::ImportCycle => "generate::import_cycle",
             Code::UnknownFile => "generate::unknown_file",
             Code::NotProto3 => "generate::not_proto3",
+            Code::Unimplemented => "generate::unimplemented",
         }
     }
 }
@@ -345,6 +345,20 @@ impl Problem {
             "elm-connect implements the proto3 JSON mapping; proto2 features like `required` \
              and default values have no Elm mapping. Use `syntax = \"proto3\";`.",
             vec![site],
+        )
+    }
+
+    /// `element` (a proto full name, such as `notes.v1.Note.tags`) is
+    /// `construct` (such as "a repeated field"), which elm-connect has no
+    /// emitter for yet. The problem names the element rather than pointing
+    /// at it: the emitter works from the IR, which keeps no source spans.
+    pub fn unimplemented(element: &str, construct: &str) -> Self {
+        Problem::new(
+            Code::Unimplemented,
+            format!("`{element}` is {construct}, which elm-connect cannot generate yet."),
+            "This version of elm-connect generates only part of proto3. Leave this element out \
+             of the files to generate, or use a later version.",
+            Vec::new(),
         )
     }
 

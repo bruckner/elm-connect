@@ -30,19 +30,22 @@ package.
 ```
 Cargo.toml          Rust workspace
 crates/
-  elm-connect-gen/        the shared library (generation not yet written)
+  elm-connect-gen/        the shared library: IR, emitter, Elm printer
   protoc-gen-elm-connect/ the protoc plugin
   elm-connect/            standalone CLI (no protoc needed)
+elm.json, src/, tests/    the Elm runtime package and its tests
 conformance/
-  harness/          Elm application the expected output will compile in
+  cases/            proto inputs and the Elm expected from them
+  harness/          Elm application the expected output compiles in
 docs/               design and decisions
 mise.toml           toolchain pin
 Justfile            task recipes; `just` lists them
 ```
 
-Both binaries build and parse their input, then stop with "type
-generation is not implemented yet". The Elm runtime package (`elm.json`,
-`src/`, `tests/` at the root) and the conformance fixtures come later.
+Both binaries generate record types and JSON codecs for messages whose
+fields are singular scalars; every other construct is reported as not
+generated yet. The runtime package holds only the JSON helpers those
+codecs call.
 
 ## Developing
 

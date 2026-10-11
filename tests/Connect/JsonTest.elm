@@ -1,0 +1,142 @@
+module Connect.JsonTest exposing (suite)
+
+import Connect.Json
+import Expect
+import Json.Decode exposing (Decoder)
+import Json.Encode
+import Test exposing (Test, describe, test)
+
+
+suite : Test
+suite =
+    describe "Connect.Json"
+        [ fieldTests
+        , int64Tests
+        , floatTests
+        , bytesTests
+        ]
+
+
+type alias Pair =
+    { name : String, count : Int }
+
+
+decodePair : Decoder Pair
+decodePair =
+    Json.Decode.succeed Pair
+        |> Connect.Json.field "name" "" Json.Decode.string
+        |> Connect.Json.field "count" 0 Json.Decode.int
+
+
+decodes : Decoder a -> String -> a -> Expect.Expectation
+decodes decoder json expected =
+    Json.Decode.decodeString decoder json
+        |> Expect.equal (Ok expected)
+
+
+fails : Decoder a -> String -> Expect.Expectation
+fails decoder json =
+    case Json.Decode.decodeString decoder json of
+        Ok value ->
+            Expect.fail ("expected a failure, decoded " ++ Debug.toString value)
+
+        Err _ ->
+            Expect.pass
+
+
+fieldTests : Test
+fieldTests =
+    describe "field"
+        [ test "a present key decodes its value" <|
+            \_ -> decodes decodePair """{"name":"a","count":3}""" (Pair "a" 3)
+        , test "a missing key gives the default" <|
+            \_ -> decodes decodePair """{"name":"a"}""" (Pair "a" 0)
+        , test "null gives the default" <|
+            \_ -> decodes decodePair """{"name":null,"count":null}""" (Pair "" 0)
+        , test "an empty object gives every default" <|
+            \_ -> decodes decodePair "{}" (Pair "" 0)
+        , test "unknown keys are ignored" <|
+            \_ -> decodes decodePair """{"other":true,"count":1}""" (Pair "" 1)
+        , test "a value of the wrong type fails" <|
+            \_ -> fails decodePair """{"count":"three"}"""
+        , test "a value that is not an object fails" <|
+            \_ -> fails decodePair "[]"
+        ]
+
+
+int64Tests : Test
+int64Tests =
+    describe "int64"
+        [ test "a string" <|
+            \_ -> decodes Connect.Json.int64 "\"9007199254740993\"" "9007199254740993"
+        , test "a negative string" <|
+            \_ -> decodes Connect.Json.int64 "\"-42\"" "-42"
+        , test "a number" <|
+            \_ -> decodes Connect.Json.int64 "42" "42"
+        , test "a negative number" <|
+            \_ -> decodes Connect.Json.int64 "-7" "-7"
+        , test "a string that is not an integer fails" <|
+            \_ -> fails Connect.Json.int64 "\"4.2\""
+        , test "an empty string fails" <|
+            \_ -> fails Connect.Json.int64 "\"\""
+        , test "a fractional number fails" <|
+            \_ -> fails Connect.Json.int64 "4.2"
+        , test "a boolean fails" <|
+            \_ -> fails Connect.Json.int64 "true"
+        , test "encodes as a string" <|
+            \_ ->
+                Connect.Json.encodeInt64 "9007199254740993"
+                    |> Json.Encode.encode 0
+                    |> Expect.equal "\"9007199254740993\""
+        ]
+
+
+floatTests : Test
+floatTests =
+    describe "float"
+        [ test "a number" <|
+            \_ -> decodes Connect.Json.float "1.5" 1.5
+        , test "an integral number" <|
+            \_ -> decodes Connect.Json.float "2" 2
+        , test "a numeric string" <|
+            \_ -> decodes Connect.Json.float "\"1.5\"" 1.5
+        , test "\"NaN\"" <|
+            \_ ->
+                Json.Decode.decodeString Connect.Json.float "\"NaN\""
+                    |> Result.map isNaN
+                    |> Expect.equal (Ok True)
+        , test "\"Infinity\"" <|
+            \_ -> decodes Connect.Json.float "\"Infinity\"" (1 / 0)
+        , test "\"-Infinity\"" <|
+            \_ -> decodes Connect.Json.float "\"-Infinity\"" -(1 / 0)
+        , test "another string fails" <|
+            \_ -> fails Connect.Json.float "\"infinity\""
+        , test "a boolean fails" <|
+            \_ -> fails Connect.Json.float "false"
+        , test "encodes a finite value as a number" <|
+            \_ -> encodesTo (Connect.Json.encodeFloat 1.5) "1.5"
+        , test "encodes NaN as a string" <|
+            \_ -> encodesTo (Connect.Json.encodeFloat (0 / 0)) "\"NaN\""
+        , test "encodes infinity as a string" <|
+            \_ -> encodesTo (Connect.Json.encodeFloat (1 / 0)) "\"Infinity\""
+        , test "encodes negative infinity as a string" <|
+            \_ -> encodesTo (Connect.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
+        ]
+
+
+bytesTests : Test
+bytesTests =
+    describe "bytes"
+        [ test "a string passes through" <|
+            \_ -> decodes Connect.Json.bytes "\"aGk=\"" "aGk="
+        , test "a number fails" <|
+            \_ -> fails Connect.Json.bytes "1"
+        , test "encodes as a string" <|
+            \_ -> encodesTo (Connect.Json.encodeBytes "aGk=") "\"aGk=\""
+        ]
+
+
+encodesTo : Json.Encode.Value -> String -> Expect.Expectation
+encodesTo value json =
+    Json.Encode.encode 0 value
+        |> Expect.equal json

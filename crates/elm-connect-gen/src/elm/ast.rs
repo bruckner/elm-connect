@@ -49,6 +49,9 @@ impl From<&str> for ModuleName {
 /// One Elm source file.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
+    /// A line comment printed above the `module` line, such as a
+    /// generated-file notice: the text after `-- `, on one line.
+    pub header: Option<String>,
     /// The module's name, matching its path under a source directory.
     pub name: ModuleName,
     /// The module documentation, printed as `{-| ... -}` under the header,

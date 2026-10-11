@@ -9,4 +9,8 @@ repository.workspace = true
 [dependencies]
 elm-connect-gen.workspace = true
 prost.workspace = true
+prost-reflect.workspace = true
 prost-types.workspace = true
+
+[dev-dependencies]
+protox.workspace = true

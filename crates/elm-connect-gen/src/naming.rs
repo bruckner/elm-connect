@@ -141,6 +141,26 @@ pub fn oneof_unset_constructor(oneof_type_name: &str) -> String {
     format!("{oneof_type_name}Unset")
 }
 
+/// The JSON encoder for a generated type: `encode` followed by the type's
+/// Elm name (`Note` becomes `encodeNote`). Type names are unique within a
+/// module, so encoder names are too.
+pub fn encoder_name(type_elm_name: &str) -> String {
+    format!("encode{type_elm_name}")
+}
+
+/// The JSON decoder for a generated type: `decode` followed by the type's
+/// Elm name (`Note` becomes `decodeNote`). Type names are unique within a
+/// module, so decoder names are too.
+pub fn decoder_name(type_elm_name: &str) -> String {
+    format!("decode{type_elm_name}")
+}
+
+/// The parameter an encoder binds the value it encodes to. Elm rejects a
+/// local name that shadows a top-level one, so no top-level value of a
+/// generated module may take this name; every top-level name generated
+/// today starts with `encode` or `decode`.
+pub const ENCODER_ARGUMENT: &str = "value";
+
 /// PascalCase of one proto identifier: drop underscores and uppercase the
 /// first letter of every underscore-separated word, leaving the rest of
 /// each word as written (`foo_bar` becomes `FooBar`, `HTTPRequest` stays).
@@ -199,6 +219,13 @@ fn strip_enum_prefix<'a>(enum_proto_name: &str, value_name: &'a str) -> &'a str 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn codec_names() {
+        assert_eq!(encoder_name("OuterInner"), "encodeOuterInner");
+        assert_eq!(decoder_name("OuterInner"), "decodeOuterInner");
+        assert!(!ENCODER_ARGUMENT.starts_with("encode") && !ENCODER_ARGUMENT.starts_with("decode"));
+    }
 
     #[test]
     fn module_names() {

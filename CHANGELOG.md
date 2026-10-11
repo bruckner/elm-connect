@@ -12,3 +12,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   diagnostics for names Elm cannot take. Nothing is emitted yet.
 - `elm-connect-gen`: a typed Elm AST for generated code and a printer
   whose output elm-format 0.8.8 accepts unchanged.
+- Generation, end to end for messages of singular scalar fields: record
+  type aliases with proto3 JSON encoders and decoders, from both
+  `elm-connect gen` and `protoc-gen-elm-connect`. Other constructs are
+  reported as `generate::unimplemented`. The runtime package
+  `bruckner/elm-connect` starts with `Connect.Json`, and the conformance
+  corpus with its first case, `scalars`.

@@ -1,7 +1,9 @@
 # Recipes for working on elm-connect. `just` lists them.
 
-# Elm sources elm-format owns: the harness, and the runtime once it exists.
-elm_dirs := "conformance/harness/src" + if path_exists("src") == "true" { " src" } else { "" }
+# Elm sources elm-format owns: the runtime package and its tests. The
+# conformance corpus is checked by its own test (`cargo test --test
+# conformance`), which runs `elm-format --validate` over the expected output.
+elm_dirs := "src tests"
 
 [private]
 default:
@@ -31,17 +33,26 @@ test:
 # Elm's first build in a fresh elm-stuff writes d.dat twice: once from a
 # background thread after resolving dependencies and again when the build
 # finishes. On a slow disk the two collide ("d.dat: withBinaryFile: resource
-# busy (file is locked)"). A bare `elm make` resolves and writes the
-# dependencies, then stops for want of input files; its exit status is ignored
-# because a real dependency problem resurfaces in the build that follows.
+# busy (file is locked)"). A bare `elm make` first resolves and writes the
+# dependencies (in a package it also builds the exposed modules); its exit
+# status is ignored because a real problem resurfaces in the build that
+# follows. The conformance test does the same for the harness.
 #
-# Compile the conformance harness, and run the Elm tests if there are any.
+# Compile the runtime package with its documentation checked (`--docs`
+# rejects an exposed value without docs, as publishing would), and run its
+# tests. The conformance harness is compiled by `cargo test`.
 elm-check:
-    -@cd conformance/harness && elm make --output=/dev/null >/dev/null 2>&1
-    cd conformance/harness && elm make src/*.elm --output=/dev/null
-    @if [ -d tests ]; then elm-test-rs; else echo "elm-check: no tests/ yet; skipping elm-test-rs"; fi
+    -@elm make --output=/dev/null >/dev/null 2>&1
+    elm make --docs=elm-stuff/docs.json
+    elm-test-rs
+
+# Rewrite the conformance corpus's expected output (modules, or
+# diagnostics.txt) to what the generator produces now. Review the diff
+# before committing it.
+bless:
+    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
 
 # Remove build output.
 clean:
     cargo clean
-    rm -rf conformance/harness/elm-stuff elm-stuff
+    rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff

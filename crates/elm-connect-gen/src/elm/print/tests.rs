@@ -492,6 +492,7 @@ fn module_layout() {
         body: int(1),
     };
     let module = Module {
+        header: None,
         name: ModuleName::new("Notes.V1"),
         doc: Some("Notes.".into()),
         exposing: Exposing::Explicit(vec![
@@ -558,6 +559,7 @@ c =
 #[test]
 fn module_without_imports_starting_with_a_comment() {
     let module = Module {
+        header: None,
         name: ModuleName::new("A"),
         doc: None,
         exposing: Exposing::All,
@@ -565,6 +567,22 @@ fn module_without_imports_starting_with_a_comment() {
         decls: vec![Decl::Comment("X".into())],
     };
     assert_eq!(print_module(&module), "module A exposing (..)\n\n-- X\n");
+}
+
+#[test]
+fn a_header_comment_sits_two_blank_lines_above_the_module_line() {
+    let module = Module {
+        header: Some("Generated. Do not edit.".into()),
+        name: ModuleName::new("A"),
+        doc: None,
+        exposing: Exposing::All,
+        imports: vec![],
+        decls: vec![],
+    };
+    assert_eq!(
+        print_module(&module),
+        "-- Generated. Do not edit.\n\n\nmodule A exposing (..)\n"
+    );
 }
 
 #[test]
