@@ -1,0 +1,33 @@
+{
+  "description": "Request bodies: a field, *, and fields both in the path and the body.",
+  "fixtures": [
+    {
+      "name": "body * leaves out a nested path field",
+      "method": "routes.v1.Routes.PostSub",
+      "binding": 0,
+      "rule": { "verb": "POST", "template": "/v1/subs/{sub.subfield}", "body": "*" },
+      "request": { "messageId": "m", "sub": { "subfield": "s" }, "revision": "3" },
+      "expect": { "path": "/v1/subs/s", "query": [], "body": { "messageId": "m", "revision": "3" } }
+    },
+    {
+      "name": "a body field is sent whole, a field the path holds included (AIP-134)",
+      "method": "routes.v1.Routes.UpdateResource",
+      "binding": 0,
+      "rule": { "verb": "PATCH", "template": "/v1/{resource.name=resources/*}", "body": "resource" },
+      "request": { "resource": { "name": "resources/r1", "displayName": "R" }, "updateMask": "displayName" },
+      "expect": {
+        "path": "/v1/resources/r1",
+        "query": [["update_mask", "displayName"]],
+        "body": { "name": "resources/r1", "displayName": "R" }
+      }
+    },
+    {
+      "name": "an unset body field is an empty object",
+      "method": "routes.v1.Routes.UpdateMessage",
+      "binding": 0,
+      "rule": { "verb": "PATCH", "template": "/v1/messages/{message_id}", "body": "message" },
+      "request": { "messageId": "1" },
+      "expect": { "path": "/v1/messages/1", "query": [], "body": {} }
+    }
+  ]
+}

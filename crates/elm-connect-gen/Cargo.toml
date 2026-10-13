@@ -14,4 +14,6 @@ prost-types.workspace = true
 protox.workspace = true
 
 [dev-dependencies]
+prost-reflect = { workspace = true, features = ["serde"] }
+serde_json.workspace = true
 similar.workspace = true

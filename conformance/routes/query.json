@@ -1,0 +1,117 @@
+{
+  "description": "Query parameters: names, value forms, and what is left out.",
+  "fixtures": [
+    {
+      "name": "fields at their defaults are left out",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "name": "", "count": 0, "big": "0", "flag": false, "kind": "KIND_UNSPECIFIED", "tags": [] },
+      "expect": { "path": "/v1/query", "query": [], "body": null }
+    },
+    {
+      "name": "scalars and enums as proto3 JSON writes them",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": {
+        "name": "n",
+        "count": -3,
+        "big": "9007199254740993",
+        "ubig": "18446744073709551615",
+        "flag": true,
+        "ratio": 0.5,
+        "scale": 1.5,
+        "data": "aGk=",
+        "kind": "KIND_TEXT"
+      },
+      "expect": {
+        "path": "/v1/query",
+        "query": [
+          ["name", "n"],
+          ["count", "-3"],
+          ["big", "9007199254740993"],
+          ["ubig", "18446744073709551615"],
+          ["flag", "true"],
+          ["ratio", "0.5"],
+          ["scale", "1.5"],
+          ["data", "aGk%3D"],
+          ["kind", "KIND_TEXT"]
+        ],
+        "body": null
+      }
+    },
+    {
+      "name": "repeated fields repeat, defaults and all",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "tags": ["a", "b"], "kinds": ["KIND_UNSPECIFIED", "KIND_IMAGE"], "numbers": [1, 0, 2] },
+      "expect": {
+        "path": "/v1/query",
+        "query": [
+          ["tags", "a"],
+          ["tags", "b"],
+          ["kinds", "KIND_UNSPECIFIED"],
+          ["kinds", "KIND_IMAGE"],
+          ["numbers", "1"],
+          ["numbers", "0"],
+          ["numbers", "2"]
+        ],
+        "body": null
+      }
+    },
+    {
+      "name": "fields with presence are sent at their defaults when set",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "maybeCount": 0, "maybeName": "", "limit": 0, "label": "", "number": 0 },
+      "expect": {
+        "path": "/v1/query",
+        "query": [["maybe_count", "0"], ["maybe_name", ""], ["limit", "0"], ["label", ""], ["number", "0"]],
+        "body": null
+      }
+    },
+    {
+      "name": "well-known types in their JSON string forms",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "at": "2024-01-02T03:04:05.678Z", "wait": "1.5s", "mask": "displayName,inner.a" },
+      "expect": {
+        "path": "/v1/query",
+        "query": [["at", "2024-01-02T03%3A04%3A05.678Z"], ["wait", "1.500s"], ["mask", "displayName%2Cinner.a"]],
+        "body": null
+      }
+    },
+    {
+      "name": "nested messages by dotted proto path, and a oneof member",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "inner": { "a": "x", "deep": { "b": 2, "c": ["p", "q"] } }, "text": "hello" },
+      "expect": {
+        "path": "/v1/query",
+        "query": [["inner.a", "x"], ["inner.deep.b", "2"], ["inner.deep.c", "p"], ["inner.deep.c", "q"], ["text", "hello"]],
+        "body": null
+      }
+    },
+    {
+      "name": "integers, booleans and enums in the path",
+      "method": "routes.v1.Routes.Typed",
+      "binding": 0,
+      "rule": { "verb": "DELETE", "template": "/v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}", "body": "" },
+      "request": { "count": 7, "flag": true, "kind": "KIND_IMAGE", "big": "-5", "inner": { "deep": { "b": 9 } }, "name": "q" },
+      "expect": { "path": "/v1/typed/7/true/KIND_IMAGE/-5/9", "query": [["name", "q"]], "body": null }
+    },
+    {
+      "name": "a path value under an unset message is empty; defaults are written",
+      "method": "routes.v1.Routes.Typed",
+      "binding": 0,
+      "rule": { "verb": "DELETE", "template": "/v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}", "body": "" },
+      "request": {},
+      "expect": { "path": "/v1/typed/0/false/KIND_UNSPECIFIED/0/", "query": [], "body": null }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "description": "The examples of google/api/http.proto, request to HTTP.",
+  "fixtures": [
+    {
+      "name": "a variable with a multi-segment template",
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/{name=messages/*}", "body": "" },
+      "request": { "name": "messages/123456" },
+      "expect": { "path": "/v1/messages/123456", "query": [], "body": null }
+    },
+    {
+      "name": "fields outside the path become query parameters",
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 2,
+      "rule": { "verb": "GET", "template": "/v1/messages/{message_id}", "body": "" },
+      "request": { "messageId": "123456", "revision": "2", "sub": { "subfield": "foo" } },
+      "expect": {
+        "path": "/v1/messages/123456",
+        "query": [["revision", "2"], ["sub.subfield", "foo"]],
+        "body": null
+      }
+    },
+    {
+      "name": "a nested field in the path",
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 1,
+      "rule": { "verb": "GET", "template": "/v1/messages/{message_id}/{sub.subfield}", "body": "" },
+      "request": { "messageId": "123456", "sub": { "subfield": "foo" } },
+      "expect": { "path": "/v1/messages/123456/foo", "query": [], "body": null }
+    },
+    {
+      "name": "an additional binding",
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 3,
+      "rule": { "verb": "GET", "template": "/v1/users/{user_id}/messages/{message_id}", "body": "" },
+      "request": { "messageId": "123456", "userId": "me" },
+      "expect": { "path": "/v1/users/me/messages/123456", "query": [], "body": null }
+    },
+    {
+      "name": "a body field",
+      "method": "routes.v1.Routes.UpdateMessage",
+      "binding": 0,
+      "rule": { "verb": "PATCH", "template": "/v1/messages/{message_id}", "body": "message" },
+      "request": { "messageId": "123456", "message": { "text": "Hi!" } },
+      "expect": { "path": "/v1/messages/123456", "query": [], "body": { "text": "Hi!" } }
+    },
+    {
+      "name": "body * holds every field not in the path",
+      "method": "routes.v1.Routes.UpdateMessageWhole",
+      "binding": 0,
+      "rule": { "verb": "PATCH", "template": "/v1/messages/{message_id}", "body": "*" },
+      "request": { "messageId": "123456", "text": "Hi!" },
+      "expect": { "path": "/v1/messages/123456", "query": [], "body": { "text": "Hi!" } }
+    }
+  ]
+}
