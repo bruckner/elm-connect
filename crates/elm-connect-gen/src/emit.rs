@@ -421,6 +421,7 @@ mod tests {
             files: vec!["a.proto".into(), "b.proto".into()],
             messages,
             enums: Vec::new(),
+            services: Vec::new(),
         }
     }
 

@@ -615,7 +615,19 @@ case names it):
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
   case): Elm forbids import cycles.
 - **A generate set not closed under package references**
-  (`generate::not_generated`, `packages_not_generated` case).
+  (`generate::not_generated`, `packages_not_generated` case), the
+  request and response types of methods included.
+- **Streaming methods** (`services::streaming`, `services_streaming`
+  case): client, server and bidirectional (§1.3).
+- **Method values that collide**: two methods of one service whose
+  values have one name (`GetSettings` and `Get_Settings`;
+  `naming::value_collision`, `services_value_collision` case).
+- **Modules that collide**: two services of one package whose module
+  names coincide (`Archive` and `archive`), a service module that is
+  also a package's (`NotesService` in `notes.v1` beside the package
+  `notes.v1.notes_service`), and two packages with one module name
+  (`naming::module_collision`, `services_module_collision` case); and a
+  service whose name has no module form (`naming::invalid_service`).
 
 ## 4. Method descriptors  *(Proposed)*
 
@@ -644,6 +656,55 @@ type Route req               -- opaque; parsed google.api.http rule
 Open question whether to fuse method and route into one value for the
 transcoding case (`Transcode.Call req res`) so call sites pass one
 thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
+
+Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
+
+- Every service of a generated package, and each of its methods: the
+  proto name, the Elm value name, the request and response types, the
+  idempotency, and the `google.api.http` rule as written (verb, path
+  template, `body`, `response_body`, additional bindings).
+- Each service is an Elm module of its own, inside its package's:
+  `Notes.V1.NotesService` for the service `NotesService` of `notes.v1`
+  (`ir::Service::module`, from `naming::service_module`). The service
+  name is converted to PascalCase as a package segment is (`notes`
+  → `Notes`), so a conventionally named service keeps its name, and a
+  name whose PascalCase form does not start with a letter is
+  `naming::invalid_service`. The package module holds the types and
+  codecs only. *(Decided, 2026-10-13.)* One module for a package's
+  types and every service's methods was the first shape built; it put
+  method values in one namespace with each other across services and
+  with the codecs and defaults, so `DefaultSettings` beside a message
+  `Settings` clashed, and two services could not both have a `Get`.
+- A method's value is its name with the first letter lowercased and
+  underscores dropped as for a field (`GetNote` → `getNote`), a reserved
+  word escaped (`Type` → `type_`). It shares a namespace only with the
+  other methods of its service: two that coincide (`GetNote` and
+  `Get_Note`) are `naming::value_collision`, never a rename. A method
+  `DefaultSettings` beside a message `Settings`, or a `Get` in two
+  services, is fine.
+- Module names are unique across the build: a service module that is
+  also a package's module (`NotesService` in `notes.v1` beside the
+  package `notes.v1.notes_service`), two services whose module names
+  coincide (`Archive` and `archive`), or two packages whose do
+  (`notes.v1` and `notes.V1`) are `naming::module_collision`, each
+  site labelled. A service named like a type of its package needs no
+  check: proto forbids the same name, and an Elm module and a type
+  with one name do not clash.
+- A method of `google.protobuf.Empty` or another supported well-known
+  type takes or gives that type's Elm form (`()` for `Empty`). Any other
+  type outside the generate set is `generate::not_generated`, worded for
+  the method ("The request of `notes.v1.Notes.Get` refers to ...").
+- A streaming method is `services::streaming`, pointing at its
+  `stream` keyword, rather than being skipped.
+- `google/api/http.proto` and `google/api/annotations.proto` are
+  embedded in `elm-connect-gen` (`googleapis` module; Apache-2.0,
+  `THIRD_PARTY.md`). The CLI resolves imports from its include paths
+  first, then protox's `google/protobuf` files, then these, so a proto
+  importing `google/api/annotations.proto` compiles without a googleapis
+  checkout. The protoc plugin needs no copy: protoc sends every import.
+  It builds its descriptor pool from the request's encoded files rather
+  than from `prost_types`, which drops extension options such as
+  `google.api.http`.
 
 ## 5. Runtime  *(Proposed)*
 
@@ -747,7 +808,8 @@ shared.
   request does not have; route body names a non-message field; map key
   of an unsupported type (dropped: every key proto allows has an Elm
   form, `bool` an association list, §3.2); package
-  import cycle; name collision after casing; `Any` field. A recursive
+  import cycle; name collision after casing; `Any` field; streaming
+  method; method value collision (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
 

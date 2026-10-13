@@ -4,16 +4,17 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use prost_reflect::{
-    DescriptorPool, EnumDescriptor, EnumValueDescriptor, FieldDescriptor, FileDescriptor, Kind,
-    MessageDescriptor,
+    DescriptorPool, DynamicMessage, EnumDescriptor, EnumValueDescriptor, FieldDescriptor,
+    FileDescriptor, Kind, MessageDescriptor, MethodDescriptor, Value,
 };
 
 use super::graph::strongly_connected;
 use super::{
-    Cardinality, Enum, EnumValue, Field, JsType, MapKey, Message, ModuleName, Oneof, OneofVariant,
-    Package, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
+    Cardinality, Enum, EnumValue, Field, HttpRule, HttpVerb, JsType, MapKey, Message, Method,
+    ModuleName, Oneof, OneofVariant, Package, ScalarKind, Service, TypeName, TypeRef, WellKnown,
+    Wrapper,
 };
-use crate::diagnostics::{Diagnostics, Problem, Site, Spans, tag};
+use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
 
 /// The package whose types are well-known types, never generated.
@@ -26,7 +27,8 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 /// Every type those packages refer to must be in a generated package or be
 /// a supported well-known type: the generate set must be closed under
 /// package references (design §3.1). Files of `google.protobuf` in
-/// `generate` are skipped. Services are ignored.
+/// `generate` are skipped. Every method must be unary, and its request and
+/// response types are held to the same closure rule.
 ///
 /// On any problem, returns every problem found instead.
 pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, Diagnostics> {
@@ -65,6 +67,9 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
     for (package, files) in &by_package {
         match naming::module_name(package) {
             Ok(module) => {
+                let what = format!("package `{package}`");
+                let origin = builder.origin(&files[0], &[], tag::FILE_PACKAGE, what);
+                builder.claim_module(&module, origin);
                 builder.modules.insert(package.clone(), module);
             }
             Err(NameError::InvalidSegment { segment }) => {
@@ -160,6 +165,9 @@ struct Builder {
     diagnostics: Diagnostics,
     spans: HashMap<String, Spans>,
     modules: BTreeMap<String, ModuleName>,
+    /// Every generated module name, a package's or a service's, so no two
+    /// generated modules share one.
+    module_names: Namespace,
     types: HashMap<String, TypeName>,
     references: Vec<Reference>,
 }
@@ -267,12 +275,137 @@ impl Builder {
             }
         }
 
+        let mut services = Vec::new();
+        for file in files {
+            for service in file.services() {
+                let full_name = service.full_name();
+                let service_module = match naming::service_module(module, service.name()) {
+                    Ok(service_module) => {
+                        let what = format!("service `{full_name}`");
+                        let origin = self.origin(file, service.path(), tag::SERVICE_NAME, what);
+                        self.claim_module(&service_module, origin);
+                        Some(service_module)
+                    }
+                    Err(_) => {
+                        let path = [service.path(), &[tag::SERVICE_NAME]].concat();
+                        let site = self.site(file, &path, "this name".into());
+                        self.diagnostics
+                            .push(Problem::invalid_service(full_name, site));
+                        None
+                    }
+                };
+                let mut values = Namespace::default();
+                let mut methods = Vec::new();
+                for method in service.methods() {
+                    if let Some(built) = self.method(file, &method, &mut values) {
+                        methods.push(built);
+                    }
+                }
+                if let Some(module) = service_module {
+                    services.push(Service {
+                        proto_full_name: full_name.to_owned(),
+                        module,
+                        methods,
+                    });
+                }
+            }
+        }
+
         Package {
             proto_name: proto_name.to_owned(),
             module: module.clone(),
             files: files.iter().map(|file| file.name().to_owned()).collect(),
             messages,
             enums,
+            services,
+        }
+    }
+
+    /// A unary method, named and with its types resolved; `None` after
+    /// reporting why it has no Elm form. Its Elm value is claimed in
+    /// `values`, the namespace of its service's methods.
+    fn method(
+        &mut self,
+        file: &FileDescriptor,
+        method: &MethodDescriptor,
+        values: &mut Namespace,
+    ) -> Option<Method> {
+        let full_name = method.full_name();
+        let path = method.path();
+        let streaming = match (method.is_client_streaming(), method.is_server_streaming()) {
+            (false, false) => None,
+            (true, false) => Some(("client", tag::METHOD_CLIENT_STREAMING)),
+            (false, true) => Some(("server", tag::METHOD_SERVER_STREAMING)),
+            (true, true) => Some(("bidirectional", tag::METHOD_CLIENT_STREAMING)),
+        };
+        if let Some((which, stream_tag)) = streaming {
+            let site = self.site(file, &[path, &[stream_tag]].concat(), "streams here".into());
+            self.diagnostics
+                .push(Problem::streaming(full_name, which, site));
+            return None;
+        }
+
+        let input = self.resolve_type(
+            file,
+            &Referrer::Request(full_name.to_owned()),
+            &[path, &[tag::METHOD_INPUT]].concat(),
+            Kind::Message(method.input()),
+        );
+        let output = self.resolve_type(
+            file,
+            &Referrer::Response(full_name.to_owned()),
+            &[path, &[tag::METHOD_OUTPUT]].concat(),
+            Kind::Message(method.output()),
+        );
+
+        let elm_name = match naming::method_name(method.name()) {
+            Ok(name) => name,
+            Err(error) => {
+                let converted = match error {
+                    NameError::WrongStart { converted } => converted,
+                    _ => String::new(),
+                };
+                let site = self.site(
+                    file,
+                    &[path, &[tag::METHOD_NAME]].concat(),
+                    "this name".into(),
+                );
+                self.diagnostics
+                    .push(Problem::invalid_method(full_name, &converted, site));
+                return None;
+            }
+        };
+        let http = http_rule(method);
+        let built = Method {
+            proto_name: method.name().to_owned(),
+            elm_name,
+            input: input?,
+            output: output?,
+            idempotent: idempotent(method),
+            http,
+        };
+
+        let what = format!("method `{full_name}`");
+        let origin = self.origin(file, path, tag::METHOD_NAME, what);
+        if let Some((first, second)) = values.claim(&built.elm_name, origin) {
+            let service = method.parent_service();
+            self.diagnostics.push(Problem::value_collision(
+                service.full_name(),
+                &built.elm_name,
+                first,
+                second,
+            ));
+        }
+        Some(built)
+    }
+
+    fn claim_module(&mut self, module: &ModuleName, origin: Origin) {
+        if let Some((first, second)) = self.module_names.claim(&module.to_string(), origin) {
+            self.diagnostics.push(Problem::module_collision(
+                &module.to_string(),
+                first,
+                second,
+            ));
         }
     }
 
@@ -535,6 +668,23 @@ impl Builder {
         field: &FieldDescriptor,
         kind: Kind,
     ) -> Option<TypeRef> {
+        let referrer = Referrer::Field {
+            message: message.full_name().to_owned(),
+            field: field.name().to_owned(),
+        };
+        let type_path = [field.path(), &[tag::FIELD_TYPE_NAME]].concat();
+        self.resolve_type(file, &referrer, &type_path, kind)
+    }
+
+    /// The type of `kind`, which `referrer` refers to at `type_path` of
+    /// `file`; `None` after reporting why it has no Elm form.
+    fn resolve_type(
+        &mut self,
+        file: &FileDescriptor,
+        referrer: &Referrer,
+        type_path: &[i32],
+        kind: Kind,
+    ) -> Option<TypeRef> {
         // For an enum, its proto name and the name of its zero value.
         let (full_name, package, defining_file, enum_names) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
@@ -570,7 +720,6 @@ impl Builder {
             }
         };
         let is_message = enum_names.is_none();
-        let type_path = [field.path(), &[tag::FIELD_TYPE_NAME]].concat();
 
         if package == WELL_KNOWN_PACKAGE {
             let name = full_name
@@ -579,11 +728,11 @@ impl Builder {
             if let Some(well_known) = WellKnown::from_name(name).filter(|_| is_message) {
                 return Some(TypeRef::WellKnown(well_known));
             }
-            let site = self.site(file, &type_path, format!("`{full_name}` here"));
+            let site = self.site(file, type_path, format!("`{full_name}` here"));
             self.diagnostics.push(if name == "Any" {
-                Problem::any(message.full_name(), field.name(), site)
+                Problem::any(referrer, site)
             } else {
-                Problem::unsupported_well_known(message.full_name(), field.name(), &full_name, site)
+                Problem::unsupported_well_known(referrer, &full_name, site)
             });
             return None;
         }
@@ -591,12 +740,11 @@ impl Builder {
         if !self.modules.contains_key(&package) {
             let site = self.site(
                 file,
-                &type_path,
+                type_path,
                 format!("`{package}` is not being generated"),
             );
             self.diagnostics.push(Problem::not_generated(
-                message.full_name(),
-                field.name(),
+                referrer,
                 &full_name,
                 &package,
                 &defining_file,
@@ -609,7 +757,7 @@ impl Builder {
         let name = self.types.get(&full_name)?.clone();
         let site = self.site(
             file,
-            &type_path,
+            type_path,
             format!("`{}` refers to `{package}` here", file.package_name()),
         );
         self.references.push(Reference {
@@ -804,6 +952,91 @@ fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDescriptor> {
         .iter()
         .filter_map(|value| enumeration.get_value_by_name(value.name()))
         .collect()
+}
+
+/// Whether `method` declares `idempotency_level = NO_SIDE_EFFECTS`.
+fn idempotent(method: &MethodDescriptor) -> bool {
+    use prost_types::method_options::IdempotencyLevel;
+    method
+        .method_descriptor_proto()
+        .options
+        .as_ref()
+        .is_some_and(|options| options.idempotency_level() == IdempotencyLevel::NoSideEffects)
+}
+
+/// The full name of the `google.api.http` extension of `MethodOptions`.
+const HTTP_EXTENSION: &str = "google.api.http";
+
+/// The `google.api.http` rule of `method`, if it has one. The extension is
+/// read from the method's options as the pool decoded them, so the pool
+/// must have kept extension options: protox keeps them, and a pool built
+/// from a `FileDescriptorSet` keeps them only when decoded from its bytes
+/// (`DescriptorPool::decode_file_descriptor_set`). A pool without
+/// `google/api/annotations.proto` has no rule to find.
+fn http_rule(method: &MethodDescriptor) -> Option<HttpRule> {
+    let extension = method.parent_pool().get_extension_by_name(HTTP_EXTENSION)?;
+    let options = method.options();
+    if !options.has_extension(&extension) {
+        return None;
+    }
+    let value = options.get_extension(&extension);
+    let rule = value.as_message()?;
+    Some(read_rule(rule))
+}
+
+/// An `HttpRule` message as the IR holds it. A rule whose `pattern` is
+/// unset reads as a `get` of the empty template, which the route parser
+/// rejects.
+fn read_rule(rule: &DynamicMessage) -> HttpRule {
+    let string = |name: &str| {
+        rule.get_field_by_name(name)
+            .and_then(|value| value.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    };
+    let set = |name: &str| rule.has_field_by_name(name);
+    let mut verb = HttpVerb::Get;
+    let mut template = String::new();
+    for (name, candidate) in [
+        ("get", HttpVerb::Get),
+        ("put", HttpVerb::Put),
+        ("post", HttpVerb::Post),
+        ("delete", HttpVerb::Delete),
+        ("patch", HttpVerb::Patch),
+    ] {
+        if set(name) {
+            verb = candidate;
+            template = string(name);
+        }
+    }
+    if let Some(Value::Message(custom)) = set("custom")
+        .then(|| rule.get_field_by_name("custom"))
+        .flatten()
+        .as_deref()
+    {
+        let text = |name: &str| {
+            custom
+                .get_field_by_name(name)
+                .and_then(|value| value.as_str().map(str::to_owned))
+                .unwrap_or_default()
+        };
+        verb = HttpVerb::Custom(text("kind"));
+        template = text("path");
+    }
+    let additional_bindings = match rule.get_field_by_name("additional_bindings").as_deref() {
+        Some(Value::List(bindings)) => bindings
+            .iter()
+            .filter_map(Value::as_message)
+            .map(read_rule)
+            .collect(),
+        _ => Vec::new(),
+    };
+    HttpRule {
+        verb,
+        template,
+        body: string("body"),
+        response_body: string("response_body"),
+        additional_bindings,
+    }
 }
 
 /// The `jstype` option of `field` when its values are 64-bit integers;

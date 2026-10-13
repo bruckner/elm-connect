@@ -1,0 +1,19 @@
+naming::value_collision
+
+  × The service `settings.v1.SettingsService` has two methods that both become
+  │ the Elm value `getSettings`.
+    ╭─[settings.proto:13:7]
+ 12 │   rpc DefaultSettings(Settings) returns (Settings);
+ 13 │   rpc GetSettings(Settings) returns (Settings);
+    ·       ─────┬─────
+    ·            ╰── method `settings.v1.SettingsService.GetSettings` becomes `getSettings`
+ 14 │   // `Get_Settings` is `getSettings` too.
+ 15 │   rpc Get_Settings(Settings) returns (Settings);
+    ·       ──────┬─────
+    ·             ╰── and so does method `settings.v1.SettingsService.Get_Settings`
+ 16 │ }
+    ╰────
+  help: A service's module defines one value per method, its name with the
+        first letter lowercased and underscores dropped, so names that differ
+        only in those ways end up the same, and a module cannot define two
+        values with one name. Rename one of the methods in the proto.

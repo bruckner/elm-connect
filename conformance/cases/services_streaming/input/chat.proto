@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package chat.v1;
+
+message Line {
+  string text = 1;
+}
+
+service Chat {
+  rpc Send(Line) returns (Line);
+  rpc Listen(Line) returns (stream Line);
+  rpc Talk(stream Line) returns (stream Line);
+}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package notes.v1;
+
+message Note {
+  string name = 1;
+}
+
+// `NotesService` is the module `Notes.V1.NotesService`, which is also the
+// module of the package `notes.v1.notes_service`.
+service NotesService {
+  rpc GetNote(Note) returns (Note);
+}
+
+// `Archive` and `archive` both become `Notes.V1.Archive`.
+service Archive {
+  rpc GetNote(Note) returns (Note);
+}
+
+service archive {
+  rpc GetNote(Note) returns (Note);
+}
