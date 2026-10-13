@@ -198,3 +198,7 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   the Transcode transport and `Rpc.viaBinding` (`tests/Routes/` and
   `tests/RouteFixtures.elm`, generated and pinned; `just bless`
   rewrites them).
+- The `services_invalid` diagnostics case: a method type outside the
+  generate set, a method name with no Elm form, a service name with no
+  module form, a rule without a path, and nested additional bindings,
+  so every diagnostic of the method layer is pinned in the corpus.
