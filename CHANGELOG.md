@@ -149,3 +149,16 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   field becomes, by dotted proto field path with the default each is
   left out at. Each problem is a `route::*` diagnostic pointing at the
   rule (`routes_invalid` case).
+- The runtime sends calls: module `Rpc`, with `Rpc.Code`. A call
+  (`Rpc.Call`, from `Rpc.call` and a `Rpc.MethodDescriptor`) is a
+  method applied to its request, carrying its HTTP bindings as data
+  (`Rpc.binding` and the segment, body and parameter constructors) and
+  per-call headers, timeout, tracker and binding choice. A config
+  (`Rpc.Config`, `Rpc.config`) is plain data: the transport (`Connect`,
+  with `useGet` off by default and `maxGetUrl`), base URL, headers,
+  timeout, credentials and a retry policy. `Rpc.task`, `Rpc.send` and
+  their traced forms send a call; `Rpc.request`, `Rpc.response` and
+  `Rpc.taskFromRequest` are the pure halves. Errors are `Rpc.Rpc`
+  (code, message, raw details and the source they were read from: a
+  Connect error body or the HTTP status) or `Rpc.Transport`. The
+  package now depends on elm/http.

@@ -743,7 +743,7 @@ gets exactly this as data and never parses a template.
 - Additional bindings follow the same rules and may not nest
   (`route::rule`, as is a rule with no pattern).
 
-## 5. Runtime  *(Proposed)*
+## 5. Runtime  *(Decided unless marked)*
 
 **The package is kept.** *(Decided, 2026-10-11.)* The type layer was
 built against a runtime package from day one, because the JSON pipeline
@@ -755,51 +755,156 @@ which inlining cannot give; the codecs for timestamps as `Time.Posix`
 and the `Int64` helpers are one copy rather than one per module; and
 the coming transports belong in it too.
 
-### 5.1 Config
+### 5.1 Config  *(Decided, 2026-10-13; built)*
 
 ```elm
 type alias Config =
-    { baseUrl : String
-    , headers : List Http.Header   -- e.g. Authorization
-    , timeout : Maybe Float        -- ms; Connect sends Connect-Timeout-Ms
+    { transport : Transport
+    , baseUrl : String                    -- a trailing "/" is dropped
+    , headers : List ( String, String )   -- e.g. ( "Authorization", "Bearer …" )
+    , timeout : Maybe Float               -- ms; Connect also sends Connect-Timeout-Ms
+    , withCredentials : Bool              -- Http.riskyRequest when True
+    , retry : Maybe Retry
     }
+
+type Transport
+    = Connect { useGet : Bool, maxGetUrl : Maybe Int }
+
+type alias Retry =
+    { attempts : Int, backoff : Float, codes : List Code, idempotentOnly : Bool }
+
+config : String -> Config   -- Connect, POST only, nothing else set
+connect : Transport         -- Connect { useGet = False, maxGetUrl = Nothing }
 ```
 
-No interceptors, no retry policy, no token refresh. Those are
-application concerns and Elm applications already own the `Task`
-pipeline where they belong.
+The config is data: a record with no function in it, transport options
+inside the `Transport` constructor. That is the point of it. Elm 0.19
+throws at run time on `==` over functions, so a config holding one
+could not be compared, kept in a model safely, or passed through
+`Html.Lazy`; data can also be printed, stored, and built per call from
+an application's shared state with record syntax
+(`{ base | headers = auth shared }`).
 
-### 5.2 Connect
+So there are no interceptors, no token provider and no logger in it.
+Every use of an interceptor maps onto something else:
+
+- onto data: headers, timeout, credentials and retry are fields;
+- onto update-time handling: logging reads the `Trace` (§5.2) a
+  traced send returns, and refreshing a token is the application
+  shell's job, single-flight, before it builds the config;
+- onto the pure halves: arbitrary rewriting of a request is
+  `Rpc.request`, then any change, then `Rpc.taskFromRequest`.
+
+The docs owe the wrapper pattern this asks of an application: one
+function, `rpc shared call = Rpc.task (config shared) call`, through
+which every call goes, and a generic retry or refresh wrapper that
+closes over the call value, which is data and can be sent again. If a
+need for hooks appears, an opaque `Rpc.Client` built from a `Config`
+plus hooks can be added beside `task : Config -> …` without breaking
+it.
+
+- Headers are name–value pairs rather than `Http.Header`, which is
+  opaque, so a built request can be inspected and compared.
+- `useGet` is off by default, as in connect-es: a GET is only worth it
+  where a cache sits in front of the server, and the application knows
+  that, not the generator. *(Decided, 2026-10-11.)* `maxGetUrl` POSTs a
+  call whose GET URL would be longer than that many characters, for
+  servers and proxies that cap URL length.
+- A timeout is also the elm/http timeout, so the client gives up at the
+  same moment it asked the server to.
+- Retry waits `backoff` ms before the second attempt and doubles it
+  before each one after, up to `attempts` tries in all. It applies only
+  to an `Rpc` error with one of `codes`, never to a transport error, and
+  with `idempotentOnly` only to idempotent calls.
+
+### 5.2 Rpc  *(Decided, 2026-10-13; built)*
+
+One public runtime module, `Rpc`, plus `Rpc.Code`; its internals live
+under `Rpc.Internal.*`. The codec modules (`Connect.Json`,
+`Connect.Timestamp`, `Connect.Duration`, `Connect.Int64`) keep their
+names.
 
 ```elm
-task : Config -> Method req res -> req -> Task Error res
-send : Config -> Method req res -> req -> (Result Error res -> msg) -> Cmd msg
+type Call req res      -- opaque: descriptor, request, binding, per-call adjustments
+type alias MethodDescriptor req res =
+    { service : String, method : String, idempotent : Bool
+    , encode : req -> Json.Encode.Value, decoder : Json.Decode.Decoder res
+    , bindings : List Binding }
+call : MethodDescriptor req res -> req -> Call req res
 
-type Error
-    = Rpc { code : Code, message : String, details : List Json.Encode.Value }
-    | Transport Http.Error      -- network, timeout, non-Connect response
+-- per call
+withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
+withTimeout : Float -> Call req res -> Call req res                     -- replaces the config's
+withTracker : String -> Call req res -> Call req res                    -- send without retry only
+viaBinding : Int -> Call req res -> Call req res                        -- transcoding only
 
-type Code = Canceled | Unknown | InvalidArgument | ... | Unauthenticated
+-- reading
+descriptor, service, method, idempotent, requestMessage, requestJson
+toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
+
+-- sending
+task : Config -> Call req res -> Task Error res
+send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
+taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
+sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
+
+-- pure halves
+type alias Request =
+    { method : String, url : String, headers : List ( String, String )
+    , body : Maybe String, timeout : Maybe Float, withCredentials : Bool }
+request : Config -> Call req res -> Request
+response : Config -> Call req res -> Http.Response String -> Result Error res
+taskFromRequest : Config -> Call req res -> Request -> Task Error res
 ```
 
-- Unary only. POST with `Content-Type: application/json` and
-  `Connect-Protocol-Version: 1`. GET with the `message` query encoding
-  when the method is idempotent, behind a `Config` flag. *(Open: default
-  on or off.)*
-- Errors follow the protocol's JSON body; a non-200 without a parsable
-  body maps from HTTP status as the spec says.
-- Error details are kept as raw JSON values. Typed details need
-  `google.protobuf.Any`, which is not designed yet (§3.5, §9).
+- A call is data: a generated function per method applied to the
+  request (§4). Per-call adjustments ride on it; `toJson` gives it a
+  stable JSON form for logs, deduplication keys and queues.
+- `task` is `taskFromRequest` of `request`; the retry loop lives in
+  `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
+  request is retried too.
+- `send` without a retry policy is one `Http.request`, carrying the
+  call's tracker; with one, it is `Task.attempt` over `task`, and the
+  tracker does not apply, since elm/http tracks commands only and
+  retrying needs a task. The traced forms are tasks too.
+- `Trace` is `{ service, method, binding, request, status, duration,
+  attempts }`: `binding` is `Nothing` when no binding was used (Connect,
+  the implicit route), `status` the last answer's HTTP status,
+  `duration` milliseconds by `Time.now` before the first attempt and
+  after the last.
+- Only the pure halves are unit-tested; elm-test cannot run a `Task`,
+  so `task`, `send`, the traced forms and the retry loop are checked by
+  the compiler and by the retry policy's own tests.
 
-### 5.3 Transcode
+### 5.3 Transports
 
-```elm
-task : Config -> Method req res -> Route req -> req -> Task Error res
+#### Connect  *(Decided; built)*
 
-type Error
-    = Rpc { code : Int, status : Code, message : String, details : List Json.Encode.Value }
-    | Transport Http.Error
-```
+- Unary only. POST to `baseUrl/<service>/<Method>` with the request's
+  JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
+  With `useGet`, an idempotent call is a GET of the same URL with
+  `?connect=v1&encoding=json&message=<JSON>`, the JSON percent-encoded
+  (every byte but RFC 3986's unreserved characters), in the order the
+  protocol recommends; no protocol-version header, which GET carries in
+  the query.
+- `Connect-Timeout-Ms` is the timeout rounded up to a whole
+  millisecond, between 1 and 9,999,999,999 (ten digits).
+- Success is status 200 with a body the response decoder accepts; a 200
+  whose body it rejects is `Transport (Http.BadBody _)`. Any other
+  answer is read as an error (§5.4).
+- Bindings are carried on the call and ignored: Connect has one route
+  per method.
+- The runtime's dependencies beyond core, json and time: elm/http
+  (which brings elm/bytes and elm/file). Percent-encoding is written out
+  in the runtime rather than taken from elm/url, whose `percentEncode`
+  keeps `!*'()`, which the transcoding rules require escaped.
+
+#### Transcode  *(Proposed)*
+
+The bindings a generated call carries (`Rpc.binding`, with
+`Rpc.literal`, `Rpc.variable`, `Rpc.wildcard`, `Rpc.doubleWildcard`,
+`Rpc.noBody`, `Rpc.wholeBody`, `Rpc.bodyField`, `Rpc.param`) are the
+parsed `google.api.http` rule:
 
 - Path from the template and the request; body from the `body` field
   (`*`, a named field, or none); remaining request fields as query
@@ -824,16 +929,37 @@ type Error
   (`route::query_field`): maps, repeated messages, `Struct`, `Value`
   and `ListValue`, and a message that contains itself. `Empty` carries
   nothing and has no parameter.
-- Errors decode `google.rpc.Status` (integer `code`, `message`,
-  `details`) as grpc-gateway and Envoy emit it.
 
-### 5.4 Why two error types
+### 5.4 Errors  *(Decided, 2026-10-13; built)*
 
-They are different on the wire (`"code": "not_found"` versus
-`"code": 5`) and a server may add transport-specific detail. Mapping
-both onto one type would hide the one piece of information that tells a
-developer which side of the system misbehaved. The `Code` custom type is
-shared.
+```elm
+type Error
+    = Rpc { code : Code, message : String, details : List Json.Encode.Value, source : Source }
+    | Transport Http.Error      -- bad URL, timeout, network, undecodable success
+
+type Source
+    = ConnectBody               -- {"code": "not_found", …}
+    | HttpStatus Int            -- inferred from the status by Connect's table
+```
+
+`Code` is `Rpc.Code.Code`, the sixteen codes, with `toString` /
+`fromString` (Connect's names), `toInt` / `fromInt` (gRPC's numbers)
+and `fromHttpStatus`.
+
+- One error type for every transport. Two were built first, one per
+  transport, on the grounds that the wire forms differ (`"code":
+  "not_found"` against `"code": 5`) and that knowing which one arrived
+  tells a developer which side misbehaved. `source` keeps that
+  information without making every caller handle two types, and a
+  server behind a transcoder can answer in either form.
+- A failed answer is read by one reader whatever the transport, in
+  order: a Connect error body (`code` a string the protocol names; an
+  unknown name reads as `Unknown`; `message` `""` and `details` `[]`
+  when absent), then the HTTP status by the protocol's table, with the
+  status text as the message (`HTTP <status>` when empty) and no
+  details.
+- Error details are kept as raw JSON values. Typed details need
+  `google.protobuf.Any`, which is not designed yet (§3.5, §9).
 
 ## 6. Generator  *(Decided unless marked)*
 
@@ -903,14 +1029,13 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 ## 9. Open questions, collected
 
 1. Fuse method and route for transcoding (§4).
-2. Connect GET for idempotent methods: default on or off (§5.2).
-3. Naming of additional-binding routes (§4).
-4. Presence as companion data: instead of `Maybe` fields, generated
+2. Naming of additional-binding routes (§4).
+3. Presence as companion data: instead of `Maybe` fields, generated
    records could carry a presence set plus helpers (`hasBar`), a
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not
    decided; raised during the type-layer review.
-5. `Any` (§3.5): the shape of pack and unpack, and its relation to the
+4. `Any` (§3.5): the shape of pack and unpack, and its relation to the
    generated descriptors (§4). The operator has prior notes.
 
 ## 10. Out of scope but recorded
