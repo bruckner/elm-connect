@@ -47,6 +47,10 @@ parsing =
             \_ -> parses "1970-01-01T00:00:01.5Z" 1500
         , test "nanoseconds are truncated to milliseconds" <|
             \_ -> parses "1970-01-01T00:00:00.123456789Z" 123
+        , test "a fraction is truncated, never rounded up" <|
+            \_ -> parses "1970-01-01T00:00:00.9999999Z" 999
+        , test "before the epoch, truncation is toward the past" <|
+            \_ -> parses "1969-12-31T23:59:59.9999999Z" -1
         , test "before the epoch, fractions still count forward" <|
             \_ -> parses "1969-12-31T23:59:59.250Z" -750
         , test "a positive offset is applied" <|

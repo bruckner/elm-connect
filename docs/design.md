@@ -328,8 +328,16 @@ just the form encoders write. *(Proposed; built.)*
   A fractional value fails, and so does one outside the proto type's
   range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
-  `"-Infinity"`; 64-bit integers as strings or numbers. A 64-bit string
-  in exponent notation (`"1e2"`) is not accepted yet.
+  `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
+  notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The
+  `String` form (`Connect.Json.int64`) is always the canonical decimal
+  string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
+  found by moving the decimal point as text, never through a `Float`,
+  so a string past 2^53 keeps every digit. A value that is not an
+  integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
+  past every 64-bit integer, which also bounds the text an exponent can
+  ask for. `Connect.Json.int64AsInt` reads the same forms within its
+  range. A 64-bit map key is kept as the text received (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
@@ -411,7 +419,7 @@ argument.)*
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
 | `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | unsupported; diagnostic | needs a type registry; no demand |
+| `google.protobuf.Any` | in scope; a diagnostic until designed | needs the descriptor layer (§9) |
 
 The in-house generator mapped `Timestamp` to `String` to avoid a
 dependency. With a runtime package required anyway (for the transports),
@@ -449,8 +457,8 @@ Built as proposed, with these details *(each Proposed)*:
   unlike any other member (§3.6).
 - `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
-  to 9999. `Time.Posix` counts milliseconds, so finer digits are dropped
-  (toward the past) and a timestamp prints with no fraction or three
+  to 9999. `Time.Posix` counts milliseconds, so finer digits are
+  truncated (toward the past, never rounded up; §3.8) and a timestamp prints with no fraction or three
   digits; protobuf's six and nine never arise. A leap second
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
   `23:59:59` with its fraction.
@@ -465,7 +473,9 @@ Built as proposed, with these details *(each Proposed)*:
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
-- `Any` is the `types::any` diagnostic (`any_field` case).
+- `Any` is in scope for the library *(Decided, 2026-10-11)*, its
+  design pending the descriptor layer (§9); until then a field of it is
+  the `types::any` diagnostic (`any_field` case).
 
 ### 3.6 Oneof
 
@@ -530,6 +540,12 @@ Built *(Proposed in its details)*:
   underscore (`type` → `type_`). *(Decided.)*
 - Collisions after casing (`foo_bar` and `fooBar` in one message) are a
   diagnostic, not a silent rename. *(Decided.)*
+- Nested messages and enums are flattened into their package's module,
+  prefixed with the names of the messages enclosing them:
+  `Outer.Inner` → `OuterInner`, `Outer.Inner.Kind` → `OuterInnerKind`.
+  *(Decided, 2026-10-11.)* A submodule per message (`Pkg.Outer.Inner`)
+  was considered and rejected: a parent referring to its own nested
+  type would be an Elm module cycle.
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
 
@@ -568,6 +584,12 @@ record of fact; the policy for them is not designed yet.
 
 Dropped distinctions:
 
+- **Sub-millisecond timestamp precision.** A `Timestamp` is
+  `Time.Posix`, which counts milliseconds (§3.5): a fraction of up to
+  nine digits is read and truncated, and the finer digits are not
+  re-emitted. An option mapping `Timestamp` to an exact seconds and
+  nanoseconds type, as `Duration` is held, could cover the rare case it
+  matters; not built.
 - **Unknown enum numbers** read as the zero value (§3.3), so a value
   the client does not know is indistinguishable from the zero value,
   and re-encoding sends the zero value's name.
@@ -625,12 +647,15 @@ thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
 
 ## 5. Runtime  *(Proposed)*
 
-**Status of the package itself (2026-10-10):** the type layer is being
+**The package is kept.** *(Decided, 2026-10-11.)* The type layer was
 built against a runtime package from day one, because the JSON pipeline
 helpers and the well-known-type codecs would otherwise be inlined into
-every generated module. Whether the package is *kept* is an open
-question: once it exists, we look at what it contains and what that buys
-over inlining, and decide. Nothing below assumes the answer.
+every generated module, with the question of keeping it left open until
+its contents existed. They settle it: a shared type (`Duration`)
+must be one type across every generated module and the application,
+which inlining cannot give; the codecs for timestamps as `Time.Posix`
+and the `Int64` helpers are one copy rather than one per module; and
+the coming transports belong in it too.
 
 ### 5.1 Config
 
@@ -666,7 +691,7 @@ type Code = Canceled | Unknown | InvalidArgument | ... | Unauthenticated
 - Errors follow the protocol's JSON body; a non-200 without a parsable
   body maps from HTTP status as the spec says.
 - Error details are kept as raw JSON values. Typed details need
-  `google.protobuf.Any`, which §3.5 excludes.
+  `google.protobuf.Any`, which is not designed yet (§3.5, §9).
 
 ### 5.3 Transcode
 
@@ -759,18 +784,19 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 9. Open questions, collected
 
-1. Whether the runtime package is kept (§5) once its contents exist.
-2. Fuse method and route for transcoding (§4).
-3. Connect GET for idempotent methods: default on or off (§5.2).
-4. Naming of additional-binding routes (§4).
-5. Presence as companion data: instead of `Maybe` fields, generated
+1. Fuse method and route for transcoding (§4).
+2. Connect GET for idempotent methods: default on or off (§5.2).
+3. Naming of additional-binding routes (§4).
+4. Presence as companion data: instead of `Maybe` fields, generated
    records could carry a presence set plus helpers (`hasBar`), a
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not
    decided; raised during the type-layer review.
+5. `Any` (§3.5): the shape of pack and unpack, and its relation to the
+   generated descriptors (§4). The operator has prior notes.
 
 ## 10. Out of scope but recorded
 
-Streaming (both transports), binary protobuf, gRPC-web, proto2, `Any`,
+Streaming (both transports), binary protobuf, gRPC-web, proto2,
 interceptors, retries, server generation. Each has a sentence above
 saying why; none is a permanent no.

@@ -683,39 +683,138 @@ integral form =
 2^53.
 
 proto3 JSON writes these as strings, and a parser must accept either a string
-or a number. A string must be an optional `-` followed by digits. A number is
-rendered back to its decimal string; past 2^53 it was already rounded when the
-JSON was parsed, before this decoder saw it.
+or a number, in exponent notation too. The result is always the canonical
+decimal string, with no leading zeros:
+
+    "42", 42           --> "42"
+    "1e3", "1.5e3"     --> "1000", "1500"
+    1E2, "-2e0"        --> "100", "-2"
+    "007", "-0"        --> "7", "0"
+
+A value that is not an integer fails (`"4.2"`, `"1.5e0"`), and so does one
+written with more than 20 digits, past every 64-bit integer. Exponent
+notation is read as text, by moving the decimal point, so a string keeps every
+digit. A number past 2^53 was already rounded when the JSON was parsed, before
+this decoder saw it.
 
 -}
 int64 : Decoder String
 int64 =
     Json.Decode.oneOf
-        [ Json.Decode.string |> Json.Decode.andThen decimal
+        [ Json.Decode.string
         , Json.Decode.map String.fromInt Json.Decode.int
         ]
+        |> Json.Decode.andThen (\text -> fromResult (canonicalInteger text))
 
 
-decimal : String -> Decoder String
-decimal text =
-    if isDecimal text then
-        Json.Decode.succeed text
-
-    else
-        Json.Decode.fail ("Expecting a decimal integer, but got \"" ++ text ++ "\"")
-
-
-isDecimal : String -> Bool
-isDecimal text =
+{-| The canonical decimal form of an integer written as text in decimal or
+exponent notation (`"-1.5e3"` is `"-1500"`), found by moving the decimal point
+rather than through a `Float`, which would round past 2^53.
+-}
+canonicalInteger : String -> Result String String
+canonicalInteger text =
     let
-        digits =
+        ( sign, unsigned ) =
             if String.startsWith "-" text then
-                String.dropLeft 1 text
+                ( "-", String.dropLeft 1 text )
 
             else
-                text
+                ( "", text )
     in
-    not (String.isEmpty digits) && String.all Char.isDigit digits
+    case scientific unsigned of
+        Nothing ->
+            Err ("Expecting a decimal integer, but got " ++ quote text)
+
+        Just { digits, point } ->
+            let
+                significant =
+                    dropLeadingZeros digits
+
+                -- The point counted from the first significant digit.
+                shifted =
+                    point - (String.length digits - String.length significant)
+
+                kept =
+                    String.reverse (dropLeadingZeros (String.reverse significant))
+            in
+            if String.isEmpty kept then
+                Ok "0"
+
+            else if String.length kept > shifted then
+                Err ("Expecting an integer, but got " ++ quote text)
+
+            else if shifted > 20 then
+                Err ("Expecting a 64-bit integer, but got " ++ quote text)
+
+            else
+                Ok (sign ++ kept ++ String.repeat (shifted - String.length kept) "0")
+
+
+{-| An unsigned number in decimal or exponent notation (`1`, `1.5`, `15e-1`,
+`1.5E+0`) as its digits and the position of the decimal point among them,
+which may lie outside them.
+-}
+scientific : String -> Maybe { digits : String, point : Int }
+scientific text =
+    let
+        allDigits part =
+            not (String.isEmpty part) && String.all Char.isDigit part
+
+        exponentOf part =
+            if allDigits (String.dropLeft 1 part) && (String.startsWith "+" part || String.startsWith "-" part) then
+                String.toInt part
+
+            else if allDigits part then
+                String.toInt part
+
+            else
+                Nothing
+
+        ( mantissa, exponent ) =
+            case String.split "e" (String.toLower text) of
+                [ whole ] ->
+                    ( whole, Just 0 )
+
+                [ whole, power ] ->
+                    ( whole, exponentOf power )
+
+                _ ->
+                    ( "", Nothing )
+
+        parts =
+            case String.split "." mantissa of
+                [ whole ] ->
+                    Just ( whole, "" )
+
+                [ whole, fraction ] ->
+                    if allDigits fraction then
+                        Just ( whole, fraction )
+
+                    else
+                        Nothing
+
+                _ ->
+                    Nothing
+    in
+    case ( parts, exponent ) of
+        ( Just ( whole, fraction ), Just power ) ->
+            if allDigits whole then
+                Just { digits = whole ++ fraction, point = String.length whole + power }
+
+            else
+                Nothing
+
+        _ ->
+            Nothing
+
+
+dropLeadingZeros : String -> String
+dropLeadingZeros text =
+    if String.startsWith "0" text then
+        dropLeadingZeros (String.dropLeft 1 text)
+
+    else
+        text
 
 
 {-| Encode a 64-bit integer, held as its decimal string, as proto3 JSON does:
@@ -729,8 +828,8 @@ encodeInt64 =
 {-| Decode a 64-bit integer as an `Int`, for code generated with the
 `int64=int` option or for a field marked `[jstype = JS_NUMBER]`.
 
-It accepts a JSON number or a decimal string, as proto3 JSON requires, and
-fails on a value that is not an integer or lies outside ±9007199254740991,
+It accepts a JSON number or a string, in decimal or exponent notation, as
+proto3 JSON requires (`42`, `"42"`, `"4.2e1"`), and fails on a value that is not an integer or lies outside ±9007199254740991,
 where Elm's `Int` stops being exact; see
 [`Connect.Int64.toInt`](Connect-Int64#toInt). A number past that range was
 already rounded when the JSON was parsed, and fails too.
@@ -765,16 +864,17 @@ int64Form form =
                         Json.Decode.succeed (round number)
 
         StringForm text ->
-            if isDecimal text then
-                case Connect.Int64.toInt text of
-                    Just int ->
-                        Json.Decode.succeed int
+            case canonicalInteger text of
+                Err problem ->
+                    Json.Decode.fail problem
 
-                    Nothing ->
-                        outOfRange
+                Ok decimal ->
+                    case Connect.Int64.toInt decimal of
+                        Just int ->
+                            Json.Decode.succeed int
 
-            else
-                Json.Decode.fail ("Expecting a decimal integer, but got \"" ++ text ++ "\"")
+                        Nothing ->
+                            outOfRange
 
 
 {-| Encode a 64-bit integer held as an `Int` as proto3 JSON writes one: its
