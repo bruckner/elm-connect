@@ -142,3 +142,10 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   embedded (Apache-2.0, `THIRD_PARTY.md`), so `elm-connect gen` compiles
   protos that import them without a googleapis checkout. The protoc
   plugin keeps extension options, which it used to drop.
+- `google.api.http` rules are parsed and checked against their request
+  and response messages (`elm-connect-gen::route`): the path template
+  under http.proto's grammar, path variables, `body`, `response_body`,
+  additional bindings, and the query parameters every other request
+  field becomes, by dotted proto field path with the default each is
+  left out at. Each problem is a `route::*` diagnostic pointing at the
+  rule (`routes_invalid` case).

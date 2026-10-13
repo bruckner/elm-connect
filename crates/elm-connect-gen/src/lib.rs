@@ -10,6 +10,7 @@ pub mod emit;
 pub mod googleapis;
 pub mod ir;
 pub mod naming;
+pub mod route;
 
 use prost_reflect::DescriptorPool;
 

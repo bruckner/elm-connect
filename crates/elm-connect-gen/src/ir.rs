@@ -94,6 +94,9 @@ pub struct Method {
     pub idempotent: bool,
     /// The method's `google.api.http` rule, if it has one.
     pub http: Option<HttpRule>,
+    /// One route per HTTP binding: the rule's own first, then each
+    /// additional binding's. Empty without a rule.
+    pub routes: Vec<crate::route::Route>,
 }
 
 /// A `google.api.http` rule as written: the verb and path template, the
