@@ -129,10 +129,15 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - The IR holds services and methods: each method's Elm value name, its
   request and response types (messages or supported well-known types),
   its idempotency, and its `google.api.http` rule as written. Streaming
-  methods are the `services::streaming` diagnostic, and a method value
-  that clashes with another top-level value is `naming::value_collision`
-  (`services_streaming` and `services_value_collision` cases). Nothing is
-  emitted for methods yet.
+  methods are the `services::streaming` diagnostic. Each service has an
+  Elm module of its own (`Notes.V1.NotesService`), so a method value
+  clashes only with another method of its service
+  (`naming::value_collision`); a module name shared by two services, a
+  service and a package, or two packages is `naming::module_collision`,
+  and a service name with no module form is `naming::invalid_service`
+  (`services_streaming`, `services_value_collision` and
+  `services_module_collision` cases). Nothing is emitted for methods
+  yet.
 - `google/api/http.proto` and `google/api/annotations.proto` are
   embedded (Apache-2.0, `THIRD_PARTY.md`), so `elm-connect gen` compiles
   protos that import them without a googleapis checkout. The protoc

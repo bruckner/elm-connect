@@ -1,51 +1,19 @@
 naming::value_collision
 
-  × The package `settings.v1` has two definitions that both become the Elm
-  │ value `defaultSettings`.
-    ╭─[settings.proto:7:9]
-  6 │
-  7 │ message Settings {
-    ·         ────┬───
-    ·             ╰── the default of message `settings.v1.Settings` becomes `defaultSettings`
-  8 │   bool dark = 1;
-  9 │ }
- 10 │
- 11 │ service SettingsService {
- 12 │   // `defaultSettings` is the default value of the message `Settings`.
- 13 │   rpc DefaultSettings(Settings) returns (Settings);
-    ·       ───────┬───────
-    ·              ╰── and so does method `settings.v1.SettingsService.DefaultSettings`
- 14 │   rpc Fetch(Settings) returns (Settings) {
+  × The service `settings.v1.SettingsService` has two methods that both become
+  │ the Elm value `getSettings`.
+    ╭─[settings.proto:13:7]
+ 12 │   rpc DefaultSettings(Settings) returns (Settings);
+ 13 │   rpc GetSettings(Settings) returns (Settings);
+    ·       ─────┬─────
+    ·            ╰── method `settings.v1.SettingsService.GetSettings` becomes `getSettings`
+ 14 │   // `Get_Settings` is `getSettings` too.
+ 15 │   rpc Get_Settings(Settings) returns (Settings);
+    ·       ──────┬─────
+    ·             ╰── and so does method `settings.v1.SettingsService.Get_Settings`
+ 16 │ }
     ╰────
-  help: A generated module defines one top-level value per method (its name in
-        lowerCamelCase), one per HTTP binding of a method (`getNoteHttp`,
-        `getNoteHttp2`), and the codecs and defaults of its types
-        (`encodeNote`, `decodeNote`, `defaultNote`), all in one namespace with
-        the names its code uses (`value`, `member`, `identity`). Rename the
-        method in the proto.
-
-naming::value_collision
-
-  × The package `settings.v1` has two definitions that both become the Elm
-  │ value `fetchHttp`.
-    ╭─[settings.proto:14:7]
- 13 │   rpc DefaultSettings(Settings) returns (Settings);
- 14 │   rpc Fetch(Settings) returns (Settings) {
-    ·       ──┬──
-    ·         ╰── the HTTP rule of `settings.v1.SettingsService.Fetch` becomes `fetchHttp`
- 15 │     option (google.api.http) = {
- 16 │       get: "/v1/settings"
- 17 │     };
- 18 │   }
- 19 │   // `fetchHttp` is the transcoding call of `Fetch`.
- 20 │   rpc FetchHttp(Settings) returns (Settings);
-    ·       ────┬────
-    ·           ╰── and so does method `settings.v1.SettingsService.FetchHttp`
- 21 │ }
-    ╰────
-  help: A generated module defines one top-level value per method (its name in
-        lowerCamelCase), one per HTTP binding of a method (`getNoteHttp`,
-        `getNoteHttp2`), and the codecs and defaults of its types
-        (`encodeNote`, `decodeNote`, `defaultNote`), all in one namespace with
-        the names its code uses (`value`, `member`, `identity`). Rename the
-        method in the proto.
+  help: A service's module defines one value per method, its name with the
+        first letter lowercased and underscores dropped, so names that differ
+        only in those ways end up the same, and a module cannot define two
+        values with one name. Rename one of the methods in the proto.

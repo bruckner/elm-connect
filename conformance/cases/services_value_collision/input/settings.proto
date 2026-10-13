@@ -2,20 +2,20 @@ syntax = "proto3";
 
 package settings.v1;
 
-import "google/api/annotations.proto";
-
 message Settings {
   bool dark = 1;
 }
 
 service SettingsService {
-  // `defaultSettings` is the default value of the message `Settings`.
+  // `defaultSettings` beside the default of `Settings` is fine: the
+  // default lives in the package's module, the method in the service's.
   rpc DefaultSettings(Settings) returns (Settings);
-  rpc Fetch(Settings) returns (Settings) {
-    option (google.api.http) = {
-      get: "/v1/settings"
-    };
-  }
-  // `fetchHttp` is the transcoding call of `Fetch`.
-  rpc FetchHttp(Settings) returns (Settings);
+  rpc GetSettings(Settings) returns (Settings);
+  // `Get_Settings` is `getSettings` too.
+  rpc Get_Settings(Settings) returns (Settings);
+}
+
+service AdminService {
+  // Another service's `getSettings` is in another module.
+  rpc GetSettings(Settings) returns (Settings);
 }

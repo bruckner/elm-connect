@@ -619,11 +619,15 @@ case names it):
   request and response types of methods included.
 - **Streaming methods** (`services::streaming`, `services_streaming`
   case): client, server and bidirectional (§1.3).
-- **Top-level values that collide**: a method whose value takes the name
-  of another method's, of an HTTP call, or of a codec or default
-  (`naming::value_collision`, `services_value_collision` case), and a
-  method named for a variable generated code binds (`value`, `member`)
-  or calls (`identity`).
+- **Method values that collide**: two methods of one service whose
+  values have one name (`GetSettings` and `Get_Settings`;
+  `naming::value_collision`, `services_value_collision` case).
+- **Modules that collide**: two services of one package whose module
+  names coincide (`Archive` and `archive`), a service module that is
+  also a package's (`NotesService` in `notes.v1` beside the package
+  `notes.v1.notes_service`), and two packages with one module name
+  (`naming::module_collision`, `services_module_collision` case); and a
+  service whose name has no module form (`naming::invalid_service`).
 
 ## 4. Method descriptors  *(Proposed)*
 
@@ -659,17 +663,33 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   proto name, the Elm value name, the request and response types, the
   idempotency, and the `google.api.http` rule as written (verb, path
   template, `body`, `response_body`, additional bindings).
+- Each service is an Elm module of its own, inside its package's:
+  `Notes.V1.NotesService` for the service `NotesService` of `notes.v1`
+  (`ir::Service::module`, from `naming::service_module`). The service
+  name is converted to PascalCase as a package segment is (`notes`
+  → `Notes`), so a conventionally named service keeps its name, and a
+  name whose PascalCase form does not start with a letter is
+  `naming::invalid_service`. The package module holds the types and
+  codecs only. *(Decided, 2026-10-13.)* One module for a package's
+  types and every service's methods was the first shape built; it put
+  method values in one namespace with each other across services and
+  with the codecs and defaults, so `DefaultSettings` beside a message
+  `Settings` clashed, and two services could not both have a `Get`.
 - A method's value is its name with the first letter lowercased and
   underscores dropped as for a field (`GetNote` → `getNote`), a reserved
-  word escaped (`Type` → `type_`). The values of a module share one
-  namespace: method values, HTTP calls (`getNoteHttp`, `getNoteHttp2`)
-  and the codecs and defaults of its types. A clash is
-  `naming::value_collision`, never a rename, and it is checked whatever
-  the `transports` option, so an option never turns a clash on or off.
-  A method `DefaultSettings` beside a message `Settings` is the case in
-  point. Two services of one package with a method of the same name
-  clash too; prefixing the service name was the alternative, rejected
-  because it lengthens every call site for a rare case.
+  word escaped (`Type` → `type_`). It shares a namespace only with the
+  other methods of its service: two that coincide (`GetNote` and
+  `Get_Note`) are `naming::value_collision`, never a rename. A method
+  `DefaultSettings` beside a message `Settings`, or a `Get` in two
+  services, is fine.
+- Module names are unique across the build: a service module that is
+  also a package's module (`NotesService` in `notes.v1` beside the
+  package `notes.v1.notes_service`), two services whose module names
+  coincide (`Archive` and `archive`), or two packages whose do
+  (`notes.v1` and `notes.V1`) are `naming::module_collision`, each
+  site labelled. A service named like a type of its package needs no
+  check: proto forbids the same name, and an Elm module and a type
+  with one name do not clash.
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`). Any other
   type outside the generate set is `generate::not_generated`, worded for

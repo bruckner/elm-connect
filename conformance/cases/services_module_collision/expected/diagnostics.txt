@@ -1,0 +1,49 @@
+naming::module_collision
+
+  × Two generated modules both become the Elm module `Notes.V1.NotesService`.
+   ╭─[notes/v1/notes_service/admin.proto:3:1]
+ 2 │
+ 3 │ package notes.v1.notes_service;
+   · ───────────────┬───────────────
+   ·                ╰── package `notes.v1.notes_service` becomes `Notes.V1.NotesService`
+ 4 │
+   ╰────
+  help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
+        and every service a module inside its package's
+        (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
+        segment in PascalCase, so a service can take the name of a package
+        nested in its own, and names that differ only in case or underscores
+        end up the same. Rename the service or the package.
+
+Advice:
+  ☞ and in `notes/v1/notes.proto`:
+    ╭─[notes/v1/notes.proto:11:9]
+ 10 │ // module of the package `notes.v1.notes_service`.
+ 11 │ service NotesService {
+    ·         ──────┬─────
+    ·               ╰── and so does service `notes.v1.NotesService`
+ 12 │   rpc GetNote(Note) returns (Note);
+    ╰────
+
+naming::module_collision
+
+  × Two generated modules both become the Elm module `Notes.V1.Archive`.
+    ╭─[notes/v1/notes.proto:16:9]
+ 15 │ // `Archive` and `archive` both become `Notes.V1.Archive`.
+ 16 │ service Archive {
+    ·         ───┬───
+    ·            ╰── service `notes.v1.Archive` becomes `Notes.V1.Archive`
+ 17 │   rpc GetNote(Note) returns (Note);
+ 18 │ }
+ 19 │
+ 20 │ service archive {
+    ·         ───┬───
+    ·            ╰── and so does service `notes.v1.archive`
+ 21 │   rpc GetNote(Note) returns (Note);
+    ╰────
+  help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
+        and every service a module inside its package's
+        (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
+        segment in PascalCase, so a service can take the name of a package
+        nested in its own, and names that differ only in case or underscores
+        end up the same. Rename the service or the package.

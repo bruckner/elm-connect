@@ -47,6 +47,8 @@ pub mod tag {
     pub const ENUM_VALUE: i32 = 2;
     /// `EnumValueDescriptorProto.name`
     pub const ENUM_VALUE_NAME: i32 = 1;
+    /// `ServiceDescriptorProto.name`
+    pub const SERVICE_NAME: i32 = 1;
     /// `ServiceDescriptorProto.method`
     pub const SERVICE_METHOD: i32 = 2;
     /// `MethodDescriptorProto.name`

@@ -191,12 +191,6 @@ pub const ENCODER_ARGUMENT: &str = "value";
 /// the name of a top-level value of a generated module.
 pub const ONEOF_MEMBER: &str = "member";
 
-/// The names a generated module binds or refers to unqualified other than
-/// its own top-level values: the encoders' argument, the oneof encoders'
-/// member variable, and `identity` from elm/core's `Basics`. A method value
-/// with one of these names would shadow it, so the IR builder refuses them.
-pub const RESERVED_VALUES: [&str; 3] = [ENCODER_ARGUMENT, ONEOF_MEMBER, "identity"];
-
 /// The Elm value for an RPC method: the method name with its first letter
 /// lowercased and underscores dropped as for a field (`GetNote` becomes
 /// `getNote`, `get_note` becomes `getNote`), an Elm reserved word gaining a
@@ -212,15 +206,20 @@ pub fn method_name(proto_name: &str) -> Result<String, NameError> {
     field_name(&lowered)
 }
 
-/// The transcoding call for a method's HTTP binding: the method's value
-/// name followed by `Http`, and by the binding's number from the second on
-/// (`getNoteHttp`, then `getNoteHttp2` for its first additional binding).
-pub fn http_call_name(method_elm_name: &str, binding: usize) -> String {
-    let base = method_elm_name.trim_end_matches('_');
-    match binding {
-        0 => format!("{base}Http"),
-        n => format!("{base}Http{}", n + 1),
-    }
+/// The Elm module for a service: its package's module followed by the
+/// service name in PascalCase, as a package segment is converted
+/// (`NotesService` in `notes.v1` becomes `Notes.V1.NotesService`). Each
+/// service gets a module of its own, so its methods share a namespace only
+/// with each other.
+pub fn service_module(
+    package_module: &ModuleName,
+    service_proto_name: &str,
+) -> Result<ModuleName, NameError> {
+    let mut segments = package_module.segments().to_vec();
+    segments.push(pascal_case(service_proto_name));
+    ModuleName::new(segments).ok_or_else(|| NameError::InvalidSegment {
+        segment: service_proto_name.to_owned(),
+    })
 }
 
 /// PascalCase of one proto identifier: drop underscores and uppercase the
@@ -479,11 +478,27 @@ mod tests {
     }
 
     #[test]
-    fn http_call_names() {
-        assert_eq!(http_call_name("getNote", 0), "getNoteHttp");
-        assert_eq!(http_call_name("getNote", 1), "getNoteHttp2");
-        assert_eq!(http_call_name("getNote", 2), "getNoteHttp3");
-        assert_eq!(http_call_name("type_", 0), "typeHttp");
+    fn service_modules() {
+        let package = module_name("notes.v1").unwrap();
+        let cases = [
+            ("NotesService", "Notes.V1.NotesService"),
+            ("notes", "Notes.V1.Notes"),
+            ("notes_service", "Notes.V1.NotesService"),
+            ("HTTPNotes", "Notes.V1.HTTPNotes"),
+        ];
+        for (service, expected) in cases {
+            let module = service_module(&package, service).unwrap();
+            assert_eq!(module.to_string(), expected, "{service}");
+        }
+        for service in ["_", "_1x"] {
+            assert_eq!(
+                service_module(&package, service),
+                Err(NameError::InvalidSegment {
+                    segment: service.into()
+                }),
+                "{service}"
+            );
+        }
     }
 
     #[test]

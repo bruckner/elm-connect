@@ -12,9 +12,10 @@
 //!
 //! - Every Elm name is a valid Elm identifier, and names that share an Elm
 //!   namespace are unique: record fields within a message, types within a
-//!   module, constructors within a module, top-level values within a module
-//!   (codecs, defaults, method values and their HTTP calls). A clash is a diagnostic from
-//!   [`build`], never a silent rename.
+//!   module, constructors within a module, method values within a service,
+//!   and module names across the build (every package's and every
+//!   service's). A clash is a diagnostic from [`build`], never a silent
+//!   rename.
 //! - Nested messages and enums are flattened into their package, their Elm
 //!   names prefixed by the enclosing names (`Outer.Inner` becomes
 //!   `OuterInner`).
@@ -58,25 +59,30 @@ pub struct Package {
     pub services: Vec<Service>,
 }
 
-/// A service: a group of methods. It has no Elm declaration of its own;
-/// its full name is part of each method's Connect path.
+/// A service: a group of methods, and an Elm module of its own holding
+/// one value per method. Its full name is part of each method's Connect
+/// path.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Service {
     /// The fully-qualified proto name, such as `notes.v1.Notes`.
     pub proto_full_name: String,
+    /// The Elm module of its methods, inside its package's, such as
+    /// `Notes.V1.Notes`. No other service's or package's module has this
+    /// name.
+    pub module: ModuleName,
     /// The methods, in declaration order. Streaming methods are
     /// diagnostics, so every method here is unary.
     pub methods: Vec<Method>,
 }
 
-/// A unary RPC method: one Elm value describing it (design §4), and one
-/// more per HTTP binding of its `google.api.http` rule.
+/// A unary RPC method: one Elm value in its service's module (design §4).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
     /// The proto method name, such as `GetNote`; the last segment of its
     /// Connect path.
     pub proto_name: String,
-    /// The Elm value of its descriptor, such as `getNote`.
+    /// The Elm value of its call, such as `getNote`, unique among the
+    /// methods of its service.
     pub elm_name: String,
     /// The request type: a [`TypeRef::Message`] or a
     /// [`TypeRef::WellKnown`] message type, never a scalar or an enum.
@@ -88,20 +94,6 @@ pub struct Method {
     pub idempotent: bool,
     /// The method's `google.api.http` rule, if it has one.
     pub http: Option<HttpRule>,
-}
-
-impl Method {
-    /// The Elm values of the method's HTTP bindings, the rule's own first
-    /// and then its additional bindings: `getNoteHttp`, `getNoteHttp2`.
-    pub fn http_call_names(&self) -> Vec<String> {
-        let count = self
-            .http
-            .as_ref()
-            .map_or(0, |rule| 1 + rule.additional_bindings.len());
-        (0..count)
-            .map(|binding| crate::naming::http_call_name(&self.elm_name, binding))
-            .collect()
-    }
 }
 
 /// A `google.api.http` rule as written: the verb and path template, the

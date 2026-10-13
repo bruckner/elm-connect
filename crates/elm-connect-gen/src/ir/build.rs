@@ -67,6 +67,9 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
     for (package, files) in &by_package {
         match naming::module_name(package) {
             Ok(module) => {
+                let what = format!("package `{package}`");
+                let origin = builder.origin(&files[0], &[], tag::FILE_PACKAGE, what);
+                builder.claim_module(&module, origin);
                 builder.modules.insert(package.clone(), module);
             }
             Err(NameError::InvalidSegment { segment }) => {
@@ -162,6 +165,9 @@ struct Builder {
     diagnostics: Diagnostics,
     spans: HashMap<String, Spans>,
     modules: BTreeMap<String, ModuleName>,
+    /// Every generated module name, a package's or a service's, so no two
+    /// generated modules share one.
+    module_names: Namespace,
     types: HashMap<String, TypeName>,
     references: Vec<Reference>,
 }
@@ -251,7 +257,6 @@ impl Builder {
     ) -> Package {
         let mut types = Namespace::default();
         let mut constructors = Namespace::default();
-        let mut values = Namespace::default();
         let mut messages = Vec::new();
         let mut enums = Vec::new();
 
@@ -260,36 +265,11 @@ impl Builder {
                 if let Some(built) =
                     self.enumeration(file, &enumeration, &mut types, &mut constructors)
                 {
-                    let of = format!("enum `{}`", enumeration.full_name());
-                    for (name, what) in [
-                        (built.encoder_name(), format!("the encoder of {of}")),
-                        (built.decoder_name(), format!("the decoder of {of}")),
-                    ] {
-                        let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what);
-                        values.claim(&name, origin);
-                    }
                     enums.push(built);
                 }
             }
             for message in all_messages(file) {
                 if let Some(built) = self.message(file, &message, &mut types, &mut constructors) {
-                    let of = format!("message `{}`", message.full_name());
-                    let mut names = vec![
-                        (built.encoder_name(), format!("the encoder of {of}")),
-                        (built.decoder_name(), format!("the decoder of {of}")),
-                        (built.default_name(), format!("the default of {of}")),
-                    ];
-                    // A recursive message's wrapper codecs end in `_`, which no
-                    // method value does, so they need no claim.
-                    for oneof in &built.oneofs {
-                        let of = format!("oneof `{}` of {of}", oneof.proto_name);
-                        names.push((oneof.encoder_name(), format!("the encoder of {of}")));
-                        names.push((oneof.decoder_name(), format!("the decoder of {of}")));
-                    }
-                    for (name, what) in names {
-                        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
-                        values.claim(&name, origin);
-                    }
                     messages.push(built);
                 }
             }
@@ -298,16 +278,36 @@ impl Builder {
         let mut services = Vec::new();
         for file in files {
             for service in file.services() {
+                let full_name = service.full_name();
+                let service_module = match naming::service_module(module, service.name()) {
+                    Ok(service_module) => {
+                        let what = format!("service `{full_name}`");
+                        let origin = self.origin(file, service.path(), tag::SERVICE_NAME, what);
+                        self.claim_module(&service_module, origin);
+                        Some(service_module)
+                    }
+                    Err(_) => {
+                        let path = [service.path(), &[tag::SERVICE_NAME]].concat();
+                        let site = self.site(file, &path, "this name".into());
+                        self.diagnostics
+                            .push(Problem::invalid_service(full_name, site));
+                        None
+                    }
+                };
+                let mut values = Namespace::default();
                 let mut methods = Vec::new();
                 for method in service.methods() {
                     if let Some(built) = self.method(file, &method, &mut values) {
                         methods.push(built);
                     }
                 }
-                services.push(Service {
-                    proto_full_name: service.full_name().to_owned(),
-                    methods,
-                });
+                if let Some(module) = service_module {
+                    services.push(Service {
+                        proto_full_name: full_name.to_owned(),
+                        module,
+                        methods,
+                    });
+                }
             }
         }
 
@@ -322,8 +322,8 @@ impl Builder {
     }
 
     /// A unary method, named and with its types resolved; `None` after
-    /// reporting why it has no Elm form. Its Elm values are claimed in
-    /// `values`, the module's top-level namespace.
+    /// reporting why it has no Elm form. Its Elm value is claimed in
+    /// `values`, the namespace of its service's methods.
     fn method(
         &mut self,
         file: &FileDescriptor,
@@ -385,33 +385,28 @@ impl Builder {
             http,
         };
 
-        let package = file.package_name();
-        let mut names = vec![(built.elm_name.clone(), format!("method `{full_name}`"))];
-        for (binding, name) in built.http_call_names().into_iter().enumerate() {
-            let what = match binding {
-                0 => format!("the HTTP rule of `{full_name}`"),
-                n => format!("additional binding {n} of `{full_name}`"),
-            };
-            names.push((name, what));
-        }
-        for (name, what) in names {
-            if naming::RESERVED_VALUES.contains(&name.as_str()) {
-                let site = self.site(
-                    file,
-                    &[path, &[tag::METHOD_NAME]].concat(),
-                    format!("{what} becomes `{name}`"),
-                );
-                self.diagnostics
-                    .push(Problem::reserved_value(package, &name, site));
-                continue;
-            }
-            let origin = self.origin(file, path, tag::METHOD_NAME, what);
-            if let Some((first, second)) = values.claim(&name, origin) {
-                self.diagnostics
-                    .push(Problem::value_collision(package, &name, first, second));
-            }
+        let what = format!("method `{full_name}`");
+        let origin = self.origin(file, path, tag::METHOD_NAME, what);
+        if let Some((first, second)) = values.claim(&built.elm_name, origin) {
+            let service = method.parent_service();
+            self.diagnostics.push(Problem::value_collision(
+                service.full_name(),
+                &built.elm_name,
+                first,
+                second,
+            ));
         }
         Some(built)
+    }
+
+    fn claim_module(&mut self, module: &ModuleName, origin: Origin) {
+        if let Some((first, second)) = self.module_names.claim(&module.to_string(), origin) {
+            self.diagnostics.push(Problem::module_collision(
+                &module.to_string(),
+                first,
+                second,
+            ));
+        }
     }
 
     fn claim_type(&mut self, types: &mut Namespace, package: &str, name: &str, origin: Origin) {

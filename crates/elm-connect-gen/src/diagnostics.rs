@@ -55,11 +55,15 @@ pub enum Code {
     Unimplemented,
     /// A method streams requests or responses.
     Streaming,
-    /// Two top-level values of a module, such as a method's value and a
-    /// codec, get the same Elm name.
+    /// Two methods of a service get the same Elm value name.
     ValueCollision,
     /// A method has no valid Elm value name.
     InvalidMethod,
+    /// Two generated modules, each a package's or a service's, get the
+    /// same Elm module name.
+    ModuleCollision,
+    /// A service has no valid Elm module name.
+    InvalidService,
 }
 
 impl Code {
@@ -82,6 +86,8 @@ impl Code {
             Code::Streaming => "services::streaming",
             Code::ValueCollision => "naming::value_collision",
             Code::InvalidMethod => "naming::invalid_method",
+            Code::ModuleCollision => "naming::module_collision",
+            Code::InvalidService => "naming::invalid_service",
         }
     }
 }
@@ -360,36 +366,49 @@ impl Problem {
         )
     }
 
-    /// Two top-level values of `package`'s module become the same Elm
-    /// name `elm_name`.
-    pub fn value_collision(package: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    /// Two methods of `service` become the same Elm value `elm_name`.
+    pub fn value_collision(service: &str, elm_name: &str, first: Site, second: Site) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
-                "The package `{package}` has two definitions that both become the Elm value \
+                "The service `{service}` has two methods that both become the Elm value \
                  `{elm_name}`."
             ),
-            "A generated module defines one top-level value per method (its name in \
-             lowerCamelCase), one per HTTP binding of a method (`getNoteHttp`, \
-             `getNoteHttp2`), and the codecs and defaults of its types (`encodeNote`, \
-             `decodeNote`, `defaultNote`), all in one namespace with the names its code uses \
-             (`value`, `member`, `identity`). Rename the method in the proto.",
+            "A service's module defines one value per method, its name with the first letter \
+             lowercased and underscores dropped, so names that differ only in those ways end \
+             up the same, and a module cannot define two values with one name. Rename one of \
+             the methods in the proto.",
             vec![first, second],
         )
     }
 
-    /// A top-level value of `package`'s module would be `elm_name`, a name
-    /// generated code uses for something else.
-    pub fn reserved_value(package: &str, elm_name: &str, site: Site) -> Self {
+    /// Two generated modules, each a package's or a service's, become the
+    /// same Elm module `elm_module`.
+    pub fn module_collision(elm_module: &str, first: Site, second: Site) -> Self {
         Problem::new(
-            Code::ValueCollision,
+            Code::ModuleCollision,
+            format!("Two generated modules both become the Elm module `{elm_module}`."),
+            "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
+             service a module inside its package's (`notes.v1.NotesService` becomes \
+             `Notes.V1.NotesService`), each segment in PascalCase, so a service can take the \
+             name of a package nested in its own, and names that differ only in case or \
+             underscores end up the same. Rename the service or the package.",
+            vec![first, second],
+        )
+    }
+
+    /// The service `service`'s name does not start with a letter once
+    /// converted to PascalCase.
+    pub fn invalid_service(service: &str, site: Site) -> Self {
+        Problem::new(
+            Code::InvalidService,
             format!(
-                "The package `{package}` has a definition that becomes the Elm value \
-                 `{elm_name}`, a name generated code uses for something else."
+                "The service `{service}` cannot become an Elm module name: its name does not \
+                 start with a letter."
             ),
-            "Generated code binds `value` and `member` as local variables and calls \
-             `identity` from elm/core, so no top-level value of a generated module may take \
-             those names. Rename the method in the proto.",
+            "Each service becomes an Elm module inside its package's, named for the service \
+             in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and an Elm module \
+             segment must start with a letter. Rename the service.",
             vec![site],
         )
     }
