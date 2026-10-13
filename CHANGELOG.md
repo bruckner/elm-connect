@@ -167,3 +167,12 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Rpc.Code` has `Code` (`Ok` or `Failed`) and `ErrorCode`, each with
   conversions to and from Connect's names, gRPC's numbers and HTTP
   statuses. The package now depends on elm/http.
+- `Rpc` sends calls over HTTP transcoding too (`Rpc.Transcode`): path,
+  query, body, custom verb and response body from the call's
+  `google.api.http` binding, chosen with `Rpc.viaBinding`; success on
+  any 2xx, an empty body reading as `{}`. A method without a rule goes
+  over the implicit route `POST /<service>/<method>`, the request
+  Connect would send. Failed answers under either transport are read
+  from a Connect error body, a `google.rpc.Status` body, the
+  `grpc-status` and `grpc-message` headers, or the HTTP status, in
+  that order (`Rpc.StatusBody`, `Rpc.GrpcHeaders`).

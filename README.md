@@ -47,7 +47,8 @@ codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
 maps, and custom types for enums and oneofs. Services are not generated yet. The runtime package
 holds the JSON helpers those codecs call, the timestamp and duration
-types, and `Rpc`, which sends calls over the Connect protocol.
+types, and `Rpc`, which sends calls over the Connect protocol or HTTP
+transcoding.
 
 ## Options
 
