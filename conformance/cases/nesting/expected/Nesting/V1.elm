@@ -88,6 +88,70 @@ type alias Sum =
 
 
 
+-- DEFAULTS
+
+
+defaultOuter : Outer
+defaultOuter =
+    { inner = Nothing
+    , kind = OuterInnerKindUnspecified
+    , all = []
+    }
+
+
+defaultOuterInner : OuterInner
+defaultOuterInner =
+    { deepest = Nothing
+    }
+
+
+defaultOuterInnerDeepest : OuterInnerDeepest
+defaultOuterInnerDeepest =
+    { kind = OuterInnerKindUnspecified
+    }
+
+
+defaultNode : Node
+defaultNode =
+    { label = ""
+    , children = []
+    , byName = Dict.empty
+    }
+
+
+defaultPerson : Person
+defaultPerson =
+    { name = ""
+    , employer = Nothing
+    }
+
+
+defaultCompany : Company
+defaultCompany =
+    { name = ""
+    , staff = []
+    }
+
+
+defaultForest : Forest
+defaultForest =
+    { trees = []
+    }
+
+
+defaultExpr : Expr
+defaultExpr =
+    { value = ExprValueUnset
+    }
+
+
+defaultSum : Sum
+defaultSum =
+    { terms = []
+    }
+
+
+
 -- ENCODERS
 
 

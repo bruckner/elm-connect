@@ -107,3 +107,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Connect.Json.boolMap` (any other key fails), with
   `Connect.Json.encodeBoolMap`. The `types::map_key` diagnostic and the
   `map_bool_key` case are gone; the `maps` case covers a `bool` key.
+- Every message gets a default value, `defaultFoo : Foo`, with each
+  field at its proto3 default and each oneof unset, in a new
+  `-- DEFAULTS` section between the types and the encoders.

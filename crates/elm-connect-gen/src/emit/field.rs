@@ -201,30 +201,16 @@ impl Emitter {
     /// The decoder of a field, and the value an absent or `null` field
     /// reads as.
     pub(super) fn field_decoder(&mut self, shape: FieldShape) -> (Expr, Expr) {
-        match shape {
-            FieldShape::Plain(zeroed) => {
-                let decoder = self.value_decoder(ValueShape::Zeroed(zeroed));
-                let zero = match zeroed {
-                    Zeroed::Scalar(repr) => scalar::zero_value(repr),
-                    Zeroed::Enum(name, zero_ctor) => {
-                        self.generated_value(&name.module, zero_ctor.to_owned())
-                    }
-                    Zeroed::Json => self.reference((JSON_ENCODE, "null")),
-                    Zeroed::Empty => Expr::Unit,
-                };
-                (decoder, zero)
-            }
+        let decoder = match shape {
+            FieldShape::Plain(zeroed) => self.value_decoder(ValueShape::Zeroed(zeroed)),
             FieldShape::Maybe(value) => {
                 let value = self.value_decoder(value);
                 let map = self.reference((JSON_DECODE, "map"));
-                (apply(map, [var("Just"), value]), var("Nothing"))
+                apply(map, [var("Just"), value])
             }
             FieldShape::List(value) => {
                 let value = self.value_decoder(value);
-                (
-                    apply(self.reference((JSON_DECODE, "list")), [value]),
-                    list([]),
-                )
+                apply(self.reference((JSON_DECODE, "list")), [value])
             }
             FieldShape::Dict(key, value) => {
                 let value = self.value_decoder(value);
@@ -232,15 +218,29 @@ impl Emitter {
                     KeyShape::String => self.reference((JSON_DECODE, "dict")),
                     KeyShape::Int => self.reference((CONNECT_JSON, "intDict")),
                 };
-                (apply(dict, [value]), self.reference((CORE_DICT, "empty")))
+                apply(dict, [value])
             }
             FieldShape::BoolMap(value) => {
                 let value = self.value_decoder(value);
-                (
-                    apply(self.reference((CONNECT_JSON, "boolMap")), [value]),
-                    list([]),
-                )
+                apply(self.reference((CONNECT_JSON, "boolMap")), [value])
             }
+        };
+        (decoder, self.field_default(shape))
+    }
+
+    /// A field's proto3 default: the value it reads as when absent or
+    /// `null`, and holds in its message's default value.
+    pub(super) fn field_default(&mut self, shape: FieldShape) -> Expr {
+        match shape {
+            FieldShape::Plain(Zeroed::Scalar(repr)) => scalar::zero_value(repr),
+            FieldShape::Plain(Zeroed::Enum(name, zero_ctor)) => {
+                self.generated_value(&name.module, zero_ctor.to_owned())
+            }
+            FieldShape::Plain(Zeroed::Json) => self.reference((JSON_ENCODE, "null")),
+            FieldShape::Plain(Zeroed::Empty) => Expr::Unit,
+            FieldShape::Maybe(_) => var("Nothing"),
+            FieldShape::List(_) | FieldShape::BoolMap(_) => list([]),
+            FieldShape::Dict(..) => self.reference((CORE_DICT, "empty")),
         }
     }
 

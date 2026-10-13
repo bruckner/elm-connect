@@ -46,6 +46,25 @@ type TagCase
 
 
 
+-- DEFAULTS
+
+
+defaultTag : Tag
+defaultTag =
+    { type_ = ""
+    , if_ = False
+    , port_ = 0
+    , alias = ""
+    , displayName = ""
+    , httpUrl = ""
+    , v2Count = 0
+    , shape = ShapeUnspecified
+    , method = HttpMethodUnspecified
+    , case_ = TagCaseUnset
+    }
+
+
+
 -- ENCODERS
 
 

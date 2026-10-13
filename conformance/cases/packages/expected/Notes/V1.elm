@@ -31,6 +31,21 @@ type NoteOwner
 
 
 
+-- DEFAULTS
+
+
+defaultNote : Note
+defaultNote =
+    { title = ""
+    , author = Nothing
+    , requiredRole = Users.V1.RoleUnspecified
+    , readers = []
+    , roles = Dict.empty
+    , owner = NoteOwnerUnset
+    }
+
+
+
 -- ENCODERS
 
 

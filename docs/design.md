@@ -207,6 +207,24 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   diagnostic, and `Dict String V` keyed by `"true"`/`"false"` was
   considered; both hid the proto type.
 - Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
+- Every message gets `defaultFoo`, so callers write
+  `{ defaultFoo | title = "x" }` and
+  `Maybe.withDefault defaultFoo.stars msg.stars` without knowing the
+  proto default. *(Decided.)* `defaultFoo : Foo` holds every field at
+  its proto3 default, the value it decodes to when absent: `0`, `0.0`,
+  `False`, `""`, `"0"` for a 64-bit integer held as a `String` (`0` as
+  an `Int`), an enum's zero constructor, `Nothing`, `[]`, `Dict.empty`,
+  `()` for `Empty`, `Json.Encode.null` for `Value`, and each oneof's
+  unset constructor. The name is the naming layer's (`default` + the
+  type name), in the value namespace with the encoders and decoders,
+  where it cannot collide (§3.7). The generated module gains a
+  `-- DEFAULTS` section between its types and its encoders. A recursive
+  message's default needs nothing special: a field that closes a cycle
+  is a `Maybe`, `List` or `Dict` of the wrapper, so its default is
+  empty, and the wrapper has no default of its own. Generated getters
+  (`getStars : Note -> Int`, unwrapping a `Maybe` to its proto default)
+  were the alternative; rejected, since the defaults give the same
+  without a function per field.
 - Recursive messages: `type alias Node = { children : List Node }` is
   illegal in Elm. Wrap with a custom type as protoc-gen-elm does.
   *(Decided, 2026-10-10.)* The shape:
@@ -524,6 +542,10 @@ Built, as the `naming` and `naming_collision` cases show:
   prefix gains the enum's name (`CUBE` → `ShapeCube`); the prefix of a
   multi-word enum is matched word by word (`HTTP_METHOD_GET` →
   `HttpMethodGet`).
+- Top-level values are a prefix and a type name: `encodeFoo`,
+  `decodeFoo` and `defaultFoo`. Type names are unique in a module and
+  start with an uppercase letter, and no prefix is another's, so these
+  never collide.
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof

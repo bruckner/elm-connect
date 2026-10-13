@@ -164,10 +164,26 @@ pub fn decoder_name(type_elm_name: &str) -> String {
     format!("decode{type_elm_name}")
 }
 
+/// The value holding every field of a message at its proto3 default:
+/// `default` followed by the message's Elm name (`Note` becomes
+/// `defaultNote`).
+///
+/// The top-level values of a generated module share one namespace, and
+/// each is a prefix (`encode`, `decode`, `default`) followed by a type
+/// name. Type names are unique within a module and start with an
+/// uppercase letter, and no prefix is another's, so two such names never
+/// collide: neither within one prefix nor across two.
+pub fn default_name(type_elm_name: &str) -> String {
+    format!("{DEFAULT_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`default_name`].
+const DEFAULT_PREFIX: &str = "default";
+
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
-/// today starts with `encode` or `decode`.
+/// today starts with `encode`, `decode` or `default`.
 pub const ENCODER_ARGUMENT: &str = "value";
 
 /// The variable a oneof's encoder binds the value of the set member to, in
@@ -238,8 +254,15 @@ mod tests {
     fn codec_names() {
         assert_eq!(encoder_name("OuterInner"), "encodeOuterInner");
         assert_eq!(decoder_name("OuterInner"), "decodeOuterInner");
+        assert_eq!(default_name("OuterInner"), "defaultOuterInner");
+        let prefixes = ["encode", "decode", DEFAULT_PREFIX];
         for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
-            assert!(!local.starts_with("encode") && !local.starts_with("decode"));
+            assert!(prefixes.iter().all(|prefix| !local.starts_with(prefix)));
+        }
+        for (i, a) in prefixes.iter().enumerate() {
+            for b in &prefixes[i + 1..] {
+                assert!(!a.starts_with(b) && !b.starts_with(a), "{a} and {b}");
+            }
         }
         assert_ne!(ENCODER_ARGUMENT, ONEOF_MEMBER);
     }

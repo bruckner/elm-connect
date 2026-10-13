@@ -38,6 +38,31 @@ type alias Team =
 
 
 
+-- DEFAULTS
+
+
+defaultMember : Member
+defaultMember =
+    { name = ""
+    }
+
+
+defaultTeam : Team
+defaultTeam =
+    { labels = Dict.empty
+    , bySeat = Dict.empty
+    , scores = Dict.empty
+    , flags = Dict.empty
+    , totals = Dict.empty
+    , byId = Dict.empty
+    , counts = Dict.empty
+    , members = Dict.empty
+    , roles = Dict.empty
+    , byFlag = []
+    }
+
+
+
 -- ENCODERS
 
 

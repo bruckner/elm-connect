@@ -13,11 +13,14 @@
 //!
 //! - A module opens with a generated-file notice, imports exactly the
 //!   modules its code refers to (beyond those Elm imports by default),
-//!   and holds three sections in order: types, encoders, decoders. Each
-//!   section has the enums, then the messages, each followed by its
-//!   recursion wrapper and its oneofs.
-//! - A message is a record type alias, an encoder
-//!   (`Foo -> Json.Encode.Value`) and a decoder (`Json.Decode.Decoder Foo`).
+//!   and holds four sections in order: types, defaults, encoders,
+//!   decoders. Each section has the enums, then the messages, each
+//!   followed by its recursion wrapper and its oneofs; the defaults
+//!   section has the messages alone, and is left out when there are none.
+//! - A message is a record type alias, a default value (`defaultFoo :
+//!   Foo`, every field at its proto3 default and every oneof unset), an
+//!   encoder (`Foo -> Json.Encode.Value`) and a decoder
+//!   (`Json.Decode.Decoder Foo`).
 //! - Encoders emit every field, default values included. proto3 JSON lets
 //!   a writer omit or include them; always including them keeps the
 //!   encoder one expression per field. This is the current rule, not yet
@@ -297,6 +300,7 @@ impl Emitter {
             return Vec::new();
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
+        let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
@@ -306,6 +310,7 @@ impl Emitter {
         }
         for shape in &messages {
             types.push(self.message_alias(shape));
+            defaults.push(self.message_default(shape));
             encoders.push(self.message_encoder(shape));
             decoders.push(self.message_decoder(shape));
             if let Some(wrapper) = &shape.message.wrapper {
@@ -319,7 +324,16 @@ impl Emitter {
                 decoders.push(self.oneof_decoder(oneof));
             }
         }
-        types.into_iter().chain(encoders).chain(decoders).collect()
+        // A package of enums alone has no defaults.
+        if messages.is_empty() {
+            defaults.clear();
+        }
+        types
+            .into_iter()
+            .chain(defaults)
+            .chain(encoders)
+            .chain(decoders)
+            .collect()
     }
 
     /// A generated type, qualified (and its module imported) when it is
@@ -482,6 +496,43 @@ mod tests {
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(imports, ["Json.Decode", "Json.Encode"]);
+    }
+
+    #[test]
+    fn sections_come_in_order_and_defaults_only_with_messages() {
+        let sections = |package: &Package| -> Vec<String> {
+            emit(package, &Options::default())
+                .expect("emits")
+                .decls
+                .into_iter()
+                .filter_map(|decl| match decl {
+                    Decl::Comment(text) => Some(text),
+                    _ => None,
+                })
+                .collect()
+        };
+        let one = package(vec![message("A", Vec::new())]);
+        assert_eq!(
+            sections(&one),
+            ["TYPES", "DEFAULTS", "ENCODERS", "DECODERS"]
+        );
+        let printed = crate::elm::print::print_module(&emit(&one, &Options::default()).unwrap());
+        assert!(
+            printed.contains("defaultA : A\ndefaultA =\n    {}"),
+            "{printed}"
+        );
+
+        let mut enums_only = package(Vec::new());
+        let value = |name: &str, number| crate::ir::EnumValue {
+            proto_name: name.into(),
+            number,
+            elm_ctor: name.into(),
+        };
+        enums_only.enums.push(
+            crate::ir::Enum::new("t.v1.E".into(), "E".into(), value("EZero", 0), Vec::new())
+                .expect("zero first"),
+        );
+        assert_eq!(sections(&enums_only), ["TYPES", "ENCODERS", "DECODERS"]);
     }
 
     #[test]

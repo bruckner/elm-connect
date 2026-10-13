@@ -42,10 +42,10 @@ mise.toml           toolchain pin
 Justfile            task recipes; `just` lists them
 ```
 
-Both binaries generate record types and JSON codecs for messages whose
-fields are scalars, enums, messages (recursive ones too) or well-known
-types, singular, `optional`, repeated or in maps, and custom types for
-enums and oneofs. Services are not generated yet. The runtime package
+Both binaries generate record types, their default values and JSON
+codecs for messages whose fields are scalars, enums, messages (recursive
+ones too) or well-known types, singular, `optional`, repeated or in
+maps, and custom types for enums and oneofs. Services are not generated yet. The runtime package
 holds the JSON helpers those codecs call and the timestamp and duration
 types.
 
