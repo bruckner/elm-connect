@@ -195,12 +195,17 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
   keys are read from their decimal strings (`Connect.Json.intDict`, which
-  fails on any other key) and written with `String.fromInt`. A `bool`
-  key has no `Dict` (Elm's `Bool` is not `comparable`) and is the
-  `types::map_key` diagnostic; mapping it to `Dict String V` with keys
-  `"true"` and `"false"` would work but hide the proto type, and `bool`
-  map keys are rare enough that asking for a `string` key costs little.
+  fails on any other key) and written with `String.fromInt`.
   An absent or `null` map decodes as `Dict.empty`.
+- `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
+  association list because `Bool` is not `comparable`; a map has at
+  most two entries. The encoder (`Connect.Json.encodeBoolMap`) writes a
+  JSON object keyed `"true"` and `"false"`; the decoder
+  (`Connect.Json.boolMap`) reads one, fails on any key but exactly
+  `"true"` or `"false"`, and gives the pairs in the object's key order.
+  An absent or `null` map decodes as `[]`. A `bool` key was first a
+  diagnostic, and `Dict String V` keyed by `"true"`/`"false"` was
+  considered; both hid the proto type.
 - Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
 - Recursive messages: `type alias Node = { children : List Node }` is
   illegal in Elm. Wrap with a custom type as protoc-gen-elm does.
@@ -549,8 +554,6 @@ case names it):
   converted name is not a valid Elm identifier (`naming::invalid_module`,
   `naming::invalid_type`, `naming::invalid_field`), and a file without a
   package declaration (`naming::invalid_module`).
-- **`bool` map keys** (`types::map_key`, `map_bool_key` case): Elm's
-  `Bool` is not `comparable`.
 - **`google.protobuf.Any` fields** (`types::any`, `any_field` case), and
   any other `google.protobuf` type without a mapping
   (`types::unsupported_well_known`).
@@ -683,7 +686,8 @@ shared.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
   of Elm's compiler. First catalogue: route variable names a field the
   request does not have; route body names a non-message field; map key
-  of an unsupported type (built: `types::map_key`, for `bool`); package
+  of an unsupported type (dropped: every key proto allows has an Elm
+  form, `bool` an association list, §3.2); package
   import cycle; name collision after casing; `Any` field. A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).

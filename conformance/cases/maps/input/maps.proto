@@ -1,5 +1,6 @@
 // Maps: `Dict String V` for string and 64-bit integer keys, `Dict Int V`
-// for 32-bit integer keys, read from and written as decimal strings.
+// for 32-bit integer keys, read from and written as decimal strings, and
+// `List ( Bool, V )` for bool keys, which Elm's `Dict` cannot hold.
 syntax = "proto3";
 
 package maps.v1;
@@ -25,4 +26,6 @@ message Team {
   // Message and enum values.
   map<string, Member> members = 8;
   map<int32, Role> roles = 9;
+  // Bool keys: an association list of at most two pairs.
+  map<bool, string> by_flag = 10;
 }

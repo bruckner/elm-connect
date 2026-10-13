@@ -497,16 +497,6 @@ impl Builder {
                 return None;
             };
             let key_kind = entry.map_entry_key_field().kind();
-            if key_kind == Kind::Bool {
-                let path = [field.path(), &[tag::FIELD_TYPE_NAME]].concat();
-                let site = self.site(file, &path, "a `bool` key".into());
-                self.diagnostics.push(Problem::map_bool_key(
-                    message.full_name(),
-                    field.name(),
-                    site,
-                ));
-                return None;
-            }
             let key = map_key(&key_kind)?;
             let value = entry.map_entry_value_field();
             let ty = self.resolve(file, message, field, value.kind())?;
@@ -836,6 +826,7 @@ fn map_key(kind: &Kind) -> Option<MapKey> {
         Kind::Sfixed32 => MapKey::SFixed32,
         Kind::Sfixed64 => MapKey::SFixed64,
         Kind::String => MapKey::String,
+        Kind::Bool => MapKey::Bool,
         _ => return None,
     })
 }

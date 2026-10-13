@@ -283,10 +283,10 @@ pub enum ScalarKind {
     Bytes,
 }
 
-/// The key kinds of a `map<K, V>` that Elm's `Dict` can hold: every key
-/// proto allows (every scalar but the floating-point ones and `bytes`)
-/// except `bool`, which is not `comparable` in Elm and is a diagnostic
-/// instead (design §3.2). The emitter maps these onto `String` and `Int`.
+/// The key kinds of a `map<K, V>`: every key proto allows, which is every
+/// scalar but the floating-point ones and `bytes`. The emitter maps these
+/// onto a `Dict` keyed by `String` or `Int`, or, for `bool`, which is not
+/// `comparable` in Elm, an association list (design §3.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MapKey {
     /// `int32`
@@ -311,6 +311,8 @@ pub enum MapKey {
     SFixed64,
     /// `string`
     String,
+    /// `bool`
+    Bool,
 }
 
 /// The `google.protobuf` types elm-connect maps (design §3.5). `Any` and

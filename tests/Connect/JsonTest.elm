@@ -19,6 +19,7 @@ suite =
         , oneofTests
         , enumTests
         , intDictTests
+        , boolMapTests
         , int32Tests
         , uint32Tests
         , int64Tests
@@ -308,6 +309,42 @@ intDictTests =
                 Json.Encode.dict String.fromInt Json.Encode.string dict
                     |> Json.Decode.decodeValue (Connect.Json.intDict Json.Decode.string)
                     |> Expect.equal (Ok dict)
+        ]
+
+
+boolMapTests : Test
+boolMapTests =
+    describe "boolMap"
+        [ test "both keys, in the object's order" <|
+            \_ ->
+                decodes (Connect.Json.boolMap Json.Decode.string)
+                    """{"true":"on","false":"off"}"""
+                    [ ( True, "on" ), ( False, "off" ) ]
+        , test "the other order" <|
+            \_ ->
+                decodes (Connect.Json.boolMap Json.Decode.string)
+                    """{"false":"off","true":"on"}"""
+                    [ ( False, "off" ), ( True, "on" ) ]
+        , test "an empty object" <|
+            \_ -> decodes (Connect.Json.boolMap Json.Decode.string) "{}" []
+        , test "a key other than true or false fails, naming it" <|
+            \_ ->
+                failsWith (Connect.Json.boolMap Json.Decode.string)
+                    """{"True":"x"}"""
+                    "Expecting a bool map key (\"true\" or \"false\"), but got \"True\""
+        , test "a numeric key fails" <|
+            \_ -> fails (Connect.Json.boolMap Json.Decode.string) """{"1":"x"}"""
+        , test "a value of the wrong type fails" <|
+            \_ -> fails (Connect.Json.boolMap Json.Decode.string) """{"true":2}"""
+        , test "encodes keys as true and false" <|
+            \_ ->
+                encodesTo (Connect.Json.encodeBoolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ])
+                    """{"true":1,"false":0}"""
+        , test "round-trips" <|
+            \_ ->
+                Connect.Json.encodeBoolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
+                    |> Json.Decode.decodeValue (Connect.Json.boolMap Json.Decode.string)
+                    |> Expect.equal (Ok [ ( False, "b" ), ( True, "a" ) ])
         ]
 
 

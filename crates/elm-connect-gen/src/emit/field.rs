@@ -29,10 +29,14 @@ pub(super) enum FieldShape<'p> {
     List(ValueShape<'p>),
     /// `Dict`: a map field, `Dict.empty` when absent or `null`.
     Dict(KeyShape, ValueShape<'p>),
+    /// `List ( Bool, v )`: a map field with `bool` keys, which cannot key a
+    /// `Dict` since Elm's `Bool` is not `comparable`; `[]` when absent or
+    /// `null` (design §3.2).
+    BoolMap(ValueShape<'p>),
 }
 
-/// The keys of a map field, as Elm holds them. JSON object keys are
-/// strings whatever the proto key type.
+/// The keys of a map field held in a `Dict`, as Elm holds them. JSON
+/// object keys are strings whatever the proto key type.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum KeyShape {
     /// `String`: `string` keys, and 64-bit integer keys held as decimal
@@ -44,8 +48,9 @@ pub(super) enum KeyShape {
 }
 
 impl KeyShape {
-    fn of(key: MapKey) -> Self {
-        match key {
+    /// The `Dict` key for `key`; `None` for `bool`, which has none.
+    fn of(key: MapKey) -> Option<Self> {
+        Some(match key {
             MapKey::String
             | MapKey::Int64
             | MapKey::UInt64
@@ -57,7 +62,8 @@ impl KeyShape {
             | MapKey::SInt32
             | MapKey::Fixed32
             | MapKey::SFixed32 => KeyShape::Int,
-        }
+            MapKey::Bool => return None,
+        })
     }
 }
 
@@ -155,6 +161,10 @@ impl Emitter {
                 let value = self.value_type(value);
                 self.exposed_type(CORE_DICT, "Dict", [key, value])
             }
+            FieldShape::BoolMap(value) => ty(
+                "List",
+                [Type::Tuple(vec![ty("Bool", []), self.value_type(value)])],
+            ),
         }
     }
 
@@ -179,6 +189,10 @@ impl Emitter {
                     KeyShape::Int => qualified(CORE_STRING, "fromInt"),
                 };
                 apply(self.reference((JSON_ENCODE, "dict")), [key, inner])
+            }
+            FieldShape::BoolMap(inner) => {
+                let inner = self.value_encoder(inner);
+                apply(self.reference((CONNECT_JSON, "encodeBoolMap")), [inner])
             }
         };
         call(encoder, [value])
@@ -219,6 +233,13 @@ impl Emitter {
                     KeyShape::Int => self.reference((CONNECT_JSON, "intDict")),
                 };
                 (apply(dict, [value]), self.reference((CORE_DICT, "empty")))
+            }
+            FieldShape::BoolMap(value) => {
+                let value = self.value_decoder(value);
+                (
+                    apply(self.reference((CONNECT_JSON, "boolMap")), [value]),
+                    list([]),
+                )
             }
         }
     }
@@ -336,7 +357,10 @@ pub(super) fn field_shape<'m>(
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
         (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
         (Cardinality::Repeated, value) => FieldShape::List(value),
-        (Cardinality::Map(key), value) => FieldShape::Dict(KeyShape::of(key), value),
+        (Cardinality::Map(key), value) => match KeyShape::of(key) {
+            Some(key) => FieldShape::Dict(key, value),
+            None => FieldShape::BoolMap(value),
+        },
     }
 }
 
