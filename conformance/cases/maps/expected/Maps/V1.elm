@@ -103,7 +103,8 @@ encodeTeam value =
 
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
-    Connect.Json.enum RoleUnspecified
+    Connect.Json.enum "Role"
+        RoleUnspecified
         [ ( "ROLE_UNSPECIFIED", 0, RoleUnspecified )
         , ( "ROLE_OWNER", 1, RoleOwner )
         ]

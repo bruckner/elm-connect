@@ -110,3 +110,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - Every message gets a default value, `defaultFoo : Foo`, with each
   field at its proto3 default and each oneof unset, in a new
   `-- DEFAULTS` section between the types and the encoders.
+- An unknown enum name fails the decode (`Expecting a value of enum
+  "Priority", but got "WHATEVER"`), as protobuf-go does; an unknown
+  number still reads as the zero value. `Connect.Json.enum` takes the
+  enum's proto name first. Aliases (`allow_alias`) collapse into the
+  constructor of the first value declared with their number, which the
+  encoder writes; the decoder reads every alias name.

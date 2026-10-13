@@ -240,15 +240,15 @@ oneofTests =
 type Status
     = StatusUnspecified
     | StatusActive
-    | StatusStarted
 
 
 decodeStatus : Decoder Status
 decodeStatus =
-    Connect.Json.enum StatusUnspecified
+    Connect.Json.enum "Status"
+        StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
-        , ( "STATUS_STARTED", 1, StatusStarted )
+        , ( "STATUS_STARTED", 1, StatusActive )
         ]
 
 
@@ -261,14 +261,17 @@ enumTests =
             \_ -> decodes decodeStatus "1" StatusActive
         , test "zero by number" <|
             \_ -> decodes decodeStatus "0" StatusUnspecified
-        , test "an alias by name" <|
-            \_ -> decodes decodeStatus "\"STATUS_STARTED\"" StatusStarted
-        , test "an unknown name is the zero value" <|
-            \_ -> decodes decodeStatus "\"STATUS_ARCHIVED\"" StatusUnspecified
+        , test "an alias by name is its number's constructor" <|
+            \_ -> decodes decodeStatus "\"STATUS_STARTED\"" StatusActive
+        , test "an unknown name fails" <|
+            \_ ->
+                failsWith decodeStatus
+                    "\"STATUS_ARCHIVED\""
+                    "Expecting a value of enum \"Status\", but got \"STATUS_ARCHIVED\""
         , test "an unknown number is the zero value" <|
             \_ -> decodes decodeStatus "7" StatusUnspecified
         , test "a name is matched exactly" <|
-            \_ -> decodes decodeStatus "\"status_active\"" StatusUnspecified
+            \_ -> fails decodeStatus "\"status_active\""
         , test "a fractional number fails" <|
             \_ -> fails decodeStatus "1.5"
         , test "a boolean fails" <|

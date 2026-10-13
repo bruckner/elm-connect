@@ -444,14 +444,19 @@ pub struct OneofVariant {
     pub jstype: JsType,
 }
 
-/// An enum: one Elm custom type with a constructor per value.
+/// An enum: one Elm custom type with a constructor per number.
 ///
 /// Proto3 requires the first value to be number 0; it is the value unknown
-/// names decode to (design §3.3), so it is held apart as [`Enum::zero`].
+/// numbers decode to (design §3.3), so it is held apart as [`Enum::zero`].
+/// With `allow_alias`, the values sharing a number are one [`EnumValue`],
+/// named for the first declared, holding the others as aliases.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Enum {
     /// The fully-qualified proto name, such as `notes.v1.Status`.
     pub proto_full_name: String,
+    /// The proto name within its package, such as `Status` or
+    /// `Note.Visibility`, which a decoding error names.
+    pub proto_name: String,
     /// The Elm type name, such as `Status`.
     pub elm_name: String,
     zero: EnumValue,
@@ -463,12 +468,14 @@ impl Enum {
     /// `zero`'s number is not 0.
     pub fn new(
         proto_full_name: String,
+        proto_name: String,
         elm_name: String,
         zero: EnumValue,
         rest: Vec<EnumValue>,
     ) -> Option<Self> {
         (zero.number == 0).then_some(Enum {
             proto_full_name,
+            proto_name,
             elm_name,
             zero,
             rest,
@@ -480,8 +487,8 @@ impl Enum {
         &self.zero
     }
 
-    /// Every value in declaration order, the zero value first. With
-    /// `allow_alias`, several values may share a number.
+    /// Every constructor in declaration order of its first value, the zero
+    /// value first. No two share a number.
     pub fn values(&self) -> impl Iterator<Item = &EnumValue> {
         std::iter::once(&self.zero).chain(&self.rest)
     }
@@ -499,15 +506,20 @@ impl Enum {
     }
 }
 
-/// One enum value: one constructor of the enum's custom type.
+/// One number of an enum: one constructor of the enum's custom type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnumValue {
-    /// The proto value name, such as `STATUS_ACTIVE`; the JSON wire form.
+    /// The name of the first value declared with the number, such as
+    /// `STATUS_ACTIVE`; the JSON wire form.
     pub proto_name: String,
     /// The value's number.
     pub number: i32,
-    /// The constructor, such as `StatusActive`.
+    /// The constructor, named for `proto_name`, such as `StatusActive`.
     pub elm_ctor: String,
+    /// The names of the values declared after it with the same number,
+    /// under `allow_alias`, in declaration order. They decode to this
+    /// constructor and are never written.
+    pub aliases: Vec<String>,
 }
 
 #[cfg(test)]
@@ -535,12 +547,22 @@ mod tests {
             proto_name: format!("V{number}"),
             number,
             elm_ctor: format!("EV{number}"),
+            aliases: Vec::new(),
         };
-        let e = Enum::new("t.E".into(), "E".into(), value(0), vec![value(1), value(2)])
-            .expect("zero first");
+        let e = Enum::new(
+            "t.E".into(),
+            "E".into(),
+            "E".into(),
+            value(0),
+            vec![value(1), value(2)],
+        )
+        .expect("zero first");
         let numbers: Vec<_> = e.values().map(|v| v.number).collect();
         assert_eq!(numbers, [0, 1, 2]);
         assert_eq!(e.zero().number, 0);
-        assert_eq!(Enum::new("t.E".into(), "E".into(), value(1), vec![]), None);
+        assert_eq!(
+            Enum::new("t.E".into(), "E".into(), "E".into(), value(1), vec![]),
+            None
+        );
     }
 }

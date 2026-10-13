@@ -303,18 +303,19 @@ fn enum_values_keep_declaration_order() {
         "#,
     );
     let level = &package.enums[0];
+    assert_eq!(level.proto_name, "Level");
+    // An alias joins the constructor of the first value with its number.
     let values: Vec<_> = level
         .values()
-        .map(|v| (v.proto_name.as_str(), v.number))
+        .map(|v| (v.proto_name.as_str(), v.number, v.aliases.clone()))
         .collect();
     assert_eq!(
         values,
         [
-            ("LEVEL_NONE", 0),
-            ("HIGH", 2),
-            ("LOW", 1),
-            ("TOP", 2),
-            ("BELOW", -1)
+            ("LEVEL_NONE", 0, vec![]),
+            ("HIGH", 2, vec!["TOP".to_owned()]),
+            ("LOW", 1, vec![]),
+            ("BELOW", -1, vec![])
         ]
     );
     let TypeRef::Enum { zero_ctor, .. } = &field(message(&package, "M"), "level").ty else {

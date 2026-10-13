@@ -309,8 +309,14 @@ impl Builder {
         let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what);
         self.claim_type(types, package, &elm_name, origin);
 
-        let mut values = Vec::new();
+        let mut values: Vec<EnumValue> = Vec::new();
         for value in declared_values(enumeration) {
+            // An alias joins the constructor of the first value with its
+            // number and claims no name of its own.
+            if let Some(first) = values.iter_mut().find(|v| v.number == value.number()) {
+                first.aliases.push(value.name().to_owned());
+                continue;
+            }
             let elm_ctor = naming::enum_constructor(&elm_name, enumeration.name(), value.name());
             let what = format!("enum value `{}`", value.name());
             let origin = self.origin(file, value.path(), tag::ENUM_VALUE_NAME, what);
@@ -319,12 +325,19 @@ impl Builder {
                 proto_name: value.name().to_owned(),
                 number: value.number(),
                 elm_ctor,
+                aliases: Vec::new(),
             });
         }
         let mut values = values.into_iter();
         // Proto3 compilers reject an enum whose first value is not 0.
+        let full_name = enumeration.full_name();
+        let proto_name = full_name
+            .strip_prefix(package)
+            .and_then(|name| name.strip_prefix('.'))
+            .unwrap_or(full_name);
         Enum::new(
-            enumeration.full_name().to_owned(),
+            full_name.to_owned(),
+            proto_name.to_owned(),
             elm_name,
             values.next()?,
             values.collect(),

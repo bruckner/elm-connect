@@ -1,5 +1,6 @@
 // Enums: a custom type per enum, the zero value first; encoded by name,
-// decoded by name or number, an unknown value read as the zero value.
+// decoded by name or number. An unknown number reads as the zero value;
+// an unknown name fails.
 syntax = "proto3";
 
 package enums.v1;
@@ -10,8 +11,11 @@ enum Status {
   STATUS_ARCHIVED = 2;
 }
 
-// Values without the conventional prefix, a negative number, and an
-// alias: two names for one number, each its own constructor.
+// Values without the conventional prefix, a negative number, and
+// aliases: names sharing a number are one constructor, named for the
+// first declared, which the encoder writes; the decoder reads them all.
+// PRIORITY_LOW would be the constructor PriorityLow, like LOW; as an
+// alias it claims no name, so the two do not collide.
 enum Priority {
   option allow_alias = true;
   NONE = 0;
@@ -19,6 +23,8 @@ enum Priority {
   HIGH = 2;
   URGENT = 2;
   BELOW_ZERO = -1;
+  PRIORITY_LOW = 1;
+  UNSET = 0;
 }
 
 message Task {

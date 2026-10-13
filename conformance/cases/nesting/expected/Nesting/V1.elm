@@ -258,7 +258,8 @@ encodeSum value =
 
 decodeOuterInnerKind : Json.Decode.Decoder OuterInnerKind
 decodeOuterInnerKind =
-    Connect.Json.enum OuterInnerKindUnspecified
+    Connect.Json.enum "Outer.Inner.Kind"
+        OuterInnerKindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, OuterInnerKindUnspecified )
         , ( "KIND_DRAFT", 1, OuterInnerKindDraft )
         ]

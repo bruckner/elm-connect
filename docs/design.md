@@ -272,30 +272,35 @@ Transcode.task config Notes.summarize ??? -- no route value exists: compile erro
   `StatusUnspecified | StatusActive`. *(Decided.)*
 - Encoding uses the proto name string. Decoding accepts the name and
   also the integer form, as the JSON spec allows. *(Decided.)*
-- **Unknown values.** *(Open.)* Two candidates:
-  - (a) decode to the zero-value constructor. Forward-tolerant: a stale
-    client survives a server that added a value. Lossy: re-encoding
-    sends `UNSPECIFIED` back. This is what the in-house generator does.
-  - (b) add an `StatusUnrecognized String` constructor. Faithful and
-    forward-tolerant, re-encodes what was received, but every `case` on
-    an enum gains a branch nobody wants to think about.
-  **Starting position (2026-10-10):** (a), as the best guess; to be
-  reviewed against the corpus output. A generator option for (b) stays
-  on the table.
-  Built as (a): the `enums` conformance case shows the output to
-  review.
-- Generated shape *(Proposed; built)*: the encoder is a `case` with one
+- **Unknown values.** *(Decided, 2026-10-11.)* An unknown **number**
+  decodes to the zero-value constructor: forward-tolerant, so a stale
+  client survives a server that added a value, and lossy, since
+  re-encoding sends the zero value's name back (§3.8). An unknown
+  **name** fails the decode, as protobuf-go's protojson does:
+  `Expecting a value of enum "Priority", but got "WHATEVER"`, the enum
+  named as declared within its package (`Outer.Inner.Kind` when
+  nested). A name is matched exactly. An `<Enum>Unrecognized Int`
+  constructor, faithful and re-encoding what was received, is deferred
+  until users ask for it: every `case` on an enum would gain a branch
+  nobody wants to think about.
+- Generated shape *(Decided)*: the encoder is a `case` with one
   `Json.Encode.string "NAME"` branch per constructor, so the compiler
   checks it is total. The decoder is one call to the runtime's
-  `Connect.Json.enum`, given the zero constructor and a
-  `( "NAME", number, Constructor )` row per value. Inlined, the decoder
-  would need two `case` expressions (one over names, one over numbers)
-  with a fallback branch each, about three times the lines per value
-  and nothing a reader learns from them.
-- Aliases (`allow_alias`): each value name is its own constructor and
-  encodes as its own name. A number decodes to the first value declared
-  with it, so `URGENT = 2` after `HIGH = 2` decodes from `2` as `HIGH`
-  but from `"URGENT"` as `URGENT`.
+  `Connect.Json.enum`, given the enum's proto name, the zero
+  constructor and a `( "NAME", number, Constructor )` row per value
+  name. Inlined, the decoder would need two `case` expressions (one over
+  names, one over numbers) with a fallback branch each, about three
+  times the lines per value and nothing a reader learns from them.
+- Aliases (`allow_alias`) collapse. *(Decided, 2026-10-11.)* The values
+  sharing a number are one constructor, named for the first declared
+  value with that number, which the encoder writes. The decoder accepts
+  every alias name and the number: each alias is a row of its own,
+  after its constructor's, so `URGENT = 2` after `HIGH = 2` adds
+  `( "URGENT", 2, PriorityHigh )`. An alias claims no constructor name,
+  so it cannot collide with one (§3.7). A constructor per name was the
+  first build; it made `HIGH` and `URGENT` distinct in Elm when they
+  are one value on the wire and in every other protobuf runtime, and a
+  number could decode to only one of them.
 - Values are in declaration order, the zero value first, whatever their
   numbers.
 
@@ -542,6 +547,9 @@ Built, as the `naming` and `naming_collision` cases show:
   prefix gains the enum's name (`CUBE` → `ShapeCube`); the prefix of a
   multi-word enum is matched word by word (`HTTP_METHOD_GET` →
   `HttpMethodGet`).
+- An enum claims one constructor per number: an alias (§3.3) has no
+  constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
+  `PriorityLow`) is not a collision.
 - Top-level values are a prefix and a type name: `encodeFoo`,
   `decodeFoo` and `defaultFoo`. Type names are unique in a module and
   start with an uppercase letter, and no prefix is another's, so these
@@ -560,6 +568,9 @@ record of fact; the policy for them is not designed yet.
 
 Dropped distinctions:
 
+- **Unknown enum numbers** read as the zero value (§3.3), so a value
+  the client does not know is indistinguishable from the zero value,
+  and re-encoding sends the zero value's name.
 - **Presence of an `Empty` field.** A singular `google.protobuf.Empty`
   field is `()` (§3.5), so a message that sent `{}` and one that left
   the field out decode alike, and the encoder always sends `{}`.
@@ -699,7 +710,8 @@ shared.
 - Options (`--elm-connect_opt=` or CLI flags):
   `transports=connect,transcode` (default both; limits emitted
   descriptors and imports), `module_prefix=`, `int64=string|int`,
-  `enum_unknown=zero|variant` (if §3.3 lands with an option).
+  and later perhaps `enum_unknown=zero|variant` (§3.3 defers the
+  variant).
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
@@ -747,12 +759,11 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 9. Open questions, collected
 
-1. Enum unknown values (§3.3): starting with zero-value; review pending.
-2. Whether the runtime package is kept (§5) once its contents exist.
-3. Fuse method and route for transcoding (§4).
-4. Connect GET for idempotent methods: default on or off (§5.2).
-5. Naming of additional-binding routes (§4).
-6. Presence as companion data: instead of `Maybe` fields, generated
+1. Whether the runtime package is kept (§5) once its contents exist.
+2. Fuse method and route for transcoding (§4).
+3. Connect GET for idempotent methods: default on or off (§5.2).
+4. Naming of additional-binding routes (§4).
+5. Presence as companion data: instead of `Maybe` fields, generated
    records could carry a presence set plus helpers (`hasBar`), a
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not

@@ -8,7 +8,7 @@ use crate::ir::Enum;
 use crate::naming::ENCODER_ARGUMENT;
 
 impl Emitter {
-    /// `type Status = StatusUnspecified | ...`, one constructor per value,
+    /// `type Status = StatusUnspecified | ...`, one constructor per number,
     /// the zero value first.
     pub(super) fn enum_type(&mut self, enumeration: &Enum) -> Decl {
         Decl::CustomType {
@@ -26,7 +26,8 @@ impl Emitter {
     }
 
     /// `encodeStatus : Status -> Json.Encode.Value`: a `case` giving each
-    /// constructor its proto name as a JSON string.
+    /// constructor its proto name as a JSON string, the first declared
+    /// name for an aliased number.
     pub(super) fn enum_encoder(&mut self, enumeration: &Enum) -> Decl {
         let branches: Vec<_> = enumeration
             .values()
@@ -52,20 +53,29 @@ impl Emitter {
     }
 
     /// `decodeStatus : Json.Decode.Decoder Status`: `Connect.Json.enum`
-    /// with the zero value and a `( name, number, constructor )` row per
-    /// value.
+    /// with the enum's proto name, the zero value and a
+    /// `( name, number, constructor )` row per value name, an alias's row
+    /// after its constructor's own.
     pub(super) fn enum_decoder(&mut self, enumeration: &Enum) -> Decl {
-        let rows = enumeration.values().map(|value| {
-            Expr::Tuple(vec![
-                string(value.proto_name.clone()),
-                int(value.number.into()),
-                var(value.elm_ctor.clone()),
-            ])
+        let rows = enumeration.values().flat_map(|value| {
+            std::iter::once(&value.proto_name)
+                .chain(&value.aliases)
+                .map(|name| {
+                    Expr::Tuple(vec![
+                        string(name.clone()),
+                        int(value.number.into()),
+                        var(value.elm_ctor.clone()),
+                    ])
+                })
         });
         let decode = self.reference((CONNECT_JSON, "enum"));
         let body = apply(
             decode,
-            [var(enumeration.zero().elm_ctor.clone()), list(rows)],
+            [
+                string(enumeration.proto_name.clone()),
+                var(enumeration.zero().elm_ctor.clone()),
+                list(rows),
+            ],
         );
         let annotation = self.library_type(
             JSON_DECODE,
