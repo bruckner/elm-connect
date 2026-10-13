@@ -104,6 +104,11 @@ pub fn list(items: impl IntoIterator<Item = Expr>) -> Expr {
     Expr::List(items.into_iter().collect())
 }
 
+/// A list literal on one line, when its items fit on one.
+pub fn inline_list(items: impl IntoIterator<Item = Expr>) -> Expr {
+    Expr::InlineList(items.into_iter().collect())
+}
+
 /// `( a, b )`.
 pub fn tuple2(a: Expr, b: Expr) -> Expr {
     Expr::Tuple(vec![a, b])

@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package notes.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PRIVATE = 1;
+  VISIBILITY_PUBLIC = 2;
+}
+
+message Note {
+  string name = 1;
+  string title = 2;
+  Visibility visibility = 3;
+  repeated string tags = 4;
+}
+
+message GetNoteRequest {
+  string name = 1;
+}
+
+message ListNotesRequest {
+  message Filter {
+    Visibility visibility = 1;
+    google.protobuf.Timestamp since = 2;
+  }
+  string parent = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+  Filter filter = 4;
+  repeated string tags = 5;
+  optional bool archived = 6;
+  int64 revision = 7;
+}
+
+message ListNotesResponse {
+  repeated Note notes = 1;
+  string next_page_token = 2;
+}
+
+message CreateNoteRequest {
+  string parent = 1;
+  Note note = 2;
+}
+
+message UpdateNoteRequest {
+  Note note = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteNoteRequest {
+  string name = 1;
+  bool force = 2;
+}
+
+message ArchiveNoteRequest {
+  string name = 1;
+  string reason = 2;
+}
+
+message ReadFileRequest {
+  string path = 1;
+}
+
+message Summary {
+  string text = 1;
+}
+
+service NotesService {
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      get: "/v1/{name=notes/*}"
+      additional_bindings {
+        get: "/v1/{name=users/*/notes/*}"
+      }
+    };
+  }
+
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {
+      get: "/v1/{parent=users/*}/notes"
+      response_body: "notes"
+    };
+  }
+
+  rpc CreateNote(CreateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1/{parent=users/*}/notes"
+      body: "note"
+    };
+  }
+
+  rpc UpdateNote(UpdateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      patch: "/v1/{note.name=notes/*}"
+      body: "note"
+    };
+  }
+
+  rpc ReplaceNote(Note) returns (Note) {
+    option (google.api.http) = {
+      put: "/v1/{name=notes/*}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=notes/*}"
+    };
+  }
+
+  rpc ArchiveNote(ArchiveNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1/{name=notes/*}:archive"
+      body: "*"
+    };
+  }
+
+  rpc ReadFile(ReadFileRequest) returns (Summary) {
+    option (google.api.http) = {
+      custom: {
+        kind: "HEAD"
+        path: "/v1/{path=files/**}"
+      }
+    };
+  }
+
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/v1/ping"
+    };
+  }
+
+  // No HTTP rule: called over the implicit route.
+  rpc Summarize(GetNoteRequest) returns (Summary);
+}

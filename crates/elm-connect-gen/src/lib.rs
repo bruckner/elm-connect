@@ -15,7 +15,7 @@ pub mod route;
 use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
-pub use crate::emit::{Int64, Options};
+pub use crate::emit::{Int64, Options, UnboundMethods};
 
 /// The version of the generator, stamped into everything it emits.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -31,24 +31,34 @@ pub struct GeneratedFile {
 }
 
 /// Generates one Elm module per proto package declared by the files in
-/// `generate` (names as `pool` knows them), sorted by path.
+/// `generate` (names as `pool` knows them), and one per service of each,
+/// sorted by path.
 ///
 /// On any problem, returns every problem found instead: those of building
-/// the IR, or else those of emitting every package.
+/// the IR, or else the methods `options` reject, or else those of emitting
+/// every package.
 pub fn generate(
     pool: &DescriptorPool,
     generate: &[&str],
     options: &Options,
 ) -> Result<Vec<GeneratedFile>, Diagnostics> {
     let packages = ir::build(pool, generate)?;
+    if options.unbound_methods == UnboundMethods::Error {
+        let unbound = ir::unbound_methods(pool, &packages);
+        if !unbound.is_empty() {
+            return Err(unbound);
+        }
+    }
     let mut files = Vec::new();
     let mut diagnostics = Diagnostics::new();
     for package in &packages {
         match emit::emit(package, options) {
-            Ok(module) => files.push(GeneratedFile {
-                path: format!("{}.elm", package.module.segments().join("/")),
-                content: elm::print::print_module(&module),
-            }),
+            Ok(module) => {
+                files.push(file(&module));
+                for service in &package.services {
+                    files.push(file(&emit::emit_service(package, service, options)));
+                }
+            }
             Err(problems) => {
                 for problem in &problems {
                     diagnostics.push(problem.clone());
@@ -61,4 +71,13 @@ pub fn generate(
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(files)
+}
+
+/// The file of `module`: `Notes/V1/NotesService.elm` for
+/// `Notes.V1.NotesService`.
+fn file(module: &elm::ast::Module) -> GeneratedFile {
+    GeneratedFile {
+        path: format!("{}.elm", module.name.as_str().replace('.', "/")),
+        content: elm::print::print_module(module),
+    }
 }

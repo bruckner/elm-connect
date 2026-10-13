@@ -511,7 +511,21 @@ pub fn resolve(
     };
 
     let mut query = Vec::new();
-    if let Some(body) = body.as_ref().filter(|body| **body != Body::All) {
+    let request_well_known = well_known(request);
+    if let Some(Some(known)) = request_well_known
+        && known != WellKnown::Empty
+        && body.as_ref().is_some_and(|body| *body != Body::All)
+    {
+        // Its JSON is not an object of its fields, so they cannot be
+        // parameters; `Empty` has none to send.
+        errors.push(RouteError::QueryField {
+            field: request.full_name().to_owned(),
+            reason: "the request is a well-known type, whose JSON has no fields".into(),
+        });
+    } else if let Some(body) = body
+        .as_ref()
+        .filter(|body| **body != Body::All && request_well_known.is_none())
+    {
         let skip = match body {
             Body::Field(path) => Some(path.proto[0].clone()),
             _ => None,

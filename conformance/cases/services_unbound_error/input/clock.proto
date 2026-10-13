@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package clock.v1;
+
+import "google/api/annotations.proto";
+
+message NowRequest {}
+
+message Time {
+  string iso = 1;
+}
+
+service ClockService {
+  rpc Now(NowRequest) returns (Time) {
+    option (google.api.http) = {
+      get: "/v1/now"
+    };
+  }
+
+  // No HTTP rule, which unbound_methods=error rejects.
+  rpc Tick(NowRequest) returns (Time);
+}

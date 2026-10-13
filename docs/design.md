@@ -39,8 +39,10 @@ a second transport and a public interface designed to be kept.
 
 - Generated code a reader can open and understand without the runtime's
   source. Plain records, plain custom types, plain decoders.
-- Which transport a method supports is visible in the types. Calling a
-  method over a transport it does not support is a compile error.
+- Generated code is transport-neutral: a call is data, and the
+  transport is chosen in the config it is sent with (§2). Every method
+  can be called over either transport; a method without a
+  `google.api.http` rule goes over the implicit route (§4).
 - Diagnostics in the register of Elm's own compiler: the proto source
   with the problem underlined, and a sentence saying what was expected.
 - One binary, no protoc required, on every platform Elm runs on. And
@@ -61,27 +63,42 @@ a second transport and a public interface designed to be kept.
   semantics.
 - Server code generation.
 
-## 2. The layering  *(Decided)*
+## 2. The layering  *(Decided; reshaped 2026-10-13)*
 
-Generated code carries no transport. Three layers:
+Generated code carries no transport. Three layers, the first two data:
 
 1. **Types and JSON codecs.** Records for messages, custom types for
-   enums and oneofs, `encode*` and `decode*` for each. Identical under
-   either transport because both use proto3 JSON.
-2. **Method descriptors.** One value per RPC describing it: service and
-   method names, request and response codecs, idempotency. A method that
-   carries a `google.api.http` rule additionally gets a *route* value. A
-   method without one gets no route value, so there is nothing to pass
-   to the transcoding transport.
-3. **Runtime transports.** `Connect` and `Transcode` modules in the
-   runtime package. Each takes a config and a descriptor (plus a route,
-   for `Transcode`) and produces a `Task` or `Cmd`.
+   enums and oneofs, `encode*` and `decode*` for each, in the package's
+   module (`Notes.V1`). Identical under either transport because both
+   use proto3 JSON.
+2. **Calls are data.** One module per service (`Notes.V1.NotesService`),
+   with one function per method that, applied to a request, gives an
+   `Rpc.Call req res`: the service and method names, idempotency, the
+   request and response codecs, and the method's `google.api.http`
+   bindings, all as data (§4). Nothing in a call picks a transport.
+3. **Config is data, and one runtime module sends.** An `Rpc.Config`
+   says where and how: the transport and its options, base URL,
+   headers, timeout, credentials and retry, with no function in it
+   (§5.1). The runtime's one module, `Rpc`, takes a config and a call
+   and sends it as a `Task` or a `Cmd`, or gives the HTTP request it
+   stands for and reads the answer without sending anything (§5.2).
 
 This is the shape connect-es arrived at in v2 (service descriptors from
 `protoc-gen-es`, transport in the runtime) and the shape anmolitor's
 protoc-gen-elm uses (service module as data, elm-grpc as transport). It
 dissolves the "one plugin or two" question: one plugin emits layers 1
-and 2; the transport choice is made at the call site.
+and 2; the transport choice is made in the config, which an
+application builds once or per call.
+
+Every method can be called over either transport. A method without an
+HTTP rule goes over the implicit route the transcoders serve (§4), so
+whether a method has a rule is not in its type. *(Decided, 2026-10-13.)*
+The first shape built made it one: a `Connect.Method` per method and a
+`Transcode.Call` per binding, so a method without a rule could not be
+passed to the transcoding transport at all. That split every helper an
+application wrote around calls into two, to guard against a server
+configuration the generator cannot see; `unbound_methods=error` (§6)
+keeps the guard for the servers that need it.
 
 ### 2.1 Before and after
 
@@ -90,8 +107,9 @@ A small service, as a proto:
 ```proto
 package notes.v1;
 
-service Notes {
+service NotesService {
   rpc GetNote(GetNoteRequest) returns (Note) {
+    option idempotency_level = NO_SIDE_EFFECTS;
     option (google.api.http) = { get: "/v1/{name=notes/*}" };
   }
   rpc CreateNote(CreateNoteRequest) returns (Note) {
@@ -118,36 +136,79 @@ getNote config request toMsg =
         }
 ```
 
-Proposed output under this design (names illustrative, see §4):
+Under this design the package module `Notes.V1` holds the types and
+codecs, and the service gets a module of its own (§4):
 
 ```elm
--- Notes/V1.elm (generated)
+-- Notes/V1/NotesService.elm (generated)
 
-getNote : Connect.Method GetNoteRequest Note
+
+module Notes.V1.NotesService exposing (..)
+
+import Notes.V1
+import Rpc
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
-    Connect.method
-        { service = "notes.v1.Notes", name = "GetNote", idempotent = True
-        , encodeRequest = encodeGetNoteRequest, decodeResponse = decodeNote }
+    Rpc.call
+        { service = "notes.v1.NotesService"
+        , method = "GetNote"
+        , idempotent = True
+        , encodeJson = Notes.V1.encodeGetNoteRequest
+        , jsonDecoder = Notes.V1.decodeNote
+        , bindings =
+            [ Rpc.binding
+                { method = "GET"
+                , path =
+                    [ Rpc.literal "v1"
+                    , Rpc.variable [ "name" ] [ Rpc.literal "notes", Rpc.wildcard ]
+                    ]
+                , customVerb = Nothing
+                , body = Rpc.noBody
+                , responseBody = Nothing
+                , query = []
+                }
+            ]
+        }
 
-getNoteRoute : Transcode.Route GetNoteRequest
-getNoteRoute =
-    Transcode.get "/v1/{name=notes/*}" [ ... parsed template as data ... ]
 
-summarize : Connect.Method SummarizeRequest Summary
-summarize = ...
--- no summarizeRoute: the method has no HTTP rule
+summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+summarize =
+    Rpc.call { …, bindings = [] }   -- no rule: the implicit route
 ```
 
+Application code applies a method to its request and sends the call
+with a config:
+
 ```elm
--- application code
+import Notes.V1.NotesService as Notes
+import Rpc
 
-Connect.task config Notes.getNote { name = "notes/42" }
-    : Task Connect.Error Note
 
-Transcode.task config Notes.getNote Notes.getNoteRoute { name = "notes/42" }
-    : Task Transcode.Error Note
+config : Rpc.Config
+config =
+    Rpc.config "https://api.example.com"
 
-Transcode.task config Notes.summarize ??? -- no route value exists: compile error
+
+-- POST https://api.example.com/notes.v1.NotesService/GetNote
+Notes.getNote { name = "notes/42" } |> Rpc.task config
+    : Task Rpc.Error Note
+
+-- GET https://api.example.com/v1/notes/42
+Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transcode }
+
+-- POST https://api.example.com/notes.v1.NotesService/Summarize, the implicit route
+Notes.summarize request |> Rpc.task { config | transport = Rpc.Transcode }
+```
+
+An application usually sends every call through one function of its
+own, which derives the config from its state:
+
+```elm
+rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc shared call =
+    Rpc.task (config shared) call
 ```
 
 ## 3. Generated types  *(mostly Decided; items marked otherwise)*
@@ -633,34 +694,99 @@ case names it):
   `notes.v1.notes_service`), and two packages with one module name
   (`naming::module_collision`, `services_module_collision` case); and a
   service whose name has no module form (`naming::invalid_service`).
+- **Methods without an HTTP rule, when asked**: under
+  `unbound_methods=error`, each one is `services::unbound_method`
+  (`services_unbound_error` case; §4).
 
-## 4. Method descriptors  *(Proposed)*
+## 4. Calls  *(Decided, 2026-10-13; built)*
+
+Each service is an Elm module of its own, `Notes.V1.NotesService`
+beside the package's `Notes.V1`, holding one function per method from
+its request to an `Rpc.Call` (§5.2). The `services` conformance case
+pins the output:
 
 ```elm
--- in the runtime
-type Method req res          -- opaque
-method :
-    { service : String, name : String, idempotent : Bool
-    , encodeRequest : req -> Json.Encode.Value
-    , decodeResponse : Json.Decode.Decoder res }
-    -> Method req res
-
-type Route req               -- opaque; parsed google.api.http rule
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        { service = "notes.v1.NotesService"
+        , method = "GetNote"
+        , idempotent = True
+        , encodeJson = Notes.V1.encodeGetNoteRequest
+        , jsonDecoder = Notes.V1.decodeNote
+        , bindings =
+            [ Rpc.binding
+                { method = "GET"
+                , path =
+                    [ Rpc.literal "v1"
+                    , Rpc.variable [ "name" ] [ Rpc.literal "notes", Rpc.wildcard ]
+                    ]
+                , customVerb = Nothing
+                , body = Rpc.noBody
+                , responseBody = Nothing
+                , query = []
+                }
+            , Rpc.binding { … }   -- the additional binding
+            ]
+        }
 ```
 
+- The service module imports `Rpc`, the package module and the modules
+  of any other package its request and response types come from, and
+  refers to every one of them qualified. Each method is written
+  point-free, `getNote = Rpc.call { … }`, binding no local name. So a
+  method's name can clash with nothing but another method of its
+  service, whatever it is: `value`, `identity` or `encodeNote` are all
+  fine method names (the namespace rule is in the IR bullets below).
+- The descriptor is `Rpc.MethodDescriptor`: `service` is the
+  fully-qualified service name and `method` the method's as declared,
+  together its Connect path; `encodeJson` and `jsonDecoder` are the
+  request's encoder and the response's decoder, a well-known type's
+  from the runtime (`()` and `Connect.Json.empty` for `Empty`), named
+  for JSON so a binary pair can join them. No separate
+  descriptor value is generated; `Rpc.descriptor` reads it back from
+  any call of the method.
 - `idempotent` is true when the proto declares
   `option idempotency_level = NO_SIDE_EFFECTS`. Connect uses it to allow
-  GET. Transcode ignores it (the HTTP verb comes from the rule).
-- A `Route req` is emitted only for methods with an HTTP rule. The
-  route is data: verb, path template as parsed segments, body field,
-  query-parameter policy. The generator parses the template; the
-  runtime only walks the parsed form.
-- Additional bindings on a rule are emitted as `getNoteRoute2`, etc.
-  *(Open: naming.)*
+  GET, and a retry policy with `idempotentOnly` to allow a retry.
+  Transcoding takes its verb from the rule.
+- **Bindings are data.** `bindings` is the method's `google.api.http`
+  rule as the generator parsed it (§4 routes, below): the rule's own
+  binding first, then its `additional_bindings` in order, each an
+  `Rpc.binding` of the verb, the path as literals and variables, the
+  custom verb, the body, the response body and the query parameters.
+  The runtime walks them and never parses a template. A call picks an
+  additional binding with `Rpc.viaBinding n`, `Nothing` for a number
+  the method has no binding of, so additional bindings need no names of
+  their own.
+- **The implicit route.** A method without a rule has `bindings = []`,
+  and nothing else is generated for it: under the Transcode transport
+  the runtime sends it as `POST /<package>.<Service>/<Method>` with the
+  request as its JSON body (§5.3), which grpc-gateway
+  (`generate_unbound_methods`), Envoy's transcoder (`auto_mapping`) and
+  Vanguard (always) serve. That request is exactly the one Connect
+  POSTs.
+- **`unbound_methods`** (§6) is `implicit` by default, the behaviour
+  above. With `error`, each method without a rule is
+  `services::unbound_method`, pointing at the method, for a server that
+  serves rules alone. Lenient is the default because the three common
+  transcoders serve the implicit route (Vanguard without being asked),
+  a server with a Connect handler serves it too, and an API whose
+  every method has a rule loses nothing either way; strict is one
+  option away for the rest.
+- `Rpc.Call req res` keeps the request type, not just the response
+  type. A call is a value an application can hold, log
+  (`Rpc.toJson`), read back (`Rpc.requestMessage`) and send again, so
+  a retry or token-refresh wrapper closes over it, and a queue can
+  store it; `req` keeps those uses typed.
 
-Open question whether to fuse method and route into one value for the
-transcoding case (`Transcode.Call req res`) so call sites pass one
-thing. Leaning yes: `Notes.getNoteHttp : Transcode.Call GetNoteRequest Note`.
+The first shape built was different: one module per package holding,
+after the codecs, a `Connect.Method` per method (`getNote`) and a
+`Transcode.Call` per binding (`getNoteHttp`, `getNoteHttp2`, …), a
+`transports=` option choosing which. It put route presence in the type
+(§2), named additional bindings by number, and put method values in one
+namespace with the codecs; the module per service, calls as data and
+`viaBinding` replace all three.
 
 Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
 
@@ -740,6 +866,10 @@ gets exactly this as data and never parses a template.
   in both, so "a field in both path and body" is not a diagnostic.
 - `response_body` is any top-level field of the response
   (`route::response_body` otherwise).
+- A request of a well-known type other than `Empty` has no fields of
+  its own to put in a query (its JSON is not an object of its fields),
+  so a rule for one has `body: "*"` (`route::query_field` otherwise).
+  `Empty` sends nothing either way.
 - Additional bindings follow the same rules and may not nest
   (`route::rule`, as is a rule with no pattern).
 
@@ -1042,13 +1172,16 @@ error handling is what calls them.
   construct, laid out on a port of elm-format's own block model (text,
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
-- Options (`--elm-connect_opt=` or CLI flags):
-  `transports=connect,transcode` (default both; limits emitted
-  descriptors and imports), `module_prefix=`, `int64=string|int`,
-  and later perhaps `enum_unknown=zero|variant` (§3.3 defers the
-  variant).
+- Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
+  `unbound_methods=implicit|error`, `module_prefix=`, and later perhaps
+  `enum_unknown=zero|variant` (§3.3 defers the variant). A
+  `transports=` option, choosing which transports' values were
+  generated, went with the shape it chose between (§4). *(Decided,
+  2026-10-13.)*
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
-  `elm-connect gen --int64 int`). The plugin parameter is
+  `elm-connect gen --int64 int`) and `unbound_methods` (§4;
+  `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
+  --unbound-methods error`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
   given twice, is an error. A conformance case sets options with an
   `options.txt` holding that parameter.
@@ -1059,7 +1192,8 @@ error handling is what calls them.
   form, `bool` an association list, §3.2); package
   import cycle; name collision after casing; `Any` field; streaming
   method; method value collision (§4); the `route::*` problems of
-  HTTP rules (§4). A recursive
+  HTTP rules (§4); a method without a rule under
+  `unbound_methods=error` (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
 
@@ -1096,18 +1230,35 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 9. Open questions, collected
 
-1. Fuse method and route for transcoding (§4).
-2. Naming of additional-binding routes (§4).
-3. Presence as companion data: instead of `Maybe` fields, generated
+1. Presence as companion data: instead of `Maybe` fields, generated
    records could carry a presence set plus helpers (`hasBar`), a
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not
    decided; raised during the type-layer review.
-4. `Any` (§3.5): the shape of pack and unpack, and its relation to the
+2. `Any` (§3.5): the shape of pack and unpack, and its relation to the
    generated descriptors (§4). The operator has prior notes.
+
+Settled 2026-10-13, with the client's shape (§2, §4, §5): whether to
+fuse method and route for transcoding, and how to name additional
+bindings. A call is data built per method, carrying every binding, so
+there is nothing to fuse, and `Rpc.viaBinding n` picks a binding
+without a name for it. Route presence left the type with them: a
+method without a rule takes the implicit route, and
+`unbound_methods=error` is the strict form. The config is data, so
+interceptors, a token provider and a logger in it were rejected: a
+function in a config makes it impossible to compare (Elm 0.19 throws
+on `==` over functions), to keep safely in a model or under
+`Html.Lazy`, and to print or build per call with record syntax, and
+each use of one maps onto data (headers, timeout, retry), onto
+update-time handling (logging from the `Trace`, token refresh
+single-flight in the application's shell) or onto the pure halves
+(rewriting a request between `Rpc.request` and `Rpc.taskFromRequest`).
+If hooks are wanted after all, an opaque `Rpc.Client` built from a
+`Config` plus hooks can be added beside `Rpc.task : Config -> …`
+without breaking it.
 
 ## 10. Out of scope but recorded
 
 Streaming (both transports), binary protobuf, gRPC-web, proto2,
-interceptors, retries, server generation. Each has a sentence above
+interceptors (§9), server generation. Each has a sentence above
 saying why; none is a permanent no.

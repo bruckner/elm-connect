@@ -287,6 +287,37 @@ fn query_fields_without_a_query_form_are_named() {
 }
 
 #[test]
+fn a_well_known_request_leaves_nothing_to_the_query() {
+    let header = r#"syntax = "proto3";
+package t.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+message Thing { string name = 1; }
+"#;
+    let built = package(&format!(
+        r#"{header}service S {{
+  rpc Ping(google.protobuf.Empty) returns (Thing) {{ option (google.api.http) = {{ get: "/v1/ping" }}; }}
+  rpc At(google.protobuf.Timestamp) returns (Thing) {{ option (google.api.http) = {{ post: "/v1/at" body: "*" }}; }}
+}}
+"#
+    ));
+    assert!(params(&method(&built, "Ping").routes[0]).is_empty());
+    assert!(params(&method(&built, "At").routes[0]).is_empty());
+
+    let source = format!(
+        r#"{header}service S {{
+  rpc At(google.protobuf.Timestamp) returns (Thing) {{ option (google.api.http) = {{ get: "/v1/at" }}; }}
+}}
+"#
+    );
+    let files = [("t.proto", source.as_str())];
+    let rendered = render(&problems(&files, &["t.proto"]), &files);
+    assert!(rendered.starts_with("route::query_field"), "{rendered}");
+    assert!(rendered.contains("well-known type"), "{rendered}");
+}
+
+#[test]
 fn a_route_problem_points_at_the_rule() {
     let rendered = route_problems(
         r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{missing}" body: "*" }; }"#,

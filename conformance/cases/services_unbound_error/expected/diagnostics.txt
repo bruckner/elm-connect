@@ -1,0 +1,17 @@
+services::unbound_method
+
+  × The method `clock.v1.ClockService.Tick` has no `google.api.http` rule.
+    ╭─[clock.proto:21:7]
+ 20 │   // No HTTP rule, which unbound_methods=error rejects.
+ 21 │   rpc Tick(NowRequest) returns (Time);
+    ·       ──┬─
+    ·         ╰── no `google.api.http` rule
+ 22 │ }
+    ╰────
+  help: With `unbound_methods=error`, every method needs a rule. Without one,
+        a call over transcoding takes the implicit route, `POST /
+        <package>.<Service>/<Method>` with the request as its body, which
+        grpc-gateway serves with `generate_unbound_methods`, Envoy's
+        transcoder with `auto_mapping`, and Vanguard always. Add a rule to the
+        method, or set `unbound_methods=implicit` (the default) if the server
+        serves that route.

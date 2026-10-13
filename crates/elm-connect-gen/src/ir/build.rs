@@ -117,6 +117,33 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
     }
 }
 
+/// A `services::unbound_method` problem for every method of `packages`
+/// (built from `pool`) without a `google.api.http` rule, at the method's
+/// name: what `unbound_methods=error` reports (design §4).
+pub fn unbound_methods(pool: &DescriptorPool, packages: &[Package]) -> Diagnostics {
+    let mut builder = Builder::default();
+    for service in packages.iter().flat_map(|package| &package.services) {
+        let Some(descriptor) = pool.get_service_by_name(&service.proto_full_name) else {
+            continue;
+        };
+        let file = descriptor.parent_file();
+        for method in descriptor.methods() {
+            let built = service
+                .methods
+                .iter()
+                .find(|m| m.proto_name == method.name());
+            if built.is_some_and(|built| built.http.is_none()) {
+                let path = [method.path(), &[tag::METHOD_NAME]].concat();
+                let site = builder.site(&file, &path, "no `google.api.http` rule".into());
+                builder
+                    .diagnostics
+                    .push(Problem::unbound_method(method.full_name(), site));
+            }
+        }
+    }
+    builder.diagnostics
+}
+
 /// A proto element that claims an Elm name: what it is, for labels, and
 /// where its name is.
 struct Origin {
