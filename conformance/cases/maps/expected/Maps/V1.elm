@@ -72,13 +72,16 @@ defaultTeam =
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { typeName = "maps.v1.Role"
-    , encodeJson = encodeRole
+    { encodeJson = encodeRole
     , jsonDecoder = decodeRole
-    , values =
-        [ { name = "ROLE_UNSPECIFIED", number = 0, value = RoleUnspecified }
-        , { name = "ROLE_OWNER", number = 1, value = RoleOwner }
-        ]
+    , default = RoleUnspecified
+    , descriptor =
+        { typeName = "maps.v1.Role"
+        , values =
+            [ { name = "ROLE_UNSPECIFIED", number = 0 }
+            , { name = "ROLE_OWNER", number = 1 }
+            ]
+        }
     }
 
 

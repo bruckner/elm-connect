@@ -33,16 +33,15 @@
 //!   shadow or clash with one.
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its full name, its encoder and
-//!   decoder, and every value name with its number and constructor. The
+//!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
+//!   and its descriptor, every declared name with its number. The
 //!   message descriptors are written inline, faithful to the proto: each
 //!   field's names, number, cardinality, kind (other types by full name)
 //!   and oneof. The section ends with the package's `registry`: its own
-//!   descriptors (an enum's built by `Proto.Enum.descriptor`), then the
-//!   registries of the packages its module imports and the well-known
-//!   types', so it is transitive. Under [`Descriptors::Off`] the message
-//!   trees are empty and there is no registry; the enum values stay,
-//!   since `Proto.Enum` reads names and numbers through them.
+//!   descriptors, then the registries of the packages its module imports
+//!   and the well-known types', so it is transitive. Under
+//!   [`Descriptors::Off`] the message trees are empty and there is no
+//!   registry.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
