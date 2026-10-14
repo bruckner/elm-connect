@@ -212,7 +212,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   its siblings are gone.
 - Typed records and descriptor trees. The runtime gains
   `Proto.Descriptor` (`MessageDescriptor`, `EnumDescriptor`,
-  `MethodDescriptor`, and the HTTP bindings, moved from `Rpc`),
+  `MethodDescriptor`), `Proto.Http` (the HTTP bindings, moved from
+  `Rpc`),
   `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs with
   its descriptor, an enum's with its name and values instead;
   `typeName`, `typeUrl`, `descriptor`, `toName`, `fromName`, `toNumber`,
