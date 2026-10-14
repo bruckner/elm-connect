@@ -5,8 +5,10 @@ module Cardinality.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -74,7 +76,7 @@ messageAuthor =
     , default = defaultAuthor
     , descriptor =
         { typeName = "cardinality.v1.Author"
-        , fields = []
+        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -87,10 +89,36 @@ messageNote =
     , default = defaultNote
     , descriptor =
         { typeName = "cardinality.v1.Note"
-        , fields = []
+        , fields =
+            [ { name = "subtitle", jsonName = "subtitle", number = 1, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "stars", jsonName = "stars", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "score", jsonName = "score", number = 3, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+            , { name = "views", jsonName = "views", number = 4, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "author", jsonName = "author", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "cardinality.v1.Author", oneof = Nothing }
+            , { name = "editor", jsonName = "editor", number = 6, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Message "cardinality.v1.Author", oneof = Nothing }
+            , { name = "tags", jsonName = "tags", number = 7, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "counts", jsonName = "counts", number = 8, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "weights", jsonName = "weights", number = 9, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Float, oneof = Nothing }
+            , { name = "reviewers", jsonName = "reviewers", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "cardinality.v1.Author", oneof = Nothing }
+            , { name = "title", jsonName = "title", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "related_links", jsonName = "relatedLinks", number = 12, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "is_draft", jsonName = "isDraft", number = 13, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageAuthor.descriptor
+            , messageNote.descriptor
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 

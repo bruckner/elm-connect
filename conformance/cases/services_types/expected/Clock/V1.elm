@@ -5,8 +5,10 @@ module Clock.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Time
 
 
@@ -40,10 +42,15 @@ messageAlarm =
     , default = defaultAlarm
     , descriptor =
         { typeName = "clock.v1.Alarm"
-        , fields = []
+        , fields = [ { name = "at", jsonName = "at", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing } ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageAlarm.descriptor ] []) Proto.Registry.wellKnown
 
 
 

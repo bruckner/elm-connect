@@ -227,3 +227,12 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   for now, and service modules build each call from those records. The
   `services_types` conformance case covers methods of well-known types
   and of another package's messages.
+- Generated descriptors hold the proto: each message's descriptor lists
+  its fields in declaration order (name, JSON name, number, cardinality,
+  kind, oneof) and its oneofs (an enum's is built from its record's
+  values). Each package module ends its descriptors section with
+  `registry : Proto.Registry.Registry`, transitive over the packages it
+  imports and the well-known types; a package without types gets a
+  module holding its registry. The trees are always written: compiled
+  output is the same size when nothing reads them, and a `descriptors`
+  option that left them empty was built, measured and dropped.

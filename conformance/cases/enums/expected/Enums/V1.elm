@@ -5,9 +5,11 @@ module Enums.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -95,10 +97,26 @@ messageTask =
     , default = defaultTask
     , descriptor =
         { typeName = "enums.v1.Task"
-        , fields = []
+        , fields =
+            [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            , { name = "priority", jsonName = "priority", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Enum "enums.v1.Priority", oneof = Nothing }
+            , { name = "history", jsonName = "history", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            , { name = "previous_status", jsonName = "previousStatus", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
+            [ enumStatus.descriptor
+            , enumPriority.descriptor
+            ]
+        )
+        Proto.Registry.wellKnown
 
 
 

@@ -5,8 +5,10 @@ module Scalars.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -80,7 +82,25 @@ messageScalars =
     , default = defaultScalars
     , descriptor =
         { typeName = "scalars.v1.Scalars"
-        , fields = []
+        , fields =
+            [ { name = "double_value", jsonName = "doubleValue", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+            , { name = "float_value", jsonName = "floatValue", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Float, oneof = Nothing }
+            , { name = "int32_value", jsonName = "int32Value", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "int64_value", jsonName = "int64Value", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "uint32_value", jsonName = "uint32Value", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
+            , { name = "uint64_value", jsonName = "uint64Value", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
+            , { name = "sint32_value", jsonName = "sint32Value", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint32, oneof = Nothing }
+            , { name = "sint64_value", jsonName = "sint64Value", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint64, oneof = Nothing }
+            , { name = "fixed32_value", jsonName = "fixed32Value", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed32, oneof = Nothing }
+            , { name = "fixed64_value", jsonName = "fixed64Value", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed64, oneof = Nothing }
+            , { name = "sfixed32_value", jsonName = "sfixed32Value", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed32, oneof = Nothing }
+            , { name = "sfixed64_value", jsonName = "sfixed64Value", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64, oneof = Nothing }
+            , { name = "bool_value", jsonName = "boolValue", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            , { name = "string_value", jsonName = "text", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "bytes_value", jsonName = "bytesValue", number = 15, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
+            , { name = "small_count", jsonName = "smallCount", number = 16, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "exact_total", jsonName = "exactTotal", number = 17, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -97,6 +117,18 @@ messageEmpty =
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageScalars.descriptor
+            , messageEmpty.descriptor
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 

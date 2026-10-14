@@ -202,10 +202,17 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
 
+/// The value holding a package's descriptors and those of every package
+/// it imports (`Proto.Registry.Registry`). Every other top-level value of a
+/// package module is a prefix and a type name, whose first letter is
+/// uppercase, so an all-lowercase name cannot be one of them.
+pub const REGISTRY: &str = "registry";
+
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
-/// today starts with one of the prefixes [`default_name`] lists.
+/// today starts with one of the prefixes [`default_name`] lists, or is
+/// [`REGISTRY`].
 pub const ENCODER_ARGUMENT: &str = "value";
 
 /// The variable a oneof's encoder binds the value of the set member to, in
@@ -326,6 +333,11 @@ mod tests {
             }
         }
         assert_ne!(ENCODER_ARGUMENT, ONEOF_MEMBER);
+        for name in [ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY] {
+            assert!(prefixes.iter().all(|prefix| !name.starts_with(prefix)));
+            assert_eq!(name, name.to_ascii_lowercase());
+        }
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY));
     }
 
     #[test]

@@ -6,9 +6,11 @@ module Maps.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -90,7 +92,7 @@ messageMember =
     , default = defaultMember
     , descriptor =
         { typeName = "maps.v1.Member"
-        , fields = []
+        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -103,10 +105,33 @@ messageTeam =
     , default = defaultTeam
     , descriptor =
         { typeName = "maps.v1.Team"
-        , fields = []
+        , fields =
+            [ { name = "labels", jsonName = "labels", number = 1, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "by_seat", jsonName = "bySeat", number = 2, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "scores", jsonName = "scores", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+            , { name = "flags", jsonName = "flags", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Sint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            , { name = "totals", jsonName = "totals", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Fixed32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "by_id", jsonName = "byId", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "counts", jsonName = "counts", number = 7, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "members", jsonName = "members", number = 8, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "maps.v1.Member", oneof = Nothing }
+            , { name = "roles", jsonName = "roles", number = 9, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Enum "maps.v1.Role", oneof = Nothing }
+            , { name = "by_flag", jsonName = "byFlag", number = 10, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageMember.descriptor
+            , messageTeam.descriptor
+            ]
+            [ enumRole.descriptor ]
+        )
+        Proto.Registry.wellKnown
 
 
 

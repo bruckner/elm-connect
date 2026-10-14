@@ -74,7 +74,7 @@ Both binaries take the same options: the protoc plugin as
 | `int64` | `--int64` | `string` (default), `int` | How 64-bit integers are held. `string` is exact; `int` gives Elm `Int`s, and a value outside ±(2^53 − 1) fails to decode. A field's `jstype` option (`JS_NUMBER`, `JS_STRING`) overrides it. |
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route (below). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 
-[`docs/design.md`](docs/design.md) §3.4 and §4 have the details.
+[`docs/design.md`](docs/design.md) §3.4, §3.9 and §4 have the details.
 
 ## Using the generated client
 
@@ -133,6 +133,34 @@ viaTranscoding =
 Errors are one type for both transports, `Rpc.Error`: an `Rpc` failure
 with an `Rpc.ErrorCode.ErrorCode`, a message, details and where they were read
 from, or a `Transport` failure.
+
+### Descriptors
+
+Each message and enum also has a typed record, `Notes.V1.messageNote`
+and `Notes.V1.enumVisibility`, holding its codecs and its descriptor:
+its full name and its fields (or values) as data. `Notes.V1.registry`
+holds the descriptors of the package, of every package it imports and
+of the well-known types, by full name:
+
+```elm
+import Notes.V1
+import Proto.Message
+import Proto.Registry
+
+
+-- "type.googleapis.com/notes.v1.Note"
+noteUrl : String
+noteUrl =
+    Proto.Message.typeUrl Notes.V1.messageNote
+
+
+-- the proto names of Note's fields, in declaration order
+noteFields : List String
+noteFields =
+    Proto.Registry.message "notes.v1.Note" Notes.V1.registry
+        |> Maybe.map (.fields >> List.map .name)
+        |> Maybe.withDefault []
+```
 
 ### Wrapping the sending once
 

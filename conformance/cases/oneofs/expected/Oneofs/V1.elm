@@ -5,9 +5,11 @@ module Oneofs.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -110,7 +112,7 @@ messageCreated =
     , default = defaultCreated
     , descriptor =
         { typeName = "oneofs.v1.Created"
-        , fields = []
+        , fields = [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -123,8 +125,22 @@ messageNoteEvent =
     , default = defaultNoteEvent
     , descriptor =
         { typeName = "oneofs.v1.NoteEvent"
-        , fields = []
-        , oneofs = []
+        , fields =
+            [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "created", jsonName = "created", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "oneofs.v1.Created", oneof = Just "kind" }
+            , { name = "title_changed", jsonName = "titleChanged", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "kind" }
+            , { name = "recolored", jsonName = "recolored", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "oneofs.v1.Color", oneof = Just "kind" }
+            , { name = "deleted_at", jsonName = "deletedAt", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "kind" }
+            , { name = "archived", jsonName = "archived", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Just "kind" }
+            , { name = "cleared_all", jsonName = "clearedAll", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Just "kind" }
+            , { name = "user", jsonName = "user", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "source" }
+            , { name = "automated", jsonName = "automated", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Just "source" }
+            , { name = "tags", jsonName = "tags", number = 8, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
+        , oneofs =
+            [ "kind"
+            , "source"
+            ]
         }
     }
 
@@ -136,10 +152,26 @@ messageChoice =
     , default = defaultChoice
     , descriptor =
         { typeName = "oneofs.v1.Choice"
-        , fields = []
-        , oneofs = []
+        , fields =
+            [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Just "value" }
+            , { name = "text", jsonName = "label", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "value" }
+            ]
+        , oneofs = [ "value" ]
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageCreated.descriptor
+            , messageNoteEvent.descriptor
+            , messageChoice.descriptor
+            ]
+            [ enumColor.descriptor ]
+        )
+        Proto.Registry.wellKnown
 
 
 

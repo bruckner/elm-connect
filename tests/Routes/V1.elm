@@ -5,10 +5,12 @@ module Routes.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Duration exposing (Duration)
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Time
 
 
@@ -229,7 +231,13 @@ messageGetMessageRequest =
     , default = defaultGetMessageRequest
     , descriptor =
         { typeName = "routes.v1.GetMessageRequest"
-        , fields = []
+        , fields =
+            [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "revision", jsonName = "revision", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "sub", jsonName = "sub", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.GetMessageRequest.SubMessage", oneof = Nothing }
+            , { name = "user_id", jsonName = "userId", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "name", jsonName = "name", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -242,7 +250,7 @@ messageGetMessageRequestSubMessage =
     , default = defaultGetMessageRequestSubMessage
     , descriptor =
         { typeName = "routes.v1.GetMessageRequest.SubMessage"
-        , fields = []
+        , fields = [ { name = "subfield", jsonName = "subfield", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -255,7 +263,10 @@ messageMessage =
     , default = defaultMessage
     , descriptor =
         { typeName = "routes.v1.Message"
-        , fields = []
+        , fields =
+            [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "text", jsonName = "text", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -268,7 +279,10 @@ messageUpdateMessageRequest =
     , default = defaultUpdateMessageRequest
     , descriptor =
         { typeName = "routes.v1.UpdateMessageRequest"
-        , fields = []
+        , fields =
+            [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "message", jsonName = "message", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Message", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -281,8 +295,31 @@ messageEverything =
     , default = defaultEverything
     , descriptor =
         { typeName = "routes.v1.Everything"
-        , fields = []
-        , oneofs = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "count", jsonName = "count", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "big", jsonName = "big", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            , { name = "ubig", jsonName = "ubig", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
+            , { name = "flag", jsonName = "flag", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            , { name = "ratio", jsonName = "ratio", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+            , { name = "scale", jsonName = "scale", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Float, oneof = Nothing }
+            , { name = "data", jsonName = "data", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
+            , { name = "kind", jsonName = "kind", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
+            , { name = "tags", jsonName = "tags", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "kinds", jsonName = "kinds", number = 11, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
+            , { name = "numbers", jsonName = "numbers", number = 12, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "maybe_count", jsonName = "maybeCount", number = 13, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "maybe_name", jsonName = "maybeName", number = 14, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "at", jsonName = "at", number = 15, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
+            , { name = "wait", jsonName = "wait", number = 16, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing }
+            , { name = "mask", jsonName = "mask", number = 17, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
+            , { name = "limit", jsonName = "limit", number = 18, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int32Value", oneof = Nothing }
+            , { name = "label", jsonName = "label", number = 19, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.StringValue", oneof = Nothing }
+            , { name = "inner", jsonName = "inner", number = 20, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Inner", oneof = Nothing }
+            , { name = "text", jsonName = "text", number = 21, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "choice" }
+            , { name = "number", jsonName = "number", number = 22, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Just "choice" }
+            ]
+        , oneofs = [ "choice" ]
         }
     }
 
@@ -294,7 +331,10 @@ messageInner =
     , default = defaultInner
     , descriptor =
         { typeName = "routes.v1.Inner"
-        , fields = []
+        , fields =
+            [ { name = "a", jsonName = "a", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "deep", jsonName = "deep", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Deep", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -307,7 +347,10 @@ messageDeep =
     , default = defaultDeep
     , descriptor =
         { typeName = "routes.v1.Deep"
-        , fields = []
+        , fields =
+            [ { name = "b", jsonName = "b", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "c", jsonName = "c", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -320,7 +363,7 @@ messageFileRequest =
     , default = defaultFileRequest
     , descriptor =
         { typeName = "routes.v1.FileRequest"
-        , fields = []
+        , fields = [ { name = "path", jsonName = "path", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -333,7 +376,10 @@ messageResource =
     , default = defaultResource
     , descriptor =
         { typeName = "routes.v1.Resource"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "display_name", jsonName = "displayName", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -346,10 +392,33 @@ messageUpdateResourceRequest =
     , default = defaultUpdateResourceRequest
     , descriptor =
         { typeName = "routes.v1.UpdateResourceRequest"
-        , fields = []
+        , fields =
+            [ { name = "resource", jsonName = "resource", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Resource", oneof = Nothing }
+            , { name = "update_mask", jsonName = "updateMask", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageGetMessageRequest.descriptor
+            , messageGetMessageRequestSubMessage.descriptor
+            , messageMessage.descriptor
+            , messageUpdateMessageRequest.descriptor
+            , messageEverything.descriptor
+            , messageInner.descriptor
+            , messageDeep.descriptor
+            , messageFileRequest.descriptor
+            , messageResource.descriptor
+            , messageUpdateResourceRequest.descriptor
+            ]
+            [ enumKind.descriptor ]
+        )
+        Proto.Registry.wellKnown
 
 
 

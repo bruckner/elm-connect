@@ -5,9 +5,11 @@ module Users.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -62,10 +64,18 @@ messageUser =
     , default = defaultUser
     , descriptor =
         { typeName = "users.v1.User"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "role", jsonName = "role", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageUser.descriptor ] [ enumRole.descriptor ]) Proto.Registry.wellKnown
 
 
 

@@ -34,7 +34,12 @@
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
 //!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
-//!   and its descriptor, every declared name with its number.
+//!   and its descriptor, every declared name with its number. The
+//!   message descriptors are written inline, faithful to the proto: each
+//!   field's names, number, cardinality, kind (other types by full name)
+//!   and oneof. The section ends with the package's `registry`: its own
+//!   descriptors, then the registries of the packages its module imports
+//!   and the well-known types', so it is transitive.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -129,6 +134,8 @@ const TIME: &str = "Time";
 const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
+/// The runtime package's descriptors, whose constructors the trees use.
+const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
 const PROTO_HTTP: &str = "Proto.Http";
 /// The runtime package's typed message records.
@@ -137,6 +144,8 @@ const PROTO_MESSAGE: &str = "Proto.Message";
 const PROTO_ENUM: &str = "Proto.Enum";
 /// The runtime package's typed records of the well-known types.
 const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
+/// The runtime package's registry of descriptors.
+const PROTO_REGISTRY: &str = "Proto.Registry";
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
@@ -387,7 +396,7 @@ impl Emitter {
             .map(|message| message_shape(message, &by_name, self.int64))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
-            return Vec::new();
+            return vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)];
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
         let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
@@ -417,6 +426,7 @@ impl Emitter {
                 decoders.push(self.oneof_decoder(oneof));
             }
         }
+        descriptors.push(self.registry(package));
         // A package of enums alone has no defaults.
         if messages.is_empty() {
             defaults.clear();
@@ -595,13 +605,66 @@ mod tests {
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
-            ["Json.Decode", "Json.Encode", "Proto.Json", "Proto.Message"]
+            [
+                "Json.Decode",
+                "Json.Encode",
+                "Proto.Descriptor",
+                "Proto.Json",
+                "Proto.Message",
+                "Proto.Registry"
+            ]
         );
 
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(imports, ["Json.Decode", "Json.Encode", "Proto.Message"]);
+        assert_eq!(
+            imports,
+            [
+                "Json.Decode",
+                "Json.Encode",
+                "Proto.Message",
+                "Proto.Registry"
+            ]
+        );
+    }
+
+    #[test]
+    fn descriptors_hold_the_fields_and_the_registry() {
+        let one = package(vec![message(
+            "A",
+            vec![field(
+                "n",
+                Cardinality::Map(crate::ir::MapKey::Bool),
+                TypeRef::Scalar(ScalarKind::SFixed64),
+            )],
+        )]);
+        let printed = |options: &Options| {
+            crate::elm::print::print_module(&emit(&one, options).expect("emits"))
+        };
+        let on = printed(&Options::default());
+        assert!(
+            on.contains(
+                "fields = [ { name = \"n\", jsonName = \"n\", number = 1, cardinality = \
+                 Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar \
+                 Proto.Descriptor.Sfixed64, oneof = Nothing } ]"
+            ),
+            "{on}"
+        );
+        assert!(
+            on.contains(
+                "registry =\n    Proto.Registry.union (Proto.Registry.fromDescriptors \
+                 [ messageA.descriptor ] []) Proto.Registry.wellKnown"
+            ),
+            "{on}"
+        );
+        let nothing = package(Vec::new());
+        let printed =
+            crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
+        assert!(
+            printed.contains("registry =\n    Proto.Registry.wellKnown"),
+            "{printed}"
+        );
     }
 
     #[test]
@@ -677,12 +740,22 @@ mod tests {
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
+                "Proto.Descriptor",
                 "Proto.Json",
-                "Proto.Message"
+                "Proto.Message",
+                "Proto.Registry"
             ]
         );
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
+        assert!(
+            printed.contains("kind = Proto.Descriptor.Message \"other.v1.B\""),
+            "{printed}"
+        );
+        assert!(
+            printed.contains("(Proto.Registry.union Other.V1.registry Proto.Registry.wellKnown)"),
+            "{printed}"
+        );
         assert!(
             printed.contains("Proto.Json.encodeMaybe Other.V1.encodeB value.b"),
             "{printed}"
