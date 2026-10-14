@@ -8,7 +8,6 @@ import Json.Decode
 import Json.Encode
 import Proto.Descriptor
 import Proto.Duration exposing (Duration)
-import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Registry
