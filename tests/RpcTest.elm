@@ -6,8 +6,8 @@ import Http
 import Json.Decode
 import Json.Encode
 import Proto.Any
-import Proto.Descriptor
 import Proto.Duration
+import Proto.Http
 import Proto.Message exposing (Message)
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
@@ -38,7 +38,7 @@ title =
     }
 
 
-notes : String -> Bool -> List Proto.Descriptor.Binding -> GetNote -> Rpc.Call GetNote String
+notes : String -> Bool -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
 notes name idempotent bindings =
     Rpc.call
         { request = getNoteRequest
@@ -70,8 +70,8 @@ listNotes : GetNote -> Rpc.Call GetNote String
 listNotes =
     notes "ListNotes"
         True
-        [ Proto.Descriptor.binding { method = "GET", path = [ Proto.Descriptor.literal "v1", Proto.Descriptor.literal "notes" ], customVerb = Nothing, body = Proto.Descriptor.noBody, responseBody = Nothing, query = [] }
-        , Proto.Descriptor.binding { method = "GET", path = [ Proto.Descriptor.literal "v2", Proto.Descriptor.literal "notes" ], customVerb = Nothing, body = Proto.Descriptor.noBody, responseBody = Nothing, query = [] }
+        [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
+        , Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v2", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
         ]
 
 

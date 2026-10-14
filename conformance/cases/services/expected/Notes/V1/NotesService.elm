@@ -4,7 +4,7 @@
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
-import Proto.Descriptor
+import Proto.Http
 import Proto.WellKnown
 import Rpc
 
@@ -21,25 +21,25 @@ getNote =
             , input = "notes.v1.GetNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
-                , Proto.Descriptor.binding
+                , Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "users", Proto.Descriptor.wildcard, Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
@@ -60,24 +60,24 @@ listNotes =
             , input = "notes.v1.ListNotesRequest"
             , output = "notes.v1.ListNotesResponse"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "parent" ] [ Proto.Descriptor.literal "users", Proto.Descriptor.wildcard ]
-                        , Proto.Descriptor.literal "notes"
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                        , Proto.Http.literal "notes"
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Just "notes"
                     , query =
-                        [ Proto.Descriptor.param "page_size" [ "pageSize" ] (Just "0")
-                        , Proto.Descriptor.param "page_token" [ "pageToken" ] (Just "")
-                        , Proto.Descriptor.param "filter.visibility" [ "filter", "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
-                        , Proto.Descriptor.param "filter.since" [ "filter", "since" ] Nothing
-                        , Proto.Descriptor.param "tags" [ "tags" ] Nothing
-                        , Proto.Descriptor.param "archived" [ "archived" ] Nothing
-                        , Proto.Descriptor.param "revision" [ "revision" ] (Just "0")
+                        [ Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
+                        , Proto.Http.param "page_token" [ "pageToken" ] (Just "")
+                        , Proto.Http.param "filter.visibility" [ "filter", "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
+                        , Proto.Http.param "filter.since" [ "filter", "since" ] Nothing
+                        , Proto.Http.param "tags" [ "tags" ] Nothing
+                        , Proto.Http.param "archived" [ "archived" ] Nothing
+                        , Proto.Http.param "revision" [ "revision" ] (Just "0")
                         ]
                     }
                 ]
@@ -97,15 +97,15 @@ createNote =
             , input = "notes.v1.CreateNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "POST"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "parent" ] [ Proto.Descriptor.literal "users", Proto.Descriptor.wildcard ]
-                        , Proto.Descriptor.literal "notes"
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                        , Proto.Http.literal "notes"
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.bodyField "note"
+                    , body = Proto.Http.bodyField "note"
                     , responseBody = Nothing
                     , query = []
                     }
@@ -126,16 +126,16 @@ updateNote =
             , input = "notes.v1.UpdateNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "PATCH"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "note", "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.bodyField "note"
+                    , body = Proto.Http.bodyField "note"
                     , responseBody = Nothing
-                    , query = [ Proto.Descriptor.param "update_mask" [ "updateMask" ] Nothing ]
+                    , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
                     }
                 ]
             }
@@ -154,14 +154,14 @@ replaceNote =
             , input = "notes.v1.Note"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "PUT"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.wholeBody
+                    , body = Proto.Http.wholeBody
                     , responseBody = Nothing
                     , query = []
                     }
@@ -182,16 +182,16 @@ deleteNote =
             , input = "notes.v1.DeleteNoteRequest"
             , output = "google.protobuf.Empty"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "DELETE"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
-                    , query = [ Proto.Descriptor.param "force" [ "force" ] (Just "false") ]
+                    , query = [ Proto.Http.param "force" [ "force" ] (Just "false") ]
                     }
                 ]
             }
@@ -210,14 +210,14 @@ archiveNote =
             , input = "notes.v1.ArchiveNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "POST"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Just "archive"
-                    , body = Proto.Descriptor.wholeBody
+                    , body = Proto.Http.wholeBody
                     , responseBody = Nothing
                     , query = []
                     }
@@ -238,14 +238,14 @@ readFile =
             , input = "notes.v1.ReadFileRequest"
             , output = "notes.v1.Summary"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "HEAD"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "path" ] [ Proto.Descriptor.literal "files", Proto.Descriptor.doubleWildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
@@ -266,14 +266,14 @@ ping =
             , input = "google.protobuf.Empty"
             , output = "google.protobuf.Empty"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.literal "ping"
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.literal "ping"
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
