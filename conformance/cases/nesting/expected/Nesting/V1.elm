@@ -161,19 +161,13 @@ defaultSum =
 
 enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
 enumOuterInnerKind =
-    { encodeJson = encodeOuterInnerKind
+    { typeName = "nesting.v1.Outer.Inner.Kind"
+    , encodeJson = encodeOuterInnerKind
     , jsonDecoder = decodeOuterInnerKind
     , values =
         [ { name = "KIND_UNSPECIFIED", number = 0, value = OuterInnerKindUnspecified }
         , { name = "KIND_DRAFT", number = 1, value = OuterInnerKindDraft }
         ]
-    , descriptor =
-        { typeName = "nesting.v1.Outer.Inner.Kind"
-        , values =
-            [ { name = "KIND_UNSPECIFIED", number = 0 }
-            , { name = "KIND_DRAFT", number = 1 }
-            ]
-        }
     }
 
 
@@ -325,7 +319,7 @@ registry =
             , messageExpr.descriptor
             , messageSum.descriptor
             ]
-            [ enumOuterInnerKind.descriptor ]
+            [ Proto.Enum.descriptor enumOuterInnerKind ]
         )
         Proto.Registry.wellKnown
 

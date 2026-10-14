@@ -56,27 +56,21 @@ defaultTask =
 
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
-    { encodeJson = encodeStatus
+    { typeName = "enums.v1.Status"
+    , encodeJson = encodeStatus
     , jsonDecoder = decodeStatus
     , values =
         [ { name = "STATUS_UNSPECIFIED", number = 0, value = StatusUnspecified }
         , { name = "STATUS_ACTIVE", number = 1, value = StatusActive }
         , { name = "STATUS_ARCHIVED", number = 2, value = StatusArchived }
         ]
-    , descriptor =
-        { typeName = "enums.v1.Status"
-        , values =
-            [ { name = "STATUS_UNSPECIFIED", number = 0 }
-            , { name = "STATUS_ACTIVE", number = 1 }
-            , { name = "STATUS_ARCHIVED", number = 2 }
-            ]
-        }
     }
 
 
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
-    { encodeJson = encodePriority
+    { typeName = "enums.v1.Priority"
+    , encodeJson = encodePriority
     , jsonDecoder = decodePriority
     , values =
         [ { name = "NONE", number = 0, value = PriorityNone }
@@ -87,18 +81,6 @@ enumPriority =
         , { name = "PRIORITY_LOW", number = 1, value = PriorityLow }
         , { name = "UNSET", number = 0, value = PriorityNone }
         ]
-    , descriptor =
-        { typeName = "enums.v1.Priority"
-        , values =
-            [ { name = "NONE", number = 0 }
-            , { name = "LOW", number = 1 }
-            , { name = "HIGH", number = 2 }
-            , { name = "URGENT", number = 2 }
-            , { name = "BELOW_ZERO", number = -1 }
-            , { name = "PRIORITY_LOW", number = 1 }
-            , { name = "UNSET", number = 0 }
-            ]
-        }
     }
 
 
@@ -124,8 +106,8 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
-            [ enumStatus.descriptor
-            , enumPriority.descriptor
+            [ Proto.Enum.descriptor enumStatus
+            , Proto.Enum.descriptor enumPriority
             ]
         )
         Proto.Registry.wellKnown

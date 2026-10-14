@@ -4,7 +4,7 @@
 
 use super::field::{Present, ValueShape, value_shape};
 use super::scalar::Repr;
-use super::{Emitter, PROTO_DESCRIPTOR, PROTO_WELL_KNOWN, RPC};
+use super::{Emitter, PROTO_HTTP, PROTO_WELL_KNOWN, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{apply, inline_list, list, record, string, ty_fn, var};
 use crate::ir::{Method, TypeRef, WellKnown};
@@ -84,7 +84,7 @@ impl Emitter {
         }
     }
 
-    /// `Proto.Descriptor.binding { … }`: one binding of a method's HTTP rule.
+    /// `Proto.Http.binding { … }`: one binding of a method's HTTP rule.
     fn binding(&mut self, route: &Route) -> Expr {
         let path: Vec<Expr> = route
             .segments
@@ -93,10 +93,10 @@ impl Emitter {
             .collect();
         let custom_verb = maybe(route.custom_verb.as_deref().map(string));
         let body = match &route.body {
-            Body::None => self.reference((PROTO_DESCRIPTOR, "noBody")),
-            Body::All => self.reference((PROTO_DESCRIPTOR, "wholeBody")),
+            Body::None => self.reference((PROTO_HTTP, "noBody")),
+            Body::All => self.reference((PROTO_HTTP, "wholeBody")),
             Body::Field(field) => apply(
-                self.reference((PROTO_DESCRIPTOR, "bodyField")),
+                self.reference((PROTO_HTTP, "bodyField")),
                 [string(field.json[0].clone())],
             ),
         };
@@ -112,7 +112,7 @@ impl Emitter {
             .map(|param| self.query_param(param))
             .collect();
         apply(
-            self.reference((PROTO_DESCRIPTOR, "binding")),
+            self.reference((PROTO_HTTP, "binding")),
             [record([
                 ("method", string(route.verb.as_str())),
                 ("path", list(path)),
@@ -133,7 +133,7 @@ impl Emitter {
     fn path_segment(&mut self, segment: &PathSegment) -> Expr {
         match segment {
             PathSegment::Literal(text) => apply(
-                self.reference((PROTO_DESCRIPTOR, "literal")),
+                self.reference((PROTO_HTTP, "literal")),
                 [string(text.clone())],
             ),
             PathSegment::Variable { field, template } => {
@@ -143,7 +143,7 @@ impl Emitter {
                     .map(|segment| self.template_segment(segment))
                     .collect();
                 apply(
-                    self.reference((PROTO_DESCRIPTOR, "variable")),
+                    self.reference((PROTO_HTTP, "variable")),
                     [names, inline_list(template)],
                 )
             }
@@ -153,11 +153,11 @@ impl Emitter {
     fn template_segment(&mut self, segment: &Segment) -> Expr {
         match segment {
             Segment::Literal(text) => apply(
-                self.reference((PROTO_DESCRIPTOR, "literal")),
+                self.reference((PROTO_HTTP, "literal")),
                 [string(text.clone())],
             ),
-            Segment::Wildcard => self.reference((PROTO_DESCRIPTOR, "wildcard")),
-            Segment::DoubleWildcard => self.reference((PROTO_DESCRIPTOR, "doubleWildcard")),
+            Segment::Wildcard => self.reference((PROTO_HTTP, "wildcard")),
+            Segment::DoubleWildcard => self.reference((PROTO_HTTP, "doubleWildcard")),
             // A variable's template holds no variables (`route::parse_template`).
             Segment::Variable { .. } => unreachable!("a variable inside a variable"),
         }
@@ -166,7 +166,7 @@ impl Emitter {
     fn query_param(&mut self, param: &QueryParam) -> Expr {
         let zero = maybe(param.zero.as_deref().map(string));
         apply(
-            self.reference((PROTO_DESCRIPTOR, "param")),
+            self.reference((PROTO_HTTP, "param")),
             [
                 string(param.field.dotted()),
                 inline_list(param.field.json.iter().map(|name| string(name.clone()))),
