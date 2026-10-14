@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (percentEncode, send, task, unreserved)
+module Rpc.Internal.Http exposing (percentDecode, percentEncode, send, task, unreserved)
 
 {-| What the transports share: percent-encoding, and sending a built request.
 Not exposed; `Rpc` re-exports what users need.
@@ -24,6 +24,109 @@ percentEncode keep text =
         )
         ""
         text
+
+
+{-| Decode `%XX` escapes as UTF-8; `Nothing` when an escape is malformed or
+the bytes are not UTF-8.
+-}
+percentDecode : String -> Maybe String
+percentDecode text =
+    bytesOf (String.toList text) []
+        |> Maybe.andThen (\bytes -> decodeUtf8 (List.reverse bytes) [])
+
+
+bytesOf : List Char -> List Int -> Maybe (List Int)
+bytesOf chars acc =
+    case chars of
+        [] ->
+            Just acc
+
+        '%' :: high :: low :: rest ->
+            case ( hexValue high, hexValue low ) of
+                ( Just h, Just l ) ->
+                    bytesOf rest ((h * 16 + l) :: acc)
+
+                _ ->
+                    Nothing
+
+        '%' :: _ ->
+            Nothing
+
+        char :: rest ->
+            bytesOf rest (List.reverse (utf8 (Char.toCode char)) ++ acc)
+
+
+hexValue : Char -> Maybe Int
+hexValue char =
+    let
+        code =
+            Char.toCode (Char.toUpper char)
+    in
+    if code >= 48 && code <= 57 then
+        Just (code - 48)
+
+    else if code >= 65 && code <= 70 then
+        Just (code - 55)
+
+    else
+        Nothing
+
+
+decodeUtf8 : List Int -> List Char -> Maybe String
+decodeUtf8 bytes acc =
+    case bytes of
+        [] ->
+            Just (String.fromList (List.reverse acc))
+
+        b :: rest ->
+            let
+                lead =
+                    if b < 0x80 then
+                        Just ( b, 0 )
+
+                    else if b >= 0xC2 && b < 0xE0 then
+                        Just ( b - 0xC0, 1 )
+
+                    else if b >= 0xE0 && b < 0xF0 then
+                        Just ( b - 0xE0, 2 )
+
+                    else if b >= 0xF0 && b < 0xF5 then
+                        Just ( b - 0xF0, 3 )
+
+                    else
+                        Nothing
+            in
+            lead
+                |> Maybe.andThen
+                    (\( high, width ) ->
+                        continuations width rest
+                            |> Maybe.andThen
+                                (\( low, remaining ) ->
+                                    decodeUtf8 remaining (Char.fromCode (Bitwise.shiftLeftBy (6 * width) high + low) :: acc)
+                                )
+                    )
+
+
+{-| The value of `width` continuation bytes at the front of `bytes`, and the
+bytes after them.
+-}
+continuations : Int -> List Int -> Maybe ( Int, List Int )
+continuations width bytes =
+    if width == 0 then
+        Just ( 0, bytes )
+
+    else
+        case bytes of
+            b :: rest ->
+                if Bitwise.and 0xC0 b == 0x80 then
+                    continuations (width - 1) rest
+                        |> Maybe.map (\( value, remaining ) -> ( Bitwise.shiftLeftBy (6 * (width - 1)) (b - 0x80) + value, remaining ))
+
+                else
+                    Nothing
+
+            [] ->
+                Nothing
 
 
 {-| RFC 3986's unreserved characters, which percent-encoding never touches:

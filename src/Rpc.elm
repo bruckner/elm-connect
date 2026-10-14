@@ -13,9 +13,11 @@ module Rpc exposing
     , Param, param
     )
 
-{-| Call RPCs: unary, JSON-encoded, over the
+{-| Call RPCs: unary and JSON-encoded, over the
 [Connect protocol](https://connectrpc.com/docs/protocol/) as connect-go,
-connect-es, connect-python and Envoy's Connect filter serve it.
+connect-es, connect-python and Envoy's Connect filter serve it, or over HTTP
+transcoding, the REST mapping `google.api.http` rules describe, as
+grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it.
 
     Rpc.send (Rpc.config "https://api.example.com")
         (Notes.V1.NotesService.getNote { name = "notes/42" })
@@ -93,6 +95,7 @@ data. Generated code builds these; application code only passes them along.
 
 -}
 
+import Dict
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
@@ -311,10 +314,15 @@ config baseUrl =
   - `Connect`: the Connect protocol. With `useGet`, an idempotent call is a GET
     with the request in the query, which caches can serve; with `maxGetUrl`, a
     GET whose URL would be longer than that many characters is POSTed instead.
+  - `Transcode`: HTTP transcoding, by the method's `google.api.http` rule. A
+    method without one is called over the implicit route
+    `POST /<service>/<method>`, which grpc-gateway (`generate_unbound_methods`),
+    Envoy (`auto_mapping`) and Vanguard serve: the request Connect would POST.
 
 -}
 type Transport
     = Connect { useGet : Bool, maxGetUrl : Maybe Int }
+    | Transcode
 
 
 {-| Connect with every call POSTed, as connect-es does by default.
@@ -410,7 +418,13 @@ taskTraced cfg ((Call fields) as c) =
                                     (\end ->
                                         ( { service = fields.descriptor.service
                                           , method = fields.descriptor.method
-                                          , binding = Nothing
+                                          , binding =
+                                                case route cfg c of
+                                                    Bound index _ ->
+                                                        Just index
+
+                                                    _ ->
+                                                        Nothing
                                           , request = sent
                                           , httpStatus = outcome.status
                                           , code = outcomeCode outcome.result
@@ -467,6 +481,12 @@ type Error
 {-| Where an `Rpc` error was read from.
 
   - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+  - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
+    and Envoy send; the number is kept as received, and one outside `1` to
+    `16` is the code `Unknown`.
+  - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, when the
+    browser exposes them; the message is percent-decoded, and the status text
+    stands in when there is none.
   - `HttpStatus`: none of the above; the code is inferred from this HTTP status
     ([`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus)), the message is the
     status text (`HTTP <status>` when there is none), and there are no
@@ -475,6 +495,8 @@ type Error
 -}
 type Source
     = ConnectBody
+    | StatusBody Int
+    | GrpcHeaders
     | HttpStatus Int
 
 
@@ -543,12 +565,54 @@ would be longer than `maxGetUrl`. A timeout is sent as `Connect-Timeout-Ms`,
 rounded up to a whole millisecond. The config's headers come first, then the
 call's.
 
+Over transcoding, the request is the binding's method, the path filled from the
+request, the query from the fields outside the path and the body, and the body
+as the binding says, with the config's headers, then the call's. Values are
+written as proto3 JSON writes them, unquoted: enums by name, 64-bit integers in
+decimal, timestamps in RFC 3339. Query names and values are percent-encoded, as
+are path values: every byte but RFC 3986's unreserved characters, and in a
+variable matching several segments, but `/` too. A call without bindings is
+the request Connect would POST.
+
 -}
 request : Config -> Call req res -> Request
 request cfg c =
     case cfg.transport of
         Connect options ->
             connectRequest options cfg c
+
+        Transcode ->
+            case route cfg c of
+                Bound _ rule ->
+                    transcodeRequest rule cfg c
+
+                Implicit ->
+                    connectRequest { useGet = False, maxGetUrl = Nothing } cfg c
+
+
+{-| How a call is sent: over a binding of its rule (by number), or over the
+implicit route of a method without a rule.
+-}
+type Route
+    = Bound Int Rule
+    | Implicit
+
+
+route : Config -> Call req res -> Route
+route cfg (Call fields) =
+    case cfg.transport of
+        Connect _ ->
+            Implicit
+
+        Transcode ->
+            -- A call's binding number is one its descriptor has (`viaBinding`
+            -- checks), or 0 for a method without bindings.
+            case List.head (List.drop fields.binding fields.descriptor.bindings) of
+                Just (Binding rule) ->
+                    Bound fields.binding rule
+
+                Nothing ->
+                    Implicit
 
 
 connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
@@ -603,6 +667,204 @@ connectRequest options cfg ((Call fields) as c) =
         }
 
 
+{-| The request over one binding of a method's rule.
+-}
+transcodeRequest : Rule -> Config -> Call req res -> Request
+transcodeRequest rule cfg ((Call fields) as c) =
+    let
+        json =
+            requestJson c
+
+        path =
+            List.map (pathSegment json) rule.path
+
+        verb =
+            Maybe.map ((++) ":") rule.customVerb |> Maybe.withDefault ""
+
+        query =
+            case List.concatMap (queryPairs json) rule.query of
+                [] ->
+                    ""
+
+                pairs ->
+                    "?" ++ String.join "&" pairs
+    in
+    { method = rule.method
+    , url = trimSlash cfg.baseUrl ++ "/" ++ String.join "/" path ++ verb ++ query
+    , headers = cfg.headers ++ fields.headers
+    , body = bindingBody rule json
+    , timeout = callTimeout cfg c
+    , withCredentials = cfg.withCredentials
+    }
+
+
+pathSegment : Value -> Segment -> String
+pathSegment json segment =
+    case segment of
+        Literal written ->
+            written
+
+        Variable fieldPath template ->
+            let
+                keep =
+                    if single template then
+                        Internal.unreserved
+
+                    else
+                        \char -> Internal.unreserved char || char == '/'
+            in
+            lookup fieldPath json
+                |> Maybe.andThen scalarText
+                |> Maybe.withDefault ""
+                |> Internal.percentEncode keep
+
+        -- Generated bindings never hold a wildcard outside a variable: no
+        -- field fills it.
+        Wildcard ->
+            ""
+
+        DoubleWildcard ->
+            ""
+
+
+single : List Segment -> Bool
+single template =
+    case template of
+        [] ->
+            True
+
+        [ Literal _ ] ->
+            True
+
+        [ Wildcard ] ->
+            True
+
+        _ ->
+            False
+
+
+queryPairs : Value -> Param -> List String
+queryPairs json (Param p) =
+    let
+        values =
+            case lookup p.path json of
+                Nothing ->
+                    []
+
+                Just value ->
+                    case Json.Decode.decodeValue (Json.Decode.list Json.Decode.value) value of
+                        Ok elements ->
+                            List.filterMap scalarText elements
+
+                        Err _ ->
+                            case scalarText value of
+                                Just text ->
+                                    if Just text == p.zero then
+                                        []
+
+                                    else
+                                        [ text ]
+
+                                Nothing ->
+                                    []
+    in
+    List.map
+        (\v -> Internal.percentEncode Internal.unreserved p.name ++ "=" ++ Internal.percentEncode Internal.unreserved v)
+        values
+
+
+{-| The value at a JSON path, unless absent or `null`.
+-}
+lookup : List String -> Value -> Maybe Value
+lookup fieldPath json =
+    Json.Decode.decodeValue (Json.Decode.at fieldPath (Json.Decode.nullable Json.Decode.value)) json
+        |> Result.toMaybe
+        |> Maybe.andThen identity
+
+
+{-| A scalar JSON value as query or path text: a string as it is, a number or
+a boolean as JSON writes it. `null`, objects and arrays have none.
+-}
+scalarText : Value -> Maybe String
+scalarText value =
+    Json.Decode.decodeValue
+        (Json.Decode.oneOf
+            [ Json.Decode.map Just Json.Decode.string
+            , Json.Decode.map
+                (\b ->
+                    if b then
+                        Just "true"
+
+                    else
+                        Just "false"
+                )
+                Json.Decode.bool
+            , Json.Decode.map (\_ -> Just (Json.Encode.encode 0 value)) Json.Decode.float
+            , Json.Decode.succeed Nothing
+            ]
+        )
+        value
+        |> Result.withDefault Nothing
+
+
+bindingBody : Rule -> Value -> Maybe String
+bindingBody rule json =
+    case rule.body of
+        NoBody ->
+            Nothing
+
+        WholeBody ->
+            Just (Json.Encode.encode 0 (List.foldl remove json (variables rule.path)))
+
+        BodyField key ->
+            lookup [ key ] json
+                |> Maybe.withDefault (Json.Encode.object [])
+                |> Json.Encode.encode 0
+                |> Just
+
+
+variables : List Segment -> List (List String)
+variables =
+    List.filterMap
+        (\segment ->
+            case segment of
+                Variable fieldPath _ ->
+                    Just fieldPath
+
+                _ ->
+                    Nothing
+        )
+
+
+{-| The JSON without the value at `fieldPath`; unchanged when there is none.
+-}
+remove : List String -> Value -> Value
+remove fieldPath json =
+    case fieldPath of
+        [] ->
+            json
+
+        key :: rest ->
+            case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
+                Ok pairs ->
+                    pairs
+                        |> List.filterMap
+                            (\( k, v ) ->
+                                if k /= key then
+                                    Just ( k, v )
+
+                                else if List.isEmpty rest then
+                                    Nothing
+
+                                else
+                                    Just ( k, remove rest v )
+                            )
+                        |> Json.Encode.object
+
+                Err _ ->
+                    json
+
+
 callTimeout : Config -> Call req res -> Maybe Float
 callTimeout cfg (Call fields) =
     case fields.timeout of
@@ -632,33 +894,72 @@ timeoutMs ms =
 
 {-| What an answer to a call means: the decoded response, or the error.
 
-Over Connect, success is status 200. Any other answer is an error, read as
-[`Source`](#Source) describes.
+Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
+body reading as `{}`, and the response decoded from the field the binding's
+`responseBody` names when it names one. Any other answer is an error, read as
+[`Source`](#Source) describes, whatever the transport.
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg (Call fields) answer =
-    case cfg.transport of
-        Connect _ ->
-            case answer of
-                Http.GoodStatus_ metadata raw ->
+response cfg ((Call fields) as c) answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            case ( cfg.transport, route cfg c ) of
+                ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
                         decodeBody fields.descriptor.jsonDecoder raw
 
                     else
                         Err (failure metadata raw)
 
-                Http.BadStatus_ metadata raw ->
-                    Err (failure metadata raw)
+                ( Transcode, Bound _ rule ) ->
+                    decodeBody (responseDecoder rule.responseBody fields.descriptor.jsonDecoder) (orEmptyObject raw)
 
-                Http.BadUrl_ url ->
-                    Err (Transport (Http.BadUrl url))
+                ( Transcode, Implicit ) ->
+                    decodeBody fields.descriptor.jsonDecoder (orEmptyObject raw)
 
-                Http.Timeout_ ->
-                    Err (Transport Http.Timeout)
+        Http.BadStatus_ metadata raw ->
+            Err (failure metadata raw)
 
-                Http.NetworkError_ ->
-                    Err (Transport Http.NetworkError)
+        Http.BadUrl_ url ->
+            Err (Transport (Http.BadUrl url))
+
+        Http.Timeout_ ->
+            Err (Transport Http.Timeout)
+
+        Http.NetworkError_ ->
+            Err (Transport Http.NetworkError)
+
+
+orEmptyObject : String -> String
+orEmptyObject raw =
+    if String.isEmpty (String.trim raw) then
+        "{}"
+
+    else
+        raw
+
+
+{-| The response decoder reading the answer as the field `responseBody` names,
+when it names one.
+-}
+responseDecoder : Maybe String -> Decoder res -> Decoder res
+responseDecoder responseBody decoder =
+    case responseBody of
+        Nothing ->
+            decoder
+
+        Just key ->
+            Json.Decode.value
+                |> Json.Decode.andThen
+                    (\value ->
+                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
+                            Ok decoded ->
+                                Json.Decode.succeed decoded
+
+                            Err error ->
+                                Json.Decode.fail (Json.Decode.errorToString error)
+                    )
 
 
 decodeBody : Decoder res -> String -> Result Error res
@@ -739,27 +1040,71 @@ statusOf answer =
             Nothing
 
 
-{-| The error a failed answer stands for: its Connect error body, or failing
-that, its HTTP status.
+{-| The error a failed answer stands for, whatever the transport: its Connect
+error body, or its `google.rpc.Status` body, or its `grpc-status` and
+`grpc-message` headers, or failing all of those, its HTTP status.
 -}
 failure : Http.Metadata -> String -> Error
 failure metadata raw =
-    case Json.Decode.decodeString connectBody raw of
+    let
+        statusText =
+            if String.isEmpty metadata.statusText then
+                "HTTP " ++ String.fromInt metadata.statusCode
+
+            else
+                metadata.statusText
+    in
+    case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
         Ok rpc ->
             Rpc rpc
 
         Err _ ->
-            Rpc
-                { code = Code.fromHttpStatus metadata.statusCode
-                , message =
-                    if String.isEmpty metadata.statusText then
-                        "HTTP " ++ String.fromInt metadata.statusCode
+            case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
+                Just number ->
+                    Rpc
+                        { code = fromGrpc number
+                        , message =
+                            header "grpc-message" metadata
+                                |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
+                                |> Maybe.withDefault statusText
+                        , details = []
+                        , source = GrpcHeaders
+                        }
 
-                    else
-                        metadata.statusText
-                , details = []
-                , source = HttpStatus metadata.statusCode
-                }
+                Nothing ->
+                    Rpc
+                        { code = Code.fromHttpStatus metadata.statusCode
+                        , message = statusText
+                        , details = []
+                        , source = HttpStatus metadata.statusCode
+                        }
+
+
+{-| A response header by name, whatever its case.
+-}
+header : String -> Http.Metadata -> Maybe String
+header key metadata =
+    metadata.headers
+        |> Dict.toList
+        |> List.filter (\( k, _ ) -> String.toLower k == key)
+        |> List.head
+        |> Maybe.map Tuple.second
+
+
+fromGrpc : Int -> ErrorCode
+fromGrpc number =
+    Code.fromInt number |> Maybe.withDefault Code.Unknown
+
+
+{-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
+optional `details`.
+-}
+statusBody : Decoder { code : ErrorCode, message : String, details : List Value, source : Source }
+statusBody =
+    Json.Decode.map3 (\number message details -> { code = fromGrpc number, message = message, details = details, source = StatusBody number })
+        (Json.Decode.field "code" Json.Decode.int)
+        (optional "message" Json.Decode.string "")
+        (optional "details" (Json.Decode.list Json.Decode.value) [])
 
 
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
@@ -791,14 +1136,17 @@ optional key decoder default =
 {-| One binding of a method's `google.api.http` rule.
 -}
 type Binding
-    = Binding
-        { method : String
-        , path : List Segment
-        , customVerb : Maybe String
-        , body : Body
-        , responseBody : Maybe String
-        , query : List Param
-        }
+    = Binding Rule
+
+
+type alias Rule =
+    { method : String
+    , path : List Segment
+    , customVerb : Maybe String
+    , body : Body
+    , responseBody : Maybe String
+    , query : List Param
+    }
 
 
 {-| A binding, as the generator parses it:

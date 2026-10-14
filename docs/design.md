@@ -769,6 +769,7 @@ type alias Config =
 
 type Transport
     = Connect { useGet : Bool, maxGetUrl : Maybe Int }
+    | Transcode                     -- no options yet
 
 type alias Retry =
     { attempts : Int, backoff : Float, codes : List ErrorCode, idempotentOnly : Bool }
@@ -909,20 +910,42 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 - Success is status 200 with a body the response decoder accepts; a 200
   whose body it rejects is `Transport (Http.BadBody _)`. Any other
   answer is read as an error (§5.4).
-- Bindings are carried on the call and ignored: Connect has one route
-  per method.
+- Bindings are carried on the call and ignored, `viaBinding` too:
+  Connect has one route per method.
 - The runtime's dependencies beyond core, json and time: elm/http
   (which brings elm/bytes and elm/file). Percent-encoding is written out
   in the runtime rather than taken from elm/url, whose `percentEncode`
   keeps `!*'()`, which the transcoding rules require escaped.
 
-#### Transcode  *(Proposed)*
+#### Transcode  *(Decided, 2026-10-13; built)*
 
 The bindings a generated call carries (`Rpc.binding`, with
 `Rpc.literal`, `Rpc.variable`, `Rpc.wildcard`, `Rpc.doubleWildcard`,
 `Rpc.noBody`, `Rpc.wholeBody`, `Rpc.bodyField`, `Rpc.param`) are the
-parsed `google.api.http` rule:
+parsed `google.api.http` rule, the rule's own binding first and its
+`additional_bindings` after; `Rpc.viaBinding n` picks one, `0` by
+default, and is `Nothing` for a number the method has no binding of
+(§5.2).
 
+- **The implicit route.** A method without a rule has no bindings, and
+  is called as `POST /<package>.<Service>/<Method>` with the request as
+  its JSON body, which grpc-gateway (`generate_unbound_methods`), Envoy
+  (`auto_mapping`) and Vanguard all serve. That is exactly the request
+  Connect POSTs, `Connect-Protocol-Version: 1` and `Connect-Timeout-Ms`
+  included, so the runtime builds it from the descriptor and the
+  generated code carries nothing for it; whether a method has a rule is
+  not in the type. Its answer is read as a transcoder's (any 2xx).
+- Every call has a route: its binding, or the implicit route when the
+  method has no rule. An earlier build let `viaBinding` take any
+  number and failed at send time for one with no binding; making the
+  choice a `Maybe` moved that failure to where the number is chosen.
+  *(Decided, 2026-10-13.)*
+- Success is any 2xx; an empty body reads as `{}`, and with
+  `response_body` the answer is that field of the response.
+- Path variables are percent-encoded (every byte but RFC 3986's
+  unreserved characters); a variable matching one segment (`{name}`,
+  `{name=*}`) escapes `/` as `%2F`, any other keeps it. A wildcard
+  outside a variable never reaches the runtime (`route::template`).
 - Path from the template and the request; body from the `body` field
   (`*`, a named field, or none); remaining request fields as query
   parameters on GET and DELETE, omitting zero values. *(Decided for
@@ -956,6 +979,8 @@ type Error
 
 type Source
     = ConnectBody               -- {"code": "not_found", …}
+    | StatusBody Int            -- google.rpc.Status, {"code": 5, …}; the number as received
+    | GrpcHeaders               -- grpc-status / grpc-message headers
     | HttpStatus Int            -- inferred from the status by Connect's table
 ```
 
@@ -992,9 +1017,15 @@ error handling is what calls them.
 - A failed answer is read by one reader whatever the transport, in
   order: a Connect error body (`code` a string the protocol names; an
   unknown name reads as `Unknown`; `message` `""` and `details` `[]`
-  when absent), then the HTTP status by the protocol's table, with the
-  status text as the message (`HTTP <status>` when empty) and no
-  details.
+  when absent); a `google.rpc.Status` body as grpc-gateway and Envoy
+  send it (`code` an integer; one outside 1 to 16, `0` included, is
+  `Unknown`, the number kept in the source); the `grpc-status` and
+  `grpc-message` headers, when the browser exposes them (the message
+  percent-decoded, the status text when absent); then the HTTP status by the protocol's
+  table, with the status text as the message (`HTTP <status>` when
+  empty) and no details. The shape of `code` tells the two bodies
+  apart, so a server behind either transport may answer in either
+  form.
 - Error details are kept as raw JSON values. Typed details need
   `google.protobuf.Any`, which is not designed yet (§3.5, §9).
 
