@@ -6,7 +6,7 @@ import Http
 import Json.Decode
 import Json.Encode
 import Rpc exposing (Error(..), Source(..))
-import Rpc.Code exposing (Code(..))
+import Rpc.Code exposing (ErrorCode(..))
 import Rpc.Internal.Retry as Retry
 import Test exposing (Test, describe, test)
 
@@ -21,8 +21,8 @@ getNote =
         { service = "notes.v1.Notes"
         , method = "GetNote"
         , idempotent = True
-        , encode = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-        , decoder = Json.Decode.field "title" Json.Decode.string
+        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
+        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
         , bindings = []
         }
 
@@ -33,9 +33,26 @@ createNote =
         { service = "notes.v1.Notes"
         , method = "CreateNote"
         , idempotent = False
-        , encode = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-        , decoder = Json.Decode.field "title" Json.Decode.string
+        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
+        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
         , bindings = []
+        }
+
+
+{-| A method with a rule and one additional binding.
+-}
+listNotes : GetNote -> Rpc.Call GetNote String
+listNotes =
+    Rpc.call
+        { service = "notes.v1.Notes"
+        , method = "ListNotes"
+        , idempotent = True
+        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
+        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
+        , bindings =
+            [ Rpc.binding { method = "GET", path = [ Rpc.literal "v1", Rpc.literal "notes" ], customVerb = Nothing, body = Rpc.noBody, responseBody = Nothing, query = [] }
+            , Rpc.binding { method = "GET", path = [ Rpc.literal "v2", Rpc.literal "notes" ], customVerb = Nothing, body = Rpc.noBody, responseBody = Nothing, query = [] }
+            ]
         }
 
 
@@ -63,12 +80,12 @@ failed status text body =
     Rpc.response base (getNote { name = "x" }) (Http.BadStatus_ (metadata status text) body)
 
 
-fromStatus : Code -> Int -> String -> Result Error String
+fromStatus : ErrorCode -> Int -> String -> Result Error String
 fromStatus code status message =
     Err (Rpc { code = code, message = message, details = [], source = HttpStatus status })
 
 
-fromBody : Code -> String -> Result Error String
+fromBody : ErrorCode -> String -> Result Error String
 fromBody code message =
     Err (Rpc { code = code, message = message, details = [], source = ConnectBody })
 
@@ -102,6 +119,16 @@ calls =
             \_ ->
                 Json.Encode.encode 0 (Rpc.requestJson c)
                     |> Expect.equal "{\"name\":\"notes/42\"}"
+        , test "viaBinding gives a call for each binding the method has, and only those" <|
+            \_ ->
+                [ -1, 0, 1, 2 ]
+                    |> List.map (\index -> Rpc.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.method)
+                    |> Expect.equal [ Nothing, Just "ListNotes", Just "ListNotes", Nothing ]
+        , test "a method without bindings has none to choose" <|
+            \_ ->
+                [ -1, 0, 1 ]
+                    |> List.map (\index -> Rpc.viaBinding index c |> Maybe.map Rpc.method)
+                    |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "toJson names the method and holds the request" <|
             \_ ->
                 Json.Encode.encode 0 (Rpc.toJson (Rpc.withTimeout 5 c))
@@ -207,10 +234,10 @@ requests =
                     |> Expect.equal [ "POST", "GET", "GET" ]
         , test "Connect ignores the binding chosen" <|
             \_ ->
-                getNote { name = "x" }
-                    |> Rpc.viaBinding 3
-                    |> Rpc.request base
-                    |> Expect.equal (Rpc.request base (getNote { name = "x" }))
+                listNotes { name = "x" }
+                    |> Rpc.viaBinding 1
+                    |> Maybe.map (Rpc.request base)
+                    |> Expect.equal (Just (Rpc.request base (listNotes { name = "x" })))
         ]
 
 
@@ -257,6 +284,10 @@ responses =
             \_ ->
                 failed 400 "Bad Request" """{"code":"teapot","message":"short and stout"}"""
                     |> Expect.equal (fromBody Unknown "short and stout")
+        , test "a failed answer claiming ok reads as unknown" <|
+            \_ ->
+                failed 500 "Internal Server Error" """{"code":"ok","message":"fine"}"""
+                    |> Expect.equal (fromBody Unknown "fine")
         , test "a body without a code maps from the HTTP status" <|
             \_ ->
                 [ ( 400, "{}" ), ( 401, "" ), ( 403, "<html>" ), ( 404, "{\"code\":null}" ), ( 429, "" ), ( 502, "" ), ( 503, "" ), ( 504, "" ), ( 500, "" ), ( 409, "" ) ]

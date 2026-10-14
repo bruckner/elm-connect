@@ -97,7 +97,7 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
-import Rpc.Code as Code exposing (Code)
+import Rpc.Code as Code exposing (Code, ErrorCode)
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry as Retry
 import Task exposing (Task)
@@ -132,8 +132,8 @@ type Call req res
   - `idempotent`: whether the proto declares
     `idempotency_level = NO_SIDE_EFFECTS`, which lets Connect send it as a GET
     and a [`Retry`](#Retry) policy retry it.
-  - `encode` and `decoder`: the proto3 JSON codecs of the request and the
-    response.
+  - `encodeJson` and `jsonDecoder`: the proto3 JSON codecs of the request and
+    the response.
   - `bindings`: its `google.api.http` rule, the rule's own binding first and
     then its `additional_bindings` in order; `[]` for a method without one.
 
@@ -142,8 +142,8 @@ type alias MethodDescriptor req res =
     { service : String
     , method : String
     , idempotent : Bool
-    , encode : req -> Value
-    , decoder : Decoder res
+    , encodeJson : req -> Value
+    , jsonDecoder : Decoder res
     , bindings : List Binding
     }
 
@@ -189,13 +189,19 @@ withTracker tracker (Call c) =
     Call { c | tracker = Just tracker }
 
 
-{-| Which HTTP binding transcoding uses: `0`, the default, is the rule's own,
-`1` and up its `additional_bindings` in order. Connect has no use for
-bindings and ignores it.
+{-| The call over another of its method's HTTP bindings, for transcoding: `0`
+is the rule's own, which a call takes unless told otherwise, and `1` and up
+its `additional_bindings` in order. `Nothing` when the method has no binding
+of that number; a method without a rule has none, and its call goes over the
+implicit route. Connect has no use for bindings and ignores the choice.
 -}
-viaBinding : Int -> Call req res -> Call req res
+viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Call c) =
-    Call { c | binding = index }
+    if index >= 0 && index < List.length c.descriptor.bindings then
+        Just (Call { c | binding = index })
+
+    else
+        Nothing
 
 
 
@@ -241,7 +247,7 @@ requestMessage (Call c) =
 -}
 requestJson : Call req res -> Value
 requestJson (Call c) =
-    c.descriptor.encode c.message
+    c.descriptor.encodeJson c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
@@ -253,7 +259,7 @@ toJson (Call c) =
     Json.Encode.object
         [ ( "service", Json.Encode.string c.descriptor.service )
         , ( "method", Json.Encode.string c.descriptor.method )
-        , ( "request", c.descriptor.encode c.message )
+        , ( "request", c.descriptor.encodeJson c.message )
         ]
 
 
@@ -327,7 +333,7 @@ error is never retried.
 type alias Retry =
     { attempts : Int
     , backoff : Float
-    , codes : List Code
+    , codes : List ErrorCode
     , idempotentOnly : Bool
     }
 
@@ -364,8 +370,11 @@ send cfg ((Call fields) as c) toMsg =
   - `service` and `method`: the call's.
   - `binding`: the HTTP binding used, or `Nothing` when there was none to use.
   - `request`: the request sent.
-  - `status`: the HTTP status of the last answer, `Nothing` when there was none
-    (a timeout, a network failure).
+  - `httpStatus`: the HTTP status of the last answer, `Nothing` when there was
+    none (a timeout, a network failure).
+  - `code`: how the call ended: `Just Ok` when it succeeded,
+    `Just (Failed code)` when it failed with an [`Rpc`](#Error) error, and
+    `Nothing` when it failed with a [`Transport`](#Error) error.
   - `duration`: milliseconds from before the first attempt to after the last.
   - `attempts`: how many times it was sent, retries included.
 
@@ -375,7 +384,8 @@ type alias Trace =
     , method : String
     , binding : Maybe Int
     , request : Request
-    , status : Maybe Int
+    , httpStatus : Maybe Int
+    , code : Maybe Code
     , duration : Float
     , attempts : Int
     }
@@ -402,7 +412,8 @@ taskTraced cfg ((Call fields) as c) =
                                           , method = fields.descriptor.method
                                           , binding = Nothing
                                           , request = sent
-                                          , status = outcome.status
+                                          , httpStatus = outcome.status
+                                          , code = outcomeCode outcome.result
                                           , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
                                           , attempts = outcome.attempts
                                           }
@@ -411,6 +422,19 @@ taskTraced cfg ((Call fields) as c) =
                                     )
                         )
             )
+
+
+outcomeCode : Result Error res -> Maybe Code
+outcomeCode result =
+    case result of
+        Ok _ ->
+            Just Code.Ok
+
+        Err (Rpc rpc) ->
+            Just (Code.Failed rpc.code)
+
+        Err (Transport _) ->
+            Nothing
 
 
 {-| Send a call, giving what happened and the result to `toMsg`.
@@ -428,13 +452,15 @@ sendTraced cfg c toMsg =
 
   - `Rpc`: the server answered with an error: its code, its message, its
     details as the JSON received (`{"type": …, "value": …}`), and where in the
-    answer they were found.
+    answer they were found. The code is an
+    [`ErrorCode`](Rpc-Code#ErrorCode), never `Ok`: an answer claiming `ok`
+    while failing reads as `Unknown`.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
     a successful answer whose body does not decode (`Http.BadBody`).
 
 -}
 type Error
-    = Rpc { code : Code, message : String, details : List Value, source : Source }
+    = Rpc { code : ErrorCode, message : String, details : List Value, source : Source }
     | Transport Http.Error
 
 
@@ -486,9 +512,16 @@ errorToString error =
 -- REQUESTS AND RESPONSES
 
 
-{-| An HTTP request, ready to send. A body is sent as `application/json`;
-`timeout` is in milliseconds, and `withCredentials` sends credentials
-cross-origin.
+{-| An HTTP request, ready to send.
+
+elm/http has no request value of its own: `Http.request` takes a record with
+opaque headers and body and an `expect`. `Request` is the data form of that
+record without `expect` and `tracker`: headers as pairs, the body as the JSON
+string, and `withCredentials` deciding whether the runtime calls
+`Http.request` or `Http.riskyRequest`.
+
+A body is sent as `application/json`, and `timeout` is in milliseconds.
+
 -}
 type alias Request =
     { method : String
@@ -610,7 +643,7 @@ response cfg (Call fields) answer =
             case answer of
                 Http.GoodStatus_ metadata raw ->
                     if metadata.statusCode == 200 then
-                        decodeBody fields.descriptor.decoder raw
+                        decodeBody fields.descriptor.jsonDecoder raw
 
                     else
                         Err (failure metadata raw)
@@ -732,7 +765,7 @@ failure metadata raw =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder { code : Code, message : String, details : List Value, source : Source }
+connectBody : Decoder { code : ErrorCode, message : String, details : List Value, source : Source }
 connectBody =
     Json.Decode.map3 (\code message details -> { code = code, message = message, details = details, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string

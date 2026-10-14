@@ -153,12 +153,17 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   (`Rpc.Call`, from `Rpc.call` and a `Rpc.MethodDescriptor`) is a
   method applied to its request, carrying its HTTP bindings as data
   (`Rpc.binding` and the segment, body and parameter constructors) and
-  per-call headers, timeout, tracker and binding choice. A config
+  per-call headers, timeout, tracker and binding choice
+  (`Rpc.viaBinding`, `Nothing` for a binding the method lacks). A
+  descriptor's codecs are `encodeJson` and `jsonDecoder`. A config
   (`Rpc.Config`, `Rpc.config`) is plain data: the transport (`Connect`,
   with `useGet` off by default and `maxGetUrl`), base URL, headers,
   timeout, credentials and a retry policy. `Rpc.task`, `Rpc.send` and
   their traced forms send a call; `Rpc.request`, `Rpc.response` and
-  `Rpc.taskFromRequest` are the pure halves. Errors are `Rpc.Rpc`
-  (code, message, raw details and the source they were read from: a
-  Connect error body or the HTTP status) or `Rpc.Transport`. The
-  package now depends on elm/http.
+  `Rpc.taskFromRequest` are the pure halves. A trace carries the HTTP
+  status and the code the call ended with. Errors are `Rpc.Rpc` (an
+  error code, message, raw details and the source they were read from:
+  a Connect error body or the HTTP status) or `Rpc.Transport`.
+  `Rpc.Code` has `Code` (`Ok` or `Failed`) and `ErrorCode`, each with
+  conversions to and from Connect's names, gRPC's numbers and HTTP
+  statuses. The package now depends on elm/http.

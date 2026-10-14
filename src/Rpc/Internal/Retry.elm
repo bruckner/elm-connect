@@ -3,7 +3,7 @@ module Rpc.Internal.Retry exposing (Policy, delay)
 {-| When to try a call again. Not exposed; `Rpc.Retry` is `Policy`.
 -}
 
-import Rpc.Code exposing (Code)
+import Rpc.Code exposing (ErrorCode)
 
 
 {-| The retry policy of a config: `attempts` tries in all, waiting `backoff`
@@ -14,7 +14,7 @@ an attempt fails with one of `codes`; only for idempotent calls when
 type alias Policy =
     { attempts : Int
     , backoff : Float
-    , codes : List Code
+    , codes : List ErrorCode
     , idempotentOnly : Bool
     }
 
@@ -23,7 +23,7 @@ type alias Policy =
 (`idempotent` or not) whose last one failed with `code` (`Nothing` for a
 failure with no code, which is never retried), or `Nothing` to stop.
 -}
-delay : Policy -> Bool -> Int -> Maybe Code -> Maybe Float
+delay : Policy -> Bool -> Int -> Maybe ErrorCode -> Maybe Float
 delay policy idempotent tried code =
     case code of
         Just c ->

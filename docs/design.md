@@ -771,7 +771,7 @@ type Transport
     = Connect { useGet : Bool, maxGetUrl : Maybe Int }
 
 type alias Retry =
-    { attempts : Int, backoff : Float, codes : List Code, idempotentOnly : Bool }
+    { attempts : Int, backoff : Float, codes : List ErrorCode, idempotentOnly : Bool }
 
 config : String -> Config   -- Connect, POST only, nothing else set
 connect : Transport         -- Connect { useGet = False, maxGetUrl = Nothing }
@@ -828,7 +828,7 @@ names.
 type Call req res      -- opaque: descriptor, request, binding, per-call adjustments
 type alias MethodDescriptor req res =
     { service : String, method : String, idempotent : Bool
-    , encode : req -> Json.Encode.Value, decoder : Json.Decode.Decoder res
+    , encodeJson : req -> Json.Encode.Value, jsonDecoder : Json.Decode.Decoder res
     , bindings : List Binding }
 call : MethodDescriptor req res -> req -> Call req res
 
@@ -836,7 +836,7 @@ call : MethodDescriptor req res -> req -> Call req res
 withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
 withTimeout : Float -> Call req res -> Call req res                     -- replaces the config's
 withTracker : String -> Call req res -> Call req res                    -- send without retry only
-viaBinding : Int -> Call req res -> Call req res                        -- transcoding only
+viaBinding : Int -> Call req res -> Maybe (Call req res)                -- transcoding only
 
 -- reading
 descriptor, service, method, idempotent, requestMessage, requestJson
@@ -860,6 +860,20 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 - A call is data: a generated function per method applied to the
   request (§4). Per-call adjustments ride on it; `toJson` gives it a
   stable JSON form for logs, deduplication keys and queues.
+- The descriptor's codecs are `encodeJson` and `jsonDecoder`, named for
+  their encoding so that binary codecs can sit beside them later
+  without a rename. *(Decided, 2026-10-13.)*
+- `viaBinding n` is `Just` the call over binding `n` when the
+  descriptor has one (`0` the rule's own, `1` and up its additional
+  bindings), `Nothing` otherwise; a method without a rule gives
+  `Nothing` for every number, and its unadjusted call takes the
+  implicit route (§5.3). A call therefore always has a route, and
+  sending never fails for want of a binding. *(Decided, 2026-10-13.)*
+- `Request` is the data form of the record `Http.request` takes,
+  without `expect` and `tracker`: elm/http has no request value of its
+  own, and its headers and body are opaque. Headers are pairs, the body
+  the JSON string, and `withCredentials` picks `Http.request` or
+  `Http.riskyRequest`.
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
@@ -867,11 +881,14 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and
   retrying needs a task. The traced forms are tasks too.
-- `Trace` is `{ service, method, binding, request, status, duration,
-  attempts }`: `binding` is `Nothing` when no binding was used (Connect,
-  the implicit route), `status` the last answer's HTTP status,
-  `duration` milliseconds by `Time.now` before the first attempt and
-  after the last.
+- `Trace` is `{ service, method, binding, request, httpStatus, code,
+  duration, attempts }`: `binding` is `Nothing` when no binding was used
+  (Connect, the implicit route), `httpStatus` the last answer's HTTP
+  status, `code` how the call ended (`Just Ok` on success,
+  `Just (Failed c)` on an `Rpc` error, `Nothing` on a transport
+  failure), `duration` milliseconds by `Time.now` before the first
+  attempt and after the last. *(`httpStatus` and `code` decided,
+  2026-10-13.)*
 - Only the pure halves are unit-tested; elm-test cannot run a `Task`,
   so `task`, `send`, the traced forms and the retry loop are checked by
   the compiler and by the retry policy's own tests.
@@ -934,7 +951,7 @@ parsed `google.api.http` rule:
 
 ```elm
 type Error
-    = Rpc { code : Code, message : String, details : List Json.Encode.Value, source : Source }
+    = Rpc { code : ErrorCode, message : String, details : List Json.Encode.Value, source : Source }
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
 
 type Source
@@ -942,9 +959,29 @@ type Source
     | HttpStatus Int            -- inferred from the status by Connect's table
 ```
 
-`Code` is `Rpc.Code.Code`, the sixteen codes, with `toString` /
-`fromString` (Connect's names), `toInt` / `fromInt` (gRPC's numbers)
-and `fromHttpStatus`.
+```elm
+-- Rpc.Code
+type Code = Ok | Failed ErrorCode
+type ErrorCode = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
+```
+
+`ErrorCode` has `toString` / `fromString` (Connect's names), `toInt` /
+`fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`;
+`Code` has the same set prefixed `code` (`codeToString`, …), with `Ok`
+as `"ok"`, `0` and any 2xx. *(Decided, 2026-10-13.)* `Ok` is in `Code`
+so that a status can be reported whole (a `Trace`'s `code`), but an
+`Rpc` error carries an `ErrorCode`, so an error claiming `Ok` cannot be
+written; a failed answer whose body says `ok` or `0` reads as
+`Unknown`. The helpers for `ErrorCode` keep the short names because
+error handling is what calls them.
+
+- `toHttpStatus` is the status a Connect server sends with a code, the
+  Connect protocol's table, which is `google/rpc/code.proto`'s HTTP
+  mapping (`InvalidArgument` 400, `NotFound` 404, `Unavailable` 503,
+  …). `fromHttpStatus` is not its inverse: it is gRPC's mapping
+  (`doc/http-grpc-status-mapping.md`) for an answer with no error body,
+  where a 400 means a proxy or the transport refused the request, so it
+  reads as `Internal`, not `InvalidArgument`.
 
 - One error type for every transport. Two were built first, one per
   transport, on the grounds that the wire forms differ (`"code":
