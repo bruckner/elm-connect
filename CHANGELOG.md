@@ -235,4 +235,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   imports and the well-known types; a package without types gets a
   module holding its registry. The trees are always written: compiled
   output is the same size when nothing reads them, and a `descriptors`
-  option that left them empty was built, measured and dropped.
+  option that left them empty was built, measured and dropped. The
+  `services_only` conformance case: a package of services alone, whose
+  package module holds its registry and nothing else.
