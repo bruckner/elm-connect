@@ -5,6 +5,8 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode
+import Proto.Http
+import Proto.Message exposing (Message)
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
 import Rpc.Internal.Retry as Retry
@@ -15,45 +17,59 @@ type alias GetNote =
     { name : String }
 
 
+getNoteRequest : Message GetNote
+getNoteRequest =
+    { encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
+    , jsonDecoder = Json.Decode.map GetNote (Json.Decode.field "name" Json.Decode.string)
+    , default = { name = "" }
+    , descriptor = { typeName = "notes.v1.GetNoteRequest", fields = [], oneofs = [] }
+    }
+
+
+title : Message String
+title =
+    { encodeJson = \t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ]
+    , jsonDecoder = Json.Decode.field "title" Json.Decode.string
+    , default = ""
+    , descriptor = { typeName = "notes.v1.Note", fields = [], oneofs = [] }
+    }
+
+
+notes : String -> Bool -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
+notes name idempotent bindings =
+    Rpc.call
+        { request = getNoteRequest
+        , response = title
+        , descriptor =
+            { service = "notes.v1.Notes"
+            , name = name
+            , idempotent = idempotent
+            , input = "notes.v1.GetNoteRequest"
+            , output = "notes.v1.Note"
+            , bindings = bindings
+            }
+        }
+
+
 getNote : GetNote -> Rpc.Call GetNote String
 getNote =
-    Rpc.call
-        { service = "notes.v1.Notes"
-        , method = "GetNote"
-        , idempotent = True
-        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
-        , bindings = []
-        }
+    notes "GetNote" True []
 
 
 createNote : GetNote -> Rpc.Call GetNote String
 createNote =
-    Rpc.call
-        { service = "notes.v1.Notes"
-        , method = "CreateNote"
-        , idempotent = False
-        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
-        , bindings = []
-        }
+    notes "CreateNote" False []
 
 
 {-| A method with a rule and one additional binding.
 -}
 listNotes : GetNote -> Rpc.Call GetNote String
 listNotes =
-    Rpc.call
-        { service = "notes.v1.Notes"
-        , method = "ListNotes"
-        , idempotent = True
-        , encodeJson = \r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-        , jsonDecoder = Json.Decode.field "title" Json.Decode.string
-        , bindings =
-            [ Rpc.binding { method = "GET", path = [ Rpc.literal "v1", Rpc.literal "notes" ], customVerb = Nothing, body = Rpc.noBody, responseBody = Nothing, query = [] }
-            , Rpc.binding { method = "GET", path = [ Rpc.literal "v2", Rpc.literal "notes" ], customVerb = Nothing, body = Rpc.noBody, responseBody = Nothing, query = [] }
-            ]
-        }
+    notes "ListNotes"
+        True
+        [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
+        , Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v2", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
+        ]
 
 
 base : Rpc.Config
@@ -109,12 +125,12 @@ calls =
     describe "calls"
         [ test "read back" <|
             \_ ->
-                ( ( Rpc.service c, Rpc.method c ), ( Rpc.idempotent c, Rpc.requestMessage c ) )
+                ( ( Rpc.serviceName c, Rpc.methodName c ), ( Rpc.idempotent c, Rpc.requestMessage c ) )
                     |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( True, { name = "notes/42" } ) )
-        , test "the descriptor is the one the call was made from" <|
+        , test "the method and its descriptor are the ones the call was made from" <|
             \_ ->
-                (Rpc.descriptor c).method
-                    |> Expect.equal "GetNote"
+                ( (Rpc.method c).request.descriptor.typeName, (Rpc.descriptor c).name, (Rpc.descriptor c).output )
+                    |> Expect.equal ( "notes.v1.GetNoteRequest", "GetNote", "notes.v1.Note" )
         , test "requestJson is the request's JSON" <|
             \_ ->
                 Json.Encode.encode 0 (Rpc.requestJson c)
@@ -122,12 +138,12 @@ calls =
         , test "viaBinding gives a call for each binding the method has, and only those" <|
             \_ ->
                 [ -1, 0, 1, 2 ]
-                    |> List.map (\index -> Rpc.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.method)
+                    |> List.map (\index -> Rpc.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.methodName)
                     |> Expect.equal [ Nothing, Just "ListNotes", Just "ListNotes", Nothing ]
         , test "a method without bindings has none to choose" <|
             \_ ->
                 [ -1, 0, 1 ]
-                    |> List.map (\index -> Rpc.viaBinding index c |> Maybe.map Rpc.method)
+                    |> List.map (\index -> Rpc.viaBinding index c |> Maybe.map Rpc.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "toJson names the method and holds the request" <|
             \_ ->

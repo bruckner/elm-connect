@@ -94,6 +94,11 @@ pub fn record<N: Into<String>>(fields: impl IntoIterator<Item = (N, Expr)>) -> E
     Expr::Record(fields.into_iter().map(|(n, e)| (n.into(), e)).collect())
 }
 
+/// A record literal on one line, when its field values fit on one.
+pub fn inline_record<N: Into<String>>(fields: impl IntoIterator<Item = (N, Expr)>) -> Expr {
+    Expr::InlineRecord(fields.into_iter().map(|(n, e)| (n.into(), e)).collect())
+}
+
 /// `expr.field`.
 pub fn access(expr: Expr, field: impl Into<String>) -> Expr {
     Expr::Access(Box::new(expr), field.into())

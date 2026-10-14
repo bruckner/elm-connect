@@ -6,7 +6,9 @@ module Routes.V1 exposing (..)
 import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 import Time
 
 
@@ -197,6 +199,156 @@ defaultUpdateResourceRequest : UpdateResourceRequest
 defaultUpdateResourceRequest =
     { resource = Nothing
     , updateMask = Nothing
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumKind : Proto.Enum.Enum Kind
+enumKind =
+    { encodeJson = encodeKind
+    , jsonDecoder = decodeKind
+    , default = KindUnspecified
+    , descriptor =
+        { typeName = "routes.v1.Kind"
+        , values =
+            [ { name = "KIND_UNSPECIFIED", number = 0 }
+            , { name = "KIND_TEXT", number = 1 }
+            , { name = "KIND_IMAGE", number = 2 }
+            ]
+        }
+    }
+
+
+messageGetMessageRequest : Proto.Message.Message GetMessageRequest
+messageGetMessageRequest =
+    { encodeJson = encodeGetMessageRequest
+    , jsonDecoder = decodeGetMessageRequest
+    , default = defaultGetMessageRequest
+    , descriptor =
+        { typeName = "routes.v1.GetMessageRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
+messageGetMessageRequestSubMessage =
+    { encodeJson = encodeGetMessageRequestSubMessage
+    , jsonDecoder = decodeGetMessageRequestSubMessage
+    , default = defaultGetMessageRequestSubMessage
+    , descriptor =
+        { typeName = "routes.v1.GetMessageRequest.SubMessage"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageMessage : Proto.Message.Message Message
+messageMessage =
+    { encodeJson = encodeMessage
+    , jsonDecoder = decodeMessage
+    , default = defaultMessage
+    , descriptor =
+        { typeName = "routes.v1.Message"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
+messageUpdateMessageRequest =
+    { encodeJson = encodeUpdateMessageRequest
+    , jsonDecoder = decodeUpdateMessageRequest
+    , default = defaultUpdateMessageRequest
+    , descriptor =
+        { typeName = "routes.v1.UpdateMessageRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageEverything : Proto.Message.Message Everything
+messageEverything =
+    { encodeJson = encodeEverything
+    , jsonDecoder = decodeEverything
+    , default = defaultEverything
+    , descriptor =
+        { typeName = "routes.v1.Everything"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageInner : Proto.Message.Message Inner
+messageInner =
+    { encodeJson = encodeInner
+    , jsonDecoder = decodeInner
+    , default = defaultInner
+    , descriptor =
+        { typeName = "routes.v1.Inner"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageDeep : Proto.Message.Message Deep
+messageDeep =
+    { encodeJson = encodeDeep
+    , jsonDecoder = decodeDeep
+    , default = defaultDeep
+    , descriptor =
+        { typeName = "routes.v1.Deep"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageFileRequest : Proto.Message.Message FileRequest
+messageFileRequest =
+    { encodeJson = encodeFileRequest
+    , jsonDecoder = decodeFileRequest
+    , default = defaultFileRequest
+    , descriptor =
+        { typeName = "routes.v1.FileRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageResource : Proto.Message.Message Resource
+messageResource =
+    { encodeJson = encodeResource
+    , jsonDecoder = decodeResource
+    , default = defaultResource
+    , descriptor =
+        { typeName = "routes.v1.Resource"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
+messageUpdateResourceRequest =
+    { encodeJson = encodeUpdateResourceRequest
+    , jsonDecoder = decodeUpdateResourceRequest
+    , default = defaultUpdateResourceRequest
+    , descriptor =
+        { typeName = "routes.v1.UpdateResourceRequest"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

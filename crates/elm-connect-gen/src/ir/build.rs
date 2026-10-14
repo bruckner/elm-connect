@@ -248,6 +248,7 @@ impl Builder {
                         TypeName {
                             module: module.clone(),
                             name,
+                            proto_full_name: full_name.to_owned(),
                         },
                     );
                 }
@@ -535,7 +536,9 @@ impl Builder {
         self.claim_type(types, package, &elm_name, origin);
 
         let mut values: Vec<EnumValue> = Vec::new();
+        let mut declared = Vec::new();
         for value in declared_values(enumeration) {
+            declared.push(value.name().to_owned());
             // An alias joins the constructor of the first value with its
             // number and claims no name of its own.
             if let Some(first) = values.iter_mut().find(|v| v.number == value.number()) {
@@ -567,6 +570,7 @@ impl Builder {
             values.next()?,
             values.collect(),
         )
+        .map(|built| built.with_declaration_order(declared))
     }
 
     fn message(

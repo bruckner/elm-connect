@@ -94,6 +94,7 @@ fn cardinalities_and_maps() {
     let tag = TypeRef::Message(elm_connect_gen::ir::TypeName {
         module: package.module.clone(),
         name: "Tag".into(),
+        proto_full_name: "t.Tag".into(),
     });
     let cases = [
         (

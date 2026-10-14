@@ -8,6 +8,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
 import Proto.Json
+import Proto.Message
 import Time
 
 
@@ -86,6 +87,23 @@ defaultEvent =
     , seen = Dict.empty
     , records = []
     , columns = Dict.empty
+    }
+
+
+
+-- DESCRIPTORS
+
+
+messageEvent : Proto.Message.Message Event
+messageEvent =
+    { encodeJson = encodeEvent
+    , jsonDecoder = decodeEvent
+    , default = defaultEvent
+    , descriptor =
+        { typeName = "well_known.v1.Event"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

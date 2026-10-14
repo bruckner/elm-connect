@@ -192,6 +192,9 @@ pub struct TypeName {
     pub module: ModuleName,
     /// The type's name within that module, such as `OuterInner`.
     pub name: String,
+    /// The type's fully-qualified proto name, such as
+    /// `notes.v1.Outer.Inner`, which descriptors refer to it by.
+    pub proto_full_name: String,
 }
 
 impl TypeName {
@@ -203,6 +206,12 @@ impl TypeName {
     /// The Elm name of the type's JSON decoder, such as `decodeNote`.
     pub fn decoder_name(&self) -> String {
         crate::naming::decoder_name(&self.name)
+    }
+
+    /// The Elm name of the typed record of the message this names, such
+    /// as `messageNote`.
+    pub fn message_value_name(&self) -> String {
+        crate::naming::message_value_name(&self.name)
     }
 }
 
@@ -266,6 +275,12 @@ impl Message {
     /// `defaultNote`.
     pub fn default_name(&self) -> String {
         crate::naming::default_name(&self.elm_name)
+    }
+
+    /// The Elm name of the message's typed record, such as
+    /// `messageNote`.
+    pub fn value_name(&self) -> String {
+        crate::naming::message_value_name(&self.elm_name)
     }
 }
 
@@ -454,6 +469,29 @@ pub enum WellKnown {
 }
 
 impl WellKnown {
+    /// The type's fully-qualified proto name, such as
+    /// `google.protobuf.Timestamp`.
+    pub fn proto_full_name(self) -> &'static str {
+        match self {
+            WellKnown::Timestamp => "google.protobuf.Timestamp",
+            WellKnown::Duration => "google.protobuf.Duration",
+            WellKnown::FieldMask => "google.protobuf.FieldMask",
+            WellKnown::Empty => "google.protobuf.Empty",
+            WellKnown::Struct => "google.protobuf.Struct",
+            WellKnown::Value => "google.protobuf.Value",
+            WellKnown::ListValue => "google.protobuf.ListValue",
+            WellKnown::DoubleValue => "google.protobuf.DoubleValue",
+            WellKnown::FloatValue => "google.protobuf.FloatValue",
+            WellKnown::Int64Value => "google.protobuf.Int64Value",
+            WellKnown::UInt64Value => "google.protobuf.UInt64Value",
+            WellKnown::Int32Value => "google.protobuf.Int32Value",
+            WellKnown::UInt32Value => "google.protobuf.UInt32Value",
+            WellKnown::BoolValue => "google.protobuf.BoolValue",
+            WellKnown::StringValue => "google.protobuf.StringValue",
+            WellKnown::BytesValue => "google.protobuf.BytesValue",
+        }
+    }
+
     /// The well-known type with this unqualified name in
     /// `google.protobuf`, if elm-connect supports it.
     pub fn from_name(name: &str) -> Option<Self> {
@@ -555,6 +593,8 @@ pub struct Enum {
     pub elm_name: String,
     zero: EnumValue,
     rest: Vec<EnumValue>,
+    /// Every value name in declaration order, aliases included.
+    declared: Vec<String>,
 }
 
 impl Enum {
@@ -567,12 +607,43 @@ impl Enum {
         zero: EnumValue,
         rest: Vec<EnumValue>,
     ) -> Option<Self> {
+        let declared = std::iter::once(&zero)
+            .chain(&rest)
+            .flat_map(|value| std::iter::once(&value.proto_name).chain(&value.aliases))
+            .cloned()
+            .collect();
         (zero.number == 0).then_some(Enum {
             proto_full_name,
             proto_name,
             elm_name,
             zero,
             rest,
+            declared,
+        })
+    }
+
+    /// The enum with its value names in this declaration order: each
+    /// value's name and each alias, once each. Without it,
+    /// [`Enum::declared`] gives each value's name followed by its aliases.
+    pub fn with_declaration_order(mut self, names: Vec<String>) -> Self {
+        debug_assert!({
+            let (mut given, mut own) = (names.clone(), self.declared.clone());
+            given.sort();
+            own.sort();
+            given == own
+        });
+        self.declared = names;
+        self
+    }
+
+    /// Every value name in declaration order, aliases included, each with
+    /// the value it names: an alias names the value of the first name
+    /// declared with its number.
+    pub fn declared(&self) -> impl Iterator<Item = (&str, &EnumValue)> {
+        self.declared.iter().filter_map(|name| {
+            self.values()
+                .find(|value| value.proto_name == *name || value.aliases.contains(name))
+                .map(|value| (name.as_str(), value))
         })
     }
 
@@ -597,6 +668,11 @@ impl Enum {
     /// The Elm name of the enum's JSON decoder, such as `decodeStatus`.
     pub fn decoder_name(&self) -> String {
         crate::naming::decoder_name(&self.elm_name)
+    }
+
+    /// The Elm name of the enum's typed record, such as `enumStatus`.
+    pub fn value_name(&self) -> String {
+        crate::naming::enum_value_name(&self.elm_name)
     }
 }
 

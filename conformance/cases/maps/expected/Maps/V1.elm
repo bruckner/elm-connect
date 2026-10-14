@@ -6,7 +6,9 @@ module Maps.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -59,6 +61,51 @@ defaultTeam =
     , members = Dict.empty
     , roles = Dict.empty
     , byFlag = []
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumRole : Proto.Enum.Enum Role
+enumRole =
+    { encodeJson = encodeRole
+    , jsonDecoder = decodeRole
+    , default = RoleUnspecified
+    , descriptor =
+        { typeName = "maps.v1.Role"
+        , values =
+            [ { name = "ROLE_UNSPECIFIED", number = 0 }
+            , { name = "ROLE_OWNER", number = 1 }
+            ]
+        }
+    }
+
+
+messageMember : Proto.Message.Message Member
+messageMember =
+    { encodeJson = encodeMember
+    , jsonDecoder = decodeMember
+    , default = defaultMember
+    , descriptor =
+        { typeName = "maps.v1.Member"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageTeam : Proto.Message.Message Team
+messageTeam =
+    { encodeJson = encodeTeam
+    , jsonDecoder = decodeTeam
+    , default = defaultTeam
+    , descriptor =
+        { typeName = "maps.v1.Team"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

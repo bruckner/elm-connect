@@ -5,6 +5,9 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Http
+import Proto.Message exposing (Message)
+import Proto.Method exposing (Method)
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
 import Test exposing (Test, describe, test)
@@ -12,20 +15,20 @@ import Test exposing (Test, describe, test)
 
 type alias Rule =
     { method : String
-    , path : List Rpc.Segment
+    , path : List Proto.Http.Segment
     , customVerb : Maybe String
-    , body : Rpc.Body
+    , body : Proto.Http.Body
     , responseBody : Maybe String
-    , query : List Rpc.Param
+    , query : List Proto.Http.Param
     }
 
 
 rule : Rule
 rule =
     { method = "GET"
-    , path = [ Rpc.literal "v1" ]
+    , path = [ Proto.Http.literal "v1" ]
     , customVerb = Nothing
-    , body = Rpc.noBody
+    , body = Proto.Http.noBody
     , responseBody = Nothing
     , query = []
     }
@@ -34,14 +37,27 @@ rule =
 {-| A method whose request is its JSON, and whose response is its `title`,
 bound by `bindings`.
 -}
-raw : List Rule -> Rpc.MethodDescriptor Value String
+raw : List Rule -> Method Value String
 raw bindings =
-    { service = "t.v1.T"
-    , method = "M"
-    , idempotent = False
-    , encodeJson = identity
-    , jsonDecoder = Json.Decode.field "title" Json.Decode.string
-    , bindings = List.map Rpc.binding bindings
+    { request = messageOf identity Json.Decode.value Json.Encode.null
+    , response = messageOf (\t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ]) (Json.Decode.field "title" Json.Decode.string) ""
+    , descriptor =
+        { service = "t.v1.T"
+        , name = "M"
+        , idempotent = False
+        , input = "t.v1.Request"
+        , output = "t.v1.Response"
+        , bindings = List.map Proto.Http.binding bindings
+        }
+    }
+
+
+messageOf : (a -> Value) -> Json.Decode.Decoder a -> a -> Message a
+messageOf encodeJson jsonDecoder default =
+    { encodeJson = encodeJson
+    , jsonDecoder = jsonDecoder
+    , default = default
+    , descriptor = { typeName = "t.v1.Message", fields = [], oneofs = [] }
     }
 
 
@@ -94,33 +110,33 @@ paths =
     describe "paths"
         [ test "a single-segment variable escapes everything but unreserved characters" <|
             \_ ->
-                url { rule | path = [ Rpc.literal "v1", Rpc.literal "messages", Rpc.variable [ "messageId" ] [] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "messages", Proto.Http.variable [ "messageId" ] [] ] }
                     """{"messageId":"a/b c?d#e!*'()é~._-"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/a%2Fb%20c%3Fd%23e%21%2A%27%28%29%C3%A9~._-"
         , test "a multi-segment variable keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Rpc.literal "v1", Rpc.variable [ "name" ] [ Rpc.literal "messages", Rpc.wildcard ] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ] }
                     """{"name":"messages/1 2"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/1%202"
         , test "** keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Rpc.literal "v1", Rpc.variable [ "path" ] [ Rpc.literal "files", Rpc.doubleWildcard ] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ] }
                     """{"path":"files/a/b/c.txt"}"""
                     |> Expect.equal "https://api.example.com/v1/files/a/b/c.txt"
         , test "{name=*} is one segment" <|
             \_ ->
-                url { rule | path = [ Rpc.variable [ "name" ] [ Rpc.wildcard ] ] } """{"name":"a/b"}"""
+                url { rule | path = [ Proto.Http.variable [ "name" ] [ Proto.Http.wildcard ] ] } """{"name":"a/b"}"""
                     |> Expect.equal "https://api.example.com/a%2Fb"
         , test "a nested field, numbers, booleans and a custom verb" <|
             \_ ->
                 url
                     { rule
                         | path =
-                            [ Rpc.literal "v1"
-                            , Rpc.variable [ "sub", "subfield" ] []
-                            , Rpc.variable [ "n" ] []
-                            , Rpc.variable [ "f" ] []
-                            , Rpc.variable [ "b" ] []
+                            [ Proto.Http.literal "v1"
+                            , Proto.Http.variable [ "sub", "subfield" ] []
+                            , Proto.Http.variable [ "n" ] []
+                            , Proto.Http.variable [ "f" ] []
+                            , Proto.Http.variable [ "b" ] []
                             ]
                         , customVerb = Just "cancel"
                     }
@@ -129,7 +145,7 @@ paths =
         , test "an absent value is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
                 (Rpc.request { config | baseUrl = "/api/" }
-                    (bound { rule | path = [ Rpc.literal "v1", Rpc.variable [ "sub", "subfield" ] [] ] } """{"sub":null}""")
+                    (bound { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "sub", "subfield" ] [] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
         ]
@@ -141,12 +157,12 @@ queries =
         r =
             { rule
                 | query =
-                    [ Rpc.param "revision" [ "revision" ] (Just "0")
-                    , Rpc.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                    , Rpc.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                    , Rpc.param "tags" [ "tags" ] Nothing
-                    , Rpc.param "pinned" [ "pinned" ] Nothing
-                    , Rpc.param "page_size" [ "pageSize" ] (Just "0")
+                    [ Proto.Http.param "revision" [ "revision" ] (Just "0")
+                    , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                    , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                    , Proto.Http.param "tags" [ "tags" ] Nothing
+                    , Proto.Http.param "pinned" [ "pinned" ] Nothing
+                    , Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
                     ]
             }
     in
@@ -181,8 +197,8 @@ bodies =
             \_ ->
                 body
                     { rule
-                        | body = Rpc.wholeBody
-                        , path = [ Rpc.variable [ "id" ] [], Rpc.variable [ "sub", "subfield" ] [] ]
+                        | body = Proto.Http.wholeBody
+                        , path = [ Proto.Http.variable [ "id" ] [], Proto.Http.variable [ "sub", "subfield" ] [] ]
                     }
                     """{"id":"1","text":"hi","sub":{"subfield":"x","other":2}}"""
                     |> Expect.equal (Just """{"text":"hi","sub":{"other":2}}""")
@@ -190,14 +206,14 @@ bodies =
             \_ ->
                 body
                     { rule
-                        | body = Rpc.bodyField "message"
-                        , path = [ Rpc.variable [ "message", "messageId" ] [] ]
+                        | body = Proto.Http.bodyField "message"
+                        , path = [ Proto.Http.variable [ "message", "messageId" ] [] ]
                     }
                     """{"messageId":"1","message":{"messageId":"1","text":"hi"}}"""
                     |> Expect.equal (Just """{"messageId":"1","text":"hi"}""")
         , test "an unset body field is an empty object" <|
             \_ ->
-                body { rule | body = Rpc.bodyField "message" } """{"message":null}"""
+                body { rule | body = Proto.Http.bodyField "message" } """{"message":null}"""
                     |> Expect.equal (Just "{}")
         , test "the method, headers, timeout and credentials come through, the call's headers last" <|
             \_ ->
@@ -216,8 +232,8 @@ routes =
         twice =
             Rpc.call
                 (raw
-                    [ { rule | path = [ Rpc.literal "v1", Rpc.literal "first" ] }
-                    , { rule | method = "POST", path = [ Rpc.literal "v1", Rpc.literal "second" ], body = Rpc.wholeBody }
+                    [ { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "first" ] }
+                    , { rule | method = "POST", path = [ Proto.Http.literal "v1", Proto.Http.literal "second" ], body = Proto.Http.wholeBody }
                     ]
                 )
                 (json """{"a":1}""")
@@ -260,7 +276,7 @@ routes =
         , test "there is no binding past the end, and none for a method without a rule" <|
             \_ ->
                 [ Rpc.viaBinding 2 twice, Rpc.viaBinding -1 twice, Rpc.viaBinding 0 unbound, Rpc.viaBinding 1 unbound ]
-                    |> List.map (Maybe.map Rpc.method)
+                    |> List.map (Maybe.map Rpc.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing, Nothing ]
         ]
 
@@ -290,12 +306,16 @@ responses =
             \_ ->
                 Rpc.response config
                     (Rpc.call
-                        { service = "t"
-                        , method = "m"
-                        , idempotent = False
-                        , encodeJson = identity
-                        , jsonDecoder = Json.Decode.succeed ()
-                        , bindings = [ Rpc.binding rule ]
+                        { request = messageOf identity Json.Decode.value Json.Encode.null
+                        , response = messageOf (\_ -> Json.Encode.object []) (Json.Decode.succeed ()) ()
+                        , descriptor =
+                            { service = "t"
+                            , name = "m"
+                            , idempotent = False
+                            , input = "t.Request"
+                            , output = "t.Response"
+                            , bindings = [ Proto.Http.binding rule ]
+                            }
                         }
                         Json.Encode.null
                     )

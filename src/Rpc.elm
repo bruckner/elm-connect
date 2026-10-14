@@ -1,16 +1,12 @@
 module Rpc exposing
-    ( Call, MethodDescriptor, call
+    ( Call, call
     , withHeaders, withTimeout, withTracker, viaBinding
-    , descriptor, service, method, idempotent, requestMessage, requestJson, toJson
+    , method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
     , Config, config, Transport(..), connect, Retry
     , task, send
     , Trace, taskTraced, sendTraced
     , Error(..), Source(..), errorToString
     , Request, request, response, taskFromRequest
-    , Binding, binding
-    , Segment, literal, variable, wildcard, doubleWildcard
-    , Body, noBody, wholeBody, bodyField
-    , Param, param
     )
 
 {-| Call RPCs: unary and JSON-encoded, over the
@@ -39,7 +35,7 @@ own state:
 
 # Calls
 
-@docs Call, MethodDescriptor, call
+@docs Call, call
 
 
 # Adjusting a call
@@ -49,7 +45,7 @@ own state:
 
 # Reading a call
 
-@docs descriptor, service, method, idempotent, requestMessage, requestJson, toJson
+@docs method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
 
 
 # Config
@@ -82,17 +78,6 @@ application can rewrite a request before sending it with
 
 @docs Request, request, response, taskFromRequest
 
-
-# HTTP bindings
-
-A method's `google.api.http` rule, parsed by the generator and written as
-data. Generated code builds these; application code only passes them along.
-
-@docs Binding, binding
-@docs Segment, literal, variable, wildcard, doubleWildcard
-@docs Body, noBody, wholeBody, bodyField
-@docs Param, param
-
 -}
 
 import Dict
@@ -100,6 +85,9 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
+import Proto.Descriptor exposing (MethodDescriptor)
+import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
+import Proto.Method exposing (Method)
 import Rpc.Code as Code exposing (Code)
 import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 import Rpc.Internal.Http as Internal
@@ -120,7 +108,7 @@ per-call adjustments made to it. Generated code builds one per method:
 -}
 type Call req res
     = Call
-        { descriptor : MethodDescriptor req res
+        { method : Method req res
         , message : req
         , binding : Int
         , headers : List ( String, String )
@@ -129,35 +117,21 @@ type Call req res
         }
 
 
-{-| What generated code says about a method:
+{-| A call of a method with a request, without any adjustment. Generated code
+applies it to each method's [`Method`](Proto-Method#Method) record:
 
-  - `service`: the fully-qualified service name, such as `notes.v1.Notes`.
-  - `method`: the method name as declared, such as `GetNote`.
-  - `idempotent`: whether the proto declares
-    `idempotency_level = NO_SIDE_EFFECTS`, which lets Connect send it as a GET
-    and a [`Retry`](#Retry) policy retry it.
-  - `encodeJson` and `jsonDecoder`: the proto3 JSON codecs of the request and
-    the response.
-  - `bindings`: its `google.api.http` rule, the rule's own binding first and
-    then its `additional_bindings` in order; `[]` for a method without one.
+    getNote =
+        Rpc.call
+            { request = Notes.V1.messageGetNoteRequest
+            , response = Notes.V1.messageNote
+            , descriptor = { service = "notes.v1.NotesService", name = "GetNote", … }
+            }
 
 -}
-type alias MethodDescriptor req res =
-    { service : String
-    , method : String
-    , idempotent : Bool
-    , encodeJson : req -> Value
-    , jsonDecoder : Decoder res
-    , bindings : List Binding
-    }
-
-
-{-| A call of a method with a request, without any adjustment.
--}
-call : MethodDescriptor req res -> req -> Call req res
-call methodDescriptor message =
+call : Method req res -> req -> Call req res
+call m message =
     Call
-        { descriptor = methodDescriptor
+        { method = m
         , message = message
         , binding = 0
         , headers = []
@@ -201,7 +175,7 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Call c) =
-    if index >= 0 && index < List.length c.descriptor.bindings then
+    if index >= 0 && index < List.length c.method.descriptor.bindings then
         Just (Call { c | binding = index })
 
     else
@@ -214,30 +188,37 @@ viaBinding index (Call c) =
 
 {-| The method the call is of.
 -}
-descriptor : Call req res -> MethodDescriptor req res
+method : Call req res -> Method req res
+method (Call c) =
+    c.method
+
+
+{-| What the proto says about the method the call is of.
+-}
+descriptor : Call req res -> MethodDescriptor
 descriptor (Call c) =
-    c.descriptor
+    c.method.descriptor
 
 
 {-| The fully-qualified service name, such as `notes.v1.Notes`.
 -}
-service : Call req res -> String
-service (Call c) =
-    c.descriptor.service
+serviceName : Call req res -> String
+serviceName (Call c) =
+    c.method.descriptor.service
 
 
 {-| The method name as declared, such as `GetNote`.
 -}
-method : Call req res -> String
-method (Call c) =
-    c.descriptor.method
+methodName : Call req res -> String
+methodName (Call c) =
+    c.method.descriptor.name
 
 
 {-| Whether the method has no side effects.
 -}
 idempotent : Call req res -> Bool
 idempotent (Call c) =
-    c.descriptor.idempotent
+    c.method.descriptor.idempotent
 
 
 {-| The request the call sends.
@@ -251,7 +232,7 @@ requestMessage (Call c) =
 -}
 requestJson : Call req res -> Value
 requestJson (Call c) =
-    c.descriptor.encodeJson c.message
+    c.method.request.encodeJson c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
@@ -261,9 +242,9 @@ not included.
 toJson : Call req res -> Value
 toJson (Call c) =
     Json.Encode.object
-        [ ( "service", Json.Encode.string c.descriptor.service )
-        , ( "method", Json.Encode.string c.descriptor.method )
-        , ( "request", c.descriptor.encodeJson c.message )
+        [ ( "service", Json.Encode.string c.method.descriptor.service )
+        , ( "method", Json.Encode.string c.method.descriptor.name )
+        , ( "request", c.method.request.encodeJson c.message )
         ]
 
 
@@ -417,8 +398,8 @@ taskTraced cfg ((Call fields) as c) =
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        ( { service = fields.descriptor.service
-                                          , method = fields.descriptor.method
+                                        ( { service = fields.method.descriptor.service
+                                          , method = fields.method.descriptor.name
                                           , binding =
                                                 case route cfg c of
                                                     Bound index _ ->
@@ -608,7 +589,7 @@ route cfg (Call fields) =
         Transcode ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding fields.descriptor.bindings) of
+            case List.head (List.drop fields.binding fields.method.descriptor.bindings) of
                 Just (Binding rule) ->
                     Bound fields.binding rule
 
@@ -620,7 +601,7 @@ connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req 
 connectRequest options cfg ((Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ fields.descriptor.service ++ "/" ++ fields.descriptor.method
+            trimSlash cfg.baseUrl ++ "/" ++ fields.method.descriptor.service ++ "/" ++ fields.method.descriptor.name
 
         json =
             Json.Encode.encode 0 (requestJson c)
@@ -649,7 +630,7 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && fields.descriptor.idempotent && fits then
+    if options.useGet && fields.method.descriptor.idempotent && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
@@ -908,16 +889,16 @@ response cfg ((Call fields) as c) answer =
             case ( cfg.transport, route cfg c ) of
                 ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody fields.descriptor.jsonDecoder raw
+                        decodeBody fields.method.response.jsonDecoder raw
 
                     else
                         Err (failure metadata raw)
 
                 ( Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody fields.descriptor.jsonDecoder) (orEmptyObject raw)
+                    decodeBody (responseDecoder rule.responseBody fields.method.response.jsonDecoder) (orEmptyObject raw)
 
                 ( Transcode, Implicit ) ->
-                    decodeBody fields.descriptor.jsonDecoder (orEmptyObject raw)
+                    decodeBody fields.method.response.jsonDecoder (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -1022,7 +1003,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err (Rpc rpc) ) ->
-            Retry.delay policy fields.descriptor.idempotent tried (Just rpc.code)
+            Retry.delay policy fields.method.descriptor.idempotent tried (Just rpc.code)
 
         _ ->
             Nothing
@@ -1128,138 +1109,3 @@ optional key decoder default =
             |> Json.Decode.map (Maybe.withDefault default)
         , Json.Decode.succeed default
         ]
-
-
-
--- HTTP BINDINGS
-
-
-{-| One binding of a method's `google.api.http` rule.
--}
-type Binding
-    = Binding Rule
-
-
-type alias Rule =
-    { method : String
-    , path : List Segment
-    , customVerb : Maybe String
-    , body : Body
-    , responseBody : Maybe String
-    , query : List Param
-    }
-
-
-{-| A binding, as the generator parses it:
-
-  - `method`: the HTTP method, such as `"GET"`.
-  - `path`: the path template's segments.
-  - `customVerb`: the text after `:` at the end of the template, if any.
-  - `body`: what the request body holds.
-  - `responseBody`: the JSON name of the response field the answer holds, if it
-    is not the whole response.
-  - `query`: the query parameters, every request field outside the path and the
-    body.
-
--}
-binding :
-    { method : String
-    , path : List Segment
-    , customVerb : Maybe String
-    , body : Body
-    , responseBody : Maybe String
-    , query : List Param
-    }
-    -> Binding
-binding =
-    Binding
-
-
-{-| One segment of a path template.
--}
-type Segment
-    = Literal String
-    | Wildcard
-    | DoubleWildcard
-    | Variable (List String) (List Segment)
-
-
-{-| Literal text, written as it is.
--}
-literal : String -> Segment
-literal =
-    Literal
-
-
-{-| A request field's value: the field's JSON path (`[ "book", "name" ]`), and
-the variable's template (`[ literal "books", wildcard ]` for
-`{book.name=books/*}`; `[]` for `{name}`). A variable matching one segment
-(`{name}`, `{name=*}`) is percent-encoded with `/` escaped as `%2F`; any other
-keeps its `/`s. An absent value is the empty string. The value is not checked
-against the template: the server does that.
--}
-variable : List String -> List Segment -> Segment
-variable =
-    Variable
-
-
-{-| `*`, one path segment, inside a variable's template.
--}
-wildcard : Segment
-wildcard =
-    Wildcard
-
-
-{-| `**`, any number of path segments, inside a variable's template.
--}
-doubleWildcard : Segment
-doubleWildcard =
-    DoubleWildcard
-
-
-{-| What a request body holds.
--}
-type Body
-    = NoBody
-    | WholeBody
-    | BodyField String
-
-
-{-| No body: every field outside the path is in the query.
--}
-noBody : Body
-noBody =
-    NoBody
-
-
-{-| `body: "*"`: the request's JSON without the fields the path holds.
--}
-wholeBody : Body
-wholeBody =
-    WholeBody
-
-
-{-| `body: "note"`: the JSON of one top-level field, by its JSON name, sent
-whole even when the path holds a field inside it. An unset field is sent as
-`{}`.
--}
-bodyField : String -> Body
-bodyField =
-    BodyField
-
-
-{-| One query parameter.
--}
-type Param
-    = Param { name : String, path : List String, zero : Maybe String }
-
-
-{-| A query parameter: its name (the dotted proto field path, `sub.subfield`),
-the field's JSON path (`[ "sub", "subfield" ]`), and the text of the value at
-which it is left out (`Just "0"`, `Just ""`, an enum's zero name), or
-`Nothing` to leave it out only when the field is unset. A JSON array is sent
-as one parameter per element.
--}
-param : String -> List String -> Maybe String -> Param
-param name path zero =
-    Param { name = name, path = path, zero = zero }

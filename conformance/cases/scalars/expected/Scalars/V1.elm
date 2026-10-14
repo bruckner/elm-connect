@@ -6,6 +6,7 @@ module Scalars.V1 exposing (..)
 import Json.Decode
 import Json.Encode
 import Proto.Json
+import Proto.Message
 
 
 
@@ -66,6 +67,36 @@ defaultScalars =
 defaultEmpty : Empty
 defaultEmpty =
     {}
+
+
+
+-- DESCRIPTORS
+
+
+messageScalars : Proto.Message.Message Scalars
+messageScalars =
+    { encodeJson = encodeScalars
+    , jsonDecoder = decodeScalars
+    , default = defaultScalars
+    , descriptor =
+        { typeName = "scalars.v1.Scalars"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageEmpty : Proto.Message.Message Empty
+messageEmpty =
+    { encodeJson = encodeEmpty
+    , jsonDecoder = decodeEmpty
+    , default = defaultEmpty
+    , descriptor =
+        { typeName = "scalars.v1.Empty"
+        , fields = []
+        , oneofs = []
+        }
+    }
 
 
 
