@@ -36,7 +36,7 @@ mod graph;
 
 use std::fmt;
 
-pub use build::build;
+pub use build::{build, unbound_methods};
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.

@@ -176,3 +176,16 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   from a Connect error body, a `google.rpc.Status` body, the
   `grpc-status` and `grpc-message` headers, or the HTTP status, in
   that order (`Rpc.StatusBody`, `Rpc.GrpcHeaders`).
+- Calls are generated: each service gets a module of its own
+  (`Notes.V1.NotesService`, file `Notes/V1/NotesService.elm`) with one
+  function per method from its request to an `Rpc.Call`, built with
+  `Rpc.call` from the method's descriptor and its `google.api.http`
+  bindings as data (`Rpc.binding`), the rule's own first. A method
+  without a rule has no bindings, and the runtime calls it over the
+  implicit route. The package module holds types and codecs only. The
+  `unbound_methods` option (`implicit`, the default, or `error`;
+  `--unbound-methods` on the CLI) makes a method without a rule the
+  `services::unbound_method` diagnostic instead. Conformance cases
+  `services` and `services_unbound_error`. A rule whose request is a
+  well-known type other than `Empty` can no longer leave fields to the
+  query (`route::query_field`).

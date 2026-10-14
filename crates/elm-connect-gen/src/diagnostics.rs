@@ -55,6 +55,9 @@ pub enum Code {
     Unimplemented,
     /// A method streams requests or responses.
     Streaming,
+    /// A method has no `google.api.http` rule, under
+    /// `unbound_methods=error`.
+    UnboundMethod,
     /// Two methods of a service get the same Elm value name.
     ValueCollision,
     /// A method has no valid Elm value name.
@@ -97,6 +100,7 @@ impl Code {
             Code::NotProto3 => "generate::not_proto3",
             Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
+            Code::UnboundMethod => "services::unbound_method",
             Code::ValueCollision => "naming::value_collision",
             Code::InvalidMethod => "naming::invalid_method",
             Code::ModuleCollision => "naming::module_collision",
@@ -381,6 +385,22 @@ impl Problem {
              streaming each frame messages differently, and neither has an Elm design yet. \
              Move the streaming methods to a service in a package you do not generate, or \
              leave their files out of the files to generate.",
+            vec![site],
+        )
+    }
+
+    /// The method `method` has no `google.api.http` rule, and
+    /// `unbound_methods=error` makes that a problem.
+    pub fn unbound_method(method: &str, site: Site) -> Self {
+        Problem::new(
+            Code::UnboundMethod,
+            format!("The method `{method}` has no `google.api.http` rule."),
+            "With `unbound_methods=error`, every method needs a rule. Without one, a call over \
+             transcoding takes the implicit route, `POST /<package>.<Service>/<Method>` with \
+             the request as its body, which grpc-gateway serves with \
+             `generate_unbound_methods`, Envoy's transcoder with `auto_mapping`, and Vanguard \
+             always. Add a rule to the method, or set `unbound_methods=implicit` (the \
+             default) if the server serves that route.",
             vec![site],
         )
     }

@@ -230,8 +230,12 @@ pub enum Expr {
     Access(Box<Expr>, String),
     /// A field accessor function: `.field`.
     Accessor(String),
-    /// A list literal.
+    /// A list literal. With more than one item it prints one item per
+    /// line.
     List(Vec<Expr>),
+    /// A list literal printed on one line when every item fits on one, as
+    /// elm-format keeps a list written that way: `[ "sub", "field" ]`.
+    InlineList(Vec<Expr>),
     /// A tuple of two or three expressions.
     Tuple(Vec<Expr>),
     /// `()`.

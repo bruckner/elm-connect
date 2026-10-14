@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use elm_connect_gen::{Int64, Options};
+use elm_connect_gen::{Int64, Options, UnboundMethods};
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -29,6 +29,11 @@ enum Command {
         /// A field's `jstype` option overrides it.
         #[arg(long, value_name = "string|int", default_value = "string")]
         int64: Int64,
+        /// What a method without a `google.api.http` rule gets: `implicit`
+        /// (a call the runtime sends over the implicit route,
+        /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
+        #[arg(long, value_name = "implicit|error", default_value = "implicit")]
+        unbound_methods: UnboundMethods,
     },
 }
 
@@ -39,9 +44,11 @@ fn main() -> miette::Result<()> {
             includes,
             out,
             int64,
+            unbound_methods,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
+            options.unbound_methods = unbound_methods;
             let generated = elm_connect::generate(&files, &includes, &options)?;
             for path in elm_connect::write(&generated, &out)? {
                 println!("{}", path.display());
@@ -60,6 +67,28 @@ mod tests {
         let cli = Cli::try_parse_from(base.iter().chain(args))?;
         let Command::Gen { int64, .. } = cli.command;
         Ok(int64)
+    }
+
+    fn unbound_methods(args: &[&str]) -> Result<UnboundMethods, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen {
+            unbound_methods, ..
+        } = cli.command;
+        Ok(unbound_methods)
+    }
+
+    #[test]
+    fn unbound_methods_default_to_implicit_and_take_error() {
+        assert_eq!(
+            unbound_methods(&[]).expect("parses"),
+            UnboundMethods::Implicit
+        );
+        assert_eq!(
+            unbound_methods(&["--unbound-methods", "error"]).expect("parses"),
+            UnboundMethods::Error
+        );
+        assert!(unbound_methods(&["--unbound-methods", "drop"]).is_err());
     }
 
     #[test]

@@ -1,5 +1,6 @@
 //! The emitter: one IR [`Package`] to one Elm [`Module`] of types and
-//! their proto3 JSON codecs (design §2 layer 1, §3).
+//! their proto3 JSON codecs (design §2, §3), and each of its services to a
+//! module of calls (design §4).
 //!
 //! Invariant: every name comes from the IR, every layout from the printer.
 //! The emitter chooses which declarations exist and what their bodies say;
@@ -17,6 +18,14 @@
 //!   decoders. Each section has the enums, then the messages, each
 //!   followed by its recursion wrapper and its oneofs; the defaults
 //!   section has the messages alone, and is left out when there are none.
+//! - A service's module, `Notes.V1.NotesService`, holds one function per
+//!   method from its request to an `Rpc.Call`, written point-free as
+//!   `Rpc.call` of the method's descriptor: its service, name,
+//!   idempotency, codecs and bindings, the bindings its HTTP rule's own
+//!   and then its additional ones, as data (`Rpc.binding`). A method
+//!   without a rule has no bindings, and the runtime calls it over the
+//!   implicit route. Every name the module refers to is qualified, so a
+//!   method's name cannot shadow or clash with one.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -75,6 +84,7 @@
 mod enumeration;
 mod field;
 mod message;
+mod method;
 mod oneof;
 mod recursion;
 mod scalar;
@@ -85,7 +95,9 @@ use crate::VERSION;
 use crate::diagnostics::Diagnostics;
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
-use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, TypeName};
+use crate::ir::{
+    Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service, TypeName,
+};
 
 use self::field::{FieldShape, ValueShape};
 
@@ -105,6 +117,8 @@ const TIME: &str = "Time";
 /// The runtime package's `Duration`, imported as
 /// `import Connect.Duration exposing (Duration)`.
 const CONNECT_DURATION: &str = "Connect.Duration";
+/// The runtime package's calls, home of `Rpc.Call` and the bindings.
+const RPC: &str = "Rpc";
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
@@ -114,6 +128,9 @@ pub struct Options {
     /// How 64-bit integer fields are held (`int64=`), unless a field's
     /// `jstype` says otherwise (design §3.4).
     pub int64: Int64,
+    /// What a method without a `google.api.http` rule gets
+    /// (`unbound_methods=`, design §4).
+    pub unbound_methods: UnboundMethods,
 }
 
 impl Options {
@@ -138,7 +155,12 @@ impl Options {
             }
             match key {
                 "int64" => options.int64 = value.parse()?,
-                _ => return Err(format!("unknown option `{key}`; the options are: int64")),
+                "unbound_methods" => options.unbound_methods = value.parse()?,
+                _ => {
+                    return Err(format!(
+                        "unknown option `{key}`; the options are: int64, unbound_methods"
+                    ));
+                }
             }
         }
         Ok(options)
@@ -170,36 +192,52 @@ impl std::str::FromStr for Int64 {
     }
 }
 
+/// What a method without a `google.api.http` rule gets (design §4).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum UnboundMethods {
+    /// Generated like any other, with no bindings: the runtime calls it
+    /// over the implicit route `POST /<package>.<Service>/<Method>`, which
+    /// grpc-gateway (`generate_unbound_methods`), Envoy's transcoder
+    /// (`auto_mapping`) and Vanguard serve.
+    #[default]
+    Implicit,
+    /// A diagnostic, `services::unbound_method`, for a server that serves
+    /// rules alone.
+    Error,
+}
+
+impl std::str::FromStr for UnboundMethods {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "implicit" => Ok(UnboundMethods::Implicit),
+            "error" => Ok(UnboundMethods::Error),
+            _ => Err(format!(
+                "`unbound_methods` is `implicit` or `error`, not `{value}`"
+            )),
+        }
+    }
+}
+
 /// The Elm module for `package`. Every construct a built IR holds has an
 /// emitter, so this does not fail today; the error is the problems found,
-/// for constructs to come (services) whose emitters may report some.
+/// for constructs to come whose emitters may report some.
 pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics> {
-    let mut emitter = Emitter {
-        module: package.module.clone(),
-        imports: BTreeMap::new(),
-        int64: options.int64,
-    };
+    let mut emitter = Emitter::new(&package.module, options);
     let decls = emitter.package(package);
-    Ok(Module {
-        header: Some(format!(
-            "Generated by elm-connect {VERSION} from {}. Do not edit; regenerate instead.",
-            package.files.join(", ")
-        )),
-        name: ModuleName::new(package.module.to_string()),
-        doc: None,
-        exposing: Exposing::All,
-        imports: emitter
-            .imports
-            .into_iter()
-            .map(|(module, types)| Import {
-                module: ModuleName::new(module),
-                alias: None,
-                exposing: (!types.is_empty())
-                    .then(|| Exposing::Explicit(types.into_iter().map(Exposed::Type).collect())),
-            })
-            .collect(),
-        decls,
-    })
+    Ok(emitter.module(package, decls))
+}
+
+/// The Elm module of `service`, one of `package`'s: one call per method.
+pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
+    let mut emitter = Emitter::new(&service.module, options);
+    let decls = service
+        .methods
+        .iter()
+        .map(|method| emitter.method(&service.proto_full_name, method))
+        .collect();
+    emitter.module(package, decls)
 }
 
 /// A message whose every field and oneof member has a shape.
@@ -284,6 +322,40 @@ struct Emitter {
 }
 
 impl Emitter {
+    fn new(module: &IrModule, options: &Options) -> Self {
+        Emitter {
+            module: module.clone(),
+            imports: BTreeMap::new(),
+            int64: options.int64,
+        }
+    }
+
+    /// The module of `decls`, generated from `package`'s files, importing
+    /// what they refer to.
+    fn module(self, package: &Package, decls: Vec<Decl>) -> Module {
+        Module {
+            header: Some(format!(
+                "Generated by elm-connect {VERSION} from {}. Do not edit; regenerate instead.",
+                package.files.join(", ")
+            )),
+            name: ModuleName::new(self.module.to_string()),
+            doc: None,
+            exposing: Exposing::All,
+            imports: self
+                .imports
+                .into_iter()
+                .map(|(module, types)| Import {
+                    module: ModuleName::new(module),
+                    alias: None,
+                    exposing: (!types.is_empty()).then(|| {
+                        Exposing::Explicit(types.into_iter().map(Exposed::Type).collect())
+                    }),
+                })
+                .collect(),
+            decls,
+        }
+    }
+
     /// The declarations of `package`, by section.
     fn package(&mut self, package: &Package) -> Vec<Decl> {
         let by_name: HashMap<&str, &Message> = package
@@ -464,6 +536,14 @@ mod tests {
         assert!(error("int64").contains("`key=value`"));
         assert!(error("colour=red").contains("unknown option `colour`"));
         assert!(error("int64=int,int64=string").contains("more than once"));
+        let unbound = |parameter| Options::from_parameter(parameter).map(|o| o.unbound_methods);
+        assert_eq!(unbound(""), Ok(UnboundMethods::Implicit));
+        assert_eq!(unbound("unbound_methods=error"), Ok(UnboundMethods::Error));
+        assert_eq!(
+            unbound("int64=int,unbound_methods=implicit"),
+            Ok(UnboundMethods::Implicit)
+        );
+        assert!(error("unbound_methods=drop").contains("`implicit` or `error`"));
     }
 
     #[test]

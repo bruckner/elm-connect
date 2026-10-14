@@ -200,6 +200,50 @@ mod tests {
     }
 
     #[test]
+    fn services_case_generates_its_expected_output() {
+        let case =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../conformance/cases/services");
+        let mut compiler =
+            protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([
+                case.join("input")
+            ]));
+        compiler.include_imports(true);
+        compiler
+            .open_file("notes.proto")
+            .expect("the case compiles");
+        let set = RawSet::decode(compiler.encode_file_descriptor_set().as_slice()).expect("set");
+        let mut request = CodeGeneratorRequest {
+            file_to_generate: vec!["notes.proto".into()],
+            ..CodeGeneratorRequest::default()
+        }
+        .encode_to_vec();
+        RawProtoFiles {
+            proto_file: set.file,
+        }
+        .encode(&mut request)
+        .expect("encode");
+        let response = CodeGeneratorResponse::decode(run(&request).encode_to_vec().as_slice())
+            .expect("decode");
+        assert_eq!(response.error, None);
+        let names: Vec<&str> = response
+            .file
+            .iter()
+            .filter_map(|f| f.name.as_deref())
+            .collect();
+        assert_eq!(names, ["Notes/V1.elm", "Notes/V1/NotesService.elm"]);
+        for file in &response.file {
+            let name = file.name.as_deref().expect("a name");
+            let expected =
+                std::fs::read_to_string(case.join("expected").join(name)).expect("blessed");
+            assert!(
+                file.content.as_deref() == Some(expected.as_str()),
+                "the plugin's {name} differs from the blessed expected output; run the \
+                 conformance tests for a diff"
+            );
+        }
+    }
+
+    #[test]
     fn extension_options_survive_the_request() {
         let dir = std::env::temp_dir().join("protoc-gen-elm-connect-http");
         std::fs::create_dir_all(&dir).expect("create");

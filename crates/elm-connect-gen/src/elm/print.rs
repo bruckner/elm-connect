@@ -557,6 +557,7 @@ fn expression(expr: &Expr) -> Block {
             )
         }
         Expr::List(items) => sequence(items, "[", "]", items.len() > 1),
+        Expr::InlineList(items) => sequence(items, "[", "]", false),
         Expr::Tuple(items) => sequence(items, "(", ")", false),
         Expr::BinOp { .. } => operator_chain(expr),
     }
