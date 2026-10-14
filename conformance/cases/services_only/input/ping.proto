@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// A package of services alone: its package module has no types, holds
+// its registry alone, and must still compile beside the service module.
+package ping.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service Ping {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp);
+}

@@ -32,7 +32,8 @@ pub struct GeneratedFile {
 
 /// Generates one Elm module per proto package declared by the files in
 /// `generate` (names as `pool` knows them), and one per service of each,
-/// sorted by path.
+/// sorted by path. A package of services alone still gets a package
+/// module, holding its registry.
 ///
 /// On any problem, returns every problem found instead: those of building
 /// the IR, or else the methods `options` reject, or else those of emitting
