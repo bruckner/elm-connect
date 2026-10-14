@@ -5,9 +5,11 @@ module Notes.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Time
 
 
@@ -191,7 +193,11 @@ enumVisibility =
         ]
     , descriptor =
         { typeName = "notes.v1.Visibility"
-        , values = []
+        , values =
+            [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }
+            , { name = "VISIBILITY_PRIVATE", number = 1 }
+            , { name = "VISIBILITY_PUBLIC", number = 2 }
+            ]
         }
     }
 
@@ -203,7 +209,12 @@ messageNote =
     , default = defaultNote
     , descriptor =
         { typeName = "notes.v1.Note"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "title", jsonName = "title", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "visibility", jsonName = "visibility", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
+            , { name = "tags", jsonName = "tags", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -216,7 +227,7 @@ messageGetNoteRequest =
     , default = defaultGetNoteRequest
     , descriptor =
         { typeName = "notes.v1.GetNoteRequest"
-        , fields = []
+        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -229,7 +240,15 @@ messageListNotesRequest =
     , default = defaultListNotesRequest
     , descriptor =
         { typeName = "notes.v1.ListNotesRequest"
-        , fields = []
+        , fields =
+            [ { name = "parent", jsonName = "parent", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "page_size", jsonName = "pageSize", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+            , { name = "page_token", jsonName = "pageToken", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "filter", jsonName = "filter", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "notes.v1.ListNotesRequest.Filter", oneof = Nothing }
+            , { name = "tags", jsonName = "tags", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "archived", jsonName = "archived", number = 6, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            , { name = "revision", jsonName = "revision", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -242,7 +261,10 @@ messageListNotesRequestFilter =
     , default = defaultListNotesRequestFilter
     , descriptor =
         { typeName = "notes.v1.ListNotesRequest.Filter"
-        , fields = []
+        , fields =
+            [ { name = "visibility", jsonName = "visibility", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
+            , { name = "since", jsonName = "since", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -255,7 +277,10 @@ messageListNotesResponse =
     , default = defaultListNotesResponse
     , descriptor =
         { typeName = "notes.v1.ListNotesResponse"
-        , fields = []
+        , fields =
+            [ { name = "notes", jsonName = "notes", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Note", oneof = Nothing }
+            , { name = "next_page_token", jsonName = "nextPageToken", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -268,7 +293,10 @@ messageCreateNoteRequest =
     , default = defaultCreateNoteRequest
     , descriptor =
         { typeName = "notes.v1.CreateNoteRequest"
-        , fields = []
+        , fields =
+            [ { name = "parent", jsonName = "parent", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "note", jsonName = "note", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "notes.v1.Note", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -281,7 +309,10 @@ messageUpdateNoteRequest =
     , default = defaultUpdateNoteRequest
     , descriptor =
         { typeName = "notes.v1.UpdateNoteRequest"
-        , fields = []
+        , fields =
+            [ { name = "note", jsonName = "note", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "notes.v1.Note", oneof = Nothing }
+            , { name = "update_mask", jsonName = "updateMask", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -294,7 +325,10 @@ messageDeleteNoteRequest =
     , default = defaultDeleteNoteRequest
     , descriptor =
         { typeName = "notes.v1.DeleteNoteRequest"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "force", jsonName = "force", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -307,7 +341,10 @@ messageArchiveNoteRequest =
     , default = defaultArchiveNoteRequest
     , descriptor =
         { typeName = "notes.v1.ArchiveNoteRequest"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "reason", jsonName = "reason", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
@@ -320,7 +357,7 @@ messageReadFileRequest =
     , default = defaultReadFileRequest
     , descriptor =
         { typeName = "notes.v1.ReadFileRequest"
-        , fields = []
+        , fields = [ { name = "path", jsonName = "path", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -333,10 +370,31 @@ messageSummary =
     , default = defaultSummary
     , descriptor =
         { typeName = "notes.v1.Summary"
-        , fields = []
+        , fields = [ { name = "text", jsonName = "text", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageNote.descriptor
+            , messageGetNoteRequest.descriptor
+            , messageListNotesRequest.descriptor
+            , messageListNotesRequestFilter.descriptor
+            , messageListNotesResponse.descriptor
+            , messageCreateNoteRequest.descriptor
+            , messageUpdateNoteRequest.descriptor
+            , messageDeleteNoteRequest.descriptor
+            , messageArchiveNoteRequest.descriptor
+            , messageReadFileRequest.descriptor
+            , messageSummary.descriptor
+            ]
+            [ enumVisibility.descriptor ]
+        )
+        Proto.Registry.wellKnown
 
 
 

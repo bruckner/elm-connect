@@ -6,8 +6,10 @@ module Notes.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Users.V1
 
 
@@ -57,10 +59,23 @@ messageNote =
     , default = defaultNote
     , descriptor =
         { typeName = "notes.v1.Note"
-        , fields = []
-        , oneofs = []
+        , fields =
+            [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "author", jsonName = "author", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
+            , { name = "required_role", jsonName = "requiredRole", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+            , { name = "readers", jsonName = "readers", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
+            , { name = "roles", jsonName = "roles", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+            , { name = "user", jsonName = "user", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Just "owner" }
+            , { name = "team", jsonName = "team", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "owner" }
+            ]
+        , oneofs = [ "owner" ]
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageNote.descriptor ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 
 
 

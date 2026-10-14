@@ -5,9 +5,11 @@ module Enums.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -63,7 +65,11 @@ enumStatus =
         ]
     , descriptor =
         { typeName = "enums.v1.Status"
-        , values = []
+        , values =
+            [ { name = "STATUS_UNSPECIFIED", number = 0 }
+            , { name = "STATUS_ACTIVE", number = 1 }
+            , { name = "STATUS_ARCHIVED", number = 2 }
+            ]
         }
     }
 
@@ -83,7 +89,15 @@ enumPriority =
         ]
     , descriptor =
         { typeName = "enums.v1.Priority"
-        , values = []
+        , values =
+            [ { name = "NONE", number = 0 }
+            , { name = "LOW", number = 1 }
+            , { name = "HIGH", number = 2 }
+            , { name = "URGENT", number = 2 }
+            , { name = "BELOW_ZERO", number = -1 }
+            , { name = "PRIORITY_LOW", number = 1 }
+            , { name = "UNSET", number = 0 }
+            ]
         }
     }
 
@@ -95,10 +109,26 @@ messageTask =
     , default = defaultTask
     , descriptor =
         { typeName = "enums.v1.Task"
-        , fields = []
+        , fields =
+            [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            , { name = "priority", jsonName = "priority", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Enum "enums.v1.Priority", oneof = Nothing }
+            , { name = "history", jsonName = "history", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            , { name = "previous_status", jsonName = "previousStatus", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
+            [ enumStatus.descriptor
+            , enumPriority.descriptor
+            ]
+        )
+        Proto.Registry.wellKnown
 
 
 

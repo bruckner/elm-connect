@@ -5,8 +5,10 @@ module Zones.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Descriptor
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 
 
 
@@ -52,7 +54,7 @@ messageZoneRequest =
     , default = defaultZoneRequest
     , descriptor =
         { typeName = "zones.v1.ZoneRequest"
-        , fields = []
+        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
     }
@@ -65,10 +67,25 @@ messageZone =
     , default = defaultZone
     , descriptor =
         { typeName = "zones.v1.Zone"
-        , fields = []
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "offset_seconds", jsonName = "offsetSeconds", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+            ]
         , oneofs = []
         }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ messageZoneRequest.descriptor
+            , messageZone.descriptor
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 

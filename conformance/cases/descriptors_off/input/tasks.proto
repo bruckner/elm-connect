@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+// Generated with `descriptors=off`: the typed records stay, their
+// descriptors hold no fields or values, and there is no registry.
+package tasks.v1;
+
+enum State {
+  STATE_UNSPECIFIED = 0;
+  STATE_OPEN = 1;
+  STATE_DONE = 2;
+}
+
+message Task {
+  string title = 1;
+  State state = 2;
+  oneof due {
+    string date = 3;
+    bool someday = 4;
+  }
+}
+
+service Tasks {
+  rpc GetTask(Task) returns (Task);
+}

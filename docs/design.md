@@ -635,7 +635,8 @@ Built, as the `naming` and `naming_collision` cases show:
 - Top-level values are a prefix and a type name: `encodeFoo`,
   `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo` (§3.9). Type
   names are unique in a module and start with an uppercase letter, and
-  no prefix is another's, so these never collide. A suffix scheme was
+  no prefix is another's, so these never collide. The one other,
+  `registry`, is all lowercase, so it is none of them. A suffix scheme was
   rejected for the typed records: `encodeFooMessage` would be both the
   encoder of `FooMessage` and the record of `EncodeFoo`.
 - Two plain fields cannot collide in practice: protoc and protox reject
@@ -723,7 +724,11 @@ messageNote =
     , default = defaultNote
     , descriptor =
         { typeName = "notes.v1.Note"
-        , fields = [ … ]
+        , fields =
+            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "visibility", jsonName = "visibility", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
+            , …
+            ]
         , oneofs = []
         }
     }
@@ -739,6 +744,13 @@ enumVisibility =
         ]
     , descriptor = { typeName = "notes.v1.Visibility", values = [ … ] }
     }
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors [ messageNote.descriptor, … ] [ enumVisibility.descriptor ])
+        (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
 
 - The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
@@ -767,8 +779,31 @@ enumVisibility =
 - No service, file or package descriptor: nothing consumes one, and a
   service module's namespace is its methods' names, so any fixed value
   name could collide with a method.
-- Built so far: the typed records, with every tree's `fields`,
-  `oneofs` and `values` empty.
+- **The registry.** Each package module ends its descriptors section
+  with `registry : Proto.Registry.Registry`, transitive: the package's
+  own descriptors, then the registries of the generated packages its
+  module imports (each holding its own imports'), then
+  `Proto.Registry.wellKnown`, joined with `Proto.Registry.union`, which
+  keeps the left one of two with one name (diamonds hold each type
+  once). Packages a service refers to but the package's types do not are
+  not in it: importing them could make a cycle Elm rejects. It is a
+  top-level constant, built once at start-up and dropped by dead-code
+  elimination when nothing uses it. A package without types has a
+  module holding its registry alone.
+- **`descriptors=off`** (§6) writes every tree empty (`fields = []`,
+  `oneofs = []`, `values = []`; the full name kept) and no registry,
+  for an application that wants smaller generated modules. The typed
+  records stay, since calls are built from them (§4).
+- **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
+  package of 300 messages of eight fields and ten enums gives a package
+  module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
+  (0.66 MB) without. A cold `elm make` of a program using every decoder
+  takes the same time either way (5.2–6.6 s over three runs each, the
+  spread larger than the difference). The optimized program is 677 KB
+  (46 KB gzipped) without descriptors, the same with them when the
+  registry is unused, since dead-code elimination drops the trees, and
+  1,655 KB (73 KB gzipped) when it uses the registry. So the default is
+  `on`: the cost falls on applications that use the descriptors.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
@@ -1267,15 +1302,18 @@ both the plain names.
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
-  `unbound_methods=implicit|error`, `module_prefix=`, and later perhaps
+  `unbound_methods=implicit|error`, `descriptors=on|off`,
+  `module_prefix=`, and later perhaps
   `enum_unknown=zero|variant` (§3.3 defers the variant). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
   2026-10-13.)*
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
-  `elm-connect gen --int64 int`) and `unbound_methods` (§4;
+  `elm-connect gen --int64 int`), `unbound_methods` (§4;
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
-  --unbound-methods error`). The plugin parameter is
+  --unbound-methods error`) and `descriptors` (§3.9;
+  `--elm-connect_opt=descriptors=off`, or `elm-connect gen
+  --descriptors off`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
   given twice, is an error. A conformance case sets options with an
   `options.txt` holding that parameter.

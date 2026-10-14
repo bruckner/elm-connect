@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use elm_connect_gen::{Int64, Options, UnboundMethods};
+use elm_connect_gen::{Descriptors, Int64, Options, UnboundMethods};
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -34,6 +34,11 @@ enum Command {
         /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
         #[arg(long, value_name = "implicit|error", default_value = "implicit")]
         unbound_methods: UnboundMethods,
+        /// Whether messages' and enums' descriptors hold their fields and
+        /// values: `on`, or `off` (the trees are empty and no registry is
+        /// generated, for smaller modules).
+        #[arg(long, value_name = "on|off", default_value = "on")]
+        descriptors: Descriptors,
     },
 }
 
@@ -45,10 +50,12 @@ fn main() -> miette::Result<()> {
             out,
             int64,
             unbound_methods,
+            descriptors,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
             options.unbound_methods = unbound_methods;
+            options.descriptors = descriptors;
             let generated = elm_connect::generate(&files, &includes, &options)?;
             for path in elm_connect::write(&generated, &out)? {
                 println!("{}", path.display());
@@ -89,6 +96,23 @@ mod tests {
             UnboundMethods::Error
         );
         assert!(unbound_methods(&["--unbound-methods", "drop"]).is_err());
+    }
+
+    fn descriptors(args: &[&str]) -> Result<Descriptors, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen { descriptors, .. } = cli.command;
+        Ok(descriptors)
+    }
+
+    #[test]
+    fn descriptors_default_to_on_and_take_off() {
+        assert_eq!(descriptors(&[]).expect("parses"), Descriptors::On);
+        assert_eq!(
+            descriptors(&["--descriptors", "off"]).expect("parses"),
+            Descriptors::Off
+        );
+        assert!(descriptors(&["--descriptors", "empty"]).is_err());
     }
 
     #[test]

@@ -34,7 +34,14 @@
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
 //!   `enumBar : Proto.Enum.Enum Bar`, its encoder and decoder, every value
-//!   name with its number and constructor, and its descriptor.
+//!   name with its number and constructor, and its descriptor. The
+//!   descriptors are written inline, faithful to the proto: each field's
+//!   names, number, cardinality, kind (other types by full name) and
+//!   oneof, each enum value name. The section ends with the package's
+//!   `registry`: its own descriptors, then the registries of the packages
+//!   its module imports and the well-known types', so it is transitive.
+//!   Under [`Descriptors::Off`] the trees are empty and there is no
+//!   registry.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -137,6 +144,8 @@ const PROTO_MESSAGE: &str = "Proto.Message";
 const PROTO_ENUM: &str = "Proto.Enum";
 /// The runtime package's typed records of the well-known types.
 const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
+/// The runtime package's registry of descriptors.
+const PROTO_REGISTRY: &str = "Proto.Registry";
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
@@ -149,6 +158,9 @@ pub struct Options {
     /// What a method without a `google.api.http` rule gets
     /// (`unbound_methods=`, design §4).
     pub unbound_methods: UnboundMethods,
+    /// Whether descriptors hold their fields and values (`descriptors=`,
+    /// design §3.9).
+    pub descriptors: Descriptors,
 }
 
 impl Options {
@@ -174,9 +186,11 @@ impl Options {
             match key {
                 "int64" => options.int64 = value.parse()?,
                 "unbound_methods" => options.unbound_methods = value.parse()?,
+                "descriptors" => options.descriptors = value.parse()?,
                 _ => {
                     return Err(format!(
-                        "unknown option `{key}`; the options are: int64, unbound_methods"
+                        "unknown option `{key}`; the options are: int64, unbound_methods, \
+                         descriptors"
                     ));
                 }
             }
@@ -234,6 +248,32 @@ impl std::str::FromStr for UnboundMethods {
             _ => Err(format!(
                 "`unbound_methods` is `implicit` or `error`, not `{value}`"
             )),
+        }
+    }
+}
+
+/// Whether the generated descriptors hold the proto's fields and values
+/// (design §3.9).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Descriptors {
+    /// Every message's descriptor lists its fields and oneofs, every
+    /// enum's its values, and each package module has a `registry`.
+    #[default]
+    On,
+    /// The descriptors are empty (`fields = []`, `oneofs = []`,
+    /// `values = []`, the full name kept) and no `registry` is generated,
+    /// for applications that want smaller modules.
+    Off,
+}
+
+impl std::str::FromStr for Descriptors {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "on" => Ok(Descriptors::On),
+            "off" => Ok(Descriptors::Off),
+            _ => Err(format!("`descriptors` is `on` or `off`, not `{value}`")),
         }
     }
 }
@@ -337,6 +377,8 @@ struct Emitter {
     imports: BTreeMap<String, BTreeSet<String>>,
     /// How 64-bit integers are held where a field does not say.
     int64: Int64,
+    /// Whether descriptors hold their fields and values.
+    descriptors: Descriptors,
 }
 
 impl Emitter {
@@ -345,6 +387,7 @@ impl Emitter {
             module: module.clone(),
             imports: BTreeMap::new(),
             int64: options.int64,
+            descriptors: options.descriptors,
         }
     }
 
@@ -387,7 +430,12 @@ impl Emitter {
             .map(|message| message_shape(message, &by_name, self.int64))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
-            return Vec::new();
+            return match self.descriptors {
+                Descriptors::On => {
+                    vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)]
+                }
+                Descriptors::Off => Vec::new(),
+            };
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
         let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
@@ -416,6 +464,9 @@ impl Emitter {
                 encoders.push(self.oneof_encoder(oneof));
                 decoders.push(self.oneof_decoder(oneof));
             }
+        }
+        if self.descriptors == Descriptors::On {
+            descriptors.push(self.registry(package));
         }
         // A package of enums alone has no defaults.
         if messages.is_empty() {
@@ -566,6 +617,10 @@ mod tests {
             Ok(UnboundMethods::Implicit)
         );
         assert!(error("unbound_methods=drop").contains("`implicit` or `error`"));
+        let descriptors = |parameter| Options::from_parameter(parameter).map(|o| o.descriptors);
+        assert_eq!(descriptors(""), Ok(Descriptors::On));
+        assert_eq!(descriptors("descriptors=off"), Ok(Descriptors::Off));
+        assert!(error("descriptors=empty").contains("`on` or `off`"));
     }
 
     #[test]
@@ -595,13 +650,78 @@ mod tests {
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
-            ["Json.Decode", "Json.Encode", "Proto.Json", "Proto.Message"]
+            [
+                "Json.Decode",
+                "Json.Encode",
+                "Proto.Descriptor",
+                "Proto.Json",
+                "Proto.Message",
+                "Proto.Registry"
+            ]
         );
 
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(imports, ["Json.Decode", "Json.Encode", "Proto.Message"]);
+        assert_eq!(
+            imports,
+            [
+                "Json.Decode",
+                "Json.Encode",
+                "Proto.Message",
+                "Proto.Registry"
+            ]
+        );
+
+        let off = Options::from_parameter("descriptors=off").expect("parses");
+        let module = emit(&only_ints, &off).expect("emits");
+        let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
+        assert_eq!(
+            imports,
+            ["Json.Decode", "Json.Encode", "Proto.Json", "Proto.Message"]
+        );
+    }
+
+    #[test]
+    fn descriptors_hold_the_fields_unless_off() {
+        let one = package(vec![message(
+            "A",
+            vec![field(
+                "n",
+                Cardinality::Map(crate::ir::MapKey::Bool),
+                TypeRef::Scalar(ScalarKind::SFixed64),
+            )],
+        )]);
+        let printed = |options: &Options| {
+            crate::elm::print::print_module(&emit(&one, options).expect("emits"))
+        };
+        let on = printed(&Options::default());
+        assert!(
+            on.contains(
+                "fields = [ { name = \"n\", jsonName = \"n\", number = 1, cardinality = \
+                 Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar \
+                 Proto.Descriptor.Sfixed64, oneof = Nothing } ]"
+            ),
+            "{on}"
+        );
+        assert!(
+            on.contains(
+                "registry =\n    Proto.Registry.union (Proto.Registry.fromDescriptors \
+                 [ messageA.descriptor ] []) Proto.Registry.wellKnown"
+            ),
+            "{on}"
+        );
+        let off = printed(&Options::from_parameter("descriptors=off").expect("parses"));
+        assert!(off.contains("fields = []"), "{off}");
+        assert!(!off.contains("registry"), "{off}");
+
+        let nothing = package(Vec::new());
+        let printed =
+            crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
+        assert!(
+            printed.contains("registry =\n    Proto.Registry.wellKnown"),
+            "{printed}"
+        );
     }
 
     #[test]
@@ -677,12 +797,22 @@ mod tests {
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
+                "Proto.Descriptor",
                 "Proto.Json",
-                "Proto.Message"
+                "Proto.Message",
+                "Proto.Registry"
             ]
         );
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
+        assert!(
+            printed.contains("kind = Proto.Descriptor.Message \"other.v1.B\""),
+            "{printed}"
+        );
+        assert!(
+            printed.contains("(Proto.Registry.union Other.V1.registry Proto.Registry.wellKnown)"),
+            "{printed}"
+        );
         assert!(
             printed.contains("Proto.Json.encodeMaybe Other.V1.encodeB value.b"),
             "{printed}"
