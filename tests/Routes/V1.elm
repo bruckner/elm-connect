@@ -416,7 +416,7 @@ registry =
             , messageResource.descriptor
             , messageUpdateResourceRequest.descriptor
             ]
-            [ Proto.Enum.descriptor enumKind ]
+            [ enumKind.descriptor ]
         )
         Proto.Registry.wellKnown
 

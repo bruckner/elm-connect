@@ -233,6 +233,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   values). Each package module ends its descriptors section with
   `registry : Proto.Registry.Registry`, transitive over the packages it
   imports and the well-known types; a package without types gets a
-  module holding its registry. The `descriptors` option (`on`, the
-  default, or `off`; `--descriptors` on the CLI) leaves the message
-  trees empty and the registry out. The `descriptors_off` conformance case.
+  module holding its registry. The trees are always written: compiled
+  output is the same size when nothing reads them, and a `descriptors`
+  option that left them empty was built, measured and dropped.

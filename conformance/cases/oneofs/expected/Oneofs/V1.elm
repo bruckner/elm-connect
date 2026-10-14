@@ -169,7 +169,7 @@ registry =
             , messageNoteEvent.descriptor
             , messageChoice.descriptor
             ]
-            [ Proto.Enum.descriptor enumColor ]
+            [ enumColor.descriptor ]
         )
         Proto.Registry.wellKnown
 

@@ -388,7 +388,7 @@ registry =
             , messageReadFileRequest.descriptor
             , messageSummary.descriptor
             ]
-            [ Proto.Enum.descriptor enumVisibility ]
+            [ enumVisibility.descriptor ]
         )
         Proto.Registry.wellKnown
 

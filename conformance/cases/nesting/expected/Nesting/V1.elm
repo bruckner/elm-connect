@@ -322,7 +322,7 @@ registry =
             , messageExpr.descriptor
             , messageSum.descriptor
             ]
-            [ Proto.Enum.descriptor enumOuterInnerKind ]
+            [ enumOuterInnerKind.descriptor ]
         )
         Proto.Registry.wellKnown
 

@@ -798,12 +798,15 @@ registry =
   top-level constant, built once at start-up and dropped by dead-code
   elimination when nothing uses it. A package without types has a
   module holding its registry alone.
-- **`descriptors=off`** (§6) writes every message tree empty
-  (`fields = []`, `oneofs = []`; the full name kept) and no registry,
-  for an application that wants smaller generated modules. The typed
-  records stay, since calls are built from them (§4), and so do the
-  enums' `values`, which `Proto.Enum` reads names and numbers through,
-  so an enum's descriptor is whole either way.
+- **No option to leave the trees out.** A `descriptors=off` setting
+  that wrote the message trees empty and no registry was built,
+  measured (below) and dropped *(2026-10-14)*. It saved generated
+  bytes only, and it made a tree with no fields mean either a message
+  with none or descriptors switched off, a doubt every reader of the
+  trees (`Proto.Any.describe`, a registry lookup, `Proto.Enum`'s names
+  and numbers) would have carried. One knob fewer while the shape
+  settles; it can return, additively, if smaller modules turn out to
+  matter.
 - **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
   package of 300 messages of eight fields and ten enums gives a package
   module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
@@ -812,8 +815,8 @@ registry =
   spread larger than the difference). The optimized program is 677 KB
   (46 KB gzipped) without descriptors, the same with them when the
   registry is unused, since dead-code elimination drops the trees, and
-  1,655 KB (73 KB gzipped) when it uses the registry. So the default is
-  `on`: the cost falls on applications that use the descriptors.
+  1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
+  always written: the cost falls on applications that use them.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
@@ -1312,8 +1315,7 @@ both the plain names.
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
-  `unbound_methods=implicit|error`, `descriptors=on|off`,
-  `module_prefix=`, and later perhaps
+  `unbound_methods=implicit|error`, `module_prefix=`, and later perhaps
   `enum_unknown=zero|variant` (§3.3 defers the variant). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
@@ -1321,9 +1323,7 @@ both the plain names.
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`), `unbound_methods` (§4;
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
-  --unbound-methods error`) and `descriptors` (§3.9;
-  `--elm-connect_opt=descriptors=off`, or `elm-connect gen
-  --descriptors off`). The plugin parameter is
+  --unbound-methods error`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
   given twice, is an error. A conformance case sets options with an
   `options.txt` holding that parameter.

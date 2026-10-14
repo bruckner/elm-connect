@@ -134,8 +134,8 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors [ messageTag.descriptor ]
-            [ Proto.Enum.descriptor enumShape
-            , Proto.Enum.descriptor enumHttpMethod
+            [ enumShape.descriptor
+            , enumHttpMethod.descriptor
             ]
         )
         Proto.Registry.wellKnown

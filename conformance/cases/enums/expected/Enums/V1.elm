@@ -112,8 +112,8 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
-            [ Proto.Enum.descriptor enumStatus
-            , Proto.Enum.descriptor enumPriority
+            [ enumStatus.descriptor
+            , enumPriority.descriptor
             ]
         )
         Proto.Registry.wellKnown

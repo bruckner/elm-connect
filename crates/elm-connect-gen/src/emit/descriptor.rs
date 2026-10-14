@@ -6,8 +6,7 @@
 use std::collections::BTreeSet;
 
 use super::{
-    Descriptors, Emitter, MessageShape, PROTO_DESCRIPTOR, PROTO_ENUM, PROTO_MESSAGE,
-    PROTO_REGISTRY, RecordField,
+    Emitter, MessageShape, PROTO_DESCRIPTOR, PROTO_ENUM, PROTO_MESSAGE, PROTO_REGISTRY, RecordField,
 };
 use crate::elm::ast::{Decl, Expr};
 use crate::elm::build::{access, apply, inline_record, int, list, record, string, ty, var};
@@ -19,14 +18,10 @@ impl Emitter {
     /// decoder and default, and its descriptor.
     pub(super) fn message_record(&mut self, shape: &MessageShape) -> Decl {
         let message = shape.message;
-        let (fields, oneofs) = match self.descriptors {
-            Descriptors::On => (self.field_descriptors(shape), oneof_names(shape)),
-            Descriptors::Off => (Vec::new(), Vec::new()),
-        };
         let descriptor = record([
             ("typeName", string(message.proto_full_name.clone())),
-            ("fields", list(fields)),
-            ("oneofs", list(oneofs)),
+            ("fields", list(self.field_descriptors(shape))),
+            ("oneofs", list(oneof_names(shape))),
         ]);
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
@@ -74,8 +69,8 @@ impl Emitter {
         }
     }
 
-    /// `registry : Proto.Registry.Registry`: the package's own descriptors
-    /// (an enum's built by `Proto.Enum.descriptor`), then the registries of the generated packages its module imports,
+    /// `registry : Proto.Registry.Registry`: the package's own descriptors,
+    /// then the registries of the generated packages its module imports,
     /// each of which holds those of its own imports, then the well-known
     /// types'. Of two descriptors with one full name the first is kept,
     /// though a full name is never in two packages.
@@ -88,10 +83,7 @@ impl Emitter {
         let enums: Vec<Expr> = package
             .enums
             .iter()
-            .map(|enumeration| {
-                let descriptor = self.reference((PROTO_ENUM, "descriptor"));
-                apply(descriptor, [var(enumeration.value_name())])
-            })
+            .map(|enumeration| access(var(enumeration.value_name()), "descriptor"))
             .collect();
         let union = self.reference((PROTO_REGISTRY, "union"));
         let mut parts: Vec<Expr> = Vec::new();

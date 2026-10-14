@@ -129,7 +129,7 @@ registry =
             [ messageMember.descriptor
             , messageTeam.descriptor
             ]
-            [ Proto.Enum.descriptor enumRole ]
+            [ enumRole.descriptor ]
         )
         Proto.Registry.wellKnown
 

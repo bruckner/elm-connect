@@ -75,7 +75,7 @@ messageUser =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageUser.descriptor ] [ Proto.Enum.descriptor enumRole ]) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageUser.descriptor ] [ enumRole.descriptor ]) Proto.Registry.wellKnown
 
 
 
