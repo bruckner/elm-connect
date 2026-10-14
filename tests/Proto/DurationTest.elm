@@ -1,14 +1,14 @@
-module Connect.DurationTest exposing (suite)
+module Proto.DurationTest exposing (suite)
 
-import Connect.Duration as Duration
 import Expect
 import Fuzz
+import Proto.Duration as Duration
 import Test exposing (Test, describe, fuzz, fuzz2, test)
 
 
 suite : Test
 suite =
-    describe "Connect.Duration"
+    describe "Proto.Duration"
         [ parsing
         , printing
         , conversions

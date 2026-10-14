@@ -1,4 +1,4 @@
-module Connect.Timestamp exposing (fromString, toString)
+module Proto.Timestamp exposing (fromString, toString)
 
 {-| `google.protobuf.Timestamp` as `Time.Posix`, and its proto3 JSON form: an
 RFC 3339 date and time such as `"2026-10-10T17:19:45.250Z"`.

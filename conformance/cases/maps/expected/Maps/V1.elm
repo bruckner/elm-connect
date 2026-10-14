@@ -3,10 +3,10 @@
 
 module Maps.V1 exposing (..)
 
-import Connect.Json
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -86,14 +86,14 @@ encodeTeam value =
     Json.Encode.object
         [ ( "labels", Json.Encode.dict identity Json.Encode.string value.labels )
         , ( "bySeat", Json.Encode.dict String.fromInt Json.Encode.string value.bySeat )
-        , ( "scores", Json.Encode.dict String.fromInt Connect.Json.encodeFloat value.scores )
+        , ( "scores", Json.Encode.dict String.fromInt Proto.Json.encodeFloat value.scores )
         , ( "flags", Json.Encode.dict String.fromInt Json.Encode.bool value.flags )
-        , ( "totals", Json.Encode.dict String.fromInt Connect.Json.encodeInt64 value.totals )
+        , ( "totals", Json.Encode.dict String.fromInt Proto.Json.encodeInt64 value.totals )
         , ( "byId", Json.Encode.dict identity Json.Encode.string value.byId )
         , ( "counts", Json.Encode.dict identity Json.Encode.int value.counts )
         , ( "members", Json.Encode.dict identity encodeMember value.members )
         , ( "roles", Json.Encode.dict String.fromInt encodeRole value.roles )
-        , ( "byFlag", Connect.Json.encodeBoolMap Json.Encode.string value.byFlag )
+        , ( "byFlag", Proto.Json.encodeBoolMap Json.Encode.string value.byFlag )
         ]
 
 
@@ -103,7 +103,7 @@ encodeTeam value =
 
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
-    Connect.Json.enum "Role"
+    Proto.Json.enum "Role"
         RoleUnspecified
         [ ( "ROLE_UNSPECIFIED", 0, RoleUnspecified )
         , ( "ROLE_OWNER", 1, RoleOwner )
@@ -113,19 +113,19 @@ decodeRole =
 decodeMember : Json.Decode.Decoder Member
 decodeMember =
     Json.Decode.succeed Member
-        |> Connect.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
 
 
 decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
     Json.Decode.succeed Team
-        |> Connect.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Connect.Json.fieldEither "bySeat" "by_seat" Dict.empty (Connect.Json.intDict Json.Decode.string)
-        |> Connect.Json.field "scores" Dict.empty (Connect.Json.intDict Connect.Json.float)
-        |> Connect.Json.field "flags" Dict.empty (Connect.Json.intDict Json.Decode.bool)
-        |> Connect.Json.field "totals" Dict.empty (Connect.Json.intDict Connect.Json.int64)
-        |> Connect.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Connect.Json.field "counts" Dict.empty (Json.Decode.dict Connect.Json.int32)
-        |> Connect.Json.field "members" Dict.empty (Json.Decode.dict decodeMember)
-        |> Connect.Json.field "roles" Dict.empty (Connect.Json.intDict decodeRole)
-        |> Connect.Json.fieldEither "byFlag" "by_flag" [] (Connect.Json.boolMap Json.Decode.string)
+        |> Proto.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
+        |> Proto.Json.fieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.intDict Json.Decode.string)
+        |> Proto.Json.field "scores" Dict.empty (Proto.Json.intDict Proto.Json.float)
+        |> Proto.Json.field "flags" Dict.empty (Proto.Json.intDict Json.Decode.bool)
+        |> Proto.Json.field "totals" Dict.empty (Proto.Json.intDict Proto.Json.int64)
+        |> Proto.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Json.Decode.string)
+        |> Proto.Json.field "counts" Dict.empty (Json.Decode.dict Proto.Json.int32)
+        |> Proto.Json.field "members" Dict.empty (Json.Decode.dict decodeMember)
+        |> Proto.Json.field "roles" Dict.empty (Proto.Json.intDict decodeRole)
+        |> Proto.Json.fieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Json.Decode.string)

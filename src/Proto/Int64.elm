@@ -1,4 +1,4 @@
-module Connect.Int64 exposing (toInt, fromInt)
+module Proto.Int64 exposing (toInt, fromInt)
 
 {-| Conversions between the decimal strings elm-connect holds 64-bit integers
 in (`int64`, `uint64`, `sint64`, `fixed64`, `sfixed64`) and Elm's `Int`.

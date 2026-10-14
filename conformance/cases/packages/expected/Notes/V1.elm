@@ -3,10 +3,10 @@
 
 module Notes.V1 exposing (..)
 
-import Connect.Json
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Json
 import Users.V1
 
 
@@ -53,7 +53,7 @@ encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Json.Encode.object
         ([ ( "title", Json.Encode.string value.title )
-         , ( "author", Connect.Json.encodeMaybe Users.V1.encodeUser value.author )
+         , ( "author", Proto.Json.encodeMaybe Users.V1.encodeUser value.author )
          , ( "requiredRole", Users.V1.encodeRole value.requiredRole )
          , ( "readers", Json.Encode.list Users.V1.encodeUser value.readers )
          , ( "roles", Json.Encode.dict identity Users.V1.encodeRole value.roles )
@@ -82,18 +82,18 @@ encodeNoteOwner value =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Connect.Json.field "title" "" Json.Decode.string
-        |> Connect.Json.field "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
-        |> Connect.Json.fieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
-        |> Connect.Json.field "readers" [] (Json.Decode.list Users.V1.decodeUser)
-        |> Connect.Json.field "roles" Dict.empty (Json.Decode.dict Users.V1.decodeRole)
-        |> Connect.Json.oneof decodeNoteOwner
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
+        |> Proto.Json.fieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
+        |> Proto.Json.field "readers" [] (Json.Decode.list Users.V1.decodeUser)
+        |> Proto.Json.field "roles" Dict.empty (Json.Decode.dict Users.V1.decodeRole)
+        |> Proto.Json.oneof decodeNoteOwner
 
 
 decodeNoteOwner : Json.Decode.Decoder NoteOwner
 decodeNoteOwner =
-    Connect.Json.members "owner"
+    Proto.Json.members "owner"
         NoteOwnerUnset
-        [ Connect.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
-        , Connect.Json.member "team" (Json.Decode.map NoteOwnerTeam Json.Decode.string)
+        [ Proto.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
+        , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Json.Decode.string)
         ]

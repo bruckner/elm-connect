@@ -3,9 +3,9 @@
 
 module Users.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -62,7 +62,7 @@ encodeUser value =
 
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
-    Connect.Json.enum "Role"
+    Proto.Json.enum "Role"
         RoleUnspecified
         [ ( "ROLE_UNSPECIFIED", 0, RoleUnspecified )
         , ( "ROLE_EDITOR", 1, RoleEditor )
@@ -72,5 +72,5 @@ decodeRole =
 decodeUser : Json.Decode.Decoder User
 decodeUser =
     Json.Decode.succeed User
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "role" RoleUnspecified decodeRole
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "role" RoleUnspecified decodeRole

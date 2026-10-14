@@ -3,8 +3,8 @@
 
 module Notes.V1.NotesService exposing (..)
 
-import Connect.Json
 import Notes.V1
+import Proto.Json
 import Rpc
 
 
@@ -156,7 +156,7 @@ deleteNote =
         , method = "DeleteNote"
         , idempotent = False
         , encodeJson = Notes.V1.encodeDeleteNoteRequest
-        , jsonDecoder = Connect.Json.empty
+        , jsonDecoder = Proto.Json.empty
         , bindings =
             [ Rpc.binding
                 { method = "DELETE"
@@ -227,8 +227,8 @@ ping =
         { service = "notes.v1.NotesService"
         , method = "Ping"
         , idempotent = False
-        , encodeJson = Connect.Json.encodeEmpty
-        , jsonDecoder = Connect.Json.empty
+        , encodeJson = Proto.Json.encodeEmpty
+        , jsonDecoder = Proto.Json.empty
         , bindings =
             [ Rpc.binding
                 { method = "GET"

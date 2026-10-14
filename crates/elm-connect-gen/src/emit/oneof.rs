@@ -2,7 +2,7 @@
 //! decoder (design §3.6).
 
 use super::field::{ValueShape, Zeroed};
-use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, var};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
@@ -80,12 +80,12 @@ impl Emitter {
     }
 
     /// `decodeFooKind : Json.Decode.Decoder FooKind`:
-    /// `Connect.Json.members "kind" FooKindUnset [ ... ]`, a member step per
+    /// `Proto.Json.members "kind" FooKindUnset [ ... ]`, a member step per
     /// member in declaration order, which reads the one member present
     /// (absent or `null` being not present), unset when none is, and fails
     /// on a malformed member or on more than one present (design §3.6).
     ///
-    /// Each step is `Connect.Json.member`, or `memberEither` when the JSON
+    /// Each step is `Proto.Json.member`, or `memberEither` when the JSON
     /// and proto names differ, with the member's decoder mapped onto its
     /// constructor; a member that closes a cycle decodes through
     /// `Json.Decode.lazy`. A member of `google.protobuf.Empty` is an
@@ -124,11 +124,11 @@ impl Emitter {
                 } else {
                     format!("{helper}Either")
                 };
-                let step = self.reference((CONNECT_JSON, &helper));
+                let step = self.reference((PROTO_JSON, &helper));
                 apply(step, names.into_iter().chain([arg]))
             })
             .collect();
-        let members = self.reference((CONNECT_JSON, "members"));
+        let members = self.reference((PROTO_JSON, "members"));
         let annotation = self.library_type(
             JSON_DECODE,
             "Decoder",

@@ -3,11 +3,11 @@
 
 module WellKnown.V1 exposing (..)
 
-import Connect.Duration exposing (Duration)
-import Connect.Json
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Duration exposing (Duration)
+import Proto.Json
 import Time
 
 
@@ -96,31 +96,31 @@ defaultEvent =
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
     Json.Encode.object
-        ([ ( "createdAt", Connect.Json.encodeMaybe Connect.Json.encodeTimestamp value.createdAt )
-         , ( "timeout", Connect.Json.encodeMaybe Connect.Json.encodeDuration value.timeout )
-         , ( "updateMask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.updateMask )
-         , ( "marker", Connect.Json.encodeEmpty value.marker )
-         , ( "metadata", Connect.Json.encodeMaybe Connect.Json.encodeStruct value.metadata )
+        ([ ( "createdAt", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.createdAt )
+         , ( "timeout", Proto.Json.encodeMaybe Proto.Json.encodeDuration value.timeout )
+         , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
+         , ( "marker", Proto.Json.encodeEmpty value.marker )
+         , ( "metadata", Proto.Json.encodeMaybe Proto.Json.encodeStruct value.metadata )
          , ( "payload", value.payload )
-         , ( "items", Connect.Json.encodeMaybe Connect.Json.encodeListValue value.items )
-         , ( "ratio", Connect.Json.encodeMaybe Connect.Json.encodeFloat value.ratio )
-         , ( "weight", Connect.Json.encodeMaybe Connect.Json.encodeFloat value.weight )
-         , ( "bigCount", Connect.Json.encodeMaybe Connect.Json.encodeInt64 value.bigCount )
-         , ( "bigTotal", Connect.Json.encodeMaybe Connect.Json.encodeInt64 value.bigTotal )
-         , ( "count", Connect.Json.encodeMaybe Json.Encode.int value.count )
-         , ( "total", Connect.Json.encodeMaybe Json.Encode.int value.total )
-         , ( "enabled", Connect.Json.encodeMaybe Json.Encode.bool value.enabled )
-         , ( "nickname", Connect.Json.encodeMaybe Json.Encode.string value.nickname )
-         , ( "avatar", Connect.Json.encodeMaybe Connect.Json.encodeBytes value.avatar )
-         , ( "history", Json.Encode.list Connect.Json.encodeTimestamp value.history )
-         , ( "limits", Json.Encode.dict identity Connect.Json.encodeDuration value.limits )
+         , ( "items", Proto.Json.encodeMaybe Proto.Json.encodeListValue value.items )
+         , ( "ratio", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.ratio )
+         , ( "weight", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.weight )
+         , ( "bigCount", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.bigCount )
+         , ( "bigTotal", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.bigTotal )
+         , ( "count", Proto.Json.encodeMaybe Json.Encode.int value.count )
+         , ( "total", Proto.Json.encodeMaybe Json.Encode.int value.total )
+         , ( "enabled", Proto.Json.encodeMaybe Json.Encode.bool value.enabled )
+         , ( "nickname", Proto.Json.encodeMaybe Json.Encode.string value.nickname )
+         , ( "avatar", Proto.Json.encodeMaybe Proto.Json.encodeBytes value.avatar )
+         , ( "history", Json.Encode.list Proto.Json.encodeTimestamp value.history )
+         , ( "limits", Json.Encode.dict identity Proto.Json.encodeDuration value.limits )
          , ( "values", Json.Encode.list identity value.values )
          , ( "counts", Json.Encode.list Json.Encode.int value.counts )
-         , ( "acked", Connect.Json.encodeEmpty value.acked )
-         , ( "pings", Json.Encode.list Connect.Json.encodeEmpty value.pings )
-         , ( "seen", Json.Encode.dict identity Connect.Json.encodeEmpty value.seen )
-         , ( "records", Json.Encode.list Connect.Json.encodeStruct value.records )
-         , ( "columns", Json.Encode.dict identity Connect.Json.encodeListValue value.columns )
+         , ( "acked", Proto.Json.encodeEmpty value.acked )
+         , ( "pings", Json.Encode.list Proto.Json.encodeEmpty value.pings )
+         , ( "seen", Json.Encode.dict identity Proto.Json.encodeEmpty value.seen )
+         , ( "records", Json.Encode.list Proto.Json.encodeStruct value.records )
+         , ( "columns", Json.Encode.dict identity Proto.Json.encodeListValue value.columns )
          ]
             ++ encodeEventWhen value.when
         )
@@ -133,19 +133,19 @@ encodeEventWhen value =
             []
 
         EventWhenAt member ->
-            [ ( "at", Connect.Json.encodeTimestamp member ) ]
+            [ ( "at", Proto.Json.encodeTimestamp member ) ]
 
         EventWhenAfter member ->
-            [ ( "after", Connect.Json.encodeDuration member ) ]
+            [ ( "after", Proto.Json.encodeDuration member ) ]
 
         EventWhenWhenever member ->
             [ ( "whenever", member ) ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Connect.Json.encodeStruct member ) ]
+            [ ( "schedule", Proto.Json.encodeStruct member ) ]
 
         EventWhenDates member ->
-            [ ( "dates", Connect.Json.encodeListValue member ) ]
+            [ ( "dates", Proto.Json.encodeListValue member ) ]
 
 
 
@@ -155,41 +155,41 @@ encodeEventWhen value =
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Json.Decode.succeed Event
-        |> Connect.Json.fieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Connect.Json.timestamp)
-        |> Connect.Json.field "timeout" Nothing (Json.Decode.map Just Connect.Json.duration)
-        |> Connect.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
-        |> Connect.Json.field "marker" () Connect.Json.empty
-        |> Connect.Json.field "metadata" Nothing (Json.Decode.map Just Connect.Json.struct)
-        |> Connect.Json.field "payload" Json.Encode.null Json.Decode.value
-        |> Connect.Json.field "items" Nothing (Json.Decode.map Just Connect.Json.listValue)
-        |> Connect.Json.field "ratio" Nothing (Json.Decode.map Just Connect.Json.float)
-        |> Connect.Json.field "weight" Nothing (Json.Decode.map Just Connect.Json.float)
-        |> Connect.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Connect.Json.int64)
-        |> Connect.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Connect.Json.int64)
-        |> Connect.Json.field "count" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.field "total" Nothing (Json.Decode.map Just Connect.Json.uint32)
-        |> Connect.Json.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Connect.Json.field "nickname" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Connect.Json.field "avatar" Nothing (Json.Decode.map Just Connect.Json.bytes)
-        |> Connect.Json.field "history" [] (Json.Decode.list Connect.Json.timestamp)
-        |> Connect.Json.field "limits" Dict.empty (Json.Decode.dict Connect.Json.duration)
-        |> Connect.Json.field "values" [] (Json.Decode.list Json.Decode.value)
-        |> Connect.Json.field "counts" [] (Json.Decode.list Connect.Json.int32)
-        |> Connect.Json.oneof decodeEventWhen
-        |> Connect.Json.field "acked" () Connect.Json.empty
-        |> Connect.Json.field "pings" [] (Json.Decode.list Connect.Json.empty)
-        |> Connect.Json.field "seen" Dict.empty (Json.Decode.dict Connect.Json.empty)
-        |> Connect.Json.field "records" [] (Json.Decode.list Connect.Json.struct)
-        |> Connect.Json.field "columns" Dict.empty (Json.Decode.dict Connect.Json.listValue)
+        |> Proto.Json.fieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        |> Proto.Json.field "timeout" Nothing (Json.Decode.map Just Proto.Json.duration)
+        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+        |> Proto.Json.field "marker" () Proto.Json.empty
+        |> Proto.Json.field "metadata" Nothing (Json.Decode.map Just Proto.Json.struct)
+        |> Proto.Json.field "payload" Json.Encode.null Json.Decode.value
+        |> Proto.Json.field "items" Nothing (Json.Decode.map Just Proto.Json.listValue)
+        |> Proto.Json.field "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
+        |> Proto.Json.field "weight" Nothing (Json.Decode.map Just Proto.Json.float)
+        |> Proto.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.int64)
+        |> Proto.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.int64)
+        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.field "total" Nothing (Json.Decode.map Just Proto.Json.uint32)
+        |> Proto.Json.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
+        |> Proto.Json.field "nickname" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "avatar" Nothing (Json.Decode.map Just Proto.Json.bytes)
+        |> Proto.Json.field "history" [] (Json.Decode.list Proto.Json.timestamp)
+        |> Proto.Json.field "limits" Dict.empty (Json.Decode.dict Proto.Json.duration)
+        |> Proto.Json.field "values" [] (Json.Decode.list Json.Decode.value)
+        |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
+        |> Proto.Json.oneof decodeEventWhen
+        |> Proto.Json.field "acked" () Proto.Json.empty
+        |> Proto.Json.field "pings" [] (Json.Decode.list Proto.Json.empty)
+        |> Proto.Json.field "seen" Dict.empty (Json.Decode.dict Proto.Json.empty)
+        |> Proto.Json.field "records" [] (Json.Decode.list Proto.Json.struct)
+        |> Proto.Json.field "columns" Dict.empty (Json.Decode.dict Proto.Json.listValue)
 
 
 decodeEventWhen : Json.Decode.Decoder EventWhen
 decodeEventWhen =
-    Connect.Json.members "when"
+    Proto.Json.members "when"
         EventWhenUnset
-        [ Connect.Json.member "at" (Json.Decode.map EventWhenAt Connect.Json.timestamp)
-        , Connect.Json.member "after" (Json.Decode.map EventWhenAfter Connect.Json.duration)
-        , Connect.Json.valueMember "whenever" EventWhenWhenever
-        , Connect.Json.member "schedule" (Json.Decode.map EventWhenSchedule Connect.Json.struct)
-        , Connect.Json.member "dates" (Json.Decode.map EventWhenDates Connect.Json.listValue)
+        [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.timestamp)
+        , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.duration)
+        , Proto.Json.valueMember "whenever" EventWhenWhenever
+        , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule Proto.Json.struct)
+        , Proto.Json.member "dates" (Json.Decode.map EventWhenDates Proto.Json.listValue)
         ]

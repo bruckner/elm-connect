@@ -3,9 +3,9 @@
 
 module Scalars.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -75,23 +75,23 @@ defaultEmpty =
 encodeScalars : Scalars -> Json.Encode.Value
 encodeScalars value =
     Json.Encode.object
-        [ ( "doubleValue", Connect.Json.encodeFloat value.doubleValue )
-        , ( "floatValue", Connect.Json.encodeFloat value.floatValue )
+        [ ( "doubleValue", Proto.Json.encodeFloat value.doubleValue )
+        , ( "floatValue", Proto.Json.encodeFloat value.floatValue )
         , ( "int32Value", Json.Encode.int value.int32Value )
-        , ( "int64Value", Connect.Json.encodeInt64 value.int64Value )
+        , ( "int64Value", Proto.Json.encodeInt64 value.int64Value )
         , ( "uint32Value", Json.Encode.int value.uint32Value )
-        , ( "uint64Value", Connect.Json.encodeInt64 value.uint64Value )
+        , ( "uint64Value", Proto.Json.encodeInt64 value.uint64Value )
         , ( "sint32Value", Json.Encode.int value.sint32Value )
-        , ( "sint64Value", Connect.Json.encodeInt64 value.sint64Value )
+        , ( "sint64Value", Proto.Json.encodeInt64 value.sint64Value )
         , ( "fixed32Value", Json.Encode.int value.fixed32Value )
-        , ( "fixed64Value", Connect.Json.encodeInt64 value.fixed64Value )
+        , ( "fixed64Value", Proto.Json.encodeInt64 value.fixed64Value )
         , ( "sfixed32Value", Json.Encode.int value.sfixed32Value )
-        , ( "sfixed64Value", Connect.Json.encodeInt64 value.sfixed64Value )
+        , ( "sfixed64Value", Proto.Json.encodeInt64 value.sfixed64Value )
         , ( "boolValue", Json.Encode.bool value.boolValue )
         , ( "text", Json.Encode.string value.stringValue )
-        , ( "bytesValue", Connect.Json.encodeBytes value.bytesValue )
-        , ( "smallCount", Connect.Json.encodeInt64AsInt value.smallCount )
-        , ( "exactTotal", Connect.Json.encodeInt64 value.exactTotal )
+        , ( "bytesValue", Proto.Json.encodeBytes value.bytesValue )
+        , ( "smallCount", Proto.Json.encodeInt64AsInt value.smallCount )
+        , ( "exactTotal", Proto.Json.encodeInt64 value.exactTotal )
         ]
 
 
@@ -107,23 +107,23 @@ encodeEmpty _ =
 decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Json.Decode.succeed Scalars
-        |> Connect.Json.fieldEither "doubleValue" "double_value" 0.0 Connect.Json.float
-        |> Connect.Json.fieldEither "floatValue" "float_value" 0.0 Connect.Json.float
-        |> Connect.Json.fieldEither "int32Value" "int32_value" 0 Connect.Json.int32
-        |> Connect.Json.fieldEither "int64Value" "int64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "uint32Value" "uint32_value" 0 Connect.Json.uint32
-        |> Connect.Json.fieldEither "uint64Value" "uint64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "sint32Value" "sint32_value" 0 Connect.Json.int32
-        |> Connect.Json.fieldEither "sint64Value" "sint64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "fixed32Value" "fixed32_value" 0 Connect.Json.uint32
-        |> Connect.Json.fieldEither "fixed64Value" "fixed64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "sfixed32Value" "sfixed32_value" 0 Connect.Json.int32
-        |> Connect.Json.fieldEither "sfixed64Value" "sfixed64_value" "0" Connect.Json.int64
-        |> Connect.Json.fieldEither "boolValue" "bool_value" False Json.Decode.bool
-        |> Connect.Json.fieldEither "text" "string_value" "" Json.Decode.string
-        |> Connect.Json.fieldEither "bytesValue" "bytes_value" "" Connect.Json.bytes
-        |> Connect.Json.fieldEither "smallCount" "small_count" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "exactTotal" "exact_total" "0" Connect.Json.int64
+        |> Proto.Json.fieldEither "doubleValue" "double_value" 0.0 Proto.Json.float
+        |> Proto.Json.fieldEither "floatValue" "float_value" 0.0 Proto.Json.float
+        |> Proto.Json.fieldEither "int32Value" "int32_value" 0 Proto.Json.int32
+        |> Proto.Json.fieldEither "int64Value" "int64_value" "0" Proto.Json.int64
+        |> Proto.Json.fieldEither "uint32Value" "uint32_value" 0 Proto.Json.uint32
+        |> Proto.Json.fieldEither "uint64Value" "uint64_value" "0" Proto.Json.int64
+        |> Proto.Json.fieldEither "sint32Value" "sint32_value" 0 Proto.Json.int32
+        |> Proto.Json.fieldEither "sint64Value" "sint64_value" "0" Proto.Json.int64
+        |> Proto.Json.fieldEither "fixed32Value" "fixed32_value" 0 Proto.Json.uint32
+        |> Proto.Json.fieldEither "fixed64Value" "fixed64_value" "0" Proto.Json.int64
+        |> Proto.Json.fieldEither "sfixed32Value" "sfixed32_value" 0 Proto.Json.int32
+        |> Proto.Json.fieldEither "sfixed64Value" "sfixed64_value" "0" Proto.Json.int64
+        |> Proto.Json.fieldEither "boolValue" "bool_value" False Json.Decode.bool
+        |> Proto.Json.fieldEither "text" "string_value" "" Json.Decode.string
+        |> Proto.Json.fieldEither "bytesValue" "bytes_value" "" Proto.Json.bytes
+        |> Proto.Json.fieldEither "smallCount" "small_count" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "exactTotal" "exact_total" "0" Proto.Json.int64
 
 
 decodeEmpty : Json.Decode.Decoder Empty

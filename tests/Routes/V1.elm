@@ -3,10 +3,10 @@
 
 module Routes.V1 exposing (..)
 
-import Connect.Duration exposing (Duration)
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Duration exposing (Duration)
+import Proto.Json
 import Time
 
 
@@ -221,8 +221,8 @@ encodeGetMessageRequest : GetMessageRequest -> Json.Encode.Value
 encodeGetMessageRequest value =
     Json.Encode.object
         [ ( "messageId", Json.Encode.string value.messageId )
-        , ( "revision", Connect.Json.encodeInt64 value.revision )
-        , ( "sub", Connect.Json.encodeMaybe encodeGetMessageRequestSubMessage value.sub )
+        , ( "revision", Proto.Json.encodeInt64 value.revision )
+        , ( "sub", Proto.Json.encodeMaybe encodeGetMessageRequestSubMessage value.sub )
         , ( "userId", Json.Encode.string value.userId )
         , ( "name", Json.Encode.string value.name )
         ]
@@ -245,7 +245,7 @@ encodeUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
 encodeUpdateMessageRequest value =
     Json.Encode.object
         [ ( "messageId", Json.Encode.string value.messageId )
-        , ( "message", Connect.Json.encodeMaybe encodeMessage value.message )
+        , ( "message", Proto.Json.encodeMaybe encodeMessage value.message )
         ]
 
 
@@ -254,24 +254,24 @@ encodeEverything value =
     Json.Encode.object
         ([ ( "name", Json.Encode.string value.name )
          , ( "count", Json.Encode.int value.count )
-         , ( "big", Connect.Json.encodeInt64 value.big )
-         , ( "ubig", Connect.Json.encodeInt64 value.ubig )
+         , ( "big", Proto.Json.encodeInt64 value.big )
+         , ( "ubig", Proto.Json.encodeInt64 value.ubig )
          , ( "flag", Json.Encode.bool value.flag )
-         , ( "ratio", Connect.Json.encodeFloat value.ratio )
-         , ( "scale", Connect.Json.encodeFloat value.scale )
-         , ( "data", Connect.Json.encodeBytes value.data )
+         , ( "ratio", Proto.Json.encodeFloat value.ratio )
+         , ( "scale", Proto.Json.encodeFloat value.scale )
+         , ( "data", Proto.Json.encodeBytes value.data )
          , ( "kind", encodeKind value.kind )
          , ( "tags", Json.Encode.list Json.Encode.string value.tags )
          , ( "kinds", Json.Encode.list encodeKind value.kinds )
          , ( "numbers", Json.Encode.list Json.Encode.int value.numbers )
-         , ( "maybeCount", Connect.Json.encodeMaybe Json.Encode.int value.maybeCount )
-         , ( "maybeName", Connect.Json.encodeMaybe Json.Encode.string value.maybeName )
-         , ( "at", Connect.Json.encodeMaybe Connect.Json.encodeTimestamp value.at )
-         , ( "wait", Connect.Json.encodeMaybe Connect.Json.encodeDuration value.wait )
-         , ( "mask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.mask )
-         , ( "limit", Connect.Json.encodeMaybe Json.Encode.int value.limit )
-         , ( "label", Connect.Json.encodeMaybe Json.Encode.string value.label )
-         , ( "inner", Connect.Json.encodeMaybe encodeInner value.inner )
+         , ( "maybeCount", Proto.Json.encodeMaybe Json.Encode.int value.maybeCount )
+         , ( "maybeName", Proto.Json.encodeMaybe Json.Encode.string value.maybeName )
+         , ( "at", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.at )
+         , ( "wait", Proto.Json.encodeMaybe Proto.Json.encodeDuration value.wait )
+         , ( "mask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.mask )
+         , ( "limit", Proto.Json.encodeMaybe Json.Encode.int value.limit )
+         , ( "label", Proto.Json.encodeMaybe Json.Encode.string value.label )
+         , ( "inner", Proto.Json.encodeMaybe encodeInner value.inner )
          ]
             ++ encodeEverythingChoice value.choice
         )
@@ -294,7 +294,7 @@ encodeInner : Inner -> Json.Encode.Value
 encodeInner value =
     Json.Encode.object
         [ ( "a", Json.Encode.string value.a )
-        , ( "deep", Connect.Json.encodeMaybe encodeDeep value.deep )
+        , ( "deep", Proto.Json.encodeMaybe encodeDeep value.deep )
         ]
 
 
@@ -322,8 +322,8 @@ encodeResource value =
 encodeUpdateResourceRequest : UpdateResourceRequest -> Json.Encode.Value
 encodeUpdateResourceRequest value =
     Json.Encode.object
-        [ ( "resource", Connect.Json.encodeMaybe encodeResource value.resource )
-        , ( "updateMask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.updateMask )
+        [ ( "resource", Proto.Json.encodeMaybe encodeResource value.resource )
+        , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
         ]
 
 
@@ -333,7 +333,7 @@ encodeUpdateResourceRequest value =
 
 decodeKind : Json.Decode.Decoder Kind
 decodeKind =
-    Connect.Json.enum "Kind"
+    Proto.Json.enum "Kind"
         KindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, KindUnspecified )
         , ( "KIND_TEXT", 1, KindText )
@@ -344,97 +344,97 @@ decodeKind =
 decodeGetMessageRequest : Json.Decode.Decoder GetMessageRequest
 decodeGetMessageRequest =
     Json.Decode.succeed GetMessageRequest
-        |> Connect.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
-        |> Connect.Json.field "revision" "0" Connect.Json.int64
-        |> Connect.Json.field "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
-        |> Connect.Json.fieldEither "userId" "user_id" "" Json.Decode.string
-        |> Connect.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
+        |> Proto.Json.field "revision" "0" Proto.Json.int64
+        |> Proto.Json.field "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
+        |> Proto.Json.fieldEither "userId" "user_id" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
 
 
 decodeGetMessageRequestSubMessage : Json.Decode.Decoder GetMessageRequestSubMessage
 decodeGetMessageRequestSubMessage =
     Json.Decode.succeed GetMessageRequestSubMessage
-        |> Connect.Json.field "subfield" "" Json.Decode.string
+        |> Proto.Json.field "subfield" "" Json.Decode.string
 
 
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
     Json.Decode.succeed Message
-        |> Connect.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
-        |> Connect.Json.field "text" "" Json.Decode.string
+        |> Proto.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
+        |> Proto.Json.field "text" "" Json.Decode.string
 
 
 decodeUpdateMessageRequest : Json.Decode.Decoder UpdateMessageRequest
 decodeUpdateMessageRequest =
     Json.Decode.succeed UpdateMessageRequest
-        |> Connect.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
-        |> Connect.Json.field "message" Nothing (Json.Decode.map Just decodeMessage)
+        |> Proto.Json.fieldEither "messageId" "message_id" "" Json.Decode.string
+        |> Proto.Json.field "message" Nothing (Json.Decode.map Just decodeMessage)
 
 
 decodeEverything : Json.Decode.Decoder Everything
 decodeEverything =
     Json.Decode.succeed Everything
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "count" 0 Connect.Json.int32
-        |> Connect.Json.field "big" "0" Connect.Json.int64
-        |> Connect.Json.field "ubig" "0" Connect.Json.int64
-        |> Connect.Json.field "flag" False Json.Decode.bool
-        |> Connect.Json.field "ratio" 0.0 Connect.Json.float
-        |> Connect.Json.field "scale" 0.0 Connect.Json.float
-        |> Connect.Json.field "data" "" Connect.Json.bytes
-        |> Connect.Json.field "kind" KindUnspecified decodeKind
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
-        |> Connect.Json.field "kinds" [] (Json.Decode.list decodeKind)
-        |> Connect.Json.field "numbers" [] (Json.Decode.list Connect.Json.int32)
-        |> Connect.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.fieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Connect.Json.field "at" Nothing (Json.Decode.map Just Connect.Json.timestamp)
-        |> Connect.Json.field "wait" Nothing (Json.Decode.map Just Connect.Json.duration)
-        |> Connect.Json.field "mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
-        |> Connect.Json.field "limit" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.field "label" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Connect.Json.field "inner" Nothing (Json.Decode.map Just decodeInner)
-        |> Connect.Json.oneof decodeEverythingChoice
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "count" 0 Proto.Json.int32
+        |> Proto.Json.field "big" "0" Proto.Json.int64
+        |> Proto.Json.field "ubig" "0" Proto.Json.int64
+        |> Proto.Json.field "flag" False Json.Decode.bool
+        |> Proto.Json.field "ratio" 0.0 Proto.Json.float
+        |> Proto.Json.field "scale" 0.0 Proto.Json.float
+        |> Proto.Json.field "data" "" Proto.Json.bytes
+        |> Proto.Json.field "kind" KindUnspecified decodeKind
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "kinds" [] (Json.Decode.list decodeKind)
+        |> Proto.Json.field "numbers" [] (Json.Decode.list Proto.Json.int32)
+        |> Proto.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.fieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
+        |> Proto.Json.field "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+        |> Proto.Json.field "limit" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.field "label" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "inner" Nothing (Json.Decode.map Just decodeInner)
+        |> Proto.Json.oneof decodeEverythingChoice
 
 
 decodeEverythingChoice : Json.Decode.Decoder EverythingChoice
 decodeEverythingChoice =
-    Connect.Json.members "choice"
+    Proto.Json.members "choice"
         EverythingChoiceUnset
-        [ Connect.Json.member "text" (Json.Decode.map EverythingChoiceText Json.Decode.string)
-        , Connect.Json.member "number" (Json.Decode.map EverythingChoiceNumber Connect.Json.int32)
+        [ Proto.Json.member "text" (Json.Decode.map EverythingChoiceText Json.Decode.string)
+        , Proto.Json.member "number" (Json.Decode.map EverythingChoiceNumber Proto.Json.int32)
         ]
 
 
 decodeInner : Json.Decode.Decoder Inner
 decodeInner =
     Json.Decode.succeed Inner
-        |> Connect.Json.field "a" "" Json.Decode.string
-        |> Connect.Json.field "deep" Nothing (Json.Decode.map Just decodeDeep)
+        |> Proto.Json.field "a" "" Json.Decode.string
+        |> Proto.Json.field "deep" Nothing (Json.Decode.map Just decodeDeep)
 
 
 decodeDeep : Json.Decode.Decoder Deep
 decodeDeep =
     Json.Decode.succeed Deep
-        |> Connect.Json.field "b" 0 Connect.Json.int32
-        |> Connect.Json.field "c" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "b" 0 Proto.Json.int32
+        |> Proto.Json.field "c" [] (Json.Decode.list Json.Decode.string)
 
 
 decodeFileRequest : Json.Decode.Decoder FileRequest
 decodeFileRequest =
     Json.Decode.succeed FileRequest
-        |> Connect.Json.field "path" "" Json.Decode.string
+        |> Proto.Json.field "path" "" Json.Decode.string
 
 
 decodeResource : Json.Decode.Decoder Resource
 decodeResource =
     Json.Decode.succeed Resource
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
 
 
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest
 decodeUpdateResourceRequest =
     Json.Decode.succeed UpdateResourceRequest
-        |> Connect.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
-        |> Connect.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
+        |> Proto.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
+        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)

@@ -1,4 +1,4 @@
-module Connect.Duration exposing
+module Proto.Duration exposing
     ( Duration
     , fromSeconds, seconds
     , fromMilliseconds, milliseconds

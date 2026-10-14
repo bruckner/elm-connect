@@ -3,10 +3,10 @@
 
 module Int64Option.V1 exposing (..)
 
-import Connect.Json
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -65,18 +65,18 @@ defaultCounters =
 encodeCounters : Counters -> Json.Encode.Value
 encodeCounters value =
     Json.Encode.object
-        ([ ( "int64Value", Connect.Json.encodeInt64AsInt value.int64Value )
-         , ( "uint64Value", Connect.Json.encodeInt64AsInt value.uint64Value )
-         , ( "sint64Value", Connect.Json.encodeInt64AsInt value.sint64Value )
-         , ( "fixed64Value", Connect.Json.encodeInt64AsInt value.fixed64Value )
-         , ( "sfixed64Value", Connect.Json.encodeInt64AsInt value.sfixed64Value )
-         , ( "exactId", Connect.Json.encodeInt64 value.exactId )
-         , ( "normal", Connect.Json.encodeInt64AsInt value.normal )
-         , ( "maybeCount", Connect.Json.encodeMaybe Connect.Json.encodeInt64AsInt value.maybeCount )
-         , ( "samples", Json.Encode.list Connect.Json.encodeInt64AsInt value.samples )
-         , ( "exactSamples", Json.Encode.list Connect.Json.encodeInt64 value.exactSamples )
-         , ( "byId", Json.Encode.dict identity Connect.Json.encodeInt64AsInt value.byId )
-         , ( "wrapped", Connect.Json.encodeMaybe Connect.Json.encodeInt64AsInt value.wrapped )
+        ([ ( "int64Value", Proto.Json.encodeInt64AsInt value.int64Value )
+         , ( "uint64Value", Proto.Json.encodeInt64AsInt value.uint64Value )
+         , ( "sint64Value", Proto.Json.encodeInt64AsInt value.sint64Value )
+         , ( "fixed64Value", Proto.Json.encodeInt64AsInt value.fixed64Value )
+         , ( "sfixed64Value", Proto.Json.encodeInt64AsInt value.sfixed64Value )
+         , ( "exactId", Proto.Json.encodeInt64 value.exactId )
+         , ( "normal", Proto.Json.encodeInt64AsInt value.normal )
+         , ( "maybeCount", Proto.Json.encodeMaybe Proto.Json.encodeInt64AsInt value.maybeCount )
+         , ( "samples", Json.Encode.list Proto.Json.encodeInt64AsInt value.samples )
+         , ( "exactSamples", Json.Encode.list Proto.Json.encodeInt64 value.exactSamples )
+         , ( "byId", Json.Encode.dict identity Proto.Json.encodeInt64AsInt value.byId )
+         , ( "wrapped", Proto.Json.encodeMaybe Proto.Json.encodeInt64AsInt value.wrapped )
          ]
             ++ encodeCountersLimit value.limit
         )
@@ -89,10 +89,10 @@ encodeCountersLimit value =
             []
 
         CountersLimitAtMost member ->
-            [ ( "atMost", Connect.Json.encodeInt64AsInt member ) ]
+            [ ( "atMost", Proto.Json.encodeInt64AsInt member ) ]
 
         CountersLimitExactly member ->
-            [ ( "exactly", Connect.Json.encodeInt64 member ) ]
+            [ ( "exactly", Proto.Json.encodeInt64 member ) ]
 
 
 
@@ -102,25 +102,25 @@ encodeCountersLimit value =
 decodeCounters : Json.Decode.Decoder Counters
 decodeCounters =
     Json.Decode.succeed Counters
-        |> Connect.Json.fieldEither "int64Value" "int64_value" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "uint64Value" "uint64_value" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "sint64Value" "sint64_value" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "fixed64Value" "fixed64_value" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "sfixed64Value" "sfixed64_value" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "exactId" "exact_id" "0" Connect.Json.int64
-        |> Connect.Json.field "normal" 0 Connect.Json.int64AsInt
-        |> Connect.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Connect.Json.int64AsInt)
-        |> Connect.Json.field "samples" [] (Json.Decode.list Connect.Json.int64AsInt)
-        |> Connect.Json.fieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Connect.Json.int64)
-        |> Connect.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Connect.Json.int64AsInt)
-        |> Connect.Json.field "wrapped" Nothing (Json.Decode.map Just Connect.Json.int64AsInt)
-        |> Connect.Json.oneof decodeCountersLimit
+        |> Proto.Json.fieldEither "int64Value" "int64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "uint64Value" "uint64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "sint64Value" "sint64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "fixed64Value" "fixed64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "sfixed64Value" "sfixed64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "exactId" "exact_id" "0" Proto.Json.int64
+        |> Proto.Json.field "normal" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
+        |> Proto.Json.field "samples" [] (Json.Decode.list Proto.Json.int64AsInt)
+        |> Proto.Json.fieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Proto.Json.int64)
+        |> Proto.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Proto.Json.int64AsInt)
+        |> Proto.Json.field "wrapped" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
+        |> Proto.Json.oneof decodeCountersLimit
 
 
 decodeCountersLimit : Json.Decode.Decoder CountersLimit
 decodeCountersLimit =
-    Connect.Json.members "limit"
+    Proto.Json.members "limit"
         CountersLimitUnset
-        [ Connect.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Connect.Json.int64AsInt)
-        , Connect.Json.member "exactly" (Json.Decode.map CountersLimitExactly Connect.Json.int64)
+        [ Proto.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Proto.Json.int64AsInt)
+        , Proto.Json.member "exactly" (Json.Decode.map CountersLimitExactly Proto.Json.int64)
         ]

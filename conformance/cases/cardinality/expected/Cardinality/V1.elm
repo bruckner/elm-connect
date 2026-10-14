@@ -3,9 +3,9 @@
 
 module Cardinality.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -74,19 +74,19 @@ encodeAuthor value =
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Json.Encode.object
-        [ ( "subtitle", Connect.Json.encodeMaybe Json.Encode.string value.subtitle )
-        , ( "stars", Connect.Json.encodeMaybe Json.Encode.int value.stars )
-        , ( "score", Connect.Json.encodeMaybe Connect.Json.encodeFloat value.score )
-        , ( "views", Connect.Json.encodeMaybe Connect.Json.encodeInt64 value.views )
-        , ( "author", Connect.Json.encodeMaybe encodeAuthor value.author )
-        , ( "editor", Connect.Json.encodeMaybe encodeAuthor value.editor )
+        [ ( "subtitle", Proto.Json.encodeMaybe Json.Encode.string value.subtitle )
+        , ( "stars", Proto.Json.encodeMaybe Json.Encode.int value.stars )
+        , ( "score", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.score )
+        , ( "views", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.views )
+        , ( "author", Proto.Json.encodeMaybe encodeAuthor value.author )
+        , ( "editor", Proto.Json.encodeMaybe encodeAuthor value.editor )
         , ( "tags", Json.Encode.list Json.Encode.string value.tags )
         , ( "counts", Json.Encode.list Json.Encode.int value.counts )
-        , ( "weights", Json.Encode.list Connect.Json.encodeFloat value.weights )
+        , ( "weights", Json.Encode.list Proto.Json.encodeFloat value.weights )
         , ( "reviewers", Json.Encode.list encodeAuthor value.reviewers )
         , ( "title", Json.Encode.string value.title )
         , ( "relatedLinks", Json.Encode.list Json.Encode.string value.relatedLinks )
-        , ( "isDraft", Connect.Json.encodeMaybe Json.Encode.bool value.isDraft )
+        , ( "isDraft", Proto.Json.encodeMaybe Json.Encode.bool value.isDraft )
         ]
 
 
@@ -97,22 +97,22 @@ encodeNote value =
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
     Json.Decode.succeed Author
-        |> Connect.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
 
 
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Connect.Json.field "subtitle" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Connect.Json.field "stars" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.field "score" Nothing (Json.Decode.map Just Connect.Json.float)
-        |> Connect.Json.field "views" Nothing (Json.Decode.map Just Connect.Json.int64)
-        |> Connect.Json.field "author" Nothing (Json.Decode.map Just decodeAuthor)
-        |> Connect.Json.field "editor" Nothing (Json.Decode.map Just decodeAuthor)
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
-        |> Connect.Json.field "counts" [] (Json.Decode.list Connect.Json.int32)
-        |> Connect.Json.field "weights" [] (Json.Decode.list Connect.Json.float)
-        |> Connect.Json.field "reviewers" [] (Json.Decode.list decodeAuthor)
-        |> Connect.Json.field "title" "" Json.Decode.string
-        |> Connect.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Json.Decode.string)
-        |> Connect.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
+        |> Proto.Json.field "subtitle" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "stars" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.field "score" Nothing (Json.Decode.map Just Proto.Json.float)
+        |> Proto.Json.field "views" Nothing (Json.Decode.map Just Proto.Json.int64)
+        |> Proto.Json.field "author" Nothing (Json.Decode.map Just decodeAuthor)
+        |> Proto.Json.field "editor" Nothing (Json.Decode.map Just decodeAuthor)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
+        |> Proto.Json.field "weights" [] (Json.Decode.list Proto.Json.float)
+        |> Proto.Json.field "reviewers" [] (Json.Decode.list decodeAuthor)
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)

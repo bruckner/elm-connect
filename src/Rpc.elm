@@ -100,7 +100,8 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
-import Rpc.Code as Code exposing (Code, ErrorCode)
+import Rpc.Code as Code exposing (Code)
+import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry as Retry
 import Task exposing (Task)
@@ -467,7 +468,7 @@ sendTraced cfg c toMsg =
   - `Rpc`: the server answered with an error: its code, its message, its
     details as the JSON received (`{"type": …, "value": …}`), and where in the
     answer they were found. The code is an
-    [`ErrorCode`](Rpc-Code#ErrorCode), never `Ok`: an answer claiming `ok`
+    [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming `ok`
     while failing reads as `Unknown`.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
     a successful answer whose body does not decode (`Http.BadBody`).
@@ -488,7 +489,7 @@ type Error
     browser exposes them; the message is percent-decoded, and the status text
     stands in when there is none.
   - `HttpStatus`: none of the above; the code is inferred from this HTTP status
-    ([`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus)), the message is the
+    ([`Rpc.ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus)), the message is the
     status text (`HTTP <status>` when there is none), and there are no
     details.
 
@@ -506,7 +507,7 @@ errorToString : Error -> String
 errorToString error =
     case error of
         Rpc rpc ->
-            Code.toString rpc.code
+            ErrorCode.toString rpc.code
                 ++ (if String.isEmpty rpc.message then
                         ""
 
@@ -1073,7 +1074,7 @@ failure metadata raw =
 
                 Nothing ->
                     Rpc
-                        { code = Code.fromHttpStatus metadata.statusCode
+                        { code = ErrorCode.fromHttpStatus metadata.statusCode
                         , message = statusText
                         , details = []
                         , source = HttpStatus metadata.statusCode
@@ -1093,7 +1094,7 @@ header key metadata =
 
 fromGrpc : Int -> ErrorCode
 fromGrpc number =
-    Code.fromInt number |> Maybe.withDefault Code.Unknown
+    ErrorCode.fromInt number |> Maybe.withDefault ErrorCode.Unknown
 
 
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
@@ -1114,7 +1115,7 @@ connectBody : Decoder { code : ErrorCode, message : String, details : List Value
 connectBody =
     Json.Decode.map3 (\code message details -> { code = code, message = message, details = details, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
-            |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
+            |> Json.Decode.map (ErrorCode.fromString >> Maybe.withDefault ErrorCode.Unknown)
         )
         (optional "message" Json.Decode.string "")
         (optional "details" (Json.Decode.list Json.Decode.value) [])

@@ -3,9 +3,9 @@
 
 module Notes.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 import Time
 
 
@@ -212,10 +212,10 @@ encodeListNotesRequest value =
         [ ( "parent", Json.Encode.string value.parent )
         , ( "pageSize", Json.Encode.int value.pageSize )
         , ( "pageToken", Json.Encode.string value.pageToken )
-        , ( "filter", Connect.Json.encodeMaybe encodeListNotesRequestFilter value.filter )
+        , ( "filter", Proto.Json.encodeMaybe encodeListNotesRequestFilter value.filter )
         , ( "tags", Json.Encode.list Json.Encode.string value.tags )
-        , ( "archived", Connect.Json.encodeMaybe Json.Encode.bool value.archived )
-        , ( "revision", Connect.Json.encodeInt64 value.revision )
+        , ( "archived", Proto.Json.encodeMaybe Json.Encode.bool value.archived )
+        , ( "revision", Proto.Json.encodeInt64 value.revision )
         ]
 
 
@@ -223,7 +223,7 @@ encodeListNotesRequestFilter : ListNotesRequestFilter -> Json.Encode.Value
 encodeListNotesRequestFilter value =
     Json.Encode.object
         [ ( "visibility", encodeVisibility value.visibility )
-        , ( "since", Connect.Json.encodeMaybe Connect.Json.encodeTimestamp value.since )
+        , ( "since", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.since )
         ]
 
 
@@ -239,15 +239,15 @@ encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
     Json.Encode.object
         [ ( "parent", Json.Encode.string value.parent )
-        , ( "note", Connect.Json.encodeMaybe encodeNote value.note )
+        , ( "note", Proto.Json.encodeMaybe encodeNote value.note )
         ]
 
 
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
     Json.Encode.object
-        [ ( "note", Connect.Json.encodeMaybe encodeNote value.note )
-        , ( "updateMask", Connect.Json.encodeMaybe Connect.Json.encodeFieldMask value.updateMask )
+        [ ( "note", Proto.Json.encodeMaybe encodeNote value.note )
+        , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
         ]
 
 
@@ -283,7 +283,7 @@ encodeSummary value =
 
 decodeVisibility : Json.Decode.Decoder Visibility
 decodeVisibility =
-    Connect.Json.enum "Visibility"
+    Proto.Json.enum "Visibility"
         VisibilityUnspecified
         [ ( "VISIBILITY_UNSPECIFIED", 0, VisibilityUnspecified )
         , ( "VISIBILITY_PRIVATE", 1, VisibilityPrivate )
@@ -294,79 +294,79 @@ decodeVisibility =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "title" "" Json.Decode.string
-        |> Connect.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
-        |> Connect.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
 
 
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Json.Decode.succeed ListNotesRequest
-        |> Connect.Json.field "parent" "" Json.Decode.string
-        |> Connect.Json.fieldEither "pageSize" "page_size" 0 Connect.Json.int32
-        |> Connect.Json.fieldEither "pageToken" "page_token" "" Json.Decode.string
-        |> Connect.Json.field "filter" Nothing (Json.Decode.map Just decodeListNotesRequestFilter)
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
-        |> Connect.Json.field "archived" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Connect.Json.field "revision" "0" Connect.Json.int64
+        |> Proto.Json.field "parent" "" Json.Decode.string
+        |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
+        |> Proto.Json.fieldEither "pageToken" "page_token" "" Json.Decode.string
+        |> Proto.Json.field "filter" Nothing (Json.Decode.map Just decodeListNotesRequestFilter)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "archived" Nothing (Json.Decode.map Just Json.Decode.bool)
+        |> Proto.Json.field "revision" "0" Proto.Json.int64
 
 
 decodeListNotesRequestFilter : Json.Decode.Decoder ListNotesRequestFilter
 decodeListNotesRequestFilter =
     Json.Decode.succeed ListNotesRequestFilter
-        |> Connect.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Connect.Json.field "since" Nothing (Json.Decode.map Just Connect.Json.timestamp)
+        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
+        |> Proto.Json.field "since" Nothing (Json.Decode.map Just Proto.Json.timestamp)
 
 
 decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
     Json.Decode.succeed ListNotesResponse
-        |> Connect.Json.field "notes" [] (Json.Decode.list decodeNote)
-        |> Connect.Json.fieldEither "nextPageToken" "next_page_token" "" Json.Decode.string
+        |> Proto.Json.field "notes" [] (Json.Decode.list decodeNote)
+        |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Json.Decode.string
 
 
 decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
     Json.Decode.succeed CreateNoteRequest
-        |> Connect.Json.field "parent" "" Json.Decode.string
-        |> Connect.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
+        |> Proto.Json.field "parent" "" Json.Decode.string
+        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
 
 
 decodeUpdateNoteRequest : Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequest =
     Json.Decode.succeed UpdateNoteRequest
-        |> Connect.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
-        |> Connect.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Connect.Json.fieldMask)
+        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
+        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
 
 
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
     Json.Decode.succeed DeleteNoteRequest
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "force" False Json.Decode.bool
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "force" False Json.Decode.bool
 
 
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "reason" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "reason" "" Json.Decode.string
 
 
 decodeReadFileRequest : Json.Decode.Decoder ReadFileRequest
 decodeReadFileRequest =
     Json.Decode.succeed ReadFileRequest
-        |> Connect.Json.field "path" "" Json.Decode.string
+        |> Proto.Json.field "path" "" Json.Decode.string
 
 
 decodeSummary : Json.Decode.Decoder Summary
 decodeSummary =
     Json.Decode.succeed Summary
-        |> Connect.Json.field "text" "" Json.Decode.string
+        |> Proto.Json.field "text" "" Json.Decode.string

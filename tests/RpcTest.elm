@@ -6,7 +6,7 @@ import Http
 import Json.Decode
 import Json.Encode
 import Rpc exposing (Error(..), Source(..))
-import Rpc.Code exposing (ErrorCode(..))
+import Rpc.ErrorCode exposing (ErrorCode(..))
 import Rpc.Internal.Retry as Retry
 import Test exposing (Test, describe, test)
 
