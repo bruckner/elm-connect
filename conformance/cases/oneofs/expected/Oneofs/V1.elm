@@ -3,9 +3,9 @@
 
 module Oneofs.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -128,7 +128,7 @@ encodeNoteEventKind value =
             [ ( "recolored", encodeColor member ) ]
 
         NoteEventKindDeletedAt member ->
-            [ ( "deletedAt", Connect.Json.encodeInt64 member ) ]
+            [ ( "deletedAt", Proto.Json.encodeInt64 member ) ]
 
         NoteEventKindArchived ->
             [ ( "archived", Json.Encode.object [] ) ]
@@ -162,7 +162,7 @@ encodeChoiceValue value =
             []
 
         ChoiceValueNumber member ->
-            [ ( "number", Connect.Json.encodeFloat member ) ]
+            [ ( "number", Proto.Json.encodeFloat member ) ]
 
         ChoiceValueText member ->
             [ ( "label", Json.Encode.string member ) ]
@@ -174,7 +174,7 @@ encodeChoiceValue value =
 
 decodeColor : Json.Decode.Decoder Color
 decodeColor =
-    Connect.Json.enum "Color"
+    Proto.Json.enum "Color"
         ColorUnspecified
         [ ( "COLOR_UNSPECIFIED", 0, ColorUnspecified )
         , ( "COLOR_RED", 1, ColorRed )
@@ -184,50 +184,50 @@ decodeColor =
 decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
     Json.Decode.succeed Created
-        |> Connect.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Json.Decode.string
 
 
 decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
     Json.Decode.succeed NoteEvent
-        |> Connect.Json.field "id" "" Json.Decode.string
-        |> Connect.Json.oneof decodeNoteEventKind
-        |> Connect.Json.oneof decodeNoteEventSource
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.oneof decodeNoteEventKind
+        |> Proto.Json.oneof decodeNoteEventSource
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
 decodeNoteEventKind : Json.Decode.Decoder NoteEventKind
 decodeNoteEventKind =
-    Connect.Json.members "kind"
+    Proto.Json.members "kind"
         NoteEventKindUnset
-        [ Connect.Json.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
-        , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Json.Decode.string)
-        , Connect.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
-        , Connect.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Connect.Json.int64)
-        , Connect.Json.emptyMember "archived" NoteEventKindArchived
-        , Connect.Json.emptyMemberEither "clearedAll" "cleared_all" NoteEventKindClearedAll
+        [ Proto.Json.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
+        , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Json.Decode.string)
+        , Proto.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
+        , Proto.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Proto.Json.int64)
+        , Proto.Json.emptyMember "archived" NoteEventKindArchived
+        , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" NoteEventKindClearedAll
         ]
 
 
 decodeNoteEventSource : Json.Decode.Decoder NoteEventSource
 decodeNoteEventSource =
-    Connect.Json.members "source"
+    Proto.Json.members "source"
         NoteEventSourceUnset
-        [ Connect.Json.member "user" (Json.Decode.map NoteEventSourceUser Json.Decode.string)
-        , Connect.Json.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
+        [ Proto.Json.member "user" (Json.Decode.map NoteEventSourceUser Json.Decode.string)
+        , Proto.Json.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
         ]
 
 
 decodeChoice : Json.Decode.Decoder Choice
 decodeChoice =
     Json.Decode.succeed Choice
-        |> Connect.Json.oneof decodeChoiceValue
+        |> Proto.Json.oneof decodeChoiceValue
 
 
 decodeChoiceValue : Json.Decode.Decoder ChoiceValue
 decodeChoiceValue =
-    Connect.Json.members "value"
+    Proto.Json.members "value"
         ChoiceValueUnset
-        [ Connect.Json.member "number" (Json.Decode.map ChoiceValueNumber Connect.Json.float)
-        , Connect.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Json.Decode.string)
+        [ Proto.Json.member "number" (Json.Decode.map ChoiceValueNumber Proto.Json.float)
+        , Proto.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Json.Decode.string)
         ]

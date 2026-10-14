@@ -3,7 +3,7 @@ module Rpc.Internal.Retry exposing (Policy, delay)
 {-| When to try a call again. Not exposed; `Rpc.Retry` is `Policy`.
 -}
 
-import Rpc.Code exposing (ErrorCode)
+import Rpc.ErrorCode exposing (ErrorCode)
 
 
 {-| The retry policy of a config: `attempts` tries in all, waiting `backoff`

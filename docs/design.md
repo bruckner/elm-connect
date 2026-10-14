@@ -255,14 +255,14 @@ rpc shared call =
   map keys will become `Dict String V` under §3.4.
   Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
-  keys are read from their decimal strings (`Connect.Json.intDict`, which
+  keys are read from their decimal strings (`Proto.Json.intDict`, which
   fails on any other key) and written with `String.fromInt`.
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Connect.Json.encodeBoolMap`) writes a
+  most two entries. The encoder (`Proto.Json.encodeBoolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
-  (`Connect.Json.boolMap`) reads one, fails on any key but exactly
+  (`Proto.Json.boolMap`) reads one, fails on any key but exactly
   `"true"` or `"false"`, and gives the pairs in the object's key order.
   An absent or `null` map decodes as `[]`. A `bool` key was first a
   diagnostic, and `Dict String V` keyed by `"true"`/`"false"` was
@@ -347,7 +347,7 @@ rpc shared call =
 - Generated shape *(Decided)*: the encoder is a `case` with one
   `Json.Encode.string "NAME"` branch per constructor, so the compiler
   checks it is total. The decoder is one call to the runtime's
-  `Connect.Json.enum`, given the enum's proto name, the zero
+  `Proto.Json.enum`, given the enum's proto name, the zero
   constructor and a `( "NAME", number, Constructor )` row per value
   name. Inlined, the decoder would need two `case` expressions (one over
   names, one over numbers) with a fallback branch each, about three
@@ -384,28 +384,28 @@ Decoders accept every form proto3 JSON requires a parser to accept, not
 just the form encoders write. *(Proposed; built.)*
 
 - 32-bit integers as numbers or strings, in exponent notation too
-  (`42`, `"42"`, `1e2`, `"1e2"`), through `Connect.Json.int32` (`int32`,
-  `sint32`, `sfixed32`) and `Connect.Json.uint32` (`uint32`, `fixed32`).
+  (`42`, `"42"`, `1e2`, `"1e2"`), through `Proto.Json.int32` (`int32`,
+  `sint32`, `sfixed32`) and `Proto.Json.uint32` (`uint32`, `fixed32`).
   A fractional value fails, and so does one outside the proto type's
   range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
   notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The
-  `String` form (`Connect.Json.int64`) is always the canonical decimal
+  `String` form (`Proto.Json.int64`) is always the canonical decimal
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
   found by moving the decimal point as text, never through a `Float`,
   so a string past 2^53 keeps every digit. A value that is not an
   integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
   past every 64-bit integer, which also bounds the text an exponent can
-  ask for. `Connect.Json.int64AsInt` reads the same forms within its
+  ask for. `Proto.Json.int64AsInt` reads the same forms within its
   range. A 64-bit map key is kept as the text received (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
 
   ```elm
-  |> Connect.Json.field "title" "" Json.Decode.string
-  |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+  |> Proto.Json.field "title" "" Json.Decode.string
+  |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
@@ -427,14 +427,14 @@ just the form encoders write. *(Proposed; built.)*
   the zero value the reader otherwise sees.
 
 **Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
-text exactly as received; nothing normalises it. `Connect.Json.bytes`
+text exactly as received; nothing normalises it. `Proto.Json.bytes`
 validates it at decode time, with no new dependency: the standard
 alphabet (`A`–`Z`, `a`–`z`, `0`–`9`, `+`, `/`) or the URL-safe one (`-`,
 `_`), not both in one string, with or without `=` padding. It fails on
 any other character, on a length no base64 has (after stripping the
 padding, length mod 4 is 1), and on padding that does not complete the
 last group to four characters. The encoder writes the string unchecked.
-A `Bytes.Bytes`-typed option and `Connect.Bytes` helpers (base64 to and
+A `Bytes.Bytes`-typed option and `Proto.Bytes` helpers (base64 to and
 from elm/bytes) would live in a separate optional package, such as
 `elm-connect-bytes`, depending on elm/bytes, so the runtime keeps its
 dependencies; not prioritised.
@@ -443,13 +443,13 @@ dependencies; not prioritised.
 
 - By default the five 64-bit kinds are `String`, the decimal integer,
   exact for every value. Their zero value is `"0"`, which re-encodes as
-  a valid int64. The runtime's `Connect.Int64` converts (`toInt`, which
+  a valid int64. The runtime's `Proto.Int64` converts (`toInt`, which
   gives `Nothing` outside ±(2^53 − 1), and `fromInt`).
 - The option `int64=int` makes them `Int`. The decoder
-  (`Connect.Json.int64AsInt`) accepts a JSON number or a decimal string
+  (`Proto.Json.int64AsInt`) accepts a JSON number or a decimal string
   and fails on a non-integer or a value outside ±(2^53 − 1), where Elm's
   `Int` stops being exact; it never rounds silently. The encoder
-  (`Connect.Json.encodeInt64AsInt`) writes the decimal string, proto3
+  (`Proto.Json.encodeInt64AsInt`) writes the decimal string, proto3
   JSON's canonical form. The zero value is `0`.
 - The standard field option `jstype` overrides the option per field:
   `[jstype = JS_NUMBER]` makes the field `Int` (range-checked) under
@@ -473,7 +473,7 @@ argument.)*
 | proto | Elm | notes |
 |---|---|---|
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
-| `google.protobuf.Duration` | `Connect.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
+| `google.protobuf.Duration` | `Proto.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
 | `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
@@ -498,7 +498,7 @@ Built as proposed, with these details *(each Proposed)*:
   member of it is a constructor without an argument (`ActionClear`, not
   `ActionClear ()`), encoded as `{"clear": {}}` and decoded from the
   member's key holding an object; a member present as `null` reads as
-  unset, as for any member (`Connect.Json.emptyMember`). Whether such a field was sent is lost
+  unset, as for any member (`Proto.Json.emptyMember`). Whether such a field was sent is lost
   (§3.8).
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
@@ -507,23 +507,23 @@ Built as proposed, with these details *(each Proposed)*:
   is kept: a singular field of either is a `Maybe` like any message
   field, and an absent or `null` field (`Nothing`) is distinct from an
   empty object or array (`Just Dict.empty`, `Just []`). Their decoders
-  (`Connect.Json.struct`, `Connect.Json.listValue`) check the JSON shape
+  (`Proto.Json.struct`, `Proto.Json.listValue`) check the JSON shape
   and fail on anything but an object or an array; their encoders are
-  `Connect.Json.encodeStruct` and `encodeListValue`. The members and
+  `Proto.Json.encodeStruct` and `encodeListValue`. The members and
   elements are passed through as received.
 - `Value` fields are `Json.Encode.Value` without `Maybe`: an absent
   field reads as `null`, and the value is passed through as received
   (`Json.Decode.value`, written back as is). A `Value` member of a oneof
   that arrives as `null` is set and holds `null`, as protojson reads it,
   unlike any other member (§3.6).
-- `Timestamp` (`Connect.Timestamp`, elm/time): RFC 3339 with a fraction
+- `Timestamp` (`Proto.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
   to 9999. `Time.Posix` counts milliseconds, so finer digits are
   truncated (toward the past, never rounded up; §3.8) and a timestamp prints with no fraction or three
   digits; protobuf's six and nine never arise. A leap second
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
   `23:59:59` with its fraction.
-- `Duration` (`Connect.Duration`, opaque): held exactly, as seconds and
+- `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
   nanoseconds like protobuf, rather than as a `Float` of seconds. The
   `Float` views (`fromSeconds`, `seconds`) are exact to the nanosecond
   only below 2^53 ns (about 104 days); `fromMilliseconds` and
@@ -562,17 +562,17 @@ Built *(Proposed in its details)*:
   `( jsonName, value )`, or `[]` when unset, and the message's encoder
   appends it to its fields: `Json.Encode.object ([ ... ] ++
   encodeNoteEventKind value.kind)`.
-- The oneof's decoder is `Connect.Json.members "kind"
+- The oneof's decoder is `Proto.Json.members "kind"
   NoteEventKindUnset [ ... ]`, given the oneof's proto name (for error
-  messages), its unset constructor and a `Connect.Json.member` per
+  messages), its unset constructor and a `Proto.Json.member` per
   member (`memberEither` when the JSON and proto names differ). The
-  message's decoder reads it with a `Connect.Json.oneof` step.
+  message's decoder reads it with a `Proto.Json.oneof` step.
 - Decoding is strict, as protobuf-go's protojson is. *(Decided.)*
   - A member is present when its key holds a value other than `null`;
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
     value of it, so a member present as `null` is set and holds the
-    JSON `null` (`Connect.Json.valueMember`).
+    JSON `null` (`Proto.Json.valueMember`).
   - No member present decodes as the unset constructor.
   - A member present with a value its decoder rejects (`{"title": 1}`
     for a string member) fails the message, as a malformed plain field
@@ -585,7 +585,7 @@ Built *(Proposed in its details)*:
     as a duplicate (§3.4).
 - A member of `google.protobuf.Empty` is a constructor without an
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
-  decoded by `Connect.Json.emptyMember`, which reads the key as set when
+  decoded by `Proto.Json.emptyMember`, which reads the key as set when
   it holds an object; `null` reads as unset, as for any member, and any
   other value fails. *(Decided; §3.5.)*
 - `Json.Decode.oneOf` over the members, ending in
@@ -746,7 +746,7 @@ getNote =
   fully-qualified service name and `method` the method's as declared,
   together its Connect path; `encodeJson` and `jsonDecoder` are the
   request's encoder and the response's decoder, a well-known type's
-  from the runtime (`()` and `Connect.Json.empty` for `Empty`), named
+  from the runtime (`()` and `Proto.Json.empty` for `Empty`), named
   for JSON so a binary pair can join them. No separate
   descriptor value is generated; `Rpc.descriptor` reads it back from
   any call of the method.
@@ -954,10 +954,13 @@ it.
 
 ### 5.2 Rpc  *(Decided, 2026-10-13; built)*
 
-One public runtime module, `Rpc`, plus `Rpc.Code`; its internals live
-under `Rpc.Internal.*`. The codec modules (`Connect.Json`,
-`Connect.Timestamp`, `Connect.Duration`, `Connect.Int64`) keep their
-names.
+The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
+*(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside
+`Rpc.Code` and `Rpc.ErrorCode` (§5.4); its internals live under
+`Rpc.Internal.*`. The data modules are `Proto.Json`, `Proto.Timestamp`,
+`Proto.Duration` and `Proto.Int64`, which generated code calls whatever
+the transport. They were `Connect.*` at first, a name that tied proto3
+JSON to one of the two transports; no public `Connect` module remains.
 
 ```elm
 type Call req res      -- opaque: descriptor, request, binding, per-call adjustments
@@ -1119,20 +1122,22 @@ type Source
 ```
 
 ```elm
+-- Rpc.ErrorCode
+type ErrorCode = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
+
 -- Rpc.Code
 type Code = Ok | Failed ErrorCode
-type ErrorCode = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
 ```
 
-`ErrorCode` has `toString` / `fromString` (Connect's names), `toInt` /
-`fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`;
-`Code` has the same set prefixed `code` (`codeToString`, …), with `Ok`
-as `"ok"`, `0` and any 2xx. *(Decided, 2026-10-13.)* `Ok` is in `Code`
-so that a status can be reported whole (a `Trace`'s `code`), but an
-`Rpc` error carries an `ErrorCode`, so an error claiming `Ok` cannot be
-written; a failed answer whose body says `ok` or `0` reads as
-`Unknown`. The helpers for `ErrorCode` keep the short names because
-error handling is what calls them.
+Each module has `toString` / `fromString` (Connect's names), `toInt` /
+`fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`; for
+`Code`, `Ok` is `"ok"`, `0` and any 2xx. *(Decided, 2026-10-13.)* `Ok`
+is in `Code` so that a status can be reported whole (a `Trace`'s
+`code`), but an `Rpc` error carries an `ErrorCode`, so an error
+claiming `Ok` cannot be written; a failed answer whose body says `ok`
+or `0` reads as `Unknown`. The two types first shared `Rpc.Code`, the
+helpers for `Code` prefixed (`codeToString`, …); a module each gives
+both the plain names.
 
 - `toHttpStatus` is the status a Connect server sends with a code, the
   Connect protocol's table, which is `google/rpc/code.proto`'s HTTP

@@ -34,16 +34,16 @@
 //!   a writer omit or include them; always including them keeps the
 //!   encoder one expression per field. This is the current rule, not yet
 //!   reviewed (design §3.4).
-//! - Decoders are a pipeline of `Connect.Json.field` steps from
+//! - Decoders are a pipeline of `Proto.Json.field` steps from
 //!   `Json.Decode.succeed`, so they read the same at any field count
 //!   (design §8). A missing or `null` field reads as its proto3 zero value.
 //!   A field whose JSON name differs from its proto name uses
-//!   `Connect.Json.fieldEither`, which accepts both keys (design §3.4).
+//!   `Proto.Json.fieldEither`, which accepts both keys (design §3.4).
 //! - A field with presence (proto3 `optional`, or message-typed) is a
 //!   `Maybe`: `Nothing` encodes as `null`, and an absent or `null` field
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array; absent or `null` decodes as `[]`. Both reuse the one
-//!   `Connect.Json.field` step with `Nothing` or `[]` as its zero value.
+//!   `Proto.Json.field` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
 //!   as strings under [`Int64::Int`], a field's `jstype` overriding the
@@ -52,16 +52,16 @@
 //!   keys) or `Int` (32-bit integer keys), encoded with
 //!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
-//!   `List ( Bool, v )` read and written by `Connect.Json.boolMap` and
+//!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
 //!   `encodeBoolMap`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
-//!   writes each constructor's proto name and a `Connect.Json.enum`
+//!   writes each constructor's proto name and a `Proto.Json.enum`
 //!   decoder that reads a name or a number, an unknown one as the zero
 //!   value (design §3.3).
 //! - A oneof is a custom type whose first constructor is the unset case,
 //!   held in one record field where its first member was declared. Its
 //!   encoder gives the set member's key and value for the message's
-//!   object; its decoder is `Connect.Json.members`, which reads the one
+//!   object; its decoder is `Proto.Json.members`, which reads the one
 //!   member present, unset when none is, and fails on a malformed member,
 //!   on two members present, and on a member written under both its names
 //!   (design §3.6).
@@ -106,7 +106,7 @@ const JSON_DECODE: &str = "Json.Decode";
 /// elm/json's encoders.
 const JSON_ENCODE: &str = "Json.Encode";
 /// The runtime package's proto3 JSON helpers.
-const CONNECT_JSON: &str = "Connect.Json";
+const PROTO_JSON: &str = "Proto.Json";
 /// elm/core's `Dict`, imported as `import Dict exposing (Dict)` so the
 /// type reads `Dict String V`, as Elm code conventionally writes it.
 const CORE_DICT: &str = "Dict";
@@ -115,8 +115,8 @@ const CORE_STRING: &str = "String";
 /// elm/time's `Time`, for `Time.Posix`.
 const TIME: &str = "Time";
 /// The runtime package's `Duration`, imported as
-/// `import Connect.Duration exposing (Duration)`.
-const CONNECT_DURATION: &str = "Connect.Duration";
+/// `import Proto.Duration exposing (Duration)`.
+const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime package's calls, home of `Rpc.Call` and the bindings.
 const RPC: &str = "Rpc";
 
@@ -571,7 +571,7 @@ mod tests {
         )]);
         let module = emit(&only_ints, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(imports, ["Connect.Json", "Json.Decode", "Json.Encode"]);
+        assert_eq!(imports, ["Json.Decode", "Json.Encode", "Proto.Json"]);
 
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
@@ -644,12 +644,12 @@ mod tests {
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
-            ["Connect.Json", "Json.Decode", "Json.Encode", "Other.V1"]
+            ["Json.Decode", "Json.Encode", "Other.V1", "Proto.Json"]
         );
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
-            printed.contains("Connect.Json.encodeMaybe Other.V1.encodeB value.b"),
+            printed.contains("Proto.Json.encodeMaybe Other.V1.encodeB value.b"),
             "{printed}"
         );
         assert!(
@@ -682,8 +682,7 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("level : Other.V1.Level"), "{printed}");
         assert!(
-            printed
-                .contains(r#"Connect.Json.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#),
+            printed.contains(r#"Proto.Json.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#),
             "{printed}"
         );
     }

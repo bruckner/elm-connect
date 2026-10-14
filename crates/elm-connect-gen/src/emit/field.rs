@@ -3,8 +3,8 @@
 
 use super::scalar::Repr;
 use super::{
-    CONNECT_DURATION, CONNECT_JSON, CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE,
-    JSON_ENCODE, TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_DURATION, PROTO_JSON,
+    TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -176,7 +176,7 @@ impl Emitter {
             }
             FieldShape::Maybe(inner) => {
                 let inner = self.value_encoder(inner);
-                apply(self.reference((CONNECT_JSON, "encodeMaybe")), [inner])
+                apply(self.reference((PROTO_JSON, "encodeMaybe")), [inner])
             }
             FieldShape::List(inner) => {
                 let inner = self.value_encoder(inner);
@@ -192,7 +192,7 @@ impl Emitter {
             }
             FieldShape::BoolMap(inner) => {
                 let inner = self.value_encoder(inner);
-                apply(self.reference((CONNECT_JSON, "encodeBoolMap")), [inner])
+                apply(self.reference((PROTO_JSON, "encodeBoolMap")), [inner])
             }
         };
         call(encoder, [value])
@@ -216,13 +216,13 @@ impl Emitter {
                 let value = self.value_decoder(value);
                 let dict = match key {
                     KeyShape::String => self.reference((JSON_DECODE, "dict")),
-                    KeyShape::Int => self.reference((CONNECT_JSON, "intDict")),
+                    KeyShape::Int => self.reference((PROTO_JSON, "intDict")),
                 };
                 apply(dict, [value])
             }
             FieldShape::BoolMap(value) => {
                 let value = self.value_decoder(value);
-                apply(self.reference((CONNECT_JSON, "boolMap")), [value])
+                apply(self.reference((PROTO_JSON, "boolMap")), [value])
             }
         };
         (decoder, self.field_default(shape))
@@ -254,7 +254,7 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
             ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
             ValueShape::Present(Present::Duration) => {
-                self.exposed_type(CONNECT_DURATION, "Duration", [])
+                self.exposed_type(PROTO_DURATION, "Duration", [])
             }
             ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
             ValueShape::Present(Present::Struct) => {
@@ -289,19 +289,19 @@ impl Emitter {
             }
             ValueShape::Zeroed(Zeroed::Json) => var("identity"),
             ValueShape::Present(Present::Timestamp) => {
-                self.reference((CONNECT_JSON, "encodeTimestamp"))
+                self.reference((PROTO_JSON, "encodeTimestamp"))
             }
             ValueShape::Present(Present::Duration) => {
-                self.reference((CONNECT_JSON, "encodeDuration"))
+                self.reference((PROTO_JSON, "encodeDuration"))
             }
             ValueShape::Present(Present::FieldMask) => {
-                self.reference((CONNECT_JSON, "encodeFieldMask"))
+                self.reference((PROTO_JSON, "encodeFieldMask"))
             }
-            ValueShape::Present(Present::Struct) => self.reference((CONNECT_JSON, "encodeStruct")),
+            ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "encodeStruct")),
             ValueShape::Present(Present::ListValue) => {
-                self.reference((CONNECT_JSON, "encodeListValue"))
+                self.reference((PROTO_JSON, "encodeListValue"))
             }
-            ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "encodeEmpty")),
+            ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
     }
@@ -316,12 +316,12 @@ impl Emitter {
                 self.generated_value(&name.module, name.decoder_name())
             }
             ValueShape::Zeroed(Zeroed::Json) => self.reference((JSON_DECODE, "value")),
-            ValueShape::Present(Present::Timestamp) => self.reference((CONNECT_JSON, "timestamp")),
-            ValueShape::Present(Present::Duration) => self.reference((CONNECT_JSON, "duration")),
-            ValueShape::Present(Present::FieldMask) => self.reference((CONNECT_JSON, "fieldMask")),
-            ValueShape::Present(Present::Struct) => self.reference((CONNECT_JSON, "struct")),
-            ValueShape::Present(Present::ListValue) => self.reference((CONNECT_JSON, "listValue")),
-            ValueShape::Zeroed(Zeroed::Empty) => self.reference((CONNECT_JSON, "empty")),
+            ValueShape::Present(Present::Timestamp) => self.reference((PROTO_JSON, "timestamp")),
+            ValueShape::Present(Present::Duration) => self.reference((PROTO_JSON, "duration")),
+            ValueShape::Present(Present::FieldMask) => self.reference((PROTO_JSON, "fieldMask")),
+            ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
+            ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
+            ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }
     }

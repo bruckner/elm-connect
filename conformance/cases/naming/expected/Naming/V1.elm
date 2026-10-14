@@ -3,9 +3,9 @@
 
 module Naming.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -133,7 +133,7 @@ encodeTagCase value =
 
 decodeShape : Json.Decode.Decoder Shape
 decodeShape =
-    Connect.Json.enum "Shape"
+    Proto.Json.enum "Shape"
         ShapeUnspecified
         [ ( "SHAPE_UNSPECIFIED", 0, ShapeUnspecified )
         , ( "SHAPE_2D", 1, Shape2d )
@@ -144,7 +144,7 @@ decodeShape =
 
 decodeHttpMethod : Json.Decode.Decoder HttpMethod
 decodeHttpMethod =
-    Connect.Json.enum "HttpMethod"
+    Proto.Json.enum "HttpMethod"
         HttpMethodUnspecified
         [ ( "HTTP_METHOD_UNSPECIFIED", 0, HttpMethodUnspecified )
         , ( "HTTP_METHOD_GET", 1, HttpMethodGet )
@@ -155,22 +155,22 @@ decodeHttpMethod =
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag
-        |> Connect.Json.field "type" "" Json.Decode.string
-        |> Connect.Json.field "if" False Json.Decode.bool
-        |> Connect.Json.field "port" 0 Connect.Json.int32
-        |> Connect.Json.field "alias" "" Json.Decode.string
-        |> Connect.Json.fieldEither "screenName" "display_name" "" Json.Decode.string
-        |> Connect.Json.fieldEither "httpUrl" "http_url" "" Json.Decode.string
-        |> Connect.Json.fieldEither "v2Count" "v2_count" 0 Connect.Json.int32
-        |> Connect.Json.field "shape" ShapeUnspecified decodeShape
-        |> Connect.Json.field "method" HttpMethodUnspecified decodeHttpMethod
-        |> Connect.Json.oneof decodeTagCase
+        |> Proto.Json.field "type" "" Json.Decode.string
+        |> Proto.Json.field "if" False Json.Decode.bool
+        |> Proto.Json.field "port" 0 Proto.Json.int32
+        |> Proto.Json.field "alias" "" Json.Decode.string
+        |> Proto.Json.fieldEither "screenName" "display_name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "httpUrl" "http_url" "" Json.Decode.string
+        |> Proto.Json.fieldEither "v2Count" "v2_count" 0 Proto.Json.int32
+        |> Proto.Json.field "shape" ShapeUnspecified decodeShape
+        |> Proto.Json.field "method" HttpMethodUnspecified decodeHttpMethod
+        |> Proto.Json.oneof decodeTagCase
 
 
 decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
-    Connect.Json.members "case"
+    Proto.Json.members "case"
         TagCaseUnset
-        [ Connect.Json.member "then" (Json.Decode.map TagCaseThen Json.Decode.string)
-        , Connect.Json.member "of" (Json.Decode.map TagCaseOf Connect.Json.int32)
+        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Json.Decode.string)
+        , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
         ]

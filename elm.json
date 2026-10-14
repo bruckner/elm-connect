@@ -7,10 +7,11 @@
     "exposed-modules": [
         "Rpc",
         "Rpc.Code",
-        "Connect.Json",
-        "Connect.Int64",
-        "Connect.Duration",
-        "Connect.Timestamp"
+        "Rpc.ErrorCode",
+        "Proto.Json",
+        "Proto.Int64",
+        "Proto.Duration",
+        "Proto.Timestamp"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

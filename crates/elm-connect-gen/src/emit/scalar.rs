@@ -1,7 +1,7 @@
 //! The Elm side of each proto scalar (design §3.4): its type, its zero
 //! value, and the library functions that encode and decode it.
 
-use super::{CONNECT_JSON, Int64, JSON_DECODE, JSON_ENCODE};
+use super::{Int64, JSON_DECODE, JSON_ENCODE, PROTO_JSON};
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{int, string, ty, var};
 use crate::ir::ScalarKind;
@@ -81,26 +81,26 @@ pub(super) fn zero_value(repr: Repr) -> Expr {
 /// The library function that encodes a scalar: its module and name.
 pub(super) fn encoder(repr: Repr) -> (&'static str, &'static str) {
     match repr {
-        Repr::Float => (CONNECT_JSON, "encodeFloat"),
+        Repr::Float => (PROTO_JSON, "encodeFloat"),
         Repr::Int32 | Repr::UInt32 => (JSON_ENCODE, "int"),
-        Repr::Int64 => (CONNECT_JSON, "encodeInt64"),
-        Repr::Int64AsInt => (CONNECT_JSON, "encodeInt64AsInt"),
+        Repr::Int64 => (PROTO_JSON, "encodeInt64"),
+        Repr::Int64AsInt => (PROTO_JSON, "encodeInt64AsInt"),
         Repr::Bool => (JSON_ENCODE, "bool"),
         Repr::String => (JSON_ENCODE, "string"),
-        Repr::Bytes => (CONNECT_JSON, "encodeBytes"),
+        Repr::Bytes => (PROTO_JSON, "encodeBytes"),
     }
 }
 
 /// The library decoder for a scalar: its module and name.
 pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
     match repr {
-        Repr::Float => (CONNECT_JSON, "float"),
-        Repr::Int32 => (CONNECT_JSON, "int32"),
-        Repr::UInt32 => (CONNECT_JSON, "uint32"),
-        Repr::Int64 => (CONNECT_JSON, "int64"),
-        Repr::Int64AsInt => (CONNECT_JSON, "int64AsInt"),
+        Repr::Float => (PROTO_JSON, "float"),
+        Repr::Int32 => (PROTO_JSON, "int32"),
+        Repr::UInt32 => (PROTO_JSON, "uint32"),
+        Repr::Int64 => (PROTO_JSON, "int64"),
+        Repr::Int64AsInt => (PROTO_JSON, "int64AsInt"),
         Repr::Bool => (JSON_DECODE, "bool"),
         Repr::String => (JSON_DECODE, "string"),
-        Repr::Bytes => (CONNECT_JSON, "bytes"),
+        Repr::Bytes => (PROTO_JSON, "bytes"),
     }
 }

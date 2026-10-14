@@ -1,13 +1,13 @@
-module Connect.Int64Test exposing (suite)
+module Proto.Int64Test exposing (suite)
 
-import Connect.Int64
 import Expect
+import Proto.Int64
 import Test exposing (Test, describe, test)
 
 
 suite : Test
 suite =
-    describe "Connect.Int64"
+    describe "Proto.Int64"
         [ describe "toInt"
             [ reads "0" (Just 0)
             , reads "-0" (Just 0)
@@ -35,17 +35,17 @@ suite =
             ]
         , describe "fromInt"
             [ test "a positive Int" <|
-                \_ -> Connect.Int64.fromInt 42 |> Expect.equal "42"
+                \_ -> Proto.Int64.fromInt 42 |> Expect.equal "42"
             , test "a negative Int" <|
-                \_ -> Connect.Int64.fromInt -42 |> Expect.equal "-42"
+                \_ -> Proto.Int64.fromInt -42 |> Expect.equal "-42"
             , test "the largest exact Int" <|
-                \_ -> Connect.Int64.fromInt 9007199254740991 |> Expect.equal "9007199254740991"
+                \_ -> Proto.Int64.fromInt 9007199254740991 |> Expect.equal "9007199254740991"
             , test "the smallest exact Int" <|
-                \_ -> Connect.Int64.fromInt -9007199254740991 |> Expect.equal "-9007199254740991"
+                \_ -> Proto.Int64.fromInt -9007199254740991 |> Expect.equal "-9007199254740991"
             , test "round-trips through toInt" <|
                 \_ ->
-                    Connect.Int64.fromInt -1234567890123
-                        |> Connect.Int64.toInt
+                    Proto.Int64.fromInt -1234567890123
+                        |> Proto.Int64.toInt
                         |> Expect.equal (Just -1234567890123)
             ]
         ]
@@ -54,4 +54,4 @@ suite =
 reads : String -> Maybe Int -> Test
 reads text expected =
     test ("\"" ++ text ++ "\"") <|
-        \_ -> Connect.Int64.toInt text |> Expect.equal expected
+        \_ -> Proto.Int64.toInt text |> Expect.equal expected

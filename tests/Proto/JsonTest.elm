@@ -1,18 +1,18 @@
-module Connect.JsonTest exposing (suite)
+module Proto.JsonTest exposing (suite)
 
-import Connect.Duration
-import Connect.Json
 import Dict
 import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode
+import Proto.Duration
+import Proto.Json
 import Test exposing (Test, describe, test)
 import Time
 
 
 suite : Test
 suite =
-    describe "Connect.Json"
+    describe "Proto.Json"
         [ fieldTests
         , fieldEitherTests
         , presenceTests
@@ -37,8 +37,8 @@ type alias Pair =
 decodePair : Decoder Pair
 decodePair =
     Json.Decode.succeed Pair
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "count" 0 Json.Decode.int
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "count" 0 Json.Decode.int
 
 
 decodes : Decoder a -> String -> a -> Expect.Expectation
@@ -84,7 +84,7 @@ type alias Named =
 decodeNamed : Decoder Named
 decodeNamed =
     Json.Decode.succeed Named
-        |> Connect.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
 
 
 fieldEitherTests : Test
@@ -99,7 +99,7 @@ fieldEitherTests =
         , test "both names fail even when one is null" <|
             \_ -> fails decodeNamed """{"displayName":null,"display_name":"b"}"""
         , test "equal names are one key" <|
-            \_ -> decodes (Json.Decode.succeed Named |> Connect.Json.fieldEither "id" "id" "" Json.Decode.string) """{"id":"a"}""" (Named "a")
+            \_ -> decodes (Json.Decode.succeed Named |> Proto.Json.fieldEither "id" "id" "" Json.Decode.string) """{"id":"a"}""" (Named "a")
         , test "neither gives the default" <|
             \_ -> decodes decodeNamed "{}" (Named "")
         , test "null under the JSON name gives the default" <|
@@ -118,8 +118,8 @@ type alias Shapes =
 decodeShapes : Decoder Shapes
 decodeShapes =
     Json.Decode.succeed Shapes
-        |> Connect.Json.field "count" Nothing (Json.Decode.map Just Connect.Json.int32)
-        |> Connect.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
 presenceTests : Test
@@ -134,9 +134,9 @@ presenceTests =
         , test "a null element of a list fails" <|
             \_ -> fails decodeShapes """{"tags":[null]}"""
         , test "encodeMaybe encodes a value" <|
-            \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
+            \_ -> encodesTo (Proto.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
         , test "encodeMaybe encodes Nothing as null" <|
-            \_ -> encodesTo (Connect.Json.encodeMaybe Json.Encode.int Nothing) "null"
+            \_ -> encodesTo (Proto.Json.encodeMaybe Json.Encode.int Nothing) "null"
         ]
 
 
@@ -155,18 +155,18 @@ type EventKind
 decodeEvent : Decoder Event
 decodeEvent =
     Json.Decode.succeed Event
-        |> Connect.Json.field "id" "" Json.Decode.string
-        |> Connect.Json.oneof decodeEventKind
+        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.oneof decodeEventKind
 
 
 decodeEventKind : Decoder EventKind
 decodeEventKind =
-    Connect.Json.members "kind"
+    Proto.Json.members "kind"
         EventKindUnset
-        [ Connect.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
-        , Connect.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
-        , Connect.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
-        , Connect.Json.valueMember "payload" EventKindPayload
+        [ Proto.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
+        , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
+        , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
+        , Proto.Json.valueMember "payload" EventKindPayload
         ]
 
 
@@ -244,7 +244,7 @@ type Status
 
 decodeStatus : Decoder Status
 decodeStatus =
-    Connect.Json.enum "Status"
+    Proto.Json.enum "Status"
         StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
@@ -280,7 +280,7 @@ enumTests =
             \_ ->
                 decodes
                     (Json.Decode.succeed identity
-                        |> Connect.Json.field "status" StatusUnspecified decodeStatus
+                        |> Proto.Json.field "status" StatusUnspecified decodeStatus
                     )
                     """{"status":null}"""
                     StatusUnspecified
@@ -292,17 +292,17 @@ intDictTests =
     describe "intDict"
         [ test "decimal keys" <|
             \_ ->
-                decodes (Connect.Json.intDict Json.Decode.string)
+                decodes (Proto.Json.intDict Json.Decode.string)
                     """{"1":"a","-2":"b","0":"c"}"""
                     (Dict.fromList [ ( 1, "a" ), ( -2, "b" ), ( 0, "c" ) ])
         , test "an empty object" <|
-            \_ -> decodes (Connect.Json.intDict Json.Decode.string) "{}" Dict.empty
+            \_ -> decodes (Proto.Json.intDict Json.Decode.string) "{}" Dict.empty
         , test "a key that is not an integer fails" <|
-            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"a":"x"}"""
+            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"a":"x"}"""
         , test "a fractional key fails" <|
-            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
+            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
         , test "a value of the wrong type fails" <|
-            \_ -> fails (Connect.Json.intDict Json.Decode.string) """{"1":2}"""
+            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1":2}"""
         , test "round-trips through Json.Encode.dict String.fromInt" <|
             \_ ->
                 let
@@ -310,7 +310,7 @@ intDictTests =
                         Dict.fromList [ ( 3, "c" ), ( -1, "a" ) ]
                 in
                 Json.Encode.dict String.fromInt Json.Encode.string dict
-                    |> Json.Decode.decodeValue (Connect.Json.intDict Json.Decode.string)
+                    |> Json.Decode.decodeValue (Proto.Json.intDict Json.Decode.string)
                     |> Expect.equal (Ok dict)
         ]
 
@@ -320,33 +320,33 @@ boolMapTests =
     describe "boolMap"
         [ test "both keys, in the object's order" <|
             \_ ->
-                decodes (Connect.Json.boolMap Json.Decode.string)
+                decodes (Proto.Json.boolMap Json.Decode.string)
                     """{"true":"on","false":"off"}"""
                     [ ( True, "on" ), ( False, "off" ) ]
         , test "the other order" <|
             \_ ->
-                decodes (Connect.Json.boolMap Json.Decode.string)
+                decodes (Proto.Json.boolMap Json.Decode.string)
                     """{"false":"off","true":"on"}"""
                     [ ( False, "off" ), ( True, "on" ) ]
         , test "an empty object" <|
-            \_ -> decodes (Connect.Json.boolMap Json.Decode.string) "{}" []
+            \_ -> decodes (Proto.Json.boolMap Json.Decode.string) "{}" []
         , test "a key other than true or false fails, naming it" <|
             \_ ->
-                failsWith (Connect.Json.boolMap Json.Decode.string)
+                failsWith (Proto.Json.boolMap Json.Decode.string)
                     """{"True":"x"}"""
                     "Expecting a bool map key (\"true\" or \"false\"), but got \"True\""
         , test "a numeric key fails" <|
-            \_ -> fails (Connect.Json.boolMap Json.Decode.string) """{"1":"x"}"""
+            \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"1":"x"}"""
         , test "a value of the wrong type fails" <|
-            \_ -> fails (Connect.Json.boolMap Json.Decode.string) """{"true":2}"""
+            \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"true":2}"""
         , test "encodes keys as true and false" <|
             \_ ->
-                encodesTo (Connect.Json.encodeBoolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ])
+                encodesTo (Proto.Json.encodeBoolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ])
                     """{"true":1,"false":0}"""
         , test "round-trips" <|
             \_ ->
-                Connect.Json.encodeBoolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
-                    |> Json.Decode.decodeValue (Connect.Json.boolMap Json.Decode.string)
+                Proto.Json.encodeBoolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
+                    |> Json.Decode.decodeValue (Proto.Json.boolMap Json.Decode.string)
                     |> Expect.equal (Ok [ ( False, "b" ), ( True, "a" ) ])
         ]
 
@@ -355,46 +355,46 @@ int32Tests : Test
 int32Tests =
     describe "int32"
         [ test "a number" <|
-            \_ -> decodes Connect.Json.int32 "42" 42
+            \_ -> decodes Proto.Json.int32 "42" 42
         , test "a negative number" <|
-            \_ -> decodes Connect.Json.int32 "-7" -7
+            \_ -> decodes Proto.Json.int32 "-7" -7
         , test "an integral number written with a fraction" <|
-            \_ -> decodes Connect.Json.int32 "4.0" 4
+            \_ -> decodes Proto.Json.int32 "4.0" 4
         , test "a number in exponent notation" <|
-            \_ -> decodes Connect.Json.int32 "1e2" 100
+            \_ -> decodes Proto.Json.int32 "1e2" 100
         , test "a string" <|
-            \_ -> decodes Connect.Json.int32 "\"42\"" 42
+            \_ -> decodes Proto.Json.int32 "\"42\"" 42
         , test "a negative string" <|
-            \_ -> decodes Connect.Json.int32 "\"-42\"" -42
+            \_ -> decodes Proto.Json.int32 "\"-42\"" -42
         , test "a string in exponent notation" <|
-            \_ -> decodes Connect.Json.int32 "\"1e2\"" 100
+            \_ -> decodes Proto.Json.int32 "\"1e2\"" 100
         , test "a fractional number fails" <|
-            \_ -> fails Connect.Json.int32 "4.5"
+            \_ -> fails Proto.Json.int32 "4.5"
         , test "a fractional string fails" <|
-            \_ -> fails Connect.Json.int32 "\"4.5\""
+            \_ -> fails Proto.Json.int32 "\"4.5\""
         , test "an empty string fails" <|
-            \_ -> fails Connect.Json.int32 "\"\""
+            \_ -> fails Proto.Json.int32 "\"\""
         , test "\"Infinity\" fails" <|
-            \_ -> fails Connect.Json.int32 "\"Infinity\""
+            \_ -> fails Proto.Json.int32 "\"Infinity\""
         , test "a boolean fails" <|
-            \_ -> fails Connect.Json.int32 "true"
+            \_ -> fails Proto.Json.int32 "true"
         , test "the bounds decode" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.int32 "2147483647" 2147483647
-                    , \_ -> decodes Connect.Json.int32 "-2147483648" -2147483648
-                    , \_ -> decodes Connect.Json.int32 "\"-2147483648\"" -2147483648
+                    [ \_ -> decodes Proto.Json.int32 "2147483647" 2147483647
+                    , \_ -> decodes Proto.Json.int32 "-2147483648" -2147483648
+                    , \_ -> decodes Proto.Json.int32 "\"-2147483648\"" -2147483648
                     ]
                     ()
         , test "past the upper bound fails" <|
-            \_ -> fails Connect.Json.int32 "2147483648"
+            \_ -> fails Proto.Json.int32 "2147483648"
         , test "past the lower bound fails" <|
-            \_ -> fails Connect.Json.int32 "\"-2147483649\""
+            \_ -> fails Proto.Json.int32 "\"-2147483649\""
         , test "a huge number fails" <|
-            \_ -> fails Connect.Json.int32 "1e30"
+            \_ -> fails Proto.Json.int32 "1e30"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.int32 "2147483648"
+                Json.Decode.decodeString Proto.Json.int32 "2147483648"
                     |> Result.mapError Json.Decode.errorToString
                     |> Result.mapError (String.contains "Expecting an int32 (-2147483648 to 2147483647), but got 2147483648")
                     |> Expect.equal (Err True)
@@ -405,23 +405,23 @@ uint32Tests : Test
 uint32Tests =
     describe "uint32"
         [ test "a number" <|
-            \_ -> decodes Connect.Json.uint32 "42" 42
+            \_ -> decodes Proto.Json.uint32 "42" 42
         , test "a string" <|
-            \_ -> decodes Connect.Json.uint32 "\"42\"" 42
+            \_ -> decodes Proto.Json.uint32 "\"42\"" 42
         , test "the bounds decode" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.uint32 "0" 0
-                    , \_ -> decodes Connect.Json.uint32 "4294967295" 4294967295
-                    , \_ -> decodes Connect.Json.uint32 "\"4294967295\"" 4294967295
+                    [ \_ -> decodes Proto.Json.uint32 "0" 0
+                    , \_ -> decodes Proto.Json.uint32 "4294967295" 4294967295
+                    , \_ -> decodes Proto.Json.uint32 "\"4294967295\"" 4294967295
                     ]
                     ()
         , test "a negative number fails" <|
-            \_ -> fails Connect.Json.uint32 "-1"
+            \_ -> fails Proto.Json.uint32 "-1"
         , test "past the upper bound fails" <|
-            \_ -> fails Connect.Json.uint32 "4294967296"
+            \_ -> fails Proto.Json.uint32 "4294967296"
         , test "a fractional number fails" <|
-            \_ -> fails Connect.Json.uint32 "1.5"
+            \_ -> fails Proto.Json.uint32 "1.5"
         ]
 
 
@@ -429,77 +429,77 @@ int64Tests : Test
 int64Tests =
     describe "int64"
         [ test "a string" <|
-            \_ -> decodes Connect.Json.int64 "\"9007199254740993\"" "9007199254740993"
+            \_ -> decodes Proto.Json.int64 "\"9007199254740993\"" "9007199254740993"
         , test "a negative string" <|
-            \_ -> decodes Connect.Json.int64 "\"-42\"" "-42"
+            \_ -> decodes Proto.Json.int64 "\"-42\"" "-42"
         , test "a number" <|
-            \_ -> decodes Connect.Json.int64 "42" "42"
+            \_ -> decodes Proto.Json.int64 "42" "42"
         , test "a negative number" <|
-            \_ -> decodes Connect.Json.int64 "-7" "-7"
+            \_ -> decodes Proto.Json.int64 "-7" "-7"
         , test "a string that is not an integer fails" <|
-            \_ -> fails Connect.Json.int64 "\"4.2\""
+            \_ -> fails Proto.Json.int64 "\"4.2\""
         , test "a string in exponent notation" <|
-            \_ -> decodes Connect.Json.int64 "\"1e3\"" "1000"
+            \_ -> decodes Proto.Json.int64 "\"1e3\"" "1000"
         , test "a string with a fraction and an exponent" <|
-            \_ -> decodes Connect.Json.int64 "\"1.5e3\"" "1500"
+            \_ -> decodes Proto.Json.int64 "\"1.5e3\"" "1500"
         , test "a number in exponent notation" <|
-            \_ -> decodes Connect.Json.int64 "1E2" "100"
+            \_ -> decodes Proto.Json.int64 "1E2" "100"
         , test "a negative string with a zero exponent" <|
-            \_ -> decodes Connect.Json.int64 "\"-2e0\"" "-2"
+            \_ -> decodes Proto.Json.int64 "\"-2e0\"" "-2"
         , test "a signed exponent" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.int64 "\"15E+1\"" "150"
-                    , \_ -> decodes Connect.Json.int64 "\"1500e-2\"" "15"
-                    , \_ -> decodes Connect.Json.int64 "\"0.0025e4\"" "25"
+                    [ \_ -> decodes Proto.Json.int64 "\"15E+1\"" "150"
+                    , \_ -> decodes Proto.Json.int64 "\"1500e-2\"" "15"
+                    , \_ -> decodes Proto.Json.int64 "\"0.0025e4\"" "25"
                     ]
                     ()
         , test "exponent notation keeps every digit past 2^53" <|
-            \_ -> decodes Connect.Json.int64 "\"9.223372036854775807e18\"" "9223372036854775807"
+            \_ -> decodes Proto.Json.int64 "\"9.223372036854775807e18\"" "9223372036854775807"
         , test "an integral decimal fraction" <|
-            \_ -> decodes Connect.Json.int64 "\"4.0\"" "4"
+            \_ -> decodes Proto.Json.int64 "\"4.0\"" "4"
         , test "leading zeros and negative zero are made canonical" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.int64 "\"007\"" "7"
-                    , \_ -> decodes Connect.Json.int64 "\"-0\"" "0"
-                    , \_ -> decodes Connect.Json.int64 "\"0e999\"" "0"
+                    [ \_ -> decodes Proto.Json.int64 "\"007\"" "7"
+                    , \_ -> decodes Proto.Json.int64 "\"-0\"" "0"
+                    , \_ -> decodes Proto.Json.int64 "\"0e999\"" "0"
                     ]
                     ()
         , test "exponent notation that leaves a fraction fails" <|
             \_ ->
-                failsWith Connect.Json.int64 "\"1.5e0\"" "Expecting an integer, but got \"1.5e0\""
+                failsWith Proto.Json.int64 "\"1.5e0\"" "Expecting an integer, but got \"1.5e0\""
         , test "a negative exponent that leaves a fraction fails" <|
-            \_ -> fails Connect.Json.int64 "\"15e-2\""
+            \_ -> fails Proto.Json.int64 "\"15e-2\""
         , test "more than 20 digits fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> failsWith Connect.Json.int64 "\"1e21\"" "Expecting a 64-bit integer, but got \"1e21\""
-                    , \_ -> fails Connect.Json.int64 "\"1e999999999999\""
-                    , \_ -> fails Connect.Json.int64 "1e21"
+                    [ \_ -> failsWith Proto.Json.int64 "\"1e21\"" "Expecting a 64-bit integer, but got \"1e21\""
+                    , \_ -> fails Proto.Json.int64 "\"1e999999999999\""
+                    , \_ -> fails Proto.Json.int64 "1e21"
                     ]
                     ()
         , test "malformed exponent notation fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> fails Connect.Json.int64 "\"1e\""
-                    , \_ -> fails Connect.Json.int64 "\"e3\""
-                    , \_ -> fails Connect.Json.int64 "\"1.e3\""
-                    , \_ -> fails Connect.Json.int64 "\".5e1\""
-                    , \_ -> fails Connect.Json.int64 "\"1e+\""
-                    , \_ -> fails Connect.Json.int64 "\"1e3e1\""
-                    , \_ -> fails Connect.Json.int64 "\"--1\""
+                    [ \_ -> fails Proto.Json.int64 "\"1e\""
+                    , \_ -> fails Proto.Json.int64 "\"e3\""
+                    , \_ -> fails Proto.Json.int64 "\"1.e3\""
+                    , \_ -> fails Proto.Json.int64 "\".5e1\""
+                    , \_ -> fails Proto.Json.int64 "\"1e+\""
+                    , \_ -> fails Proto.Json.int64 "\"1e3e1\""
+                    , \_ -> fails Proto.Json.int64 "\"--1\""
                     ]
                     ()
         , test "an empty string fails" <|
-            \_ -> fails Connect.Json.int64 "\"\""
+            \_ -> fails Proto.Json.int64 "\"\""
         , test "a fractional number fails" <|
-            \_ -> fails Connect.Json.int64 "4.2"
+            \_ -> fails Proto.Json.int64 "4.2"
         , test "a boolean fails" <|
-            \_ -> fails Connect.Json.int64 "true"
+            \_ -> fails Proto.Json.int64 "true"
         , test "encodes as a string" <|
             \_ ->
-                Connect.Json.encodeInt64 "9007199254740993"
+                Proto.Json.encodeInt64 "9007199254740993"
                     |> Json.Encode.encode 0
                     |> Expect.equal "\"9007199254740993\""
         ]
@@ -509,52 +509,52 @@ int64AsIntTests : Test
 int64AsIntTests =
     describe "int64AsInt"
         [ test "a number" <|
-            \_ -> decodes Connect.Json.int64AsInt "42" 42
+            \_ -> decodes Proto.Json.int64AsInt "42" 42
         , test "a string" <|
-            \_ -> decodes Connect.Json.int64AsInt "\"-42\"" -42
+            \_ -> decodes Proto.Json.int64AsInt "\"-42\"" -42
         , test "the largest exact Int, as a string and a number" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.int64AsInt "\"9007199254740991\"" 9007199254740991
-                    , \_ -> decodes Connect.Json.int64AsInt "9007199254740991" 9007199254740991
-                    , \_ -> decodes Connect.Json.int64AsInt "\"-9007199254740991\"" -9007199254740991
-                    , \_ -> decodes Connect.Json.int64AsInt "-9007199254740991" -9007199254740991
+                    [ \_ -> decodes Proto.Json.int64AsInt "\"9007199254740991\"" 9007199254740991
+                    , \_ -> decodes Proto.Json.int64AsInt "9007199254740991" 9007199254740991
+                    , \_ -> decodes Proto.Json.int64AsInt "\"-9007199254740991\"" -9007199254740991
+                    , \_ -> decodes Proto.Json.int64AsInt "-9007199254740991" -9007199254740991
                     ]
                     ()
         , test "2^53 as a string fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"9007199254740992\""
+            \_ -> fails Proto.Json.int64AsInt "\"9007199254740992\""
         , test "2^53 as a number fails" <|
-            \_ -> fails Connect.Json.int64AsInt "9007199254740992"
+            \_ -> fails Proto.Json.int64AsInt "9007199254740992"
         , test "-2^53 fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"-9007199254740992\""
+            \_ -> fails Proto.Json.int64AsInt "\"-9007199254740992\""
         , test "a fractional number fails" <|
-            \_ -> fails Connect.Json.int64AsInt "4.5"
+            \_ -> fails Proto.Json.int64AsInt "4.5"
         , test "a string in exponent notation" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Connect.Json.int64AsInt "\"1e3\"" 1000
-                    , \_ -> decodes Connect.Json.int64AsInt "\"-4.2e1\"" -42
-                    , \_ -> decodes Connect.Json.int64AsInt "1.5E3" 1500
-                    , \_ -> decodes Connect.Json.int64AsInt "\"9.007199254740991e15\"" 9007199254740991
+                    [ \_ -> decodes Proto.Json.int64AsInt "\"1e3\"" 1000
+                    , \_ -> decodes Proto.Json.int64AsInt "\"-4.2e1\"" -42
+                    , \_ -> decodes Proto.Json.int64AsInt "1.5E3" 1500
+                    , \_ -> decodes Proto.Json.int64AsInt "\"9.007199254740991e15\"" 9007199254740991
                     ]
                     ()
         , test "exponent notation out of range fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"9.007199254740992e15\""
+            \_ -> fails Proto.Json.int64AsInt "\"9.007199254740992e15\""
         , test "exponent notation that leaves a fraction fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"1.5e0\""
+            \_ -> fails Proto.Json.int64AsInt "\"1.5e0\""
         , test "an empty string fails" <|
-            \_ -> fails Connect.Json.int64AsInt "\"\""
+            \_ -> fails Proto.Json.int64AsInt "\"\""
         , test "a boolean fails" <|
-            \_ -> fails Connect.Json.int64AsInt "true"
+            \_ -> fails Proto.Json.int64AsInt "true"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.int64AsInt "\"9007199254740992\""
+                Json.Decode.decodeString Proto.Json.int64AsInt "\"9007199254740992\""
                     |> Result.mapError Json.Decode.errorToString
                     |> Result.mapError (String.contains "Expecting an integer from -9007199254740991 to 9007199254740991, the 64-bit integers an Elm Int holds exactly, but got \"9007199254740992\"")
                     |> Expect.equal (Err True)
         , test "encodes as a decimal string" <|
             \_ ->
-                Connect.Json.encodeInt64AsInt -9007199254740991
+                Proto.Json.encodeInt64AsInt -9007199254740991
                     |> Json.Encode.encode 0
                     |> Expect.equal "\"-9007199254740991\""
         ]
@@ -564,32 +564,32 @@ floatTests : Test
 floatTests =
     describe "float"
         [ test "a number" <|
-            \_ -> decodes Connect.Json.float "1.5" 1.5
+            \_ -> decodes Proto.Json.float "1.5" 1.5
         , test "an integral number" <|
-            \_ -> decodes Connect.Json.float "2" 2
+            \_ -> decodes Proto.Json.float "2" 2
         , test "a numeric string" <|
-            \_ -> decodes Connect.Json.float "\"1.5\"" 1.5
+            \_ -> decodes Proto.Json.float "\"1.5\"" 1.5
         , test "\"NaN\"" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.float "\"NaN\""
+                Json.Decode.decodeString Proto.Json.float "\"NaN\""
                     |> Result.map isNaN
                     |> Expect.equal (Ok True)
         , test "\"Infinity\"" <|
-            \_ -> decodes Connect.Json.float "\"Infinity\"" (1 / 0)
+            \_ -> decodes Proto.Json.float "\"Infinity\"" (1 / 0)
         , test "\"-Infinity\"" <|
-            \_ -> decodes Connect.Json.float "\"-Infinity\"" -(1 / 0)
+            \_ -> decodes Proto.Json.float "\"-Infinity\"" -(1 / 0)
         , test "another string fails" <|
-            \_ -> fails Connect.Json.float "\"infinity\""
+            \_ -> fails Proto.Json.float "\"infinity\""
         , test "a boolean fails" <|
-            \_ -> fails Connect.Json.float "false"
+            \_ -> fails Proto.Json.float "false"
         , test "encodes a finite value as a number" <|
-            \_ -> encodesTo (Connect.Json.encodeFloat 1.5) "1.5"
+            \_ -> encodesTo (Proto.Json.encodeFloat 1.5) "1.5"
         , test "encodes NaN as a string" <|
-            \_ -> encodesTo (Connect.Json.encodeFloat (0 / 0)) "\"NaN\""
+            \_ -> encodesTo (Proto.Json.encodeFloat (0 / 0)) "\"NaN\""
         , test "encodes infinity as a string" <|
-            \_ -> encodesTo (Connect.Json.encodeFloat (1 / 0)) "\"Infinity\""
+            \_ -> encodesTo (Proto.Json.encodeFloat (1 / 0)) "\"Infinity\""
         , test "encodes negative infinity as a string" <|
-            \_ -> encodesTo (Connect.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
+            \_ -> encodesTo (Proto.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
         ]
 
 
@@ -598,11 +598,11 @@ bytesTests =
     let
         accepts text =
             test ("accepts \"" ++ text ++ "\"") <|
-                \_ -> decodes Connect.Json.bytes ("\"" ++ text ++ "\"") text
+                \_ -> decodes Proto.Json.bytes ("\"" ++ text ++ "\"") text
 
         rejects text =
             test ("rejects \"" ++ text ++ "\"") <|
-                \_ -> fails Connect.Json.bytes ("\"" ++ text ++ "\"")
+                \_ -> fails Proto.Json.bytes ("\"" ++ text ++ "\"")
     in
     describe "bytes"
         [ accepts ""
@@ -629,16 +629,16 @@ bytesTests =
         , rejects "+/-_"
         , rejects "aGkß"
         , test "keeps the string as received" <|
-            \_ -> decodes Connect.Json.bytes "\"-_8\"" "-_8"
+            \_ -> decodes Proto.Json.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|
-            \_ -> fails Connect.Json.bytes "1"
+            \_ -> fails Proto.Json.bytes "1"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.bytes "\"a\""
+                Json.Decode.decodeString Proto.Json.bytes "\"a\""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional), but got \"a\"")
                     |> Expect.equal (Err True)
         , test "encodes as a string" <|
-            \_ -> encodesTo (Connect.Json.encodeBytes "aGk=") "\"aGk=\""
+            \_ -> encodesTo (Proto.Json.encodeBytes "aGk=") "\"aGk=\""
         ]
 
 
@@ -653,61 +653,61 @@ wellKnownTests =
     describe "well-known types"
         [ test "struct reads an object" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.struct """{"a":1,"b":null}"""
+                Json.Decode.decodeString Proto.Json.struct """{"a":1,"b":null}"""
                     |> Result.map (Dict.map (\_ value -> Json.Encode.encode 0 value) >> Dict.toList)
                     |> Expect.equal (Ok [ ( "a", "1" ), ( "b", "null" ) ])
         , test "struct fails on an array" <|
-            \_ -> fails Connect.Json.struct "[1]"
+            \_ -> fails Proto.Json.struct "[1]"
         , test "struct fails on null" <|
-            \_ -> fails Connect.Json.struct "null"
+            \_ -> fails Proto.Json.struct "null"
         , test "encodeStruct writes an object" <|
             \_ ->
                 encodesTo
-                    (Connect.Json.encodeStruct (Dict.fromList [ ( "a", Json.Encode.int 1 ) ]))
+                    (Proto.Json.encodeStruct (Dict.fromList [ ( "a", Json.Encode.int 1 ) ]))
                     """{"a":1}"""
         , test "listValue reads an array" <|
             \_ ->
-                Json.Decode.decodeString Connect.Json.listValue """[1,"x",null]"""
+                Json.Decode.decodeString Proto.Json.listValue """[1,"x",null]"""
                     |> Result.map (List.map (Json.Encode.encode 0))
                     |> Expect.equal (Ok [ "1", "\"x\"", "null" ])
         , test "listValue fails on an object" <|
-            \_ -> fails Connect.Json.listValue """{"a":1}"""
+            \_ -> fails Proto.Json.listValue """{"a":1}"""
         , test "encodeListValue writes an array" <|
             \_ ->
                 encodesTo
-                    (Connect.Json.encodeListValue [ Json.Encode.int 1, Json.Encode.null ])
+                    (Proto.Json.encodeListValue [ Json.Encode.int 1, Json.Encode.null ])
                     "[1,null]"
         , test "a timestamp" <|
-            \_ -> decodes Connect.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
+            \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
         , test "a malformed timestamp fails" <|
-            \_ -> fails Connect.Json.timestamp "\"yesterday\""
+            \_ -> fails Proto.Json.timestamp "\"yesterday\""
         , test "a timestamp as a number fails" <|
-            \_ -> fails Connect.Json.timestamp "1500"
+            \_ -> fails Proto.Json.timestamp "1500"
         , test "encodes a timestamp" <|
-            \_ -> encodesTo (Connect.Json.encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
+            \_ -> encodesTo (Proto.Json.encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
         , test "a duration" <|
-            \_ -> decodes Connect.Json.duration "\"-1.5s\"" (Connect.Duration.fromSeconds -1.5)
+            \_ -> decodes Proto.Json.duration "\"-1.5s\"" (Proto.Duration.fromSeconds -1.5)
         , test "a malformed duration fails" <|
-            \_ -> fails Connect.Json.duration "\"1.5\""
+            \_ -> fails Proto.Json.duration "\"1.5\""
         , test "encodes a duration" <|
-            \_ -> encodesTo (Connect.Json.encodeDuration (Connect.Duration.fromSeconds 1.5)) "\"1.500s\""
+            \_ -> encodesTo (Proto.Json.encodeDuration (Proto.Duration.fromSeconds 1.5)) "\"1.500s\""
         , test "a field mask comes back with proto field names" <|
             \_ ->
-                decodes Connect.Json.fieldMask
+                decodes Proto.Json.fieldMask
                     "\"displayName,author.emailAddress,id\""
                     [ "display_name", "author.email_address", "id" ]
         , test "the empty field mask" <|
-            \_ -> decodes Connect.Json.fieldMask "\"\"" []
+            \_ -> decodes Proto.Json.fieldMask "\"\"" []
         , test "encodes a field mask in lowerCamelCase" <|
             \_ ->
-                encodesTo (Connect.Json.encodeFieldMask [ "display_name", "author.email_address" ])
+                encodesTo (Proto.Json.encodeFieldMask [ "display_name", "author.email_address" ])
                     "\"displayName,author.emailAddress\""
         , test "encodes the empty field mask" <|
-            \_ -> encodesTo (Connect.Json.encodeFieldMask []) "\"\""
+            \_ -> encodesTo (Proto.Json.encodeFieldMask []) "\"\""
         , test "Empty is any object" <|
-            \_ -> decodes Connect.Json.empty """{"ignored":1}""" ()
+            \_ -> decodes Proto.Json.empty """{"ignored":1}""" ()
         , test "Empty is not an array" <|
-            \_ -> fails Connect.Json.empty "[]"
+            \_ -> fails Proto.Json.empty "[]"
         , test "encodes Empty as {}" <|
-            \_ -> encodesTo (Connect.Json.encodeEmpty ()) "{}"
+            \_ -> encodesTo (Proto.Json.encodeEmpty ()) "{}"
         ]

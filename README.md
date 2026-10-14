@@ -117,7 +117,7 @@ viaTranscoding =
 `Rpc.config` is Connect with every call POSTed; set `transport`,
 `headers`, `timeout`, `withCredentials` or `retry` with record syntax.
 Errors are one type for both transports, `Rpc.Error`: an `Rpc` failure
-with an `Rpc.Code.ErrorCode`, a message, details and where they were read
+with an `Rpc.ErrorCode.ErrorCode`, a message, details and where they were read
 from, or a `Transport` failure.
 
 ### Wrapping the sending once
@@ -152,7 +152,7 @@ withRefresh refresh shared call =
             (\error ->
                 case error of
                     Rpc.Rpc { code } ->
-                        if code == Rpc.Code.Unauthenticated then
+                        if code == Rpc.ErrorCode.Unauthenticated then
                             refresh |> Task.andThen (\fresh -> rpc fresh call)
 
                         else

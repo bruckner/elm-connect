@@ -3,10 +3,10 @@
 
 module Nesting.V1 exposing (..)
 
-import Connect.Json
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -168,7 +168,7 @@ encodeOuterInnerKind value =
 encodeOuter : Outer -> Json.Encode.Value
 encodeOuter value =
     Json.Encode.object
-        [ ( "inner", Connect.Json.encodeMaybe encodeOuterInner value.inner )
+        [ ( "inner", Proto.Json.encodeMaybe encodeOuterInner value.inner )
         , ( "kind", encodeOuterInnerKind value.kind )
         , ( "all", Json.Encode.list encodeOuterInnerDeepest value.all )
         ]
@@ -176,7 +176,7 @@ encodeOuter value =
 
 encodeOuterInner : OuterInner -> Json.Encode.Value
 encodeOuterInner value =
-    Json.Encode.object [ ( "deepest", Connect.Json.encodeMaybe encodeOuterInnerDeepest value.deepest ) ]
+    Json.Encode.object [ ( "deepest", Proto.Json.encodeMaybe encodeOuterInnerDeepest value.deepest ) ]
 
 
 encodeOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
@@ -202,7 +202,7 @@ encodePerson : Person -> Json.Encode.Value
 encodePerson value =
     Json.Encode.object
         [ ( "name", Json.Encode.string value.name )
-        , ( "employer", Connect.Json.encodeMaybe encodeCompany_ value.employer )
+        , ( "employer", Proto.Json.encodeMaybe encodeCompany_ value.employer )
         ]
 
 
@@ -241,7 +241,7 @@ encodeExprValue value =
             []
 
         ExprValueNumber member ->
-            [ ( "number", Connect.Json.encodeInt64 member ) ]
+            [ ( "number", Proto.Json.encodeInt64 member ) ]
 
         ExprValueSum member ->
             [ ( "sum", encodeSum member ) ]
@@ -258,7 +258,7 @@ encodeSum value =
 
 decodeOuterInnerKind : Json.Decode.Decoder OuterInnerKind
 decodeOuterInnerKind =
-    Connect.Json.enum "Outer.Inner.Kind"
+    Proto.Json.enum "Outer.Inner.Kind"
         OuterInnerKindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, OuterInnerKindUnspecified )
         , ( "KIND_DRAFT", 1, OuterInnerKindDraft )
@@ -268,29 +268,29 @@ decodeOuterInnerKind =
 decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
     Json.Decode.succeed Outer
-        |> Connect.Json.field "inner" Nothing (Json.Decode.map Just decodeOuterInner)
-        |> Connect.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
-        |> Connect.Json.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
+        |> Proto.Json.field "inner" Nothing (Json.Decode.map Just decodeOuterInner)
+        |> Proto.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+        |> Proto.Json.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
 
 
 decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
     Json.Decode.succeed OuterInner
-        |> Connect.Json.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
+        |> Proto.Json.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
 
 
 decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
     Json.Decode.succeed OuterInnerDeepest
-        |> Connect.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+        |> Proto.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
 
 
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
     Json.Decode.succeed Node
-        |> Connect.Json.field "label" "" Json.Decode.string
-        |> Connect.Json.field "children" [] (Json.Decode.list decodeNode_)
-        |> Connect.Json.fieldEither "byName" "by_name" Dict.empty (Json.Decode.dict decodeNode_)
+        |> Proto.Json.field "label" "" Json.Decode.string
+        |> Proto.Json.field "children" [] (Json.Decode.list decodeNode_)
+        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Json.Decode.dict decodeNode_)
 
 
 decodeNode_ : Json.Decode.Decoder Node_
@@ -301,8 +301,8 @@ decodeNode_ =
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
     Json.Decode.succeed Person
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "employer" Nothing (Json.Decode.map Just decodeCompany_)
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "employer" Nothing (Json.Decode.map Just decodeCompany_)
 
 
 decodePerson_ : Json.Decode.Decoder Person_
@@ -313,8 +313,8 @@ decodePerson_ =
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
     Json.Decode.succeed Company
-        |> Connect.Json.field "name" "" Json.Decode.string
-        |> Connect.Json.field "staff" [] (Json.Decode.list decodePerson_)
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "staff" [] (Json.Decode.list decodePerson_)
 
 
 decodeCompany_ : Json.Decode.Decoder Company_
@@ -325,25 +325,25 @@ decodeCompany_ =
 decodeForest : Json.Decode.Decoder Forest
 decodeForest =
     Json.Decode.succeed Forest
-        |> Connect.Json.field "trees" [] (Json.Decode.list decodeNode)
+        |> Proto.Json.field "trees" [] (Json.Decode.list decodeNode)
 
 
 decodeExpr : Json.Decode.Decoder Expr
 decodeExpr =
     Json.Decode.succeed Expr
-        |> Connect.Json.oneof decodeExprValue
+        |> Proto.Json.oneof decodeExprValue
 
 
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =
-    Connect.Json.members "value"
+    Proto.Json.members "value"
         ExprValueUnset
-        [ Connect.Json.member "number" (Json.Decode.map ExprValueNumber Connect.Json.int64)
-        , Connect.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeSum)))
+        [ Proto.Json.member "number" (Json.Decode.map ExprValueNumber Proto.Json.int64)
+        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeSum)))
         ]
 
 
 decodeSum : Json.Decode.Decoder Sum
 decodeSum =
     Json.Decode.succeed Sum
-        |> Connect.Json.field "terms" [] (Json.Decode.list decodeExpr)
+        |> Proto.Json.field "terms" [] (Json.Decode.list decodeExpr)

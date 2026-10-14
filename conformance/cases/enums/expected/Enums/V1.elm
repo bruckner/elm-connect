@@ -3,9 +3,9 @@
 
 module Enums.V1 exposing (..)
 
-import Connect.Json
 import Json.Decode
 import Json.Encode
+import Proto.Json
 
 
 
@@ -83,7 +83,7 @@ encodeTask : Task -> Json.Encode.Value
 encodeTask value =
     Json.Encode.object
         [ ( "status", encodeStatus value.status )
-        , ( "priority", Connect.Json.encodeMaybe encodePriority value.priority )
+        , ( "priority", Proto.Json.encodeMaybe encodePriority value.priority )
         , ( "history", Json.Encode.list encodeStatus value.history )
         , ( "previousStatus", encodeStatus value.previousStatus )
         ]
@@ -95,7 +95,7 @@ encodeTask value =
 
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
-    Connect.Json.enum "Status"
+    Proto.Json.enum "Status"
         StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
@@ -105,7 +105,7 @@ decodeStatus =
 
 decodePriority : Json.Decode.Decoder Priority
 decodePriority =
-    Connect.Json.enum "Priority"
+    Proto.Json.enum "Priority"
         PriorityNone
         [ ( "NONE", 0, PriorityNone )
         , ( "UNSET", 0, PriorityNone )
@@ -120,7 +120,7 @@ decodePriority =
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Json.Decode.succeed Task
-        |> Connect.Json.field "status" StatusUnspecified decodeStatus
-        |> Connect.Json.field "priority" Nothing (Json.Decode.map Just decodePriority)
-        |> Connect.Json.field "history" [] (Json.Decode.list decodeStatus)
-        |> Connect.Json.fieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
+        |> Proto.Json.field "status" StatusUnspecified decodeStatus
+        |> Proto.Json.field "priority" Nothing (Json.Decode.map Just decodePriority)
+        |> Proto.Json.field "history" [] (Json.Decode.list decodeStatus)
+        |> Proto.Json.fieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus

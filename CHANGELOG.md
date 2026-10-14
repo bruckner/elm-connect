@@ -202,3 +202,11 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   generate set, a method name with no Elm form, a service name with no
   module form, a rule without a path, and nested additional bindings,
   so every diagnostic of the method layer is pinned in the corpus.
+- The runtime's data modules move under `Proto`: `Connect.Json`,
+  `Connect.Timestamp`, `Connect.Duration` and `Connect.Int64` are now
+  `Proto.Json`, `Proto.Timestamp`, `Proto.Duration` and `Proto.Int64`,
+  contents unchanged, and generated code imports them so. `Rpc.Code`
+  splits in two: `Rpc.ErrorCode` holds `ErrorCode` and `Rpc.Code` holds
+  `Code`, each with `toString`, `fromString`, `toInt`, `fromInt`,
+  `toHttpStatus` and `fromHttpStatus`; the prefixed `codeToString` and
+  its siblings are gone.

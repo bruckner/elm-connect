@@ -1,15 +1,15 @@
-module Connect.TimestampTest exposing (suite)
+module Proto.TimestampTest exposing (suite)
 
-import Connect.Timestamp
 import Expect
 import Fuzz
+import Proto.Timestamp
 import Test exposing (Test, describe, fuzz, test)
 import Time
 
 
 suite : Test
 suite =
-    describe "Connect.Timestamp"
+    describe "Proto.Timestamp"
         [ parsing
         , printing
         , roundTrips
@@ -18,19 +18,19 @@ suite =
 
 parses : String -> Int -> Expect.Expectation
 parses text millis =
-    Connect.Timestamp.fromString text
+    Proto.Timestamp.fromString text
         |> Expect.equal (Just (Time.millisToPosix millis))
 
 
 rejects : String -> Expect.Expectation
 rejects text =
-    Connect.Timestamp.fromString text
+    Proto.Timestamp.fromString text
         |> Expect.equal Nothing
 
 
 prints : Int -> String -> Expect.Expectation
 prints millis text =
-    Connect.Timestamp.toString (Time.millisToPosix millis)
+    Proto.Timestamp.toString (Time.millisToPosix millis)
         |> Expect.equal text
 
 
@@ -129,6 +129,6 @@ roundTrips =
     describe "round trips"
         [ fuzz (Fuzz.intRange -62135596800000 253402300799999) "toString then fromString" <|
             \millis ->
-                Connect.Timestamp.fromString (Connect.Timestamp.toString (Time.millisToPosix millis))
+                Proto.Timestamp.fromString (Proto.Timestamp.toString (Time.millisToPosix millis))
                     |> Expect.equal (Just (Time.millisToPosix millis))
         ]

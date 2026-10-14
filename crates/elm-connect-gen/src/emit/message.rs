@@ -1,7 +1,7 @@
 //! A message's four declarations: its record type alias, its default
 //! value, its encoder and its decoder.
 
-use super::{CONNECT_JSON, Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, RecordField, call};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, RecordField, call};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
     access, apply, binop, list, pipeline, pvar, record, string, tuple2, ty, var,
@@ -117,8 +117,8 @@ impl Emitter {
 
     /// A decoding pipeline step reading the field `json_name`, also
     /// accepted under `proto_name` as proto3 JSON requires:
-    /// `Connect.Json.field json_name ...` when the two are equal, else
-    /// `Connect.Json.fieldEither json_name proto_name ...`, followed by
+    /// `Proto.Json.field json_name ...` when the two are equal, else
+    /// `Proto.Json.fieldEither json_name proto_name ...`, followed by
     /// `args`.
     fn field_step(
         &mut self,
@@ -127,10 +127,10 @@ impl Emitter {
         args: impl IntoIterator<Item = Expr>,
     ) -> Expr {
         let step = if json_name == proto_name {
-            let field = self.reference((CONNECT_JSON, "field"));
+            let field = self.reference((PROTO_JSON, "field"));
             apply(field, [string(json_name)])
         } else {
-            let field = self.reference((CONNECT_JSON, "fieldEither"));
+            let field = self.reference((PROTO_JSON, "fieldEither"));
             apply(field, [string(json_name), string(proto_name)])
         };
         call(step, args)
@@ -138,7 +138,7 @@ impl Emitter {
 
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Json.Decode.succeed Foo`
     /// with one step per record field, in record order: an
-    /// [`Emitter::field_step`] per proto field, a `Connect.Json.oneof` per
+    /// [`Emitter::field_step`] per proto field, a `Proto.Json.oneof` per
     /// oneof.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Decl {
         let succeed = self.reference((JSON_DECODE, "succeed"));
@@ -156,7 +156,7 @@ impl Emitter {
                         self.field_step(&field.json_name, &field.proto_name, [zero, decoder])
                     }
                     RecordField::Oneof(oneof) => {
-                        let step = self.reference((CONNECT_JSON, "oneof"));
+                        let step = self.reference((PROTO_JSON, "oneof"));
                         apply(step, [var(oneof.oneof.decoder_name())])
                     }
                 })
