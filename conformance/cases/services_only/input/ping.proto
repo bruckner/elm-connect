@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-// A package of services alone, generated with `descriptors=off`: its
-// package module has no types and no registry, and must still compile.
+// A package of services alone: its package module has no types, holds
+// its registry alone, and must still compile beside the service module.
 package ping.v1;
 
 import "google/protobuf/empty.proto";
