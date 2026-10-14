@@ -485,7 +485,7 @@ argument.)*
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
 | `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | *(Decided, 2026-10-13; built in the runtime)* the message's JSON plus `"@type"` on the wire |
+| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | *(Decided, 2026-10-13; built)* the message's JSON plus `"@type"` on the wire |
 
 The in-house generator mapped `Timestamp` to `String` to avoid a
 dependency. With a runtime package required anyway (for the transports),
@@ -562,8 +562,17 @@ Built as proposed, with these details *(each Proposed)*:
   binary-only `Any` has no proto3 JSON form; `encodeJson` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
   `jsonDecoder` does not read back.
-- Generated `Any` fields are not built yet: a field of it is still the
-  `types::any` diagnostic (`any_field` case).
+- A field of `Any` is a message field, so a singular one is a
+  `Maybe Proto.Any.Any`; repeated it is `List Proto.Any.Any`, as a map
+  value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
+  encoded and decoded with `Proto.Any.encodeJson` and `jsonDecoder`,
+  and its descriptor kind is `Message "google.protobuf.Any"`. A method
+  taking or returning one uses `Proto.WellKnown.any` (`any_field`
+  case). It was the `types::any` diagnostic until `Proto.Any` existed:
+  decoding one needs the registry the descriptors give, and unpacking
+  is left to the application, which knows the types it expects.
+- An `Any` field has no query form: its JSON is the packed message's,
+  whose fields the route cannot know (`route::query_field`, §5.3).
 
 ### 3.6 Oneof
 
@@ -702,9 +711,9 @@ case names it):
   `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
   case), and a file without a package declaration
   (`naming::invalid_module`).
-- **`google.protobuf.Any` fields** (`types::any`, `any_field` case), and
-  any other `google.protobuf` type without a mapping
-  (`types::unsupported_well_known`).
+- **A `google.protobuf` type without a mapping**
+  (`types::unsupported_well_known`), such as `Api` or `Type`. `Any`
+  was refused here (`types::any`) until it was built (§3.5).
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
   case): Elm forbids import cycles.
 - **A generate set not closed under package references**
@@ -1251,8 +1260,8 @@ default, and is `Nothing` for a number the method has no binding of
   name, 64-bit integers in decimal, timestamps in RFC 3339, field masks
   comma-joined.
 - Fields with no query form are refused rather than dropped
-  (`route::query_field`): maps, repeated messages, `Struct`, `Value`
-  and `ListValue`, and a message that contains itself. `Empty` carries
+  (`route::query_field`): maps, repeated messages, `Struct`, `Value`,
+  `ListValue` and `Any`, and a message that contains itself. `Empty` carries
   nothing and has no parameter.
 
 ### 5.4 Errors  *(Decided, 2026-10-13; built)*
@@ -1363,7 +1372,7 @@ both the plain names.
   request does not have; route body names a non-message field; map key
   of an unsupported type (dropped: every key proto allows has an Elm
   form, `bool` an association list, §3.2); package
-  import cycle; name collision after casing; `Any` field; streaming
+  import cycle; name collision after casing; streaming
   method; method value collision (§4); the `route::*` problems of
   HTTP rules (§4); a method without a rule under
   `unbound_methods=error` (§4). A recursive

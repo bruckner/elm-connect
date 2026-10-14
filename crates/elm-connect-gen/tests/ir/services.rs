@@ -151,21 +151,24 @@ fn method_types_must_be_generated() {
     let notes = r#"syntax = "proto3";
 package notes.v1;
 import "other.proto";
-import "google/protobuf/any.proto";
+import "google/protobuf/api.proto";
 service Notes {
-  rpc Get(other.v1.Thing) returns (google.protobuf.Any);
+  rpc Get(other.v1.Thing) returns (google.protobuf.Api);
 }
 "#;
     let files = [("other.proto", other), ("notes.proto", notes)];
     let diagnostics = problems(&files, &["notes.proto"]);
-    assert_eq!(codes(&diagnostics), [Code::NotGenerated, Code::Any]);
+    assert_eq!(
+        codes(&diagnostics),
+        [Code::NotGenerated, Code::UnsupportedWellKnown]
+    );
     let rendered = render(&diagnostics, &files);
     assert!(
         rendered.contains("The request of `notes.v1.Notes.Get` refers to `other.v1.Thing`"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("The response of `notes.v1.Notes.Get` has type `google.protobuf.Any`"),
+        rendered.contains("The response of `notes.v1.Notes.Get` has type `google.protobuf.Api`"),
         "{rendered}"
     );
 }

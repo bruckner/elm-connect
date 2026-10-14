@@ -169,6 +169,7 @@ fn route_problems(rules: &str) -> String {
 package t.v1;
 import "google/api/annotations.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
 message Inner {{ string name = 1; repeated string tags = 2; }}
 message Node {{ string id = 1; Node next = 2; }}
 message Thing {{
@@ -179,6 +180,7 @@ message Thing {{
   repeated Inner inners = 5;
   google.protobuf.Struct extra = 6;
   Node node = 7;
+  google.protobuf.Any packed = 8;
 }}
 service S {{
 {rules}
@@ -269,7 +271,7 @@ fn query_fields_without_a_query_form_are_named() {
         .lines()
         .take_while(|line| !line.is_empty())
         .collect();
-    assert_eq!(problems.len(), 4, "{rendered}");
+    assert_eq!(problems.len(), 5, "{rendered}");
     assert!(
         problems
             .iter()
@@ -281,6 +283,7 @@ fn query_fields_without_a_query_form_are_named() {
         "sends `inners` as a query parameter, but it is a repeated message",
         "`google.protobuf.Struct` is free-form JSON",
         "`t.v1.Node` contains itself",
+        "sends `packed` as a query parameter, but `google.protobuf.Any` holds a message",
     ] {
         assert!(rendered.contains(expected), "{expected}\n{rendered}");
     }
@@ -322,7 +325,7 @@ fn a_route_problem_points_at_the_rule() {
     let rendered = route_problems(
         r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{missing}" body: "*" }; }"#,
     );
-    assert!(rendered.contains("╭─[t.proto:17:36]"), "{rendered}");
+    assert!(rendered.contains("╭─[t.proto:19:36]"), "{rendered}");
     assert!(rendered.contains("in this rule"), "{rendered}");
     assert!(
         rendered.contains("The HTTP rule of `t.v1.S.Get` binds `{missing}`"),

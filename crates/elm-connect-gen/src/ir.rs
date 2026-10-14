@@ -430,8 +430,8 @@ pub enum MapKey {
     Bool,
 }
 
-/// The `google.protobuf` types elm-connect maps (design §3.5). `Any` and
-/// every other `google.protobuf` type are diagnostics instead.
+/// The `google.protobuf` types elm-connect maps (design §3.5). Every other
+/// `google.protobuf` type is a diagnostic instead.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum WellKnown {
     /// `google.protobuf.Timestamp`
@@ -442,6 +442,8 @@ pub enum WellKnown {
     FieldMask,
     /// `google.protobuf.Empty`
     Empty,
+    /// `google.protobuf.Any`
+    Any,
     /// `google.protobuf.Struct`
     Struct,
     /// `google.protobuf.Value`
@@ -477,6 +479,7 @@ impl WellKnown {
             WellKnown::Duration => "google.protobuf.Duration",
             WellKnown::FieldMask => "google.protobuf.FieldMask",
             WellKnown::Empty => "google.protobuf.Empty",
+            WellKnown::Any => "google.protobuf.Any",
             WellKnown::Struct => "google.protobuf.Struct",
             WellKnown::Value => "google.protobuf.Value",
             WellKnown::ListValue => "google.protobuf.ListValue",
@@ -500,6 +503,7 @@ impl WellKnown {
             "Duration" => WellKnown::Duration,
             "FieldMask" => WellKnown::FieldMask,
             "Empty" => WellKnown::Empty,
+            "Any" => WellKnown::Any,
             "Struct" => WellKnown::Struct,
             "Value" => WellKnown::Value,
             "ListValue" => WellKnown::ListValue,

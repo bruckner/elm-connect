@@ -3,8 +3,8 @@
 
 use super::scalar::Repr;
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_DURATION, PROTO_JSON,
-    TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
+    PROTO_JSON, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -119,6 +119,8 @@ pub(super) enum Present<'p> {
     /// `google.protobuf.ListValue`: a JSON array, a
     /// `List Json.Encode.Value`.
     ListValue,
+    /// `google.protobuf.Any`: the runtime's `Proto.Any.Any`.
+    Any,
 }
 
 /// The shape of a well-known type's values; `int64` says how the 64-bit
@@ -133,6 +135,7 @@ fn well_known(well_known: WellKnown, int64: Int64) -> ValueShape<'static> {
         WellKnown::Duration => Present::Duration,
         WellKnown::FieldMask => Present::FieldMask,
         WellKnown::Empty => return ValueShape::Zeroed(Zeroed::Empty),
+        WellKnown::Any => Present::Any,
         WellKnown::DoubleValue => wrapper(ScalarKind::Double),
         WellKnown::FloatValue => wrapper(ScalarKind::Float),
         WellKnown::Int64Value => wrapper(ScalarKind::Int64),
@@ -264,6 +267,7 @@ impl Emitter {
             ValueShape::Present(Present::ListValue) => {
                 ty("List", [self.library_type(JSON_ENCODE, "Value", [])])
             }
+            ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
             ValueShape::Zeroed(Zeroed::Empty) => Type::Unit,
             ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
         }
@@ -301,6 +305,7 @@ impl Emitter {
             ValueShape::Present(Present::ListValue) => {
                 self.reference((PROTO_JSON, "encodeListValue"))
             }
+            ValueShape::Present(Present::Any) => self.reference((PROTO_ANY, "encodeJson")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
@@ -321,6 +326,7 @@ impl Emitter {
             ValueShape::Present(Present::FieldMask) => self.reference((PROTO_JSON, "fieldMask")),
             ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
+            ValueShape::Present(Present::Any) => self.reference((PROTO_ANY, "jsonDecoder")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }

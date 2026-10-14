@@ -203,6 +203,7 @@ fn well_known_value(known: WellKnown) -> &'static str {
         WellKnown::Duration => "duration",
         WellKnown::FieldMask => "fieldMask",
         WellKnown::Empty => "empty",
+        WellKnown::Any => "any",
         WellKnown::Struct => "struct",
         WellKnown::Value => "value",
         WellKnown::ListValue => "listValue",

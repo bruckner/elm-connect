@@ -1,4 +1,6 @@
-// `google.protobuf.Any` needs a registry of every type it might hold.
+// `google.protobuf.Any` is the runtime's `Proto.Any.Any`: a message
+// field, so singular it is a `Maybe`; repeated, a map value and a oneof
+// member hold it bare. A method may take or return one.
 syntax = "proto3";
 
 package envelope.v1;
@@ -8,4 +10,15 @@ import "google/protobuf/any.proto";
 message Envelope {
   string id = 1;
   google.protobuf.Any payload = 2;
+  repeated google.protobuf.Any attachments = 3;
+  map<string, google.protobuf.Any> headers = 4;
+  oneof body {
+    google.protobuf.Any packed = 5;
+    string text = 6;
+  }
+}
+
+service Relay {
+  rpc Forward(google.protobuf.Any) returns (google.protobuf.Any);
+  rpc Send(Envelope) returns (Envelope);
 }

@@ -337,6 +337,7 @@ fn well_known_types_map() {
         import "google/protobuf/empty.proto";
         import "google/protobuf/struct.proto";
         import "google/protobuf/wrappers.proto";
+        import "google/protobuf/any.proto";
         message W {
           google.protobuf.Timestamp a = 1;
           google.protobuf.Duration b = 2;
@@ -355,6 +356,7 @@ fn well_known_types_map() {
           google.protobuf.StringValue o = 15;
           google.protobuf.BytesValue p = 16;
           repeated google.protobuf.Timestamp q = 17;
+          google.protobuf.Any r = 18;
         }
         "#,
     );
@@ -377,6 +379,7 @@ fn well_known_types_map() {
         StringValue,
         BytesValue,
         Timestamp,
+        Any,
     ];
     let actual: Vec<_> = message(&package, "W")
         .fields
@@ -557,18 +560,6 @@ fn a_cycle_through_a_oneof_marks_only_the_member() {
     assert!(!field(message(&package, "Expr"), "call").cyclic);
     let arg = &message(&package, "Call").oneofs[0];
     assert!(arg.variants[0].cyclic && !arg.variants[1].cyclic);
-}
-
-#[test]
-fn any_is_an_error() {
-    let source = r#"
-syntax = "proto3";
-package t;
-import "google/protobuf/any.proto";
-message M { google.protobuf.Any payload = 1; }
-"#;
-    let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
-    assert_eq!(codes(&diagnostics), [Code::Any]);
 }
 
 #[test]

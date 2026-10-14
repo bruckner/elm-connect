@@ -679,6 +679,10 @@ impl QueryWalk<'_> {
                 Some(Some(WellKnown::Struct | WellKnown::Value | WellKnown::ListValue)) => {
                     self.refuse(&path, format!("`{}` is free-form JSON", inner.full_name()))
                 }
+                Some(Some(WellKnown::Any)) => self.refuse(
+                    &path,
+                    "`google.protobuf.Any` holds a message whose fields are not known",
+                ),
                 Some(Some(_)) => self.params.push(param(None)),
                 // Unsupported well-known types are reported by the IR.
                 Some(None) => {}
