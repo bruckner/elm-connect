@@ -17,7 +17,8 @@ type Priority
 -}
 enumPriority : Enum Priority
 enumPriority =
-    { encodeJson =
+    { typeName = "t.v1.Priority"
+    , encodeJson =
         \priority ->
             case priority of
                 PriorityNone ->
@@ -35,17 +36,28 @@ enumPriority =
         , { name = "LOW", number = 1, value = PriorityLow }
         , { name = "URGENT", number = 2, value = PriorityHigh }
         ]
-    , descriptor = { typeName = "t.v1.Priority", values = [] }
     }
 
 
 suite : Test
 suite =
     describe "Proto.Enum"
-        [ test "the type name is the descriptor's" <|
+        [ test "the type name is the record's" <|
             \_ ->
                 Enum.typeName enumPriority
                     |> Expect.equal "t.v1.Priority"
+        , test "the descriptor is the values without their Elm values" <|
+            \_ ->
+                Enum.descriptor enumPriority
+                    |> Expect.equal
+                        { typeName = "t.v1.Priority"
+                        , values =
+                            [ { name = "NONE", number = 0 }
+                            , { name = "HIGH", number = 2 }
+                            , { name = "LOW", number = 1 }
+                            , { name = "URGENT", number = 2 }
+                            ]
+                        }
         , test "a value's name and number are its first entry's" <|
             \_ ->
                 List.map (\p -> ( Enum.toName enumPriority p, Enum.toNumber enumPriority p )) [ PriorityNone, PriorityHigh, PriorityLow ]

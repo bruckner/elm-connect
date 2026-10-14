@@ -33,15 +33,16 @@
 //!   shadow or clash with one.
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its encoder and decoder, every value
-//!   name with its number and constructor, and its descriptor. The
-//!   descriptors are written inline, faithful to the proto: each field's
-//!   names, number, cardinality, kind (other types by full name) and
-//!   oneof, each enum value name. The section ends with the package's
-//!   `registry`: its own descriptors, then the registries of the packages
-//!   its module imports and the well-known types', so it is transitive.
-//!   Under [`Descriptors::Off`] the trees are empty and there is no
-//!   registry.
+//!   `enumBar : Proto.Enum.Enum Bar`, its full name, its encoder and
+//!   decoder, and every value name with its number and constructor. The
+//!   message descriptors are written inline, faithful to the proto: each
+//!   field's names, number, cardinality, kind (other types by full name)
+//!   and oneof. The section ends with the package's `registry`: its own
+//!   descriptors (an enum's built by `Proto.Enum.descriptor`), then the
+//!   registries of the packages its module imports and the well-known
+//!   types', so it is transitive. Under [`Descriptors::Off`] the message
+//!   trees are empty and there is no registry; the enum values stay,
+//!   since `Proto.Enum` reads names and numbers through them.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -256,13 +257,14 @@ impl std::str::FromStr for UnboundMethods {
 /// (design §3.9).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Descriptors {
-    /// Every message's descriptor lists its fields and oneofs, every
-    /// enum's its values, and each package module has a `registry`.
+    /// Every message's descriptor lists its fields and oneofs, and each
+    /// package module has a `registry`.
     #[default]
     On,
-    /// The descriptors are empty (`fields = []`, `oneofs = []`,
-    /// `values = []`, the full name kept) and no `registry` is generated,
-    /// for applications that want smaller modules.
+    /// The message descriptors are empty (`fields = []`, `oneofs = []`,
+    /// the full name kept) and no `registry` is generated, for
+    /// applications that want smaller modules. Enum records keep their
+    /// values, which `Proto.Enum` reads names and numbers through.
     Off,
 }
 

@@ -214,24 +214,25 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.Descriptor` (`MessageDescriptor`, `EnumDescriptor`,
   `MethodDescriptor`, and the HTTP bindings, moved from `Rpc`),
   `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs with
-  its descriptor; `typeName`, `typeUrl`, `toName`, `fromName`,
-  `toNumber`, `fromNumber`), `Proto.WellKnown` (the well-known types'
+  its descriptor, an enum's with its name and values instead;
+  `typeName`, `typeUrl`, `descriptor`, `toName`, `fromName`, `toNumber`,
+  `fromNumber`), `Proto.WellKnown` (the well-known types'
   records) and `Proto.Registry` (descriptors by full name, `union`,
   `wellKnown`). `Rpc.call` takes a `Proto.Method.Method`;
   `Rpc.MethodDescriptor` is gone, and the call accessors are
   `Rpc.method`, `Rpc.descriptor`, `Rpc.serviceName`, `Rpc.methodName`
   and `Rpc.idempotent`. Generated package modules gain a
   `-- DESCRIPTORS` section with `messageFoo : Proto.Message.Message Foo`
-  and `enumBar : Proto.Enum.Enum Bar` per type, whose trees are empty
+  and `enumBar : Proto.Enum.Enum Bar` per type, the message trees empty
   for now, and service modules build each call from those records. The
   `services_types` conformance case covers methods of well-known types
   and of another package's messages.
 - Generated descriptors hold the proto: each message's descriptor lists
   its fields in declaration order (name, JSON name, number, cardinality,
-  kind, oneof) and its oneofs, each enum's its value names, aliases
-  included. Each package module ends its descriptors section with
+  kind, oneof) and its oneofs (an enum's is built from its record's
+  values). Each package module ends its descriptors section with
   `registry : Proto.Registry.Registry`, transitive over the packages it
   imports and the well-known types; a package without types gets a
   module holding its registry. The `descriptors` option (`on`, the
-  default, or `off`; `--descriptors` on the CLI) leaves the trees empty
-  and the registry out. The `descriptors_off` conformance case.
+  default, or `off`; `--descriptors` on the CLI) leaves the message
+  trees empty and the registry out. The `descriptors_off` conformance case.

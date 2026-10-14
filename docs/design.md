@@ -713,8 +713,8 @@ case names it):
 ### 3.9 Descriptors  *(Decided, 2026-10-13)*
 
 Every message and enum gets a typed record, a value holding its codecs
-and its descriptor together, in a `-- DESCRIPTORS` section between the
-defaults and the encoders:
+with its descriptor, in a `-- DESCRIPTORS` section between the defaults
+and the encoders:
 
 ```elm
 messageNote : Proto.Message.Message Note
@@ -736,13 +736,13 @@ messageNote =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { encodeJson = encodeVisibility
+    { typeName = "notes.v1.Visibility"
+    , encodeJson = encodeVisibility
     , jsonDecoder = decodeVisibility
     , values =
         [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
         , …
         ]
-    , descriptor = { typeName = "notes.v1.Visibility", values = [ … ] }
     }
 
 
@@ -754,9 +754,12 @@ registry =
 ```
 
 - The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
-  the typed record carrying it in its `descriptor` field:
-  `MessageDescriptor` and `Message a`, `EnumDescriptor` and `Enum a`,
-  `MethodDescriptor` and `Method req res` (§4).
+  the typed record: `MessageDescriptor` and `Message a`,
+  `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
+  (§4). A message's and a method's record carry the tree in a
+  `descriptor` field. An enum's does not: the tree is its `values`
+  without the Elm values, so writing both would say everything twice,
+  and `Proto.Enum.descriptor` builds it instead.
 - The trees (`Proto.Descriptor`) are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
@@ -790,10 +793,12 @@ registry =
   top-level constant, built once at start-up and dropped by dead-code
   elimination when nothing uses it. A package without types has a
   module holding its registry alone.
-- **`descriptors=off`** (§6) writes every tree empty (`fields = []`,
-  `oneofs = []`, `values = []`; the full name kept) and no registry,
+- **`descriptors=off`** (§6) writes every message tree empty
+  (`fields = []`, `oneofs = []`; the full name kept) and no registry,
   for an application that wants smaller generated modules. The typed
-  records stay, since calls are built from them (§4).
+  records stay, since calls are built from them (§4), and so do the
+  enums' `values`, which `Proto.Enum` reads names and numbers through,
+  so an enum's descriptor is whole either way.
 - **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
   package of 300 messages of eight fields and ten enums gives a package
   module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines

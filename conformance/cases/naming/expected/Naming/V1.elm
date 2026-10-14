@@ -74,7 +74,8 @@ defaultTag =
 
 enumShape : Proto.Enum.Enum Shape
 enumShape =
-    { encodeJson = encodeShape
+    { typeName = "naming.v1.Shape"
+    , encodeJson = encodeShape
     , jsonDecoder = decodeShape
     , values =
         [ { name = "SHAPE_UNSPECIFIED", number = 0, value = ShapeUnspecified }
@@ -82,35 +83,19 @@ enumShape =
         , { name = "CUBE", number = 2, value = ShapeCube }
         , { name = "SHAPE_V3_MESH", number = 3, value = ShapeV3Mesh }
         ]
-    , descriptor =
-        { typeName = "naming.v1.Shape"
-        , values =
-            [ { name = "SHAPE_UNSPECIFIED", number = 0 }
-            , { name = "SHAPE_2D", number = 1 }
-            , { name = "CUBE", number = 2 }
-            , { name = "SHAPE_V3_MESH", number = 3 }
-            ]
-        }
     }
 
 
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
-    { encodeJson = encodeHttpMethod
+    { typeName = "naming.v1.HttpMethod"
+    , encodeJson = encodeHttpMethod
     , jsonDecoder = decodeHttpMethod
     , values =
         [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0, value = HttpMethodUnspecified }
         , { name = "HTTP_METHOD_GET", number = 1, value = HttpMethodGet }
         , { name = "POST", number = 2, value = HttpMethodPost }
         ]
-    , descriptor =
-        { typeName = "naming.v1.HttpMethod"
-        , values =
-            [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0 }
-            , { name = "HTTP_METHOD_GET", number = 1 }
-            , { name = "POST", number = 2 }
-            ]
-        }
     }
 
 
@@ -143,8 +128,8 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors [ messageTag.descriptor ]
-            [ enumShape.descriptor
-            , enumHttpMethod.descriptor
+            [ Proto.Enum.descriptor enumShape
+            , Proto.Enum.descriptor enumHttpMethod
             ]
         )
         Proto.Registry.wellKnown

@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Descriptor
+import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Registry
