@@ -32,7 +32,10 @@ pub struct GeneratedFile {
 
 /// Generates one Elm module per proto package declared by the files in
 /// `generate` (names as `pool` knows them), and one per service of each,
-/// sorted by path.
+/// sorted by path. A package module with nothing to declare (a package of
+/// services alone under [`Descriptors::Off`], which has neither types nor
+/// a registry) is not written: Elm rejects a module without declarations,
+/// and nothing would import it.
 ///
 /// On any problem, returns every problem found instead: those of building
 /// the IR, or else the methods `options` reject, or else those of emitting
@@ -54,7 +57,9 @@ pub fn generate(
     for package in &packages {
         match emit::emit(package, options) {
             Ok(module) => {
-                files.push(file(&module));
+                if !module.decls.is_empty() {
+                    files.push(file(&module));
+                }
                 for service in &package.services {
                     files.push(file(&emit::emit_service(package, service, options)));
                 }

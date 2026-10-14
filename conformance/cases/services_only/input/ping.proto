@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// A package of services alone, generated with `descriptors=off`: its
+// package module has no types and no registry, and must still compile.
+package ping.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service Ping {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp);
+}

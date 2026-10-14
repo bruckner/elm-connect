@@ -235,3 +235,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   module holding its registry. The `descriptors` option (`on`, the
   default, or `off`; `--descriptors` on the CLI) leaves the trees empty
   and the registry out. The `descriptors_off` conformance case.
+- A package of services alone generated with `descriptors=off` no longer
+  writes an empty package module, which `elm make` rejected; its service
+  modules are written as before. The `services_only` conformance case.

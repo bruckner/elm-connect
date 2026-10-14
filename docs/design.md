@@ -793,7 +793,10 @@ registry =
 - **`descriptors=off`** (§6) writes every tree empty (`fields = []`,
   `oneofs = []`, `values = []`; the full name kept) and no registry,
   for an application that wants smaller generated modules. The typed
-  records stay, since calls are built from them (§4).
+  records stay, since calls are built from them (§4). A package of
+  services alone then has nothing for its package module to declare,
+  and Elm rejects a module without declarations, so that module is not
+  written; nothing would import it.
 - **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
   package of 300 messages of eight fields and ten enums gives a package
   module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
