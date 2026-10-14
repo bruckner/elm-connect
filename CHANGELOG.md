@@ -214,10 +214,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.Descriptor` (`MessageDescriptor`, `EnumDescriptor`,
   `MethodDescriptor`), `Proto.Http` (the HTTP bindings, moved from
   `Rpc`),
-  `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs with
-  its descriptor, an enum's with its name and values instead;
-  `typeName`, `typeUrl`, `descriptor`, `toName`, `fromName`, `toNumber`,
-  `fromNumber`), `Proto.WellKnown` (the well-known types'
+  `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs and
+  default with its descriptor; `typeName`, `typeUrl`, `toName`,
+  `fromName`, `toNumber`, `fromNumber`), `Proto.WellKnown` (the well-known types'
   records) and `Proto.Registry` (descriptors by full name, `union`,
   `wellKnown`). `Rpc.call` takes a `Proto.Method.Method`;
   `Rpc.MethodDescriptor` is gone, and the call accessors are

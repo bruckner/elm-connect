@@ -33,8 +33,8 @@
 //!   shadow or clash with one.
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its full name, its encoder and
-//!   decoder, and every value name with its number and constructor.
+//!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
+//!   and its descriptor, every declared name with its number.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder

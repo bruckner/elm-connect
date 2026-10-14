@@ -72,28 +72,34 @@ defaultTag =
 
 enumShape : Proto.Enum.Enum Shape
 enumShape =
-    { typeName = "naming.v1.Shape"
-    , encodeJson = encodeShape
+    { encodeJson = encodeShape
     , jsonDecoder = decodeShape
-    , values =
-        [ { name = "SHAPE_UNSPECIFIED", number = 0, value = ShapeUnspecified }
-        , { name = "SHAPE_2D", number = 1, value = Shape2d }
-        , { name = "CUBE", number = 2, value = ShapeCube }
-        , { name = "SHAPE_V3_MESH", number = 3, value = ShapeV3Mesh }
-        ]
+    , default = ShapeUnspecified
+    , descriptor =
+        { typeName = "naming.v1.Shape"
+        , values =
+            [ { name = "SHAPE_UNSPECIFIED", number = 0 }
+            , { name = "SHAPE_2D", number = 1 }
+            , { name = "CUBE", number = 2 }
+            , { name = "SHAPE_V3_MESH", number = 3 }
+            ]
+        }
     }
 
 
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
-    { typeName = "naming.v1.HttpMethod"
-    , encodeJson = encodeHttpMethod
+    { encodeJson = encodeHttpMethod
     , jsonDecoder = decodeHttpMethod
-    , values =
-        [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0, value = HttpMethodUnspecified }
-        , { name = "HTTP_METHOD_GET", number = 1, value = HttpMethodGet }
-        , { name = "POST", number = 2, value = HttpMethodPost }
-        ]
+    , default = HttpMethodUnspecified
+    , descriptor =
+        { typeName = "naming.v1.HttpMethod"
+        , values =
+            [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0 }
+            , { name = "HTTP_METHOD_GET", number = 1 }
+            , { name = "POST", number = 2 }
+            ]
+        }
     }
 
 

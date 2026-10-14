@@ -1,7 +1,7 @@
 //! The typed records of a package's messages and enums (design §3.9):
-//! `messageFoo : Proto.Message.Message Foo`, holding the message's codecs
-//! and its descriptor, and `enumBar : Proto.Enum.Enum Bar`, holding the
-//! enum's name, codecs and values.
+//! `messageFoo : Proto.Message.Message Foo` and `enumBar :
+//! Proto.Enum.Enum Bar`, each holding its type's codecs, default and
+//! descriptor.
 
 use super::{Emitter, MessageShape, PROTO_ENUM, PROTO_MESSAGE};
 use crate::elm::ast::{Decl, Expr};
@@ -34,22 +34,20 @@ impl Emitter {
         }
     }
 
-    /// `enumBar : Proto.Enum.Enum Bar`: the enum's full name, its encoder
-    /// and decoder, and every value name in declaration order with its
-    /// number and constructor (an alias with its value's). That is all the
-    /// proto says about an enum, so the record carries no descriptor;
-    /// `Proto.Enum.descriptor` builds one.
+    /// `enumBar : Proto.Enum.Enum Bar`: the enum's encoder, decoder and
+    /// zero value, and its descriptor, whose values are every declared
+    /// name in order with its number (an alias with its number).
     pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
-                inline_record([
-                    ("name", string(name)),
-                    ("number", int(value.number.into())),
-                    ("value", var(value.elm_ctor.clone())),
-                ])
+                inline_record([("name", string(name)), ("number", int(value.number.into()))])
             })
             .collect();
+        let descriptor = record([
+            ("typeName", string(enumeration.proto_full_name.clone())),
+            ("values", list(values)),
+        ]);
         let annotation =
             self.library_type(PROTO_ENUM, "Enum", [ty(enumeration.elm_name.clone(), [])]);
         Decl::Value {
@@ -58,10 +56,10 @@ impl Emitter {
             annotation,
             params: Vec::new(),
             body: record([
-                ("typeName", string(enumeration.proto_full_name.clone())),
                 ("encodeJson", var(enumeration.encoder_name())),
                 ("jsonDecoder", var(enumeration.decoder_name())),
-                ("values", list(values)),
+                ("default", var(enumeration.zero().elm_ctor.clone())),
+                ("descriptor", descriptor),
             ]),
         }
     }

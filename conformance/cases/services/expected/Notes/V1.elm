@@ -182,14 +182,17 @@ defaultSummary =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { typeName = "notes.v1.Visibility"
-    , encodeJson = encodeVisibility
+    { encodeJson = encodeVisibility
     , jsonDecoder = decodeVisibility
-    , values =
-        [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
-        , { name = "VISIBILITY_PRIVATE", number = 1, value = VisibilityPrivate }
-        , { name = "VISIBILITY_PUBLIC", number = 2, value = VisibilityPublic }
-        ]
+    , default = VisibilityUnspecified
+    , descriptor =
+        { typeName = "notes.v1.Visibility"
+        , values =
+            [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }
+            , { name = "VISIBILITY_PRIVATE", number = 1 }
+            , { name = "VISIBILITY_PUBLIC", number = 2 }
+            ]
+        }
     }
 
 
