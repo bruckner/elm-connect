@@ -214,10 +214,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.Descriptor` (`MessageDescriptor`, `EnumDescriptor`,
   `MethodDescriptor`), `Proto.Http` (the HTTP bindings, moved from
   `Rpc`),
-  `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs with
-  its descriptor, an enum's with its name and values instead;
-  `typeName`, `typeUrl`, `descriptor`, `toName`, `fromName`, `toNumber`,
-  `fromNumber`), `Proto.WellKnown` (the well-known types'
+  `Proto.Message`, `Proto.Enum` and `Proto.Method` (a type's codecs and
+  default with its descriptor; `typeName`, `typeUrl`, `toName`,
+  `fromName`, `toNumber`, `fromNumber`), `Proto.WellKnown` (the well-known types'
   records) and `Proto.Registry` (descriptors by full name, `union`,
   `wellKnown`). `Rpc.call` takes a `Proto.Method.Method`;
   `Rpc.MethodDescriptor` is gone, and the call accessors are
@@ -234,12 +233,11 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   values). Each package module ends its descriptors section with
   `registry : Proto.Registry.Registry`, transitive over the packages it
   imports and the well-known types; a package without types gets a
-  module holding its registry. The `descriptors` option (`on`, the
-  default, or `off`; `--descriptors` on the CLI) leaves the message
-  trees empty and the registry out. The `descriptors_off` conformance case.
-- A package of services alone generated with `descriptors=off` no longer
-  writes an empty package module, which `elm make` rejected; its service
-  modules are written as before. The `services_only` conformance case.
+  module holding its registry. The trees are always written: compiled
+  output is the same size when nothing reads them, and a `descriptors`
+  option that left them empty was built, measured and dropped. The
+  `services_only` conformance case: a package of services alone, whose
+  package module holds its registry and nothing else.
 - `Proto.Any`: `google.protobuf.Any` as an opaque `Any` holding a type
   URL and the packed message's JSON, or only its protobuf binary when
   that is all that arrived. `pack`, `packWith`, `unpack` (to

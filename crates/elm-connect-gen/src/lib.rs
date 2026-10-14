@@ -15,7 +15,7 @@ pub mod route;
 use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
-pub use crate::emit::{Descriptors, Int64, Options, UnboundMethods};
+pub use crate::emit::{Int64, Options, UnboundMethods};
 
 /// The version of the generator, stamped into everything it emits.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -32,10 +32,8 @@ pub struct GeneratedFile {
 
 /// Generates one Elm module per proto package declared by the files in
 /// `generate` (names as `pool` knows them), and one per service of each,
-/// sorted by path. A package module with nothing to declare (a package of
-/// services alone under [`Descriptors::Off`], which has neither types nor
-/// a registry) is not written: Elm rejects a module without declarations,
-/// and nothing would import it.
+/// sorted by path. A package of services alone still gets a package
+/// module, holding its registry.
 ///
 /// On any problem, returns every problem found instead: those of building
 /// the IR, or else the methods `options` reject, or else those of emitting
@@ -57,9 +55,7 @@ pub fn generate(
     for package in &packages {
         match emit::emit(package, options) {
             Ok(module) => {
-                if !module.decls.is_empty() {
-                    files.push(file(&module));
-                }
+                files.push(file(&module));
                 for service in &package.services {
                     files.push(file(&emit::emit_service(package, service, options)));
                 }
