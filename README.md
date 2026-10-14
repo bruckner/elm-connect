@@ -56,7 +56,8 @@ calling:
 |---|---|
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
-| `Proto.Descriptor` | descriptors as data: messages, enums, methods and their HTTP bindings |
+| `Proto.Descriptor` | descriptors as data: messages, enums and methods |
+| `Proto.Http` | a method's `google.api.http` rule as data |
 | `Proto.Message`, `Proto.Enum`, `Proto.Method` | typed records: a type's codecs with its descriptor |
 | `Proto.WellKnown` | the well-known types' typed records |
 | `Proto.Registry` | descriptors by full name |
@@ -73,7 +74,7 @@ Both binaries take the same options: the protoc plugin as
 |---|---|---|---|
 | `int64` | `--int64` | `string` (default), `int` | How 64-bit integers are held. `string` is exact; `int` gives Elm `Int`s, and a value outside ±(2^53 − 1) fails to decode. A field's `jstype` option (`JS_NUMBER`, `JS_STRING`) overrides it. |
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route (below). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
-| `descriptors` | `--descriptors` | `on` (default), `off` | Whether each message's and enum's descriptor lists its fields and values, and each package module has a `registry`. `off`: the trees are empty and there is no registry, for smaller modules. An application that never reads them pays nothing for them either way: dead-code elimination drops them. |
+| `descriptors` | `--descriptors` | `on` (default), `off` | Whether each message's descriptor lists its fields and oneofs, and each package module has a `registry`. `off`: the message trees are empty and there is no registry, for smaller modules; an enum's values stay, since its names and numbers are read through them. An application that never reads them pays nothing for them either way: dead-code elimination drops them. |
 
 [`docs/design.md`](docs/design.md) §3.4, §3.9 and §4 have the details.
 

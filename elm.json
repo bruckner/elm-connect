@@ -9,6 +9,7 @@
         "Rpc.Code",
         "Rpc.ErrorCode",
         "Proto.Descriptor",
+        "Proto.Http",
         "Proto.Message",
         "Proto.Enum",
         "Proto.Method",

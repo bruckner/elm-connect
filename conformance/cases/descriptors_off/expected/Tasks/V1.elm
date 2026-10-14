@@ -51,17 +51,14 @@ defaultTask =
 
 enumState : Proto.Enum.Enum State
 enumState =
-    { encodeJson = encodeState
+    { typeName = "tasks.v1.State"
+    , encodeJson = encodeState
     , jsonDecoder = decodeState
     , values =
         [ { name = "STATE_UNSPECIFIED", number = 0, value = StateUnspecified }
         , { name = "STATE_OPEN", number = 1, value = StateOpen }
         , { name = "STATE_DONE", number = 2, value = StateDone }
         ]
-    , descriptor =
-        { typeName = "tasks.v1.State"
-        , values = []
-        }
     }
 
 

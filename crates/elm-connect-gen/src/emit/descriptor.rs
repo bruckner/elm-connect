@@ -1,6 +1,7 @@
-//! The typed records of a package's messages and enums, their descriptors
-//! and the package's registry (design §3.9): `messageFoo :
-//! Proto.Message.Message Foo`, `enumBar : Proto.Enum.Enum Bar` and
+//! The typed records of a package's messages and enums and the package's
+//! registry (design §3.9): `messageFoo : Proto.Message.Message Foo`,
+//! holding the message's codecs and its descriptor, `enumBar :
+//! Proto.Enum.Enum Bar`, holding the enum's name, codecs and values, and
 //! `registry : Proto.Registry.Registry`.
 
 use std::collections::BTreeSet;
@@ -44,9 +45,11 @@ impl Emitter {
         }
     }
 
-    /// `enumBar : Proto.Enum.Enum Bar`: the enum's encoder and decoder,
-    /// every value name in declaration order with its number and
-    /// constructor (an alias with its value's), and its descriptor.
+    /// `enumBar : Proto.Enum.Enum Bar`: the enum's full name, its encoder
+    /// and decoder, and every value name in declaration order with its
+    /// number and constructor (an alias with its value's). That is all the
+    /// proto says about an enum, so the record carries no descriptor;
+    /// `Proto.Enum.descriptor` builds one.
     pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
@@ -58,19 +61,6 @@ impl Emitter {
                 ])
             })
             .collect();
-        let described: Vec<Expr> = match self.descriptors {
-            Descriptors::On => enumeration
-                .declared()
-                .map(|(name, value)| {
-                    inline_record([("name", string(name)), ("number", int(value.number.into()))])
-                })
-                .collect(),
-            Descriptors::Off => Vec::new(),
-        };
-        let descriptor = record([
-            ("typeName", string(enumeration.proto_full_name.clone())),
-            ("values", list(described)),
-        ]);
         let annotation =
             self.library_type(PROTO_ENUM, "Enum", [ty(enumeration.elm_name.clone(), [])]);
         Decl::Value {
@@ -79,16 +69,16 @@ impl Emitter {
             annotation,
             params: Vec::new(),
             body: record([
+                ("typeName", string(enumeration.proto_full_name.clone())),
                 ("encodeJson", var(enumeration.encoder_name())),
                 ("jsonDecoder", var(enumeration.decoder_name())),
                 ("values", list(values)),
-                ("descriptor", descriptor),
             ]),
         }
     }
 
-    /// `registry : Proto.Registry.Registry`: the package's own descriptors,
-    /// then the registries of the generated packages its module imports,
+    /// `registry : Proto.Registry.Registry`: the package's own descriptors
+    /// (an enum's built by `Proto.Enum.descriptor`), then the registries of the generated packages its module imports,
     /// each of which holds those of its own imports, then the well-known
     /// types'. Of two descriptors with one full name the first is kept,
     /// though a full name is never in two packages.
@@ -101,7 +91,10 @@ impl Emitter {
         let enums: Vec<Expr> = package
             .enums
             .iter()
-            .map(|enumeration| access(var(enumeration.value_name()), "descriptor"))
+            .map(|enumeration| {
+                let descriptor = self.reference((PROTO_ENUM, "descriptor"));
+                apply(descriptor, [var(enumeration.value_name())])
+            })
             .collect();
         let union = self.reference((PROTO_REGISTRY, "union"));
         let mut parts: Vec<Expr> = Vec::new();

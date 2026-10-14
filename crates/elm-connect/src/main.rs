@@ -34,9 +34,9 @@ enum Command {
         /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
         #[arg(long, value_name = "implicit|error", default_value = "implicit")]
         unbound_methods: UnboundMethods,
-        /// Whether messages' and enums' descriptors hold their fields and
-        /// values: `on`, or `off` (the trees are empty and no registry is
-        /// generated, for smaller modules).
+        /// Whether messages' descriptors hold their fields and oneofs:
+        /// `on`, or `off` (the message trees are empty and no registry is
+        /// generated, for smaller modules; enum values stay).
         #[arg(long, value_name = "on|off", default_value = "on")]
         descriptors: Descriptors,
     },

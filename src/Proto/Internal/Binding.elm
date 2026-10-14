@@ -7,7 +7,7 @@ module Proto.Internal.Binding exposing
     )
 
 {-| The HTTP binding types, defined here so that `Rpc` can read what
-`Proto.Descriptor` exposes only to build.
+`Proto.Http` exposes only to build.
 -}
 
 

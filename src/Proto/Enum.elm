@@ -1,13 +1,13 @@
 module Proto.Enum exposing
-    ( Enum, typeName
+    ( Enum, typeName, descriptor
     , toName, fromName, toNumber, fromNumber
     )
 
-{-| An enum type as a value: its proto3 JSON codecs, its values and its
-descriptor, together. Generated code gives one per enum
+{-| An enum type as a value: its full name, its proto3 JSON codecs and its
+values, together. Generated code gives one per enum
 (`Notes.V1.enumVisibility : Enum Visibility`).
 
-@docs Enum, typeName
+@docs Enum, typeName, descriptor
 
 
 # Names and numbers
@@ -23,19 +23,23 @@ import Proto.Descriptor exposing (EnumDescriptor)
 
 {-| An enum type whose Elm values are `a`:
 
+  - `typeName`: its full name, such as `notes.v1.Visibility`.
   - `encodeJson` and `jsonDecoder`: its proto3 JSON codecs.
   - `values`: every value name in declaration order, with its number and the
     Elm value it stands for. An alias (`allow_alias`) is an entry of its own
     whose `value` is that of the name it aliases, so one Elm value can appear
     under several names; the first is the one written.
-  - `descriptor`: what the proto says about it.
+
+What the proto says about the enum is all here, so unlike a message's
+record this one carries no descriptor; [`descriptor`](#descriptor) builds
+it.
 
 -}
 type alias Enum a =
-    { encodeJson : a -> Json.Encode.Value
+    { typeName : String
+    , encodeJson : a -> Json.Encode.Value
     , jsonDecoder : Json.Decode.Decoder a
     , values : List { name : String, number : Int, value : a }
-    , descriptor : EnumDescriptor
     }
 
 
@@ -43,7 +47,17 @@ type alias Enum a =
 -}
 typeName : Enum a -> String
 typeName enum =
-    enum.descriptor.typeName
+    enum.typeName
+
+
+{-| The enum as data: its full name and its value names with their numbers,
+which is `values` without the Elm values.
+-}
+descriptor : Enum a -> EnumDescriptor
+descriptor enum =
+    { typeName = enum.typeName
+    , values = List.map (\entry_ -> { name = entry_.name, number = entry_.number }) enum.values
+    }
 
 
 {-| The proto name of a value, such as `"VISIBILITY_PUBLIC"`: the first entry

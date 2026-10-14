@@ -146,7 +146,7 @@ codecs, and the service gets a module of its own (§4):
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
-import Proto.Descriptor
+import Proto.Http
 import Rpc
 
 
@@ -162,14 +162,14 @@ getNote =
             , input = "notes.v1.GetNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
@@ -744,8 +744,8 @@ case names it):
 ### 3.9 Descriptors  *(Decided, 2026-10-13)*
 
 Every message and enum gets a typed record, a value holding its codecs
-and its descriptor together, in a `-- DESCRIPTORS` section between the
-defaults and the encoders:
+with its descriptor, in a `-- DESCRIPTORS` section between the defaults
+and the encoders:
 
 ```elm
 messageNote : Proto.Message.Message Note
@@ -767,13 +767,13 @@ messageNote =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { encodeJson = encodeVisibility
+    { typeName = "notes.v1.Visibility"
+    , encodeJson = encodeVisibility
     , jsonDecoder = decodeVisibility
     , values =
         [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
         , …
         ]
-    , descriptor = { typeName = "notes.v1.Visibility", values = [ … ] }
     }
 
 
@@ -785,9 +785,12 @@ registry =
 ```
 
 - The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
-  the typed record carrying it in its `descriptor` field:
-  `MessageDescriptor` and `Message a`, `EnumDescriptor` and `Enum a`,
-  `MethodDescriptor` and `Method req res` (§4).
+  the typed record: `MessageDescriptor` and `Message a`,
+  `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
+  (§4). A message's and a method's record carry the tree in a
+  `descriptor` field. An enum's does not: the tree is its `values`
+  without the Elm values, so writing both would say everything twice,
+  and `Proto.Enum.descriptor` builds it instead.
 - The trees (`Proto.Descriptor`) are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
@@ -823,13 +826,15 @@ registry =
   top-level constant, built once at start-up and dropped by dead-code
   elimination when nothing uses it. A package without types has a
   module holding its registry alone.
-- **`descriptors=off`** (§6) writes every tree empty (`fields = []`,
-  `oneofs = []`, `values = []`; the full name kept) and no registry,
+- **`descriptors=off`** (§6) writes every message tree empty
+  (`fields = []`, `oneofs = []`; the full name kept) and no registry,
   for an application that wants smaller generated modules. The typed
-  records stay, since calls are built from them (§4). A package of
-  services alone then has nothing for its package module to declare,
-  and Elm rejects a module without declarations, so that module is not
-  written; nothing would import it.
+  records stay, since calls are built from them (§4), and so do the
+  enums' `values`, which `Proto.Enum` reads names and numbers through,
+  so an enum's descriptor is whole either way. A package of services
+  alone then has nothing for its package module to declare, and Elm
+  rejects a module without declarations, so that module is not written;
+  nothing would import it.
 - **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
   package of 300 messages of eight fields and ten enums gives a package
   module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
@@ -861,24 +866,24 @@ getNote =
             , input = "notes.v1.GetNoteRequest"
             , output = "notes.v1.Note"
             , bindings =
-                [ Proto.Descriptor.binding
+                [ Proto.Http.binding
                     { method = "GET"
                     , path =
-                        [ Proto.Descriptor.literal "v1"
-                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        [ Proto.Http.literal "v1"
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
                         ]
                     , customVerb = Nothing
-                    , body = Proto.Descriptor.noBody
+                    , body = Proto.Http.noBody
                     , responseBody = Nothing
                     , query = []
                     }
-                , Proto.Descriptor.binding { … }   -- the additional binding
+                , Proto.Http.binding { … }   -- the additional binding
                 ]
             }
         }
 ```
 
-- The service module imports `Rpc`, `Proto.Descriptor` (for the
+- The service module imports `Rpc`, `Proto.Http` (for the
   bindings), the package module and the modules of any other package
   its request and response types come from (`Proto.WellKnown` for a
   well-known type), and refers to every one of them qualified. Each method is written
@@ -907,7 +912,7 @@ getNote =
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
-  `Proto.Descriptor.binding` of the verb, the path as literals and variables, the
+  `Proto.Http.binding` of the verb, the path as literals and variables, the
   custom verb, the body, the response body and the query parameters.
   The runtime walks them and never parses a template. A call picks an
   additional binding with `Rpc.viaBinding n`, `Nothing` for a number
@@ -1110,8 +1115,8 @@ The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 `Rpc.Code` and `Rpc.ErrorCode` (§5.4); its internals live under
 `Rpc.Internal.*`. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
-`Proto.Duration`, `Proto.Int64`), the descriptor trees and HTTP
-bindings (`Proto.Descriptor`), the typed records (`Proto.Message`,
+`Proto.Duration`, `Proto.Int64`), the descriptor trees
+(`Proto.Descriptor`), the HTTP bindings (`Proto.Http`), the typed records (`Proto.Message`,
 `Proto.Enum`, `Proto.Method`), the well-known types' records
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any`
 (§3.5). They were `Connect.*` at first, a name that tied proto3
@@ -1213,7 +1218,7 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 
 #### Transcode  *(Decided, 2026-10-13; built)*
 
-The bindings a generated call carries (`Proto.Descriptor.binding`, with
+The bindings a generated call carries (`Proto.Http.binding`, with
 `literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
 `wholeBody`, `bodyField` and `param`) are the parsed `google.api.http`
 rule, the rule's own binding first and its
