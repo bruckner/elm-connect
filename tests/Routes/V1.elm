@@ -210,14 +210,17 @@ defaultUpdateResourceRequest =
 
 enumKind : Proto.Enum.Enum Kind
 enumKind =
-    { typeName = "routes.v1.Kind"
-    , encodeJson = encodeKind
+    { encodeJson = encodeKind
     , jsonDecoder = decodeKind
-    , values =
-        [ { name = "KIND_UNSPECIFIED", number = 0, value = KindUnspecified }
-        , { name = "KIND_TEXT", number = 1, value = KindText }
-        , { name = "KIND_IMAGE", number = 2, value = KindImage }
-        ]
+    , default = KindUnspecified
+    , descriptor =
+        { typeName = "routes.v1.Kind"
+        , values =
+            [ { name = "KIND_UNSPECIFIED", number = 0 }
+            , { name = "KIND_TEXT", number = 1 }
+            , { name = "KIND_IMAGE", number = 2 }
+            ]
+        }
     }
 
 
@@ -413,7 +416,7 @@ registry =
             , messageResource.descriptor
             , messageUpdateResourceRequest.descriptor
             ]
-            [ Proto.Enum.descriptor enumKind ]
+            [ enumKind.descriptor ]
         )
         Proto.Registry.wellKnown
 

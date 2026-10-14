@@ -33,16 +33,13 @@
 //!   shadow or clash with one.
 //! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
 //!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its full name, its encoder and
-//!   decoder, and every value name with its number and constructor. The
+//!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
+//!   and its descriptor, every declared name with its number. The
 //!   message descriptors are written inline, faithful to the proto: each
 //!   field's names, number, cardinality, kind (other types by full name)
 //!   and oneof. The section ends with the package's `registry`: its own
-//!   descriptors (an enum's built by `Proto.Enum.descriptor`), then the
-//!   registries of the packages its module imports and the well-known
-//!   types', so it is transitive. Under [`Descriptors::Off`] the message
-//!   trees are empty and there is no registry; the enum values stay,
-//!   since `Proto.Enum` reads names and numbers through them.
+//!   descriptors, then the registries of the packages its module imports
+//!   and the well-known types', so it is transitive.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -163,9 +160,6 @@ pub struct Options {
     /// What a method without a `google.api.http` rule gets
     /// (`unbound_methods=`, design §4).
     pub unbound_methods: UnboundMethods,
-    /// Whether descriptors hold their fields and values (`descriptors=`,
-    /// design §3.9).
-    pub descriptors: Descriptors,
 }
 
 impl Options {
@@ -191,11 +185,9 @@ impl Options {
             match key {
                 "int64" => options.int64 = value.parse()?,
                 "unbound_methods" => options.unbound_methods = value.parse()?,
-                "descriptors" => options.descriptors = value.parse()?,
                 _ => {
                     return Err(format!(
-                        "unknown option `{key}`; the options are: int64, unbound_methods, \
-                         descriptors"
+                        "unknown option `{key}`; the options are: int64, unbound_methods"
                     ));
                 }
             }
@@ -253,33 +245,6 @@ impl std::str::FromStr for UnboundMethods {
             _ => Err(format!(
                 "`unbound_methods` is `implicit` or `error`, not `{value}`"
             )),
-        }
-    }
-}
-
-/// Whether the generated descriptors hold the proto's fields and values
-/// (design §3.9).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Descriptors {
-    /// Every message's descriptor lists its fields and oneofs, and each
-    /// package module has a `registry`.
-    #[default]
-    On,
-    /// The message descriptors are empty (`fields = []`, `oneofs = []`,
-    /// the full name kept) and no `registry` is generated, for
-    /// applications that want smaller modules. Enum records keep their
-    /// values, which `Proto.Enum` reads names and numbers through.
-    Off,
-}
-
-impl std::str::FromStr for Descriptors {
-    type Err = String;
-
-    fn from_str(value: &str) -> Result<Self, String> {
-        match value {
-            "on" => Ok(Descriptors::On),
-            "off" => Ok(Descriptors::Off),
-            _ => Err(format!("`descriptors` is `on` or `off`, not `{value}`")),
         }
     }
 }
@@ -383,8 +348,6 @@ struct Emitter {
     imports: BTreeMap<String, BTreeSet<String>>,
     /// How 64-bit integers are held where a field does not say.
     int64: Int64,
-    /// Whether descriptors hold their fields and values.
-    descriptors: Descriptors,
 }
 
 impl Emitter {
@@ -393,7 +356,6 @@ impl Emitter {
             module: module.clone(),
             imports: BTreeMap::new(),
             int64: options.int64,
-            descriptors: options.descriptors,
         }
     }
 
@@ -436,12 +398,7 @@ impl Emitter {
             .map(|message| message_shape(message, &by_name, self.int64))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
-            return match self.descriptors {
-                Descriptors::On => {
-                    vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)]
-                }
-                Descriptors::Off => Vec::new(),
-            };
+            return vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)];
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
         let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
@@ -471,9 +428,7 @@ impl Emitter {
                 decoders.push(self.oneof_decoder(oneof));
             }
         }
-        if self.descriptors == Descriptors::On {
-            descriptors.push(self.registry(package));
-        }
+        descriptors.push(self.registry(package));
         // A package of enums alone has no defaults.
         if messages.is_empty() {
             defaults.clear();
@@ -623,10 +578,6 @@ mod tests {
             Ok(UnboundMethods::Implicit)
         );
         assert!(error("unbound_methods=drop").contains("`implicit` or `error`"));
-        let descriptors = |parameter| Options::from_parameter(parameter).map(|o| o.descriptors);
-        assert_eq!(descriptors(""), Ok(Descriptors::On));
-        assert_eq!(descriptors("descriptors=off"), Ok(Descriptors::Off));
-        assert!(error("descriptors=empty").contains("`on` or `off`"));
     }
 
     #[test]
@@ -678,18 +629,10 @@ mod tests {
                 "Proto.Registry"
             ]
         );
-
-        let off = Options::from_parameter("descriptors=off").expect("parses");
-        let module = emit(&only_ints, &off).expect("emits");
-        let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(
-            imports,
-            ["Json.Decode", "Json.Encode", "Proto.Json", "Proto.Message"]
-        );
     }
 
     #[test]
-    fn descriptors_hold_the_fields_unless_off() {
+    fn descriptors_hold_the_fields_and_the_registry() {
         let one = package(vec![message(
             "A",
             vec![field(
@@ -717,10 +660,6 @@ mod tests {
             ),
             "{on}"
         );
-        let off = printed(&Options::from_parameter("descriptors=off").expect("parses"));
-        assert!(off.contains("fields = []"), "{off}");
-        assert!(!off.contains("registry"), "{off}");
-
         let nothing = package(Vec::new());
         let printed =
             crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
