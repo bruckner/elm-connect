@@ -5,7 +5,9 @@ module Users.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -31,6 +33,38 @@ defaultUser : User
 defaultUser =
     { name = ""
     , role = RoleUnspecified
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumRole : Proto.Enum.Enum Role
+enumRole =
+    { encodeJson = encodeRole
+    , jsonDecoder = decodeRole
+    , values =
+        [ { name = "ROLE_UNSPECIFIED", number = 0, value = RoleUnspecified }
+        , { name = "ROLE_EDITOR", number = 1, value = RoleEditor }
+        ]
+    , descriptor =
+        { typeName = "users.v1.Role"
+        , values = []
+        }
+    }
+
+
+messageUser : Proto.Message.Message User
+messageUser =
+    { encodeJson = encodeUser
+    , jsonDecoder = decodeUser
+    , default = defaultUser
+    , descriptor =
+        { typeName = "users.v1.User"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

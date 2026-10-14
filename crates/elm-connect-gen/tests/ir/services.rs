@@ -72,6 +72,7 @@ fn methods_are_named_and_typed() {
         TypeRef::Message(TypeName {
             module: package.module.clone(),
             name: name.into(),
+            proto_full_name: format!("notes.v1.{name}"),
         })
     };
     assert_eq!(get.input, note("GetNoteRequest"));

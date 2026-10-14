@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Json
+import Proto.Message
 import Users.V1
 
 
@@ -42,6 +43,23 @@ defaultNote =
     , readers = []
     , roles = Dict.empty
     , owner = NoteOwnerUnset
+    }
+
+
+
+-- DESCRIPTORS
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    { encodeJson = encodeNote
+    , jsonDecoder = decodeNote
+    , default = defaultNote
+    , descriptor =
+        { typeName = "notes.v1.Note"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

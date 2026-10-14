@@ -6,6 +6,7 @@ module Cardinality.V1 exposing (..)
 import Json.Decode
 import Json.Encode
 import Proto.Json
+import Proto.Message
 
 
 
@@ -59,6 +60,36 @@ defaultNote =
     , title = ""
     , relatedLinks = []
     , isDraft = Nothing
+    }
+
+
+
+-- DESCRIPTORS
+
+
+messageAuthor : Proto.Message.Message Author
+messageAuthor =
+    { encodeJson = encodeAuthor
+    , jsonDecoder = decodeAuthor
+    , default = defaultAuthor
+    , descriptor =
+        { typeName = "cardinality.v1.Author"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    { encodeJson = encodeNote
+    , jsonDecoder = decodeNote
+    , default = defaultNote
+    , descriptor =
+        { typeName = "cardinality.v1.Note"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

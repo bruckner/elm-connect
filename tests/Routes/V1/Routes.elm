@@ -3,6 +3,7 @@
 
 module Routes.V1.Routes exposing (..)
 
+import Proto.Descriptor
 import Routes.V1
 import Rpc
 
@@ -10,457 +11,509 @@ import Rpc
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "GetMessage"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeGetMessageRequest
-        , jsonDecoder = Routes.V1.decodeMessage
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "name" ] [ Rpc.literal "messages", Rpc.wildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "message_id" [ "messageId" ] (Just "")
-                    , Rpc.param "revision" [ "revision" ] (Just "0")
-                    , Rpc.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                    , Rpc.param "user_id" [ "userId" ] (Just "")
-                    ]
-                }
-            , Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "messages"
-                    , Rpc.variable [ "messageId" ] []
-                    , Rpc.variable [ "sub", "subfield" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "revision" [ "revision" ] (Just "0")
-                    , Rpc.param "user_id" [ "userId" ] (Just "")
-                    , Rpc.param "name" [ "name" ] (Just "")
-                    ]
-                }
-            , Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "messages"
-                    , Rpc.variable [ "messageId" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "revision" [ "revision" ] (Just "0")
-                    , Rpc.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                    , Rpc.param "user_id" [ "userId" ] (Just "")
-                    , Rpc.param "name" [ "name" ] (Just "")
-                    ]
-                }
-            , Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "users"
-                    , Rpc.variable [ "userId" ] []
-                    , Rpc.literal "messages"
-                    , Rpc.variable [ "messageId" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "revision" [ "revision" ] (Just "0")
-                    , Rpc.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                    , Rpc.param "name" [ "name" ] (Just "")
-                    ]
-                }
-            ]
+        { request = Routes.V1.messageGetMessageRequest
+        , response = Routes.V1.messageMessage
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "GetMessage"
+            , idempotent = False
+            , input = "routes.v1.GetMessageRequest"
+            , output = "routes.v1.Message"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "messages", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "message_id" [ "messageId" ] (Just "")
+                        , Proto.Descriptor.param "revision" [ "revision" ] (Just "0")
+                        , Proto.Descriptor.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                        , Proto.Descriptor.param "user_id" [ "userId" ] (Just "")
+                        ]
+                    }
+                , Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "messages"
+                        , Proto.Descriptor.variable [ "messageId" ] []
+                        , Proto.Descriptor.variable [ "sub", "subfield" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "revision" [ "revision" ] (Just "0")
+                        , Proto.Descriptor.param "user_id" [ "userId" ] (Just "")
+                        , Proto.Descriptor.param "name" [ "name" ] (Just "")
+                        ]
+                    }
+                , Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "messages"
+                        , Proto.Descriptor.variable [ "messageId" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "revision" [ "revision" ] (Just "0")
+                        , Proto.Descriptor.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                        , Proto.Descriptor.param "user_id" [ "userId" ] (Just "")
+                        , Proto.Descriptor.param "name" [ "name" ] (Just "")
+                        ]
+                    }
+                , Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "users"
+                        , Proto.Descriptor.variable [ "userId" ] []
+                        , Proto.Descriptor.literal "messages"
+                        , Proto.Descriptor.variable [ "messageId" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "revision" [ "revision" ] (Just "0")
+                        , Proto.Descriptor.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                        , Proto.Descriptor.param "name" [ "name" ] (Just "")
+                        ]
+                    }
+                ]
+            }
         }
 
 
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "UpdateMessage"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeUpdateMessageRequest
-        , jsonDecoder = Routes.V1.decodeMessage
-        , bindings =
-            [ Rpc.binding
-                { method = "PATCH"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "messages"
-                    , Rpc.variable [ "messageId" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.bodyField "message"
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageUpdateMessageRequest
+        , response = Routes.V1.messageMessage
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "UpdateMessage"
+            , idempotent = False
+            , input = "routes.v1.UpdateMessageRequest"
+            , output = "routes.v1.Message"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "PATCH"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "messages"
+                        , Proto.Descriptor.variable [ "messageId" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.bodyField "message"
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "UpdateMessageWhole"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeMessage
-        , jsonDecoder = Routes.V1.decodeMessage
-        , bindings =
-            [ Rpc.binding
-                { method = "PATCH"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "messages"
-                    , Rpc.variable [ "messageId" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.wholeBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageMessage
+        , response = Routes.V1.messageMessage
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "UpdateMessageWhole"
+            , idempotent = False
+            , input = "routes.v1.Message"
+            , output = "routes.v1.Message"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "PATCH"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "messages"
+                        , Proto.Descriptor.variable [ "messageId" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.wholeBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "PostSub"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeGetMessageRequest
-        , jsonDecoder = Routes.V1.decodeMessage
-        , bindings =
-            [ Rpc.binding
-                { method = "POST"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "subs"
-                    , Rpc.variable [ "sub", "subfield" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.wholeBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageGetMessageRequest
+        , response = Routes.V1.messageMessage
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "PostSub"
+            , idempotent = False
+            , input = "routes.v1.GetMessageRequest"
+            , output = "routes.v1.Message"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "POST"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "subs"
+                        , Proto.Descriptor.variable [ "sub", "subfield" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.wholeBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Query"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeEverything
-        , jsonDecoder = Routes.V1.decodeEverything
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "query"
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "name" [ "name" ] (Just "")
-                    , Rpc.param "count" [ "count" ] (Just "0")
-                    , Rpc.param "big" [ "big" ] (Just "0")
-                    , Rpc.param "ubig" [ "ubig" ] (Just "0")
-                    , Rpc.param "flag" [ "flag" ] (Just "false")
-                    , Rpc.param "ratio" [ "ratio" ] (Just "0")
-                    , Rpc.param "scale" [ "scale" ] (Just "0")
-                    , Rpc.param "data" [ "data" ] (Just "")
-                    , Rpc.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                    , Rpc.param "tags" [ "tags" ] Nothing
-                    , Rpc.param "kinds" [ "kinds" ] Nothing
-                    , Rpc.param "numbers" [ "numbers" ] Nothing
-                    , Rpc.param "maybe_count" [ "maybeCount" ] Nothing
-                    , Rpc.param "maybe_name" [ "maybeName" ] Nothing
-                    , Rpc.param "at" [ "at" ] Nothing
-                    , Rpc.param "wait" [ "wait" ] Nothing
-                    , Rpc.param "mask" [ "mask" ] Nothing
-                    , Rpc.param "limit" [ "limit" ] Nothing
-                    , Rpc.param "label" [ "label" ] Nothing
-                    , Rpc.param "inner.a" [ "inner", "a" ] (Just "")
-                    , Rpc.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                    , Rpc.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                    , Rpc.param "text" [ "text" ] Nothing
-                    , Rpc.param "number" [ "number" ] Nothing
-                    ]
-                }
-            ]
+        { request = Routes.V1.messageEverything
+        , response = Routes.V1.messageEverything
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Query"
+            , idempotent = False
+            , input = "routes.v1.Everything"
+            , output = "routes.v1.Everything"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "query"
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "name" [ "name" ] (Just "")
+                        , Proto.Descriptor.param "count" [ "count" ] (Just "0")
+                        , Proto.Descriptor.param "big" [ "big" ] (Just "0")
+                        , Proto.Descriptor.param "ubig" [ "ubig" ] (Just "0")
+                        , Proto.Descriptor.param "flag" [ "flag" ] (Just "false")
+                        , Proto.Descriptor.param "ratio" [ "ratio" ] (Just "0")
+                        , Proto.Descriptor.param "scale" [ "scale" ] (Just "0")
+                        , Proto.Descriptor.param "data" [ "data" ] (Just "")
+                        , Proto.Descriptor.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                        , Proto.Descriptor.param "tags" [ "tags" ] Nothing
+                        , Proto.Descriptor.param "kinds" [ "kinds" ] Nothing
+                        , Proto.Descriptor.param "numbers" [ "numbers" ] Nothing
+                        , Proto.Descriptor.param "maybe_count" [ "maybeCount" ] Nothing
+                        , Proto.Descriptor.param "maybe_name" [ "maybeName" ] Nothing
+                        , Proto.Descriptor.param "at" [ "at" ] Nothing
+                        , Proto.Descriptor.param "wait" [ "wait" ] Nothing
+                        , Proto.Descriptor.param "mask" [ "mask" ] Nothing
+                        , Proto.Descriptor.param "limit" [ "limit" ] Nothing
+                        , Proto.Descriptor.param "label" [ "label" ] Nothing
+                        , Proto.Descriptor.param "inner.a" [ "inner", "a" ] (Just "")
+                        , Proto.Descriptor.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                        , Proto.Descriptor.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                        , Proto.Descriptor.param "text" [ "text" ] Nothing
+                        , Proto.Descriptor.param "number" [ "number" ] Nothing
+                        ]
+                    }
+                ]
+            }
         }
 
 
 single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Single"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeEverything
-        , jsonDecoder = Routes.V1.decodeEverything
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "single"
-                    , Rpc.variable [ "name" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "count" [ "count" ] (Just "0")
-                    , Rpc.param "big" [ "big" ] (Just "0")
-                    , Rpc.param "ubig" [ "ubig" ] (Just "0")
-                    , Rpc.param "flag" [ "flag" ] (Just "false")
-                    , Rpc.param "ratio" [ "ratio" ] (Just "0")
-                    , Rpc.param "scale" [ "scale" ] (Just "0")
-                    , Rpc.param "data" [ "data" ] (Just "")
-                    , Rpc.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                    , Rpc.param "tags" [ "tags" ] Nothing
-                    , Rpc.param "kinds" [ "kinds" ] Nothing
-                    , Rpc.param "numbers" [ "numbers" ] Nothing
-                    , Rpc.param "maybe_count" [ "maybeCount" ] Nothing
-                    , Rpc.param "maybe_name" [ "maybeName" ] Nothing
-                    , Rpc.param "at" [ "at" ] Nothing
-                    , Rpc.param "wait" [ "wait" ] Nothing
-                    , Rpc.param "mask" [ "mask" ] Nothing
-                    , Rpc.param "limit" [ "limit" ] Nothing
-                    , Rpc.param "label" [ "label" ] Nothing
-                    , Rpc.param "inner.a" [ "inner", "a" ] (Just "")
-                    , Rpc.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                    , Rpc.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                    , Rpc.param "text" [ "text" ] Nothing
-                    , Rpc.param "number" [ "number" ] Nothing
-                    ]
-                }
-            ]
+        { request = Routes.V1.messageEverything
+        , response = Routes.V1.messageEverything
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Single"
+            , idempotent = False
+            , input = "routes.v1.Everything"
+            , output = "routes.v1.Everything"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "single"
+                        , Proto.Descriptor.variable [ "name" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "count" [ "count" ] (Just "0")
+                        , Proto.Descriptor.param "big" [ "big" ] (Just "0")
+                        , Proto.Descriptor.param "ubig" [ "ubig" ] (Just "0")
+                        , Proto.Descriptor.param "flag" [ "flag" ] (Just "false")
+                        , Proto.Descriptor.param "ratio" [ "ratio" ] (Just "0")
+                        , Proto.Descriptor.param "scale" [ "scale" ] (Just "0")
+                        , Proto.Descriptor.param "data" [ "data" ] (Just "")
+                        , Proto.Descriptor.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                        , Proto.Descriptor.param "tags" [ "tags" ] Nothing
+                        , Proto.Descriptor.param "kinds" [ "kinds" ] Nothing
+                        , Proto.Descriptor.param "numbers" [ "numbers" ] Nothing
+                        , Proto.Descriptor.param "maybe_count" [ "maybeCount" ] Nothing
+                        , Proto.Descriptor.param "maybe_name" [ "maybeName" ] Nothing
+                        , Proto.Descriptor.param "at" [ "at" ] Nothing
+                        , Proto.Descriptor.param "wait" [ "wait" ] Nothing
+                        , Proto.Descriptor.param "mask" [ "mask" ] Nothing
+                        , Proto.Descriptor.param "limit" [ "limit" ] Nothing
+                        , Proto.Descriptor.param "label" [ "label" ] Nothing
+                        , Proto.Descriptor.param "inner.a" [ "inner", "a" ] (Just "")
+                        , Proto.Descriptor.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                        , Proto.Descriptor.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                        , Proto.Descriptor.param "text" [ "text" ] Nothing
+                        , Proto.Descriptor.param "number" [ "number" ] Nothing
+                        ]
+                    }
+                ]
+            }
         }
 
 
 multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Multi"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeEverything
-        , jsonDecoder = Routes.V1.decodeEverything
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "name" ] [ Rpc.literal "things", Rpc.wildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "count" [ "count" ] (Just "0")
-                    , Rpc.param "big" [ "big" ] (Just "0")
-                    , Rpc.param "ubig" [ "ubig" ] (Just "0")
-                    , Rpc.param "flag" [ "flag" ] (Just "false")
-                    , Rpc.param "ratio" [ "ratio" ] (Just "0")
-                    , Rpc.param "scale" [ "scale" ] (Just "0")
-                    , Rpc.param "data" [ "data" ] (Just "")
-                    , Rpc.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                    , Rpc.param "tags" [ "tags" ] Nothing
-                    , Rpc.param "kinds" [ "kinds" ] Nothing
-                    , Rpc.param "numbers" [ "numbers" ] Nothing
-                    , Rpc.param "maybe_count" [ "maybeCount" ] Nothing
-                    , Rpc.param "maybe_name" [ "maybeName" ] Nothing
-                    , Rpc.param "at" [ "at" ] Nothing
-                    , Rpc.param "wait" [ "wait" ] Nothing
-                    , Rpc.param "mask" [ "mask" ] Nothing
-                    , Rpc.param "limit" [ "limit" ] Nothing
-                    , Rpc.param "label" [ "label" ] Nothing
-                    , Rpc.param "inner.a" [ "inner", "a" ] (Just "")
-                    , Rpc.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                    , Rpc.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                    , Rpc.param "text" [ "text" ] Nothing
-                    , Rpc.param "number" [ "number" ] Nothing
-                    ]
-                }
-            ]
+        { request = Routes.V1.messageEverything
+        , response = Routes.V1.messageEverything
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Multi"
+            , idempotent = False
+            , input = "routes.v1.Everything"
+            , output = "routes.v1.Everything"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "things", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "count" [ "count" ] (Just "0")
+                        , Proto.Descriptor.param "big" [ "big" ] (Just "0")
+                        , Proto.Descriptor.param "ubig" [ "ubig" ] (Just "0")
+                        , Proto.Descriptor.param "flag" [ "flag" ] (Just "false")
+                        , Proto.Descriptor.param "ratio" [ "ratio" ] (Just "0")
+                        , Proto.Descriptor.param "scale" [ "scale" ] (Just "0")
+                        , Proto.Descriptor.param "data" [ "data" ] (Just "")
+                        , Proto.Descriptor.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                        , Proto.Descriptor.param "tags" [ "tags" ] Nothing
+                        , Proto.Descriptor.param "kinds" [ "kinds" ] Nothing
+                        , Proto.Descriptor.param "numbers" [ "numbers" ] Nothing
+                        , Proto.Descriptor.param "maybe_count" [ "maybeCount" ] Nothing
+                        , Proto.Descriptor.param "maybe_name" [ "maybeName" ] Nothing
+                        , Proto.Descriptor.param "at" [ "at" ] Nothing
+                        , Proto.Descriptor.param "wait" [ "wait" ] Nothing
+                        , Proto.Descriptor.param "mask" [ "mask" ] Nothing
+                        , Proto.Descriptor.param "limit" [ "limit" ] Nothing
+                        , Proto.Descriptor.param "label" [ "label" ] Nothing
+                        , Proto.Descriptor.param "inner.a" [ "inner", "a" ] (Just "")
+                        , Proto.Descriptor.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                        , Proto.Descriptor.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                        , Proto.Descriptor.param "text" [ "text" ] Nothing
+                        , Proto.Descriptor.param "number" [ "number" ] Nothing
+                        ]
+                    }
+                ]
+            }
         }
 
 
 typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Typed"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeEverything
-        , jsonDecoder = Routes.V1.decodeEverything
-        , bindings =
-            [ Rpc.binding
-                { method = "DELETE"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.literal "typed"
-                    , Rpc.variable [ "count" ] []
-                    , Rpc.variable [ "flag" ] []
-                    , Rpc.variable [ "kind" ] []
-                    , Rpc.variable [ "big" ] []
-                    , Rpc.variable [ "inner", "deep", "b" ] []
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query =
-                    [ Rpc.param "name" [ "name" ] (Just "")
-                    , Rpc.param "ubig" [ "ubig" ] (Just "0")
-                    , Rpc.param "ratio" [ "ratio" ] (Just "0")
-                    , Rpc.param "scale" [ "scale" ] (Just "0")
-                    , Rpc.param "data" [ "data" ] (Just "")
-                    , Rpc.param "tags" [ "tags" ] Nothing
-                    , Rpc.param "kinds" [ "kinds" ] Nothing
-                    , Rpc.param "numbers" [ "numbers" ] Nothing
-                    , Rpc.param "maybe_count" [ "maybeCount" ] Nothing
-                    , Rpc.param "maybe_name" [ "maybeName" ] Nothing
-                    , Rpc.param "at" [ "at" ] Nothing
-                    , Rpc.param "wait" [ "wait" ] Nothing
-                    , Rpc.param "mask" [ "mask" ] Nothing
-                    , Rpc.param "limit" [ "limit" ] Nothing
-                    , Rpc.param "label" [ "label" ] Nothing
-                    , Rpc.param "inner.a" [ "inner", "a" ] (Just "")
-                    , Rpc.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                    , Rpc.param "text" [ "text" ] Nothing
-                    , Rpc.param "number" [ "number" ] Nothing
-                    ]
-                }
-            ]
+        { request = Routes.V1.messageEverything
+        , response = Routes.V1.messageEverything
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Typed"
+            , idempotent = False
+            , input = "routes.v1.Everything"
+            , output = "routes.v1.Everything"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "DELETE"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.literal "typed"
+                        , Proto.Descriptor.variable [ "count" ] []
+                        , Proto.Descriptor.variable [ "flag" ] []
+                        , Proto.Descriptor.variable [ "kind" ] []
+                        , Proto.Descriptor.variable [ "big" ] []
+                        , Proto.Descriptor.variable [ "inner", "deep", "b" ] []
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query =
+                        [ Proto.Descriptor.param "name" [ "name" ] (Just "")
+                        , Proto.Descriptor.param "ubig" [ "ubig" ] (Just "0")
+                        , Proto.Descriptor.param "ratio" [ "ratio" ] (Just "0")
+                        , Proto.Descriptor.param "scale" [ "scale" ] (Just "0")
+                        , Proto.Descriptor.param "data" [ "data" ] (Just "")
+                        , Proto.Descriptor.param "tags" [ "tags" ] Nothing
+                        , Proto.Descriptor.param "kinds" [ "kinds" ] Nothing
+                        , Proto.Descriptor.param "numbers" [ "numbers" ] Nothing
+                        , Proto.Descriptor.param "maybe_count" [ "maybeCount" ] Nothing
+                        , Proto.Descriptor.param "maybe_name" [ "maybeName" ] Nothing
+                        , Proto.Descriptor.param "at" [ "at" ] Nothing
+                        , Proto.Descriptor.param "wait" [ "wait" ] Nothing
+                        , Proto.Descriptor.param "mask" [ "mask" ] Nothing
+                        , Proto.Descriptor.param "limit" [ "limit" ] Nothing
+                        , Proto.Descriptor.param "label" [ "label" ] Nothing
+                        , Proto.Descriptor.param "inner.a" [ "inner", "a" ] (Just "")
+                        , Proto.Descriptor.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                        , Proto.Descriptor.param "text" [ "text" ] Nothing
+                        , Proto.Descriptor.param "number" [ "number" ] Nothing
+                        ]
+                    }
+                ]
+            }
         }
 
 
 files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Files"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeFileRequest
-        , jsonDecoder = Routes.V1.decodeFileRequest
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "path" ] [ Rpc.literal "files", Rpc.doubleWildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageFileRequest
+        , response = Routes.V1.messageFileRequest
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Files"
+            , idempotent = False
+            , input = "routes.v1.FileRequest"
+            , output = "routes.v1.FileRequest"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "path" ] [ Proto.Descriptor.literal "files", Proto.Descriptor.doubleWildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Cancel"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeResource
-        , jsonDecoder = Routes.V1.decodeResource
-        , bindings =
-            [ Rpc.binding
-                { method = "POST"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "name" ] [ Rpc.literal "operations", Rpc.wildcard ]
-                    ]
-                , customVerb = Just "cancel"
-                , body = Rpc.wholeBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageResource
+        , response = Routes.V1.messageResource
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Cancel"
+            , idempotent = False
+            , input = "routes.v1.Resource"
+            , output = "routes.v1.Resource"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "POST"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "operations", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Just "cancel"
+                    , body = Proto.Descriptor.wholeBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "UpdateResource"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeUpdateResourceRequest
-        , jsonDecoder = Routes.V1.decodeResource
-        , bindings =
-            [ Rpc.binding
-                { method = "PATCH"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "resource", "name" ] [ Rpc.literal "resources", Rpc.wildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.bodyField "resource"
-                , responseBody = Nothing
-                , query = [ Rpc.param "update_mask" [ "updateMask" ] Nothing ]
-                }
-            ]
+        { request = Routes.V1.messageUpdateResourceRequest
+        , response = Routes.V1.messageResource
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "UpdateResource"
+            , idempotent = False
+            , input = "routes.v1.UpdateResourceRequest"
+            , output = "routes.v1.Resource"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "PATCH"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "resource", "name" ] [ Proto.Descriptor.literal "resources", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.bodyField "resource"
+                    , responseBody = Nothing
+                    , query = [ Proto.Descriptor.param "update_mask" [ "updateMask" ] Nothing ]
+                    }
+                ]
+            }
         }
 
 
 head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Head"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeFileRequest
-        , jsonDecoder = Routes.V1.decodeFileRequest
-        , bindings =
-            [ Rpc.binding
-                { method = "HEAD"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "path" ] [ Rpc.literal "files", Rpc.doubleWildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Routes.V1.messageFileRequest
+        , response = Routes.V1.messageFileRequest
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Head"
+            , idempotent = False
+            , input = "routes.v1.FileRequest"
+            , output = "routes.v1.FileRequest"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "HEAD"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "path" ] [ Proto.Descriptor.literal "files", Proto.Descriptor.doubleWildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        { service = "routes.v1.Routes"
-        , method = "Unbound"
-        , idempotent = False
-        , encodeJson = Routes.V1.encodeGetMessageRequest
-        , jsonDecoder = Routes.V1.decodeMessage
-        , bindings = []
+        { request = Routes.V1.messageGetMessageRequest
+        , response = Routes.V1.messageMessage
+        , descriptor =
+            { service = "routes.v1.Routes"
+            , name = "Unbound"
+            , idempotent = False
+            , input = "routes.v1.GetMessageRequest"
+            , output = "routes.v1.Message"
+            , bindings = []
+            }
         }

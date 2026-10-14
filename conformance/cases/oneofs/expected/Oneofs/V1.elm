@@ -5,7 +5,9 @@ module Oneofs.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -79,6 +81,64 @@ defaultNoteEvent =
 defaultChoice : Choice
 defaultChoice =
     { value = ChoiceValueUnset
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumColor : Proto.Enum.Enum Color
+enumColor =
+    { encodeJson = encodeColor
+    , jsonDecoder = decodeColor
+    , values =
+        [ { name = "COLOR_UNSPECIFIED", number = 0, value = ColorUnspecified }
+        , { name = "COLOR_RED", number = 1, value = ColorRed }
+        ]
+    , descriptor =
+        { typeName = "oneofs.v1.Color"
+        , values = []
+        }
+    }
+
+
+messageCreated : Proto.Message.Message Created
+messageCreated =
+    { encodeJson = encodeCreated
+    , jsonDecoder = decodeCreated
+    , default = defaultCreated
+    , descriptor =
+        { typeName = "oneofs.v1.Created"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageNoteEvent : Proto.Message.Message NoteEvent
+messageNoteEvent =
+    { encodeJson = encodeNoteEvent
+    , jsonDecoder = decodeNoteEvent
+    , default = defaultNoteEvent
+    , descriptor =
+        { typeName = "oneofs.v1.NoteEvent"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageChoice : Proto.Message.Message Choice
+messageChoice =
+    { encodeJson = encodeChoice
+    , jsonDecoder = decodeChoice
+    , default = defaultChoice
+    , descriptor =
+        { typeName = "oneofs.v1.Choice"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

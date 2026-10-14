@@ -219,6 +219,10 @@ pub enum Expr {
     },
     /// A record literal: `{ a = 1, b = 2 }`.
     Record(Vec<(String, Expr)>),
+    /// A record literal printed on one line when every field value fits on
+    /// one, as elm-format keeps a record written that way, and like
+    /// [`Expr::Record`] otherwise.
+    InlineRecord(Vec<(String, Expr)>),
     /// `{ record | a = 1 }`. Elm only allows a variable as the record.
     RecordUpdate {
         /// The variable being updated.

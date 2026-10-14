@@ -14,18 +14,27 @@
 //!
 //! - A module opens with a generated-file notice, imports exactly the
 //!   modules its code refers to (beyond those Elm imports by default),
-//!   and holds four sections in order: types, defaults, encoders,
-//!   decoders. Each section has the enums, then the messages, each
-//!   followed by its recursion wrapper and its oneofs; the defaults
-//!   section has the messages alone, and is left out when there are none.
+//!   and holds five sections in order: types, defaults, descriptors,
+//!   encoders, decoders. Each section has the enums, then the messages,
+//!   each followed by its recursion wrapper and its oneofs; the defaults
+//!   section has the messages alone, and is left out when there are none,
+//!   and the descriptors section has each enum's and message's typed
+//!   record.
 //! - A service's module, `Notes.V1.NotesService`, holds one function per
 //!   method from its request to an `Rpc.Call`, written point-free as
-//!   `Rpc.call` of the method's descriptor: its service, name,
-//!   idempotency, codecs and bindings, the bindings its HTTP rule's own
-//!   and then its additional ones, as data (`Rpc.binding`). A method
-//!   without a rule has no bindings, and the runtime calls it over the
-//!   implicit route. Every name the module refers to is qualified, so a
-//!   method's name cannot shadow or clash with one.
+//!   `Rpc.call` of the method's `Proto.Method.Method` record: the typed
+//!   records of its request and response (`Notes.V1.messageNote`, or the
+//!   runtime's for a well-known type) and its descriptor, holding its
+//!   service, name, idempotency, type names and bindings, the bindings
+//!   its HTTP rule's own and then its additional ones, as data
+//!   (`Proto.Descriptor.binding`). A method without a rule has no
+//!   bindings, and the runtime calls it over the implicit route. Every
+//!   name the module refers to is qualified, so a method's name cannot
+//!   shadow or clash with one.
+//! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
+//!   holds its encoder, decoder and default and its descriptor; an enum's,
+//!   `enumBar : Proto.Enum.Enum Bar`, its encoder and decoder, every value
+//!   name with its number and constructor, and its descriptor.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -81,6 +90,7 @@
 //!   through `Json.Decode.lazy`. A oneof member that closes a cycle decodes
 //!   through `Json.Decode.lazy` too (design §3.2).
 
+mod descriptor;
 mod enumeration;
 mod field;
 mod message;
@@ -117,8 +127,16 @@ const TIME: &str = "Time";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
-/// The runtime package's calls, home of `Rpc.Call` and the bindings.
+/// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
+/// The runtime package's descriptors, home of the HTTP bindings.
+const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
+/// The runtime package's typed message records.
+const PROTO_MESSAGE: &str = "Proto.Message";
+/// The runtime package's typed enum records.
+const PROTO_ENUM: &str = "Proto.Enum";
+/// The runtime package's typed records of the well-known types.
+const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
@@ -373,16 +391,19 @@ impl Emitter {
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
         let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
+        let mut descriptors = vec![Decl::Comment("DESCRIPTORS".into())];
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
             types.push(self.enum_type(enumeration));
+            descriptors.push(self.enum_record(enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
         }
         for shape in &messages {
             types.push(self.message_alias(shape));
             defaults.push(self.message_default(shape));
+            descriptors.push(self.message_record(shape));
             encoders.push(self.message_encoder(shape));
             decoders.push(self.message_decoder(shape));
             if let Some(wrapper) = &shape.message.wrapper {
@@ -403,6 +424,7 @@ impl Emitter {
         types
             .into_iter()
             .chain(defaults)
+            .chain(descriptors)
             .chain(encoders)
             .chain(decoders)
             .collect()
@@ -571,12 +593,15 @@ mod tests {
         )]);
         let module = emit(&only_ints, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(imports, ["Json.Decode", "Json.Encode", "Proto.Json"]);
+        assert_eq!(
+            imports,
+            ["Json.Decode", "Json.Encode", "Proto.Json", "Proto.Message"]
+        );
 
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
-        assert_eq!(imports, ["Json.Decode", "Json.Encode"]);
+        assert_eq!(imports, ["Json.Decode", "Json.Encode", "Proto.Message"]);
     }
 
     #[test]
@@ -595,7 +620,7 @@ mod tests {
         let one = package(vec![message("A", Vec::new())]);
         assert_eq!(
             sections(&one),
-            ["TYPES", "DEFAULTS", "ENCODERS", "DECODERS"]
+            ["TYPES", "DEFAULTS", "DESCRIPTORS", "ENCODERS", "DECODERS"]
         );
         let printed = crate::elm::print::print_module(&emit(&one, &Options::default()).unwrap());
         assert!(
@@ -620,7 +645,10 @@ mod tests {
             )
             .expect("zero first"),
         );
-        assert_eq!(sections(&enums_only), ["TYPES", "ENCODERS", "DECODERS"]);
+        assert_eq!(
+            sections(&enums_only),
+            ["TYPES", "DESCRIPTORS", "ENCODERS", "DECODERS"]
+        );
     }
 
     #[test]
@@ -628,6 +656,7 @@ mod tests {
         let elsewhere = TypeName {
             module: IrModule::new(vec!["Other".into(), "V1".into()]).expect("valid"),
             name: "B".into(),
+            proto_full_name: "other.v1.B".into(),
         };
         let module = emit(
             &package(vec![message(
@@ -644,7 +673,13 @@ mod tests {
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
-            ["Json.Decode", "Json.Encode", "Other.V1", "Proto.Json"]
+            [
+                "Json.Decode",
+                "Json.Encode",
+                "Other.V1",
+                "Proto.Json",
+                "Proto.Message"
+            ]
         );
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
@@ -663,6 +698,7 @@ mod tests {
         let elsewhere = TypeName {
             module: IrModule::new(vec!["Other".into(), "V1".into()]).expect("valid"),
             name: "Level".into(),
+            proto_full_name: "other.v1.Level".into(),
         };
         let module = emit(
             &package(vec![message(

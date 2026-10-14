@@ -5,7 +5,9 @@ module Enums.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -43,6 +45,59 @@ defaultTask =
     , priority = Nothing
     , history = []
     , previousStatus = StatusUnspecified
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumStatus : Proto.Enum.Enum Status
+enumStatus =
+    { encodeJson = encodeStatus
+    , jsonDecoder = decodeStatus
+    , values =
+        [ { name = "STATUS_UNSPECIFIED", number = 0, value = StatusUnspecified }
+        , { name = "STATUS_ACTIVE", number = 1, value = StatusActive }
+        , { name = "STATUS_ARCHIVED", number = 2, value = StatusArchived }
+        ]
+    , descriptor =
+        { typeName = "enums.v1.Status"
+        , values = []
+        }
+    }
+
+
+enumPriority : Proto.Enum.Enum Priority
+enumPriority =
+    { encodeJson = encodePriority
+    , jsonDecoder = decodePriority
+    , values =
+        [ { name = "NONE", number = 0, value = PriorityNone }
+        , { name = "LOW", number = 1, value = PriorityLow }
+        , { name = "HIGH", number = 2, value = PriorityHigh }
+        , { name = "URGENT", number = 2, value = PriorityHigh }
+        , { name = "BELOW_ZERO", number = -1, value = PriorityBelowZero }
+        , { name = "PRIORITY_LOW", number = 1, value = PriorityLow }
+        , { name = "UNSET", number = 0, value = PriorityNone }
+        ]
+    , descriptor =
+        { typeName = "enums.v1.Priority"
+        , values = []
+        }
+    }
+
+
+messageTask : Proto.Message.Message Task
+messageTask =
+    { encodeJson = encodeTask
+    , jsonDecoder = decodeTask
+    , default = defaultTask
+    , descriptor =
+        { typeName = "enums.v1.Task"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

@@ -365,6 +365,17 @@ fn record_literals() {
         print_expr(&access(record([("a", int(1))]), "a")),
         "{ a = 1\n}.a"
     );
+    assert_eq!(
+        print_expr(&inline_record([("a", int(1)), ("b", string("x"))])),
+        "{ a = 1, b = \"x\" }"
+    );
+    assert_eq!(
+        print_expr(&inline_record([(
+            "a",
+            case(var("m"), [(Pattern::Wildcard, int(0))])
+        )])),
+        "{ a =\n    case m of\n        _ ->\n            0\n}"
+    );
 }
 
 #[test]

@@ -5,7 +5,9 @@ module Notes.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 import Time
 
 
@@ -171,6 +173,169 @@ defaultReadFileRequest =
 defaultSummary : Summary
 defaultSummary =
     { text = ""
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumVisibility : Proto.Enum.Enum Visibility
+enumVisibility =
+    { encodeJson = encodeVisibility
+    , jsonDecoder = decodeVisibility
+    , values =
+        [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
+        , { name = "VISIBILITY_PRIVATE", number = 1, value = VisibilityPrivate }
+        , { name = "VISIBILITY_PUBLIC", number = 2, value = VisibilityPublic }
+        ]
+    , descriptor =
+        { typeName = "notes.v1.Visibility"
+        , values = []
+        }
+    }
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    { encodeJson = encodeNote
+    , jsonDecoder = decodeNote
+    , default = defaultNote
+    , descriptor =
+        { typeName = "notes.v1.Note"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest =
+    { encodeJson = encodeGetNoteRequest
+    , jsonDecoder = decodeGetNoteRequest
+    , default = defaultGetNoteRequest
+    , descriptor =
+        { typeName = "notes.v1.GetNoteRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageListNotesRequest : Proto.Message.Message ListNotesRequest
+messageListNotesRequest =
+    { encodeJson = encodeListNotesRequest
+    , jsonDecoder = decodeListNotesRequest
+    , default = defaultListNotesRequest
+    , descriptor =
+        { typeName = "notes.v1.ListNotesRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageListNotesRequestFilter : Proto.Message.Message ListNotesRequestFilter
+messageListNotesRequestFilter =
+    { encodeJson = encodeListNotesRequestFilter
+    , jsonDecoder = decodeListNotesRequestFilter
+    , default = defaultListNotesRequestFilter
+    , descriptor =
+        { typeName = "notes.v1.ListNotesRequest.Filter"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageListNotesResponse : Proto.Message.Message ListNotesResponse
+messageListNotesResponse =
+    { encodeJson = encodeListNotesResponse
+    , jsonDecoder = decodeListNotesResponse
+    , default = defaultListNotesResponse
+    , descriptor =
+        { typeName = "notes.v1.ListNotesResponse"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
+messageCreateNoteRequest =
+    { encodeJson = encodeCreateNoteRequest
+    , jsonDecoder = decodeCreateNoteRequest
+    , default = defaultCreateNoteRequest
+    , descriptor =
+        { typeName = "notes.v1.CreateNoteRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
+messageUpdateNoteRequest =
+    { encodeJson = encodeUpdateNoteRequest
+    , jsonDecoder = decodeUpdateNoteRequest
+    , default = defaultUpdateNoteRequest
+    , descriptor =
+        { typeName = "notes.v1.UpdateNoteRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
+messageDeleteNoteRequest =
+    { encodeJson = encodeDeleteNoteRequest
+    , jsonDecoder = decodeDeleteNoteRequest
+    , default = defaultDeleteNoteRequest
+    , descriptor =
+        { typeName = "notes.v1.DeleteNoteRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
+messageArchiveNoteRequest =
+    { encodeJson = encodeArchiveNoteRequest
+    , jsonDecoder = decodeArchiveNoteRequest
+    , default = defaultArchiveNoteRequest
+    , descriptor =
+        { typeName = "notes.v1.ArchiveNoteRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageReadFileRequest : Proto.Message.Message ReadFileRequest
+messageReadFileRequest =
+    { encodeJson = encodeReadFileRequest
+    , jsonDecoder = decodeReadFileRequest
+    , default = defaultReadFileRequest
+    , descriptor =
+        { typeName = "notes.v1.ReadFileRequest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageSummary : Proto.Message.Message Summary
+messageSummary =
+    { encodeJson = encodeSummary
+    , jsonDecoder = decodeSummary
+    , default = defaultSummary
+    , descriptor =
+        { typeName = "notes.v1.Summary"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

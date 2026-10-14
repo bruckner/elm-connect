@@ -169,10 +169,12 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`) followed by a type
-/// name. Type names are unique within a module and start with an
-/// uppercase letter, and no prefix is another's, so two such names never
-/// collide: neither within one prefix nor across two.
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
+/// followed by a type name. Type names are unique within a module and
+/// start with an uppercase letter, and no prefix is another's, so two such
+/// names never collide: neither within one prefix nor across two. (A
+/// suffix would not do: `encodeFooMessage` would be both the encoder of
+/// `FooMessage` and the record of `EncodeFoo`.)
 pub fn default_name(type_elm_name: &str) -> String {
     format!("{DEFAULT_PREFIX}{type_elm_name}")
 }
@@ -180,10 +182,30 @@ pub fn default_name(type_elm_name: &str) -> String {
 /// The prefix of [`default_name`].
 const DEFAULT_PREFIX: &str = "default";
 
+/// The typed record of a message (`Proto.Message.Message`): `message`
+/// followed by the message's Elm name (`Note` becomes `messageNote`).
+/// Like [`default_name`], a prefix and a type name.
+pub fn message_value_name(type_elm_name: &str) -> String {
+    format!("{MESSAGE_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`message_value_name`].
+const MESSAGE_PREFIX: &str = "message";
+
+/// The typed record of an enum (`Proto.Enum.Enum`): `enum` followed by the
+/// enum's Elm name (`Status` becomes `enumStatus`). Like
+/// [`default_name`], a prefix and a type name.
+pub fn enum_value_name(type_elm_name: &str) -> String {
+    format!("{ENUM_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`enum_value_name`].
+const ENUM_PREFIX: &str = "enum";
+
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
-/// today starts with `encode`, `decode` or `default`.
+/// today starts with one of the prefixes [`default_name`] lists.
 pub const ENCODER_ARGUMENT: &str = "value";
 
 /// The variable a oneof's encoder binds the value of the set member to, in
@@ -286,7 +308,15 @@ mod tests {
         assert_eq!(encoder_name("OuterInner"), "encodeOuterInner");
         assert_eq!(decoder_name("OuterInner"), "decodeOuterInner");
         assert_eq!(default_name("OuterInner"), "defaultOuterInner");
-        let prefixes = ["encode", "decode", DEFAULT_PREFIX];
+        assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
+        assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
+        let prefixes = [
+            "encode",
+            "decode",
+            DEFAULT_PREFIX,
+            MESSAGE_PREFIX,
+            ENUM_PREFIX,
+        ];
         for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
             assert!(prefixes.iter().all(|prefix| !local.starts_with(prefix)));
         }

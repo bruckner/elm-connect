@@ -45,10 +45,23 @@ Justfile            task recipes; `just` lists them
 Both binaries generate record types, their default values and JSON
 codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
-maps, and custom types for enums and oneofs, and a module per service
-with a call for every unary method. The runtime package holds the JSON
-helpers those codecs call, the timestamp and duration types, and `Rpc`,
-which sends calls over the Connect protocol or HTTP transcoding.
+maps, and custom types for enums and oneofs, a typed record per message
+and enum holding its codecs and descriptor, and a module per service
+with a call for every unary method.
+
+The runtime package has two roots, `Proto` for data and `Rpc` for
+calling:
+
+| Module | Holds |
+|---|---|
+| `Proto.Json` | the proto3 JSON helpers generated codecs call |
+| `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
+| `Proto.Descriptor` | descriptors as data: messages, enums, methods and their HTTP bindings |
+| `Proto.Message`, `Proto.Enum`, `Proto.Method` | typed records: a type's codecs with its descriptor |
+| `Proto.WellKnown` | the well-known types' typed records |
+| `Proto.Registry` | descriptors by full name |
+| `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
+| `Rpc.Code`, `Rpc.ErrorCode` | the codes an RPC ends with |
 
 ## Options
 

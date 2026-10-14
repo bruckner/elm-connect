@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package zones.v1;
+
+message ZoneRequest {
+  string name = 1;
+}
+
+message Zone {
+  string name = 1;
+  int64 offset_seconds = 2;
+}

@@ -1,19 +1,21 @@
 //! A method's declaration in its service's module (design §4): a function
 //! from the request to an `Rpc.Call`, built point-free with `Rpc.call` from
-//! the method's descriptor, its HTTP bindings written out as data.
+//! the method's typed record, its HTTP bindings written out as data.
 
-use super::field::value_shape;
-use super::{Emitter, RPC};
+use super::field::{Present, ValueShape, value_shape};
+use super::scalar::Repr;
+use super::{Emitter, PROTO_DESCRIPTOR, PROTO_WELL_KNOWN, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{apply, inline_list, list, record, string, ty_fn, var};
-use crate::ir::{Method, TypeRef};
+use crate::ir::{Method, TypeRef, WellKnown};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
-    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`: the
-    /// method's service, name, idempotency, codecs and bindings, given to
-    /// `Rpc.call`. A method without an HTTP rule has no bindings; the
-    /// runtime calls it over the implicit route.
+    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
+    /// `Rpc.call` of the method's `Proto.Method.Method`, the typed records
+    /// of its request and response and its descriptor (service, name,
+    /// idempotency, type names and bindings). A method without an HTTP rule
+    /// has no bindings; the runtime calls it over the implicit route.
     ///
     /// The value binds no locals and every name in it is qualified, so it
     /// cannot clash with the package module's names or the runtime's,
@@ -21,23 +23,28 @@ impl Emitter {
     pub(super) fn method(&mut self, service: &str, method: &Method) -> Decl {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
-        let encode = self.value_encoder(value_shape(&method.input, self.int64));
-        let decoder = self.value_decoder(value_shape(&method.output, self.int64));
+        let request_record = self.message_value(&method.input);
+        let response_record = self.message_value(&method.output);
         let idempotent = if method.idempotent { "True" } else { "False" };
         let bindings: Vec<Expr> = method
             .routes
             .iter()
             .map(|route| self.binding(route))
             .collect();
+        let descriptor = record([
+            ("service", string(service)),
+            ("name", string(method.proto_name.clone())),
+            ("idempotent", var(idempotent)),
+            ("input", string(proto_full_name(&method.input))),
+            ("output", string(proto_full_name(&method.output))),
+            ("bindings", list(bindings)),
+        ]);
         let body = apply(
             self.reference((RPC, "call")),
             [record([
-                ("service", string(service)),
-                ("method", string(method.proto_name.clone())),
-                ("idempotent", var(idempotent)),
-                ("encodeJson", encode),
-                ("jsonDecoder", decoder),
-                ("bindings", list(bindings)),
+                ("request", request_record),
+                ("response", response_record),
+                ("descriptor", descriptor),
             ])],
         );
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
@@ -50,7 +57,34 @@ impl Emitter {
         }
     }
 
-    /// `Rpc.binding { … }`: one binding of a method's HTTP rule.
+    /// The typed record of a method's request or response type: the
+    /// generated `messageFoo`, or the runtime's for a well-known type, in
+    /// the Elm form the `int64` option gives the 64-bit wrappers.
+    fn message_value(&mut self, ty: &TypeRef) -> Expr {
+        match ty {
+            TypeRef::Message(name) => self.generated_value(&name.module, name.message_value_name()),
+            TypeRef::WellKnown(known) => {
+                let name = match (known, value_shape(ty, self.int64)) {
+                    (
+                        WellKnown::Int64Value,
+                        ValueShape::Present(Present::Wrapper(Repr::Int64AsInt)),
+                    ) => "int64ValueAsInt",
+                    (
+                        WellKnown::UInt64Value,
+                        ValueShape::Present(Present::Wrapper(Repr::Int64AsInt)),
+                    ) => "uint64ValueAsInt",
+                    _ => well_known_value(*known),
+                };
+                self.reference((PROTO_WELL_KNOWN, name))
+            }
+            // A method's types are messages (`ir::Method::input`).
+            TypeRef::Scalar(_) | TypeRef::Enum { .. } => {
+                unreachable!("a method type that is not a message")
+            }
+        }
+    }
+
+    /// `Proto.Descriptor.binding { … }`: one binding of a method's HTTP rule.
     fn binding(&mut self, route: &Route) -> Expr {
         let path: Vec<Expr> = route
             .segments
@@ -59,10 +93,10 @@ impl Emitter {
             .collect();
         let custom_verb = maybe(route.custom_verb.as_deref().map(string));
         let body = match &route.body {
-            Body::None => self.reference((RPC, "noBody")),
-            Body::All => self.reference((RPC, "wholeBody")),
+            Body::None => self.reference((PROTO_DESCRIPTOR, "noBody")),
+            Body::All => self.reference((PROTO_DESCRIPTOR, "wholeBody")),
             Body::Field(field) => apply(
-                self.reference((RPC, "bodyField")),
+                self.reference((PROTO_DESCRIPTOR, "bodyField")),
                 [string(field.json[0].clone())],
             ),
         };
@@ -78,7 +112,7 @@ impl Emitter {
             .map(|param| self.query_param(param))
             .collect();
         apply(
-            self.reference((RPC, "binding")),
+            self.reference((PROTO_DESCRIPTOR, "binding")),
             [record([
                 ("method", string(route.verb.as_str())),
                 ("path", list(path)),
@@ -98,9 +132,10 @@ impl Emitter {
 
     fn path_segment(&mut self, segment: &PathSegment) -> Expr {
         match segment {
-            PathSegment::Literal(text) => {
-                apply(self.reference((RPC, "literal")), [string(text.clone())])
-            }
+            PathSegment::Literal(text) => apply(
+                self.reference((PROTO_DESCRIPTOR, "literal")),
+                [string(text.clone())],
+            ),
             PathSegment::Variable { field, template } => {
                 let names = inline_list(field.json.iter().map(|name| string(name.clone())));
                 let template: Vec<Expr> = template
@@ -108,7 +143,7 @@ impl Emitter {
                     .map(|segment| self.template_segment(segment))
                     .collect();
                 apply(
-                    self.reference((RPC, "variable")),
+                    self.reference((PROTO_DESCRIPTOR, "variable")),
                     [names, inline_list(template)],
                 )
             }
@@ -117,11 +152,12 @@ impl Emitter {
 
     fn template_segment(&mut self, segment: &Segment) -> Expr {
         match segment {
-            Segment::Literal(text) => {
-                apply(self.reference((RPC, "literal")), [string(text.clone())])
-            }
-            Segment::Wildcard => self.reference((RPC, "wildcard")),
-            Segment::DoubleWildcard => self.reference((RPC, "doubleWildcard")),
+            Segment::Literal(text) => apply(
+                self.reference((PROTO_DESCRIPTOR, "literal")),
+                [string(text.clone())],
+            ),
+            Segment::Wildcard => self.reference((PROTO_DESCRIPTOR, "wildcard")),
+            Segment::DoubleWildcard => self.reference((PROTO_DESCRIPTOR, "doubleWildcard")),
             // A variable's template holds no variables (`route::parse_template`).
             Segment::Variable { .. } => unreachable!("a variable inside a variable"),
         }
@@ -130,7 +166,7 @@ impl Emitter {
     fn query_param(&mut self, param: &QueryParam) -> Expr {
         let zero = maybe(param.zero.as_deref().map(string));
         apply(
-            self.reference((RPC, "param")),
+            self.reference((PROTO_DESCRIPTOR, "param")),
             [
                 string(param.field.dotted()),
                 inline_list(param.field.json.iter().map(|name| string(name.clone()))),
@@ -145,5 +181,39 @@ fn maybe(value: Option<Expr>) -> Expr {
     match value {
         Some(value) => apply(var("Just"), [value]),
         None => var("Nothing"),
+    }
+}
+
+/// A method type's full proto name, such as `notes.v1.Note`.
+fn proto_full_name(ty: &TypeRef) -> String {
+    match ty {
+        TypeRef::Message(name) => name.proto_full_name.clone(),
+        TypeRef::WellKnown(known) => known.proto_full_name().to_owned(),
+        // A method's types are messages (`ir::Method::input`).
+        TypeRef::Scalar(_) | TypeRef::Enum { .. } => {
+            unreachable!("a method type that is not a message")
+        }
+    }
+}
+
+/// The runtime's typed record of a well-known type, in `Proto.WellKnown`.
+fn well_known_value(known: WellKnown) -> &'static str {
+    match known {
+        WellKnown::Timestamp => "timestamp",
+        WellKnown::Duration => "duration",
+        WellKnown::FieldMask => "fieldMask",
+        WellKnown::Empty => "empty",
+        WellKnown::Struct => "struct",
+        WellKnown::Value => "value",
+        WellKnown::ListValue => "listValue",
+        WellKnown::DoubleValue => "doubleValue",
+        WellKnown::FloatValue => "floatValue",
+        WellKnown::Int64Value => "int64Value",
+        WellKnown::UInt64Value => "uint64Value",
+        WellKnown::Int32Value => "int32Value",
+        WellKnown::UInt32Value => "uint32Value",
+        WellKnown::BoolValue => "boolValue",
+        WellKnown::StringValue => "stringValue",
+        WellKnown::BytesValue => "bytesValue",
     }
 }

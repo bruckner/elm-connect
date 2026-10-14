@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+// Methods whose request or response is a well-known type, or a message of
+// another generated package, generated under `int64=int`.
+package clock.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "zones.proto";
+
+message Alarm {
+  google.protobuf.Timestamp at = 1;
+}
+
+service Clock {
+  rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp);
+  rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty);
+  rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct);
+  rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue);
+  rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value);
+  rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value);
+  rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue);
+  rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue);
+  rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue);
+  rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone);
+  rpc Set(Alarm) returns (Alarm);
+}

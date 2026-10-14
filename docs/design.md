@@ -146,36 +146,41 @@ codecs, and the service gets a module of its own (§4):
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
+import Proto.Descriptor
 import Rpc
 
 
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { service = "notes.v1.NotesService"
-        , method = "GetNote"
-        , idempotent = True
-        , encodeJson = Notes.V1.encodeGetNoteRequest
-        , jsonDecoder = Notes.V1.decodeNote
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "name" ] [ Rpc.literal "notes", Rpc.wildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query = []
-                }
-            ]
+        { request = Notes.V1.messageGetNoteRequest
+        , response = Notes.V1.messageNote
+        , descriptor =
+            { service = "notes.v1.NotesService"
+            , name = "GetNote"
+            , idempotent = True
+            , input = "notes.v1.GetNoteRequest"
+            , output = "notes.v1.Note"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                ]
+            }
         }
 
 
 summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
 summarize =
-    Rpc.call { …, bindings = [] }   -- no rule: the implicit route
+    Rpc.call { …, descriptor = { …, bindings = [] } }   -- no rule: the implicit route
 ```
 
 Application code applies a method to its request and sends the call
@@ -628,9 +633,11 @@ Built, as the `naming` and `naming_collision` cases show:
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.
 - Top-level values are a prefix and a type name: `encodeFoo`,
-  `decodeFoo` and `defaultFoo`. Type names are unique in a module and
-  start with an uppercase letter, and no prefix is another's, so these
-  never collide.
+  `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo` (§3.9). Type
+  names are unique in a module and start with an uppercase letter, and
+  no prefix is another's, so these never collide. A suffix scheme was
+  rejected for the typed records: `encodeFooMessage` would be both the
+  encoder of `FooMessage` and the record of `EncodeFoo`.
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof
@@ -702,6 +709,67 @@ case names it):
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4).
 
+### 3.9 Descriptors  *(Decided, 2026-10-13)*
+
+Every message and enum gets a typed record, a value holding its codecs
+and its descriptor together, in a `-- DESCRIPTORS` section between the
+defaults and the encoders:
+
+```elm
+messageNote : Proto.Message.Message Note
+messageNote =
+    { encodeJson = encodeNote
+    , jsonDecoder = decodeNote
+    , default = defaultNote
+    , descriptor =
+        { typeName = "notes.v1.Note"
+        , fields = [ … ]
+        , oneofs = []
+        }
+    }
+
+
+enumVisibility : Proto.Enum.Enum Visibility
+enumVisibility =
+    { encodeJson = encodeVisibility
+    , jsonDecoder = decodeVisibility
+    , values =
+        [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
+        , …
+        ]
+    , descriptor = { typeName = "notes.v1.Visibility", values = [ … ] }
+    }
+```
+
+- The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
+  the typed record carrying it in its `descriptor` field:
+  `MessageDescriptor` and `Message a`, `EnumDescriptor` and `Enum a`,
+  `MethodDescriptor` and `Method req res` (§4).
+- The trees (`Proto.Descriptor`) are faithful to the proto, not to the
+  Elm mapping: a message's full name, its fields in declaration order
+  (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
+  names; an enum's full name and its value names in declaration order,
+  an alias an entry of its own. A singular message field is `Singular`
+  of `Message "…"` though Elm holds it as a `Maybe`; a proto3
+  `optional` field is `Optional`, its synthetic oneof not listed. Types
+  refer to each other by full name, never by value, since Elm forbids
+  cyclic values; a `Proto.Registry` resolves the names.
+- An enum record's `values` lists every value name in declaration
+  order with its number and constructor, an alias with the constructor
+  of its number's first name; `Proto.Enum` reads names and numbers
+  through it (`toName`, `fromName`, `toNumber`, `fromNumber`).
+- The well-known types' records are the runtime's, in
+  `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
+  `struct`, `value`, `listValue` and the wrappers, the 64-bit ones in
+  both `int64` forms), and `Proto.Registry.wellKnown` holds their
+  trees. They live apart from `Proto.Message` so that a record for
+  `google.protobuf.Any` can join them without an import cycle.
+- No service, file or package descriptor: nothing consumes one, and a
+  service module's namespace is its methods' names, so any fixed value
+  name could collide with a method.
+- Built so far: the typed records, with every tree's `fields`,
+  `oneofs` and `values` empty.
+
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
@@ -713,51 +781,62 @@ pins the output:
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { service = "notes.v1.NotesService"
-        , method = "GetNote"
-        , idempotent = True
-        , encodeJson = Notes.V1.encodeGetNoteRequest
-        , jsonDecoder = Notes.V1.decodeNote
-        , bindings =
-            [ Rpc.binding
-                { method = "GET"
-                , path =
-                    [ Rpc.literal "v1"
-                    , Rpc.variable [ "name" ] [ Rpc.literal "notes", Rpc.wildcard ]
-                    ]
-                , customVerb = Nothing
-                , body = Rpc.noBody
-                , responseBody = Nothing
-                , query = []
-                }
-            , Rpc.binding { … }   -- the additional binding
-            ]
+        { request = Notes.V1.messageGetNoteRequest
+        , response = Notes.V1.messageNote
+        , descriptor =
+            { service = "notes.v1.NotesService"
+            , name = "GetNote"
+            , idempotent = True
+            , input = "notes.v1.GetNoteRequest"
+            , output = "notes.v1.Note"
+            , bindings =
+                [ Proto.Descriptor.binding
+                    { method = "GET"
+                    , path =
+                        [ Proto.Descriptor.literal "v1"
+                        , Proto.Descriptor.variable [ "name" ] [ Proto.Descriptor.literal "notes", Proto.Descriptor.wildcard ]
+                        ]
+                    , customVerb = Nothing
+                    , body = Proto.Descriptor.noBody
+                    , responseBody = Nothing
+                    , query = []
+                    }
+                , Proto.Descriptor.binding { … }   -- the additional binding
+                ]
+            }
         }
 ```
 
-- The service module imports `Rpc`, the package module and the modules
-  of any other package its request and response types come from, and
-  refers to every one of them qualified. Each method is written
+- The service module imports `Rpc`, `Proto.Descriptor` (for the
+  bindings), the package module and the modules of any other package
+  its request and response types come from (`Proto.WellKnown` for a
+  well-known type), and refers to every one of them qualified. Each method is written
   point-free, `getNote = Rpc.call { … }`, binding no local name. So a
   method's name can clash with nothing but another method of its
   service, whatever it is: `value`, `identity` or `encodeNote` are all
   fine method names (the namespace rule is in the IR bullets below).
-- The descriptor is `Rpc.MethodDescriptor`: `service` is the
-  fully-qualified service name and `method` the method's as declared,
-  together its Connect path; `encodeJson` and `jsonDecoder` are the
-  request's encoder and the response's decoder, a well-known type's
-  from the runtime (`()` and `Proto.Json.empty` for `Empty`), named
-  for JSON so a binary pair can join them. No separate
-  descriptor value is generated; `Rpc.descriptor` reads it back from
-  any call of the method.
+- `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9):
+  `request` and `response` are the typed records of its types
+  (`Notes.V1.messageNote`, which hold their codecs; for a well-known
+  type the runtime's, `Proto.WellKnown.empty` for `Empty`, and
+  `int64ValueAsInt` for `Int64Value` under `int64=int`), and
+  `descriptor` its `Proto.Descriptor.MethodDescriptor`: `service` is
+  the fully-qualified service name and `name` the method's as
+  declared, together its Connect path, and `input` and `output` the
+  full names of its types. No separate method value is generated;
+  `Rpc.method` and `Rpc.descriptor` read them back from any call of the
+  method. *(Decided, 2026-10-13.)* The first shape put the codecs
+  themselves in a descriptor record of `Rpc`'s; the typed records keep
+  them, with each type's descriptor, in one place both the call and
+  `google.protobuf.Any` (§3.5) can use.
 - `idempotent` is true when the proto declares
   `option idempotency_level = NO_SIDE_EFFECTS`. Connect uses it to allow
   GET, and a retry policy with `idempotentOnly` to allow a retry.
   Transcoding takes its verb from the rule.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
-  binding first, then its `additional_bindings` in order, each an
-  `Rpc.binding` of the verb, the path as literals and variables, the
+  binding first, then its `additional_bindings` in order, each a
+  `Proto.Descriptor.binding` of the verb, the path as literals and variables, the
   custom verb, the body, the response body and the query parameters.
   The runtime walks them and never parses a template. A call picks an
   additional binding with `Rpc.viaBinding n`, `Nothing` for a number
@@ -826,7 +905,8 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   check: proto forbids the same name, and an Elm module and a type
   with one name do not clash.
 - A method of `google.protobuf.Empty` or another supported well-known
-  type takes or gives that type's Elm form (`()` for `Empty`). Any other
+  type takes or gives that type's Elm form (`()` for `Empty`), through
+  the runtime's typed record of it (`services_types` case). Any other
   type outside the generate set is `generate::not_generated`, worded for
   the method ("The request of `notes.v1.Notes.Get` refers to ...").
 - A streaming method is `services::streaming`, pointing at its
@@ -957,18 +1037,17 @@ it.
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 *(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside
 `Rpc.Code` and `Rpc.ErrorCode` (§5.4); its internals live under
-`Rpc.Internal.*`. The data modules are `Proto.Json`, `Proto.Timestamp`,
-`Proto.Duration` and `Proto.Int64`, which generated code calls whatever
-the transport. They were `Connect.*` at first, a name that tied proto3
+`Rpc.Internal.*`. The data modules, which generated code calls whatever
+the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
+`Proto.Duration`, `Proto.Int64`), the descriptor trees and HTTP
+bindings (`Proto.Descriptor`), the typed records (`Proto.Message`,
+`Proto.Enum`, `Proto.Method`), the well-known types' records
+(`Proto.WellKnown`) and `Proto.Registry` (§3.9). They were `Connect.*` at first, a name that tied proto3
 JSON to one of the two transports; no public `Connect` module remains.
 
 ```elm
-type Call req res      -- opaque: descriptor, request, binding, per-call adjustments
-type alias MethodDescriptor req res =
-    { service : String, method : String, idempotent : Bool
-    , encodeJson : req -> Json.Encode.Value, jsonDecoder : Json.Decode.Decoder res
-    , bindings : List Binding }
-call : MethodDescriptor req res -> req -> Call req res
+type Call req res      -- opaque: method, request, binding, per-call adjustments
+call : Proto.Method.Method req res -> req -> Call req res
 
 -- per call
 withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
@@ -977,7 +1056,9 @@ withTracker : String -> Call req res -> Call req res                    -- send 
 viaBinding : Int -> Call req res -> Maybe (Call req res)                -- transcoding only
 
 -- reading
-descriptor, service, method, idempotent, requestMessage, requestJson
+method : Call req res -> Proto.Method.Method req res
+descriptor : Call req res -> Proto.Descriptor.MethodDescriptor
+serviceName, methodName, idempotent, requestMessage, requestJson
 toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
 
 -- sending
@@ -998,9 +1079,13 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 - A call is data: a generated function per method applied to the
   request (§4). Per-call adjustments ride on it; `toJson` gives it a
   stable JSON form for logs, deduplication keys and queues.
-- The descriptor's codecs are `encodeJson` and `jsonDecoder`, named for
-  their encoding so that binary codecs can sit beside them later
-  without a rename. *(Decided, 2026-10-13.)*
+- The codecs are the typed records' `encodeJson` and `jsonDecoder`,
+  named for their encoding so that binary codecs can sit beside them
+  later without a rename. *(Decided, 2026-10-13.)*
+- The accessors are `method` (the `Method` record), `descriptor` (its
+  descriptor), `serviceName`, `methodName` and `idempotent`; the
+  string accessors were `service` and `method` until `method` named
+  the record. *(Decided, 2026-10-13.)*
 - `viaBinding n` is `Just` the call over binding `n` when the
   descriptor has one (`0` the rule's own, `1` and up its additional
   bindings), `Nothing` otherwise; a method without a rule gives
@@ -1056,10 +1141,10 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 
 #### Transcode  *(Decided, 2026-10-13; built)*
 
-The bindings a generated call carries (`Rpc.binding`, with
-`Rpc.literal`, `Rpc.variable`, `Rpc.wildcard`, `Rpc.doubleWildcard`,
-`Rpc.noBody`, `Rpc.wholeBody`, `Rpc.bodyField`, `Rpc.param`) are the
-parsed `google.api.http` rule, the rule's own binding first and its
+The bindings a generated call carries (`Proto.Descriptor.binding`, with
+`literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
+`wholeBody`, `bodyField` and `param`) are the parsed `google.api.http`
+rule, the rule's own binding first and its
 `additional_bindings` after; `Rpc.viaBinding n` picks one, `0` by
 default, and is `Nothing` for a number the method has no binding of
 (§5.2).

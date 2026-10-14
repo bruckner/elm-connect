@@ -8,7 +8,8 @@
 //! rules rather than by line width:
 //!
 //! - `case`, `let` and `if` always span lines.
-//! - Non-empty records and record updates put one field per line.
+//! - Non-empty records and record updates put one field per line, except
+//!   an [`Expr::InlineRecord`] whose fields all fit on one line.
 //! - Lists of more than one element put one element per line.
 //! - A chain containing `|>` puts each operator at the start of its own
 //!   line, indented one step.
@@ -409,7 +410,11 @@ fn needs_parens(expr: &Expr, position: Position) -> bool {
         // parentheses from `({ a = 1 }).a`.
         Position::AccessTarget => !matches!(
             expr,
-            Expr::Var { .. } | Expr::Access(..) | Expr::Record(_) | Expr::RecordUpdate { .. }
+            Expr::Var { .. }
+                | Expr::Access(..)
+                | Expr::Record(_)
+                | Expr::InlineRecord(_)
+                | Expr::RecordUpdate { .. }
         ),
         // Operator children are parenthesized by `flatten`, not here.
         Position::Operand { open_end } => open && !open_end,
@@ -537,8 +542,18 @@ fn expression(expr: &Expr) -> Block {
             ])
         }
         Expr::If { .. } => if_chain(expr),
-        Expr::Record(fields) if fields.is_empty() => Block::text("{}"),
-        Expr::Record(fields) => {
+        Expr::Record(fields) | Expr::InlineRecord(fields) if fields.is_empty() => Block::text("{}"),
+        Expr::InlineRecord(fields)
+            if fields
+                .iter()
+                .all(|(_, value)| expression(value).is_single()) =>
+        {
+            let fields = fields
+                .iter()
+                .map(|(name, value)| expression(value).prefix(&format!("{name} = ")));
+            Block::row(fields, ", ").prefix("{ ").suffix(" }")
+        }
+        Expr::Record(fields) | Expr::InlineRecord(fields) => {
             let fields = fields.iter().enumerate().map(|(i, (name, value))| {
                 field(name, value).prefix(if i == 0 { "{ " } else { ", " })
             });

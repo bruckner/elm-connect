@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Json
+import Proto.Message
 
 
 
@@ -55,6 +56,23 @@ defaultCounters =
     , byId = Dict.empty
     , wrapped = Nothing
     , limit = CountersLimitUnset
+    }
+
+
+
+-- DESCRIPTORS
+
+
+messageCounters : Proto.Message.Message Counters
+messageCounters =
+    { encodeJson = encodeCounters
+    , jsonDecoder = decodeCounters
+    , default = defaultCounters
+    , descriptor =
+        { typeName = "int64_option.v1.Counters"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

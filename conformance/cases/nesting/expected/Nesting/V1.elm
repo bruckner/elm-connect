@@ -6,7 +6,9 @@ module Nesting.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -148,6 +150,142 @@ defaultExpr =
 defaultSum : Sum
 defaultSum =
     { terms = []
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
+enumOuterInnerKind =
+    { encodeJson = encodeOuterInnerKind
+    , jsonDecoder = decodeOuterInnerKind
+    , values =
+        [ { name = "KIND_UNSPECIFIED", number = 0, value = OuterInnerKindUnspecified }
+        , { name = "KIND_DRAFT", number = 1, value = OuterInnerKindDraft }
+        ]
+    , descriptor =
+        { typeName = "nesting.v1.Outer.Inner.Kind"
+        , values = []
+        }
+    }
+
+
+messageOuter : Proto.Message.Message Outer
+messageOuter =
+    { encodeJson = encodeOuter
+    , jsonDecoder = decodeOuter
+    , default = defaultOuter
+    , descriptor =
+        { typeName = "nesting.v1.Outer"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageOuterInner : Proto.Message.Message OuterInner
+messageOuterInner =
+    { encodeJson = encodeOuterInner
+    , jsonDecoder = decodeOuterInner
+    , default = defaultOuterInner
+    , descriptor =
+        { typeName = "nesting.v1.Outer.Inner"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
+messageOuterInnerDeepest =
+    { encodeJson = encodeOuterInnerDeepest
+    , jsonDecoder = decodeOuterInnerDeepest
+    , default = defaultOuterInnerDeepest
+    , descriptor =
+        { typeName = "nesting.v1.Outer.Inner.Deepest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageNode : Proto.Message.Message Node
+messageNode =
+    { encodeJson = encodeNode
+    , jsonDecoder = decodeNode
+    , default = defaultNode
+    , descriptor =
+        { typeName = "nesting.v1.Node"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messagePerson : Proto.Message.Message Person
+messagePerson =
+    { encodeJson = encodePerson
+    , jsonDecoder = decodePerson
+    , default = defaultPerson
+    , descriptor =
+        { typeName = "nesting.v1.Person"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageCompany : Proto.Message.Message Company
+messageCompany =
+    { encodeJson = encodeCompany
+    , jsonDecoder = decodeCompany
+    , default = defaultCompany
+    , descriptor =
+        { typeName = "nesting.v1.Company"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageForest : Proto.Message.Message Forest
+messageForest =
+    { encodeJson = encodeForest
+    , jsonDecoder = decodeForest
+    , default = defaultForest
+    , descriptor =
+        { typeName = "nesting.v1.Forest"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageExpr : Proto.Message.Message Expr
+messageExpr =
+    { encodeJson = encodeExpr
+    , jsonDecoder = decodeExpr
+    , default = defaultExpr
+    , descriptor =
+        { typeName = "nesting.v1.Expr"
+        , fields = []
+        , oneofs = []
+        }
+    }
+
+
+messageSum : Proto.Message.Message Sum
+messageSum =
+    { encodeJson = encodeSum
+    , jsonDecoder = decodeSum
+    , default = defaultSum
+    , descriptor =
+        { typeName = "nesting.v1.Sum"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 

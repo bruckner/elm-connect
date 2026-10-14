@@ -5,7 +5,9 @@ module Naming.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Enum
 import Proto.Json
+import Proto.Message
 
 
 
@@ -61,6 +63,56 @@ defaultTag =
     , shape = ShapeUnspecified
     , method = HttpMethodUnspecified
     , case_ = TagCaseUnset
+    }
+
+
+
+-- DESCRIPTORS
+
+
+enumShape : Proto.Enum.Enum Shape
+enumShape =
+    { encodeJson = encodeShape
+    , jsonDecoder = decodeShape
+    , values =
+        [ { name = "SHAPE_UNSPECIFIED", number = 0, value = ShapeUnspecified }
+        , { name = "SHAPE_2D", number = 1, value = Shape2d }
+        , { name = "CUBE", number = 2, value = ShapeCube }
+        , { name = "SHAPE_V3_MESH", number = 3, value = ShapeV3Mesh }
+        ]
+    , descriptor =
+        { typeName = "naming.v1.Shape"
+        , values = []
+        }
+    }
+
+
+enumHttpMethod : Proto.Enum.Enum HttpMethod
+enumHttpMethod =
+    { encodeJson = encodeHttpMethod
+    , jsonDecoder = decodeHttpMethod
+    , values =
+        [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0, value = HttpMethodUnspecified }
+        , { name = "HTTP_METHOD_GET", number = 1, value = HttpMethodGet }
+        , { name = "POST", number = 2, value = HttpMethodPost }
+        ]
+    , descriptor =
+        { typeName = "naming.v1.HttpMethod"
+        , values = []
+        }
+    }
+
+
+messageTag : Proto.Message.Message Tag
+messageTag =
+    { encodeJson = encodeTag
+    , jsonDecoder = decodeTag
+    , default = defaultTag
+    , descriptor =
+        { typeName = "naming.v1.Tag"
+        , fields = []
+        , oneofs = []
+        }
     }
 
 
