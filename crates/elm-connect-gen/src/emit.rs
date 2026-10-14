@@ -27,7 +27,7 @@
 //!   runtime's for a well-known type) and its descriptor, holding its
 //!   service, name, idempotency, type names and bindings, the bindings
 //!   its HTTP rule's own and then its additional ones, as data
-//!   (`Proto.Descriptor.binding`). A method without a rule has no
+//!   (`Proto.Http.binding`). A method without a rule has no
 //!   bindings, and the runtime calls it over the implicit route. Every
 //!   name the module refers to is qualified, so a method's name cannot
 //!   shadow or clash with one.
@@ -129,8 +129,8 @@ const TIME: &str = "Time";
 const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
-/// The runtime package's descriptors, home of the HTTP bindings.
-const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
+/// The runtime package's HTTP bindings, which a method's descriptor holds.
+const PROTO_HTTP: &str = "Proto.Http";
 /// The runtime package's typed message records.
 const PROTO_MESSAGE: &str = "Proto.Message";
 /// The runtime package's typed enum records.
