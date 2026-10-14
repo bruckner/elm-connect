@@ -76,13 +76,14 @@ suite =
                 in
                 Registry.union (Registry.union shared Registry.wellKnown) (Registry.union shared Registry.wellKnown)
                     |> (\registry -> ( List.length (Registry.messages registry), List.length (Registry.enums registry) ))
-                    |> Expect.equal ( 17, 2 )
+                    |> Expect.equal ( 18, 2 )
         , test "the well-known types" <|
             \_ ->
                 Registry.messages Registry.wellKnown
                     |> List.map .typeName
                     |> Expect.equal
-                        [ "google.protobuf.BoolValue"
+                        [ "google.protobuf.Any"
+                        , "google.protobuf.BoolValue"
                         , "google.protobuf.BytesValue"
                         , "google.protobuf.DoubleValue"
                         , "google.protobuf.Duration"

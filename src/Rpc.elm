@@ -5,7 +5,7 @@ module Rpc exposing
     , Config, config, Transport(..), connect, Retry
     , task, send
     , Trace, taskTraced, sendTraced
-    , Error(..), Source(..), errorToString
+    , Error(..), Source(..), errorToString, details
     , Request, request, response, taskFromRequest
     )
 
@@ -65,7 +65,7 @@ own state:
 
 # Errors
 
-@docs Error, Source, errorToString
+@docs Error, Source, errorToString, details
 
 
 # Requests and responses
@@ -85,8 +85,11 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
+import Proto.Any exposing (Any)
 import Proto.Descriptor exposing (MethodDescriptor)
+import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
+import Proto.Message exposing (Message)
 import Proto.Method exposing (Method)
 import Rpc.Code as Code exposing (Code)
 import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
@@ -447,8 +450,9 @@ sendTraced cfg c toMsg =
 {-| Why a call failed.
 
   - `Rpc`: the server answered with an error: its code, its message, its
-    details as the JSON received (`{"type": …, "value": …}`), and where in the
-    answer they were found. The code is an
+    details, and where in the answer they were found. Each detail is a message
+    packed in an [`Any`](Proto-Any#Any), read with [`details`](#details) or
+    [`Proto.Any.unpack`](Proto-Any#unpack). The code is an
     [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming `ok`
     while failing reads as `Unknown`.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
@@ -456,7 +460,7 @@ sendTraced cfg c toMsg =
 
 -}
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Value, source : Source }
+    = Rpc { code : ErrorCode, message : String, details : List Any, source : Source }
     | Transport Http.Error
 
 
@@ -510,6 +514,28 @@ errorToString error =
 
         Transport (Http.BadBody problem) ->
             "bad response body: " ++ problem
+
+
+{-| The details of an error that are of this message type, in the order the
+server sent them, leaving out any that do not decode. A `Transport` error has
+none.
+
+    case Rpc.details Google.Rpc.messageBadRequest error of
+        badRequest :: _ ->
+            showViolations badRequest.fieldViolations
+
+        [] ->
+            showMessage (Rpc.errorToString error)
+
+-}
+details : Message a -> Error -> List a
+details message error =
+    case error of
+        Rpc rpc ->
+            List.filterMap (Proto.Any.unpack message >> Maybe.andThen Result.toMaybe) rpc.details
+
+        Transport _ ->
+            []
 
 
 
@@ -1081,25 +1107,64 @@ fromGrpc number =
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
 optional `details`.
 -}
-statusBody : Decoder { code : ErrorCode, message : String, details : List Value, source : Source }
+statusBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
 statusBody =
-    Json.Decode.map3 (\number message details -> { code = fromGrpc number, message = message, details = details, source = StatusBody number })
+    Json.Decode.map3 (\number message found -> { code = fromGrpc number, message = message, details = found, source = StatusBody number })
         (Json.Decode.field "code" Json.Decode.int)
         (optional "message" Json.Decode.string "")
-        (optional "details" (Json.Decode.list Json.Decode.value) [])
+        (optional "details" detailList [])
 
 
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder { code : ErrorCode, message : String, details : List Value, source : Source }
+connectBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
 connectBody =
-    Json.Decode.map3 (\code message details -> { code = code, message = message, details = details, source = ConnectBody })
+    Json.Decode.map3 (\code message found -> { code = code, message = message, details = found, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
             |> Json.Decode.map (ErrorCode.fromString >> Maybe.withDefault ErrorCode.Unknown)
         )
         (optional "message" Json.Decode.string "")
-        (optional "details" (Json.Decode.list Json.Decode.value) [])
+        (optional "details" detailList [])
+
+
+{-| An error's details, each in either form whichever body it came in: a
+`google.rpc.Status` body holds proto3 JSON `Any` objects, a Connect body
+`{"type", "value", "debug"}` objects. A detail in neither form is left out
+rather than losing the error's code and message with it.
+-}
+detailList : Decoder (List Any)
+detailList =
+    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Any.jsonDecoder, connectDetail ]))
+        |> Json.Decode.map (List.filterMap identity)
+
+
+{-| A Connect error detail: the message's full name as `type`, its protobuf
+binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
+holds when present. Without it the `Any` holds the binary alone.
+-}
+connectDetail : Decoder Any
+connectDetail =
+    Json.Decode.map3
+        (\name binary debug ->
+            Proto.Internal.Any.Any
+                (if String.contains "/" name then
+                    name
+
+                 else
+                    "type.googleapis.com/" ++ name
+                )
+                (case debug of
+                    Just json ->
+                        Proto.Internal.Any.InJson json
+
+                    Nothing ->
+                        Proto.Internal.Any.InBinary binary
+                )
+        )
+        (Json.Decode.field "type" Json.Decode.string)
+        (optional "value" Json.Decode.string "")
+        (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing)
 
 
 optional : String -> Decoder a -> a -> Decoder a

@@ -238,3 +238,15 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - A package of services alone generated with `descriptors=off` no longer
   writes an empty package module, which `elm make` rejected; its service
   modules are written as before. The `services_only` conformance case.
+- `Proto.Any`: `google.protobuf.Any` as an opaque `Any` holding a type
+  URL and the packed message's JSON, or only its protobuf binary when
+  that is all that arrived. `pack`, `packWith`, `unpack` (to
+  `Maybe (Result Problem a)`, `Problem` being `Json` or `BinaryOnly`),
+  `is`, `typeUrl`, `typeName`, `describe` (through a registry), and the
+  proto3 JSON codecs, which write a well-known type with a JSON form of
+  its own under `"value"`. `Proto.WellKnown.any` is its typed record and
+  `Proto.Registry.wellKnown` holds its descriptor. `Rpc.Error`'s details
+  are now `List Proto.Any.Any`, read from a `google.rpc.Status` body's
+  proto3 JSON or a Connect body's `type`, `value` and `debug`; a detail
+  in neither form is left out. `Rpc.details` gives an error's details of
+  one message type.

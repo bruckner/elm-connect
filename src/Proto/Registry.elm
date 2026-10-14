@@ -80,8 +80,8 @@ union (Registry left) (Registry right) =
 
 
 {-| The `google.protobuf` types elm-connect maps: `Timestamp`, `Duration`,
-`FieldMask`, `Empty`, `Struct`, `Value`, `ListValue` and the wrappers, and the
-enum `NullValue` that `Value` refers to.
+`FieldMask`, `Empty`, `Any`, `Struct`, `Value`, `ListValue` and the wrappers,
+and the enum `NullValue` that `Value` refers to.
 -}
 wellKnown : Registry
 wellKnown =

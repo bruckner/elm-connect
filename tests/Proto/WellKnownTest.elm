@@ -31,6 +31,7 @@ suite =
                 , check WellKnown.timestamp
                 , check WellKnown.duration
                 , check WellKnown.fieldMask
+                , check WellKnown.any
                 , check WellKnown.struct
                 , check WellKnown.listValue
                 , check WellKnown.doubleValue
@@ -50,6 +51,7 @@ suite =
                         , ( "google.protobuf.Timestamp", True )
                         , ( "google.protobuf.Duration", True )
                         , ( "google.protobuf.FieldMask", True )
+                        , ( "google.protobuf.Any", True )
                         , ( "google.protobuf.Struct", True )
                         , ( "google.protobuf.ListValue", True )
                         , ( "google.protobuf.DoubleValue", True )

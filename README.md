@@ -60,6 +60,7 @@ calling:
 | `Proto.Message`, `Proto.Enum`, `Proto.Method` | typed records: a type's codecs with its descriptor |
 | `Proto.WellKnown` | the well-known types' typed records |
 | `Proto.Registry` | descriptors by full name |
+| `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
 | `Rpc.Code`, `Rpc.ErrorCode` | the codes an RPC ends with |
 
@@ -161,6 +162,53 @@ noteFields =
         |> Maybe.map (.fields >> List.map .name)
         |> Maybe.withDefault []
 ```
+
+### Any
+
+`Proto.Any` packs a message into a `google.protobuf.Any` with its typed
+record, and unpacks one the same way: `Nothing` when it holds another
+type, `Just (Err problem)` when it holds this type but cannot be read.
+
+```elm
+import Notes.V1
+import Proto.Any
+
+
+-- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries", …}
+packed : Proto.Any.Any
+packed =
+    Proto.Any.pack Notes.V1.messageNote { title = "groceries", pinned = True }
+
+
+title : Proto.Any.Any -> Maybe String
+title any =
+    case Proto.Any.unpack Notes.V1.messageNote any of
+        Just (Ok note) ->
+            Just note.title
+
+        _ ->
+            Nothing
+```
+
+An error's details are `Any`s, and `Rpc.details` gives those of one
+type, here `google.rpc.BadRequest` from a package generated from
+`google/rpc/error_details.proto`:
+
+```elm
+import Google.Rpc
+import Rpc
+
+
+violations : Rpc.Error -> List String
+violations error =
+    Rpc.details Google.Rpc.messageBadRequest error
+        |> List.concatMap .fieldViolations
+        |> List.map .description
+```
+
+A Connect server sends each detail as protobuf binary, with its JSON
+beside it as `debug` when it chooses to; a detail without `debug` keeps
+its type but does not unpack (`Proto.Any.BinaryOnly`).
 
 ### Wrapping the sending once
 

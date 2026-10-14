@@ -5,6 +5,7 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Any
 import Proto.Descriptor
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Method)
@@ -363,7 +364,7 @@ errors =
                         (\error ->
                             case error of
                                 Rpc r ->
-                                    ( ( r.code, r.source ), r.message, List.map (Json.Encode.encode 0) r.details )
+                                    ( ( r.code, r.source ), r.message, List.map (Proto.Any.encodeJson >> Json.Encode.encode 0) r.details )
 
                                 Transport _ ->
                                     ( ( Internal, ConnectBody ), "", [] )
