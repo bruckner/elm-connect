@@ -666,10 +666,12 @@ case names it):
   such as enum values or oneof members (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
   `naming_collision` case).
-- **Names with no Elm form**: a package segment, type or field whose
-  converted name is not a valid Elm identifier (`naming::invalid_module`,
-  `naming::invalid_type`, `naming::invalid_field`), and a file without a
-  package declaration (`naming::invalid_module`).
+- **Names with no Elm form**: a package segment, type, field or method
+  whose converted name is not a valid Elm identifier
+  (`naming::invalid_module`, `naming::invalid_type`,
+  `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
+  case), and a file without a package declaration
+  (`naming::invalid_module`).
 - **`google.protobuf.Any` fields** (`types::any`, `any_field` case), and
   any other `google.protobuf` type without a mapping
   (`types::unsupported_well_known`).
@@ -677,14 +679,15 @@ case names it):
   case): Elm forbids import cycles.
 - **A generate set not closed under package references**
   (`generate::not_generated`, `packages_not_generated` case), the
-  request and response types of methods included.
+  request and response types of methods included (`services_invalid`
+  case).
 - **Streaming methods** (`services::streaming`, `services_streaming`
   case): client, server and bidirectional (§1.3).
 - **HTTP rules a client cannot follow** (`route::*`, `routes_invalid`
   case): a template that does not parse or has a bare wildcard, a path
   variable, `body` or `response_body` naming no suitable field, a
-  request field with no query form, nested additional bindings (§4,
-  §5.3).
+  request field with no query form, a rule without a path, nested
+  additional bindings (§4, §5.3; with `services_invalid`).
 - **Method values that collide**: two methods of one service whose
   values have one name (`GetSettings` and `Get_Settings`;
   `naming::value_collision`, `services_value_collision` case).
@@ -693,7 +696,8 @@ case names it):
   also a package's (`NotesService` in `notes.v1` beside the package
   `notes.v1.notes_service`), and two packages with one module name
   (`naming::module_collision`, `services_module_collision` case); and a
-  service whose name has no module form (`naming::invalid_service`).
+  service whose name has no module form (`naming::invalid_service`,
+  `services_invalid` case).
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4).

@@ -1,0 +1,82 @@
+generate::not_generated
+
+  × The request of `jobs.v1.Jobs.Adopt` refers to `other.v1.Thing`, but the
+  │ package `other.v1` is not being generated.
+    ╭─[jobs.proto:14:13]
+ 13 │   // other.v1 is imported but not generated.
+ 14 │   rpc Adopt(other.v1.Thing) returns (Job);
+    ·             ───────┬──────
+    ·                    ╰── `other.v1` is not being generated
+ 15 │
+    ╰────
+  help: Generated Elm modules import the modules of every package they refer
+        to, so those packages must be generated too. Add `other/v1/
+        thing.proto` to the files to generate.
+
+naming::invalid_method
+
+  × The method `jobs.v1.Jobs._9Lives` becomes `9Lives` in Elm, which is not a
+  │ valid Elm value name.
+    ╭─[jobs.proto:17:7]
+ 16 │   // A name with no Elm form.
+ 17 │   rpc _9Lives(Job) returns (Job);
+    ·       ───┬───
+    ·          ╰── this name
+ 18 │
+    ╰────
+  help: A method's Elm value is its name with the first letter lowercased and
+        underscores dropped, and must start with a letter. Rename the method.
+
+route::rule
+
+  × The HTTP rule of `jobs.v1.Jobs.Start` has no path.
+    ╭─[jobs.proto:21:5]
+ 20 │       rpc Start(Job) returns (Job) {
+ 21 │ ╭─▶     option (google.api.http) = {
+ 22 │ │         body: "*"
+ 23 │ ├─▶     };
+    · ╰──── in this rule
+ 24 │       }
+    ╰────
+  help: A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path
+        template, or `custom` to a kind and a path.
+
+route::rule
+
+  × Additional binding 1 of `jobs.v1.Jobs.Stop` has additional bindings of its
+  │ own.
+    ╭─[jobs.proto:28:5]
+ 27 │       rpc Stop(Job) returns (Job) {
+ 28 │ ╭─▶     option (google.api.http) = {
+ 29 │ │         post: "/v1/{name=jobs/*}:stop"
+ 30 │ │         body: "*"
+ 31 │ │         additional_bindings {
+ 32 │ │           post: "/v1/{name=queues/*/jobs/*}:stop"
+ 33 │ │           body: "*"
+ 34 │ │           additional_bindings {
+ 35 │ │             post: "/v2/{name=jobs/*}:stop"
+ 36 │ │             body: "*"
+ 37 │ │           }
+ 38 │ │         }
+ 39 │ ├─▶     };
+    · ╰──── in this rule
+ 40 │       }
+    ╰────
+  help: `google/api/http.proto` allows additional bindings one level deep
+        only. Move the nested bindings up into the rule's own
+        `additional_bindings`.
+
+naming::invalid_service
+
+  × The service `jobs.v1._2Jobs` cannot become an Elm module name: its name
+  │ does not start with a letter.
+    ╭─[jobs.proto:44:9]
+ 43 │ // A service name with no Elm module form.
+ 44 │ service _2Jobs {
+    ·         ───┬──
+    ·            ╰── this name
+ 45 │   rpc Ping(Job) returns (Job);
+    ╰────
+  help: Each service becomes an Elm module inside its package's, named for the
+        service in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and
+        an Elm module segment must start with a letter. Rename the service.

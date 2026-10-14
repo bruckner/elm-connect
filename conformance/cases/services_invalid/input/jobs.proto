@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package jobs.v1;
+
+import "google/api/annotations.proto";
+import "other/v1/thing.proto";
+
+message Job {
+  string name = 1;
+}
+
+service Jobs {
+  // other.v1 is imported but not generated.
+  rpc Adopt(other.v1.Thing) returns (Job);
+
+  // A name with no Elm form.
+  rpc _9Lives(Job) returns (Job);
+
+  // A rule with a body but no path.
+  rpc Start(Job) returns (Job) {
+    option (google.api.http) = {
+      body: "*"
+    };
+  }
+
+  // Additional bindings nest one level only.
+  rpc Stop(Job) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{name=jobs/*}:stop"
+      body: "*"
+      additional_bindings {
+        post: "/v1/{name=queues/*/jobs/*}:stop"
+        body: "*"
+        additional_bindings {
+          post: "/v2/{name=jobs/*}:stop"
+          body: "*"
+        }
+      }
+    };
+  }
+}
+
+// A service name with no Elm module form.
+service _2Jobs {
+  rpc Ping(Job) returns (Job);
+}
