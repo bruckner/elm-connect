@@ -189,3 +189,12 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `services` and `services_unbound_error`. A rule whose request is a
   well-known type other than `Empty` can no longer leave fields to the
   query (`route::query_field`).
+- Route fixtures (`conformance/routes/`): `routes.proto` and JSON
+  fixtures of request to path, query and body, covering http.proto's
+  examples, percent-encoding, query value forms and omission, bodies,
+  and the implicit route of a method without a rule. A Rust reference
+  implementation on prost-reflect checks the generated routes against
+  them, and the runtime's tests replay them through `Rpc.request` with
+  the Transcode transport and `Rpc.viaBinding` (`tests/Routes/` and
+  `tests/RouteFixtures.elm`, generated and pinned; `just bless`
+  rewrites them).

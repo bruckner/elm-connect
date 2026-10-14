@@ -65,10 +65,12 @@ compile-with elm:
     conformance/compile-with.sh {{elm}}
 
 # Rewrite the conformance corpus's expected output (modules, or
-# diagnostics.txt) to what the generator produces now. Review the diff
-# before committing it.
+# diagnostics.txt), and the Elm replay of the route fixtures (tests/Routes,
+# tests/RouteFixtures.elm), to what the generator produces now. Review the
+# diff before committing it.
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
+    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current
 
 # Remove build output.
 clean:

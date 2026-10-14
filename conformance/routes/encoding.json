@@ -1,0 +1,69 @@
+{
+  "description": "Percent-encoding of path values, query names and values.",
+  "fixtures": [
+    {
+      "name": "a single-segment variable escapes / and every reserved character",
+      "method": "routes.v1.Routes.Single",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/single/{name}", "body": "" },
+      "request": { "name": "a/b c?d#e[f]@g!$&'()*+,;=h" },
+      "expect": {
+        "path": "/v1/single/a%2Fb%20c%3Fd%23e%5Bf%5D%40g%21%24%26%27%28%29%2A%2B%2C%3B%3Dh",
+        "query": [],
+        "body": null
+      }
+    },
+    {
+      "name": "unreserved characters are kept, and the rest is UTF-8",
+      "method": "routes.v1.Routes.Single",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/single/{name}", "body": "" },
+      "request": { "name": "Az09-_.~é✓😀%" },
+      "expect": { "path": "/v1/single/Az09-_.~%C3%A9%E2%9C%93%F0%9F%98%80%25", "query": [], "body": null }
+    },
+    {
+      "name": "a multi-segment variable keeps /",
+      "method": "routes.v1.Routes.Multi",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/{name=things/*}", "body": "" },
+      "request": { "name": "things/x y:z" },
+      "expect": { "path": "/v1/things/x%20y%3Az", "query": [], "body": null }
+    },
+    {
+      "name": "** keeps every /",
+      "method": "routes.v1.Routes.Files",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/{path=files/**}", "body": "" },
+      "request": { "path": "files/a/b c/d.txt" },
+      "expect": { "path": "/v1/files/a/b%20c/d.txt", "query": [], "body": null }
+    },
+    {
+      "name": "a custom HTTP method",
+      "method": "routes.v1.Routes.Head",
+      "binding": 0,
+      "rule": { "verb": "HEAD", "template": "/v1/{path=files/**}", "body": "" },
+      "request": { "path": "files/a" },
+      "expect": { "path": "/v1/files/a", "query": [], "body": null }
+    },
+    {
+      "name": "a custom verb follows the path",
+      "method": "routes.v1.Routes.Cancel",
+      "binding": 0,
+      "rule": { "verb": "POST", "template": "/v1/{name=operations/*}:cancel", "body": "*" },
+      "request": { "name": "operations/op-1", "displayName": "Op" },
+      "expect": { "path": "/v1/operations/op-1:cancel", "query": [], "body": { "displayName": "Op" } }
+    },
+    {
+      "name": "query values are escaped like single-segment path values",
+      "method": "routes.v1.Routes.Query",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/query", "body": "" },
+      "request": { "name": "a&b=c+d e/f", "tags": ["x,y", "é"] },
+      "expect": {
+        "path": "/v1/query",
+        "query": [["name", "a%26b%3Dc%2Bd%20e%2Ff"], ["tags", "x%2Cy"], ["tags", "%C3%A9"]],
+        "body": null
+      }
+    }
+  ]
+}

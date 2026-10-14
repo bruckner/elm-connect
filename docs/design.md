@@ -1211,6 +1211,30 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
   body)` expectations, checked against the generator's parser. The same
   file is intended to be consumable by a server-side implementation so
   the two ends can prove agreement without sharing code.
+  Built *(Decided; built)* as `conformance/routes/` (layout in
+  `conformance/README.md`): `routes.proto` gives the request messages and
+  the rules, since a request's JSON names fields by JSON name and the
+  rule by proto name, and only the schema joins them; each fixture names
+  a method and binding, repeats the rule (verb, template, body) and
+  gives the request as proto3 JSON and the expected path, query pairs
+  (percent-encoded, in order) and body. They cover http.proto's own
+  examples, percent-encoding (`/` as `%2F` in a single-segment variable,
+  kept by `**` and multi-segment ones, reserved characters, UTF-8),
+  query names, value forms and omission (scalars, enums, 64-bit
+  integers, bytes, repeated fields, presence, well-known types, nested
+  messages, oneofs), typed path values, custom methods and verbs,
+  bodies (`*` without nested path fields, a field sent whole, an unset
+  field), and the implicit route of a method without a rule (`binding`
+  and `rule` `null`; the expected headers carry
+  `Connect-Protocol-Version: 1`, §4, §5.3).
+  Both ends are checked: in Rust against a reference built on
+  prost-reflect's proto3 JSON parser and field presence, independent of
+  the JSON walk the runtime does, and in Elm by replaying each fixture
+  through `Rpc.request` with a Transcode config, the call built by the
+  generated service module and its binding chosen with
+  `Rpc.viaBinding` (a fixture naming a binding the method lacks fails
+  rather than falling back to the implicit route). Bodies compare with
+  `null`s and defaults dropped.
 
 ## 8. Compatibility and versioning
 

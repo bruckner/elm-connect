@@ -1,0 +1,192 @@
+// The request messages and HTTP rules the route fixtures (*.json beside
+// this file) exercise. Each fixture names a method and one of its
+// bindings, or none for a method without a rule; its expectations hold
+// for any client or server that follows google/api/http.proto and proto3
+// JSON, and for a method without a rule, serves the implicit route.
+syntax = "proto3";
+
+package routes.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  KIND_TEXT = 1;
+  KIND_IMAGE = 2;
+}
+
+// The messages of google/api/http.proto's examples.
+message GetMessageRequest {
+  message SubMessage {
+    string subfield = 1;
+  }
+  string message_id = 1;
+  int64 revision = 2;
+  SubMessage sub = 3;
+  string user_id = 4;
+  string name = 5;
+}
+
+message Message {
+  string message_id = 1;
+  string text = 2;
+}
+
+message UpdateMessageRequest {
+  string message_id = 1;
+  Message message = 2;
+}
+
+// A field of every kind a query parameter or path variable can hold.
+message Everything {
+  string name = 1;
+  int32 count = 2;
+  int64 big = 3;
+  uint64 ubig = 4;
+  bool flag = 5;
+  double ratio = 6;
+  float scale = 7;
+  bytes data = 8;
+  Kind kind = 9;
+  repeated string tags = 10;
+  repeated Kind kinds = 11;
+  repeated int32 numbers = 12;
+  optional int32 maybe_count = 13;
+  optional string maybe_name = 14;
+  google.protobuf.Timestamp at = 15;
+  google.protobuf.Duration wait = 16;
+  google.protobuf.FieldMask mask = 17;
+  google.protobuf.Int32Value limit = 18;
+  google.protobuf.StringValue label = 19;
+  Inner inner = 20;
+  oneof choice {
+    string text = 21;
+    int32 number = 22;
+  }
+}
+
+message Inner {
+  string a = 1;
+  Deep deep = 2;
+}
+
+message Deep {
+  int32 b = 1;
+  repeated string c = 2;
+}
+
+message FileRequest {
+  string path = 1;
+}
+
+message Resource {
+  string name = 1;
+  string display_name = 2;
+}
+
+message UpdateResourceRequest {
+  Resource resource = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+service Routes {
+  // google/api/http.proto's GET examples, as one rule and its bindings.
+  rpc GetMessage(GetMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      get: "/v1/{name=messages/*}"
+      additional_bindings {
+        get: "/v1/messages/{message_id}/{sub.subfield}"
+      }
+      additional_bindings {
+        get: "/v1/messages/{message_id}"
+      }
+      additional_bindings {
+        get: "/v1/users/{user_id}/messages/{message_id}"
+      }
+    };
+  }
+
+  // google/api/http.proto's body examples.
+  rpc UpdateMessage(UpdateMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      patch: "/v1/messages/{message_id}"
+      body: "message"
+    };
+  }
+
+  rpc UpdateMessageWhole(Message) returns (Message) {
+    option (google.api.http) = {
+      patch: "/v1/messages/{message_id}"
+      body: "*"
+    };
+  }
+
+  rpc PostSub(GetMessageRequest) returns (Message) {
+    option (google.api.http) = {
+      post: "/v1/subs/{sub.subfield}"
+      body: "*"
+    };
+  }
+
+  rpc Query(Everything) returns (Everything) {
+    option (google.api.http) = {
+      get: "/v1/query"
+    };
+  }
+
+  rpc Single(Everything) returns (Everything) {
+    option (google.api.http) = {
+      get: "/v1/single/{name}"
+    };
+  }
+
+  rpc Multi(Everything) returns (Everything) {
+    option (google.api.http) = {
+      get: "/v1/{name=things/*}"
+    };
+  }
+
+  rpc Typed(Everything) returns (Everything) {
+    option (google.api.http) = {
+      delete: "/v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}"
+    };
+  }
+
+  rpc Files(FileRequest) returns (FileRequest) {
+    option (google.api.http) = {
+      get: "/v1/{path=files/**}"
+    };
+  }
+
+  rpc Cancel(Resource) returns (Resource) {
+    option (google.api.http) = {
+      post: "/v1/{name=operations/*}:cancel"
+      body: "*"
+    };
+  }
+
+  rpc UpdateResource(UpdateResourceRequest) returns (Resource) {
+    option (google.api.http) = {
+      patch: "/v1/{resource.name=resources/*}"
+      body: "resource"
+    };
+  }
+
+  rpc Head(FileRequest) returns (FileRequest) {
+    option (google.api.http) = {
+      custom: {
+        kind: "HEAD"
+        path: "/v1/{path=files/**}"
+      }
+    };
+  }
+
+  // No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
+  // request as its body, as grpc-gateway (generate_unbound_methods),
+  // Envoy's transcoder (auto_mapping) and Vanguard serve it.
+  rpc Unbound(GetMessageRequest) returns (Message);
+}
