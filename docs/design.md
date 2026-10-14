@@ -736,13 +736,13 @@ messageNote =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { typeName = "notes.v1.Visibility"
-    , encodeJson = encodeVisibility
+    { encodeJson = encodeVisibility
     , jsonDecoder = decodeVisibility
-    , values =
-        [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
-        , …
-        ]
+    , default = VisibilityUnspecified
+    , descriptor =
+        { typeName = "notes.v1.Visibility"
+        , values = [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }, … ]
+        }
     }
 
 
@@ -754,12 +754,12 @@ registry =
 ```
 
 - The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
-  the typed record: `MessageDescriptor` and `Message a`,
+  the typed record carrying it in its `descriptor` field, beside the
+  type's codecs and default: `MessageDescriptor` and `Message a`,
   `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
-  (§4). A message's and a method's record carry the tree in a
-  `descriptor` field. An enum's does not: the tree is its `values`
-  without the Elm values, so writing both would say everything twice,
-  and `Proto.Enum.descriptor` builds it instead.
+  (§4). The records have one shape, so nothing about a type is written
+  twice: an enum's names and numbers are its descriptor's, and
+  `Proto.Enum` reads them through the codecs (below).
 - The trees (`Proto.Descriptor`) are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
@@ -769,10 +769,15 @@ registry =
   `optional` field is `Optional`, its synthetic oneof not listed. Types
   refer to each other by full name, never by value, since Elm forbids
   cyclic values; a `Proto.Registry` resolves the names.
-- An enum record's `values` lists every value name in declaration
-  order with its number and constructor, an alias with the constructor
-  of its number's first name; `Proto.Enum` reads names and numbers
-  through it (`toName`, `fromName`, `toNumber`, `fromNumber`).
+- `Proto.Enum` derives names and numbers (`toName`, `fromName`,
+  `toNumber`, `fromNumber`) from the descriptor and the codecs: the
+  encoder writes a value's name, the decoder reads every declared name
+  and number, aliases included, and the descriptor says which names
+  and numbers are declared, so an undeclared one is `Nothing` rather
+  than the zero value the decoder would give. The record holds no
+  typed value list of its own: that would be the descriptor again,
+  and it is sound only while the descriptor is always written (§3.9
+  has no option to leave it out).
 - The well-known types' records are the runtime's, in
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
   `struct`, `value`, `listValue` and the wrappers, the 64-bit ones in
@@ -793,15 +798,15 @@ registry =
   top-level constant, built once at start-up and dropped by dead-code
   elimination when nothing uses it. A package without types has a
   module holding its registry alone.
-- **`descriptors=off`** (§6) writes every message tree empty
-  (`fields = []`, `oneofs = []`; the full name kept) and no registry,
-  for an application that wants smaller generated modules. The typed
-  records stay, since calls are built from them (§4), and so do the
-  enums' `values`, which `Proto.Enum` reads names and numbers through,
-  so an enum's descriptor is whole either way. A package of services
-  alone then has nothing for its package module to declare, and Elm
-  rejects a module without declarations, so that module is not written;
-  nothing would import it.
+- **No option to leave the trees out.** A `descriptors=off` setting
+  that wrote the message trees empty and no registry was built,
+  measured (below) and dropped *(2026-10-14)*. It saved generated
+  bytes only, and it made a tree with no fields mean either a message
+  with none or descriptors switched off, a doubt every reader of the
+  trees (`Proto.Any.describe`, a registry lookup, `Proto.Enum`'s names
+  and numbers) would have carried. One knob fewer while the shape
+  settles; it can return, additively, if smaller modules turn out to
+  matter.
 - **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
   package of 300 messages of eight fields and ten enums gives a package
   module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
@@ -810,8 +815,8 @@ registry =
   spread larger than the difference). The optimized program is 677 KB
   (46 KB gzipped) without descriptors, the same with them when the
   registry is unused, since dead-code elimination drops the trees, and
-  1,655 KB (73 KB gzipped) when it uses the registry. So the default is
-  `on`: the cost falls on applications that use the descriptors.
+  1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
+  always written: the cost falls on applications that use them.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
@@ -1310,8 +1315,7 @@ both the plain names.
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
-  `unbound_methods=implicit|error`, `descriptors=on|off`,
-  `module_prefix=`, and later perhaps
+  `unbound_methods=implicit|error`, `module_prefix=`, and later perhaps
   `enum_unknown=zero|variant` (§3.3 defers the variant). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
@@ -1319,9 +1323,7 @@ both the plain names.
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`), `unbound_methods` (§4;
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
-  --unbound-methods error`) and `descriptors` (§3.9;
-  `--elm-connect_opt=descriptors=off`, or `elm-connect gen
-  --descriptors off`). The plugin parameter is
+  --unbound-methods error`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
   given twice, is an error. A conformance case sets options with an
   `options.txt` holding that parameter.
