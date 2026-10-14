@@ -90,16 +90,13 @@ defaultChoice =
 
 enumColor : Proto.Enum.Enum Color
 enumColor =
-    { encodeJson = encodeColor
+    { typeName = "oneofs.v1.Color"
+    , encodeJson = encodeColor
     , jsonDecoder = decodeColor
     , values =
         [ { name = "COLOR_UNSPECIFIED", number = 0, value = ColorUnspecified }
         , { name = "COLOR_RED", number = 1, value = ColorRed }
         ]
-    , descriptor =
-        { typeName = "oneofs.v1.Color"
-        , values = []
-        }
     }
 
 

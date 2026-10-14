@@ -42,16 +42,13 @@ defaultUser =
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { encodeJson = encodeRole
+    { typeName = "users.v1.Role"
+    , encodeJson = encodeRole
     , jsonDecoder = decodeRole
     , values =
         [ { name = "ROLE_UNSPECIFIED", number = 0, value = RoleUnspecified }
         , { name = "ROLE_EDITOR", number = 1, value = RoleEditor }
         ]
-    , descriptor =
-        { typeName = "users.v1.Role"
-        , values = []
-        }
     }
 
 

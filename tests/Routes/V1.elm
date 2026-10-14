@@ -208,17 +208,14 @@ defaultUpdateResourceRequest =
 
 enumKind : Proto.Enum.Enum Kind
 enumKind =
-    { encodeJson = encodeKind
+    { typeName = "routes.v1.Kind"
+    , encodeJson = encodeKind
     , jsonDecoder = decodeKind
     , values =
         [ { name = "KIND_UNSPECIFIED", number = 0, value = KindUnspecified }
         , { name = "KIND_TEXT", number = 1, value = KindText }
         , { name = "KIND_IMAGE", number = 2, value = KindImage }
         ]
-    , descriptor =
-        { typeName = "routes.v1.Kind"
-        , values = []
-        }
     }
 
 

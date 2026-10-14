@@ -712,8 +712,8 @@ case names it):
 ### 3.9 Descriptors  *(Decided, 2026-10-13)*
 
 Every message and enum gets a typed record, a value holding its codecs
-and its descriptor together, in a `-- DESCRIPTORS` section between the
-defaults and the encoders:
+with its descriptor, in a `-- DESCRIPTORS` section between the defaults
+and the encoders:
 
 ```elm
 messageNote : Proto.Message.Message Note
@@ -731,20 +731,23 @@ messageNote =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { encodeJson = encodeVisibility
+    { typeName = "notes.v1.Visibility"
+    , encodeJson = encodeVisibility
     , jsonDecoder = decodeVisibility
     , values =
         [ { name = "VISIBILITY_UNSPECIFIED", number = 0, value = VisibilityUnspecified }
         , …
         ]
-    , descriptor = { typeName = "notes.v1.Visibility", values = [ … ] }
     }
 ```
 
 - The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
-  the typed record carrying it in its `descriptor` field:
-  `MessageDescriptor` and `Message a`, `EnumDescriptor` and `Enum a`,
-  `MethodDescriptor` and `Method req res` (§4).
+  the typed record: `MessageDescriptor` and `Message a`,
+  `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
+  (§4). A message's and a method's record carry the tree in a
+  `descriptor` field. An enum's does not: the tree is its `values`
+  without the Elm values, so writing both would say everything twice,
+  and `Proto.Enum.descriptor` builds it instead.
 - The trees (`Proto.Descriptor`) are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
@@ -767,8 +770,8 @@ enumVisibility =
 - No service, file or package descriptor: nothing consumes one, and a
   service module's namespace is its methods' names, so any fixed value
   name could collide with a method.
-- Built so far: the typed records, with every tree's `fields`,
-  `oneofs` and `values` empty.
+- Built so far: the typed records, with every message tree's `fields`
+  and `oneofs` empty.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
