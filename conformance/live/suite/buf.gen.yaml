@@ -1,0 +1,20 @@
+# `buf generate`, run here by `just live-conformance-gen`: the Connect
+# conformance suite's protos (connectrpc.conformance.v1) at the commit the
+# Buf Schema Registry labels v1.0.6, the release `connectconformance` is
+# pinned to. Two outputs: the Elm the runner calls the suite's service with,
+# from this repository's protoc-gen-elm-connect (the service has streaming
+# methods, which `streaming=skip` leaves out), and the JavaScript
+# conformance.mjs reads and writes the suite's messages with, from
+# protoc-gen-es as package.json pins it.
+version: v2
+inputs:
+  - module: buf.build/connectrpc/conformance:d37ba00b58084ea7a4480086db6e4be0
+plugins:
+  - local: protoc-gen-elm-connect
+    out: elm
+    opt: streaming=skip
+  - local: protoc-gen-es
+    out: js
+    opt:
+      - target=js
+      - import_extension=js

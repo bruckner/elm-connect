@@ -35,8 +35,9 @@ jobs:
 
   live:
     # Design section 7, live verification: the runtime against the example
-    # server over Connect and transcoding. buf fetches googleapis from the
-    # Buf Schema Registry.
+    # server over Connect and transcoding, then the Connect conformance
+    # suite (connectconformance from its GitHub release). buf fetches
+    # googleapis and the suite's protos from the Buf Schema Registry.
     name: just live (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:

@@ -11,7 +11,9 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
+import Live.Conformance
 import Live.Notes
+import Live.Routes
 import Rpc
 import Rpc.ErrorCode
 
@@ -26,7 +28,7 @@ port results : Value -> Cmd msg
 -}
 tables : Dict ( String, String ) (Entry Msg)
 tables =
-    Dict.fromList Live.Notes.table
+    Dict.fromList (Live.Notes.table ++ Live.Conformance.table ++ Live.Routes.table)
 
 
 main : Program () Model Msg
@@ -94,6 +96,7 @@ update msg model =
                     ([ ( "id", Encode.string outcome.id )
                      , ( "result", outcome.result )
                      , ( "trace", outcome.trace )
+                     , ( "response", outcome.response )
                      ]
                         ++ (case Dict.get outcome.id model of
                                 Just progress ->
@@ -184,7 +187,7 @@ transport =
 
 sending : Decoder Sending
 sending =
-    oneOfNames "send" [ ( "sendTraced", Traced ), ( "send", Plain ), ( "task", AsTask ) ]
+    oneOfNames "send" [ ( "sendTraced", Traced ), ( "send", Plain ), ( "task", AsTask ), ( "halves", Halves ) ]
 
 
 oneOfNames : String -> List ( String, a ) -> Decoder a

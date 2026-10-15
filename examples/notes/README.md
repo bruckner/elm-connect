@@ -7,9 +7,10 @@ client elm-connect generates for it. The live suite
 
 ```
 proto/notes/v1/notes.proto   the API; its comments document each method's errors
-buf.yaml, buf.lock           the module; googleapis comes from the Buf Schema Registry
+routes/                      a link to conformance/routes: the route fixtures' API, served too
+buf.yaml, buf.lock           the modules; googleapis comes from the Buf Schema Registry
 buf.gen.yaml                 Go stubs into server/gen, Elm into elm/generated
-server/                      the Go server (connect-go and Vanguard)
+server/                      the Go server (connect-go and Vanguard); routes.go echoes routes.v1
 elm/generated/               the generated Elm client
 ```
 
@@ -38,6 +39,9 @@ It prints `listening on http://127.0.0.1:8080` and serves:
 | `GET /healthz` | `ok` |
 | `/status/<status>/…` | that HTTP status with a plain-text body, for reading an answer without an error body |
 | `/grpc-status/<code>/…` | HTTP 503 with no body and the error in `grpc-status` and `grpc-message` |
+| `routes.v1.Routes` at its rules and Connect routes | the route fixtures' service, echoing each request (`server/routes.go`) |
+| `/layer/<n>/…` | the bindings of `routes.v1.Routes` Vanguard will not serve beside the others |
+| `GET /routes/layers` | where each binding of `routes.v1.Routes` is served, as JSON |
 
 The store is in memory and starts with three notes: `notes/welcome`, with
 every field set, `notes/slow` and `notes/flaky`. Calls naming
