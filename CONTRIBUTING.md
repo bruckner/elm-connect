@@ -69,6 +69,13 @@ paragraph, a `CHANGELOG.md` line. A documentation-only PR is for work
 that *is* the document, such as a design revision, not for catching up
 on bookkeeping after the fact.
 
+Since every change appends to the CHANGELOG's Unreleased list,
+`.gitattributes` merges that file with git's union driver, which keeps
+both sides' lines where two branches add bullets at the same spot
+instead of reporting a conflict. It applies to local merges and
+rebases only; GitHub's merge ignores it, so a branch behind `main`
+still shows a conflict there until it is rebased.
+
 ## Commit messages
 
 Commits follow the seven rules from
