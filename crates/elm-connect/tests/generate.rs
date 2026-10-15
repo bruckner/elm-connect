@@ -1,7 +1,7 @@
 //! `elm-connect gen` end to end, in-process: the conformance corpus's
 //! scalars case, a problem rendered against its proto source, and
-//! `--include-imports`, which the corpus cannot express (its `options.txt`
-//! is the plugin parameter).
+//! `--include-imports` and where `--module-prefix` writes, which the
+//! corpus cannot express (its `options.txt` is the plugin parameter).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -186,4 +186,32 @@ fn include_imports_leaves_out_runtime_googleapis_and_empty_files() {
         compiled.inputs,
         ["notes/v1/note.proto", "users/v1/user.proto"]
     );
+}
+
+#[test]
+fn module_prefix_moves_every_generated_module_and_its_path() {
+    let dir = two_packages("cli-module-prefix");
+    let mut options = Options::default();
+    options.module_prefix = Some(elm_connect_gen::parse_module_prefix("Api.Example").unwrap());
+    let generated = elm_connect::generate(
+        &[PathBuf::from("notes/v1/note.proto")],
+        std::slice::from_ref(&dir),
+        true,
+        &options,
+    )
+    .unwrap_or_else(|report| panic!("{report:?}"));
+    let out = dir.join("out");
+    let written = elm_connect::write(&generated.files, &out).expect("write the output");
+
+    assert_eq!(
+        written,
+        [
+            out.join("Api/Example/Notes/V1.elm"),
+            out.join("Api/Example/Users/V1.elm"),
+        ]
+    );
+    let notes = &generated.files[0].content;
+    assert!(notes.contains("module Api.Example.Notes.V1 exposing"));
+    assert!(notes.contains("import Api.Example.Users.V1\n"));
+    assert!(notes.contains("import Proto.Json\n"));
 }

@@ -1,0 +1,26 @@
+// Under `module_prefix`, every generated module goes inside the prefix:
+// package modules, a renamed one too (`users.v1` is renamed `People`), and
+// service modules inside theirs. References and imports between them use
+// the prefixed names; the runtime's modules are not prefixed.
+syntax = "proto3";
+
+package notes.v1;
+
+import "google/api/annotations.proto";
+import "users/v1/user.proto";
+
+message Note {
+  string name = 1;
+  users.v1.User author = 2;
+  users.v1.Role required_role = 3;
+}
+
+message GetNoteRequest {
+  string name = 1;
+}
+
+service NotesService {
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option (google.api.http) = {get: "/v1/{name=notes/*}"};
+  }
+}

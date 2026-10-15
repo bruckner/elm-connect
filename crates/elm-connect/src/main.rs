@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use elm_connect_gen::ir::ModuleName;
 use elm_connect_gen::{EnumUnknown, Int64, Options, Streaming, UnboundMethods};
 use miette::{Report, miette};
 
@@ -51,6 +52,11 @@ enum Command {
         /// service, method, message, enum, field, oneof or enum value.
         #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
         rename: Vec<String>,
+        /// The module every generated module goes inside, such as
+        /// `Api.Notes`: `notes.v1` then becomes `Api.Notes.V1`, in
+        /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
+        #[arg(long, value_name = "MODULE", value_parser = elm_connect_gen::parse_module_prefix)]
+        module_prefix: Option<ModuleName>,
         /// Also generate the packages of every file the given ones import,
         /// transitively, as `buf generate --include-imports` does; without
         /// it, a reference to a package none of the given files declares is
@@ -79,6 +85,7 @@ fn main() -> miette::Result<()> {
             streaming,
             enum_unknown,
             rename,
+            module_prefix,
             include_imports,
         } => {
             let mut options = Options::default();
@@ -86,6 +93,7 @@ fn main() -> miette::Result<()> {
             options.unbound_methods = unbound_methods;
             options.streaming = streaming;
             options.enum_unknown = enum_unknown;
+            options.module_prefix = module_prefix;
             for entry in &rename {
                 options
                     .add_rename(entry)
@@ -193,6 +201,32 @@ mod tests {
         assert!(rename(&["--rename", "notes.v1.Note"]).is_err());
         assert!(rename(&["--rename", "notes.v1.Note:"]).is_err());
         assert!(int64(&["--int64", "int", "--int64", "string"]).is_err());
+    }
+
+    fn module_prefix(args: &[&str]) -> Result<Option<String>, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen { module_prefix, .. } = cli.command;
+        Ok(module_prefix.map(|module| module.to_string()))
+    }
+
+    #[test]
+    fn module_prefix_takes_elm_module_segments_once() {
+        assert_eq!(module_prefix(&[]).expect("parses"), None);
+        assert_eq!(
+            module_prefix(&["--module-prefix", "Api.Notes"]).expect("parses"),
+            Some("Api.Notes".to_owned())
+        );
+        for invalid in ["", "api.Notes", "Api.", "Api-Notes"] {
+            let error = module_prefix(&["--module-prefix", invalid]).unwrap_err();
+            assert!(
+                error
+                    .to_string()
+                    .contains("`module_prefix` is dot-separated Elm module segments"),
+                "{invalid}: {error}"
+            );
+        }
+        assert!(module_prefix(&["--module-prefix", "Api", "--module-prefix", "Web"]).is_err());
     }
 
     fn include_imports(args: &[&str]) -> Result<bool, clap::Error> {

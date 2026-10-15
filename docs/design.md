@@ -233,7 +233,18 @@ rpc shared call =
   Built as `generate::import_cycle` (`packages_cycle` case): it names
   each package with its files and points at a reference along the
   cycle in each.
-- An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)*
+- An optional `module_prefix` option (`Api.Notes.V1`). *(Decided; built
+  2026-10-15.)* It puts every module the run generates inside the prefix:
+  each package's, a renamed one too (`rename=notes.v1:Memos` under
+  `module_prefix=Api` gives `Api.Memos`), each service's inside its
+  package's, and any other generated package's, such as `Google.Rpc`;
+  file paths, imports, qualified references and the module names in
+  diagnostics follow, while the runtime's modules (`Proto.*`, `Rpc`,
+  `Rpc.*`) are never prefixed. The value is dot-separated Elm module segments,
+  given at most once (`module_prefix` case, `tests/ir/module_prefix.rs`).
+  A file-level `elm_package` file option (like `java_package` or
+  `go_package`), if one is added, composes under the prefix: with both, a
+  package's module is `<module_prefix>.<elm_package>`.
 - Only packages with a requested file are generated: protoc's
   `file_to_generate`, or the files named to the CLI. *(Decided,
   2026-10-15.)* Each is generated in full, from every compiled file that
@@ -1712,10 +1723,13 @@ both the plain names.
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
   skip`), `enum_unknown` (§3.3; `--elm-connect_opt=enum_unknown=zero`,
   or `elm-connect gen --enum-unknown zero`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
-  repeated, or `elm-connect gen --rename notes.v1.Note:Memo`, repeated).
+  repeated, or `elm-connect gen --rename notes.v1.Note:Memo`, repeated),
+  `module_prefix` (§3.1; `--elm-connect_opt=module_prefix=Api.Notes`, or
+  `elm-connect gen --module-prefix Api.Notes`).
   The plugin parameter is comma-separated `key=value` pairs; an unknown
   key or value, or a key other than `rename` given twice, is an error,
-  as is a `rename` without its `:` or one renaming a proto name twice. A conformance case sets options with an
+  as is a `rename` without its `:` or one renaming a proto name twice,
+  or a `module_prefix` that is not dot-separated Elm module segments. A conformance case sets options with an
   `options.txt` holding that parameter.
 - The CLI's `--include-imports` flag *(Decided, 2026-10-15; built)*,
   named after buf's: the CLI also requests every file the named ones

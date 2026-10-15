@@ -56,7 +56,8 @@ pub struct Built {
 /// [`build`], under the options that shape the IR: `streaming=skip`
 /// leaves streaming methods out of their services, each a warning, and
 /// the rename map gives Elm names in place of derived ones, each checked
-/// against what it renames (design §3.7).
+/// against what it renames (design §3.7), and `module_prefix` puts every
+/// generated module inside it (design §3.1).
 ///
 /// On any error, returns every error found instead.
 pub fn build_with(
@@ -99,11 +100,14 @@ pub fn build_with(
 
     for (package, files) in &by_package {
         let module = match builder.renames.get(package) {
-            Some(given) => {
-                let segments = given.split('.').map(str::to_owned).collect();
-                ModuleName::new(segments).ok_or(NameError::EmptyPackage)
-            }
+            Some(given) => ModuleName::parse(given).ok_or(NameError::EmptyPackage),
             None => naming::module_name(package),
+        };
+        // The prefix goes in front of every package module, a renamed one
+        // too; service modules, inside their package's, follow.
+        let module = match &options.module_prefix {
+            Some(prefix) => module.map(|module| module.under(prefix)),
+            None => module,
         };
         match module {
             Ok(module) => {
