@@ -1,0 +1,37 @@
+// The rename map gives Elm names in place of derived ones (options.txt):
+// the package's module, a service's module, a method's value, a message's,
+// a nested message's and an enum's type, a field, a oneof (its field and,
+// through it, its type), a oneof's field (its constructor) and an enum
+// value (its constructor). The names derived from a renamed one follow it:
+// `Memo` has `encodeMemo` and `messageMemo`, `Audience` the constructor
+// `AudienceUnspecified`, and the oneof `body` the type `MemoBody`.
+syntax = "proto3";
+
+package notes.v1;
+
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PUBLIC = 1;
+}
+
+message Note {
+  message Revision {
+    int32 number = 1;
+  }
+
+  string title = 1;
+  Visibility visibility = 2;
+  repeated Revision revisions = 3;
+  oneof kind {
+    string text = 4;
+    string link = 5;
+  }
+}
+
+message GetNoteRequest {
+  string name = 1;
+}
+
+service NotesService {
+  rpc GetNote(GetNoteRequest) returns (Note);
+}

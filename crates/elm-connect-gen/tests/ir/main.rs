@@ -3,6 +3,7 @@
 
 mod build;
 mod common;
+mod rename;
 mod render;
 mod routes;
 mod services;

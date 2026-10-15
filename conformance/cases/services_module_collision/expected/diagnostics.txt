@@ -13,7 +13,8 @@ naming::module_collision
         (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
         segment in PascalCase, so a service can take the name of a package
         nested in its own, and names that differ only in case or underscores
-        end up the same. Rename the service or the package.
+        end up the same. Rename the service or the package, or rename one with
+        `rename=<proto full name>:<Elm name>`.
 
 Advice:
   ☞ and in `notes/v1/notes.proto`:
@@ -46,4 +47,5 @@ naming::module_collision
         (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
         segment in PascalCase, so a service can take the name of a package
         nested in its own, and names that differ only in case or underscores
-        end up the same. Rename the service or the package.
+        end up the same. Rename the service or the package, or rename one with
+        `rename=<proto full name>:<Elm name>`.

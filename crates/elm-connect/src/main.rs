@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use elm_connect_gen::{Int64, Options, Streaming, UnboundMethods};
-use miette::Report;
+use miette::{Report, miette};
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -40,7 +40,19 @@ enum Command {
         /// module, with a warning; the rest is generated).
         #[arg(long, value_name = "error|skip", default_value = "error")]
         streaming: Streaming,
+        /// An Elm name for a proto element, in place of the one the naming
+        /// rules derive: `<proto full name>:<Elm name>`, such as
+        /// `notes.v1.Note:Memo`; repeatable. The proto name is a package,
+        /// service, method, message, enum, field, oneof or enum value.
+        #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
+        rename: Vec<String>,
     },
+}
+
+/// A `--rename` value, checked for its `<proto full name>:<Elm name>`
+/// form.
+fn rename_entry(value: &str) -> Result<String, String> {
+    elm_connect_gen::parse_rename(value).map(|_| value.to_owned())
 }
 
 fn main() -> miette::Result<()> {
@@ -52,11 +64,17 @@ fn main() -> miette::Result<()> {
             int64,
             unbound_methods,
             streaming,
+            rename,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
             options.unbound_methods = unbound_methods;
             options.streaming = streaming;
+            for entry in &rename {
+                options
+                    .add_rename(entry)
+                    .map_err(|err| miette!("--rename: {err}"))?;
+            }
             let generated = elm_connect::generate(&files, &includes, &options)?;
             if !generated.warnings.is_empty() {
                 eprintln!("{:?}", Report::new(generated.warnings));
@@ -117,6 +135,31 @@ mod tests {
             Streaming::Skip
         );
         assert!(streaming(&["--streaming", "drop"]).is_err());
+    }
+
+    fn rename(args: &[&str]) -> Result<Vec<String>, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen { rename, .. } = cli.command;
+        Ok(rename)
+    }
+
+    #[test]
+    fn rename_repeats_and_needs_a_colon() {
+        assert_eq!(rename(&[]).expect("parses"), Vec::<String>::new());
+        assert_eq!(
+            rename(&[
+                "--rename",
+                "notes.v1.Note:Memo",
+                "--rename",
+                "notes.v1.Note.title:heading"
+            ])
+            .expect("parses"),
+            ["notes.v1.Note:Memo", "notes.v1.Note.title:heading"]
+        );
+        assert!(rename(&["--rename", "notes.v1.Note"]).is_err());
+        assert!(rename(&["--rename", "notes.v1.Note:"]).is_err());
+        assert!(int64(&["--int64", "int", "--int64", "string"]).is_err());
     }
 
     #[test]

@@ -1,0 +1,125 @@
+options::invalid_rename
+
+  × The rename of `notes.v1` gives `notes.api`, which a package cannot be
+  │ named.
+   ╭─[notes.proto:6:1]
+ 5 │
+ 6 │ package notes.v1;
+   · ────────┬────────
+   ·         ╰── a package here
+ 7 │
+   ╰────
+  help: `notes.v1` is a package, which becomes an Elm module name, and a
+        rename's name is used as it is, so it must be dot-separated segments,
+        each an ASCII uppercase letter followed by letters, digits or
+        underscores (`Notes.Api`).
+
+options::unknown_rename
+
+  × The rename of `notes.v1.Missing` names nothing elm-connect generates.
+  help: A rename names a package, service, method, message, enum, field, oneof
+        or enum value of a generated package by its proto full name: nested
+        names dotted (`notes.v1.Note.Revision`, `notes.v1.Note.title`), an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+        Check the name against the protos.
+
+options::invalid_rename
+
+  × The rename of `notes.v1.Note` gives `memo`, which a message cannot be
+  │ named.
+    ╭─[notes.proto:15:9]
+ 14 │
+ 15 │ message Note {
+    ·         ──┬─
+    ·           ╰── a message here
+ 16 │   string title = 1;
+    ╰────
+  help: `notes.v1.Note` is a message, which becomes an Elm type, and a
+        rename's name is used as it is, so it must be an ASCII uppercase
+        letter followed by letters and digits (PascalCase).
+
+options::unknown_rename
+
+  × The rename of `notes.v1.Note.missing` names nothing elm-connect generates.
+  help: A rename names a package, service, method, message, enum, field, oneof
+        or enum value of a generated package by its proto full name: nested
+        names dotted (`notes.v1.Note.Revision`, `notes.v1.Note.title`), an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+        Check the name against the protos.
+
+options::invalid_rename
+
+  × The rename of `notes.v1.Note.title` gives `type`, which a field cannot be
+  │ named.
+    ╭─[notes.proto:16:10]
+ 15 │ message Note {
+ 16 │   string title = 1;
+    ·          ──┬──
+    ·            ╰── a field here
+ 17 │   Status status = 2;
+    ╰────
+  help: `notes.v1.Note.title` is a field, which becomes an Elm record field,
+        and a rename's name is used as it is, so it must be an ASCII lowercase
+        letter followed by letters, digits or underscores, and not an Elm
+        reserved word.
+
+options::invalid_rename
+
+  × The rename of `notes.v1.NotesService` gives `Notes.Service`, which a
+  │ service cannot be named.
+    ╭─[notes.proto:20:9]
+ 19 │
+ 20 │ service NotesService {
+    ·         ──────┬─────
+    ·               ╰── a service here
+ 21 │   rpc GetNote(Note) returns (Note);
+    ╰────
+  help: `notes.v1.NotesService` is a service, which becomes the last segment
+        of an Elm module name, and a rename's name is used as it is, so it
+        must be a single segment, without dots: an ASCII uppercase letter
+        followed by letters, digits or underscores.
+
+options::invalid_rename
+
+  × The rename of `notes.v1.NotesService.GetNote` gives `Get`, which a method
+  │ cannot be named.
+    ╭─[notes.proto:21:7]
+ 20 │ service NotesService {
+ 21 │   rpc GetNote(Note) returns (Note);
+    ·       ───┬───
+    ·          ╰── a method here
+ 22 │ }
+    ╰────
+  help: `notes.v1.NotesService.GetNote` is a method, which becomes an Elm
+        value, and a rename's name is used as it is, so it must be an ASCII
+        lowercase letter followed by letters, digits or underscores, and not
+        an Elm reserved word.
+
+options::invalid_rename
+
+  × The rename of `notes.v1.Status.STATUS_DONE` gives `Status_Done`, which an
+  │ enum value cannot be named.
+    ╭─[notes.proto:11:3]
+ 10 │   STATUS_UNSPECIFIED = 0;
+ 11 │   STATUS_DONE = 1;
+    ·   ─────┬─────
+    ·        ╰── an enum value here
+ 12 │   STATUS_FINISHED = 1;
+    ╰────
+  help: `notes.v1.Status.STATUS_DONE` is an enum value, which becomes an Elm
+        constructor, and a rename's name is used as it is, so it must be an
+        ASCII uppercase letter followed by letters and digits (PascalCase).
+
+options::invalid_rename
+
+  × The rename of `notes.v1.Status.STATUS_FINISHED` names an enum value alias.
+    ╭─[notes.proto:12:3]
+ 11 │   STATUS_DONE = 1;
+ 12 │   STATUS_FINISHED = 1;
+    ·   ───────┬───────
+    ·          ╰── an enum value alias here
+ 13 │ }
+    ╰────
+  help: An alias shares the constructor of the first value declared with its
+        number, and has no Elm name of its own. Rename that first value
+        instead.

@@ -71,6 +71,15 @@ pub fn type_name(nested_path: &[&str]) -> Result<String, NameError> {
     check_upper(converted)
 }
 
+/// The Elm type name for a message or enum nested in a message whose Elm
+/// name is `enclosing_elm_name`: that name followed by the proto name in
+/// PascalCase. Without renames it is [`type_name`] of the whole path
+/// (`OuterInner`); with one, it follows the enclosing message's new name
+/// (`Shell` + `Inner` becomes `ShellInner`).
+pub fn nested_type_name(enclosing_elm_name: &str, proto_name: &str) -> String {
+    format!("{enclosing_elm_name}{}", pascal_case(proto_name))
+}
+
 /// The Elm record field name for a proto field (or oneof) name.
 ///
 /// The conversion is protoc's default `json_name` rule, applied to the

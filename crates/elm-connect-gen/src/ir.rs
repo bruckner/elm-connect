@@ -6,7 +6,9 @@
 //! layer (services, their methods, and each method's `google.api.http`
 //! rule). It keeps proto kinds (scalar kinds, map key kinds, well-known types)
 //! and leaves their Elm spelling to the emitter, but every Elm *name* is
-//! decided here, by [`crate::naming`], so the emitter never invents one.
+//! decided here, by [`crate::naming`] or the rename map
+//! ([`crate::Options::rename`], design §3.7), so the emitter never invents
+//! one.
 //!
 //! Invariants a built IR upholds:
 //!
@@ -17,8 +19,8 @@
 //!   service's). A clash is a diagnostic from [`build`], never a silent
 //!   rename.
 //! - Nested messages and enums are flattened into their package, their Elm
-//!   names prefixed by the enclosing names (`Outer.Inner` becomes
-//!   `OuterInner`).
+//!   names prefixed by the enclosing message's (`Outer.Inner` becomes
+//!   `OuterInner`, or `ShellInner` when `Outer` is renamed `Shell`).
 //! - Proto3 `optional` fields are [`Cardinality::Optional`] fields, never
 //!   [`Oneof`]s; only real oneofs appear as oneofs.
 //! - Every cycle of message references is marked: each field that closes
@@ -33,6 +35,7 @@
 
 mod build;
 mod graph;
+mod rename;
 
 use std::fmt;
 
