@@ -1,0 +1,95 @@
+{
+  "description": "Where Vanguard and the route fixtures part, found by routes.mjs on 2026-10-15 against connect-go v2.0.1 and Vanguard v0.5.0 (conformance/README.md, design section 7). servedApart: bindings Vanguard will not serve beside the others; the example server serves each under its prefix, and the fixture runs there. fixtures: fixtures whose live call does not agree with the fixture; `observed` is matched against the runner's result and must keep matching, `url` is the request the runtime makes, `answer` Vanguard's, `reading` who is right by google/api/http.proto and proto3 JSON. probes: requests the runtime does not make, sent as written, where Vanguard and grpc-gateway (known-divergent-gateway.json) answer differently; `observed` is matched against {status, body}, the body parsed as JSON.",
+  "servedApart": [
+    {
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 2,
+      "prefix": "/layer/1",
+      "reason": "GET /v1/messages/{message_id} and binding 0, GET /v1/{name=messages/*}, match the same paths; Vanguard refuses a second route for a verb and path it has (\"target for /v1/messages/*, method GET already exists\"). routes.proto joins http.proto's separate examples into one rule, which a client can follow but no router can serve whole."
+    },
+    {
+      "method": "routes.v1.Routes.UpdateMessageWhole",
+      "binding": 0,
+      "prefix": "/layer/1",
+      "reason": "PATCH /v1/messages/{message_id} is UpdateMessage's route too; as above (\"target for /v1/messages/*, method PATCH already exists: routes.v1.Routes.UpdateMessage\")."
+    }
+  ],
+  "fixtures": [
+    {
+      "file": "query.json",
+      "fixture": "fields with presence are sent at their defaults when set",
+      "url": "GET /v1/query?maybe_count=0&maybe_name=&limit=0&label=&number=0",
+      "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"label\\\" value for type \\\"message\\\": \"}",
+      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree. Fix proposed in https://github.com/connectrpc/vanguard-go/pull/208.",
+      "observed": {
+        "trace": { "httpStatus": 400 },
+        "result": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "invalid parameter \"label\" value for type \"message\": ",
+            "source": "StatusBody"
+          }
+        }
+      }
+    },
+    {
+      "file": "query.json",
+      "fixture": "a path value under an unset message is its default; defaults are written",
+      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0",
+      "answer": "200, echoing {\"inner\":{\"deep\":{\"b\":0}}} with the other defaults",
+      "reading": "Neither is wrong; the wire cannot say it. proto3 reads inner.deep.b as 0 when inner is unset, so the runtime writes 0 (an empty segment is no int32, and Vanguard rejects it as \"unexpected end of JSON input\"). A server sets the field a path segment names, and with it every message on the way, so it reads inner and inner.deep as set and empty where the request left them unset. No path can leave a message unset.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "inner": { "deep": {} } } }
+      }
+    },
+    {
+      "file": "bodies.json",
+      "fixture": "an unset body field is an empty object",
+      "url": "PATCH /v1/messages/1 with body {}",
+      "answer": "200, echoing {\"messageId\":\"1\",\"message\":{}}",
+      "reading": "Neither is wrong; the wire cannot say it. With body: \"message\" the body is the field's value, so a server reads {} as message set and empty, where the request left it unset. A client could send no body for an unset field, but http.proto gives that no meaning either; proto3 JSON has none for a present-but-empty message other than {}.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "text": { "$json": { "messageId": "1", "message": {} } } } }
+      }
+    }
+  ],
+  "probes": [
+    {
+      "name": "an unknown query parameter",
+      "request": { "method": "GET", "path": "/v1/notes?page_size=1&bogus=1" },
+      "observed": {
+        "status": 400,
+        "body": { "code": 3, "message": { "$match": "query parameter \"bogus\": unknown field" } }
+      },
+      "reading": "Neither is wrong. http.proto maps query parameters to fields and says nothing of one that names none; a proto3 JSON parser rejects an unknown field unless told to ignore it. Vanguard rejects it, grpc-gateway drops it: a client newer than its server, sending a field the server lacks, fails under one and is quietly misread under the other."
+    },
+    {
+      "name": "a verb the path has no route for",
+      "request": { "method": "PUT", "path": "/v1/notes" },
+      "observed": { "status": 405, "body": { "code": 12 } },
+      "reading": "Neither is wrong. Both answer UNIMPLEMENTED in a google.rpc.Status body, which the runtime reads first; the HTTP status differs, Vanguard's 405 Method Not Allowed (RFC 9110) against grpc-gateway's 501, its mapping of UNIMPLEMENTED."
+    },
+    {
+      "name": "PATCH without an update mask",
+      "request": {
+        "method": "PATCH",
+        "path": "/v1/resources/r1",
+        "body": { "name": "resources/r1", "displayName": "R" }
+      },
+      "observed": {
+        "status": 200,
+        "body": {
+          "displayName": {
+            "$json": {
+              "resource": { "name": "resources/r1", "displayName": "R" },
+              "updateMask": { "$absent": true }
+            }
+          }
+        }
+      },
+      "reading": "Neither is wrong. Vanguard passes the request as sent, with no update_mask; grpc-gateway fills update_mask with the fields the body sets (its allow_patch_feature, on by default). AIP-134 has the service treat an omitted mask as the populated fields; the gateway does it for the service, which can then not tell an implied mask from a sent one."
+    }
+  ]
+}

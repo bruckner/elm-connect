@@ -1,13 +1,15 @@
 // Command server serves the example notes.v1.NotesService from memory, over
 // the Connect protocol (and gRPC and gRPC-Web, which connect-go serves too) at
 // /notes.v1.NotesService/<Method>, and over HTTP transcoding at the paths the
-// proto's google.api.http rules give, from one port. The behaviours the live
-// suite relies on are documented on the service in notes.proto, and the
-// routes beside it (/healthz, /status/, /grpc-status/) on their handlers.
-// Beside it, routes.v1.Routes, the route fixtures' service, echoes each
-// request (routes.go), and GET /routes/layers says where each of its
-// bindings is served. With -static, it also serves a directory's files, the
-// browser example among them, from the same origin as the API.
+// proto's google.api.http rules give, from one port: by Vanguard at the root,
+// and by grpc-gateway under /gateway, which calls the service over gRPC
+// (gateway.go). The behaviours the live suite relies on are documented on
+// the service in notes.proto, and the routes beside it (/healthz, /status/,
+// /grpc-status/) on their handlers. Beside it, routes.v1.Routes, the route
+// fixtures' service, echoes each request (routes.go), and GET /routes/layers
+// and GET /gateway/routes/layers say where each of its bindings is served.
+// With -static, it also serves a directory's files, the browser example
+// among them, from the same origin as the API.
 package main
 
 import (
@@ -59,22 +61,26 @@ func main() {
 	static := flag.String("static", "", "a directory whose files to serve too, index.html at /, such as ../elm/dist")
 	flag.Parse()
 
-	handler, err := newHandler(newStore())
+	listener, err := net.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	handler, err := newHandler(newStore(), listener.Addr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if *static != "" {
 		handler = withStatic(os.DirFS(*static), handler)
 	}
-	listener, err := net.Listen("tcp", *addr)
-	if err != nil {
-		log.Fatal(err)
-	}
 	// The first line out is the address, so a script that asked for port 0
 	// learns which one it got.
 	fmt.Printf("listening on http://%s\n", listener.Addr())
 
-	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
+	// HTTP/2 without TLS too, for the gateway's gRPC calls to this server.
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second, Protocols: protocols}
 	go func() {
 		stop := make(chan os.Signal, 1)
 		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
@@ -88,9 +94,10 @@ func main() {
 	}
 }
 
-// newHandler serves the services over Connect and over transcoding, /healthz,
-// and the x-echo header on every response.
-func newHandler(svc notesv1connect.NotesServiceHandler) (http.Handler, error) {
+// newHandler serves the services over Connect and over transcoding, under
+// Vanguard and under grpc-gateway, /healthz, and the x-echo header on every
+// response. self is the server's own address, which the gateway calls.
+func newHandler(svc notesv1connect.NotesServiceHandler, self string) (http.Handler, error) {
 	server := connect.NewServer()
 	notesv1connect.RegisterNotesServiceHandler(server, svc)
 
@@ -104,6 +111,9 @@ func newHandler(svc notesv1connect.NotesServiceHandler) (http.Handler, error) {
 	// routes above are more specific, so a method without a rule is reached
 	// at its Connect path, which is the implicit route.
 	if err := vanguard.Mount(mux, server, vanguard.WithRules(routeRules...)); err != nil {
+		return nil, err
+	}
+	if err := mountGateway(mux, self); err != nil {
 		return nil, err
 	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {

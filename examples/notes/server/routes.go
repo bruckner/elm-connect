@@ -39,21 +39,15 @@ type routeBinding struct {
 	Binding int    `json:"binding"`
 	Layer   int    `json:"layer"`
 	Prefix  string `json:"prefix"`
-	// Why the binding is not on the first layer: Vanguard's error when it
-	// was tried there.
+	// Why the binding is not on the first layer: the transcoder's error
+	// when it was tried there.
 	Reason string `json:"reason,omitempty"`
 	rule   *annotations.HttpRule
 }
 
-// routeLayers places every binding. The fixtures' rules overlap: GetMessage's first and third bindings are
-// both GET /v1/messages/*, and UpdateMessage and UpdateMessageWhole are both
-// PATCH /v1/messages/{message_id}. Vanguard refuses a second route for a
-// verb and path it already has, so the bindings are served in layers: each
-// binding goes on the first layer that takes it, the first layer at the
-// root beside notes.v1, layer n under /layer/<n>, the prefix stripped
-// before Vanguard sees the path. GET /routes/layers lists every binding
-// and where it is served.
-func routeLayers() []routeBinding {
+// routeBindings is every binding of every routes.v1 method, in the order
+// routes.proto gives them, each on layer 0.
+func routeBindings() []routeBinding {
 	var bindings []routeBinding
 	methods := routesv1.File_routes_proto.Services().ByName("Routes").Methods()
 	for i := range methods.Len() {
@@ -70,6 +64,20 @@ func routeLayers() []routeBinding {
 			bindings = append(bindings, routeBinding{Method: string(method.FullName()), Binding: n, rule: r})
 		}
 	}
+	return bindings
+}
+
+// routeLayers places every binding for Vanguard. The fixtures' rules
+// overlap: GetMessage's first and third bindings are both GET
+// /v1/messages/*, and UpdateMessage and UpdateMessageWhole are both PATCH
+// /v1/messages/{message_id}. Vanguard refuses a second route for a verb and
+// path it already has, so the bindings are served in layers: each binding
+// goes on the first layer that takes it, the first layer at the root beside
+// notes.v1, layer n under /layer/<n>, the prefix stripped before Vanguard
+// sees the path. GET /routes/layers lists every binding and where it is
+// served.
+func routeLayers() []routeBinding {
+	bindings := routeBindings()
 	var layers [][]*annotations.HttpRule
 	for i := range bindings {
 		b := &bindings[i]

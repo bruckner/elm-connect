@@ -1959,7 +1959,7 @@ with presence kept when set, 64-bit integers as strings, enums by name,
 bytes, durations and timestamps in one form), and (c) the runtime's
 `ok` equal to the echo. `cases/transcode.json` adds the error bodies as
 they go over the wire. Found, and recorded in
-`conformance/live/known-divergent.json`, where the run asserts
+`conformance/live/known-divergent-vanguard.json`, where the run asserts
 Vanguard's answer so that a change either way is noticed:
 
 - `routes.proto` cannot be served whole: `GetMessage`'s first and third
@@ -2017,20 +2017,82 @@ binary, each keyed on the files that pin it (`go.sum`;
 `package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and runs
 `just live`, which builds the example.
 
-What is now verified live, against connect-go and Vanguard: every
-method of the example API over both transports, from Node in CI and
-by hand from the example in a browser; `task`, `send`, `sendTraced`, retries, timeouts,
-`withCredentials`, trackers and Connect GET; an answer's headers and
-trailers reaching the application through the halves and the `Trace`; the error reader's four
-sources with details; the transcoding request builder on every route
-fixture; and the Connect conformance suite's unary JSON cases. Not
+grpc-gateway, built 2026-10-15: the example server mounts grpc-gateway
+v2.32.0 under `/gateway` beside Vanguard, in front of the same service,
+and `just live` runs the transcode cases of `cases/notes.json` (`run.mjs
+--transport transcode`; they make the notes they delete, so they run
+alone), `cases/transcode.json` and the route fixtures against it
+(`--prefix /gateway`), each fixture's divergence recorded
+in `conformance/live/known-divergent-gateway.json` as Vanguard's are in
+`known-divergent-vanguard.json`, with a reading and the answer the run
+asserts.
+
+- The gateway proxies over gRPC, as one deployed in front of a gRPC
+  service does: generated with `protoc-gen-go-grpc` and
+  `protoc-gen-grpc-gateway` (`generate_unbound_methods=true`, so a
+  method without a rule is served at its implicit route), registered
+  over a `grpc.NewClient` connection to the server's own address, where
+  connect-go serves gRPC; the server accepts HTTP/2 without TLS for it.
+  connect-go's gRPC handler sends a service error with its details, and
+  the gateway writes it as a `google.rpc.Status` body: the error cases
+  pass unchanged. Calling the service in process
+  (`Register…HandlerServer`) would skip the hop but needs the errors
+  translated by hand, which is not what a deployment does.
+- The gateway runs with its defaults (`runtime.NewServeMux()`), as a
+  deployed one most likely does; where an option changes an answer, the
+  reading says so.
+- protoc-gen-grpc-gateway refuses two bindings with one verb and path
+  template in a service ("duplicate annotation"), so `routes.proto`
+  cannot be generated whole: `UpdateMessageWhole` is left out of
+  `buf.gen.gateway.yaml` (buf's `exclude_types`) and generated alone,
+  standalone, by `buf.gen.gateway-apart.yaml`, onto a second gateway mux
+  under `/gateway/layer/1`. Templates that differ but match the same
+  paths, `GetMessage`'s `GET /v1/{name=messages/*}` and `GET
+  /v1/messages/{message_id}`, are both generated, and the mux tries the
+  binding registered last first, so the fixture for the first is
+  answered by the second. Neither end is wrong: no router can serve that
+  rule whole.
+- grpc-gateway keeps a `google.protobuf.FieldMask` query value's paths
+  as written, so the JSON form the runtime sends (`mask=displayName`)
+  reaches the service as a path no field has; the gateway is wrong by
+  proto3 JSON. Two fixtures fail with it, with `UNKNOWN`: the
+  well-known types in the query, and `UpdateResource`'s `update_mask`.
+- A single-segment variable holding `/` (`%2F`) is not found: the
+  gateway's default unescaping mode splits the decoded path. The gateway
+  is wrong by http.proto; `UnescapingModeAllExceptReserved`, which it
+  documents as the next default, serves the fixture.
+- As under Vanguard, a path value under an unset message and an unset
+  body field sent as `{}` reach the service as set, empty messages.
+- Where the gateway agrees with the fixtures and Vanguard does not: a
+  `StringValue` set to `""` and sent as `label=` is accepted.
+- Where the two transcoders differ beyond the fixtures, each known file
+  holds the same probes, requests the runtime does not make, with that
+  transcoder's answer: an unknown query parameter (Vanguard 400,
+  grpc-gateway drops it), a verb a path has no route for (405 against
+  501, both `UNIMPLEMENTED` in a `google.rpc.Status` body), and `PATCH`
+  without an update mask, which grpc-gateway fills from the body's
+  fields (its `allow_patch_feature`, AIP-134's implied mask, applied for
+  the service). Neither is wrong in any of them.
+- Also seen, not a divergence: the gateway writes every field, an unset
+  message as `null` (in an error's details too), which the runtime reads
+  as unset, and passes the gRPC response headers on as
+  `Grpc-Metadata-*`.
+
+What is now verified live, against connect-go, Vanguard and
+grpc-gateway: every method of the example API over both transports, from
+Node in CI (transcoding under both transcoders) and by hand from the
+example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
+retries, timeouts, `withCredentials`, trackers and Connect GET; an
+answer's headers and trailers reaching the application through the
+halves and the `Trace`; the error reader's four sources with details;
+the transcoding request builder on every route fixture, under both
+transcoders; and the Connect conformance suite's unary JSON cases. Not
 live: `taskFromRequest` with a rewritten request (§5.2),
 `response_body` (§5.3), and cancellation, which has no outcome (§5.2).
 
-Recorded for later: documented and verified examples for Envoy's
-gRPC-JSON transcoder and grpc-gateway in front of the same service,
-each run by the live suite. And a pass of small, well-documented
-examples for learning from (medium priority, 2026-10-15): the notes
+Recorded for later: a documented and verified example for Envoy's
+gRPC-JSON transcoder in front of the same service, run by the live
+suite. And a pass of small, well-documented examples for learning from (medium priority, 2026-10-15): the notes
 example was meant to double as the implementation to consult, and
 serves verification well, but carrying both transports, the error
 panel and the live suite's needs makes it too much to learn from

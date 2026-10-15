@@ -1,0 +1,126 @@
+{
+  "description": "Where grpc-gateway and the route fixtures part, found by routes.mjs on 2026-10-15 against grpc-gateway v2.32.0 with its defaults (runtime.NewServeMux()), proxying over gRPC to connect-go v2.0.1 (conformance/README.md, design section 7). The fields are known-divergent-vanguard.json's: servedApart, bindings protoc-gen-grpc-gateway will not generate beside the others, served by a second gateway mux under /gateway/layer/1; fixtures, those whose live call does not agree with the fixture, `observed` matched against the runner's result; probes, requests the runtime does not make, where the two transcoders answer differently. Paths are under /gateway.",
+  "servedApart": [
+    {
+      "method": "routes.v1.Routes.UpdateMessageWhole",
+      "binding": 0,
+      "prefix": "/layer/1",
+      "reason": "PATCH /v1/messages/{message_id} is UpdateMessage's route too; protoc-gen-grpc-gateway refuses to generate the second (\"duplicate annotation: method=PATCH, template=/v1/messages/{message_id}\"), so buf.gen.gateway.yaml leaves the method out and buf.gen.gateway-apart.yaml generates it alone. GetMessage's first and third bindings, both GET /v1/messages/*, are generated, since their templates differ; see the fixture below."
+    }
+  ],
+  "fixtures": [
+    {
+      "file": "http_proto.json",
+      "fixture": "a variable with a multi-segment template",
+      "url": "GET /v1/messages/123456",
+      "answer": "200, echoing {\"messageId\":\"123456\"}: GetMessage binding 2's reading of the path, not binding 0's {\"name\":\"messages/123456\"}",
+      "reading": "Neither is wrong; the rule cannot be served whole. GetMessage's binding 0, GET /v1/{name=messages/*}, and binding 2, GET /v1/messages/{message_id}, match the same paths. Vanguard refuses the second (known-divergent-vanguard.json); grpc-gateway generates both, and its mux tries the binding registered last first, so binding 2 takes every path binding 0 matches. The runtime builds binding 0's request as the fixture says.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": {
+          "ok": { "text": { "$json": { "messageId": "123456", "name": { "$absent": true } } } }
+        }
+      }
+    },
+    {
+      "file": "encoding.json",
+      "fixture": "a single-segment variable escapes / and every reserved character",
+      "url": "GET /v1/single/a%2Fb%20c%3Fd%23e%5Bf%5D%40g%21%24%26%27%28%29%2A%2B%2C%3B%3Dh",
+      "answer": "404 {\"code\":5,\"message\":\"Not Found\"}",
+      "reading": "The runtime. http.proto has a single-segment variable percent-encode every character but the unreserved ones, / included, and a server decode them. grpc-gateway's default unescaping mode (UnescapingModeLegacy) splits the decoded path, so %2F becomes a separator and the path has a segment too many. With runtime.WithUnescapingMode(runtime.UnescapingModeAllExceptReserved), which grpc-gateway documents as the next default, it echoes the fixture's name (tried by hand, 2026-10-15); the example keeps the default, as a deployed gateway most likely does.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": {
+          "error": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
+        }
+      }
+    },
+    {
+      "file": "query.json",
+      "fixture": "well-known types in their JSON string forms",
+      "url": "GET /v1/query?at=2024-01-02T03%3A04%3A05.678Z&wait=1.500s&mask=displayName%2Cinner.a",
+      "answer": "500 {\"code\":2,\"message\":\"proto: google.protobuf.FieldMask.paths contains irreversible value \\\"displayName\\\"\"}",
+      "reading": "The runtime. A FieldMask's JSON form is its paths in lowerCamelCase, joined by commas, which a reader converts to field names; grpc-gateway's query parser splits the value on commas and keeps each path as written (runtime/query.go), so the service receives the path displayName, which no field has. The echo comes back over gRPC whole, and the gateway then fails writing it as JSON, answering UNKNOWN. mask=display_name is accepted, but is not the JSON form. Timestamp and Duration agree.",
+      "observed": {
+        "trace": { "httpStatus": 500 },
+        "result": {
+          "error": {
+            "code": "unknown",
+            "message": { "$match": "FieldMask.paths contains irreversible value \"displayName\"" },
+            "source": "StatusBody"
+          }
+        }
+      }
+    },
+    {
+      "file": "bodies.json",
+      "fixture": "a body field is sent whole, a field the path holds included (AIP-134)",
+      "url": "PATCH /v1/resources/r1?update_mask=displayName with body {\"name\":\"resources/r1\",\"displayName\":\"R\"}",
+      "answer": "500 {\"code\":2,\"message\":\"\"}",
+      "reading": "The runtime, as above: the gateway keeps the update mask's path displayName as written, so the service receives a mask naming no field. Here the service's echo cannot write that request as JSON and fails, which connect-go reports as UNKNOWN without a message; a service applying the mask would refuse it or ignore it. The path and body agree.",
+      "observed": {
+        "trace": { "httpStatus": 500 },
+        "result": { "error": { "code": "unknown", "message": "", "source": "StatusBody" } }
+      }
+    },
+    {
+      "file": "query.json",
+      "fixture": "a path value under an unset message is its default; defaults are written",
+      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0",
+      "answer": "200, echoing inner and inner.deep set and empty",
+      "reading": "Neither is wrong; the wire cannot say it. As under Vanguard (known-divergent-vanguard.json): a path segment sets its field and every message on the way, so no path leaves inner unset.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "inner": { "deep": {} } } }
+      }
+    },
+    {
+      "file": "bodies.json",
+      "fixture": "an unset body field is an empty object",
+      "url": "PATCH /v1/messages/1 with body {}",
+      "answer": "200, echoing {\"messageId\":\"1\",\"message\":{}}",
+      "reading": "Neither is wrong; the wire cannot say it. As under Vanguard: with body: \"message\" a body of {} is the field set and empty.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "text": { "$json": { "messageId": "1", "message": {} } } } }
+      }
+    }
+  ],
+  "probes": [
+    {
+      "name": "an unknown query parameter",
+      "request": { "method": "GET", "path": "/v1/notes?page_size=1&bogus=1" },
+      "observed": {
+        "status": 200,
+        "body": { "notes": [{ "name": "notes/flaky" }], "nextPageToken": "1" }
+      },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. grpc-gateway drops a parameter that names no field."
+    },
+    {
+      "name": "a verb the path has no route for",
+      "request": { "method": "PUT", "path": "/v1/notes" },
+      "observed": { "status": 501, "body": { "code": 12, "message": "Method Not Allowed" } },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. grpc-gateway answers UNIMPLEMENTED with its HTTP mapping, 501."
+    },
+    {
+      "name": "PATCH without an update mask",
+      "request": {
+        "method": "PATCH",
+        "path": "/v1/resources/r1",
+        "body": { "name": "resources/r1", "displayName": "R" }
+      },
+      "observed": {
+        "status": 200,
+        "body": {
+          "displayName": {
+            "$json": {
+              "resource": { "name": "resources/r1", "displayName": "R" },
+              "updateMask": { "$match": "^(displayName,name|name,displayName)$" }
+            }
+          }
+        }
+      },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. grpc-gateway fills update_mask with the fields the body sets, in no fixed order."
+    }
+  ]
+}

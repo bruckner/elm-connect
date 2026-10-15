@@ -1,8 +1,8 @@
 module Main exposing (main)
 
 {-| The notes example: list, create, edit, archive and delete notes through the
-generated `Notes.V1.NotesService`, over Connect or over HTTP transcoding, and
-show what each call sent and how it failed. `examples/notes/README.md` walks
+generated `Notes.V1.NotesService`, over Connect or over HTTP transcoding (by
+Vanguard or by grpc-gateway), and show what each call sent and how it failed. `examples/notes/README.md` walks
 through it.
 -}
 
@@ -32,13 +32,25 @@ main =
 
 
 type alias Model =
-    { shared : Shared
+    { origin : String
+    , wire : Wire
+    , shared : Shared
     , notes : List Note
     , newTitle : String
     , editing : Maybe Draft
     , sent : List Rpc.Request
     , failure : Maybe Rpc.Error
     }
+
+
+{-| Where calls go: over Connect, or over HTTP transcoding to the server's
+own transcoder (Vanguard) or to grpc-gateway, which it serves under
+/gateway.
+-}
+type Wire
+    = ViaConnect
+    | ViaVanguard
+    | ViaGateway
 
 
 {-| A note being edited, and the note as it was, to tell which fields changed.
@@ -54,7 +66,9 @@ type alias Draft =
 init : String -> ( Model, Cmd Msg )
 init origin =
     list
-        { shared = { apiUrl = origin, token = "example-token", transport = Rpc.connect }
+        { origin = origin
+        , wire = ViaConnect
+        , shared = { apiUrl = origin, token = "example-token", transport = Rpc.connect }
         , notes = []
         , newTitle = ""
         , editing = Nothing
@@ -64,7 +78,7 @@ init origin =
 
 
 type Msg
-    = SetTransport Rpc.Transport
+    = SetWire Wire
     | Listed (Result Rpc.Error Notes.V1.ListNotesResponse)
     | Changed (Result Rpc.Error ())
     | SetNewTitle String
@@ -84,12 +98,27 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         -- region toggle
-        SetTransport transport ->
+        SetWire wire ->
             let
                 shared =
                     model.shared
+
+                ( transport, path ) =
+                    case wire of
+                        ViaConnect ->
+                            ( Rpc.connect, "" )
+
+                        ViaVanguard ->
+                            ( Rpc.Transcode, "" )
+
+                        ViaGateway ->
+                            ( Rpc.Transcode, "/gateway" )
             in
-            list { model | shared = { shared | transport = transport } }
+            list
+                { model
+                    | wire = wire
+                    , shared = { shared | transport = transport, apiUrl = model.origin ++ path }
+                }
 
         -- endregion toggle
         Listed (Ok response) ->
@@ -236,7 +265,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Notes" ]
-        , viewTransport model.shared.transport
+        , viewTransport model.wire
         , Maybe.map viewError model.failure |> Maybe.withDefault (text "")
         , section []
             [ h2 [] [ text "Notes" ]
@@ -255,27 +284,20 @@ view model =
         ]
 
 
-viewTransport : Rpc.Transport -> Html Msg
-viewTransport transport =
+viewTransport : Wire -> Html Msg
+viewTransport wire =
     let
-        isConnect =
-            case transport of
-                Rpc.Connect _ ->
-                    True
-
-                Rpc.Transcode ->
-                    False
-
-        option label_ isChosen choice =
+        option label_ choice =
             label []
-                [ input [ type_ "radio", name "transport", checked isChosen, onClick (SetTransport choice) ] []
+                [ input [ type_ "radio", name "transport", checked (wire == choice), onClick (SetWire choice) ] []
                 , text label_
                 ]
     in
     p []
         [ text "Transport: "
-        , option " Connect " isConnect Rpc.connect
-        , option " HTTP transcoding" (not isConnect) Rpc.Transcode
+        , option " Connect " ViaConnect
+        , option " HTTP transcoding " ViaVanguard
+        , option " HTTP transcoding via grpc-gateway" ViaGateway
         ]
 
 
