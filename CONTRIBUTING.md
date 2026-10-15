@@ -3,7 +3,8 @@
 ## Getting set up
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
-elm-format, elm-test-rs, node, just, zizmor and gitleaks. From the repository root:
+elm-format, elm-test-rs, node, just, zizmor and gitleaks, and Go and
+buf for the live suite. From the repository root:
 
 ```sh
 mise install    # install the pinned toolchain
@@ -25,6 +26,12 @@ CI runs the same recipe on
 Linux and macOS for every pull request and every push to `main`, so a
 green local `just check` is the bar for opening a PR. Formatting in the
 gate is check-only; `just fmt` fixes it.
+
+`just live` runs the runtime against the example server
+(`conformance/README.md`, "Live verification"). It is outside the gate,
+since it needs Go and the Buf Schema Registry; CI runs it as its own
+job, so run it before a PR that touches the runtime's sending, the
+service modules, or `examples/notes/`.
 
 ## Branches and pull requests
 

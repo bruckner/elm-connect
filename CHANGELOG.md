@@ -311,3 +311,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.WellKnown`. A `Method` built by hand takes the codecs in place
   of `request` and `response`; the typed records still serve `Any`,
   error details and reflection.
+- Live verification: `just live` runs the runtime against a server.
+  `examples/notes/` holds an example API (`notes.v1.NotesService`), a Go
+  server answering it over Connect (connect-go) and HTTP transcoding
+  (Vanguard) from one port, and the Go and Elm buf generates for it;
+  `conformance/live/` a headless Elm program over the runtime, driven
+  from Node through an `XMLHttpRequest` over `node:http`, and a smoke
+  suite of every method over both transports, error bodies with
+  details, `grpc-status` headers, bare statuses, timeouts, retries,
+  Connect GET, bindings, trackers and each way of sending. CI runs it
+  as the `live` job; Go and buf join the toolchain pin.

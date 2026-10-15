@@ -1,0 +1,10 @@
+{
+  "name": "elm-connect-live",
+  "private": true,
+  "description": "Drives elm-connect's runtime, compiled from src/Live.elm, against a live server",
+  "type": "module",
+  "license": "MIT OR Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

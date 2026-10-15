@@ -101,7 +101,8 @@ A method without a rule has `"binding": null` and `"rule": null`, and
 expects the implicit route: `POST /<package>.<Service>/<Method>` with
 the request as its body and `Connect-Protocol-Version: 1`, which
 grpc-gateway (`generate_unbound_methods`), Envoy (`auto_mapping`) and
-Vanguard serve (`implicit.json`). `request` is proto3 JSON. `path`
+Vanguard serve (`implicit.json`; the live suite below runs it against
+Vanguard). `request` is proto3 JSON. `path`
 (custom verb included) and the query pairs are as sent,
 percent-encoded; `headers`, optional and `[]` when absent, are those
 the route itself adds; `body` is JSON or `null` for none.
@@ -127,3 +128,123 @@ so a server-side implementation can check itself against the same file.
 To add a fixture, add it to a `routes/*.json` file (and a method to
 `routes.proto` if no rule fits), check that the reference agrees, and
 bless.
+
+## Live verification
+
+The corpus and the fixtures pin what is generated and what request a
+call becomes; `live/` runs the runtime against a server (design §7,
+live verification):
+
+```
+live/
+  elm.json            an application: the runtime's ../../src, the example's
+                      generated Elm (examples/notes/elm/generated), src/
+  src/Live.elm        a headless Platform.worker: envelopes in on the
+                      `requests` port, results out on `results`
+  src/Live/Call.elm   the envelope, and `entry`, which makes a dispatch
+                      table's entry from a generated call function and codecs
+  src/Live/Notes.elm  the dispatch table of notes.v1.NotesService
+  xhr.mjs             an XMLHttpRequest over node:http, the subset elm/http
+                      uses, reporting each exchange
+  run.mjs             loads build/elm.js; a module (`createRunner`,
+                      `runCases`, `mismatches`, `serve`) and a command
+  cases/notes.json    the smoke suite
+  build/              the compiled program (gitignored)
+```
+
+```sh
+just live                                     # regenerate, build, start the server, run
+node conformance/live/run.mjs --server http://127.0.0.1:8080 conformance/live/cases/notes.json
+node conformance/live/run.mjs --serve target/live/bin/notes-server --print conformance/live/cases/notes.json
+```
+
+`just live` regenerates the example with buf and fails if the output
+differs from what is committed, builds the server and `Live.elm`
+(unoptimized), starts the server on a free port and runs the suite.
+`--print` prints each result instead of checking it.
+
+An **envelope**, what the runner sends:
+
+```json
+{
+  "id": "a name for the call",
+  "service": "notes.v1.NotesService",
+  "method": "GetNote",
+  "request": { "name": "notes/welcome" },
+  "transport": "connect",
+  "config": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "headers": [["x-echo", "hi"]],
+    "timeout": 500,
+    "withCredentials": false,
+    "useGet": false,
+    "maxGetUrl": null,
+    "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
+  },
+  "binding": null,
+  "send": "sendTraced",
+  "tracker": null
+}
+```
+
+`request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
+`transcode`; everything in `config` but `baseUrl` is optional, as are
+`binding` (applied with `Rpc.viaBinding`), `send` (`sendTraced`, the
+default, `send` or `task`) and `tracker` (`Rpc.withTracker`).
+
+A **result**, what comes back:
+
+```json
+{
+  "id": "a name for the call",
+  "result": { "ok": { "name": "notes/welcome" } },
+  "trace": {
+    "service": "notes.v1.NotesService", "method": "GetNote", "binding": null,
+    "httpStatus": 200, "code": "ok", "attempts": 1, "duration": 4,
+    "request": { "method": "POST", "url": "…", "headers": [["Connect-Protocol-Version", "1"]],
+                 "body": "{\"name\":\"notes/welcome\"}", "timeout": null, "withCredentials": false }
+  },
+  "progress": { "sending": 1, "receiving": 1 },
+  "wire": [{ "method": "POST", "url": "…", "requestHeaders": [], "body": "…", "timeout": 0,
+             "withCredentials": false, "status": 200, "responseHeaders": {}, "outcome": "load" }]
+}
+```
+
+`result` is one of `{"ok": <response as proto3 JSON>}`, `{"error":
+{"code", "message", "details", "source"}}` (the code as Connect names
+it, each detail as `Proto.Any.encodeJson` writes it, the source as
+`ConnectBody`, `StatusBody 5`, `GrpcHeaders` or `HttpStatus 404`),
+`{"transport": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
+`BadStatus <n>`, `BadBody <problem>`) and `{"runner": <why>}` for an
+envelope the runner could not send: one that does not decode, an unknown
+method or a binding the method lacks. `trace` is the `Rpc.Trace`, and
+`null` unless sent with `sendTraced`; `progress` counts a tracker's
+events and is present only with one. `wire` is added by `run.mjs`: each
+HTTP exchange made during the call, as `xhr.mjs` saw it (`outcome` is
+`load`, `error` or `timeout`). Calls run one at a time, so every
+exchange belongs to its call.
+
+A **case file** is a JSON array of cases, run in order:
+
+```json
+{
+  "name": "connect GetNote",
+  "note": "optional prose",
+  "call": { "service": "…", "method": "…", "request": {}, "transport": "connect", "config": {} },
+  "expect": { "result": { "ok": { "name": "notes/welcome" } }, "trace": { "attempts": 1 } },
+  "skip": "optional: why the case is not run"
+}
+```
+
+`call` is an envelope without `id` (the case's name) whose `baseUrl`
+defaults to the server's, `{server}` standing for it in one given.
+`expect` is matched against the result: an object matches when each of
+its keys does, other keys ignored; an array element by element, with
+the same length; anything else by equality. `{"$match": "<regex>"}`
+matches a string the expression finds, `{"$json": …}` a string whose
+JSON parse matches, `{"$contains": […]}` an array with a match for each
+element, and `{"$absent": true}` a key that is missing or `null`.
+
+To add a service, add its proto to the example (or a new one beside
+it), a dispatch table `src/Live/<Service>.elm` listing `entry` per
+method, and the table to `tables` in `Live.elm`.

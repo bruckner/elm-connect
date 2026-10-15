@@ -1,0 +1,15 @@
+# `buf generate`, run here by `just live-gen` with the plugins on PATH: the
+# Go server's stubs, at the versions its go.mod pins, and the Elm client from
+# this repository's protoc-gen-elm-connect.
+version: v2
+inputs:
+  - directory: proto
+plugins:
+  - local: protoc-gen-go
+    out: server/gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: server/gen
+    opt: paths=source_relative
+  - local: protoc-gen-elm-connect
+    out: elm/generated
