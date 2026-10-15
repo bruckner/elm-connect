@@ -374,13 +374,14 @@ message was queued before this command ran, the application sees the result
 and then the cancellation, and a cancellation that follows a result is to be
 ignored.
 
-Cancellation with an outcome is for `send` alone. A call sent with a
-[`Retry`](#Retry) policy has no tracker, so it is not aborted: it runs on, and
-its result follows the cancellation. The tasks, [`task`](#task) and
-[`taskTraced`](#taskTraced) under [`sendTraced`](#sendTraced), ignore the
-tracker; one run under `Process.spawn` and stopped with `Process.kill` reports
-nothing, and has no trace, since its attempts and duration end with the
-process.
+Cancellation with an outcome is for `send` alone, and for a request an
+application sends itself from [`request`](#request) with the tracker on its
+`Http.request`. A call sent with a [`Retry`](#Retry) policy has no tracker,
+so it is not aborted: it runs on, and its result follows the cancellation.
+The tasks, [`task`](#task) and [`taskTraced`](#taskTraced) under
+[`sendTraced`](#sendTraced), ignore the tracker; one run under
+`Process.spawn` and stopped with `Process.kill` reports nothing, and has no
+trace, since its attempts and duration end with the process.
 
 -}
 cancel : String -> (Result Error res -> msg) -> Cmd msg

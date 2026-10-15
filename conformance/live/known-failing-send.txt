@@ -1,14 +1,21 @@
 # Further test cases of the Connect conformance suite that fail when calls are
-# sent with `Rpc.sendTraced` (conformance.mjs --send sendTraced), and would
-# with `Rpc.send` and `Rpc.task`: these give the response or the error and no
-# more, so an answer's headers and trailers never reach the application. Each
-# of these tests asserts the response's headers or trailers (`x-custom-header`,
-# `x-custom-trailer` and the like). Through the pure halves (`Rpc.request`,
-# elm/http, `Rpc.response`) the application has them, and the tests pass.
-# Format as in known-failing.txt, which applies too.
+# sent with `Rpc.sendTraced` (conformance.mjs --send sendTraced), each with
+# the reason above it and the ways of sending it holds for. Through the pure
+# halves (`Rpc.request`, elm/http, `Rpc.response`) they pass. Format as in
+# known-failing.txt, which applies too.
 
+# With `Rpc.sendTraced`, `Rpc.send` and `Rpc.task`: these give the response
+# or the error and no more, so an answer's headers and trailers never reach
+# the application. Each of these tests asserts the response's headers or
+# trailers (`x-custom-header`, `x-custom-trailer` and the like).
 Basic/**/unary/success
 Connect with GET/**/success
 Duplicate Metadata/**/unary/success
 Duplicate Metadata/**/unary/error
 Errors/**/unary/error-with-metadata
+
+# With `Rpc.sendTraced` and `Rpc.task`: these ignore the tracker, so
+# `Rpc.cancel` cannot abort the call, and the runner refuses to cancel one
+# rather than report `Canceled` while it runs on. `Rpc.send` without a retry
+# policy cancels it, as the halves do.
+Client Cancellation/**/unary/cancel-after-close-send

@@ -1,4 +1,4 @@
-module Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..), entry)
+module Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), entry)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.
@@ -22,7 +22,8 @@ import Task
 
 
 {-| One call to make: the method, its request as proto3 JSON, the transport,
-the config and the binding, if one is chosen.
+the config and the binding, if one is chosen, and the milliseconds after which
+to cancel it, if it is to be.
 -}
 type alias Envelope =
     { id : String
@@ -34,6 +35,7 @@ type alias Envelope =
     , binding : Maybe Int
     , sending : Sending
     , tracker : Maybe String
+    , cancelAfter : Maybe Int
     }
 
 
@@ -57,11 +59,20 @@ type Transport
 
 
 {-| How a dispatch table sends an envelope's call: `Err` with a reason when
-the request does not decode or the binding does not exist, or a command that
-reports the outcome.
+the request does not decode, the binding does not exist or the call cannot be
+cancelled as asked, or the commands that send it and cancel it.
 -}
 type alias Entry msg =
-    Envelope -> (Outcome -> msg) -> Result String (Cmd msg)
+    Envelope -> (Outcome -> msg) -> Result String (Sent msg)
+
+
+{-| A call's commands: `send` sends it and reports the outcome; `cancel`, for
+an envelope with `cancelAfter`, cancels it with `Rpc.cancel` and reports
+`Canceled` to the same `toMsg`. The caller reports whichever outcome comes
+first.
+-}
+type alias Sent msg =
+    { send : Cmd msg, cancel : Maybe (Cmd msg) }
 
 
 {-| What became of a call, as JSON: the result, the trace when the call was
@@ -104,42 +115,88 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
                                         ++ " has"
                                     )
             in
-            Result.map
-                (\c ->
-                    let
-                        tracked =
-                            case envelope.tracker of
-                                Just name ->
-                                    Rpc.withTracker name c
+            bound |> Result.andThen (sendWith envelope encodeResponse toMsg)
 
-                                Nothing ->
-                                    c
 
-                        report trace result =
-                            reportWith trace Encode.null result
+{-| The commands for a call. Only a call elm/http sends under a tracker can be
+aborted: one sent with `send` without a retry policy, or through the halves
+with the tracker on `Http.request`. `sendTraced`, `task` and `send` with a
+retry policy ignore the tracker, so a call sent so with `cancelAfter` is
+refused rather than reported `Canceled` while it runs on. A call to be
+cancelled without a tracker of its own gets its id as one.
+-}
+sendWith : Envelope -> (res -> Value) -> (Outcome -> msg) -> Rpc.Call req res -> Result String (Sent msg)
+sendWith envelope encodeResponse toMsg c =
+    let
+        tracker =
+            case ( envelope.tracker, envelope.cancelAfter ) of
+                ( Just name, _ ) ->
+                    Just name
 
-                        reportWith trace answer result =
-                            toMsg
-                                { id = envelope.id
-                                , result = encodeResult encodeResponse result
-                                , trace = trace
-                                , response = answer
-                                }
-                    in
-                    case envelope.sending of
-                        Traced ->
-                            Rpc.sendTraced envelope.config tracked (\trace -> report (encodeTrace trace))
+                ( Nothing, Just _ ) ->
+                    Just envelope.id
 
-                        Plain ->
-                            Rpc.send envelope.config tracked (report Encode.null)
+                ( Nothing, Nothing ) ->
+                    Nothing
 
-                        AsTask ->
-                            Rpc.task envelope.config tracked |> Task.attempt (report Encode.null)
+        tracked =
+            case tracker of
+                Just name ->
+                    Rpc.withTracker name c
 
-                        Halves ->
-                            sendHalves envelope.config tracked envelope.tracker (\( answer, result ) -> reportWith Encode.null answer result)
+                Nothing ->
+                    c
+
+        report trace result =
+            reportWith trace Encode.null result
+
+        reportWith trace answer result =
+            toMsg
+                { id = envelope.id
+                , result = encodeResult encodeResponse result
+                , trace = trace
+                , response = answer
+                }
+
+        cancelling toResultMsg =
+            case ( envelope.cancelAfter, tracker ) of
+                ( Just _, Just name ) ->
+                    Just (Rpc.cancel name toResultMsg)
+
+                _ ->
+                    Nothing
+
+        uncancellable send =
+            case envelope.cancelAfter of
+                Just _ ->
+                    Err ("a call sent with " ++ send ++ " cannot be cancelled: it ignores the tracker")
+
+                Nothing ->
+                    Ok Nothing
+    in
+    case envelope.sending of
+        Traced ->
+            uncancellable "sendTraced"
+                |> Result.map (Sent (Rpc.sendTraced envelope.config tracked (\trace -> report (encodeTrace trace))))
+
+        Plain ->
+            case envelope.config.retry of
+                Just _ ->
+                    uncancellable "send and a retry policy"
+                        |> Result.map (Sent (Rpc.send envelope.config tracked (report Encode.null)))
+
+                Nothing ->
+                    Ok (Sent (Rpc.send envelope.config tracked (report Encode.null)) (cancelling (report Encode.null)))
+
+        AsTask ->
+            uncancellable "task"
+                |> Result.map (Sent (Rpc.task envelope.config tracked |> Task.attempt (report Encode.null)))
+
+        Halves ->
+            Ok
+                (Sent (sendHalves envelope.config tracked tracker (\( answer, result ) -> reportWith Encode.null answer result))
+                    (cancelling (reportWith Encode.null Encode.null))
                 )
-                bound
 
 
 {-| Send a call as `Rpc.request` describes it, with elm/http directly, and read

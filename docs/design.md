@@ -1340,11 +1340,12 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   the one race is an answer whose message was queued before the
   cancel ran, which the application sees before the cancellation and
   is told to keep, ignoring a cancellation that follows a result. It
-  is for `send` alone: a call sent with a retry policy has no tracker
-  and runs on, and the tasks (`task`, and `taskTraced` under
-  `sendTraced`) ignore the tracker; one killed with `Process.kill`
-  reports nothing and has no trace, its attempts and duration ending
-  with the process. *(Decided, 2026-10-15.)*
+  is for `send` alone, and for a request the application sends itself
+  from `request` with the tracker on its `Http.request`: a call sent
+  with a retry policy has no tracker and runs on, and the tasks
+  (`task`, and `taskTraced` under `sendTraced`) ignore the tracker;
+  one killed with `Process.kill` reports nothing and has no trace, its
+  attempts and duration ending with the process. *(Decided, 2026-10-15.)*
 - `Trace` is `{ service, method, binding, request, httpStatus, code,
   duration, attempts }`: `binding` is `Nothing` when no binding was used
   (Connect, the implicit route), `httpStatus` the last answer's HTTP
@@ -1364,10 +1365,10 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   each field of the `Trace`. The Connect conformance suite (§7) runs
   `Rpc.request` and `Rpc.response` with elm/http between them, and
   `sendTraced`. `taskFromRequest` with a rewritten request is not run
-  yet. Cancelling through a tracker cannot give an outcome: elm/http
-  sends no message for a request `Http.cancel` aborts, so there is no
-  `Canceled` error to give, and the suite's cancellation test is known to
-  fail (2026-10-15).
+  yet. `cancel` is run by both: the suite's cancellation test cancels
+  calls sent through the halves (the tracker on `Http.request`), and a
+  smoke case one sent with `send`; each is aborted and reported
+  `Canceled` (2026-10-15).
 - Only the pure halves give the application an answer's headers:
   `task`, `send` and the traced forms give the response or the error and
   nothing more, and the conformance suite's tests of response headers
@@ -1381,7 +1382,7 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 Run against connect-go by the live suite (§7): POST and GET, the
 timeout header, every method of the example API; and by the Connect
 conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
-39 of 40 passing, cancellation the exception.
+all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
@@ -1789,18 +1790,23 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 
 - Calls go through the pure halves (`Rpc.request`, elm/http,
   `Rpc.response`), the one way an application gets an answer's headers,
-  and are run again through `Rpc.sendTraced`. 39 of 40 pass through the
-  halves, 34 through `sendTraced`.
-- Known failing, whichever way (`known-failing.txt`): `Client
-  Cancellation/unary/cancel-after-close-send`. A cancelled call has no
-  outcome (§5.2), so the wrapper does not cancel, the call completes and
-  the expected `canceled` never comes.
+  and are run again through `Rpc.sendTraced`. 40 of 40 pass through the
+  halves, 34 through `sendTraced`; `known-failing.txt`, for what fails
+  whichever way, lists none.
+- Cancellation is live: `Client Cancellation/unary/cancel-after-close-send`
+  becomes an envelope with `cancelAfterMs`, the runner sends the call
+  under a tracker and issues `Rpc.cancel` that long after, and reports
+  whichever outcome comes first, so the race of §5.2 is reported once.
+  The smoke case `connect cancel` does the same through `send`, and
+  asserts the exchange was aborted.
 - Known failing through `sendTraced` (`known-failing-send.txt`):
   `Basic/unary/success`, `Connect with GET/success`, `Duplicate
   Metadata/unary/success` and `unary/error`, and
   `Errors/unary/error-with-metadata`, which assert the answer's headers
   and trailers; `send`, `task` and the traced forms do not give them
-  (§5.2).
+  (§5.2). And `cancel-after-close-send`: `sendTraced` and `task` ignore
+  the tracker, so the runner refuses to cancel a call sent so rather
+  than report `Canceled` while it runs on.
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `Transport Timeout`, as a Connect client gives its own deadline.

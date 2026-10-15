@@ -204,17 +204,27 @@ An **envelope**, what the runner sends:
   },
   "binding": null,
   "send": "sendTraced",
-  "tracker": null
+  "tracker": null,
+  "cancelAfterMs": null
 }
 ```
 
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.viaBinding`), `send` (`sendTraced`, the
-default, `send`, `task` or `halves`) and `tracker` (`Rpc.withTracker`).
-`halves` sends through the pure halves, as an application that needs the
-answer's headers does: `Rpc.request`, `Http.request` with the answer kept
-whole, and `Rpc.response`.
+default, `send`, `task` or `halves`), `tracker` (`Rpc.withTracker`) and
+`cancelAfterMs`. `halves` sends through the pure halves, as an application
+that needs the answer's headers does: `Rpc.request`, `Http.request` with the
+answer kept whole, and `Rpc.response`.
+
+With `cancelAfterMs` the runner cancels the call that many milliseconds
+after sending it with `Rpc.cancel`, under the envelope's tracker or, without
+one, its `id`, and reports whichever outcome comes first, the result or
+`{"canceled": true}`; a later one is dropped, so a call is reported once.
+Only `send` without a retry policy and `halves` put the tracker on the
+request; `sendTraced`, `task` and `send` with a retry policy ignore it, so an
+envelope sending one of those with `cancelAfterMs` is refused (`{"runner":
+…}`) rather than reported `Canceled` while the call runs on.
 
 A **result**, what comes back:
 
@@ -251,7 +261,7 @@ method or a binding the method lacks. `trace` is the `Rpc.Trace`, and
 `null` unless sent with `halves` and answered; `progress` counts a tracker's
 events and is present only with one. `wire` is added by `run.mjs`: each
 HTTP exchange made during the call, as `xhr.mjs` saw it (`outcome` is
-`load`, `error` or `timeout`). Calls run one at a time, so every
+`load`, `error`, `timeout` or `abort`, or `pending` for one still open). Calls run one at a time, so every
 exchange belongs to its call.
 
 A **case file** is a JSON array of cases, run in order:
@@ -304,7 +314,11 @@ generates from the suite's protos (`suite/js/`, through
 `@bufbuild/protobuf`), unpacks its one request message from its `Any` to
 proto3 JSON, and makes it an envelope for the runner: `host` and `port` as
 the `baseUrl`, `request_headers` as `headers`, `timeout_ms` as `timeout`,
-`use_get_http_method` as `useGet`. The runner calls the method through
+`use_get_http_method` as `useGet`, and `cancel.after_close_send_ms` as
+`cancelAfterMs` (a unary call's request is sent whole, so the count starts
+when the call is sent). The other cancel timings, `before_close_send` and
+`after_num_responses`, are for streams, which `conformance.yaml` declares
+unsupported; a request with one is refused. The runner calls the method through
 `Live.Conformance`, whose calls come from the Elm protoc-gen-elm-connect
 generates from the same protos (`suite/elm/`, `streaming=skip`), and the
 result is translated back: the response's payload, or the error's code,
@@ -314,7 +328,7 @@ message and details (a detail that came as JSON is read back from its
 headers, and as trailers those prefixed `trailer-`, which is how Connect
 sends a unary call's trailers. A transport failure is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-anything else as `unknown`. What is reported is only what the runtime gives
+anything else as `unknown`; `{"canceled": true}` as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure
@@ -326,8 +340,9 @@ runs both `halves` and `sendTraced`.
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
 calls, Connect GET, and no TLS, HTTP/2, trailers or receive limit; that is
 40 test cases. `known-failing.txt` lists the test cases the runtime fails
-however a call is sent, and `known-failing-send.txt` those it fails too
-without the halves, each with the reason; the runner requires a listed
+however a call is sent (none: all 40 pass through the halves), and
+`known-failing-send.txt` those it fails too through `sendTraced` (34
+pass), each with the reason and the ways of sending it holds for; the runner requires a listed
 case to fail, so the lists cannot go stale. One test case pattern per line
 (`*` one name component, `**` any number), `#` starting a comment.
 `connectconformance` reads only the first `--known-failing` flag it is

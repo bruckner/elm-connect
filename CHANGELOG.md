@@ -368,4 +368,7 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   that tracker and reports `Err Canceled` to `toMsg`, where
   `Http.cancel` alone reported nothing. Its code is `Canceled`, its
   message empty and `errorToString` gives `canceled`. Code that matches
-  every `Rpc.Error` constructor adds a branch for it.
+  every `Rpc.Error` constructor adds a branch for it. The live runner
+  cancels as an application would (an envelope's `cancelAfterMs`), so
+  the Connect conformance suite's cancellation case passes, 40 of 40
+  through the halves, and a smoke case cancels a call sent with `send`.
