@@ -250,3 +250,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   proto3 JSON or a Connect body's `type`, `value` and `debug`; a detail
   in neither form is left out. `Rpc.details` gives an error's details of
   one message type.
+- Generated `google.protobuf.Any` fields: `Proto.Any.Any`, singular as a
+  `Maybe`, repeated, as a map value or a oneof member bare, coded with
+  `Proto.Any.encodeJson` and `jsonDecoder`; a method of `Any` uses
+  `Proto.WellKnown.any`. The `types::any` diagnostic is gone, and the
+  `any_field` conformance case is a golden one. An `Any` request field
+  outside the body is `route::query_field`.

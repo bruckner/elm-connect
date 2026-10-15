@@ -82,7 +82,7 @@
 //! - A field or member whose JSON name differs from its proto name is
 //!   read under either, and an object holding both fails (design §3.4).
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
-//!   `List String` (field masks), `()` (`Empty`),
+//!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`,
 //!   `Dict String Json.Encode.Value` (`Struct`), `List Json.Encode.Value`
 //!   (`ListValue`), `Json.Encode.Value` (`Value`) and the wrappers'
 //!   scalars (design §3.5). All but `Empty` and `Value` are messages, held
@@ -146,6 +146,8 @@ const PROTO_ENUM: &str = "Proto.Enum";
 const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
 /// The runtime package's registry of descriptors.
 const PROTO_REGISTRY: &str = "Proto.Registry";
+/// The runtime package's `google.protobuf.Any`.
+const PROTO_ANY: &str = "Proto.Any";
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.

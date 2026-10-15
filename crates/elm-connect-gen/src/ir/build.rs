@@ -825,11 +825,8 @@ impl Builder {
                 return Some(TypeRef::WellKnown(well_known));
             }
             let site = self.site(file, type_path, format!("`{full_name}` here"));
-            self.diagnostics.push(if name == "Any" {
-                Problem::any(referrer, site)
-            } else {
-                Problem::unsupported_well_known(referrer, &full_name, site)
-            });
+            self.diagnostics
+                .push(Problem::unsupported_well_known(referrer, &full_name, site));
             return None;
         }
 

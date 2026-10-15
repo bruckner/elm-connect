@@ -39,8 +39,6 @@ pub enum Code {
     InvalidType,
     /// A field or oneof has no valid Elm record field name.
     InvalidField,
-    /// A field uses `google.protobuf.Any`.
-    Any,
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown,
     /// A generated package refers to a type in a package not generated.
@@ -92,7 +90,6 @@ impl Code {
             Code::InvalidModule => "naming::invalid_module",
             Code::InvalidType => "naming::invalid_type",
             Code::InvalidField => "naming::invalid_field",
-            Code::Any => "types::any",
             Code::UnsupportedWellKnown => "types::unsupported_well_known",
             Code::NotGenerated => "generate::not_generated",
             Code::ImportCycle => "generate::import_cycle",
@@ -319,20 +316,6 @@ impl Problem {
         )
     }
 
-    /// `referrer` is a `google.protobuf.Any`.
-    pub fn any(referrer: &Referrer, site: Site) -> Self {
-        Problem::new(
-            Code::Any,
-            format!(
-                "{referrer} has type `google.protobuf.Any`, which elm-connect does not support."
-            ),
-            "Decoding an `Any` needs a registry of every type it might hold, and generated Elm \
-             code has none. Use a oneof of the concrete messages instead, or \
-             `google.protobuf.Struct` for free-form JSON.",
-            vec![site],
-        )
-    }
-
     /// `referrer` uses `type_name`, a `google.protobuf` type elm-connect
     /// has no mapping for.
     pub fn unsupported_well_known(referrer: &Referrer, type_name: &str, site: Site) -> Self {
@@ -342,9 +325,9 @@ impl Problem {
                 "{referrer} has type `{type_name}`, a well-known type elm-connect has no Elm \
                  mapping for."
             ),
-            "The supported well-known types are Timestamp, Duration, FieldMask, Empty, Struct, \
-             Value, ListValue and the wrappers like Int32Value. Use one of those, or a message \
-             of your own.",
+            "The supported well-known types are Timestamp, Duration, FieldMask, Empty, Any, \
+             Struct, Value, ListValue and the wrappers like Int32Value. Use one of those, or a \
+             message of your own.",
             vec![site],
         )
     }
