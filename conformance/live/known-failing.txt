@@ -1,0 +1,12 @@
+# Test cases of the Connect conformance suite (conformance.yaml) that
+# elm-connect's runtime is known to fail, whichever way a call is sent; the
+# runner requires each to fail. One test case pattern per line (`*` matches
+# one name component, `**` any number), each with the reason above it.
+# conformance/README.md, "The Connect conformance suite"; design section 7.
+
+# A call cannot be cancelled with an outcome. `Http.cancel` through a
+# tracker (`Rpc.withTracker`) aborts the request, but elm/http 2.0.0 then
+# sends no message at all, so there is no `Canceled` error for the runtime
+# to give. conformance.mjs does not cancel; the call completes and the
+# expected `canceled` error never comes.
+Client Cancellation/**/unary/cancel-after-close-send

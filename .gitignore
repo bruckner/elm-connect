@@ -1,6 +1,8 @@
 /target/
 elm-stuff/
 /conformance/harness/generated/
+/conformance/live/build/
+node_modules/
 .DS_Store
 mise.local.toml
 .mise.local.toml

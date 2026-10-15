@@ -1062,7 +1062,8 @@ getNote =
   the runtime sends it as `POST /<package>.<Service>/<Method>` with the
   request as its JSON body (§5.3), which grpc-gateway
   (`generate_unbound_methods`), Envoy's transcoder (`auto_mapping`) and
-  Vanguard (always) serve. That request is exactly the one Connect
+  Vanguard (always; from v0.5 through the Connect handler mounted
+  beside it, §7) serve. That request is exactly the one Connect
   POSTs.
 - **`unbound_methods`** (§6) is `implicit` by default, the behaviour
   above. With `error`, each method without a rule is
@@ -1340,11 +1341,32 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   failure until every error had a code, 2026-10-15.)*
 - Only the pure halves are unit-tested; elm-test cannot run a `Task`,
   so `task`, `send`, the traced forms and the retry loop are checked by
-  the compiler and by the retry policy's own tests.
+  the compiler and by the retry policy's own tests, and run against a
+  server by the live suite (§7, live verification): `sendTraced`,
+  `send` with and without a retry policy, `task`, the retry loop over
+  `UNAVAILABLE` and its `idempotentOnly` gate, timeouts,
+  `withCredentials` reaching the request, a tracker's progress, and
+  each field of the `Trace`. The Connect conformance suite (§7) runs
+  `Rpc.request` and `Rpc.response` with elm/http between them, and
+  `sendTraced`. `taskFromRequest` with a rewritten request is not run
+  yet. Cancelling through a tracker cannot give an outcome: elm/http
+  sends no message for a request `Http.cancel` aborts, so there is no
+  `Canceled` error to give, and the suite's cancellation test is known to
+  fail (2026-10-15).
+- Only the pure halves give the application an answer's headers:
+  `task`, `send` and the traced forms give the response or the error and
+  nothing more, and the conformance suite's tests of response headers
+  and trailers pass through the halves and fail through `sendTraced`
+  (2026-10-15).
 
 ### 5.3 Transports
 
 #### Connect  *(Decided; built)*
+
+Run against connect-go by the live suite (§7): POST and GET, the
+timeout header, every method of the example API; and by the Connect
+conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
+39 of 40 passing, cancellation the exception.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
@@ -1367,6 +1389,15 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 
 #### Transcode  *(Decided, 2026-10-13; built)*
 
+Run against Vanguard by the live suite (§7): GET with query
+parameters, POST with a body field, PATCH with an update mask in the
+query, DELETE, a custom verb, percent-encoded path values and the
+implicit route; and every route fixture (`conformance/routes/`), each
+request checked against the fixture and Vanguard's reading of it
+against the fixture's request, with three divergences recorded (§7).
+Not verified live: `response_body` (no rule of either API has one),
+and the fields refused a query form, which never reach a server.
+
 The bindings a generated call carries (`Proto.Http.binding`, with
 `literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
 `wholeBody`, `bodyField` and `param`) are the parsed `google.api.http`
@@ -1383,6 +1414,7 @@ default, and is `Nothing` for a number the method has no binding of
   included, so the runtime builds it from the descriptor and the
   generated code carries nothing for it; whether a method has a rule is
   not in the type. Its answer is read as a transcoder's (any 2xx).
+  The live suite runs it against connect-go with Vanguard (§7).
 - Every call has a route: its binding, or the implicit route when the
   method has no rule. An earlier build let `viaBinding` take any
   number and failed at send time for one with no binding; making the
@@ -1419,6 +1451,14 @@ default, and is `Nothing` for a number the method has no binding of
   nothing and has no parameter.
 
 ### 5.4 Errors  *(Decided, 2026-10-13; built)*
+
+Every source is read from a live answer by the live suite (§7): a
+Connect body and a `google.rpc.Status` body, each with details read
+as JSON (`debug` in the Connect body), `grpc-status` headers and a bare
+HTTP status. The Connect conformance suite (§7) checks every code from a
+Connect body, with its message (Unicode included) and details, and
+`fromHttpStatus` on answers with no error body. A detail without `debug`
+is not met: connect-go, the suite's reference server, always sends it.
 
 ```elm
 type Error
@@ -1647,6 +1687,141 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `Rpc.viaBinding` (a fixture naming a binding the method lacks fails
   rather than falling back to the implicit route). Bodies compare with
   `null`s and defaults dropped.
+
+### Live verification *(Decided 2026-10-15)*
+
+The corpus and the route fixtures prove what is generated and what
+request a call becomes; nothing above proves that a server accepts
+that request or that the runtime reads its answer. The HTTP path
+(`Rpc.task`, `send`, `sendTraced`, retries, timeouts,
+`withCredentials`, trackers, the error reader and the transcoding
+request builder) was compile-checked and unit-tested only. Five
+workstreams, in order, close that:
+
+1. **Runner** *(built)*: one example API, one server answering it over
+   Connect and transcoding from one process, and a headless runner
+   that drives the compiled runtime from Node over ports.
+2. **Connect conformance suite** (`connectrpc/conformance`)
+   *(built)*: a Node wrapper makes the runner a client under test, with
+   a config declaring what is supported (unary, the JSON codec,
+   HTTP/1.1, no compression, GET for idempotent methods). Streaming, the
+   binary codec and gRPC-Web are declared unsupported rather than
+   known-failing.
+3. **Transcoding live tests**: a table of calls against the server
+   asserting path, query, body, response and the `google.rpc.Status`
+   error body, reusing the route fixtures' expectations where they
+   overlap.
+4. **Examples**: `examples/notes/` gains a browser application over
+   either transport and a walkthrough; the README's snippets move into
+   it so CI compiles them.
+5. **CI**: a `live` job on Ubuntu *(built with the runner)*.
+
+Decisions:
+
+- The server is Go: connect-go and Vanguard, the canonical Connect
+  stack, whose transcoder is the likeliest one in front of a Connect
+  service. connect-go v2 and Vanguard v0.5 mount side by side
+  (`connecthttp.Mount`, `vanguard.Mount`); Vanguard serves the rules
+  alone, and a method without one is reached on its Connect route,
+  which is the implicit route (§5.3).
+- buf generates the example, so the plugin runs under buf for real:
+  googleapis is a Buf Schema Registry dependency, its files reach the
+  plugin as imports only, and nothing is generated for them.
+- HTTP/1.1 only, without TLS: elm/http cannot choose a protocol, and a
+  browser handles the rest.
+- The runner sends through its own `XMLHttpRequest` over `node:http`
+  (`conformance/live/xhr.mjs`), the subset elm/http uses, with a
+  browser's whole-exchange timeout; it hides no response header and
+  reports each exchange, so a case can assert what went over the wire.
+  xhr2 was the candidate and was not taken: unmaintained since 2022,
+  its timeout is socket idleness and its status text is invented.
+- `just live` is not part of `just check`, which needs neither Go nor
+  the network; CI runs it as its own job.
+
+Built (`conformance/live/`, layout in `conformance/README.md`): the
+example API and server under `examples/notes/`, the runner (`Live.elm`,
+a dispatch table per service, `run.mjs`) and the smoke suite
+`cases/notes.json`, which runs every method over both transports, the
+error reader's four sources (a Connect body, a `google.rpc.Status`
+body, `grpc-status` headers, a bare status) with `ErrorInfo` and
+`BadRequest` details decoded from each body, timeouts (a
+`Transport Timeout`, the server never answering first), retries,
+Connect GET and `maxGetUrl`, percent-encoded path values, `viaBinding`
+in and out of range, and `sendTraced`, `send` and `task`.
+
+Built, the Connect conformance suite *(2026-10-15)*: `connectconformance`
+v1.0.6, fetched from its GitHub release with its SHA-256 pinned per
+platform (a Go `tool` dependency would have put the suite's modules in
+the example server's `go.mod`), runs its reference server and
+`conformance/live/conformance.mjs`, which reads the suite's
+`ClientCompatRequest`s with the JavaScript protoc-gen-es generates, makes
+each call through the runner with the Elm protoc-gen-elm-connect
+generates from the same protos (`streaming=skip`; the three streaming
+methods are its only warnings), and reports what the runtime gave. The
+config (`conformance.yaml`) selects 40 test cases: basic success,
+`Unimplemented`, every error code, Connect's mapping of a bare HTTP
+status, error metadata, duplicate metadata, Unicode messages, deadline
+propagation, a timeout, Connect GET and cancellation. The proto-codec
+suites (unexpected and empty answers, error end-streams) do not apply.
+
+- Calls go through the pure halves (`Rpc.request`, elm/http,
+  `Rpc.response`), the one way an application gets an answer's headers,
+  and are run again through `Rpc.sendTraced`. 39 of 40 pass through the
+  halves, 34 through `sendTraced`.
+- Known failing, whichever way (`known-failing.txt`): `Client
+  Cancellation/unary/cancel-after-close-send`. A cancelled call has no
+  outcome (§5.2), so the wrapper does not cancel, the call completes and
+  the expected `canceled` never comes.
+- Known failing through `sendTraced` (`known-failing-send.txt`):
+  `Basic/unary/success`, `Connect with GET/success`, `Duplicate
+  Metadata/unary/success` and `unary/error`, and
+  `Errors/unary/error-with-metadata`, which assert the answer's headers
+  and trailers; `send`, `task` and the traced forms do not give them
+  (§5.2).
+- A transport failure is reported to the suite as an error, `Timeout`
+  as `deadline_exceeded`: the wrapper's reading of the runtime's
+  `Transport Timeout`, as a Connect client gives its own deadline.
+Workstream 3, built 2026-10-15: the example server also serves the
+route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
+the request Vanguard decoded, and `conformance/live/routes.mjs` sends
+every fixture through the runtime with its binding. It checks (a) the
+request against the fixture (verb, path, query pairs as sent, body
+compared as the fixtures' own checks compare it, a fixture's headers),
+(b) HTTP 200 and the echo equal to the fixture's request, both read as
+proto3 JSON (a field without presence at its default left out, one
+with presence kept when set, 64-bit integers as strings, enums by name,
+bytes, durations and timestamps in one form), and (c) the runtime's
+`ok` equal to the echo. `cases/transcode.json` adds the error bodies as
+they go over the wire. Found, and recorded in
+`conformance/live/known-divergent.json`, where the run asserts
+Vanguard's answer so that a change either way is noticed:
+
+- `routes.proto` cannot be served whole: `GetMessage`'s first and third
+  bindings are both `GET /v1/messages/*`, and `UpdateMessage` and
+  `UpdateMessageWhole` share `PATCH /v1/messages/{message_id}`. Vanguard
+  refuses the second route; the server serves each refused binding on a
+  second transcoder under `/layer/1`, and its fixture runs there. The
+  fixtures join http.proto's separate examples into one rule; a client
+  can follow it, no router can serve it.
+- A `google.protobuf.StringValue` set to `""` is sent as `label=`, which
+  Vanguard rejects (it quotes a wrapper's value for protojson only when
+  non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
+  string.
+- A path variable under an unset message is sent as an empty segment
+  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejects as
+  no int32. The fixture's choice, and the runtime's; proto3 reads the
+  field as `0`, which the fixture writes for every other default, and
+  which Vanguard accepts. Left for a change of the fixture and runtime.
+- An unset body field sent as `{}` reaches the server as a set, empty
+  message. Neither end is wrong: the wire has no other form for it.
+
+Also seen, not a divergence: with `body: "*"` the runtime sends
+`"sub": {}` for a message whose only field the path holds, and writes
+fields at their defaults; the fixtures' comparison drops both.
+
+Recorded for later: documented and verified examples for Envoy's
+gRPC-JSON transcoder and grpc-gateway in front of the same service,
+each run by the live suite.
 
 ## 8. Compatibility and versioning
 
