@@ -414,3 +414,12 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   the Connect conformance suite's cancellation case passes, 40 of 40
   through the halves and 39 through `sendTraced`, whose task cannot be
   cancelled, and a smoke case cancels a call sent with `send`.
+- `protoc-gen-elm-connect` no longer generates `google/api/http.proto`
+  or `google/api/annotations.proto` when they are among its files to
+  generate, as they are under `buf generate --include-imports`: they
+  only carry `google.api.http`, and every API with HTTP rules got a
+  `Google.Api` module of `Http`, `HttpRule` and `CustomHttpPattern`.
+  The rule is by file name, the files the CLI embeds, whose
+  `--include-imports` already skipped them; other `google/api` files,
+  such as `httpbody.proto`, still generate. `just live-gen` checks the
+  notes example under `buf generate --include-imports`.

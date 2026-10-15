@@ -11,7 +11,7 @@ use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
 use elm_connect_gen::diagnostics::render_narrow;
-use elm_connect_gen::{Options, generate};
+use elm_connect_gen::{Options, generate, googleapis};
 use prost::Message;
 use prost_reflect::DescriptorPool;
 use prost_types::compiler::code_generator_response::{Feature, File};
@@ -78,10 +78,15 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
             return (response(Some(error), Vec::new()), String::new());
         }
     };
+    // `buf generate --include-imports` asks for every import, the
+    // googleapis files that only carry `google.api.http` among them; they
+    // are skipped, as the CLI's `--include-imports` skips them, so no
+    // `Google.Api` module of `http.proto`'s messages appears.
     let generate_set: Vec<&str> = request
         .file_to_generate
         .iter()
         .map(String::as_str)
+        .filter(|name| !googleapis::is_embedded(name))
         .collect();
     match generate(&pool, &generate_set, &options) {
         Ok(generated) => {
@@ -358,5 +363,114 @@ service Notes {
         let method = &packages[0].services[0].methods[0];
         let rule = method.http.as_ref().expect("the rule survives");
         assert_eq!(rule.template, "/v1/{name=notes/*}");
+    }
+
+    /// The request `buf generate --include-imports` sends for `files`
+    /// (each a name and its source, written under a temporary directory
+    /// named `case`) asking for `to_generate`, compiled against the
+    /// embedded googleapis files, options intact.
+    fn request_for(case: &str, files: &[(&str, &str)], to_generate: &[&str]) -> Vec<u8> {
+        let dir = std::env::temp_dir().join(format!("protoc-gen-elm-connect-{case}"));
+        for (name, source) in files {
+            let path = dir.join(name);
+            std::fs::create_dir_all(path.parent().expect("a parent")).expect("create");
+            std::fs::write(path, source).expect("write");
+        }
+        let mut compiler =
+            protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([dir]));
+        compiler.include_imports(true);
+        compiler
+            .open_files(files.iter().map(|(name, _)| *name))
+            .expect("compiles");
+        let set = RawSet::decode(compiler.encode_file_descriptor_set().as_slice()).expect("set");
+        let mut request = CodeGeneratorRequest {
+            file_to_generate: to_generate.iter().map(|&name| name.to_owned()).collect(),
+            ..CodeGeneratorRequest::default()
+        }
+        .encode_to_vec();
+        RawProtoFiles {
+            proto_file: set.file,
+        }
+        .encode(&mut request)
+        .expect("encode");
+        request
+    }
+
+    fn names(response: &CodeGeneratorResponse) -> Vec<&str> {
+        response
+            .file
+            .iter()
+            .filter_map(|f| f.name.as_deref())
+            .collect()
+    }
+
+    const NOTES: &str = r#"syntax = "proto3";
+package notes.v1;
+import "google/api/annotations.proto";
+message Note { string name = 1; }
+service Notes {
+  rpc GetNote(Note) returns (Note) {
+    option (google.api.http) = { get: "/v1/{name=notes/*}" };
+  }
+}
+"#;
+
+    #[test]
+    fn the_embedded_googleapis_files_are_not_generated() {
+        let request = request_for(
+            "googleapis-skipped",
+            &[("notes.proto", NOTES)],
+            &[
+                "google/api/http.proto",
+                "google/protobuf/descriptor.proto",
+                "google/api/annotations.proto",
+                "notes.proto",
+            ],
+        );
+        let (response, warnings) = run(&request);
+        assert_eq!(response.error, None);
+        assert_eq!(warnings, "");
+        assert_eq!(
+            names(&response),
+            ["Notes/V1.elm", "Notes/V1/Notes.elm"],
+            "no Google/Api.elm"
+        );
+    }
+
+    #[test]
+    fn other_google_api_files_are_generated() {
+        let httpbody = r#"syntax = "proto3";
+package google.api;
+import "google/protobuf/any.proto";
+message HttpBody {
+  string content_type = 1;
+  bytes data = 2;
+  repeated google.protobuf.Any extensions = 3;
+}
+"#;
+        let upload = r#"syntax = "proto3";
+package uploads.v1;
+import "google/api/httpbody.proto";
+service Uploads {
+  rpc Upload(google.api.HttpBody) returns (google.api.HttpBody);
+}
+"#;
+        let request = request_for(
+            "httpbody",
+            &[
+                ("google/api/httpbody.proto", httpbody),
+                ("uploads.proto", upload),
+            ],
+            &["google/api/httpbody.proto", "uploads.proto"],
+        );
+        let response = CodeGeneratorResponse::decode(run(&request).0.encode_to_vec().as_slice())
+            .expect("decode");
+        assert_eq!(response.error, None);
+        assert_eq!(
+            names(&response),
+            ["Google/Api.elm", "Uploads/V1.elm", "Uploads/V1/Uploads.elm"]
+        );
+        let api = response.file[0].content.as_deref().expect("content");
+        assert!(api.contains("type alias HttpBody ="), "{api}");
     }
 }

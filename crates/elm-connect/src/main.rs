@@ -54,7 +54,9 @@ enum Command {
         /// Also generate the packages of every file the given ones import,
         /// transitively, as `buf generate --include-imports` does; without
         /// it, a reference to a package none of the given files declares is
-        /// an error. `google/protobuf` files are never generated.
+        /// an error. `google/protobuf` files are never generated, nor are
+        /// `google/api/http.proto` and `google/api/annotations.proto`,
+        /// which only carry `google.api.http`.
         #[arg(long)]
         include_imports: bool,
     },

@@ -1,0 +1,15 @@
+# `buf generate --include-imports --template buf.gen.include-imports.yaml`,
+# run by `just live-gen` into a scratch directory: the Elm of buf.gen.yaml
+# and buf.gen.google-rpc.yaml in one run, with every import asked for too.
+# The output must equal the committed elm/generated: the imports are
+# googleapis's `google/api` files, which carry only `google.api.http` and
+# the plugin skips, and `google/protobuf` files, which map to the runtime.
+version: v2
+inputs:
+  - directory: .
+  - module: buf.build/googleapis/googleapis:c17df5b2beca46928cc87d5656bd5343 # gitleaks:allow (a BSR commit)
+    paths:
+      - google/rpc/error_details.proto
+plugins:
+  - local: protoc-gen-elm-connect
+    out: elm/generated

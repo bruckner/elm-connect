@@ -39,9 +39,7 @@ impl Compiled {
             for import in file.dependencies() {
                 let name = import.name();
                 if name.starts_with("google/protobuf/")
-                    || googleapis::FILES
-                        .iter()
-                        .any(|(embedded, _)| *embedded == name)
+                    || googleapis::is_embedded(name)
                     || !seen.insert(name.to_owned())
                 {
                     continue;
