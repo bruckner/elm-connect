@@ -14,8 +14,11 @@ import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
 import Live.Conformance
 import Live.Notes
 import Live.Routes
+import Process
 import Rpc
 import Rpc.ErrorCode
+import Set exposing (Set)
+import Task
 
 
 port requests : (Value -> msg) -> Sub msg
@@ -34,17 +37,22 @@ tables =
 main : Program () Model Msg
 main =
     Platform.worker
-        { init = \() -> ( Dict.empty, Cmd.none )
+        { init = \() -> ( { inFlight = Set.empty, progress = Dict.empty }, Cmd.none )
         , update = update
         , subscriptions = subscriptions
         }
 
 
-{-| The progress seen so far of each call in flight with a tracker, by the
-call's id.
+{-| The ids of the calls in flight, and the progress seen so far of each with
+a tracker, by its id.
+
+A call is reported once, by the first outcome: a cancelled call can have two,
+its result and `Canceled`, when the answer comes in before the cancellation
+runs, and the later is dropped.
+
 -}
 type alias Model =
-    Dict String Progress
+    { inFlight : Set String, progress : Dict String Progress }
 
 
 type alias Progress =
@@ -55,6 +63,7 @@ type Msg
     = Received Value
     | Finished Outcome
     | Tracked String Http.Progress
+    | CancelDue String (Cmd Msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -76,67 +85,99 @@ update msg model =
 
                         Just send ->
                             case send e Finished of
-                                Ok cmd ->
-                                    ( case e.tracker of
-                                        Just name ->
-                                            Dict.insert e.id { tracker = name, sending = 0, receiving = 0 } model
+                                Ok sent ->
+                                    ( { inFlight = Set.insert e.id model.inFlight
+                                      , progress =
+                                            case e.tracker of
+                                                Just name ->
+                                                    Dict.insert e.id { tracker = name, sending = 0, receiving = 0 } model.progress
 
-                                        Nothing ->
-                                            model
-                                    , cmd
+                                                Nothing ->
+                                                    model.progress
+                                      }
+                                    , case ( sent.cancel, e.cancelAfter ) of
+                                        ( Just cancel, Just ms ) ->
+                                            Cmd.batch
+                                                [ sent.send
+                                                , Process.sleep (toFloat ms) |> Task.perform (\() -> CancelDue e.id cancel)
+                                                ]
+
+                                        _ ->
+                                            sent.send
                                     )
 
                                 Err problem ->
                                     ( model, refuse e.id problem )
 
         Finished outcome ->
-            ( Dict.remove outcome.id model
-            , results
-                (Encode.object
-                    ([ ( "id", Encode.string outcome.id )
-                     , ( "result", outcome.result )
-                     , ( "trace", outcome.trace )
-                     , ( "response", outcome.response )
-                     ]
-                        ++ (case Dict.get outcome.id model of
-                                Just progress ->
-                                    [ ( "progress"
-                                      , Encode.object
-                                            [ ( "sending", Encode.int progress.sending )
-                                            , ( "receiving", Encode.int progress.receiving )
-                                            ]
-                                      )
-                                    ]
+            if Set.member outcome.id model.inFlight then
+                report outcome model
 
-                                Nothing ->
-                                    []
-                           )
-                    )
-                )
+            else
+                ( model, Cmd.none )
+
+        CancelDue id cancel ->
+            ( model
+            , if Set.member id model.inFlight then
+                cancel
+
+              else
+                Cmd.none
             )
 
         Tracked id progress ->
-            ( Dict.update id
-                (Maybe.map
-                    (\seen ->
-                        case progress of
-                            Http.Sending _ ->
-                                { seen | sending = seen.sending + 1 }
+            ( { model
+                | progress =
+                    Dict.update id
+                        (Maybe.map
+                            (\seen ->
+                                case progress of
+                                    Http.Sending _ ->
+                                        { seen | sending = seen.sending + 1 }
 
-                            Http.Receiving _ ->
-                                { seen | receiving = seen.receiving + 1 }
-                    )
-                )
-                model
+                                    Http.Receiving _ ->
+                                        { seen | receiving = seen.receiving + 1 }
+                            )
+                        )
+                        model.progress
+              }
             , Cmd.none
             )
+
+
+report : Outcome -> Model -> ( Model, Cmd Msg )
+report outcome model =
+    ( { inFlight = Set.remove outcome.id model.inFlight, progress = Dict.remove outcome.id model.progress }
+    , results
+        (Encode.object
+            ([ ( "id", Encode.string outcome.id )
+             , ( "result", outcome.result )
+             , ( "trace", outcome.trace )
+             , ( "response", outcome.response )
+             ]
+                ++ (case Dict.get outcome.id model.progress of
+                        Just progress ->
+                            [ ( "progress"
+                              , Encode.object
+                                    [ ( "sending", Encode.int progress.sending )
+                                    , ( "receiving", Encode.int progress.receiving )
+                                    ]
+                              )
+                            ]
+
+                        Nothing ->
+                            []
+                   )
+            )
+        )
+    )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         (requests Received
-            :: List.map (\( id, seen ) -> Http.track seen.tracker (Tracked id)) (Dict.toList model)
+            :: List.map (\( id, seen ) -> Http.track seen.tracker (Tracked id)) (Dict.toList model.progress)
         )
 
 
@@ -172,6 +213,7 @@ envelope =
                     |> with (optional "binding" (Decode.nullable Decode.int) Nothing)
                     |> with (optional "send" sending Traced)
                     |> with (optional "tracker" (Decode.nullable Decode.string) Nothing)
+                    |> with (optional "cancelAfterMs" (Decode.nullable Decode.int) Nothing)
             )
 
 

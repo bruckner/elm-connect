@@ -1,6 +1,6 @@
 // A browser-shaped XMLHttpRequest over node:http, as much of it as elm/http
 // uses: open, setRequestHeader, send, abort, timeout, withCredentials,
-// responseType "" (text), the load, error, timeout and progress events (and
+// responseType "" (text), the load, error, timeout, abort and progress events (and
 // upload progress),
 // status, statusText, response, responseText, responseURL and
 // getAllResponseHeaders. HTTP only, no TLS: the live suite's servers are local.
@@ -60,6 +60,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
     #headers = [];
     #responseHeaders = [];
     #request = null;
+    #exchange = null;
     #timer = null;
     #finished = false;
 
@@ -106,6 +107,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
         outcome: "pending",
       };
       observe(exchange);
+      this.#exchange = exchange;
       const payload = exchange.body === null ? null : Buffer.from(exchange.body, "utf8");
       const headers = {};
       for (const [k, v] of this.#headers) {
@@ -173,6 +175,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
       this.#finished = true;
       clearTimeout(this.#timer);
       this.#request.destroy();
+      this.#exchange.outcome = "abort";
       this.readyState = DONE;
       this.status = 0;
       this.dispatch("abort");

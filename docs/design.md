@@ -1317,6 +1317,7 @@ task : Config -> Call req res -> Task Error res
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
 taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
 sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
+cancel : String -> (Result Error res -> msg) -> Cmd msg                  -- by tracker; reports Canceled
 
 -- pure halves
 type alias Request =
@@ -1358,6 +1359,21 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and
   retrying needs a task. The traced forms are tasks too.
+- `cancel tracker toMsg` is `Http.cancel tracker` batched with a
+  command giving `toMsg` the error `Canceled` (§5.4). elm/http cancels
+  by killing the process that runs the request, which aborts it and
+  delivers no message, and a package outside `elm/` cannot define an
+  effect manager to intercept that, so the outcome is synthesised in
+  the same command. Once the request is aborted no result can follow;
+  the one race is an answer whose message was queued before the
+  cancel ran, which the application sees before the cancellation and
+  is told to keep, ignoring a cancellation that follows a result. It
+  is for `send` alone, and for a request the application sends itself
+  from `request` with the tracker on its `Http.request`: a call sent
+  with a retry policy has no tracker and runs on, and the tasks
+  (`task`, and `taskTraced` under `sendTraced`) ignore the tracker;
+  one killed with `Process.kill` reports nothing and has no trace, its
+  attempts and duration ending with the process. *(Decided, 2026-10-15.)*
 - `Trace` is `{ service, method, binding, request, httpStatus, headers,
   trailers, code, duration, attempts }`: `binding` is `Nothing` when no
   binding was used (Connect, the implicit route), `httpStatus` the last
@@ -1392,10 +1408,10 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   each field of the `Trace`. The Connect conformance suite (§7) runs
   `Rpc.request` and `Rpc.response` with elm/http between them, and
   `sendTraced`. `taskFromRequest` with a rewritten request is not run
-  yet. Cancelling through a tracker cannot give an outcome: elm/http
-  sends no message for a request `Http.cancel` aborts, so there is no
-  `Canceled` error to give, and the suite's cancellation test is known to
-  fail (2026-10-15).
+  yet. `cancel` is run by both: the suite's cancellation test cancels
+  calls sent through the halves (the tracker on `Http.request`), and a
+  smoke case one sent with `send`; each is aborted and reported
+  `Canceled` (2026-10-15).
 - The pure halves and the traced forms give the application an
   answer's headers and trailers; `task` and `send` give the response or
   the error and nothing more. The conformance suite's tests of response
@@ -1409,7 +1425,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 Run against connect-go by the live suite (§7): POST and GET, the
 timeout header, every method of the example API; and by the Connect
 conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
-39 of 40 passing, cancellation the exception.
+all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
@@ -1531,6 +1547,7 @@ type Error
         Response
     | Http Response             -- it answered, but stated none
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
+    | Canceled                  -- the application withdrew the call (Rpc.cancel)
 
 type Source
     = ConnectBody               -- {"code": "not_found", …}
@@ -1540,7 +1557,7 @@ type Source
 type alias Response =           -- elm/http's Http.Metadata names, and the body
     { statusCode : Int, statusText : String, headers : Dict String String, body : String }
 
-code : Error -> ErrorCode       -- Http: by Connect's table; Transport: as below
+code : Error -> ErrorCode       -- Http: by Connect's table; Transport, Canceled: as below
 message : Error -> String
 details : Proto.Message.Message a -> Error -> List a
 errorToString : Error -> String -- "<code>: <message>", or "<code>" when the message is empty
@@ -1604,14 +1621,14 @@ both the plain names.
   a function is the possible next step, deferred until a second
   application asks for it. A `Transport` error has no answer.
   *(Decided, 2026-10-15.)*
-- Three constructors, and `code` and `message` for the common path
-  (`case Rpc.code error of Unauthenticated -> …`). *(Decided,
-  2026-10-15.)* The answer was first kept on one flat `Rpc` record
-  beside `source`, whose `HttpStatus Int` marked an inferred code,
-  until review found it bought nothing: Elm's record patterns bind
-  field names and never match field values, so the documented
-  `Rpc { source = HttpStatus 404, response }` did not parse, and
-  helpers serve as well. A code the server stated and one inferred
+- A constructor per kind of error, and `code` and `message` for the
+  common path (`case Rpc.code error of Unauthenticated -> …`).
+  *(Decided, 2026-10-15.)* The answer was first kept on one flat
+  `Rpc` record beside `source`, whose `HttpStatus Int` marked an
+  inferred code, until review found it bought nothing: Elm's record
+  patterns bind field names and never match field values, so the
+  documented `Rpc { source = HttpStatus 404, response }` did not
+  parse, and helpers serve as well. A code the server stated and one inferred
   from the HTTP status are different kinds of error, which a
   constructor says honestly while `code` still gives one code for
   both. `Source`'s `Int`s went too: `StatusBody`'s duplicated the raw
@@ -1629,7 +1646,14 @@ both the plain names.
   still says no answer came. `message` gives a `Transport` error's
   description (`timeout`, `network error`, `bad URL: <url>`,
   `bad response body: <problem>`), and `errorToString` is the code and
-  the message for all three. *(Decided, 2026-10-15.)*
+  the message for all of them. *(Decided, 2026-10-15.)*
+- `Canceled` is the outcome of a call the application withdrew with
+  `Rpc.cancel` (§5.2): nothing the server said counts. It is not a
+  `Transport` error, since elm/http has no `Http.Error` for it, and not
+  a `Status`, since the server did not state it. Its code is
+  `Canceled`, its message empty (so `errorToString` gives `canceled`)
+  and it has no details. The retry loop never sees it: it is made
+  outside the task. *(Decided, 2026-10-15.)*
 - Error details are `Proto.Any.Any` values (§3.5). *(Decided,
   2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64
@@ -1828,14 +1852,20 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 - Calls go through the pure halves (`Rpc.request`, elm/http,
   `Rpc.response`), which give an application the answer's headers, and
   are run again through `Rpc.sendTraced`, whose `Trace` gives them
-  split into headers and trailers. 39 of 40 pass either way.
-- Known failing, whichever way (`known-failing.txt`): `Client
-  Cancellation/unary/cancel-after-close-send`. A cancelled call has no
-  outcome (§5.2), so the wrapper does not cancel, the call completes and
-  the expected `canceled` never comes.
+  split into headers and trailers. 40 of 40 pass through the halves, 39
+  through `sendTraced`; `known-failing.txt`, for what fails whichever
+  way, lists none.
+- Cancellation is live: `Client Cancellation/unary/cancel-after-close-send`
+  becomes an envelope with `cancelAfterMs`, the runner sends the call
+  under a tracker and issues `Rpc.cancel` that long after, and reports
+  whichever outcome comes first, so the race of §5.2 is reported once.
+  The smoke case `connect cancel` does the same through `send`, and
+  asserts the exchange was aborted.
 - Known failing through `sendTraced` only (`known-failing-send.txt`):
-  none. `Basic/unary/success`, `Connect with GET/success`, `Duplicate
-  Metadata/unary/success` and `unary/error`, and
+  `cancel-after-close-send`: `sendTraced` and `task` ignore the tracker,
+  so the runner refuses to cancel a call sent so rather than report
+  `Canceled` while it runs on. `Basic/unary/success`, `Connect with
+  GET/success`, `Duplicate Metadata/unary/success` and `unary/error`, and
   `Errors/unary/error-with-metadata` assert the answer's headers and
   trailers; they failed through `sendTraced` until the `Trace` carried
   them (2026-10-15), and would through `send` and `task`, which do not

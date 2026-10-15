@@ -16,9 +16,11 @@
 // already split; or `send` or `task`, which give the response or the error
 // only. What is reported is what the mode gives an application: the decoded
 // response or the `Rpc.Error`, and with `halves` or `sendTraced` the answer's
-// status, headers and trailers. The runner's `wire` log is never read. What
-// the runtime cannot do is in known-failing.txt, and what only the halves
-// can in known-failing-send.txt.
+// status, headers and trailers. A call the suite cancels after it is sent is
+// cancelled with Rpc.cancel, which `sendTraced` and `task` cannot be. The
+// runner's `wire` log is never read. What the runtime cannot do is in
+// known-failing.txt, and what only the halves (and `send`) can in
+// known-failing-send.txt.
 //
 // Formats and the reasoning: conformance/README.md, "The Connect conformance
 // suite"; design section 7.
@@ -80,6 +82,10 @@ async function answer(runner, send, request) {
     timeout: request.timeoutMs ?? null,
     useGet: request.useGetHttpMethod,
   };
+  // A unary call's request is sent whole, so `afterCloseSendMs` counts from
+  // the call being sent; refusal turns away the streaming-only timings.
+  const timing = request.cancel?.cancelTiming;
+  const cancelAfterMs = timing?.case === "afterCloseSendMs" ? timing.value : null;
   const outcome = await runner.call({
     id: request.testName,
     service,
@@ -88,6 +94,7 @@ async function answer(runner, send, request) {
     transport: "connect",
     config,
     send,
+    cancelAfterMs,
   });
 
   const result = outcome.result;
@@ -114,6 +121,8 @@ async function answer(runner, send, request) {
       message: result.error.message,
       details: result.error.details.map(detail),
     };
+  } else if (result.canceled !== undefined) {
+    response.error = { code: Code.CANCELED, message: "" };
   } else {
     response.error = transportError(result.transport);
   }
@@ -139,6 +148,8 @@ function refusal(request) {
   if (request.serverTlsCert.length > 0) return "TLS is not supported";
   if (request.rawRequest !== undefined) return "raw requests are not supported";
   if (request.requestMessages.length !== 1) return `a unary call takes one request, not ${request.requestMessages.length}`;
+  const timing = request.cancel?.cancelTiming?.case;
+  if (timing !== undefined && timing !== "afterCloseSendMs") return `cancelling ${timing} is for streams`;
   return null;
 }
 

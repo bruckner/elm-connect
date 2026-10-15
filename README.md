@@ -169,8 +169,9 @@ viaTranscoding =
 `headers`, `timeout`, `withCredentials` or `retry` with record syntax.
 Errors are one type for both transports, `Rpc.Error`: a `Status` the
 server stated (an `Rpc.ErrorCode.ErrorCode`, a message, details and
-where they were read from), an `Http` answer that stated none, or a
-`Transport` failure with no answer. Every error has a code and a
+where they were read from), an `Http` answer that stated none, a
+`Transport` failure with no answer, or `Canceled`, a call the
+application withdrew with `Rpc.cancel`. Every error has a code and a
 message, `Rpc.code error` and `Rpc.message error`, a timeout reading as
 `DeadlineExceeded`; the `Status` and `Http` errors keep the answer
 itself (status, headers and body) for errors in a shape the runtime
@@ -356,12 +357,11 @@ headless Elm program and driven from Node, against
 [`examples/notes`](examples/notes): a Go server answering over Connect
 (connect-go) and HTTP transcoding (Vanguard) from one port. Every
 method over both transports, errors with details, timeouts, retries and
-Connect GET are covered; [`conformance/README.md`](conformance/README.md)
+Connect GET and cancellation are covered; [`conformance/README.md`](conformance/README.md)
 has the case format, and CI runs it on every pull request.
 `just live` also runs the official
 [Connect conformance suite](https://github.com/connectrpc/conformance)'s
-unary JSON test cases (v1.0.6) against the runtime: 39 of 40 pass, the
-known failure being cancellation.
+unary JSON test cases (v1.0.6) against the runtime: all 40 pass.
 
 **The example.** [`examples/notes`](examples/notes) is also a browser
 application over either transport, with a walkthrough; `just

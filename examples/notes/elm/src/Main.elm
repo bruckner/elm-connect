@@ -347,6 +347,9 @@ viewError error =
         Rpc.Transport _ ->
             section [ class "error" ] [ p [] [ text (Rpc.errorToString error) ] ]
 
+        Rpc.Canceled ->
+            section [ class "error" ] [ p [] [ text "Cancelled before an answer came." ] ]
+
 
 viewDetail : Proto.Any.Any -> Html msg
 viewDetail detail =

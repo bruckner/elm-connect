@@ -575,6 +575,32 @@
     }
   },
   {
+    "name": "connect cancel",
+    "note": "Rpc.cancel 100 ms into a call notes/slow answers after 2 s: the request is aborted and the call reported Canceled, once.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/slow"
+      },
+      "config": {},
+      "send": "send",
+      "cancelAfterMs": 100
+    },
+    "expect": {
+      "result": {
+        "canceled": true
+      },
+      "trace": null,
+      "wire": [
+        {
+          "outcome": "abort"
+        }
+      ]
+    }
+  },
+  {
     "name": "connect retry",
     "call": {
       "service": "notes.v1.NotesService",

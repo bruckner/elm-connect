@@ -404,3 +404,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   The Connect conformance suite's five header and trailer test cases now
   pass through `Rpc.sendTraced` (39 of 40), and `known-failing-send.txt`
   lists none.
+- `Rpc.Error` gains `Canceled`, a call the application withdrew, and
+  `Rpc.cancel tracker toMsg` cancels a call sent with `Rpc.send` through
+  that tracker and reports `Err Canceled` to `toMsg`, where
+  `Http.cancel` alone reported nothing. Its code is `Canceled`, its
+  message empty and `errorToString` gives `canceled`. Code that matches
+  every `Rpc.Error` constructor adds a branch for it. The live runner
+  cancels as an application would (an envelope's `cancelAfterMs`), so
+  the Connect conformance suite's cancellation case passes, 40 of 40
+  through the halves and 39 through `sendTraced`, whose task cannot be
+  cancelled, and a smoke case cancels a call sent with `send`.
