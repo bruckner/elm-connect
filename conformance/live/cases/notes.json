@@ -40,6 +40,10 @@
       "trace": {
         "binding": null,
         "httpStatus": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "trailers": {},
         "code": "ok",
         "attempts": 1,
         "request": {

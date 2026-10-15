@@ -1326,6 +1326,7 @@ type alias Request =
 request : Config -> Call req res -> Request
 response : Config -> Call req res -> Http.Response String -> Result Error res
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
+splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
 ```
 
 - A call is data: a generated function per method applied to the
@@ -1373,15 +1374,30 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   (`task`, and `taskTraced` under `sendTraced`) ignore the tracker;
   one killed with `Process.kill` reports nothing and has no trace, its
   attempts and duration ending with the process. *(Decided, 2026-10-15.)*
-- `Trace` is `{ service, method, binding, request, httpStatus, code,
-  duration, attempts }`: `binding` is `Nothing` when no binding was used
-  (Connect, the implicit route), `httpStatus` the last answer's HTTP
-  status (`Nothing` on a transport failure), `code` how the call ended
-  (`Ok` on success, `Failed (Rpc.code error)` on any error, so a
-  timeout is `Failed DeadlineExceeded`), `duration` milliseconds by
-  `Time.now` before the first attempt and after the last. *(`httpStatus`
-  and `code` decided, 2026-10-13; `code` was `Nothing` on a transport
-  failure until every error had a code, 2026-10-15.)*
+- `Trace` is `{ service, method, binding, request, httpStatus, headers,
+  trailers, code, duration, attempts }`: `binding` is `Nothing` when no
+  binding was used (Connect, the implicit route), `httpStatus` the last
+  answer's HTTP status (`Nothing` on a transport failure), `headers` and
+  `trailers` its response metadata as `splitTrailers` divides it (both
+  empty when there was no answer), `code` how the call ended (`Ok` on
+  success, `Failed (Rpc.code error)` on any error, so a timeout is
+  `Failed DeadlineExceeded`), `duration` milliseconds by `Time.now`
+  before the first attempt and after the last. *(`httpStatus` and `code`
+  decided, 2026-10-13; `code` was `Nothing` on a transport failure until
+  every error had a code, and `headers` and `trailers` added,
+  2026-10-15.)*
+- `splitTrailers` is the Connect unary rule for an answer's metadata:
+  a header named `trailer-<name>`, in any case, is the trailer
+  `<name>`, and the rest are headers; every name is lowercased. A
+  header named `trailer-` alone names no trailer and stays a header.
+  The trace applies it whatever the transport; the halves' caller
+  applies it to `Http.Metadata` itself. A header sent more than once
+  arrives as one value: the browser's `getAllResponseHeaders` and
+  elm/http's `_Http_parseHeaders` join repeated names' values with
+  `", "` in the order they came, and names differing only in case are
+  joined the same way when lowercased. The conformance suite's
+  duplicate-metadata tests accept the joined value. *(Decided,
+  2026-10-15.)*
 - Only the pure halves are unit-tested; elm-test cannot run a `Task`,
   so `task`, `send`, the traced forms and the retry loop are checked by
   the compiler and by the retry policy's own tests, and run against a
@@ -1396,11 +1412,11 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   calls sent through the halves (the tracker on `Http.request`), and a
   smoke case one sent with `send`; each is aborted and reported
   `Canceled` (2026-10-15).
-- Only the pure halves give the application an answer's headers:
-  `task`, `send` and the traced forms give the response or the error and
-  nothing more, and the conformance suite's tests of response headers
-  and trailers pass through the halves and fail through `sendTraced`
-  (2026-10-15).
+- The pure halves and the traced forms give the application an
+  answer's headers and trailers; `task` and `send` give the response or
+  the error and nothing more. The conformance suite's tests of response
+  headers and trailers pass both through the halves and through
+  `sendTraced` (2026-10-15).
 
 ### 5.3 Transports
 
@@ -1834,24 +1850,26 @@ propagation, a timeout, Connect GET and cancellation. The proto-codec
 suites (unexpected and empty answers, error end-streams) do not apply.
 
 - Calls go through the pure halves (`Rpc.request`, elm/http,
-  `Rpc.response`), the one way an application gets an answer's headers,
-  and are run again through `Rpc.sendTraced`. 40 of 40 pass through the
-  halves, 34 through `sendTraced`; `known-failing.txt`, for what fails
-  whichever way, lists none.
+  `Rpc.response`), which give an application the answer's headers, and
+  are run again through `Rpc.sendTraced`, whose `Trace` gives them
+  split into headers and trailers. 40 of 40 pass through the halves, 39
+  through `sendTraced`; `known-failing.txt`, for what fails whichever
+  way, lists none.
 - Cancellation is live: `Client Cancellation/unary/cancel-after-close-send`
   becomes an envelope with `cancelAfterMs`, the runner sends the call
   under a tracker and issues `Rpc.cancel` that long after, and reports
   whichever outcome comes first, so the race of §5.2 is reported once.
   The smoke case `connect cancel` does the same through `send`, and
   asserts the exchange was aborted.
-- Known failing through `sendTraced` (`known-failing-send.txt`):
-  `Basic/unary/success`, `Connect with GET/success`, `Duplicate
-  Metadata/unary/success` and `unary/error`, and
-  `Errors/unary/error-with-metadata`, which assert the answer's headers
-  and trailers; `send`, `task` and the traced forms do not give them
-  (§5.2). And `cancel-after-close-send`: `sendTraced` and `task` ignore
-  the tracker, so the runner refuses to cancel a call sent so rather
-  than report `Canceled` while it runs on.
+- Known failing through `sendTraced` only (`known-failing-send.txt`):
+  `cancel-after-close-send`: `sendTraced` and `task` ignore the tracker,
+  so the runner refuses to cancel a call sent so rather than report
+  `Canceled` while it runs on. `Basic/unary/success`, `Connect with
+  GET/success`, `Duplicate Metadata/unary/success` and `unary/error`, and
+  `Errors/unary/error-with-metadata` assert the answer's headers and
+  trailers; they failed through `sendTraced` until the `Trace` carried
+  them (2026-10-15), and would through `send` and `task`, which do not
+  give them (§5.2).
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `Transport Timeout`, as a Connect client gives its own deadline.
@@ -1929,7 +1947,8 @@ the example.
 What is now verified live, against connect-go and Vanguard: every
 method of the example API over both transports, from Node in CI and
 by hand from the example in a browser; `task`, `send`, `sendTraced`, retries, timeouts,
-`withCredentials`, trackers and Connect GET; the error reader's four
+`withCredentials`, trackers and Connect GET; an answer's headers and
+trailers reaching the application through the halves and the `Trace`; the error reader's four
 sources with details; the transcoding request builder on every route
 fixture; and the Connect conformance suite's unary JSON cases. Not
 live: `taskFromRequest` with a rewritten request (§5.2),
