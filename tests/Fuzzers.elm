@@ -40,19 +40,26 @@ import Time
 
 {-| A short string mixing ASCII with what a URL must escape: reserved and
 delimiting characters, space, `%`, `+`, and characters of two, three and four
-UTF-8 bytes. Never a lone surrogate, which no proto3 string holds.
+UTF-8 bytes; now and then `__proto__`, the one map key a JavaScript object
+cannot hold as a property. Never a lone surrogate, which no proto3 string
+holds.
 -}
 awkwardString : Fuzzer String
 awkwardString =
-    Fuzz.oneOf
-        [ Fuzz.asciiChar
-        , Fuzz.oneOfValues
-            [ '/', '?', '#', '&', '=', '%', ' ', '+', ':', '@', '[', ']', '-', '.', '_', '~', 'é', '✓' ]
-        , Fuzz.map Char.fromCode (Fuzz.intRange 0x80 0xD7FF)
-        , Fuzz.map Char.fromCode (Fuzz.intRange 0x00010000 0x0010FFFF)
+    Fuzz.frequency
+        [ ( 19
+          , Fuzz.oneOf
+                [ Fuzz.asciiChar
+                , Fuzz.oneOfValues
+                    [ '/', '?', '#', '&', '=', '%', ' ', '+', ':', '@', '[', ']', '-', '.', '_', '~', 'é', '✓' ]
+                , Fuzz.map Char.fromCode (Fuzz.intRange 0x80 0xD7FF)
+                , Fuzz.map Char.fromCode (Fuzz.intRange 0x00010000 0x0010FFFF)
+                ]
+                |> Fuzz.listOfLengthBetween 0 10
+                |> Fuzz.map String.fromList
+          )
+        , ( 1, Fuzz.constant "__proto__" )
         ]
-        |> Fuzz.listOfLengthBetween 0 10
-        |> Fuzz.map String.fromList
 
 
 

@@ -451,3 +451,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   which the live suite's `routes.mjs` now reads. The reference writes a
   float in a path or query as the runtime does: `Infinity`, not Rust's
   `inf`, and a finite value in ECMAScript's form.
+- A map or `Struct` key of `__proto__` is written: `Proto.Json.dict`,
+  `encodeStruct` and `object` build an object holding that key as text
+  and parse it, since assigning it to a JavaScript object sets the
+  prototype and `Json.Encode.object` lost it, while decoding kept it.
+
