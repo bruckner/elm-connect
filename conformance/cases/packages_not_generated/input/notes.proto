@@ -1,0 +1,12 @@
+// The generate set must be closed under package references: `notes.v1`
+// refers to `users.v1`, which is not being generated.
+syntax = "proto3";
+
+package notes.v1;
+
+import "users.proto";
+
+message Note {
+  string title = 1;
+  users.v1.User author = 2;
+}

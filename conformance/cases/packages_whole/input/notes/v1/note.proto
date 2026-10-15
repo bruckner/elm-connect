@@ -1,0 +1,12 @@
+// A requested package is generated whole: `Tag` is declared in a file of
+// `notes.v1` that is only imported, and is in the module all the same.
+syntax = "proto3";
+
+package notes.v1;
+
+import "notes/v1/tag.proto";
+
+message Note {
+  string title = 1;
+  repeated Tag tags = 2;
+}

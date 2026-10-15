@@ -4,7 +4,7 @@
 use elm_connect_gen::diagnostics::{Code, Diagnostics};
 use elm_connect_gen::ir::{HttpRule, HttpVerb, Method, Package, TypeName, TypeRef, WellKnown};
 
-use crate::common::{build, package, problems, render};
+use crate::common::{package, problems, render};
 
 fn method<'a>(package: &'a Package, proto_name: &str) -> &'a Method {
     package
@@ -146,32 +146,31 @@ fn streaming_methods_are_errors() {
 }
 
 #[test]
-fn method_types_generate_their_packages() {
+fn method_types_must_be_generated() {
     let other = "syntax = \"proto3\"; package other.v1; message Thing {}";
     let notes = r#"syntax = "proto3";
 package notes.v1;
 import "other.proto";
 import "google/protobuf/api.proto";
 service Notes {
-  rpc Get(other.v1.Thing) returns (other.v1.Thing);
-  rpc Describe(other.v1.Thing) returns (google.protobuf.Api);
+  rpc Get(other.v1.Thing) returns (google.protobuf.Api);
 }
 "#;
     let files = [("other.proto", other), ("notes.proto", notes)];
     let diagnostics = problems(&files, &["notes.proto"]);
-    assert_eq!(codes(&diagnostics), [Code::UnsupportedWellKnown]);
+    assert_eq!(
+        codes(&diagnostics),
+        [Code::NotGenerated, Code::UnsupportedWellKnown]
+    );
     let rendered = render(&diagnostics, &files);
     assert!(
-        rendered
-            .contains("The response of `notes.v1.Notes.Describe` has type `google.protobuf.Api`"),
+        rendered.contains("The request of `notes.v1.Notes.Get` refers to `other.v1.Thing`"),
         "{rendered}"
     );
-
-    let notes = notes.replace("returns (google.protobuf.Api)", "returns (other.v1.Thing)");
-    let files = [("other.proto", other), ("notes.proto", notes.as_str())];
-    let packages = build(&files, &["notes.proto"]).expect("builds");
-    let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
-    assert_eq!(names, ["notes.v1", "other.v1"]);
+    assert!(
+        rendered.contains("The response of `notes.v1.Notes.Get` has type `google.protobuf.Api`"),
+        "{rendered}"
+    );
 }
 
 #[test]

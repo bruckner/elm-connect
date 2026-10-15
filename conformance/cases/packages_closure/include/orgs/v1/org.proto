@@ -1,9 +1,0 @@
-// Reached only through `users.v1`.
-syntax = "proto3";
-
-package orgs.v1;
-
-enum Tier {
-  TIER_UNSPECIFIED = 0;
-  TIER_PAID = 1;
-}

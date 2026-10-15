@@ -40,6 +40,12 @@ enum Command {
         /// module, with a warning; the rest is generated).
         #[arg(long, value_name = "error|skip", default_value = "error")]
         streaming: Streaming,
+        /// Also generate the packages of every file the given ones import,
+        /// transitively, as `buf generate --include-imports` does; without
+        /// it, a reference to a package none of the given files declares is
+        /// an error. `google/protobuf` files are never generated.
+        #[arg(long)]
+        include_imports: bool,
     },
 }
 
@@ -52,12 +58,13 @@ fn main() -> miette::Result<()> {
             int64,
             unbound_methods,
             streaming,
+            include_imports,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
             options.unbound_methods = unbound_methods;
             options.streaming = streaming;
-            let generated = elm_connect::generate(&files, &includes, &options)?;
+            let generated = elm_connect::generate(&files, &includes, include_imports, &options)?;
             if !generated.warnings.is_empty() {
                 eprintln!("{:?}", Report::new(generated.warnings));
             }
@@ -117,6 +124,22 @@ mod tests {
             Streaming::Skip
         );
         assert!(streaming(&["--streaming", "drop"]).is_err());
+    }
+
+    fn include_imports(args: &[&str]) -> Result<bool, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen {
+            include_imports, ..
+        } = cli.command;
+        Ok(include_imports)
+    }
+
+    #[test]
+    fn include_imports_defaults_to_off_and_takes_no_value() {
+        assert!(!include_imports(&[]).expect("parses"));
+        assert!(include_imports(&["--include-imports"]).expect("parses"));
+        assert!(include_imports(&["--include-imports=true"]).is_err());
     }
 
     #[test]

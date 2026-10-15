@@ -3,12 +3,16 @@ syntax = "proto3";
 package jobs.v1;
 
 import "google/api/annotations.proto";
+import "other/v1/thing.proto";
 
 message Job {
   string name = 1;
 }
 
 service Jobs {
+  // other.v1 is imported but not generated.
+  rpc Adopt(other.v1.Thing) returns (Job);
+
   // A name with no Elm form.
   rpc _9Lives(Job) returns (Job);
 

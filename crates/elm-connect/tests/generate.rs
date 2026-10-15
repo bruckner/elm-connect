@@ -1,5 +1,7 @@
 //! `elm-connect gen` end to end, in-process: the conformance corpus's
-//! scalars case, and a problem rendered against its proto source.
+//! scalars case, a problem rendered against its proto source, and
+//! `--include-imports`, which the corpus cannot express (its `options.txt`
+//! is the plugin parameter).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -17,6 +19,7 @@ fn scalars_case_generates_its_expected_output() {
     let generated = elm_connect::generate(
         &[PathBuf::from("scalars.proto")],
         &[case.join("input")],
+        false,
         &Options::default(),
     )
     .unwrap_or_else(|report| panic!("{report:?}"));
@@ -44,9 +47,13 @@ fn problems_render_against_the_proto_source() {
          oneof displayName {\n    string text = 2;\n  }\n}\n",
     )
     .expect("write the input");
-    let report =
-        elm_connect::generate(&[PathBuf::from("clash.proto")], &[dir], &Options::default())
-            .expect_err("two fields become `displayName`");
+    let report = elm_connect::generate(
+        &[PathBuf::from("clash.proto")],
+        &[dir],
+        false,
+        &Options::default(),
+    )
+    .expect_err("two fields become `displayName`");
     let mut rendered = String::new();
     GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor())
         .with_width(80)
@@ -89,6 +96,7 @@ fn warnings_come_back_with_the_files() {
     let generated = elm_connect::generate(
         &[PathBuf::from("chat.proto")],
         &[case.join("input")],
+        false,
         &options,
     )
     .unwrap_or_else(|report| panic!("{report:?}"));
@@ -100,5 +108,82 @@ fn warnings_come_back_with_the_files() {
         warnings,
         fs::read_to_string(case.join("expected/warnings.txt")).expect("blessed"),
         "the CLI's warnings carry the proto source, as the corpus pins them"
+    );
+}
+
+/// Two packages, `notes.v1` importing `users.v1`, which imports a
+/// well-known type, the googleapis annotations and a file declaring
+/// nothing.
+fn two_packages(name: &str) -> PathBuf {
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
+    let _ = fs::remove_dir_all(&dir);
+    for (path, text) in [
+        (
+            "notes/v1/note.proto",
+            "syntax = \"proto3\";\npackage notes.v1;\nimport \"users/v1/user.proto\";\n\
+             message Note {\n  string title = 1;\n  users.v1.User author = 2;\n}\n",
+        ),
+        (
+            "users/v1/user.proto",
+            "syntax = \"proto3\";\npackage users.v1;\n\
+             import \"google/protobuf/timestamp.proto\";\n\
+             import \"google/api/annotations.proto\";\nimport \"shared/v1/empty.proto\";\n\
+             message User {\n  string name = 1;\n  google.protobuf.Timestamp joined = 2;\n}\n",
+        ),
+        (
+            "shared/v1/empty.proto",
+            "syntax = \"proto3\";\npackage shared.v1;\n",
+        ),
+    ] {
+        let path = dir.join(path);
+        fs::create_dir_all(path.parent().unwrap()).expect("create the input directory");
+        fs::write(path, text).expect("write the input");
+    }
+    dir
+}
+
+#[test]
+fn imported_packages_are_not_generated_by_default() {
+    let dir = two_packages("cli-imports-off");
+    let report = elm_connect::generate(
+        &[PathBuf::from("notes/v1/note.proto")],
+        &[dir],
+        false,
+        &Options::default(),
+    )
+    .expect_err("`users.v1` is not requested");
+    let diagnostics = report
+        .downcast_ref::<elm_connect_gen::diagnostics::Diagnostics>()
+        .expect("the generator's diagnostics");
+    let codes: Vec<_> = diagnostics.iter().map(|d| d.code()).collect();
+    assert_eq!(codes, [elm_connect_gen::diagnostics::Code::NotGenerated]);
+}
+
+#[test]
+fn include_imports_generates_the_imported_packages() {
+    let dir = two_packages("cli-imports-on");
+    let generated = elm_connect::generate(
+        &[PathBuf::from("notes/v1/note.proto")],
+        &[dir],
+        true,
+        &Options::default(),
+    )
+    .unwrap_or_else(|report| panic!("{report:?}"));
+
+    let paths: Vec<&str> = generated.files.iter().map(|f| f.path.as_str()).collect();
+    assert_eq!(paths, ["Notes/V1.elm", "Users/V1.elm"]);
+    assert!(generated.files[0].content.contains("import Users.V1"));
+}
+
+#[test]
+fn include_imports_leaves_out_runtime_googleapis_and_empty_files() {
+    let dir = two_packages("cli-imports-set");
+    let mut compiled =
+        elm_connect::compile(&[PathBuf::from("notes/v1/note.proto")], &[dir]).expect("compiles");
+    assert_eq!(compiled.inputs, ["notes/v1/note.proto"]);
+    compiled.include_imports();
+    assert_eq!(
+        compiled.inputs,
+        ["notes/v1/note.proto", "users/v1/user.proto"]
     );
 }
