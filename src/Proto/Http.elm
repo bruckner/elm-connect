@@ -65,14 +65,17 @@ literal =
     Internal.Literal
 
 
-{-| A request field's value: the field's JSON path (`[ "book", "name" ]`), and
-the variable's template (`[ literal "books", wildcard ]` for
-`{book.name=books/*}`; `[]` for `{name}`). A variable matching one segment
-(`{name}`, `{name=*}`) is percent-encoded with `/` escaped as `%2F`; any other
-keeps its `/`s. An absent value is the empty string. The value is not checked
-against the template: the server does that.
+{-| A request field's value: the field's JSON path (`[ "book", "name" ]`), the
+variable's template (`[ literal "books", wildcard ]` for `{book.name=books/*}`;
+`[]` for `{name}`), and the text of the field's proto3 default (`"0"`, `""`,
+`"false"`, an enum's zero name). A variable matching one segment (`{name}`,
+`{name=*}`) is percent-encoded with `/` escaped as `%2F`; any other keeps its
+`/`s. A value absent from the request's JSON, or `null` there, as under an
+unset message, is the default: proto3 reads the field as its default, and a
+server parsing the segment as the field's type rejects an empty one. The value
+is not checked against the template: the server does that.
 -}
-variable : List String -> List Segment -> Segment
+variable : List String -> List Segment -> String -> Segment
 variable =
     Internal.Variable
 

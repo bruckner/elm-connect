@@ -352,3 +352,11 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   and compiled by `just live`; the `Any` example, which built a `Note`
   from two fields it does not have, is fixed. The `live` CI job caches npm, Elm and
   `connectconformance` as well as Go and buf.
+- A path variable the request's JSON has no value for, such as one
+  under an unset message, is sent as the field's proto3 default (`0`,
+  `false`, an enum's zero name) instead of an empty segment, which a
+  server parsing it as a number or enum rejects. `Proto.Http.variable`
+  takes the default's text as a third argument, which the generator
+  writes; the route fixture and Vanguard now agree on the request, and
+  the server reading the messages on the way as set is recorded in
+  `conformance/live/known-divergent.json` (design §5.3, §7).

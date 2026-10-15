@@ -106,12 +106,12 @@
       "expect": { "path": "/v1/typed/7/true/KIND_IMAGE/-5/9", "query": [["name", "q"]], "body": null }
     },
     {
-      "name": "a path value under an unset message is empty; defaults are written",
+      "name": "a path value under an unset message is its default; defaults are written",
       "method": "routes.v1.Routes.Typed",
       "binding": 0,
       "rule": { "verb": "DELETE", "template": "/v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}", "body": "" },
       "request": {},
-      "expect": { "path": "/v1/typed/0/false/KIND_UNSPECIFIED/0/", "query": [], "body": null }
+      "expect": { "path": "/v1/typed/0/false/KIND_UNSPECIFIED/0/0", "query": [], "body": null }
     }
   ]
 }
