@@ -965,7 +965,8 @@ uint64 =
 
 
 {-| Decode an unsigned 64-bit integer as an `Int`, under the `int64=int`
-option: the forms [`int64AsInt`](#int64AsInt) accepts, from 0 to
+option: the forms [`int64AsInt`](#int64AsInt) accepts, from 0 up to
+the largest `Int` that is exact, 9007199254740991.
 -}
 uint64AsInt : Decoder Int
 uint64AsInt =
