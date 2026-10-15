@@ -4,6 +4,9 @@
 // proto's google.api.http rules give, from one port. The behaviours the live
 // suite relies on are documented on the service in notes.proto, and the
 // routes beside it (/healthz, /status/, /grpc-status/) on their handlers.
+// Beside it, routes.v1.Routes, the route fixtures' service, echoes each
+// request (routes.go), and GET /routes/layers says where each of its
+// bindings is served.
 package main
 
 import (
@@ -79,18 +82,22 @@ func main() {
 	}
 }
 
-// newHandler serves the service over Connect and over transcoding, /healthz,
+// newHandler serves the services over Connect and over transcoding, /healthz,
 // and the x-echo header on every response.
 func newHandler(svc notesv1connect.NotesServiceHandler) (http.Handler, error) {
 	server := connect.NewServer()
 	notesv1connect.RegisterNotesServiceHandler(server, svc)
 
 	mux := http.NewServeMux()
+	routeRules, err := mountRoutes(mux, server)
+	if err != nil {
+		return nil, err
+	}
 	connecthttp.Mount(mux, server)
 	// Vanguard takes "/" and serves every google.api.http rule; the Connect
 	// routes above are more specific, so a method without a rule is reached
 	// at its Connect path, which is the implicit route.
-	if err := vanguard.Mount(mux, server); err != nil {
+	if err := vanguard.Mount(mux, server, vanguard.WithRules(routeRules...)); err != nil {
 		return nil, err
 	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
