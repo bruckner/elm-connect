@@ -1,17 +1,17 @@
 # Recipes for working on elm-connect. `just` lists them.
 
-# Elm sources elm-format owns: the runtime package, its tests and the live
-# runner. The conformance corpus is checked by its own test (`cargo test
+# Elm sources elm-format owns: the runtime package, its tests, the live
+# runner and the browser example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src"
+elm_dirs := "src tests conformance/live/src examples/notes/elm/src"
 
 [private]
 default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check zizmor gitleaks
+check: fmt-check clippy test elm-check snippets zizmor gitleaks
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -47,6 +47,12 @@ elm-check:
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
 
+# Check that every tagged code block of the README and the notes example's
+# walkthrough is an excerpt of the file it names (examples/check-snippets.sh).
+# The excerpts compile with the example, which `example-notes-build` builds.
+snippets:
+    examples/check-snippets.sh README.md examples/notes/README.md
+
 # Audit the GitHub Actions workflows for template injection, unpinned
 # or vulnerable actions, leaked credentials and the like. The audits
 # that consult GitHub run only when GH_TOKEN is set (CI sets it); without
@@ -78,8 +84,9 @@ bless:
 # against the example server over Connect and over transcoding, then the
 # route fixtures against its routes.v1 echo service under Vanguard, then the
 # Connect conformance suite. Not part of `check`: it needs Go and the Buf
-# Schema Registry; CI runs it as its own job.
-live: live-gen live-build && live-conformance
+# Schema Registry; CI runs it as its own job. It builds the browser example
+# too, so the README's excerpts of it compile.
+live: live-gen live-build example-notes-build && live-conformance
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve target/live/bin/notes-server
@@ -94,6 +101,7 @@ live-gen:
     cargo build -p protoc-gen-elm-connect
     cp target/debug/protoc-gen-elm-connect target/live/bin/
     cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate
+    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
     git diff --exit-code -- examples/notes/server/gen examples/notes/elm/generated
     @test -z "$(git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated; exit 1)
 
@@ -133,8 +141,26 @@ live-conformance-gen:
     git diff --exit-code -- conformance/live/suite
     @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
 
+# Build the notes example: the server, and the browser application into
+# examples/notes/elm/dist (index.html and elm.js, optimized), and compile the
+# README's excerpts in src/Snippets with it. The bare `elm make` resolves
+# dependencies first, as in elm-check.
+example-notes-build:
+    mkdir -p target/live/bin
+    cd examples/notes/server && go build -o ../../../target/live/bin/notes-server .
+    -@cd examples/notes/elm && elm make >/dev/null 2>&1
+    cd examples/notes/elm && elm make --optimize src/Main.elm --output=dist/elm.js
+    cd examples/notes/elm && elm make src/Snippets/*.elm --output=/dev/null
+    cp examples/notes/elm/index.html examples/notes/elm/dist/
+
+# Build the notes example and serve it: the page and the API on one origin,
+# http://127.0.0.1:8080 unless `addr` says otherwise. Ctrl-C stops it.
+example-notes addr="127.0.0.1:8080": example-notes-build
+    target/live/bin/notes-server -addr {{addr}} -static examples/notes/elm/dist
+
 # Remove build output.
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
+    rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist

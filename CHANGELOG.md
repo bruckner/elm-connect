@@ -342,3 +342,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `cases/transcode.json` adds `google.rpc.Status` bodies as sent,
   statuses without one, `grpc-status` headers and empty or non-JSON 2xx
   answers; the runner reports each exchange's response body.
+- `examples/notes` is a browser application on the generated client:
+  list, create, edit with an update mask, archive and delete, errors
+  with their details, and a toggle between Connect and transcoding,
+  every call through one `Api.rpc`. The server serves it with `-static`;
+  `just example-notes` builds and runs both. `Google.Rpc` is generated
+  for it from googleapis with buf. The README's examples and the new
+  walkthrough are excerpts of it, checked by `just snippets` in the gate
+  and compiled by `just live`; the `Any` example, which built a `Note`
+  from two fields it does not have, is fixed. The `live` CI job caches npm, Elm and
+  `connectconformance` as well as Go and buf.
