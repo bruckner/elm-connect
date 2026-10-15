@@ -5,8 +5,8 @@
 //!
 //! A case is `input/` (proto files, compiled with protox and all
 //! requested), an optional `include/` (protos the input may import, not
-//! requested, though a package the input refers to is generated with the
-//! rest) and `expected/`, holding either the Elm modules generated
+//! requested, though one of a requested package is generated with it) and
+//! `expected/`, holding either the Elm modules generated
 //! from the input, at their module paths, or `diagnostics.txt`, the
 //! narrow rendering of the problems generating reports instead. Beside the
 //! modules, `warnings.txt` is the narrow rendering of the warnings a
@@ -116,7 +116,8 @@ struct Run {
 /// What generating a case's input gives: the files and warnings, or the
 /// narrow rendering of the problems, with the proto sources attached.
 /// Protos in the case's optional `include/` can be imported but are not
-/// requested; the packages the input refers to are generated anyway. The case's `options.txt`, if any, sets the generator's
+/// requested; those of a requested package are generated with it. The
+/// case's `options.txt`, if any, sets the generator's
 /// options.
 fn run_generator(case: &Path) -> Result<Run, String> {
     let input = case.join("input");

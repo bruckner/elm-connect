@@ -234,22 +234,35 @@ rpc shared call =
   each package with its files and points at a reference along the
   cycle in each.
 - An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)*
-- The packages generated are the closure of the requested files':
-  every package reachable from them through field, oneof member,
-  map value and method request and response references is generated,
-  transitively, with no option to turn it off. *(Decided, 2026-10-14.)*
-  Each is generated in full, from every compiled file that declares it:
-  its types, its enums and its services. A package's module is then the
-  same whichever of its files were asked for. The protoc plugin takes
-  the closure from the request's `proto_file`, which holds every
-  import; the CLI from the files protox compiled. `google.protobuf` is
-  never generated as a package: its supported types map to the runtime
-  (§3.5), and the rest are `types::unsupported_well_known`. This
-  replaced a rule that the requested files be closed under package
-  references, with a `generate::not_generated` diagnostic naming the
-  file to add; listing every file by hand was the only way past it
-  (`packages_closure` case, formerly `packages_not_generated`). A
-  reference to another generated package is qualified with its module
+- Only packages with a requested file are generated: protoc's
+  `file_to_generate`, or the files named to the CLI. *(Decided,
+  2026-10-15.)* Each is generated in full, from every compiled file that
+  declares it (protoc's `proto_file` holds every import): its types, its
+  enums and its services, so a package's module is the same whichever of
+  its files were asked for (`packages_whole` case). Before, a package
+  was built from its requested files alone, and a field whose type was
+  declared in an unrequested file of the same package was silently
+  dropped. A file without a package is not one package with the other
+  files without one; only requested ones are taken, each
+  `naming::invalid_module`.
+  A generated package that refers to a package with no requested file
+  is `generate::not_generated` (`packages_not_generated` case), the
+  request and response types of methods included (`services_invalid`
+  case). It points at the reference, names the file to add, and names
+  the ways to add it: `buf generate --include-imports`, the file on
+  protoc's command line, or the CLI's `--include-imports` (§6), which
+  adds the transitive imports of the named files.
+  `google.protobuf` is never generated as a package: its supported
+  types map to the runtime (§3.5), and the rest are
+  `types::unsupported_well_known`.
+  Why not generate the closure by default: a protoc plugin generates
+  `file_to_generate` and resolves the rest from `proto_file`, and buf
+  already offers the closure as an opt-in (`--include-imports`, and
+  `--include-wkt` for the well-known types). Under buf's per-directory
+  strategy each plugin run gets one directory's files; a plugin that
+  also wrote its imports' packages would have two runs write the same
+  module (`Users/V1.elm`), and buf rejects a duplicate output path.
+  A reference to another generated package is qualified with its module
   (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
   plainly, without an alias or an exposing list (`packages` case).
 
@@ -811,10 +824,14 @@ case names it):
   yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
   case): Elm forbids import cycles. No escape yet; a module map,
-  sending the packages of a cycle to one Elm module, would be one. A
-  package referred to but not requested was a dead end too
-  (`generate::not_generated`) until the closure was generated (§3.1);
-  it is no longer refused.
+  sending the packages of a cycle to one Elm module, would be one.
+- **A generate set not closed under package references**
+  (`generate::not_generated`, `packages_not_generated` case), the
+  request and response types of methods included (`services_invalid`
+  case). Escapes: request the imported files too, with `buf generate
+  --include-imports`, by naming them on protoc's command line, or with
+  the CLI's `--include-imports` (§3.1, §6). The plugin cannot add them
+  itself: it generates only what it is asked to.
 - **Streaming methods** (`services::streaming`, `services_streaming`
   case): client, server and bidirectional (§1.3). Escape:
   `streaming=skip` leaves each one out of its service's module, a
@@ -1094,9 +1111,8 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`), through
   the runtime's typed record of it (`services_types` case). Any other
-  type's package is generated with the rest (§3.1), and an unsupported
-  well-known type is `types::unsupported_well_known`, worded for the
-  method ("The response of `notes.v1.Notes.Get` has type ...").
+  type outside the generate set is `generate::not_generated`, worded for
+  the method ("The request of `notes.v1.Notes.Get` refers to ...").
 - A streaming method is `services::streaming`, pointing at its
   `stream` keyword, rather than being skipped; `streaming=skip` skips it
   instead, with the same code as a warning (§3.8).
@@ -1490,6 +1506,16 @@ both the plain names.
   key or value, or a key other than `rename` given twice, is an error,
   as is a `rename` without its `:` or one renaming a proto name twice. A conformance case sets options with an
   `options.txt` holding that parameter.
+- The CLI's `--include-imports` flag *(Decided, 2026-10-15; built)*,
+  named after buf's: the CLI also requests every file the named ones
+  import, transitively, that declares a message, enum or service, bar
+  `google/protobuf/*` (the runtime's) and the googleapis files the CLI
+  embeds for `google.api.http`. Off by default, so the CLI generates
+  what protoc and buf generate from the same files (§3.1). It is the
+  CLI's driver choosing the generate set, not a generator option:
+  protoc and buf choose it themselves, and the plugin cannot widen it.
+  The corpus cannot set it (`options.txt` is the plugin parameter), so
+  `crates/elm-connect/tests/generate.rs` covers it.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
   of Elm's compiler. First catalogue: route variable names a field the
   request does not have; route body names a non-message field; map key

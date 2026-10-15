@@ -469,53 +469,63 @@ fn a_package_spans_its_files() {
 }
 
 #[test]
-fn referenced_packages_are_generated_too() {
+fn generate_set_must_be_closed_under_package_references() {
     let files = [
         ("users/v1/user.proto", USERS),
         ("notes/v1/note.proto", NOTES),
     ];
-    let packages = build(&files, &["notes/v1/note.proto"]).expect("builds");
-    let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
-    assert_eq!(names, ["notes.v1", "users.v1"]);
-    assert_eq!(packages[1].files, ["users/v1/user.proto"]);
-    let user = message(&packages[1], "User");
-    assert_eq!(field(user, "id").elm_name, "id");
+    let diagnostics = problems(&files, &["notes/v1/note.proto"]);
+    assert_eq!(
+        codes(&diagnostics),
+        [Code::NotGenerated, Code::NotGenerated]
+    );
+    let first = diagnostics.iter().next().unwrap();
+    assert!(
+        first.message().contains("`notes.v1.Note`"),
+        "{}",
+        first.message()
+    );
+    assert!(
+        first.message().contains("`users.v1.User`"),
+        "{}",
+        first.message()
+    );
+    let help = first.help_text();
+    assert!(help.contains("users/v1/user.proto"), "{help}");
+    assert!(help.contains("buf generate --include-imports"), "{help}");
+    assert!(help.contains("with protoc"), "{help}");
+    assert!(help.contains("`--include-imports`"), "{help}");
 }
 
 #[test]
-fn the_closure_is_transitive_and_takes_whole_packages() {
+fn a_requested_package_takes_its_unrequested_files() {
     let files = [
-        (
-            "orgs/v1/org.proto",
-            "syntax = \"proto3\"; package orgs.v1; enum Tier { TIER_UNSPECIFIED = 0; }",
-        ),
-        (
-            "users/v1/user.proto",
-            "syntax = \"proto3\"; package users.v1; import \"orgs/v1/org.proto\"; \
-             message User { map<string, orgs.v1.Tier> tiers = 1; }",
-        ),
         (
             "users/v1/group.proto",
             "syntax = \"proto3\"; package users.v1; message Group {}",
         ),
         (
-            "notes/v1/note.proto",
-            "syntax = \"proto3\"; package notes.v1; import \"users/v1/user.proto\"; \
-             import \"users/v1/group.proto\"; \
-             message Note { oneof by { users.v1.User user = 1; } }",
+            "users/v1/user.proto",
+            "syntax = \"proto3\"; package users.v1; import \"users/v1/group.proto\"; \
+             message User { users.v1.Group group = 1; }",
         ),
         (
             "unrelated/v1/thing.proto",
             "syntax = \"proto3\"; package unrelated.v1; message Thing {}",
         ),
     ];
-    let packages = build(&files, &["notes/v1/note.proto"]).expect("builds");
+    let packages = build(&files, &["users/v1/user.proto"]).expect("builds");
     let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
-    assert_eq!(names, ["notes.v1", "orgs.v1", "users.v1"]);
+    assert_eq!(names, ["users.v1"]);
     assert_eq!(
-        packages[2].files,
+        packages[0].files,
         ["users/v1/group.proto", "users/v1/user.proto"]
     );
+    let user = message(&packages[0], "User");
+    let TypeRef::Message(group) = &field(user, "group").ty else {
+        panic!("group is a message");
+    };
+    assert_eq!(group.name, "Group");
 }
 
 #[test]

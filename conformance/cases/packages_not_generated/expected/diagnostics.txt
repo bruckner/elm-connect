@@ -1,0 +1,17 @@
+generate::not_generated
+
+  × The field `author` of `notes.v1.Note` refers to `users.v1.User`, but the
+  │ package `users.v1` is not being generated.
+    ╭─[notes.proto:11:3]
+ 10 │   string title = 1;
+ 11 │   users.v1.User author = 2;
+    ·   ──────┬──────
+    ·         ╰── `users.v1` is not being generated
+ 12 │ }
+    ╰────
+  help: Generated Elm modules import the modules of every package they refer
+        to, so those packages must be generated too, and only packages with a
+        file to generate are. Add `users.proto` to the files to generate: with
+        buf, run `buf generate --include-imports`; with protoc, name
+        `users.proto` on the command line; with the elm-connect CLI, pass
+        `--include-imports`.

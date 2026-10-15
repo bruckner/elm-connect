@@ -1,12 +1,12 @@
 //! The standalone CLI's logic, kept out of `main` so tests can drive it
 //! in-process.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::Columns;
-use elm_connect_gen::{Generated, GeneratedFile, Options};
+use elm_connect_gen::{Generated, GeneratedFile, Options, googleapis};
 use miette::{IntoDiagnostic, Report, WrapErr};
 use protox::prost_reflect::DescriptorPool;
 
@@ -21,6 +21,42 @@ pub struct Compiled {
     /// The text of every resolved file read from disk, by name, for
     /// diagnostics.
     pub sources: HashMap<String, String>,
+}
+
+impl Compiled {
+    /// Adds to `inputs` every file they import, transitively, that declares
+    /// a message, enum or service: what `--include-imports` asks for, the
+    /// way `buf generate --include-imports` does. `google/protobuf` files
+    /// map to the runtime and the googleapis files elm-connect embeds only
+    /// carry `google.api.http`, so neither is added.
+    pub fn include_imports(&mut self) {
+        let mut seen: BTreeSet<String> = self.inputs.iter().cloned().collect();
+        let mut pending: Vec<String> = self.inputs.clone();
+        while let Some(name) = pending.pop() {
+            let Some(file) = self.pool.get_file_by_name(&name) else {
+                continue;
+            };
+            for import in file.dependencies() {
+                let name = import.name();
+                if name.starts_with("google/protobuf/")
+                    || googleapis::FILES
+                        .iter()
+                        .any(|(embedded, _)| *embedded == name)
+                    || !seen.insert(name.to_owned())
+                {
+                    continue;
+                }
+                pending.push(name.to_owned());
+                let declares = import.messages().next().is_some()
+                    || import.enums().next().is_some()
+                    || import.services().next().is_some();
+                if declares {
+                    self.inputs.push(name.to_owned());
+                }
+            }
+        }
+        self.inputs.sort();
+    }
 }
 
 /// Compiles `files` against the `includes` search path (`.` if empty),
@@ -60,7 +96,9 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
 }
 
 /// Compiles `files` against `includes` and generates Elm from them as
-/// `options` say.
+/// `options` say: from the packages of `files` alone, or, with
+/// `include_imports`, from those of every file they import too (see
+/// [`Compiled::include_imports`]).
 ///
 /// Problems in the protos come back as one `Report` whose snippets point
 /// into the proto sources; the warnings of a successful run carry their
@@ -68,9 +106,13 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
 pub fn generate(
     files: &[PathBuf],
     includes: &[PathBuf],
+    include_imports: bool,
     options: &Options,
 ) -> Result<Generated, Report> {
-    let compiled = compile(files, includes)?;
+    let mut compiled = compile(files, includes)?;
+    if include_imports {
+        compiled.include_imports();
+    }
     let inputs: Vec<&str> = compiled.inputs.iter().map(String::as_str).collect();
     // protox records columns in bytes.
     match elm_connect_gen::generate(&compiled.pool, &inputs, options) {

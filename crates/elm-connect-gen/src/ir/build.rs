@@ -25,17 +25,16 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 
 /// Builds one [`Package`] per proto package declared by the files in
 /// `generate` (protoc's `file_to_generate`: names as the pool knows them),
-/// and per package those refer to, transitively, sorted by package name
-/// (design §3.1).
+/// sorted by package name. Each is built in full, from every file of the
+/// pool that declares it, so a package's module is the same whichever of
+/// its files were asked for (design §3.1).
 ///
-/// The packages generated are the closure of the requested ones under
-/// references: a field's, oneof member's or map value's type, and a
-/// method's request and response. Each is generated in full, from every
-/// file of the pool that declares it, so a package's module is the same
-/// whichever of its files were asked for. `google.protobuf` is never a
-/// package: its supported types are well-known types, and the rest are
-/// diagnostics. Files of `google.protobuf` in `generate` are skipped.
-/// Every method must be unary.
+/// Every type those packages refer to must be in a generated package or be
+/// a supported well-known type: a package with no file in `generate` is
+/// not generated, and a reference to it is a diagnostic naming the ways to
+/// add it (design §3.1, §3.8). Files of `google.protobuf` in `generate` are
+/// skipped. Every method must be unary, and its request and response types
+/// are held to the same rule.
 ///
 /// On any problem, returns every problem found instead.
 ///
@@ -71,20 +70,26 @@ pub fn build_with(
     };
 
     // Files are checked for proto3 in the order asked for, then the rest
-    // of the closure's.
+    // of their packages'.
+    let mut asked = BTreeSet::new();
     let mut checked = BTreeSet::new();
-    let mut requested = BTreeSet::new();
+    let mut requested = Vec::new();
     for &name in generate {
+        if !asked.insert(name) {
+            continue;
+        }
         let Some(file) = pool.get_file_by_name(name) else {
             builder.diagnostics.push(Problem::unknown_file(name));
             continue;
         };
-        if file.package_name() != WELL_KNOWN_PACKAGE && checked.insert(name.to_owned()) {
+        if file.package_name() != WELL_KNOWN_PACKAGE {
+            checked.insert(name.to_owned());
             builder.check_proto3(&file);
-            requested.insert(file.package_name().to_owned());
+            requested.push(file);
         }
     }
-    let by_package = closure(pool, requested);
+    let by_package = whole_packages(pool, requested);
+    builder.generated = by_package.keys().cloned().collect();
     for file in by_package.values().flatten() {
         if checked.insert(file.name().to_owned()) {
             builder.check_proto3(file);
@@ -152,69 +157,37 @@ pub fn build_with(
     }
 }
 
-/// The files of every package to generate, by package name, each package's
-/// sorted by file name: the packages of `requested` and those they refer
-/// to, transitively, with every file of `pool` that declares each.
-fn closure(
+/// The files of every package to generate, by package name, each
+/// package's sorted by file name: the packages of `requested`, each with
+/// every file of `pool` that declares it. Files without a package are not
+/// one package: only the requested ones are taken, each reported as
+/// missing its package.
+fn whole_packages(
     pool: &DescriptorPool,
-    requested: BTreeSet<String>,
+    requested: Vec<FileDescriptor>,
 ) -> BTreeMap<String, Vec<FileDescriptor>> {
-    let mut files_of: HashMap<String, Vec<FileDescriptor>> = HashMap::new();
-    for file in pool.files() {
-        files_of
+    let mut by_package: BTreeMap<String, Vec<FileDescriptor>> = BTreeMap::new();
+    for file in requested {
+        by_package
             .entry(file.package_name().to_owned())
             .or_default()
             .push(file);
     }
-    let mut by_package = BTreeMap::new();
-    let mut pending: Vec<String> = requested.into_iter().collect();
-    while let Some(package) = pending.pop() {
-        if package == WELL_KNOWN_PACKAGE || by_package.contains_key(&package) {
+    for file in pool.files() {
+        let package = file.package_name();
+        if package.is_empty() {
             continue;
         }
-        let mut files = files_of.remove(&package).unwrap_or_default();
-        files.sort_by(|a, b| a.name().cmp(b.name()));
-        for file in &files {
-            pending.extend(referenced_packages(file));
+        if let Some(files) = by_package.get_mut(package)
+            && !files.iter().any(|f| f.name() == file.name())
+        {
+            files.push(file);
         }
-        by_package.insert(package, files);
+    }
+    for files in by_package.values_mut() {
+        files.sort_by(|a, b| a.name().cmp(b.name()));
     }
     by_package
-}
-
-/// The packages whose types `file` refers to: the types of its messages'
-/// fields (oneof members and map values included) and of its methods'
-/// requests and responses.
-fn referenced_packages(file: &FileDescriptor) -> BTreeSet<String> {
-    fn walk(message: MessageDescriptor, out: &mut BTreeSet<String>) {
-        for field in message.fields() {
-            match field.kind() {
-                // A map's entry is a nested message of this one; its value
-                // field is reached through it.
-                Kind::Message(target) if !target.is_map_entry() => {
-                    out.insert(target.package_name().to_owned());
-                }
-                Kind::Enum(target) => {
-                    out.insert(target.package_name().to_owned());
-                }
-                _ => {}
-            }
-        }
-        for child in message.child_messages() {
-            walk(child, out);
-        }
-    }
-    let mut out = BTreeSet::new();
-    for message in file.messages() {
-        walk(message, &mut out);
-    }
-    for service in file.services() {
-        for method in service.methods() {
-            out.insert(method.input().package_name().to_owned());
-            out.insert(method.output().package_name().to_owned());
-        }
-    }
-    out
 }
 
 /// A `services::unbound_method` problem for every method of `packages`
@@ -293,6 +266,8 @@ struct Builder {
     diagnostics: Diagnostics,
     spans: HashMap<String, Spans>,
     modules: BTreeMap<String, ModuleName>,
+    /// Every package being generated, whether or not it has a module name.
+    generated: BTreeSet<String>,
     /// Every generated module name, a package's or a service's, so no two
     /// generated modules share one.
     module_names: Namespace,
@@ -992,7 +967,7 @@ impl Builder {
         kind: Kind,
     ) -> Option<TypeRef> {
         // For an enum, its proto name and the name of its zero value.
-        let (full_name, package, enum_names) = match kind {
+        let (full_name, package, defining_file, enum_names) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
             Kind::Float => return Some(TypeRef::Scalar(ScalarKind::Float)),
             Kind::Int32 => return Some(TypeRef::Scalar(ScalarKind::Int32)),
@@ -1011,6 +986,7 @@ impl Builder {
             Kind::Message(target) => (
                 target.full_name().to_owned(),
                 target.package_name().to_owned(),
+                target.parent_file().name().to_owned(),
                 None,
             ),
             Kind::Enum(target) => {
@@ -1019,6 +995,7 @@ impl Builder {
                 (
                     target.full_name().to_owned(),
                     target.package_name().to_owned(),
+                    target.parent_file().name().to_owned(),
                     Some((target.name().to_owned(), zero)),
                 )
             }
@@ -1038,9 +1015,24 @@ impl Builder {
             return None;
         }
 
-        // Every package referred to is generated (the closure), so a type
-        // without a name is one whose name, or whose package's module
-        // name, was reported already.
+        if !self.generated.contains(&package) {
+            let site = self.site(
+                file,
+                type_path,
+                format!("`{package}` is not being generated"),
+            );
+            self.diagnostics.push(Problem::not_generated(
+                referrer,
+                &full_name,
+                &package,
+                &defining_file,
+                site,
+            ));
+            return None;
+        }
+
+        // A type in a generated package with no name, or whose package has
+        // no module name, was reported already.
         let name = self.types.get(&full_name)?.clone();
         let site = self.site(
             file,

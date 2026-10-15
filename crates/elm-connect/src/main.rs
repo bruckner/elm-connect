@@ -51,6 +51,12 @@ enum Command {
         /// service, method, message, enum, field, oneof or enum value.
         #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
         rename: Vec<String>,
+        /// Also generate the packages of every file the given ones import,
+        /// transitively, as `buf generate --include-imports` does; without
+        /// it, a reference to a package none of the given files declares is
+        /// an error. `google/protobuf` files are never generated.
+        #[arg(long)]
+        include_imports: bool,
     },
 }
 
@@ -71,6 +77,7 @@ fn main() -> miette::Result<()> {
             streaming,
             enum_unknown,
             rename,
+            include_imports,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
@@ -82,7 +89,7 @@ fn main() -> miette::Result<()> {
                     .add_rename(entry)
                     .map_err(|err| miette!("--rename: {err}"))?;
             }
-            let generated = elm_connect::generate(&files, &includes, &options)?;
+            let generated = elm_connect::generate(&files, &includes, include_imports, &options)?;
             if !generated.warnings.is_empty() {
                 eprintln!("{:?}", Report::new(generated.warnings));
             }
@@ -184,6 +191,22 @@ mod tests {
         assert!(rename(&["--rename", "notes.v1.Note"]).is_err());
         assert!(rename(&["--rename", "notes.v1.Note:"]).is_err());
         assert!(int64(&["--int64", "int", "--int64", "string"]).is_err());
+    }
+
+    fn include_imports(args: &[&str]) -> Result<bool, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen {
+            include_imports, ..
+        } = cli.command;
+        Ok(include_imports)
+    }
+
+    #[test]
+    fn include_imports_defaults_to_off_and_takes_no_value() {
+        assert!(!include_imports(&[]).expect("parses"));
+        assert!(include_imports(&["--include-imports"]).expect("parses"));
+        assert!(include_imports(&["--include-imports=true"]).is_err());
     }
 
     #[test]
