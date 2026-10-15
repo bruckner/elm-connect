@@ -2,6 +2,10 @@
 //! `CodeGeneratorResponse` on stdout. Options arrive as the request's
 //! parameter (`--elm-connect_opt=int64=int`), comma-separated `key=value`
 //! pairs.
+//!
+//! Warnings, such as the streaming methods `streaming=skip` leaves out, go
+//! to stderr, which protoc passes through: a response has no field for
+//! them, and its `error` would fail the run.
 
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
@@ -37,20 +41,22 @@ fn pool(request: &[u8]) -> Result<DescriptorPool, String> {
     Ok(pool)
 }
 
-/// Answers one plugin request, given its encoded bytes. Errors in the
-/// user's protos travel back to protoc in `error`; only a failure to talk
-/// to protoc is a process error.
+/// Answers one plugin request, given its encoded bytes, with the warnings
+/// to print, rendered (empty for none). Errors in the user's protos travel
+/// back to protoc in `error`; only a failure to talk to protoc is a process
+/// error.
 ///
 /// protoc sends no proto sources, so problems render without snippets,
 /// naming the proto elements instead.
-fn run(bytes: &[u8]) -> CodeGeneratorResponse {
+fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     let request = match CodeGeneratorRequest::decode(bytes) {
         Ok(request) => request,
         Err(err) => {
-            return CodeGeneratorResponse {
+            let response = CodeGeneratorResponse {
                 error: Some(format!("elm-connect: decoding the request: {err}")),
                 ..CodeGeneratorResponse::default()
             };
+            return (response, String::new());
         }
     };
     let response = |error: Option<String>, file: Vec<File>| CodeGeneratorResponse {
@@ -61,19 +67,15 @@ fn run(bytes: &[u8]) -> CodeGeneratorResponse {
     let options = match Options::from_parameter(request.parameter()) {
         Ok(options) => options,
         Err(err) => {
-            return response(
-                Some(format!("elm-connect: the plugin parameter: {err}")),
-                Vec::new(),
-            );
+            let error = format!("elm-connect: the plugin parameter: {err}");
+            return (response(Some(error), Vec::new()), String::new());
         }
     };
     let pool = match pool(bytes) {
         Ok(pool) => pool,
         Err(err) => {
-            return response(
-                Some(format!("elm-connect: reading the descriptors: {err}")),
-                Vec::new(),
-            );
+            let error = format!("elm-connect: reading the descriptors: {err}");
+            return (response(Some(error), Vec::new()), String::new());
         }
     };
     let generate_set: Vec<&str> = request
@@ -82,18 +84,27 @@ fn run(bytes: &[u8]) -> CodeGeneratorResponse {
         .map(String::as_str)
         .collect();
     match generate(&pool, &generate_set, &options) {
-        Ok(files) => response(
-            None,
-            files
+        Ok(generated) => {
+            let files = generated
+                .files
                 .into_iter()
                 .map(|file| File {
                     name: Some(file.path),
                     content: Some(file.content),
                     ..File::default()
                 })
-                .collect(),
+                .collect();
+            let warnings = if generated.warnings.is_empty() {
+                String::new()
+            } else {
+                render_narrow(&generated.warnings)
+            };
+            (response(None, files), warnings)
+        }
+        Err(diagnostics) => (
+            response(Some(render_narrow(&diagnostics)), Vec::new()),
+            String::new(),
         ),
-        Err(diagnostics) => response(Some(render_narrow(&diagnostics)), Vec::new()),
     }
 }
 
@@ -103,7 +114,9 @@ fn main() -> ExitCode {
         eprintln!("protoc-gen-elm-connect: reading the request: {err}");
         return ExitCode::FAILURE;
     }
-    let output = run(&input).encode_to_vec();
+    let (response, warnings) = run(&input);
+    eprint!("{warnings}");
+    let output = response.encode_to_vec();
     if let Err(err) = io::stdout().write_all(&output) {
         eprintln!("protoc-gen-elm-connect: writing the response: {err}");
         return ExitCode::FAILURE;
@@ -139,7 +152,7 @@ mod tests {
     }
 
     fn round_trip(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
-        let bytes = run(&request.encode_to_vec()).encode_to_vec();
+        let bytes = run(&request.encode_to_vec()).0.encode_to_vec();
         CodeGeneratorResponse::decode(bytes.as_slice()).expect("decode the response")
     }
 
@@ -192,6 +205,37 @@ mod tests {
         assert!(response.file.is_empty());
     }
 
+    #[test]
+    fn warnings_come_back_beside_the_files() {
+        let case = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../conformance/cases/services_streaming_skip");
+        let mut compiler = protox::Compiler::new([case.join("input")]).expect("an include path");
+        compiler.include_imports(true);
+        compiler.open_file("chat.proto").expect("the case compiles");
+        let request = CodeGeneratorRequest {
+            file_to_generate: vec!["chat.proto".into()],
+            parameter: Some("streaming=skip".into()),
+            proto_file: compiler.file_descriptor_set().file,
+            ..CodeGeneratorRequest::default()
+        };
+        let (response, warnings) = run(&request.encode_to_vec());
+
+        assert_eq!(response.error, None);
+        let names: Vec<&str> = response
+            .file
+            .iter()
+            .filter_map(|f| f.name.as_deref())
+            .collect();
+        assert_eq!(names, ["Chat/V1.elm", "Chat/V1/Chat.elm"]);
+        assert!(warnings.starts_with("services::streaming\n"), "{warnings}");
+        assert!(warnings.contains("`chat.v1.Chat.Listen`"), "{warnings}");
+        assert!(warnings.contains("`chat.v1.Uploads.Upload`"), "{warnings}");
+
+        let (response, warnings) = run(&scalars_request().encode_to_vec());
+        assert_eq!(response.error, None);
+        assert_eq!(warnings, "");
+    }
+
     /// A set's files as protox encoded them, options intact.
     #[derive(Clone, PartialEq, prost::Message)]
     struct RawSet {
@@ -222,7 +266,7 @@ mod tests {
         }
         .encode(&mut request)
         .expect("encode");
-        let response = CodeGeneratorResponse::decode(run(&request).encode_to_vec().as_slice())
+        let response = CodeGeneratorResponse::decode(run(&request).0.encode_to_vec().as_slice())
             .expect("decode");
         assert_eq!(response.error, None);
         let names: Vec<&str> = response

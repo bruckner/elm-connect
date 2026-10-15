@@ -74,8 +74,9 @@ Both binaries take the same options: the protoc plugin as
 |---|---|---|---|
 | `int64` | `--int64` | `string` (default), `int` | How 64-bit integers are held. `string` is exact; `int` gives Elm `Int`s, and a value outside ±(2^53 − 1) fails to decode. A field's `jstype` option (`JS_NUMBER`, `JS_STRING`) overrides it. |
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route (below). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
+| `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 
-[`docs/design.md`](docs/design.md) §3.4, §3.9 and §4 have the details.
+[`docs/design.md`](docs/design.md) §3.4, §3.8, §3.9 and §4 have the details.
 
 ## Using the generated client
 

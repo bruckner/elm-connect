@@ -55,7 +55,8 @@ a second transport and a public interface designed to be kept.
 
 - Streaming of any kind, on either transport. Connect streaming uses
   enveloped frames; grpc-gateway and Envoy stream newline-delimited JSON
-  in different shapes. Each would be its own design.
+  in different shapes. Each would be its own design. A streaming method
+  is a diagnostic, or with `streaming=skip` is left out (§3.8).
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack.
 - gRPC-web.
@@ -681,8 +682,18 @@ Built, as the `naming` and `naming_collision` cases show:
 ### 3.8 Dead ends
 
 Valid proto constructs whose Elm form drops a distinction the proto
-makes, or that the generator refuses with a diagnostic. This is a
-record of fact; the policy for them is not designed yet.
+makes, or that the generator refuses with a diagnostic.
+
+The policy *(Decided, 2026-10-14)*: diagnostics stay the default, and
+each diagnostic names its escape, a generator option (§6) that gets the
+user past it, in its help text. An escape either generates the
+construct some other way or leaves it out; what it leaves out it
+reports as a warning (`services::streaming` under `streaming=skip`),
+which never fails the run: the CLI prints warnings to stderr, the
+protoc plugin likewise (protoc has no other channel for them), and the
+library returns them beside the files. A custom proto option spelling
+the same escapes in the protos may come later; not built. The entries
+below each say their escape, or "no escape yet".
 
 Dropped distinctions:
 
@@ -699,6 +710,9 @@ Dropped distinctions:
   field is `()` (§3.5), so a message that sent `{}` and one that left
   the field out decode alike, and the encoder always sends `{}`.
 
+None of these is a diagnostic, and none has an escape yet: each would be
+an option choosing an Elm form that keeps the distinction.
+
 Refused (each a diagnostic, pinned in the conformance corpus where a
 case names it):
 
@@ -706,42 +720,54 @@ case names it):
   flattening (`naming::type_collision`), two constructors in one module,
   such as enum values or oneof members (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
-  `naming_collision` case).
+  `naming_collision` case). No escape yet.
 - **Names with no Elm form**: a package segment, type, field or method
   whose converted name is not a valid Elm identifier
   (`naming::invalid_module`, `naming::invalid_type`,
   `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
   case), and a file without a package declaration
-  (`naming::invalid_module`).
+  (`naming::invalid_module`). No escape yet.
 - **A `google.protobuf` type without a mapping**
   (`types::unsupported_well_known`), such as `Api` or `Type`. `Any`
-  was refused here (`types::any`) until it was built (§3.5).
+  was refused here (`types::any`) until it was built (§3.5). No escape
+  yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
-  case): Elm forbids import cycles.
+  case): Elm forbids import cycles. No escape yet; a module map, sending
+  the packages of a cycle to one Elm module, would be one.
 - **A generate set not closed under package references**
   (`generate::not_generated`, `packages_not_generated` case), the
   request and response types of methods included (`services_invalid`
-  case).
+  case). No escape yet.
 - **Streaming methods** (`services::streaming`, `services_streaming`
-  case): client, server and bidirectional (§1.3).
+  case): client, server and bidirectional (§1.3). Escape:
+  `streaming=skip` leaves each one out of its service's module, a
+  `services::streaming` warning, and generates the rest
+  (`services_streaming_skip` case). A service left with no methods gets
+  no module, as one declared without methods does: Elm rejects a module
+  that declares nothing.
 - **HTTP rules a client cannot follow** (`route::*`, `routes_invalid`
   case): a template that does not parse or has a bare wildcard, a path
   variable, `body` or `response_body` naming no suitable field, a
   request field with no query form, a rule without a path, nested
-  additional bindings (§4, §5.3; with `services_invalid`).
+  additional bindings (§4, §5.3; with `services_invalid`). No escape
+  yet; a `route` skip, leaving such a method out as `streaming=skip`
+  does, would be one.
 - **Method values that collide**: two methods of one service whose
   values have one name (`GetSettings` and `Get_Settings`;
-  `naming::value_collision`, `services_value_collision` case).
+  `naming::value_collision`, `services_value_collision` case). No escape
+  yet.
 - **Modules that collide**: two services of one package whose module
   names coincide (`Archive` and `archive`), a service module that is
   also a package's (`NotesService` in `notes.v1` beside the package
   `notes.v1.notes_service`), and two packages with one module name
   (`naming::module_collision`, `services_module_collision` case); and a
   service whose name has no module form (`naming::invalid_service`,
-  `services_invalid` case).
+  `services_invalid` case). No escape yet.
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
-  (`services_unbound_error` case; §4).
+  (`services_unbound_error` case; §4). The option is the user's own
+  choice, and its escape is the default, `unbound_methods=implicit`,
+  which the help names.
 
 ### 3.9 Descriptors  *(Decided, 2026-10-13)*
 
@@ -993,7 +1019,8 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   type outside the generate set is `generate::not_generated`, worded for
   the method ("The request of `notes.v1.Notes.Get` refers to ...").
 - A streaming method is `services::streaming`, pointing at its
-  `stream` keyword, rather than being skipped.
+  `stream` keyword, rather than being skipped; `streaming=skip` skips it
+  instead, with the same code as a warning (§3.8).
 - `google/api/http.proto` and `google/api/annotations.proto` are
   embedded in `elm-connect-gen` (`googleapis` module; Apache-2.0,
   `THIRD_PARTY.md`). The CLI resolves imports from its include paths
@@ -1364,7 +1391,8 @@ both the plain names.
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
-  `unbound_methods=implicit|error`, `module_prefix=`, and later perhaps
+  `unbound_methods=implicit|error`, `streaming=error|skip`,
+  `module_prefix=`, and later perhaps
   `enum_unknown=zero|variant` (§3.3 defers the variant). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
@@ -1372,7 +1400,9 @@ both the plain names.
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`), `unbound_methods` (§4;
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
-  --unbound-methods error`). The plugin parameter is
+  --unbound-methods error`), `streaming` (§3.8;
+  `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
+  skip`). The plugin parameter is
   comma-separated `key=value` pairs; an unknown key or value, or a key
   given twice, is an error. A conformance case sets options with an
   `options.txt` holding that parameter.
@@ -1387,12 +1417,19 @@ both the plain names.
   `unbound_methods=error` (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
+  A diagnostic is an error, failing the run, or a warning, reporting
+  what an escape left out (§3.8) beside a successful run: rendered the
+  same way with miette's warning styling (`⚠`), printed to stderr by
+  both binaries (the plugin leaves the response's `error` unset), and
+  returned by the library as `Generated::warnings` beside
+  `Generated::files`.
 
 ## 7. Conformance  *(Decided)*
 
 The harness is *(Decided and built)*: `conformance/cases/` and the
 `conformance` test of `elm-connect-gen`, described in
-`conformance/README.md`.
+`conformance/README.md`. A case that generates pins its warnings, if
+any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 
 - `conformance/cases/<case>/input/*.proto` and `expected/*.elm`. A test
   regenerates and diffs; a second test runs `elm make` over all expected

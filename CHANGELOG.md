@@ -261,3 +261,15 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.WellKnown.uint64Value` and `uint64ValueAsInt` likewise. The
   `naming::module_collision` help reads "every service becomes a
   module".
+- Option `streaming=error|skip` (CLI `--streaming`). `skip` leaves each
+  client, server or bidirectional streaming method out of its service's
+  module and generates the rest; each one is a `services::streaming`
+  warning, printed to stderr by both binaries and never failing the run.
+  The `services::streaming` error names the option. Diagnostics gain a
+  warning severity, and `elm_connect_gen::generate` returns
+  `Generated { files, warnings }`; `ir::build_with` builds under the
+  options that shape the IR, and the options live in
+  `elm_connect_gen::options`. A service without methods gets no module,
+  which Elm would reject. The conformance harness pins a case's warnings
+  in `expected/warnings.txt` (`services_streaming_skip` case).
+

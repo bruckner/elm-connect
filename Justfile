@@ -64,7 +64,7 @@ gitleaks:
 compile-with elm:
     conformance/compile-with.sh {{elm}}
 
-# Rewrite the conformance corpus's expected output (modules, or
+# Rewrite the conformance corpus's expected output (modules and warnings.txt, or
 # diagnostics.txt), and the Elm replay of the route fixtures (tests/Routes,
 # tests/RouteFixtures.elm), to what the generator produces now. Review the
 # diff before committing it.

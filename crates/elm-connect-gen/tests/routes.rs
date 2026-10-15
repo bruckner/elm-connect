@@ -610,6 +610,7 @@ fn the_elm_replay_is_current() {
         .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
     let fixtures = elm_connect_gen::elm::print::print_module(&fixtures_module(&methods));
     let failures: Vec<String> = generated
+        .files
         .iter()
         .map(|module| pinned(&format!("tests/{}", module.path), &module.content))
         .chain([pinned("tests/RouteFixtures.elm", &fixtures)])

@@ -7,7 +7,9 @@
 //! generated), an optional `include/` (protos the input may import, not
 //! generated) and `expected/`, holding either the Elm modules generated
 //! from the input, at their module paths, or `diagnostics.txt`, the
-//! narrow rendering of the problems generating reports instead. An
+//! narrow rendering of the problems generating reports instead. Beside the
+//! modules, `warnings.txt` is the narrow rendering of the warnings a
+//! successful run reports, present exactly when there are some. An
 //! optional `options.txt` holds the generator's options as a protoc plugin
 //! parameter.
 //!
@@ -23,12 +25,15 @@ use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
-use elm_connect_gen::diagnostics::{Columns, render_narrow};
+use elm_connect_gen::diagnostics::{Columns, Diagnostics, render_narrow};
 use elm_connect_gen::{GeneratedFile, Options, generate};
 use similar::TextDiff;
 
 /// The file in `expected/` that makes a case a diagnostics case.
 const DIAGNOSTICS: &str = "diagnostics.txt";
+/// The file in `expected/` beside the modules that pins the warnings a
+/// successful run reports.
+const WARNINGS: &str = "warnings.txt";
 /// The optional file in a case that sets the generator's options.
 const OPTIONS: &str = "options.txt";
 
@@ -99,11 +104,20 @@ fn case_options(case: &Path) -> Options {
     }
 }
 
-/// What generating a case's input gives: the files, or the narrow
-/// rendering of the problems, with the proto sources attached. Protos in
-/// the case's optional `include/` can be imported but are not generated.
-/// The case's `options.txt`, if any, sets the generator's options.
-fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
+/// What a successful run of the generator over a case gives.
+struct Run {
+    files: Vec<GeneratedFile>,
+    /// The narrow rendering of the warnings, with the proto sources
+    /// attached; empty for none.
+    warnings: String,
+}
+
+/// What generating a case's input gives: the files and warnings, or the
+/// narrow rendering of the problems, with the proto sources attached.
+/// Protos in the case's optional `include/` can be imported but are not
+/// generated. The case's `options.txt`, if any, sets the generator's
+/// options.
+fn run_generator(case: &Path) -> Result<Run, String> {
     let input = case.join("input");
     let include = case.join("include");
     let protos = |dir: &Path| -> Vec<String> {
@@ -126,12 +140,7 @@ fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
         .open_files(&names)
         .unwrap_or_else(|e| panic!("{} does not compile: {e:?}", input.display()));
     let generate_set: Vec<&str> = names.iter().map(String::as_str).collect();
-    generate(
-        &compiler.descriptor_pool(),
-        &generate_set,
-        &case_options(case),
-    )
-    .map_err(|mut diagnostics| {
+    let render = |mut diagnostics: Diagnostics| {
         let mut sources = HashMap::new();
         for dir in &include_paths {
             for name in protos(dir) {
@@ -141,7 +150,22 @@ fn run_generator(case: &Path) -> Result<Vec<GeneratedFile>, String> {
         }
         diagnostics.attach_sources(&sources, Columns::Bytes);
         render_narrow(&diagnostics)
-    })
+    };
+    match generate(
+        &compiler.descriptor_pool(),
+        &generate_set,
+        &case_options(case),
+    ) {
+        Ok(generated) => Ok(Run {
+            files: generated.files,
+            warnings: if generated.warnings.is_empty() {
+                String::new()
+            } else {
+                render(generated.warnings)
+            },
+        }),
+        Err(diagnostics) => Err(render(diagnostics)),
+    }
 }
 
 fn blessing() -> bool {
@@ -159,26 +183,36 @@ fn unified_diff(path: &str, expected: &str, actual: &str) -> String {
 // The checks, each over one case. `Err` is the failure report.
 
 /// The generated modules of `case` are its expected `.elm` files, byte for
-/// byte, no more and no fewer. Blessing rewrites `expected/` instead.
+/// byte, no more and no fewer, and its warnings are its expected
+/// `warnings.txt`, which is absent when there are none. Blessing rewrites
+/// `expected/` instead.
 fn check_golden(case: &Path, bless: bool) -> Result<(), String> {
-    let generated = run_generator(case).map_err(|rendered| {
+    let run = run_generator(case).map_err(|rendered| {
         format!(
             "generating failed; to expect that, put an empty expected/{DIAGNOSTICS} in the \
              case and bless it:\n{rendered}"
         )
     })?;
     let expected_dir = case.join("expected");
-    let generated: BTreeMap<String, String> = generated
+    let generated: BTreeMap<String, String> = run
+        .files
         .into_iter()
         .map(|file| (file.path, file.content))
         .collect();
     let expected: BTreeMap<String, String> = files_under(&expected_dir)
         .into_iter()
+        .filter(|path| path != WARNINGS)
         .map(|path| {
             let text = fs::read_to_string(expected_dir.join(&path)).expect("read an expected file");
             (path, text)
         })
         .collect();
+    let warnings_path = expected_dir.join(WARNINGS);
+    let expected_warnings = match fs::read_to_string(&warnings_path) {
+        Ok(text) => Some(text),
+        Err(e) if e.kind() == ErrorKind::NotFound => None,
+        Err(e) => panic!("read {}: {e}", warnings_path.display()),
+    };
     if bless {
         for path in expected.keys().filter(|p| !generated.contains_key(*p)) {
             fs::remove_file(expected_dir.join(path)).expect("remove a stale expected file");
@@ -188,6 +222,13 @@ fn check_golden(case: &Path, bless: bool) -> Result<(), String> {
             fs::create_dir_all(target.parent().expect("a file has a parent"))
                 .expect("create an expected directory");
             fs::write(&target, content).expect("write an expected file");
+        }
+        if run.warnings.is_empty() {
+            if expected_warnings.is_some() {
+                fs::remove_file(&warnings_path).expect("remove a stale warnings.txt");
+            }
+        } else {
+            fs::write(&warnings_path, &run.warnings).expect("write warnings.txt");
         }
         return Ok(());
     }
@@ -202,6 +243,20 @@ fn check_golden(case: &Path, bless: bool) -> Result<(), String> {
             Some(_) => {}
         }
     }
+    match (expected_warnings, run.warnings.is_empty()) {
+        (None, true) => {}
+        (None, false) => problems.push(format!(
+            "generating warns, but expected/{WARNINGS} is absent:\n{}",
+            run.warnings
+        )),
+        (Some(_), true) => problems.push(format!(
+            "expected/{WARNINGS} is present, but generating does not warn"
+        )),
+        (Some(want), false) if want != run.warnings => {
+            problems.push(unified_diff(WARNINGS, &want, &run.warnings));
+        }
+        (Some(_), false) => {}
+    }
     if problems.is_empty() {
         Ok(())
     } else {
@@ -213,8 +268,8 @@ fn check_golden(case: &Path, bless: bool) -> Result<(), String> {
 /// `diagnostics.txt`. Blessing rewrites that file instead.
 fn check_diagnostics(case: &Path, bless: bool) -> Result<(), String> {
     let rendered = match run_generator(case) {
-        Ok(files) => {
-            let paths: Vec<_> = files.into_iter().map(|file| file.path).collect();
+        Ok(run) => {
+            let paths: Vec<_> = run.files.into_iter().map(|file| file.path).collect();
             return Err(format!(
                 "expected problems, but generating succeeded with {}",
                 paths.join(", ")
@@ -411,4 +466,42 @@ fn diagnostics_cases_compare_and_bless() {
     .expect("write input");
     let report = check_diagnostics(&case, false).expect_err("generating succeeds");
     assert!(report.contains("Clash/V1.elm"), "{report}");
+}
+
+/// The warnings mechanism on a throwaway case: a run that warns without a
+/// `warnings.txt` fails, blessing writes it, and a run that stops warning
+/// fails until blessing removes it.
+#[test]
+fn warnings_compare_and_bless() {
+    let case = Path::new(env!("CARGO_TARGET_TMPDIR")).join("conformance-warnings-case");
+    let _ = fs::remove_dir_all(&case);
+    fs::create_dir_all(case.join("input")).expect("create input");
+    fs::create_dir_all(case.join("expected")).expect("create expected");
+    fs::write(case.join(OPTIONS), "streaming=skip\n").expect("write options.txt");
+    let streaming = "syntax = \"proto3\";\n\npackage feed.v1;\n\nmessage Item {}\n\n\
+                     service Feed {\n  rpc Get(Item) returns (Item);\n  \
+                     rpc Watch(Item) returns (stream Item);\n}\n";
+    fs::write(case.join("input/feed.proto"), streaming).expect("write input");
+    let warnings = case.join("expected").join(WARNINGS);
+
+    check_golden(&case, true).expect("blessing passes");
+    let blessed = fs::read_to_string(&warnings).expect("read warnings.txt");
+    assert!(blessed.starts_with("services::streaming\n"), "{blessed}");
+    assert!(blessed.contains("╭─[feed.proto:9:"), "{blessed}");
+    check_golden(&case, false).expect("the blessed output matches");
+
+    fs::remove_file(&warnings).expect("remove warnings.txt");
+    let report = check_golden(&case, false).expect_err("the warning is unexpected");
+    assert!(report.contains("warnings.txt is absent"), "{report}");
+
+    check_golden(&case, true).expect("blessing passes");
+    fs::write(
+        case.join("input/feed.proto"),
+        streaming.replace("stream Item", "Item"),
+    )
+    .expect("write input");
+    let report = check_golden(&case, false).expect_err("the warning is gone");
+    assert!(report.contains("does not warn"), "{report}");
+    check_golden(&case, true).expect("blessing passes");
+    assert!(!warnings.exists(), "blessing removes a stale warnings.txt");
 }
