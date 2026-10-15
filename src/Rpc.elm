@@ -802,7 +802,7 @@ pathSegment json segment =
         Literal written ->
             written
 
-        Variable fieldPath template ->
+        Variable fieldPath template zero ->
             let
                 keep =
                     if single template then
@@ -813,7 +813,7 @@ pathSegment json segment =
             in
             lookup fieldPath json
                 |> Maybe.andThen scalarText
-                |> Maybe.withDefault ""
+                |> Maybe.withDefault zero
                 |> Internal.percentEncode keep
 
         -- Generated bindings never hold a wildcard outside a variable: no
@@ -926,7 +926,7 @@ variables =
     List.filterMap
         (\segment ->
             case segment of
-                Variable fieldPath _ ->
+                Variable fieldPath _ _ ->
                     Just fieldPath
 
                 _ ->

@@ -24,7 +24,7 @@ getMessage =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -41,8 +41,8 @@ getMessage =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] []
-                        , Proto.Http.variable [ "sub", "subfield" ] []
+                        , Proto.Http.variable [ "messageId" ] [] ""
+                        , Proto.Http.variable [ "sub", "subfield" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -58,7 +58,7 @@ getMessage =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] []
+                        , Proto.Http.variable [ "messageId" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -75,9 +75,9 @@ getMessage =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "users"
-                        , Proto.Http.variable [ "userId" ] []
+                        , Proto.Http.variable [ "userId" ] [] ""
                         , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] []
+                        , Proto.Http.variable [ "messageId" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -110,7 +110,7 @@ updateMessage =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] []
+                        , Proto.Http.variable [ "messageId" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.bodyField "message"
@@ -139,7 +139,7 @@ updateMessageWhole =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] []
+                        , Proto.Http.variable [ "messageId" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.wholeBody
@@ -168,7 +168,7 @@ postSub =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "subs"
-                        , Proto.Http.variable [ "sub", "subfield" ] []
+                        , Proto.Http.variable [ "sub", "subfield" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.wholeBody
@@ -250,7 +250,7 @@ single =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "single"
-                        , Proto.Http.variable [ "name" ] []
+                        , Proto.Http.variable [ "name" ] [] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -302,7 +302,7 @@ multi =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "things", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -355,11 +355,11 @@ typed =
                     , path =
                         [ Proto.Http.literal "v1"
                         , Proto.Http.literal "typed"
-                        , Proto.Http.variable [ "count" ] []
-                        , Proto.Http.variable [ "flag" ] []
-                        , Proto.Http.variable [ "kind" ] []
-                        , Proto.Http.variable [ "big" ] []
-                        , Proto.Http.variable [ "inner", "deep", "b" ] []
+                        , Proto.Http.variable [ "count" ] [] "0"
+                        , Proto.Http.variable [ "flag" ] [] "false"
+                        , Proto.Http.variable [ "kind" ] [] "KIND_UNSPECIFIED"
+                        , Proto.Http.variable [ "big" ] [] "0"
+                        , Proto.Http.variable [ "inner", "deep", "b" ] [] "0"
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -407,7 +407,7 @@ files =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -435,7 +435,7 @@ cancel =
                     { method = "POST"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "operations", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "operations", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Just "cancel"
                     , body = Proto.Http.wholeBody
@@ -463,7 +463,7 @@ updateResource =
                     { method = "PATCH"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "resource", "name" ] [ Proto.Http.literal "resources", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "resource", "name" ] [ Proto.Http.literal "resources", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.bodyField "resource"
@@ -491,7 +491,7 @@ head =
                     { method = "HEAD"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody

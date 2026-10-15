@@ -16,9 +16,10 @@
 //! [`resolve`] then checks a parsed rule against the request and response
 //! messages and computes what the runtime needs to turn a request into an
 //! HTTP request without knowing its type: the JSON path of every path
-//! variable, the body, and every query parameter with its JSON path and
-//! the text of the value it is left out at. A [`Route`] is data the emitter
-//! writes out as Elm; the runtime never parses a template.
+//! variable with the text of its default, the body, and every query
+//! parameter with its JSON path and the text of the value it is left out
+//! at. A [`Route`] is data the emitter writes out as Elm; the runtime
+//! never parses a template.
 //!
 //! The rules:
 //!
@@ -301,6 +302,11 @@ pub enum PathSegment {
         /// The variable's template as written (`messages/*`), without
         /// variables; empty for `{name}`.
         template: Vec<Segment>,
+        /// The text of the field's proto3 default (`0`, `""`, `false`, or
+        /// the zero value's name for an enum), written when the request
+        /// has no value for it: a message on the way is unset, or the
+        /// field has presence and is unset.
+        zero: String,
     },
 }
 
@@ -457,7 +463,7 @@ pub fn resolve(
                 field,
                 segments: template,
             } => match path_field(request, &field) {
-                Ok(path) => {
+                Ok((path, zero)) => {
                     if bound.contains(&path) {
                         errors.push(RouteError::PathFieldTwice {
                             field: path.dotted(),
@@ -467,6 +473,7 @@ pub fn resolve(
                     segments.push(PathSegment::Variable {
                         field: path,
                         template,
+                        zero,
                     });
                 }
                 Err(reason) => errors.push(RouteError::PathField {
@@ -571,8 +578,11 @@ fn well_known(message: &MessageDescriptor) -> Option<Option<WellKnown>> {
 }
 
 /// The field a path variable names, through singular fields of generated
-/// messages to a non-repeated scalar or enum.
-fn path_field(request: &MessageDescriptor, names: &[String]) -> Result<FieldPath, String> {
+/// messages to a non-repeated scalar or enum, and the text of its default.
+fn path_field(
+    request: &MessageDescriptor,
+    names: &[String],
+) -> Result<(FieldPath, String), String> {
     let mut message = request.clone();
     let mut path = FieldPath::default();
     for (index, name) in names.iter().enumerate() {
@@ -605,7 +615,7 @@ fn path_field(request: &MessageDescriptor, names: &[String]) -> Result<FieldPath
                 }
                 message = inner;
             }
-            _ if last => {}
+            kind if last => return Ok((path, default_text(&kind))),
             _ => {
                 return Err(format!(
                     "`{}` is not a message, so it has no field `{}`",
@@ -615,7 +625,24 @@ fn path_field(request: &MessageDescriptor, names: &[String]) -> Result<FieldPath
             }
         }
     }
-    Ok(path)
+    unreachable!("a path variable names at least one field")
+}
+
+/// The text of a scalar or enum's proto3 default as a path or query
+/// value: `""` for a string or bytes, `false`, the zero value's name for
+/// an enum, and `0` for a number.
+fn default_text(kind: &Kind) -> String {
+    match kind {
+        Kind::Enum(enumeration) => enumeration
+            .enum_descriptor_proto()
+            .value
+            .first()
+            .map(|value| value.name().to_owned())
+            .unwrap_or_default(),
+        Kind::String | Kind::Bytes => String::new(),
+        Kind::Bool => "false".into(),
+        _ => "0".into(),
+    }
 }
 
 /// The top-level singular message field `name` of the request.
@@ -696,18 +723,7 @@ impl QueryWalk<'_> {
                     self.stack.pop();
                 }
             },
-            Kind::Enum(enumeration) => {
-                let first = enumeration
-                    .enum_descriptor_proto()
-                    .value
-                    .first()
-                    .map(|value| value.name().to_owned())
-                    .unwrap_or_default();
-                self.params.push(param(zero(first)));
-            }
-            Kind::String | Kind::Bytes => self.params.push(param(zero(String::new()))),
-            Kind::Bool => self.params.push(param(zero("false".into()))),
-            _ => self.params.push(param(zero("0".into()))),
+            kind => self.params.push(param(zero(default_text(&kind)))),
         }
     }
 }
@@ -825,6 +841,7 @@ mod tests {
                     json: field,
                 },
                 template: segments,
+                zero: String::new(),
             }
             .is_single()
         };

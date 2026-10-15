@@ -79,6 +79,9 @@ service Messaging {
   rpc Files(GetMessageRequest) returns (Message) {
     option (google.api.http) = { get: "/v1/{message_id=files/**}" };
   }
+  rpc Typed(GetMessageRequest) returns (Message) {
+    option (google.api.http) = { get: "/v1/{revision}/{sub.kind}/{pinned}/{message_id}" };
+  }
 }
 "#;
 
@@ -97,6 +100,7 @@ fn query_parameters_are_every_leaf_outside_the_path() {
             PathSegment::Variable {
                 field: path("message_id", "messageId"),
                 template: Vec::new(),
+                zero: String::new(),
             },
         ]
     );
@@ -123,6 +127,7 @@ fn query_parameters_are_every_leaf_outside_the_path() {
         PathSegment::Variable {
             field: path("sub.subfield", "sub.subfield"),
             template: Vec::new(),
+            zero: String::new(),
         }
     );
     assert!(
@@ -134,13 +139,31 @@ fn query_parameters_are_every_leaf_outside_the_path() {
 }
 
 #[test]
+fn a_path_variable_carries_the_text_of_its_default() {
+    let package = package(MESSAGES);
+    let typed = &method(&package, "Typed").routes[0];
+    let zeros: Vec<&str> = typed
+        .segments
+        .iter()
+        .filter_map(|segment| match segment {
+            PathSegment::Variable { zero, .. } => Some(zero.as_str()),
+            PathSegment::Literal(_) => None,
+        })
+        .collect();
+    assert_eq!(zeros, ["0", "KIND_UNSPECIFIED", "false", ""]);
+}
+
+#[test]
 fn bodies_and_response_bodies() {
     let package = package(MESSAGES);
     let update = &method(&package, "UpdateMessage").routes[0];
     assert_eq!(update.verb, HttpVerb::Patch);
     assert_eq!(update.body, Body::Field(path("message", "message")));
     assert_eq!(update.response_body, Some(path("lines", "lines")));
-    let PathSegment::Variable { field, template } = &update.segments[1] else {
+    let PathSegment::Variable {
+        field, template, ..
+    } = &update.segments[1]
+    else {
         panic!("{update:?}")
     };
     assert_eq!(*field, path("message.message_id", "message.messageId"));
