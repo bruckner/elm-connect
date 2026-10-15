@@ -71,7 +71,7 @@ impl Emitter {
                     ) => "int64ValueAsInt",
                     (
                         WellKnown::UInt64Value,
-                        ValueShape::Present(Present::Wrapper(Repr::Int64AsInt)),
+                        ValueShape::Present(Present::Wrapper(Repr::UInt64AsInt)),
                     ) => "uint64ValueAsInt",
                     _ => well_known_value(*known),
                 };

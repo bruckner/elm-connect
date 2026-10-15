@@ -143,15 +143,15 @@ decodeCounters : Json.Decode.Decoder Counters
 decodeCounters =
     Json.Decode.succeed Counters
         |> Proto.Json.fieldEither "int64Value" "int64_value" 0 Proto.Json.int64AsInt
-        |> Proto.Json.fieldEither "uint64Value" "uint64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "uint64Value" "uint64_value" 0 Proto.Json.uint64AsInt
         |> Proto.Json.fieldEither "sint64Value" "sint64_value" 0 Proto.Json.int64AsInt
-        |> Proto.Json.fieldEither "fixed64Value" "fixed64_value" 0 Proto.Json.int64AsInt
+        |> Proto.Json.fieldEither "fixed64Value" "fixed64_value" 0 Proto.Json.uint64AsInt
         |> Proto.Json.fieldEither "sfixed64Value" "sfixed64_value" 0 Proto.Json.int64AsInt
         |> Proto.Json.fieldEither "exactId" "exact_id" "0" Proto.Json.int64
         |> Proto.Json.field "normal" 0 Proto.Json.int64AsInt
         |> Proto.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
         |> Proto.Json.field "samples" [] (Json.Decode.list Proto.Json.int64AsInt)
-        |> Proto.Json.fieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Proto.Json.int64)
+        |> Proto.Json.fieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Proto.Json.uint64)
         |> Proto.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Proto.Json.int64AsInt)
         |> Proto.Json.field "wrapped" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
         |> Proto.Json.oneof decodeCountersLimit

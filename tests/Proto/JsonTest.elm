@@ -24,6 +24,8 @@ suite =
         , uint32Tests
         , int64Tests
         , int64AsIntTests
+        , uint64Tests
+        , uint64AsIntTests
         , floatTests
         , bytesTests
         , wellKnownTests
@@ -710,4 +712,43 @@ wellKnownTests =
             \_ -> fails Proto.Json.empty "[]"
         , test "encodes Empty as {}" <|
             \_ -> encodesTo (Proto.Json.encodeEmpty ()) "{}"
+        ]
+
+
+uint64Tests : Test
+uint64Tests =
+    describe "uint64"
+        [ test "the forms int64 takes, zero or more" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.uint64 "\"18446744073709551615\"" "18446744073709551615"
+                    , \_ -> decodes Proto.Json.uint64 "42" "42"
+                    , \_ -> decodes Proto.Json.uint64 "\"1e3\"" "1000"
+                    , \_ -> decodes Proto.Json.uint64 "\"-0\"" "0"
+                    ]
+                    ()
+        , test "a negative value fails" <|
+            \_ -> fails Proto.Json.uint64 "\"-1\""
+        , test "a negative number fails" <|
+            \_ -> fails Proto.Json.uint64 "-42"
+        ]
+
+
+uint64AsIntTests : Test
+uint64AsIntTests =
+    describe "uint64AsInt"
+        [ test "the forms int64AsInt takes, zero or more" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.uint64AsInt "\"9007199254740991\"" 9007199254740991
+                    , \_ -> decodes Proto.Json.uint64AsInt "0" 0
+                    , \_ -> decodes Proto.Json.uint64AsInt "\"4.2e1\"" 42
+                    ]
+                    ()
+        , test "a negative value fails" <|
+            \_ -> fails Proto.Json.uint64AsInt "\"-1\""
+        , test "a negative number fails" <|
+            \_ -> fails Proto.Json.uint64AsInt "-42"
+        , test "2^53 fails" <|
+            \_ -> fails Proto.Json.uint64AsInt "\"9007199254740992\""
         ]

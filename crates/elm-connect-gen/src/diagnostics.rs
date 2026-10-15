@@ -411,7 +411,7 @@ impl Problem {
             Code::ModuleCollision,
             format!("Two generated modules both become the Elm module `{elm_module}`."),
             "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
-             service a module inside its package's (`notes.v1.NotesService` becomes \
+             service becomes a module inside its package's (`notes.v1.NotesService` becomes \
              `Notes.V1.NotesService`), each segment in PascalCase, so a service can take the \
              name of a package nested in its own, and names that differ only in case or \
              underscores end up the same. Rename the service or the package.",

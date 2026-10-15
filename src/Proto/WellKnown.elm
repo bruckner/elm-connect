@@ -141,14 +141,14 @@ int64ValueAsInt =
 -}
 uint64Value : Message String
 uint64Value =
-    message Proto.Json.encodeInt64 Proto.Json.int64 "0" Descriptors.uint64Value
+    message Proto.Json.encodeInt64 Proto.Json.uint64 "0" Descriptors.uint64Value
 
 
 {-| `google.protobuf.UInt64Value` as an `Int`, under the `int64=int` option.
 -}
 uint64ValueAsInt : Message Int
 uint64ValueAsInt =
-    message Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt 0 Descriptors.uint64Value
+    message Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt 0 Descriptors.uint64Value
 
 
 {-| `google.protobuf.Int32Value`.
