@@ -396,3 +396,11 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Rpc.code error` for the common case. The retry policy judges every
   error by its code, so a network failure retries when `Unavailable` is
   in `codes` and a timeout when `DeadlineExceeded` is.
+- `Rpc.Trace` gains `headers` and `trailers`: the last answer's response
+  metadata, split as a Connect unary answer carries it, trailers being
+  the headers named `trailer-<name>`; names are lowercased and a
+  repeated header's values come joined with `", "`. `Rpc.splitTrailers`
+  applies the same rule to the `Http.Metadata` the pure halves give.
+  The Connect conformance suite's five header and trailer test cases now
+  pass through `Rpc.sendTraced` (39 of 40), and `known-failing-send.txt`
+  lists none.

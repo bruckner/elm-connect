@@ -1,10 +1,11 @@
-module Rpc.Internal.Http exposing (percentDecode, percentEncode, send, task, unreserved)
+module Rpc.Internal.Http exposing (metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
-{-| What the transports share: percent-encoding, and sending a built request.
-Not exposed; `Rpc` re-exports what users need.
+{-| What the transports share: percent-encoding, sending a built request, and
+reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
 -}
 
 import Bitwise
+import Dict exposing (Dict)
 import Http
 import Task exposing (Task)
 
@@ -243,3 +244,59 @@ body request =
 
         Nothing ->
             Http.emptyBody
+
+
+{-| An answer's status and headers, or `Nothing` when there was no answer.
+-}
+metadataOf : Http.Response body -> Maybe Http.Metadata
+metadataOf answer =
+    case answer of
+        Http.GoodStatus_ metadata _ ->
+            Just metadata
+
+        Http.BadStatus_ metadata _ ->
+            Just metadata
+
+        _ ->
+            Nothing
+
+
+{-| Split response headers as a Connect unary answer carries its metadata:
+trailers as headers named `trailer-<name>` in any case, headers as the rest.
+Names are lowercased, and values whose names differ only in case are joined
+with `", "` in the order of their original names. A header named `trailer-`
+alone names no trailer and stays a header.
+-}
+splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
+splitTrailers =
+    Dict.foldl
+        (\name value split ->
+            let
+                lower =
+                    String.toLower name
+            in
+            if String.startsWith trailerPrefix lower && String.length lower > String.length trailerPrefix then
+                { split | trailers = insertJoined (String.dropLeft (String.length trailerPrefix) lower) value split.trailers }
+
+            else
+                { split | headers = insertJoined lower value split.headers }
+        )
+        { headers = Dict.empty, trailers = Dict.empty }
+
+
+trailerPrefix : String
+trailerPrefix =
+    "trailer-"
+
+
+insertJoined : String -> String -> Dict String String -> Dict String String
+insertJoined key value =
+    Dict.update key
+        (\earlier ->
+            case earlier of
+                Just first ->
+                    Just (first ++ ", " ++ value)
+
+                Nothing ->
+                    Just value
+        )

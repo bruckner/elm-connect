@@ -6,7 +6,7 @@ module Rpc exposing
     , task, send
     , Trace, taskTraced, sendTraced
     , Error(..), Source(..), Response, code, message, errorToString, details
-    , Request, request, response, taskFromRequest
+    , Request, request, response, taskFromRequest, splitTrailers
     )
 
 {-| Call RPCs: unary and JSON-encoded, over the
@@ -76,7 +76,7 @@ sends and how it reads the answer can be checked without a server, and an
 application can rewrite a request before sending it with
 [`taskFromRequest`](#taskFromRequest).
 
-@docs Request, request, response, taskFromRequest
+@docs Request, request, response, taskFromRequest, splitTrailers
 
 -}
 
@@ -370,6 +370,13 @@ send cfg ((Call fields) as c) toMsg =
   - `request`: the request sent.
   - `httpStatus`: the HTTP status of the last answer, `Nothing` when there was
     none (a timeout, a network failure).
+  - `headers` and `trailers`: the last answer's response metadata, split by
+    [`splitTrailers`](#splitTrailers): its trailers are the headers named
+    `trailer-<name>`, as a Connect unary answer carries them, and its headers
+    the rest. Names are lowercased. A header the server sent more than once has
+    its values joined with `", "` in the order they came, which is how elm/http
+    (and the browser before it) gives them. Both are empty when there was no
+    answer.
   - `code`: how the call ended: `Ok` when it succeeded, and `Failed` with the
     error's [`code`](#code) when it failed, so a timeout is
     `Failed DeadlineExceeded`.
@@ -383,6 +390,8 @@ type alias Trace =
     , binding : Maybe Int
     , request : Request
     , httpStatus : Maybe Int
+    , headers : Dict String String
+    , trailers : Dict String String
     , code : Code
     , duration : Float
     , attempts : Int
@@ -406,6 +415,12 @@ taskTraced cfg ((Call fields) as c) =
                             Time.now
                                 |> Task.map
                                     (\end ->
+                                        let
+                                            metadata =
+                                                outcome.metadata
+                                                    |> Maybe.map (.headers >> splitTrailers)
+                                                    |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
+                                        in
                                         ( { service = fields.method.descriptor.service
                                           , method = fields.method.descriptor.name
                                           , binding =
@@ -416,7 +431,9 @@ taskTraced cfg ((Call fields) as c) =
                                                     _ ->
                                                         Nothing
                                           , request = sent
-                                          , httpStatus = outcome.status
+                                          , httpStatus = Maybe.map .statusCode outcome.metadata
+                                          , headers = metadata.headers
+                                          , trailers = metadata.trailers
                                           , code = outcomeCode outcome.result
                                           , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
                                           , attempts = outcome.attempts
@@ -1068,6 +1085,39 @@ decodeBody decoder raw =
         |> Result.mapError (Json.Decode.errorToString >> Http.BadBody >> Transport)
 
 
+{-| Split an answer's response headers as a Connect unary answer carries its
+metadata: its trailers are the headers whose names begin with `trailer-`, in
+any case, and its headers the rest. Names are lowercased, and trailer names
+have the prefix removed:
+
+    splitTrailers
+        (Dict.fromList
+            [ ( "Content-Type", "application/json" )
+            , ( "Trailer-X-Custom-Trailer", "done" )
+            ]
+        )
+        == { headers = Dict.fromList [ ( "content-type", "application/json" ) ]
+           , trailers = Dict.fromList [ ( "x-custom-trailer", "done" ) ]
+           }
+
+[`Trace`](#Trace) splits its answer's headers so; this is for the
+`Http.Metadata` of an answer read through [`request`](#request) and
+[`response`](#response). elm/http gives a header the server sent more than once
+as one value, the values joined with `", "` in the order they came; were two
+names to differ only in case, their values are joined the same way, in the
+order of the names as given. A header named `trailer-` and nothing more names
+no trailer, and stays a header.
+
+The trace applies the rule whatever the transport. Transcoding servers do not
+name headers so: grpc-gateway, for one, sends a gRPC trailer as a header
+prefixed `Grpc-Trailer-`, which stays a header.
+
+-}
+splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
+splitTrailers =
+    Internal.splitTrailers
+
+
 {-| Send a request in place of the one a call would send, and read the answer as
 the call's. The config's retry policy applies.
 -}
@@ -1088,7 +1138,7 @@ taskFromRequest cfg c sent =
 
 type alias Outcome res =
     { attempts : Int
-    , status : Maybe Int
+    , metadata : Maybe Http.Metadata
     , result : Result Error res
     }
 
@@ -1099,19 +1149,19 @@ attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
 attempt cfg c sent =
     let
         once =
-            Internal.task (\answer -> Ok ( statusOf answer, response cfg c answer )) sent
+            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
 
         loop tried =
             once
                 |> Task.andThen
-                    (\( status, result ) ->
+                    (\( metadata, result ) ->
                         case retryDelay cfg c tried result of
                             Just wait ->
                                 Process.sleep wait
                                     |> Task.andThen (\_ -> loop (tried + 1))
 
                             Nothing ->
-                                Task.succeed { attempts = tried, status = status, result = result }
+                                Task.succeed { attempts = tried, metadata = metadata, result = result }
                     )
     in
     loop 1
@@ -1122,19 +1172,6 @@ retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
             Retry.delay policy fields.method.descriptor.idempotent tried (Just (code error))
-
-        _ ->
-            Nothing
-
-
-statusOf : Http.Response String -> Maybe Int
-statusOf answer =
-    case answer of
-        Http.GoodStatus_ metadata _ ->
-            Just metadata.statusCode
-
-        Http.BadStatus_ metadata _ ->
-            Just metadata.statusCode
 
         _ ->
             Nothing

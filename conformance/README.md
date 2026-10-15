@@ -161,6 +161,7 @@ live/
   known-failing.txt   the suite's test cases the runtime fails, with reasons
   known-failing-send.txt
                       those it fails too when sent with Rpc.sendTraced
+                      (none right now)
   fetch-conformance.sh
                       fetches connectconformance at its pinned release
   suite/              buf.gen.yaml, and the Elm (elm/) and JavaScript (js/)
@@ -225,7 +226,8 @@ A **result**, what comes back:
   "result": { "ok": { "name": "notes/welcome" } },
   "trace": {
     "service": "notes.v1.NotesService", "method": "GetNote", "binding": null,
-    "httpStatus": 200, "code": "ok", "attempts": 1, "duration": 4,
+    "httpStatus": 200, "headers": { "content-type": "application/json" }, "trailers": {},
+    "code": "ok", "attempts": 1, "duration": 4,
     "request": { "method": "POST", "url": "…", "headers": [["Connect-Protocol-Version", "1"]],
                  "body": "{\"name\":\"notes/welcome\"}", "timeout": null, "withCredentials": false }
   },
@@ -245,8 +247,9 @@ error was read from: `statusCode`, `statusText` and `body`),
 `{"transport": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `BadStatus <n>`, `BadBody <problem>`) and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
-method or a binding the method lacks. `trace` is the `Rpc.Trace`, and
-`null` unless sent with `sendTraced`; `response` is the answer's
+method or a binding the method lacks. `trace` is the `Rpc.Trace` (its
+`headers` and `trailers` as objects), and `null` unless sent with
+`sendTraced`; `response` is the answer's
 `{"status", "headers": [[name, value], …]}` as elm/http gives it, and
 `null` unless sent with `halves` and answered; `progress` counts a tracker's
 events and is present only with one. `wire` is added by `run.mjs`: each
@@ -312,14 +315,18 @@ message and details (a detail that came as JSON is read back from its
 `"@type"` form; one that came as protobuf binary only, `{"type",
 "value"}`, is forwarded as the `Any`'s bytes as they came), the answer's
 headers, and as trailers those prefixed `trailer-`, which is how Connect
-sends a unary call's trailers. A transport failure is reported as an
+sends a unary call's trailers. With `halves` the wrapper splits the
+answer's headers itself; with `sendTraced` it reports the `Trace`'s
+`headers` and `trailers`, which `Rpc.splitTrailers` has split. Either
+way a repeated header is one value, joined with `", "` as elm/http gives
+it, which the suite accepts. A transport failure is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
 anything else as `unknown`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure
-halves, which is the only way an application gets an answer's headers, or
-`sendTraced`, `send` or `task`, which give none. `just live-conformance`
+halves, or `sendTraced`, both of which give an application the answer's
+headers, or `send` or `task`, which give none. `just live-conformance`
 runs both `halves` and `sendTraced`.
 
 `conformance.yaml` declares what is tested (the suite's `Features`):
@@ -327,7 +334,9 @@ HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
 calls, Connect GET, and no TLS, HTTP/2, trailers or receive limit; that is
 40 test cases. `known-failing.txt` lists the test cases the runtime fails
 however a call is sent, and `known-failing-send.txt` those it fails too
-without the halves, each with the reason; the runner requires a listed
+through `sendTraced` but not the halves, each with the reason (none right
+now: the five that assert headers and trailers pass since the `Trace`
+carries them); the runner requires a listed
 case to fail, so the lists cannot go stale. One test case pattern per line
 (`*` one name component, `**` any number), `#` starting a comment.
 `connectconformance` reads only the first `--known-failing` flag it is

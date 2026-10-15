@@ -1,14 +1,8 @@
 # Further test cases of the Connect conformance suite that fail when calls are
-# sent with `Rpc.sendTraced` (conformance.mjs --send sendTraced), and would
-# with `Rpc.send` and `Rpc.task`: these give the response or the error and no
-# more, so an answer's headers and trailers never reach the application. Each
-# of these tests asserts the response's headers or trailers (`x-custom-header`,
-# `x-custom-trailer` and the like). Through the pure halves (`Rpc.request`,
-# elm/http, `Rpc.response`) the application has them, and the tests pass.
-# Format as in known-failing.txt, which applies too.
-
-Basic/**/unary/success
-Connect with GET/**/success
-Duplicate Metadata/**/unary/success
-Duplicate Metadata/**/unary/error
-Errors/**/unary/error-with-metadata
+# sent with `Rpc.sendTraced` (conformance.mjs --send sendTraced) but pass
+# through the pure halves (`Rpc.request`, elm/http, `Rpc.response`). None
+# right now: the trace carries the answer's headers and trailers, which is
+# what the cases that assert them (`x-custom-header`, `x-custom-trailer` and
+# the like) need. `Rpc.send` and `Rpc.task` give the response or the error
+# and no more, so through them those cases would fail. Format as in
+# known-failing.txt, which applies too.
