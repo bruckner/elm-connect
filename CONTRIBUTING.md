@@ -28,10 +28,23 @@ green local `just check` is the bar for opening a PR. Formatting in the
 gate is check-only; `just fmt` fixes it.
 
 `just live` runs the runtime against the example server
-(`conformance/README.md`, "Live verification"). It is outside the gate,
-since it needs Go and the Buf Schema Registry; CI runs it as its own
-job, so run it before a PR that touches the runtime's sending, the
-service modules, or `examples/notes/`.
+(`conformance/README.md`, "Live verification"): it regenerates the
+example's code and fails on drift, runs the live cases and the route
+fixtures, runs the Connect conformance suite, and builds the browser
+example. It is outside the gate, since it needs Go and the Buf Schema
+Registry; CI runs it as its own job, so run it before a PR that touches
+the runtime's sending, the service modules, `examples/notes/` or a
+README snippet's file.
+
+`just example-notes` builds the browser example and serves it with the
+API at `http://127.0.0.1:8080` (`just example-notes 127.0.0.1:9000` for
+another address); `examples/notes/README.md` walks through it.
+
+The README's and the walkthrough's code blocks are excerpts: a block's
+fence names its file (`` ```elm examples/notes/elm/src/Api.elm#wrapper ``),
+and `just snippets`, part of the gate, checks each against it. Change
+the file, then copy the region into the document; `examples/check-snippets.sh`
+documents the forms.
 
 ## Branches and pull requests
 

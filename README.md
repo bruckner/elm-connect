@@ -39,7 +39,7 @@ conformance/
   harness/          Elm application the expected output compiles in
   routes/           route fixtures: the HTTP request a call becomes
   live/             the runtime run against a live server (`just live`)
-examples/notes/     an example API, its Go server and generated Elm client
+examples/notes/     an example API, its Go server, and a browser app on its generated client
 docs/               design and decisions
 mise.toml           toolchain pin
 Justfile            task recipes; `just` lists them
@@ -110,7 +110,7 @@ from the same files.
 
 From this proto:
 
-```proto
+```proto examples/notes/proto/notes/v1/notes.proto excerpt
 package notes.v1;
 
 import "google/api/annotations.proto";
@@ -118,27 +118,34 @@ import "google/api/annotations.proto";
 service NotesService {
   rpc GetNote(GetNoteRequest) returns (Note) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (google.api.http) = { get: "/v1/{name=notes/*}" };
+    option (google.api.http) = {get: "/v1/{name=notes/*}"};
   }
-  rpc Summarize(SummarizeRequest) returns (Summary);
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 ```
 
 the generator writes two modules: `Notes.V1`, the types and their
 codecs, and `Notes.V1.NotesService`, one function per method:
 
-```elm
+```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+ping : () -> Rpc.Call () ()
 ```
 
 A call is data: the method, its request, and its HTTP bindings. A
 config, also data, says where to send it and how; `Rpc.task` and
 `Rpc.send` send a call with a config:
 
-```elm
+```elm examples/notes/elm/src/Snippets/Sending.elm#sending
+import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
+
+
+type Msg
+    = GotNote (Result Rpc.Error Notes.V1.Note)
 
 
 config : Rpc.Config
@@ -146,15 +153,15 @@ config =
     Rpc.config "https://api.example.com"
 
 
--- POST https://api.example.com/notes.v1.NotesService/GetNote
 viaConnect : Cmd Msg
 viaConnect =
+    -- POST https://api.example.com/notes.v1.NotesService/GetNote
     Rpc.send config (Notes.getNote { name = "notes/42" }) GotNote
 
 
--- GET https://api.example.com/v1/notes/42
 viaTranscoding : Cmd Msg
 viaTranscoding =
+    -- GET https://api.example.com/v1/notes/42
     Rpc.send { config | transport = Rpc.Transcode } (Notes.getNote { name = "notes/42" }) GotNote
 ```
 
@@ -178,21 +185,21 @@ its full name and its fields (or values) as data. `Notes.V1.registry`
 holds the descriptors of the package, of every package it imports and
 of the well-known types, by full name:
 
-```elm
+```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
 import Notes.V1
 import Proto.Message
 import Proto.Registry
 
 
--- "type.googleapis.com/notes.v1.Note"
 noteUrl : String
 noteUrl =
+    -- "type.googleapis.com/notes.v1.Note"
     Proto.Message.typeUrl Notes.V1.messageNote
 
 
--- the proto names of Note's fields, in declaration order
 noteFields : List String
 noteFields =
+    -- the proto names of Note's fields, in declaration order
     Proto.Registry.message "notes.v1.Note" Notes.V1.registry
         |> Maybe.map (.fields >> List.map .name)
         |> Maybe.withDefault []
@@ -204,15 +211,19 @@ noteFields =
 record, and unpacks one the same way: `Nothing` when it holds another
 type, `Just (Err problem)` when it holds this type but cannot be read.
 
-```elm
+```elm examples/notes/elm/src/Snippets/Any.elm#any
 import Notes.V1
 import Proto.Any
 
 
--- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries", …}
 packed : Proto.Any.Any
 packed =
-    Proto.Any.pack Notes.V1.messageNote { title = "groceries", pinned = True }
+    -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries", …}
+    let
+        note =
+            Notes.V1.defaultNote
+    in
+    Proto.Any.pack Notes.V1.messageNote { note | title = "groceries" }
 
 
 title : Proto.Any.Any -> Maybe String
@@ -227,9 +238,10 @@ title any =
 
 An error's details are `Any`s, and `Rpc.details` gives those of one
 type, here `google.rpc.BadRequest` from a package generated from
-`google/rpc/error_details.proto`:
+`google/rpc/error_details.proto` (the notes example generates it with buf
+from googleapis):
 
-```elm
+```elm examples/notes/elm/src/Snippets/Details.elm#details
 import Google.Rpc
 import Rpc
 
@@ -251,7 +263,7 @@ The config holds no functions (no interceptors, no token provider), so
 an application sends every call through one function of its own that
 builds the config from its state:
 
-```elm
+```elm examples/notes/elm/src/Api.elm#wrapper
 rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
 rpc shared call =
     Rpc.task (config shared) call
@@ -263,13 +275,16 @@ config shared =
         base =
             Rpc.config shared.apiUrl
     in
-    { base | headers = [ ( "Authorization", "Bearer " ++ shared.token ) ] }
+    { base
+        | transport = shared.transport
+        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
+    }
 ```
 
 Since a call is a value, a wrapper can send it again. Refreshing an
 expired token and retrying once:
 
-```elm
+```elm examples/notes/elm/src/Snippets/Refresh.elm#refresh
 withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call req res -> Task Rpc.Error res
 withRefresh refresh shared call =
     rpc shared call
@@ -295,15 +310,15 @@ wrapper.
 as the call's, so anything the config cannot say is a function between
 the two:
 
-```elm
+```elm examples/notes/elm/src/Snippets/Signed.elm#signed
 signed : Rpc.Config -> Rpc.Call req res -> Task Rpc.Error res
 signed cfg call =
     let
         request =
             Rpc.request cfg call
     in
-    Rpc.taskFromRequest cfg call
-        { request | headers = ( "X-Signature", sign request ) :: request.headers }
+    { request | headers = ( "X-Signature", sign request ) :: request.headers }
+        |> Rpc.taskFromRequest cfg call
 ```
 
 `Rpc.response` is the other half: it reads an `Http.Response String`
@@ -311,9 +326,9 @@ as the call's answer, so both can be tested without a server.
 
 ### Methods without an HTTP rule
 
-`Summarize` has no `google.api.http` rule, and is generated like the
+`Ping` has no `google.api.http` rule, and is generated like the
 rest. Over Connect nothing changes. Over transcoding it is sent on the
-implicit route, `POST /notes.v1.NotesService/Summarize` with the request
+implicit route, `POST /notes.v1.NotesService/Ping` with the request
 as its JSON body, which is the request Connect sends. Servers serve
 that route as follows:
 
@@ -347,6 +362,11 @@ has the case format, and CI runs it on every pull request.
 `just live` also runs the official
 [Connect conformance suite](https://github.com/connectrpc/conformance)'s
 unary JSON test cases (v1.0.6) against the runtime: all 40 pass.
+
+**The example.** [`examples/notes`](examples/notes) is also a browser
+application over either transport, with a walkthrough; `just
+example-notes` serves it. The Elm blocks above are excerpts of it, and
+`just check` fails when one drifts from its file.
 
 ## License
 
