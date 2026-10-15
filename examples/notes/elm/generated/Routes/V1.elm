@@ -3,6 +3,7 @@
 
 module Routes.V1 exposing (..)
 
+import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Descriptor
@@ -101,6 +102,9 @@ type alias FileRequest =
 type alias Resource =
     { name : String
     , displayName : String
+    , labels : Dict String String
+    , kinds : Dict String Kind
+    , weights : List ( Bool, Float )
     }
 
 
@@ -194,6 +198,9 @@ defaultResource : Resource
 defaultResource =
     { name = ""
     , displayName = ""
+    , labels = Dict.empty
+    , kinds = Dict.empty
+    , weights = []
     }
 
 
@@ -379,6 +386,9 @@ messageResource =
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
             , { name = "display_name", jsonName = "displayName", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "labels", jsonName = "labels", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+            , { name = "kinds", jsonName = "kinds", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
+            , { name = "weights", jsonName = "weights", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
             ]
         , oneofs = []
         }
@@ -537,6 +547,9 @@ encodeResource value =
     Proto.Json.object
         [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
         , ( "displayName", Proto.Json.implicit "" Json.Encode.string value.displayName )
+        , ( "labels", Proto.Json.dict identity Json.Encode.string value.labels )
+        , ( "kinds", Proto.Json.dict identity encodeKind value.kinds )
+        , ( "weights", Proto.Json.boolDict Proto.Json.encodeFloat value.weights )
         ]
 
 
@@ -652,6 +665,9 @@ decodeResource =
     Json.Decode.succeed Resource
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+        |> Proto.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
+        |> Proto.Json.field "kinds" Dict.empty (Json.Decode.dict decodeKind)
+        |> Proto.Json.field "weights" [] (Proto.Json.boolMap Proto.Json.float)
 
 
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest

@@ -436,3 +436,18 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   file paths, imports and references following; the runtime's modules
   are untouched. A value that is not dot-separated Elm module segments
   is an error. The `module_prefix` conformance case pins it.
+- Property tests (design §7). Elm fuzz tests check the runtime's laws:
+  every proto3 JSON codec round-trips across its type's range (64-bit
+  integers past 2^53, floats' special values, both base64 alphabets,
+  timestamps of years 1 to 9999, durations to ±315,576,000,000 s, field
+  masks, enums, maps, `Struct` and the rest), the generated codecs leave
+  out defaults, and `Rpc.request` over Transcode keeps path values,
+  query and body apart and percent-encodes what it must. The route
+  fixtures' test samples 16 requests for each binding of `routes.proto`
+  (256 in all) from a fixed seed, and its reference's HTTP requests
+  for them are pinned in `tests/RouteProperties.elm` and replayed
+  through `Rpc.request` as the fixtures are (`just bless` rewrites the
+  file). `routes.proto`'s `Resource` gains three map fields for them,
+  which the live suite's `routes.mjs` now reads. The reference writes a
+  float in a path or query as the runtime does: `Infinity`, not Rust's
+  `inf`, and a finite value in ECMAScript's form.
