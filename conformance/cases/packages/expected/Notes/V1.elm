@@ -84,28 +84,28 @@ registry =
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Json.Encode.object
-        ([ ( "title", Json.Encode.string value.title )
-         , ( "author", Proto.Json.encodeMaybe Users.V1.encodeUser value.author )
-         , ( "requiredRole", Users.V1.encodeRole value.requiredRole )
-         , ( "readers", Json.Encode.list Users.V1.encodeUser value.readers )
-         , ( "roles", Json.Encode.dict identity Users.V1.encodeRole value.roles )
+    Proto.Json.object
+        ([ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+         , ( "author", Maybe.map Users.V1.encodeUser value.author )
+         , ( "requiredRole", Proto.Json.implicit Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
+         , ( "readers", Proto.Json.repeated Users.V1.encodeUser value.readers )
+         , ( "roles", Proto.Json.dict identity Users.V1.encodeRole value.roles )
          ]
             ++ encodeNoteOwner value.owner
         )
 
 
-encodeNoteOwner : NoteOwner -> List ( String, Json.Encode.Value )
+encodeNoteOwner : NoteOwner -> List ( String, Maybe Json.Encode.Value )
 encodeNoteOwner value =
     case value of
         NoteOwnerUnset ->
             []
 
         NoteOwnerUser member ->
-            [ ( "user", Users.V1.encodeUser member ) ]
+            [ ( "user", Just (Users.V1.encodeUser member) ) ]
 
         NoteOwnerTeam member ->
-            [ ( "team", Json.Encode.string member ) ]
+            [ ( "team", Just (Json.Encode.string member) ) ]
 
 
 

@@ -81,27 +81,27 @@ registry =
 
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
-    Json.Encode.object
-        ([ ( "id", Json.Encode.string value.id )
-         , ( "payload", Proto.Json.encodeMaybe Proto.Any.encodeJson value.payload )
-         , ( "attachments", Json.Encode.list Proto.Any.encodeJson value.attachments )
-         , ( "headers", Json.Encode.dict identity Proto.Any.encodeJson value.headers )
+    Proto.Json.object
+        ([ ( "id", Proto.Json.implicit "" Json.Encode.string value.id )
+         , ( "payload", Maybe.map Proto.Any.encodeJson value.payload )
+         , ( "attachments", Proto.Json.repeated Proto.Any.encodeJson value.attachments )
+         , ( "headers", Proto.Json.dict identity Proto.Any.encodeJson value.headers )
          ]
             ++ encodeEnvelopeBody value.body
         )
 
 
-encodeEnvelopeBody : EnvelopeBody -> List ( String, Json.Encode.Value )
+encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
 encodeEnvelopeBody value =
     case value of
         EnvelopeBodyUnset ->
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Proto.Any.encodeJson member ) ]
+            [ ( "packed", Just (Proto.Any.encodeJson member) ) ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Json.Encode.string member ) ]
+            [ ( "text", Just (Json.Encode.string member) ) ]
 
 
 

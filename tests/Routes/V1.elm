@@ -440,111 +440,111 @@ encodeKind value =
 
 encodeGetMessageRequest : GetMessageRequest -> Json.Encode.Value
 encodeGetMessageRequest value =
-    Json.Encode.object
-        [ ( "messageId", Json.Encode.string value.messageId )
-        , ( "revision", Proto.Json.encodeInt64 value.revision )
-        , ( "sub", Proto.Json.encodeMaybe encodeGetMessageRequestSubMessage value.sub )
-        , ( "userId", Json.Encode.string value.userId )
-        , ( "name", Json.Encode.string value.name )
+    Proto.Json.object
+        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
+        , ( "revision", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.revision )
+        , ( "sub", Maybe.map encodeGetMessageRequestSubMessage value.sub )
+        , ( "userId", Proto.Json.implicit "" Json.Encode.string value.userId )
+        , ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
         ]
 
 
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Json.Encode.Value
 encodeGetMessageRequestSubMessage value =
-    Json.Encode.object [ ( "subfield", Json.Encode.string value.subfield ) ]
+    Proto.Json.object [ ( "subfield", Proto.Json.implicit "" Json.Encode.string value.subfield ) ]
 
 
 encodeMessage : Message -> Json.Encode.Value
 encodeMessage value =
-    Json.Encode.object
-        [ ( "messageId", Json.Encode.string value.messageId )
-        , ( "text", Json.Encode.string value.text )
+    Proto.Json.object
+        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
+        , ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
         ]
 
 
 encodeUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
 encodeUpdateMessageRequest value =
-    Json.Encode.object
-        [ ( "messageId", Json.Encode.string value.messageId )
-        , ( "message", Proto.Json.encodeMaybe encodeMessage value.message )
+    Proto.Json.object
+        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
+        , ( "message", Maybe.map encodeMessage value.message )
         ]
 
 
 encodeEverything : Everything -> Json.Encode.Value
 encodeEverything value =
-    Json.Encode.object
-        ([ ( "name", Json.Encode.string value.name )
-         , ( "count", Json.Encode.int value.count )
-         , ( "big", Proto.Json.encodeInt64 value.big )
-         , ( "ubig", Proto.Json.encodeInt64 value.ubig )
-         , ( "flag", Json.Encode.bool value.flag )
-         , ( "ratio", Proto.Json.encodeFloat value.ratio )
-         , ( "scale", Proto.Json.encodeFloat value.scale )
-         , ( "data", Proto.Json.encodeBytes value.data )
-         , ( "kind", encodeKind value.kind )
-         , ( "tags", Json.Encode.list Json.Encode.string value.tags )
-         , ( "kinds", Json.Encode.list encodeKind value.kinds )
-         , ( "numbers", Json.Encode.list Json.Encode.int value.numbers )
-         , ( "maybeCount", Proto.Json.encodeMaybe Json.Encode.int value.maybeCount )
-         , ( "maybeName", Proto.Json.encodeMaybe Json.Encode.string value.maybeName )
-         , ( "at", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.at )
-         , ( "wait", Proto.Json.encodeMaybe Proto.Json.encodeDuration value.wait )
-         , ( "mask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.mask )
-         , ( "limit", Proto.Json.encodeMaybe Json.Encode.int value.limit )
-         , ( "label", Proto.Json.encodeMaybe Json.Encode.string value.label )
-         , ( "inner", Proto.Json.encodeMaybe encodeInner value.inner )
+    Proto.Json.object
+        ([ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+         , ( "count", Proto.Json.implicit 0 Json.Encode.int value.count )
+         , ( "big", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.big )
+         , ( "ubig", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.ubig )
+         , ( "flag", Proto.Json.implicit False Json.Encode.bool value.flag )
+         , ( "ratio", Proto.Json.implicitFloat value.ratio )
+         , ( "scale", Proto.Json.implicitFloat value.scale )
+         , ( "data", Proto.Json.implicit "" Proto.Json.encodeBytes value.data )
+         , ( "kind", Proto.Json.implicit KindUnspecified encodeKind value.kind )
+         , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
+         , ( "kinds", Proto.Json.repeated encodeKind value.kinds )
+         , ( "numbers", Proto.Json.repeated Json.Encode.int value.numbers )
+         , ( "maybeCount", Maybe.map Json.Encode.int value.maybeCount )
+         , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
+         , ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
+         , ( "wait", Maybe.map Proto.Json.encodeDuration value.wait )
+         , ( "mask", Maybe.map Proto.Json.encodeFieldMask value.mask )
+         , ( "limit", Maybe.map Json.Encode.int value.limit )
+         , ( "label", Maybe.map Json.Encode.string value.label )
+         , ( "inner", Maybe.map encodeInner value.inner )
          ]
             ++ encodeEverythingChoice value.choice
         )
 
 
-encodeEverythingChoice : EverythingChoice -> List ( String, Json.Encode.Value )
+encodeEverythingChoice : EverythingChoice -> List ( String, Maybe Json.Encode.Value )
 encodeEverythingChoice value =
     case value of
         EverythingChoiceUnset ->
             []
 
         EverythingChoiceText member ->
-            [ ( "text", Json.Encode.string member ) ]
+            [ ( "text", Just (Json.Encode.string member) ) ]
 
         EverythingChoiceNumber member ->
-            [ ( "number", Json.Encode.int member ) ]
+            [ ( "number", Just (Json.Encode.int member) ) ]
 
 
 encodeInner : Inner -> Json.Encode.Value
 encodeInner value =
-    Json.Encode.object
-        [ ( "a", Json.Encode.string value.a )
-        , ( "deep", Proto.Json.encodeMaybe encodeDeep value.deep )
+    Proto.Json.object
+        [ ( "a", Proto.Json.implicit "" Json.Encode.string value.a )
+        , ( "deep", Maybe.map encodeDeep value.deep )
         ]
 
 
 encodeDeep : Deep -> Json.Encode.Value
 encodeDeep value =
-    Json.Encode.object
-        [ ( "b", Json.Encode.int value.b )
-        , ( "c", Json.Encode.list Json.Encode.string value.c )
+    Proto.Json.object
+        [ ( "b", Proto.Json.implicit 0 Json.Encode.int value.b )
+        , ( "c", Proto.Json.repeated Json.Encode.string value.c )
         ]
 
 
 encodeFileRequest : FileRequest -> Json.Encode.Value
 encodeFileRequest value =
-    Json.Encode.object [ ( "path", Json.Encode.string value.path ) ]
+    Proto.Json.object [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path ) ]
 
 
 encodeResource : Resource -> Json.Encode.Value
 encodeResource value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "displayName", Json.Encode.string value.displayName )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "displayName", Proto.Json.implicit "" Json.Encode.string value.displayName )
         ]
 
 
 encodeUpdateResourceRequest : UpdateResourceRequest -> Json.Encode.Value
 encodeUpdateResourceRequest value =
-    Json.Encode.object
-        [ ( "resource", Proto.Json.encodeMaybe encodeResource value.resource )
-        , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
+    Proto.Json.object
+        [ ( "resource", Maybe.map encodeResource value.resource )
+        , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
         ]
 
 

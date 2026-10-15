@@ -163,36 +163,36 @@ encodeAudience value =
 
 encodeMemo : Memo -> Json.Encode.Value
 encodeMemo value =
-    Json.Encode.object
-        ([ ( "title", Json.Encode.string value.heading )
-         , ( "visibility", encodeAudience value.visibility )
-         , ( "revisions", Json.Encode.list encodeEdit value.revisions )
+    Proto.Json.object
+        ([ ( "title", Proto.Json.implicit "" Json.Encode.string value.heading )
+         , ( "visibility", Proto.Json.implicit AudienceUnspecified encodeAudience value.visibility )
+         , ( "revisions", Proto.Json.repeated encodeEdit value.revisions )
          ]
             ++ encodeMemoBody value.body
         )
 
 
-encodeMemoBody : MemoBody -> List ( String, Json.Encode.Value )
+encodeMemoBody : MemoBody -> List ( String, Maybe Json.Encode.Value )
 encodeMemoBody value =
     case value of
         MemoBodyUnset ->
             []
 
         MemoBodyText member ->
-            [ ( "text", Json.Encode.string member ) ]
+            [ ( "text", Just (Json.Encode.string member) ) ]
 
         BodyUrl member ->
-            [ ( "link", Json.Encode.string member ) ]
+            [ ( "link", Just (Json.Encode.string member) ) ]
 
 
 encodeEdit : Edit -> Json.Encode.Value
 encodeEdit value =
-    Json.Encode.object [ ( "number", Json.Encode.int value.number ) ]
+    Proto.Json.object [ ( "number", Proto.Json.implicit 0 Json.Encode.int value.number ) ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Json.Encode.object [ ( "name", Json.Encode.string value.name ) ]
+    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
 
 
 

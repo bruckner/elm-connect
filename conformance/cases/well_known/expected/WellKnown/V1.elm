@@ -151,57 +151,57 @@ registry =
 
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
-    Json.Encode.object
-        ([ ( "createdAt", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.createdAt )
-         , ( "timeout", Proto.Json.encodeMaybe Proto.Json.encodeDuration value.timeout )
-         , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
-         , ( "marker", Proto.Json.encodeEmpty value.marker )
-         , ( "metadata", Proto.Json.encodeMaybe Proto.Json.encodeStruct value.metadata )
-         , ( "payload", value.payload )
-         , ( "items", Proto.Json.encodeMaybe Proto.Json.encodeListValue value.items )
-         , ( "ratio", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.ratio )
-         , ( "weight", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.weight )
-         , ( "bigCount", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.bigCount )
-         , ( "bigTotal", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.bigTotal )
-         , ( "count", Proto.Json.encodeMaybe Json.Encode.int value.count )
-         , ( "total", Proto.Json.encodeMaybe Json.Encode.int value.total )
-         , ( "enabled", Proto.Json.encodeMaybe Json.Encode.bool value.enabled )
-         , ( "nickname", Proto.Json.encodeMaybe Json.Encode.string value.nickname )
-         , ( "avatar", Proto.Json.encodeMaybe Proto.Json.encodeBytes value.avatar )
-         , ( "history", Json.Encode.list Proto.Json.encodeTimestamp value.history )
-         , ( "limits", Json.Encode.dict identity Proto.Json.encodeDuration value.limits )
-         , ( "values", Json.Encode.list identity value.values )
-         , ( "counts", Json.Encode.list Json.Encode.int value.counts )
-         , ( "acked", Proto.Json.encodeEmpty value.acked )
-         , ( "pings", Json.Encode.list Proto.Json.encodeEmpty value.pings )
-         , ( "seen", Json.Encode.dict identity Proto.Json.encodeEmpty value.seen )
-         , ( "records", Json.Encode.list Proto.Json.encodeStruct value.records )
-         , ( "columns", Json.Encode.dict identity Proto.Json.encodeListValue value.columns )
+    Proto.Json.object
+        ([ ( "createdAt", Maybe.map Proto.Json.encodeTimestamp value.createdAt )
+         , ( "timeout", Maybe.map Proto.Json.encodeDuration value.timeout )
+         , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
+         , ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
+         , ( "metadata", Maybe.map Proto.Json.encodeStruct value.metadata )
+         , ( "payload", Just value.payload )
+         , ( "items", Maybe.map Proto.Json.encodeListValue value.items )
+         , ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
+         , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
+         , ( "bigCount", Maybe.map Proto.Json.encodeInt64 value.bigCount )
+         , ( "bigTotal", Maybe.map Proto.Json.encodeInt64 value.bigTotal )
+         , ( "count", Maybe.map Json.Encode.int value.count )
+         , ( "total", Maybe.map Json.Encode.int value.total )
+         , ( "enabled", Maybe.map Json.Encode.bool value.enabled )
+         , ( "nickname", Maybe.map Json.Encode.string value.nickname )
+         , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
+         , ( "history", Proto.Json.repeated Proto.Json.encodeTimestamp value.history )
+         , ( "limits", Proto.Json.dict identity Proto.Json.encodeDuration value.limits )
+         , ( "values", Proto.Json.repeated identity value.values )
+         , ( "counts", Proto.Json.repeated Json.Encode.int value.counts )
+         , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
+         , ( "pings", Proto.Json.repeated Proto.Json.encodeEmpty value.pings )
+         , ( "seen", Proto.Json.dict identity Proto.Json.encodeEmpty value.seen )
+         , ( "records", Proto.Json.repeated Proto.Json.encodeStruct value.records )
+         , ( "columns", Proto.Json.dict identity Proto.Json.encodeListValue value.columns )
          ]
             ++ encodeEventWhen value.when
         )
 
 
-encodeEventWhen : EventWhen -> List ( String, Json.Encode.Value )
+encodeEventWhen : EventWhen -> List ( String, Maybe Json.Encode.Value )
 encodeEventWhen value =
     case value of
         EventWhenUnset ->
             []
 
         EventWhenAt member ->
-            [ ( "at", Proto.Json.encodeTimestamp member ) ]
+            [ ( "at", Just (Proto.Json.encodeTimestamp member) ) ]
 
         EventWhenAfter member ->
-            [ ( "after", Proto.Json.encodeDuration member ) ]
+            [ ( "after", Just (Proto.Json.encodeDuration member) ) ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", member ) ]
+            [ ( "whenever", Just member ) ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Proto.Json.encodeStruct member ) ]
+            [ ( "schedule", Just (Proto.Json.encodeStruct member) ) ]
 
         EventWhenDates member ->
-            [ ( "dates", Proto.Json.encodeListValue member ) ]
+            [ ( "dates", Just (Proto.Json.encodeListValue member) ) ]
 
 
 

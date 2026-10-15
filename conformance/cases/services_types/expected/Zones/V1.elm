@@ -94,14 +94,14 @@ registry =
 
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
-    Json.Encode.object [ ( "name", Json.Encode.string value.name ) ]
+    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
 
 
 encodeZone : Zone -> Json.Encode.Value
 encodeZone value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "offsetSeconds", Proto.Json.encodeInt64AsInt value.offsetSeconds )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "offsetSeconds", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
         ]
 
 

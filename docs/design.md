@@ -286,7 +286,8 @@ rpc shared call =
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Proto.Json.encodeBoolMap`) writes a
+  most two entries. The encoder (`Proto.Json.boolDict`, through
+  `Proto.Json.encodeBoolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.boolMap`) reads one, fails on any key but exactly
   `"true"` or `"false"`, and gives the pairs in the object's key order.
@@ -418,9 +419,34 @@ rpc shared call =
 | `string` | `String` | |
 | `bytes` | `String` (base64, as on the wire) | *(Decided; see below.)* |
 
-Encoders emit every field, default values included, which proto3 JSON
-allows. *(Current rule, not yet reviewed.)* A field with presence
-(`Maybe`) encodes `Nothing` as `null`, which parsers read as absent.
+Encoders leave out every field at its default. *(Decided, 2026-10-15.)*
+A message's encoder is `Proto.Json.object` over `( jsonName, Maybe
+Json.Encode.Value )` pairs, one per field, `Nothing` leaving the field
+out:
+
+- A field without presence (a plain scalar or enum) is left out at its
+  proto3 default (`Proto.Json.implicit zero encoder value`: `0`, `"0"`,
+  `""`, `False`, the zero enum value); a float only at `0`
+  (`Proto.Json.implicitFloat`), so `-0`, NaN and the infinities are
+  written.
+- A field with presence (`Maybe`: `optional`, a message, a wrapper,
+  `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Any`) is
+  left out when `Nothing` and written when `Just`, at its default too
+  (`Just 0` writes `0`, `Just` an empty message writes `{}`): presence
+  is what the `Maybe` says (`Maybe.map encoder value`).
+- A oneof's set member is always written, at its default too; an unset
+  oneof writes nothing (§3.6).
+- A repeated or map field is left out when empty (`Proto.Json.repeated`,
+  `Proto.Json.dict`, `Proto.Json.boolDict`).
+- A `Value` field is always written, since `null` is one of its values,
+  and an `Empty` field always writes `{}` (§3.5).
+
+Why: request bodies shrink to what the message holds; protobuf-go's
+`protojson`, and so connect-go, writes the same way unless
+`EmitUnpopulated` is set; and every proto3 JSON parser, this runtime's
+decoders included, reads a missing field as its default, so nothing is
+lost. Encoders wrote every field, defaults included and `Nothing` as
+`null`, until 2026-10-15; proto3 JSON allows both.
 
 Decoders accept every form proto3 JSON requires a parser to accept, not
 just the form encoders write. *(Proposed; built.)*
@@ -633,9 +659,10 @@ Built *(Proposed in its details)*:
   declared, so the record constructor's argument order follows the
   proto.
 - The oneof's encoder gives the set member as a one-element list of
-  `( jsonName, value )`, or `[]` when unset, and the message's encoder
-  appends it to its fields: `Json.Encode.object ([ ... ] ++
-  encodeNoteEventKind value.kind)`.
+  `( jsonName, Just value )`, or `[]` when unset, and the message's
+  encoder appends it to its fields: `Proto.Json.object ([ ... ] ++
+  encodeNoteEventKind value.kind)`. The member is written at its
+  default too: being set is what a oneof says (§3.4).
 - The oneof's decoder is `Proto.Json.members "kind"
   NoteEventKindUnset [ ... ]`, given the oneof's proto name (for error
   messages), its unset constructor and a `Proto.Json.member` per
@@ -1469,6 +1496,12 @@ default, and is `Nothing` for a number the method has no binding of
   proto3 default (`""`, `0`, `false`, an enum's zero value), a field
   with presence (`optional`, a oneof member, a wrapper, a timestamp)
   only when unset, and a repeated field sends one parameter per element.
+  Generated encoders already leave such fields out (§3.4); the runtime
+  still compares a value with its parameter's default text, so JSON
+  from another encoder (`Rpc.taskFromRequest`, the pure halves) gives
+  the same query. Likewise a path variable missing from the JSON is
+  its default's text, which is now how every path field at its default
+  is written.
   Values are written as proto3 JSON writes them, unquoted: enums by
   name, 64-bit integers in decimal, timestamps in RFC 3339, field masks
   comma-joined.
@@ -1859,8 +1892,9 @@ Vanguard's answer so that a change either way is noticed:
   message. Neither end is wrong: the wire has no other form for it.
 
 Also seen, not a divergence: with `body: "*"` the runtime sends
-`"sub": {}` for a message whose only field the path holds, and writes
-fields at their defaults; the fixtures' comparison drops both.
+`"sub": {}` for a message whose only field the path holds, which the
+fixtures' comparison drops. It also wrote fields at their defaults
+until encoders left them out (§3.4).
 
 Workstream 4, built 2026-10-15: `examples/notes/elm/` is a browser
 application (`Main.elm`) that lists, creates, edits with an update
