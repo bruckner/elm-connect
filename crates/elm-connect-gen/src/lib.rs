@@ -44,8 +44,10 @@ pub struct Generated {
 }
 
 /// Generates one Elm module per proto package declared by the files in
-/// `generate` (names as `pool` knows them), and one per service of each
-/// that has a method, sorted by path. A package of services alone still
+/// `generate` (names as `pool` knows them) or referred to from them,
+/// transitively, each in full from every file of `pool` that declares it
+/// (the closure, design §3.1; `google.protobuf` excepted), and one per
+/// service of each that has a method, sorted by path. A package of services alone still
 /// gets a package module, holding its registry. A service without methods,
 /// declared so or left so by `streaming=skip`, gets no module: Elm rejects
 /// a module that declares nothing.

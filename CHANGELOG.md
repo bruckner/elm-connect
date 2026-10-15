@@ -272,4 +272,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `elm_connect_gen::options`. A service without methods gets no module,
   which Elm would reject. The conformance harness pins a case's warnings
   in `expected/warnings.txt` (`services_streaming_skip` case).
+- The packages generated are the closure of the requested files: every
+  package they refer to through fields, oneof members, map values and
+  method requests and responses is generated too, transitively and in
+  full (every compiled file declaring it: types, enums, services), from
+  protoc's `proto_file` or the CLI's compiled imports. `google.protobuf`
+  is still never generated. The `generate::not_generated` diagnostic is
+  gone; `packages_not_generated` is now the golden case
+  `packages_closure`, and `services_invalid` drops its method of an
+  ungenerated package.
 

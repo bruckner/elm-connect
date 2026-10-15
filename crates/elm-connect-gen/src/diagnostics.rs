@@ -45,8 +45,6 @@ pub enum Code {
     InvalidField,
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown,
-    /// A generated package refers to a type in a package not generated.
-    NotGenerated,
     /// Generated packages refer to each other in a cycle.
     ImportCycle,
     /// A file to generate is not in the descriptor set.
@@ -95,7 +93,6 @@ impl Code {
             Code::InvalidType => "naming::invalid_type",
             Code::InvalidField => "naming::invalid_field",
             Code::UnsupportedWellKnown => "types::unsupported_well_known",
-            Code::NotGenerated => "generate::not_generated",
             Code::ImportCycle => "generate::import_cycle",
             Code::UnknownFile => "generate::unknown_file",
             Code::NotProto3 => "generate::not_proto3",
@@ -348,29 +345,6 @@ impl Problem {
             "The supported well-known types are Timestamp, Duration, FieldMask, Empty, Any, \
              Struct, Value, ListValue and the wrappers like Int32Value. Use one of those, or a \
              message of your own.",
-            vec![site],
-        )
-    }
-
-    /// `referrer` refers to `type_name`, whose package `package` (declared
-    /// in `file`) is not being generated.
-    pub fn not_generated(
-        referrer: &Referrer,
-        type_name: &str,
-        package: &str,
-        file: &str,
-        site: Site,
-    ) -> Self {
-        Problem::new(
-            Code::NotGenerated,
-            format!(
-                "{referrer} refers to `{type_name}`, but the package `{package}` is not being \
-                 generated."
-            ),
-            format!(
-                "Generated Elm modules import the modules of every package they refer to, so \
-                 those packages must be generated too. Add `{file}` to the files to generate."
-            ),
             vec![site],
         )
     }

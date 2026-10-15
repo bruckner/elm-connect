@@ -47,7 +47,9 @@ codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
 maps, and custom types for enums and oneofs, a typed record per message
 and enum holding its codecs and descriptor, and a module per service
-with a call for every unary method.
+with a call for every unary method. Every package the given files refer
+to is generated with them, transitively, so there is no need to list
+its files; `google.protobuf` maps to the runtime instead.
 
 The runtime package has two roots, `Proto` for data and `Rpc` for
 calling:

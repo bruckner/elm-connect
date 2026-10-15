@@ -236,6 +236,50 @@ mod tests {
         assert_eq!(warnings, "");
     }
 
+    #[test]
+    fn the_closure_comes_from_the_imports() {
+        let case = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../conformance/cases/packages_closure");
+        let mut compiler =
+            protox::Compiler::new([case.join("input"), case.join("include")]).expect("paths");
+        compiler.include_imports(true);
+        compiler
+            .open_file("notes.proto")
+            .expect("the case compiles");
+        let request = CodeGeneratorRequest {
+            file_to_generate: vec!["notes.proto".into()],
+            proto_file: compiler.file_descriptor_set().file,
+            ..CodeGeneratorRequest::default()
+        };
+        let response = round_trip(request);
+
+        assert_eq!(response.error, None);
+        for file in &response.file {
+            let name = file.name.as_deref().expect("a name");
+            let expected =
+                std::fs::read_to_string(case.join("expected").join(name)).expect("blessed");
+            assert!(
+                file.content.as_deref() == Some(expected.as_str()),
+                "the plugin's {name} differs from the blessed expected output"
+            );
+        }
+        let names: Vec<&str> = response
+            .file
+            .iter()
+            .filter_map(|f| f.name.as_deref())
+            .collect();
+        assert_eq!(
+            names,
+            [
+                "Notes/V1.elm",
+                "Notes/V1/Notes.elm",
+                "Orgs/V1.elm",
+                "Users/V1.elm",
+                "Users/V1/Users.elm"
+            ]
+        );
+    }
+
     /// A set's files as protox encoded them, options intact.
     #[derive(Clone, PartialEq, prost::Message)]
     struct RawSet {

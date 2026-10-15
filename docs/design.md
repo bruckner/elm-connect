@@ -234,14 +234,21 @@ rpc shared call =
   each package with its files and points at a reference along the
   cycle in each.
 - An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)*
-- The set of files to generate must be closed under package references:
-  a generated package may refer only to types in generated packages or
-  to supported well-known types, and a reference to any other package is
-  a diagnostic naming both sides. The CLI generates the closure of its
-  inputs; protoc users list all the files. *(Proposed.)* `google.protobuf`
-  is never generated as a package.
-  Built as `generate::not_generated` (`packages_not_generated` case),
-  which points at the referring field and names the file to add. A
+- The packages generated are the closure of the requested files':
+  every package reachable from them through field, oneof member,
+  map value and method request and response references is generated,
+  transitively, with no option to turn it off. *(Decided, 2026-10-14.)*
+  Each is generated in full, from every compiled file that declares it:
+  its types, its enums and its services. A package's module is then the
+  same whichever of its files were asked for. The protoc plugin takes
+  the closure from the request's `proto_file`, which holds every
+  import; the CLI from the files protox compiled. `google.protobuf` is
+  never generated as a package: its supported types map to the runtime
+  (§3.5), and the rest are `types::unsupported_well_known`. This
+  replaced a rule that the requested files be closed under package
+  references, with a `generate::not_generated` diagnostic naming the
+  file to add; listing every file by hand was the only way past it
+  (`packages_closure` case, formerly `packages_not_generated`). A
   reference to another generated package is qualified with its module
   (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
   plainly, without an alias or an exposing list (`packages` case).
@@ -732,12 +739,11 @@ case names it):
   was refused here (`types::any`) until it was built (§3.5). No escape
   yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
-  case): Elm forbids import cycles. No escape yet; a module map, sending
-  the packages of a cycle to one Elm module, would be one.
-- **A generate set not closed under package references**
-  (`generate::not_generated`, `packages_not_generated` case), the
-  request and response types of methods included (`services_invalid`
-  case). No escape yet.
+  case): Elm forbids import cycles. No escape yet; a module map,
+  sending the packages of a cycle to one Elm module, would be one. A
+  package referred to but not requested was a dead end too
+  (`generate::not_generated`) until the closure was generated (§3.1);
+  it is no longer refused.
 - **Streaming methods** (`services::streaming`, `services_streaming`
   case): client, server and bidirectional (§1.3). Escape:
   `streaming=skip` leaves each one out of its service's module, a
@@ -1016,8 +1022,9 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`), through
   the runtime's typed record of it (`services_types` case). Any other
-  type outside the generate set is `generate::not_generated`, worded for
-  the method ("The request of `notes.v1.Notes.Get` refers to ...").
+  type's package is generated with the rest (§3.1), and an unsupported
+  well-known type is `types::unsupported_well_known`, worded for the
+  method ("The response of `notes.v1.Notes.Get` has type ...").
 - A streaming method is `services::streaming`, pointing at its
   `stream` keyword, rather than being skipped; `streaming=skip` skips it
   instead, with the same code as a warning (§3.8).

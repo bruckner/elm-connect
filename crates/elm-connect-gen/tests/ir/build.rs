@@ -469,28 +469,53 @@ fn a_package_spans_its_files() {
 }
 
 #[test]
-fn generate_set_must_be_closed_under_package_references() {
+fn referenced_packages_are_generated_too() {
     let files = [
         ("users/v1/user.proto", USERS),
         ("notes/v1/note.proto", NOTES),
     ];
-    let diagnostics = problems(&files, &["notes/v1/note.proto"]);
+    let packages = build(&files, &["notes/v1/note.proto"]).expect("builds");
+    let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
+    assert_eq!(names, ["notes.v1", "users.v1"]);
+    assert_eq!(packages[1].files, ["users/v1/user.proto"]);
+    let user = message(&packages[1], "User");
+    assert_eq!(field(user, "id").elm_name, "id");
+}
+
+#[test]
+fn the_closure_is_transitive_and_takes_whole_packages() {
+    let files = [
+        (
+            "orgs/v1/org.proto",
+            "syntax = \"proto3\"; package orgs.v1; enum Tier { TIER_UNSPECIFIED = 0; }",
+        ),
+        (
+            "users/v1/user.proto",
+            "syntax = \"proto3\"; package users.v1; import \"orgs/v1/org.proto\"; \
+             message User { map<string, orgs.v1.Tier> tiers = 1; }",
+        ),
+        (
+            "users/v1/group.proto",
+            "syntax = \"proto3\"; package users.v1; message Group {}",
+        ),
+        (
+            "notes/v1/note.proto",
+            "syntax = \"proto3\"; package notes.v1; import \"users/v1/user.proto\"; \
+             import \"users/v1/group.proto\"; \
+             message Note { oneof by { users.v1.User user = 1; } }",
+        ),
+        (
+            "unrelated/v1/thing.proto",
+            "syntax = \"proto3\"; package unrelated.v1; message Thing {}",
+        ),
+    ];
+    let packages = build(&files, &["notes/v1/note.proto"]).expect("builds");
+    let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
+    assert_eq!(names, ["notes.v1", "orgs.v1", "users.v1"]);
     assert_eq!(
-        codes(&diagnostics),
-        [Code::NotGenerated, Code::NotGenerated]
+        packages[2].files,
+        ["users/v1/group.proto", "users/v1/user.proto"]
     );
-    let first = diagnostics.iter().next().unwrap();
-    assert!(
-        first.message().contains("`notes.v1.Note`"),
-        "{}",
-        first.message()
-    );
-    assert!(
-        first.message().contains("`users.v1.User`"),
-        "{}",
-        first.message()
-    );
-    assert!(first.help_text().contains("users/v1/user.proto"));
 }
 
 #[test]

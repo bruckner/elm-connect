@@ -9,7 +9,7 @@ cases/<case>/
                          plugin parameter on one line (`int64=int`)
   input/                 .proto files; all of them are compiled and generated
   include/               optional: .proto files the input may import, which
-                         are compiled but not generated
+                         are compiled but not requested
   expected/
     <Module/Path>.elm    the Elm generated from the input, one file per module
     warnings.txt         beside the modules, when generating warns: the
@@ -20,8 +20,10 @@ cases/<case>/
 
 A case expects either modules or `diagnostics.txt`, never both. Inputs are
 compiled with protox, with `input/` and `include/` as the include paths,
-and every file under `input/` is in the generate set; nothing under
-`include/` is. Without `options.txt` a case is generated with the default
+and every file under `input/` is requested; nothing under `include/` is.
+A package the requested ones refer to is generated all the same, as the
+closure (design §3.1), so an `include/` file can still have modules in
+`expected/` (`packages_closure` case). Without `options.txt` a case is generated with the default
 options.
 
 ## The checks
