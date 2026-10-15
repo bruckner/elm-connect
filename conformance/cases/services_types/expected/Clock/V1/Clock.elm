@@ -5,9 +5,10 @@ module Clock.V1.Clock exposing (..)
 
 import Clock.V1
 import Dict exposing (Dict)
+import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
-import Proto.WellKnown
+import Proto.Json
 import Rpc
 import Time
 import Zones.V1
@@ -16,8 +17,8 @@ import Zones.V1
 now : () -> Rpc.Call () Time.Posix
 now =
     Rpc.call
-        { request = Proto.WellKnown.empty
-        , response = Proto.WellKnown.timestamp
+        { encodeRequest = Proto.Json.encodeEmpty
+        , responseDecoder = Proto.Json.timestamp
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Now"
@@ -32,8 +33,8 @@ now =
 sleep : Duration -> Rpc.Call Duration ()
 sleep =
     Rpc.call
-        { request = Proto.WellKnown.duration
-        , response = Proto.WellKnown.empty
+        { encodeRequest = Proto.Json.encodeDuration
+        , responseDecoder = Proto.Json.empty
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Sleep"
@@ -48,8 +49,8 @@ sleep =
 mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
 mask =
     Rpc.call
-        { request = Proto.WellKnown.fieldMask
-        , response = Proto.WellKnown.struct
+        { encodeRequest = Proto.Json.encodeFieldMask
+        , responseDecoder = Proto.Json.struct
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Mask"
@@ -64,8 +65,8 @@ mask =
 echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
 echo =
     Rpc.call
-        { request = Proto.WellKnown.value
-        , response = Proto.WellKnown.listValue
+        { encodeRequest = Basics.identity
+        , responseDecoder = Proto.Json.listValue
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Echo"
@@ -80,8 +81,8 @@ echo =
 ticks : Int -> Rpc.Call Int Int
 ticks =
     Rpc.call
-        { request = Proto.WellKnown.int64ValueAsInt
-        , response = Proto.WellKnown.uint64ValueAsInt
+        { encodeRequest = Proto.Json.encodeInt64AsInt
+        , responseDecoder = Proto.Json.uint64AsInt
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Ticks"
@@ -96,8 +97,8 @@ ticks =
 count : Int -> Rpc.Call Int Int
 count =
     Rpc.call
-        { request = Proto.WellKnown.int32Value
-        , response = Proto.WellKnown.uint32Value
+        { encodeRequest = Json.Encode.int
+        , responseDecoder = Proto.Json.uint32
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Count"
@@ -112,8 +113,8 @@ count =
 ratio : Float -> Rpc.Call Float Float
 ratio =
     Rpc.call
-        { request = Proto.WellKnown.doubleValue
-        , response = Proto.WellKnown.floatValue
+        { encodeRequest = Proto.Json.encodeFloat
+        , responseDecoder = Proto.Json.float
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Ratio"
@@ -128,8 +129,8 @@ ratio =
 name : String -> Rpc.Call String Bool
 name =
     Rpc.call
-        { request = Proto.WellKnown.stringValue
-        , response = Proto.WellKnown.boolValue
+        { encodeRequest = Json.Encode.string
+        , responseDecoder = Json.Decode.bool
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Name"
@@ -144,8 +145,8 @@ name =
 raw : String -> Rpc.Call String String
 raw =
     Rpc.call
-        { request = Proto.WellKnown.bytesValue
-        , response = Proto.WellKnown.bytesValue
+        { encodeRequest = Proto.Json.encodeBytes
+        , responseDecoder = Proto.Json.bytes
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Raw"
@@ -160,8 +161,8 @@ raw =
 zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
     Rpc.call
-        { request = Zones.V1.messageZoneRequest
-        , response = Zones.V1.messageZone
+        { encodeRequest = Zones.V1.encodeZoneRequest
+        , responseDecoder = Zones.V1.decodeZone
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Zone"
@@ -176,8 +177,8 @@ zone =
 set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
 set =
     Rpc.call
-        { request = Clock.V1.messageAlarm
-        , response = Clock.V1.messageAlarm
+        { encodeRequest = Clock.V1.encodeAlarm
+        , responseDecoder = Clock.V1.decodeAlarm
         , descriptor =
             { service = "clock.v1.Clock"
             , name = "Set"

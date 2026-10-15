@@ -7,7 +7,6 @@ import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Any
 import Proto.Http
-import Proto.Message exposing (Message)
 import Proto.Method exposing (Method)
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
@@ -40,8 +39,8 @@ bound by `bindings`.
 -}
 raw : List Rule -> Method Value String
 raw bindings =
-    { request = messageOf identity Json.Decode.value Json.Encode.null
-    , response = messageOf (\t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ]) (Json.Decode.field "title" Json.Decode.string) ""
+    { encodeRequest = identity
+    , responseDecoder = Json.Decode.field "title" Json.Decode.string
     , descriptor =
         { service = "t.v1.T"
         , name = "M"
@@ -50,15 +49,6 @@ raw bindings =
         , output = "t.v1.Response"
         , bindings = List.map Proto.Http.binding bindings
         }
-    }
-
-
-messageOf : (a -> Value) -> Json.Decode.Decoder a -> a -> Message a
-messageOf encodeJson jsonDecoder default =
-    { encodeJson = encodeJson
-    , jsonDecoder = jsonDecoder
-    , default = default
-    , descriptor = { typeName = "t.v1.Message", fields = [], oneofs = [] }
     }
 
 
@@ -307,8 +297,8 @@ responses =
             \_ ->
                 Rpc.response config
                     (Rpc.call
-                        { request = messageOf identity Json.Decode.value Json.Encode.null
-                        , response = messageOf (\_ -> Json.Encode.object []) (Json.Decode.succeed ()) ()
+                        { encodeRequest = identity
+                        , responseDecoder = Json.Decode.succeed ()
                         , descriptor =
                             { service = "t"
                             , name = "m"

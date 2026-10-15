@@ -154,8 +154,8 @@ import Rpc
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { request = Notes.V1.messageGetNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeGetNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "GetNote"
@@ -606,8 +606,7 @@ Built as proposed, with these details *(each Proposed)*:
   value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
   encoded and decoded with `Proto.Any.encodeJson` and `jsonDecoder`,
   and its descriptor kind is `Message "google.protobuf.Any"`. A method
-  taking or returning one uses `Proto.WellKnown.any` (`any_field`
-  case). It was the `types::any` diagnostic until `Proto.Any` existed:
+  taking or returning one uses those codecs too (`any_field` case). It was the `types::any` diagnostic until `Proto.Any` existed:
   decoding one needs the registry the descriptors give, and unpacking
   is left to the application, which knows the types it expects.
 - An `Any` field has no query form: its JSON is the packed message's,
@@ -911,7 +910,7 @@ registry =
   the typed record carrying it in its `descriptor` field, beside the
   type's codecs and default: `MessageDescriptor` and `Message a`,
   `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
-  (§4). The records have one shape, so nothing about a type is written
+  (§4, which holds the codecs of its types but not their records). The records have one shape, so nothing about a type is written
   twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
 - The trees (`Proto.Descriptor`) are faithful to the proto, not to the
@@ -940,6 +939,11 @@ registry =
   for `google.protobuf.Any` (`Proto.Any`, §3.5), whose module needs
   `Proto.Message` and `Proto.Registry`, can join them without an
   import cycle.
+- The typed records serve `Any` (§3.5), error details (§5.4) and
+  reflection; calls carry codecs only (§4), because Elm's dead-code
+  elimination keeps a top-level value whole: a method holding a record
+  would bring the type's default and descriptor tree into every
+  program that calls it. *(Decided, 2026-10-15.)*
 - No service, file or package descriptor: nothing consumes one, and a
   service module's namespace is its methods' names, so any fixed value
   name could collide with a method.
@@ -985,8 +989,8 @@ pins the output:
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { request = Notes.V1.messageGetNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeGetNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "GetNote"
@@ -1013,26 +1017,33 @@ getNote =
 
 - The service module imports `Rpc`, `Proto.Http` (for the
   bindings), the package module and the modules of any other package
-  its request and response types come from (`Proto.WellKnown` for a
-  well-known type), and refers to every one of them qualified. Each method is written
+  its request and response types come from (`Proto.Json`, `Proto.Any`,
+  `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
+  refers to every one of them qualified. Each method is written
   point-free, `getNote = Rpc.call { … }`, binding no local name. So a
   method's name can clash with nothing but another method of its
   service, whatever it is: `value`, `identity` or `encodeNote` are all
   fine method names (the namespace rule is in the IR bullets below).
 - `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9):
-  `request` and `response` are the typed records of its types
-  (`Notes.V1.messageNote`, which hold their codecs; for a well-known
-  type the runtime's, `Proto.WellKnown.empty` for `Empty`, and
-  `int64ValueAsInt` for `Int64Value` under `int64=int`), and
+  `encodeRequest` is its request type's encoder and `responseDecoder`
+  its response type's decoder (`Notes.V1.encodeGetNoteRequest`,
+  `Notes.V1.decodeNote`; for a well-known type the runtime's codecs a
+  field of that type uses, `Proto.Json.encodeEmpty` and
+  `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
+  `Int64Value` under `int64=int`, `Basics.identity` qualified for
+  `Value` so that a method called `identity` cannot capture it), and
   `descriptor` its `Proto.Descriptor.MethodDescriptor`: `service` is
   the fully-qualified service name and `name` the method's as
   declared, together its Connect path, and `input` and `output` the
   full names of its types. No separate method value is generated;
   `Rpc.method` and `Rpc.descriptor` read them back from any call of the
   method. *(Decided, 2026-10-13.)* The first shape put the codecs
-  themselves in a descriptor record of `Rpc`'s; the typed records keep
-  them, with each type's descriptor, in one place both the call and
-  `google.protobuf.Any` (§3.5) can use.
+  themselves in a descriptor record of `Rpc`'s; the second gave the
+  method its types' typed records (§3.9). A method now carries only
+  what the wire needs: the records hold each type's default and
+  descriptor tree, and Elm keeps a top-level value whole, so a call
+  through records cost about 16 KB gzipped over a client referencing
+  only the codecs in an application's bundle. *(Decided, 2026-10-15.)*
 - `idempotent` is true when the proto declares
   `option idempotency_level = NO_SIDE_EFFECTS`. Connect uses it to allow
   GET, and a retry policy with `idempotentOnly` to allow a retry.
@@ -1285,9 +1296,11 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 - A call is data: a generated function per method applied to the
   request (§4). Per-call adjustments ride on it; `toJson` gives it a
   stable JSON form for logs, deduplication keys and queues.
-- The codecs are the typed records' `encodeJson` and `jsonDecoder`,
-  named for their encoding so that binary codecs can sit beside them
-  later without a rename. *(Decided, 2026-10-13.)*
+- The codecs are the method's `encodeRequest` and `responseDecoder`
+  (the typed records' `encodeJson` and `jsonDecoder` for `Any` and
+  error details), named for their encoding so that binary codecs can
+  sit beside them later without a rename. *(Decided, 2026-10-13;
+  method fields 2026-10-15.)*
 - The accessors are `method` (the `Method` record), `descriptor` (its
   descriptor), `serviceName`, `methodName` and `idempotent`; the
   string accessors were `service` and `method` until `method` named

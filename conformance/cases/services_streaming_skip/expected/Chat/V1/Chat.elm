@@ -10,8 +10,8 @@ import Rpc
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call
-        { request = Chat.V1.messageLine
-        , response = Chat.V1.messageLine
+        { encodeRequest = Chat.V1.encodeLine
+        , responseDecoder = Chat.V1.decodeLine
         , descriptor =
             { service = "chat.v1.Chat"
             , name = "Send"

@@ -145,8 +145,6 @@ const PROTO_HTTP: &str = "Proto.Http";
 const PROTO_MESSAGE: &str = "Proto.Message";
 /// The runtime package's typed enum records.
 const PROTO_ENUM: &str = "Proto.Enum";
-/// The runtime package's typed records of the well-known types.
-const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
 /// The runtime package's registry of descriptors.
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
@@ -424,7 +422,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ir::{Cardinality, ScalarKind, TypeRef};
+    use crate::ir::{Cardinality, ScalarKind, TypeRef, WellKnown};
 
     fn package(messages: Vec<Message>) -> Package {
         Package {
@@ -676,5 +674,63 @@ mod tests {
             printed.contains(r#"Proto.Json.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#),
             "{printed}"
         );
+    }
+
+    #[test]
+    fn a_method_carries_codecs_not_typed_records() {
+        let a = TypeName {
+            module: IrModule::new(vec!["T".into(), "V1".into()]).expect("valid"),
+            name: "A".into(),
+            proto_full_name: "t.v1.A".into(),
+        };
+        let method = |name: &str, input: TypeRef, output: TypeRef| crate::ir::Method {
+            proto_name: name.into(),
+            elm_name: name.to_lowercase(),
+            input,
+            output,
+            idempotent: false,
+            http: None,
+            routes: Vec::new(),
+        };
+        let service = Service {
+            proto_full_name: "t.v1.S".into(),
+            module: IrModule::new(vec!["T".into(), "V1".into(), "S".into()]).expect("valid"),
+            methods: vec![
+                method(
+                    "Get",
+                    TypeRef::Message(a.clone()),
+                    TypeRef::Message(a.clone()),
+                ),
+                method(
+                    "Identity",
+                    TypeRef::WellKnown(WellKnown::Value),
+                    TypeRef::WellKnown(WellKnown::Empty),
+                ),
+                method(
+                    "Ticks",
+                    TypeRef::WellKnown(WellKnown::Int64Value),
+                    TypeRef::WellKnown(WellKnown::Any),
+                ),
+            ],
+        };
+        let options = Options {
+            int64: Int64::Int,
+            ..Options::default()
+        };
+        let module = emit_service(&package(Vec::new()), &service, &options);
+        let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
+        assert_eq!(
+            imports,
+            ["Json.Encode", "Proto.Any", "Proto.Json", "Rpc", "T.V1"]
+        );
+        let printed = crate::elm::print::print_module(&module);
+        for expected in [
+            "{ encodeRequest = T.V1.encodeA\n        , responseDecoder = T.V1.decodeA",
+            // Qualified, or `identity` would be the method itself.
+            "{ encodeRequest = Basics.identity\n        , responseDecoder = Proto.Json.empty",
+            "{ encodeRequest = Proto.Json.encodeInt64AsInt\n        , responseDecoder = Proto.Any.jsonDecoder",
+        ] {
+            assert!(printed.contains(expected), "{expected}\n{printed}");
+        }
     }
 }

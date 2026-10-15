@@ -10,8 +10,8 @@ import Rpc
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call
-        { request = Notes.Api.messageGetNoteRequest
-        , response = Notes.Api.messageMemo
+        { encodeRequest = Notes.Api.encodeGetNoteRequest
+        , responseDecoder = Notes.Api.decodeMemo
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "GetNote"

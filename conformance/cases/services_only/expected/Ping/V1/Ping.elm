@@ -3,7 +3,7 @@
 
 module Ping.V1.Ping exposing (..)
 
-import Proto.WellKnown
+import Proto.Json
 import Rpc
 import Time
 
@@ -11,8 +11,8 @@ import Time
 ping : () -> Rpc.Call () Time.Posix
 ping =
     Rpc.call
-        { request = Proto.WellKnown.empty
-        , response = Proto.WellKnown.timestamp
+        { encodeRequest = Proto.Json.encodeEmpty
+        , responseDecoder = Proto.Json.timestamp
         , descriptor =
             { service = "ping.v1.Ping"
             , name = "Ping"
