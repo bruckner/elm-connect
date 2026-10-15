@@ -1339,15 +1339,27 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   `send` with and without a retry policy, `task`, the retry loop over
   `UNAVAILABLE` and its `idempotentOnly` gate, timeouts,
   `withCredentials` reaching the request, a tracker's progress, and
-  each field of the `Trace`. `taskFromRequest` with a rewritten
-  request and cancelling through a tracker are not run yet.
+  each field of the `Trace`. The Connect conformance suite (§7) runs
+  `Rpc.request` and `Rpc.response` with elm/http between them, and
+  `sendTraced`. `taskFromRequest` with a rewritten request is not run
+  yet. Cancelling through a tracker cannot give an outcome: elm/http
+  sends no message for a request `Http.cancel` aborts, so there is no
+  `Canceled` error to give, and the suite's cancellation test is known to
+  fail (2026-10-15).
+- Only the pure halves give the application an answer's headers:
+  `task`, `send` and the traced forms give the response or the error and
+  nothing more, and the conformance suite's tests of response headers
+  and trailers pass through the halves and fail through `sendTraced`
+  (2026-10-15).
 
 ### 5.3 Transports
 
 #### Connect  *(Decided; built)*
 
 Run against connect-go by the live suite (§7): POST and GET, the
-timeout header, every method of the example API.
+timeout header, every method of the example API; and by the Connect
+conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
+39 of 40 passing, cancellation the exception.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
@@ -1432,7 +1444,10 @@ default, and is `Nothing` for a number the method has no binding of
 Every source is read from a live answer by the live suite (§7): a
 Connect body and a `google.rpc.Status` body, each with details read
 as JSON (`debug` in the Connect body), `grpc-status` headers and a bare
-HTTP status.
+HTTP status. The Connect conformance suite (§7) checks every code from a
+Connect body, with its message (Unicode included) and details, and
+`fromHttpStatus` on answers with no error body. A detail without `debug`
+is not met: connect-go, the suite's reference server, always sends it.
 
 ```elm
 type Error
@@ -1621,11 +1636,11 @@ workstreams, in order, close that:
 1. **Runner** *(built)*: one example API, one server answering it over
    Connect and transcoding from one process, and a headless runner
    that drives the compiled runtime from Node over ports.
-2. **Connect conformance suite** (`connectrpc/conformance`): a Node
-   wrapper makes the runner a client under test, with a config
-   declaring what is supported (unary, the JSON codec, HTTP/1.1, no
-   compression, GET for idempotent methods). Streaming, the binary
-   codec and gRPC-Web are declared unsupported rather than
+2. **Connect conformance suite** (`connectrpc/conformance`)
+   *(built)*: a Node wrapper makes the runner a client under test, with
+   a config declaring what is supported (unary, the JSON codec,
+   HTTP/1.1, no compression, GET for idempotent methods). Streaming, the
+   binary codec and gRPC-Web are declared unsupported rather than
    known-failing.
 3. **Transcoding live tests**: a table of calls against the server
    asserting path, query, body, response and the `google.rpc.Status`
@@ -1668,6 +1683,39 @@ body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `Transport Timeout`, the server never answering first), retries,
 Connect GET and `maxGetUrl`, percent-encoded path values, `viaBinding`
 in and out of range, and `sendTraced`, `send` and `task`.
+
+Built, the Connect conformance suite *(2026-10-15)*: `connectconformance`
+v1.0.6, fetched from its GitHub release with its SHA-256 pinned per
+platform (a Go `tool` dependency would have put the suite's modules in
+the example server's `go.mod`), runs its reference server and
+`conformance/live/conformance.mjs`, which reads the suite's
+`ClientCompatRequest`s with the JavaScript protoc-gen-es generates, makes
+each call through the runner with the Elm protoc-gen-elm-connect
+generates from the same protos (`streaming=skip`; the three streaming
+methods are its only warnings), and reports what the runtime gave. The
+config (`conformance.yaml`) selects 40 test cases: basic success,
+`Unimplemented`, every error code, Connect's mapping of a bare HTTP
+status, error metadata, duplicate metadata, Unicode messages, deadline
+propagation, a timeout, Connect GET and cancellation. The proto-codec
+suites (unexpected and empty answers, error end-streams) do not apply.
+
+- Calls go through the pure halves (`Rpc.request`, elm/http,
+  `Rpc.response`), the one way an application gets an answer's headers,
+  and are run again through `Rpc.sendTraced`. 39 of 40 pass through the
+  halves, 34 through `sendTraced`.
+- Known failing, whichever way (`known-failing.txt`): `Client
+  Cancellation/unary/cancel-after-close-send`. A cancelled call has no
+  outcome (§5.2), so the wrapper does not cancel, the call completes and
+  the expected `canceled` never comes.
+- Known failing through `sendTraced` (`known-failing-send.txt`):
+  `Basic/unary/success`, `Connect with GET/success`, `Duplicate
+  Metadata/unary/success` and `unary/error`, and
+  `Errors/unary/error-with-metadata`, which assert the answer's headers
+  and trailers; `send`, `task` and the traced forms do not give them
+  (§5.2).
+- A transport failure is reported to the suite as an error, `Timeout`
+  as `deadline_exceeded`: the wrapper's reading of the runtime's
+  `Transport Timeout`, as a Connect client gives its own deadline.
 
 Recorded for later: documented and verified examples for Envoy's
 gRPC-JSON transcoder and grpc-gateway in front of the same service,

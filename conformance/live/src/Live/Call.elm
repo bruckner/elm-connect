@@ -10,6 +10,7 @@ proto3 JSON, and the response's encoder, since the result reports it so.
 
 -}
 
+import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -36,12 +37,16 @@ type alias Envelope =
     }
 
 
-{-| Which of the runtime's ways of sending a call to use.
+{-| Which of the runtime's ways of sending a call to use. `Halves` sends
+through the pure halves, as an application that needs the response's headers
+does: `Rpc.request`, `Http.request` with the answer kept whole, and
+`Rpc.response`.
 -}
 type Sending
     = Traced
     | Plain
     | AsTask
+    | Halves
 
 
 {-| The transport a call goes over, as the envelope names it.
@@ -59,11 +64,13 @@ type alias Entry msg =
     Envelope -> (Outcome -> msg) -> Result String (Cmd msg)
 
 
-{-| What became of a call, as JSON: the result, and the trace when the call
-was sent with `Rpc.sendTraced` (`null` otherwise).
+{-| What became of a call, as JSON: the result, the trace when the call was
+sent with `Rpc.sendTraced` (`null` otherwise), and the answer's status and
+headers when it was sent through the halves and an answer came (`null`
+otherwise).
 -}
 type alias Outcome =
-    { id : String, result : Value, trace : Value }
+    { id : String, result : Value, trace : Value, response : Value }
 
 
 {-| The entry for a method, from its generated call function, its request's
@@ -109,10 +116,14 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
                                     c
 
                         report trace result =
+                            reportWith trace Encode.null result
+
+                        reportWith trace answer result =
                             toMsg
                                 { id = envelope.id
                                 , result = encodeResult encodeResponse result
                                 , trace = trace
+                                , response = answer
                                 }
                     in
                     case envelope.sending of
@@ -124,8 +135,77 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
 
                         AsTask ->
                             Rpc.task envelope.config tracked |> Task.attempt (report Encode.null)
+
+                        Halves ->
+                            sendHalves envelope.config tracked envelope.tracker (\( answer, result ) -> reportWith Encode.null answer result)
                 )
                 bound
+
+
+{-| Send a call as `Rpc.request` describes it, with elm/http directly, and read
+the answer with `Rpc.response`, keeping the answer's status and headers.
+-}
+sendHalves : Rpc.Config -> Rpc.Call req res -> Maybe String -> (( Value, Result Rpc.Error res ) -> msg) -> Cmd msg
+sendHalves config c tracker toMsg =
+    let
+        sent =
+            Rpc.request config c
+
+        perform =
+            if sent.withCredentials then
+                Http.riskyRequest
+
+            else
+                Http.request
+
+        read answer =
+            Ok ( encodeAnswer answer, Rpc.response config c answer )
+    in
+    perform
+        { method = sent.method
+        , headers = List.map (\( name, value ) -> Http.header name value) sent.headers
+        , url = sent.url
+        , body =
+            case sent.body of
+                Just json ->
+                    Http.stringBody "application/json" json
+
+                Nothing ->
+                    Http.emptyBody
+        , expect =
+            Http.expectStringResponse
+                (\outcome ->
+                    case outcome of
+                        Ok pair ->
+                            toMsg pair
+
+                        Err impossible ->
+                            never impossible
+                )
+                read
+        , timeout = sent.timeout
+        , tracker = tracker
+        }
+
+
+encodeAnswer : Http.Response String -> Value
+encodeAnswer answer =
+    let
+        withMetadata metadata =
+            Encode.object
+                [ ( "status", Encode.int metadata.statusCode )
+                , ( "headers", Encode.list (\( k, v ) -> Encode.list Encode.string [ k, v ]) (Dict.toList metadata.headers) )
+                ]
+    in
+    case answer of
+        Http.GoodStatus_ metadata _ ->
+            withMetadata metadata
+
+        Http.BadStatus_ metadata _ ->
+            withMetadata metadata
+
+        _ ->
+            Encode.null
 
 
 encodeResult : (res -> Value) -> Result Rpc.Error res -> Value

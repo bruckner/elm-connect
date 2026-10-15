@@ -144,12 +144,26 @@ live/
   src/Live/Call.elm   the envelope, and `entry`, which makes a dispatch
                       table's entry from a generated call function and codecs
   src/Live/Notes.elm  the dispatch table of notes.v1.NotesService
+  src/Live/Conformance.elm
+                      the dispatch table of the Connect conformance suite's
+                      ConformanceService (its unary methods)
   xhr.mjs             an XMLHttpRequest over node:http, the subset elm/http
                       uses, reporting each exchange
   run.mjs             loads build/elm.js; a module (`createRunner`,
                       `runCases`, `mismatches`, `serve`) and a command
   cases/notes.json    the smoke suite
-  build/              the compiled program (gitignored)
+  conformance.mjs     the client under test for the Connect conformance suite
+  conformance.yaml    the features the suite tests (what the runtime supports)
+  known-failing.txt   the suite's test cases the runtime fails, with reasons
+  known-failing-send.txt
+                      those it fails too when sent with Rpc.sendTraced
+  fetch-conformance.sh
+                      fetches connectconformance at its pinned release
+  suite/              buf.gen.yaml, and the Elm (elm/) and JavaScript (js/)
+                      generated from the suite's protos
+  package.json        @bufbuild/protobuf and protoc-gen-es, pinned with
+                      package-lock.json
+  build/              the compiled program and connectconformance (gitignored)
 ```
 
 ```sh
@@ -190,7 +204,10 @@ An **envelope**, what the runner sends:
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.viaBinding`), `send` (`sendTraced`, the
-default, `send` or `task`) and `tracker` (`Rpc.withTracker`).
+default, `send`, `task` or `halves`) and `tracker` (`Rpc.withTracker`).
+`halves` sends through the pure halves, as an application that needs the
+answer's headers does: `Rpc.request`, `Http.request` with the answer kept
+whole, and `Rpc.response`.
 
 A **result**, what comes back:
 
@@ -218,7 +235,9 @@ it, each detail as `Proto.Any.encodeJson` writes it, the source as
 `BadStatus <n>`, `BadBody <problem>`) and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
 method or a binding the method lacks. `trace` is the `Rpc.Trace`, and
-`null` unless sent with `sendTraced`; `progress` counts a tracker's
+`null` unless sent with `sendTraced`; `response` is the answer's
+`{"status", "headers": [[name, value], …]}` as elm/http gives it, and
+`null` unless sent with `halves` and answered; `progress` counts a tracker's
 events and is present only with one. `wire` is added by `run.mjs`: each
 HTTP exchange made during the call, as `xhr.mjs` saw it (`outcome` is
 `load`, `error` or `timeout`). Calls run one at a time, so every
@@ -248,3 +267,62 @@ element, and `{"$absent": true}` a key that is missing or `null`.
 To add a service, add its proto to the example (or a new one beside
 it), a dispatch table `src/Live/<Service>.elm` listing `entry` per
 method, and the table to `tables` in `Live.elm`.
+
+## The Connect conformance suite
+
+`just live-conformance` (part of `just live`) runs the official
+[Connect conformance suite](https://github.com/connectrpc/conformance)
+against the runtime (design §7, live verification), at v1.0.6:
+
+```sh
+just live-conformance
+# by hand, from conformance/live once `just live-conformance-gen live-build` has run:
+"$(./fetch-conformance.sh)" --mode client --conf conformance.yaml \
+  --known-failing @known-failing.txt -- node conformance.mjs --send halves
+```
+
+`fetch-conformance.sh` downloads `connectconformance` from the suite's
+GitHub release, checks it against the SHA-256 pinned per platform, and
+keeps it in `build/`. In client mode it starts its own reference server
+(connect-go) and launches `node conformance.mjs`, writing
+`ClientCompatRequest` messages to its stdin and reading a
+`ClientCompatResponse` for each from its stdout, protobuf binary, each
+prefixed by its length as a 4-byte big-endian integer.
+`conformance.mjs` decodes each request with the JavaScript protoc-gen-es
+generates from the suite's protos (`suite/js/`, through
+`@bufbuild/protobuf`), unpacks its one request message from its `Any` to
+proto3 JSON, and makes it an envelope for the runner: `host` and `port` as
+the `baseUrl`, `request_headers` as `headers`, `timeout_ms` as `timeout`,
+`use_get_http_method` as `useGet`. The runner calls the method through
+`Live.Conformance`, whose calls come from the Elm protoc-gen-elm-connect
+generates from the same protos (`suite/elm/`, `streaming=skip`), and the
+result is translated back: the response's payload, or the error's code,
+message and details (a detail that came as JSON is read back from its
+`"@type"` form; one that came as protobuf binary only, `{"type",
+"value"}`, is forwarded as the `Any`'s bytes as they came), the answer's
+headers, and as trailers those prefixed `trailer-`, which is how Connect
+sends a unary call's trailers. A transport failure is reported as an
+error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
+anything else as `unknown`. What is reported is only what the runtime gives
+an application; the runner's `wire` log is never read.
+
+`--send` picks how calls are sent: `halves` (the default) through the pure
+halves, which is the only way an application gets an answer's headers, or
+`sendTraced`, `send` or `task`, which give none. `just live-conformance`
+runs both `halves` and `sendTraced`.
+
+`conformance.yaml` declares what is tested (the suite's `Features`):
+HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
+calls, Connect GET, and no TLS, HTTP/2, trailers or receive limit; that is
+40 test cases. `known-failing.txt` lists the test cases the runtime fails
+however a call is sent, and `known-failing-send.txt` those it fails too
+without the halves, each with the reason; the runner requires a listed
+case to fail, so the lists cannot go stale. One test case pattern per line
+(`*` one name component, `**` any number), `#` starting a comment.
+`connectconformance` reads only the first `--known-failing` flag it is
+given, so the `sendTraced` run joins the two files in `build/`.
+
+`suite/buf.gen.yaml` generates both from
+`buf.build/connectrpc/conformance` at the commit its v1.0.6 label names;
+`just live-conformance-gen` installs the npm packages with `npm ci`,
+regenerates, and fails if the output differs from what is committed.

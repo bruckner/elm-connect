@@ -321,3 +321,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   details, `grpc-status` headers, bare statuses, timeouts, retries,
   Connect GET, bindings, trackers and each way of sending. CI runs it
   as the `live` job; Go and buf join the toolchain pin.
+- Live verification runs the Connect conformance suite
+  (`connectrpc/conformance` v1.0.6, `just live-conformance`, part of
+  `just live`): `conformance/live/conformance.mjs` makes the runner its
+  client under test for unary calls over Connect with JSON on HTTP/1.1,
+  `conformance.yaml` declaring the rest unsupported. Calls go through the
+  pure halves and again through `Rpc.sendTraced`; 39 and 34 of 40 test
+  cases pass, `known-failing.txt` (cancellation) and
+  `known-failing-send.txt` (response headers and trailers, which only the
+  halves give) listing the rest with reasons. The runner gains the
+  `halves` way of sending, which reports the answer's status and headers.
