@@ -73,8 +73,9 @@ export function parseProto(source) {
     expect("}");
     schema.enums[name] = values;
   };
-  const parseField = (fields, label, oneof) => {
-    const type = next();
+  // A map field's value type is given; its key type is set after.
+  const parseField = (fields, label, oneof, valueType) => {
+    const type = valueType ?? next();
     const name = next();
     expect("=");
     next();
@@ -102,7 +103,14 @@ export function parseProto(source) {
       } else if (t === "option" || t === "reserved") {
         skip();
       } else if (t === "map") {
-        throw new Error("routes.proto: map fields are not read here");
+        at++;
+        expect("<");
+        const key = next();
+        expect(",");
+        const value = next();
+        expect(">");
+        parseField(fields, null, false, value);
+        fields.at(-1).mapKey = key;
       } else if (t === "repeated" || t === "optional") {
         at++;
         parseField(fields, t, false);
@@ -209,6 +217,12 @@ export function normalize(schema, type, value) {
     const t = int32s.has(f.type) || int64s.has(f.type) || ["double", "float", "bool", "string", "bytes"].includes(f.type)
       ? f.type
       : resolve(schema, f.type, f.scope);
+    if (f.mapKey) {
+      if (typeof raw !== "object" || Array.isArray(raw)) throw new Error(`${type}.${f.name}: not an object`);
+      const entries = Object.entries(raw).map(([k, v]) => [mapKey(f.mapKey, k), scalar(schema, t, v, `${type}.${f.name}`)]);
+      if (entries.length > 0) out[f.json] = Object.fromEntries(entries);
+      continue;
+    }
     if (f.repeated) {
       if (!Array.isArray(raw)) throw new Error(`${type}.${f.name}: not an array`);
       if (raw.length > 0) out[f.json] = raw.map((v) => scalar(schema, t, v, `${type}.${f.name}`));
@@ -219,6 +233,11 @@ export function normalize(schema, type, value) {
     if (f.presence || message || !isDefault(schema, t, v)) out[f.json] = v;
   }
   return out;
+}
+
+// A map key as proto3 JSON writes it: an integer key in canonical decimal.
+function mapKey(type, key) {
+  return int32s.has(type) || int64s.has(type) ? BigInt(key).toString() : key;
 }
 
 function isDefault(schema, type, v) {

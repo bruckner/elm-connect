@@ -653,10 +653,14 @@ func (x *FileRequest) GetPath() string {
 	return ""
 }
 
+// Sent only as a body, so it may hold maps, which have no query form.
 type Resource struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Kinds         map[int64]Kind         `protobuf:"bytes,4,rep,name=kinds,proto3" json:"kinds,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=routes.v1.Kind"`
+	Weights       map[bool]float64       `protobuf:"bytes,5,rep,name=weights,proto3" json:"weights,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -703,6 +707,27 @@ func (x *Resource) GetDisplayName() string {
 		return x.DisplayName
 	}
 	return ""
+}
+
+func (x *Resource) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *Resource) GetKinds() map[int64]Kind {
+	if x != nil {
+		return x.Kinds
+	}
+	return nil
+}
+
+func (x *Resource) GetWeights() map[bool]float64 {
+	if x != nil {
+		return x.Weights
+	}
+	return nil
 }
 
 type UpdateResourceRequest struct {
@@ -861,10 +886,23 @@ const file_routes_proto_rawDesc = "" +
 	"\x01b\x18\x01 \x01(\x05R\x01b\x12\f\n" +
 	"\x01c\x18\x02 \x03(\tR\x01c\"!\n" +
 	"\vFileRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"A\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xae\x03\n" +
 	"\bResource\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x85\x01\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x127\n" +
+	"\x06labels\x18\x03 \x03(\v2\x1f.routes.v1.Resource.LabelsEntryR\x06labels\x124\n" +
+	"\x05kinds\x18\x04 \x03(\v2\x1e.routes.v1.Resource.KindsEntryR\x05kinds\x12:\n" +
+	"\aweights\x18\x05 \x03(\v2 .routes.v1.Resource.WeightsEntryR\aweights\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aI\n" +
+	"\n" +
+	"KindsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x03R\x03key\x12%\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.routes.v1.KindR\x05value:\x028\x01\x1a:\n" +
+	"\fWeightsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\bR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"\x85\x01\n" +
 	"\x15UpdateResourceRequest\x12/\n" +
 	"\bresource\x18\x01 \x01(\v2\x13.routes.v1.ResourceR\bresource\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
@@ -905,7 +943,7 @@ func file_routes_proto_rawDescGZIP() []byte {
 }
 
 var file_routes_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_routes_proto_goTypes = []any{
 	(Kind)(0),                            // 0: routes.v1.Kind
 	(*GetMessageRequest)(nil),            // 1: routes.v1.GetMessageRequest
@@ -918,57 +956,64 @@ var file_routes_proto_goTypes = []any{
 	(*Resource)(nil),                     // 8: routes.v1.Resource
 	(*UpdateResourceRequest)(nil),        // 9: routes.v1.UpdateResourceRequest
 	(*GetMessageRequest_SubMessage)(nil), // 10: routes.v1.GetMessageRequest.SubMessage
-	(*timestamppb.Timestamp)(nil),        // 11: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),          // 12: google.protobuf.Duration
-	(*fieldmaskpb.FieldMask)(nil),        // 13: google.protobuf.FieldMask
-	(*wrapperspb.Int32Value)(nil),        // 14: google.protobuf.Int32Value
-	(*wrapperspb.StringValue)(nil),       // 15: google.protobuf.StringValue
+	nil,                                  // 11: routes.v1.Resource.LabelsEntry
+	nil,                                  // 12: routes.v1.Resource.KindsEntry
+	nil,                                  // 13: routes.v1.Resource.WeightsEntry
+	(*timestamppb.Timestamp)(nil),        // 14: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),          // 15: google.protobuf.Duration
+	(*fieldmaskpb.FieldMask)(nil),        // 16: google.protobuf.FieldMask
+	(*wrapperspb.Int32Value)(nil),        // 17: google.protobuf.Int32Value
+	(*wrapperspb.StringValue)(nil),       // 18: google.protobuf.StringValue
 }
 var file_routes_proto_depIdxs = []int32{
 	10, // 0: routes.v1.GetMessageRequest.sub:type_name -> routes.v1.GetMessageRequest.SubMessage
 	2,  // 1: routes.v1.UpdateMessageRequest.message:type_name -> routes.v1.Message
 	0,  // 2: routes.v1.Everything.kind:type_name -> routes.v1.Kind
 	0,  // 3: routes.v1.Everything.kinds:type_name -> routes.v1.Kind
-	11, // 4: routes.v1.Everything.at:type_name -> google.protobuf.Timestamp
-	12, // 5: routes.v1.Everything.wait:type_name -> google.protobuf.Duration
-	13, // 6: routes.v1.Everything.mask:type_name -> google.protobuf.FieldMask
-	14, // 7: routes.v1.Everything.limit:type_name -> google.protobuf.Int32Value
-	15, // 8: routes.v1.Everything.label:type_name -> google.protobuf.StringValue
+	14, // 4: routes.v1.Everything.at:type_name -> google.protobuf.Timestamp
+	15, // 5: routes.v1.Everything.wait:type_name -> google.protobuf.Duration
+	16, // 6: routes.v1.Everything.mask:type_name -> google.protobuf.FieldMask
+	17, // 7: routes.v1.Everything.limit:type_name -> google.protobuf.Int32Value
+	18, // 8: routes.v1.Everything.label:type_name -> google.protobuf.StringValue
 	5,  // 9: routes.v1.Everything.inner:type_name -> routes.v1.Inner
 	6,  // 10: routes.v1.Inner.deep:type_name -> routes.v1.Deep
-	8,  // 11: routes.v1.UpdateResourceRequest.resource:type_name -> routes.v1.Resource
-	13, // 12: routes.v1.UpdateResourceRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 13: routes.v1.Routes.GetMessage:input_type -> routes.v1.GetMessageRequest
-	3,  // 14: routes.v1.Routes.UpdateMessage:input_type -> routes.v1.UpdateMessageRequest
-	2,  // 15: routes.v1.Routes.UpdateMessageWhole:input_type -> routes.v1.Message
-	1,  // 16: routes.v1.Routes.PostSub:input_type -> routes.v1.GetMessageRequest
-	4,  // 17: routes.v1.Routes.Query:input_type -> routes.v1.Everything
-	4,  // 18: routes.v1.Routes.Single:input_type -> routes.v1.Everything
-	4,  // 19: routes.v1.Routes.Multi:input_type -> routes.v1.Everything
-	4,  // 20: routes.v1.Routes.Typed:input_type -> routes.v1.Everything
-	7,  // 21: routes.v1.Routes.Files:input_type -> routes.v1.FileRequest
-	8,  // 22: routes.v1.Routes.Cancel:input_type -> routes.v1.Resource
-	9,  // 23: routes.v1.Routes.UpdateResource:input_type -> routes.v1.UpdateResourceRequest
-	7,  // 24: routes.v1.Routes.Head:input_type -> routes.v1.FileRequest
-	1,  // 25: routes.v1.Routes.Unbound:input_type -> routes.v1.GetMessageRequest
-	2,  // 26: routes.v1.Routes.GetMessage:output_type -> routes.v1.Message
-	2,  // 27: routes.v1.Routes.UpdateMessage:output_type -> routes.v1.Message
-	2,  // 28: routes.v1.Routes.UpdateMessageWhole:output_type -> routes.v1.Message
-	2,  // 29: routes.v1.Routes.PostSub:output_type -> routes.v1.Message
-	4,  // 30: routes.v1.Routes.Query:output_type -> routes.v1.Everything
-	4,  // 31: routes.v1.Routes.Single:output_type -> routes.v1.Everything
-	4,  // 32: routes.v1.Routes.Multi:output_type -> routes.v1.Everything
-	4,  // 33: routes.v1.Routes.Typed:output_type -> routes.v1.Everything
-	7,  // 34: routes.v1.Routes.Files:output_type -> routes.v1.FileRequest
-	8,  // 35: routes.v1.Routes.Cancel:output_type -> routes.v1.Resource
-	8,  // 36: routes.v1.Routes.UpdateResource:output_type -> routes.v1.Resource
-	7,  // 37: routes.v1.Routes.Head:output_type -> routes.v1.FileRequest
-	2,  // 38: routes.v1.Routes.Unbound:output_type -> routes.v1.Message
-	26, // [26:39] is the sub-list for method output_type
-	13, // [13:26] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	11, // 11: routes.v1.Resource.labels:type_name -> routes.v1.Resource.LabelsEntry
+	12, // 12: routes.v1.Resource.kinds:type_name -> routes.v1.Resource.KindsEntry
+	13, // 13: routes.v1.Resource.weights:type_name -> routes.v1.Resource.WeightsEntry
+	8,  // 14: routes.v1.UpdateResourceRequest.resource:type_name -> routes.v1.Resource
+	16, // 15: routes.v1.UpdateResourceRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,  // 16: routes.v1.Resource.KindsEntry.value:type_name -> routes.v1.Kind
+	1,  // 17: routes.v1.Routes.GetMessage:input_type -> routes.v1.GetMessageRequest
+	3,  // 18: routes.v1.Routes.UpdateMessage:input_type -> routes.v1.UpdateMessageRequest
+	2,  // 19: routes.v1.Routes.UpdateMessageWhole:input_type -> routes.v1.Message
+	1,  // 20: routes.v1.Routes.PostSub:input_type -> routes.v1.GetMessageRequest
+	4,  // 21: routes.v1.Routes.Query:input_type -> routes.v1.Everything
+	4,  // 22: routes.v1.Routes.Single:input_type -> routes.v1.Everything
+	4,  // 23: routes.v1.Routes.Multi:input_type -> routes.v1.Everything
+	4,  // 24: routes.v1.Routes.Typed:input_type -> routes.v1.Everything
+	7,  // 25: routes.v1.Routes.Files:input_type -> routes.v1.FileRequest
+	8,  // 26: routes.v1.Routes.Cancel:input_type -> routes.v1.Resource
+	9,  // 27: routes.v1.Routes.UpdateResource:input_type -> routes.v1.UpdateResourceRequest
+	7,  // 28: routes.v1.Routes.Head:input_type -> routes.v1.FileRequest
+	1,  // 29: routes.v1.Routes.Unbound:input_type -> routes.v1.GetMessageRequest
+	2,  // 30: routes.v1.Routes.GetMessage:output_type -> routes.v1.Message
+	2,  // 31: routes.v1.Routes.UpdateMessage:output_type -> routes.v1.Message
+	2,  // 32: routes.v1.Routes.UpdateMessageWhole:output_type -> routes.v1.Message
+	2,  // 33: routes.v1.Routes.PostSub:output_type -> routes.v1.Message
+	4,  // 34: routes.v1.Routes.Query:output_type -> routes.v1.Everything
+	4,  // 35: routes.v1.Routes.Single:output_type -> routes.v1.Everything
+	4,  // 36: routes.v1.Routes.Multi:output_type -> routes.v1.Everything
+	4,  // 37: routes.v1.Routes.Typed:output_type -> routes.v1.Everything
+	7,  // 38: routes.v1.Routes.Files:output_type -> routes.v1.FileRequest
+	8,  // 39: routes.v1.Routes.Cancel:output_type -> routes.v1.Resource
+	8,  // 40: routes.v1.Routes.UpdateResource:output_type -> routes.v1.Resource
+	7,  // 41: routes.v1.Routes.Head:output_type -> routes.v1.FileRequest
+	2,  // 42: routes.v1.Routes.Unbound:output_type -> routes.v1.Message
+	30, // [30:43] is the sub-list for method output_type
+	17, // [17:30] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_routes_proto_init() }
@@ -986,7 +1031,7 @@ func file_routes_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routes_proto_rawDesc), len(file_routes_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

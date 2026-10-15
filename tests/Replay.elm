@@ -1,13 +1,16 @@
-module Replay exposing (Expected, Fixture, fixture, normalize)
+module Replay exposing (Expected, Fixture, fixture, normalize, replay)
 
-{-| Replaying the route fixtures (`conformance/routes`) through `Rpc.request`
-with the Transcode transport: `RouteFixtures` is generated from them, and
-`RouteFixturesTest` checks each.
+{-| Replaying the route fixtures (`conformance/routes`) and the route
+properties through `Rpc.request` with the Transcode transport: `RouteFixtures`
+and `RouteProperties` are generated from them, and `RouteFixturesTest` and
+`RoutePropertiesTest` check each.
 -}
 
+import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Rpc
+import Test exposing (Test, test)
 
 
 type alias Fixture =
@@ -52,6 +55,31 @@ fixture name decoder method binding json expected =
             |> Result.map (Rpc.request transcode)
     , expected = expected
     }
+
+
+{-| A fixture's test: the request `Rpc.request` builds is the one expected,
+bodies compared once normalized.
+-}
+replay : Fixture -> Test
+replay case_ =
+    test case_.name <|
+        \_ ->
+            case case_.actual of
+                Err problem ->
+                    Expect.fail problem
+
+                Ok request ->
+                    { method = request.method
+                    , url = request.url
+                    , headers = request.headers
+                    , body = Maybe.map normalize request.body
+                    }
+                        |> Expect.equal
+                            { method = case_.expected.method
+                            , url = case_.expected.url
+                            , headers = case_.expected.headers
+                            , body = Maybe.map normalize case_.expected.body
+                            }
 
 
 transcode : Rpc.Config

@@ -22,6 +22,7 @@ suite =
         , enumOrZeroTests
         , intDictTests
         , boolMapTests
+        , protoKeyTests
         , int32Tests
         , uint32Tests
         , int64Tests
@@ -852,4 +853,40 @@ uint64AsIntTests =
             \_ -> fails Proto.Json.uint64AsInt "-42"
         , test "2^53 fails" <|
             \_ -> fails Proto.Json.uint64AsInt "\"9007199254740992\""
+        ]
+
+
+protoKeyTests : Test
+protoKeyTests =
+    let
+        written : Maybe Json.Encode.Value -> Maybe String
+        written =
+            Maybe.map (Json.Encode.encode 0)
+
+        pairs : Dict.Dict String String
+        pairs =
+            Dict.fromList [ ( "__proto__", "x" ), ( "a", "b" ) ]
+    in
+    describe "a __proto__ key"
+        [ test "is written by dict" <|
+            \_ ->
+                Proto.Json.dict identity Json.Encode.string pairs
+                    |> written
+                    |> Expect.equal (Just "{\"__proto__\":\"x\",\"a\":\"b\"}")
+        , test "is written by encodeStruct" <|
+            \_ ->
+                Dict.map (\_ -> Json.Encode.string) pairs
+                    |> Proto.Json.encodeStruct
+                    |> Json.Encode.encode 0
+                    |> Expect.equal "{\"__proto__\":\"x\",\"a\":\"b\"}"
+        , test "is written by object" <|
+            \_ ->
+                Proto.Json.object [ ( "__proto__", Just (Json.Encode.string "x") ), ( "a", Nothing ) ]
+                    |> Json.Encode.encode 0
+                    |> Expect.equal "{\"__proto__\":\"x\"}"
+        , test "round-trips through dict" <|
+            \_ ->
+                Proto.Json.dict identity Json.Encode.string pairs
+                    |> Maybe.andThen (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) >> Result.toMaybe)
+                    |> Expect.equal (Just pairs)
         ]

@@ -452,7 +452,8 @@ out:
   proto3 default (`Proto.Json.implicit zero encoder value`: `0`, `"0"`,
   `""`, `False`, the zero enum value); a float only at `0`
   (`Proto.Json.implicitFloat`), so `-0`, NaN and the infinities are
-  written.
+  written, `-0` as `0`: JavaScript's JSON writer has no negative zero,
+  and a server reads `+0` either way.
 - A field with presence (`Maybe`: `optional`, a message, a wrapper,
   `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Any`) is
   left out when `Nothing` and written when `Just`, at its default too
@@ -1799,6 +1800,37 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `Rpc.viaBinding` (a fixture naming a binding the method lacks fails
   rather than falling back to the implicit route). Bodies compare with
   `null`s and defaults dropped.
+- Property tests *(built 2026-10-15)*, in two layers. Elm fuzz tests
+  (`tests/Proto/JsonFuzzTest.elm`, `tests/RpcFuzzTest.elm`, fuzzers in
+  `tests/Fuzzers.elm`) check laws of the runtime alone: each proto3
+  JSON codec round-trips across its type's whole range (32- and 64-bit
+  integers past 2^53, floats with their special values, bytes in both
+  base64 alphabets, timestamps of years 1 to 9999, durations to
+  ±315,576,000,000 s, field masks, enums, maps, repeated fields,
+  `Struct`, `ListValue`, `Value`), decoders accept the other forms
+  proto3 JSON allows, the generated codecs of `routes.proto` leave out
+  defaults (a default message is `{}`, `{}` decodes to it, and
+  `encode (decode (encode x)) == encode x`), and `Rpc.request` over
+  Transcode keeps structural laws (a path segment percent-decodes to its
+  field's value, a field bound in the path is in neither the query nor
+  a `*` body, a body field is not in the query, the URL holds only
+  unreserved characters, escapes and its delimiters). The second layer
+  is the route fixtures' machinery run on requests the Rust test samples
+  for every binding of `routes.proto` from a fixed seed (strings needing
+  escapes, integer bounds, floats' special values, unset and empty
+  messages, repeated and map fields, wrappers at their defaults,
+  well-known types): the reference gives each one's HTTP request, pinned
+  as `tests/RouteProperties.elm` and replayed through `Rpc.request` as
+  the fixtures are, which also runs the generated decoders and encoders
+  on prost-reflect's proto3 JSON (written with and without defaults,
+  under JSON and proto names). Neither layer proves a server agrees: the
+  samples are not sent live, the second layer is only as right as the
+  reference's reading of http.proto and proto3 JSON, and a float's text
+  in a path or query is held to one form (ECMAScript's, which proto3
+  JSON does not require). Timestamps are sampled to the millisecond,
+  which is all `Time.Posix` holds (§3.5). A sample that fails is a
+  finding, not a case to exclude; `-0` is the one value the codec laws
+  hold apart, since it is written as `0` (§3.4).
 
 ### Live verification *(Decided 2026-10-15; built 2026-10-15)*
 
@@ -2018,6 +2050,10 @@ kept compiling the same way.
 - Generated code states the runtime major it needs in a header comment;
   a mismatch surfaces as an Elm compile error against the runtime's
   types. Generator major == runtime major. *(Decided.)*
+- A drift check (`elm-connect check`, regenerating in memory and
+  diffing the committed tree, with the header's version checked against
+  the runtime) is wanted and deferred *(medium priority, 2026-10-15)*;
+  regenerating and `git diff` serves meanwhile.
 - Elm package versions follow Elm's enforced semver. Crate versions
   follow Cargo's.
 

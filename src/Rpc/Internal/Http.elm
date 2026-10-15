@@ -11,7 +11,10 @@ import Task exposing (Task)
 
 
 {-| Percent-encode `text` as UTF-8, keeping the characters `keep` accepts and
-writing every other byte as `%XX` with uppercase hex digits.
+writing every other byte as `%XX` with uppercase hex digits. A high surrogate
+left without its pair, which a string holds when it was cut inside a
+character, has no UTF-8 form and is written as U+FFFD, the replacement
+character, as the WHATWG URL encoder writes it.
 -}
 percentEncode : (Char -> Bool) -> String -> String
 percentEncode keep text =
@@ -147,6 +150,13 @@ utf8 code =
         [ 0xC0 + Bitwise.shiftRightBy 6 code
         , continuation code
         ]
+
+    else if isNaN (toFloat code) || (code >= 0xD800 && code <= 0xDFFF) then
+        -- A high surrogate left without its pair, as when a string is cut
+        -- inside a character, reaches here with no code: `Char.toCode`
+        -- gives NaN for it. Its value is written as U+FFFD, since no byte
+        -- sequence is UTF-8 for it.
+        utf8 0xFFFD
 
     else if code < 0x00010000 then
         [ 0xE0 + Bitwise.shiftRightBy 12 code

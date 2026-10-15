@@ -231,7 +231,32 @@ object : List ( String, Maybe Value ) -> Value
 object fields =
     fields
         |> List.filterMap (\( key, value ) -> Maybe.map (Tuple.pair key) value)
-        |> Json.Encode.object
+        |> objectOf
+
+
+{-| A JSON object from its pairs, keys kept in order. `Json.Encode.object`
+assigns each pair to a JavaScript object, and assigning `__proto__` sets the
+object's prototype rather than a property, so that key would be lost from the
+output while `JSON.parse` reads it as a property. An object with it is built
+as text and parsed, which keeps it.
+-}
+objectOf : List ( String, Value ) -> Value
+objectOf pairs =
+    if List.any (\( key, _ ) -> key == "__proto__") pairs then
+        pairs
+            |> List.map
+                (\( key, value ) ->
+                    Json.Encode.encode 0 (Json.Encode.string key)
+                        ++ ":"
+                        ++ Json.Encode.encode 0 value
+                )
+            |> String.join ","
+            |> (\body -> "{" ++ body ++ "}")
+            |> Json.Decode.decodeString Json.Decode.value
+            |> Result.withDefault (Json.Encode.object pairs)
+
+    else
+        Json.Encode.object pairs
 
 
 {-| A field without presence: `Nothing` when it holds its proto3 default, the
@@ -255,7 +280,8 @@ implicit zero encode value =
 
 {-| A `double` or `float` field without presence: `Nothing` at `0`, else its
 JSON as [`encodeFloat`](#encodeFloat) writes it. `-0`, NaN and the infinities
-are not the default and are written.
+are not the default and are written; `-0` as `0`, since JavaScript's JSON
+writer has no negative zero, and a server reads `+0` either way.
 -}
 implicitFloat : Float -> Maybe Value
 implicitFloat number =
@@ -278,7 +304,8 @@ repeated encode values =
 
 
 {-| A map field: `Nothing` when empty, else a JSON object, keyed as
-`Json.Encode.dict` keys it.
+`Json.Encode.dict` keys it. A key of `__proto__` is kept (see
+[`object`](#object)).
 -}
 dict : (k -> String) -> (v -> Value) -> Dict.Dict k v -> Maybe Value
 dict key encode entries =
@@ -286,7 +313,11 @@ dict key encode entries =
         Nothing
 
     else
-        Just (Json.Encode.dict key encode entries)
+        entries
+            |> Dict.toList
+            |> List.map (\( k, v ) -> ( key k, encode v ))
+            |> objectOf
+            |> Just
 
 
 {-| A map field with `bool` keys: `Nothing` when empty, else the object
@@ -965,7 +996,8 @@ uint64 =
 
 
 {-| Decode an unsigned 64-bit integer as an `Int`, under the `int64=int`
-option: the forms [`int64AsInt`](#int64AsInt) accepts, from 0 to
+option: the forms [`int64AsInt`](#int64AsInt) accepts, from 0 up to
+the largest `Int` that is exact, 9007199254740991.
 -}
 uint64AsInt : Decoder Int
 uint64AsInt =
@@ -1312,8 +1344,8 @@ struct =
 {-| Encode a `google.protobuf.Struct` from its members, as a JSON object.
 -}
 encodeStruct : Dict.Dict String Value -> Value
-encodeStruct =
-    Json.Encode.dict identity identity
+encodeStruct fields =
+    objectOf (Dict.toList fields)
 
 
 {-| Decode a `google.protobuf.ListValue`, a JSON array, into its elements. Any

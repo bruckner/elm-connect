@@ -217,8 +217,8 @@ fn text(value: &Value, kind: &Kind) -> String {
         Value::I64(n) => n.to_string(),
         Value::U32(n) => n.to_string(),
         Value::U64(n) => n.to_string(),
-        Value::F32(x) => x.to_string(),
-        Value::F64(x) => x.to_string(),
+        Value::F32(x) => number(f64::from(*x)),
+        Value::F64(x) => number(*x),
         Value::Bytes(b) => base64(b),
         Value::EnumNumber(n) => match kind {
             Kind::Enum(e) => e.get_value(*n).expect("a known value").name().to_owned(),
@@ -232,6 +232,59 @@ fn text(value: &Value, kind: &Kind) -> String {
         },
         other => panic!("no query text for {other:?}"),
     }
+}
+
+/// A float as text: proto3 JSON's `NaN`, `Infinity` and `-Infinity`, and a
+/// finite value as ECMAScript's Number-to-String writes it (`1e+21`,
+/// `1e-7`, `0.000001`, `-0` as `0`), which is what `JSON.stringify` and so
+/// a browser client sends. proto3 JSON fixes no form for a number and a
+/// server parses any; the expectation needs one.
+fn number(x: f64) -> String {
+    if x.is_nan() {
+        return "NaN".into();
+    }
+    if x.is_infinite() {
+        return if x > 0.0 { "Infinity" } else { "-Infinity" }.into();
+    }
+    if x == 0.0 {
+        return "0".into();
+    }
+    // Rust's `{:e}` writes the shortest digits that read back as `x`, as
+    // ECMAScript does, but when two such are equally close to `x` it rounds
+    // up, where ECMAScript takes the even one. A tie shows in `x`'s exact
+    // expansion (`{:.800e}` holds every digit of any double) as a 5
+    // followed by nothing past the shortest digits.
+    let shortest = format!("{:e}", x.abs());
+    let (mantissa, exponent) = shortest.split_once('e').expect("an exponent");
+    let mut digits = mantissa.replace('.', "");
+    let exact = format!("{:.800e}", x.abs());
+    let (exact_mantissa, exact_exponent) = exact.split_once('e').expect("an exponent");
+    let exact_digits = exact_mantissa.replace('.', "");
+    let (kept, rest) = exact_digits.split_at(digits.len());
+    let tie = rest.starts_with('5') && rest[1..].bytes().all(|b| b == b'0');
+    let odd = digits.ends_with(['1', '3', '5', '7', '9']);
+    if tie && odd && exact_exponent == exponent && kept != digits {
+        digits = kept.to_owned();
+    }
+    let k = digits.len() as i32;
+    let n = exponent.parse::<i32>().expect("an exponent") + 1;
+    let zeros = |count: i32| "0".repeat(count as usize);
+    let text = if k <= n && n <= 21 {
+        format!("{digits}{}", zeros(n - k))
+    } else if 0 < n && n <= 21 {
+        format!("{}.{}", &digits[..n as usize], &digits[n as usize..])
+    } else if -6 < n && n <= 0 {
+        format!("0.{}{digits}", zeros(-n))
+    } else {
+        let mantissa = if k == 1 {
+            digits.clone()
+        } else {
+            format!("{}.{}", &digits[..1], &digits[1..])
+        };
+        let sign = if n > 0 { '+' } else { '-' };
+        format!("{mantissa}e{sign}{}", (n - 1).abs())
+    };
+    if x < 0.0 { format!("-{text}") } else { text }
 }
 
 /// The field at proto path `path` of `message`: `None` when a message on
@@ -529,16 +582,44 @@ fn pinned(path: &str, content: &str) -> Result<(), String> {
     }
 }
 
-/// The fixtures as an Elm module of `Replay.fixture` calls, each with the
+/// One request to replay in Elm: a fixture, or a sampled request.
+struct Case {
+    name: String,
+    method: String,
+    /// `None` for a method without a rule.
+    binding: Option<usize>,
+    /// The request as proto3 JSON.
+    request: String,
+    expect: Http,
+}
+
+impl Case {
+    fn of_fixture(fixture: &Fixture) -> Case {
+        Case {
+            name: format!("{}: {}", fixture.file, fixture.name),
+            method: fixture.method.clone(),
+            binding: fixture.binding,
+            request: fixture.request.to_string(),
+            expect: expected(fixture),
+        }
+    }
+}
+
+/// `cases` as an Elm module `name` of `Replay.fixture` calls, each with the
 /// generated decoder of its request, the generated function of its method
 /// and the number of its binding (`Nothing` for a method without a rule).
-fn fixtures_module(methods: &HashMap<String, Known>) -> Module {
+fn replay_module(
+    name: &str,
+    header: &str,
+    cases: &[Case],
+    methods: &HashMap<String, Known>,
+) -> Module {
     let module = ModuleName::new("Routes.V1");
     let mut services = std::collections::BTreeSet::new();
-    let items: Vec<Expr> = fixtures()
+    let items: Vec<Expr> = cases
         .iter()
-        .map(|fixture| {
-            let known = &methods[&fixture.method];
+        .map(|case| {
+            let known = &methods[&case.method];
             let request = known
                 .input
                 .full_name()
@@ -549,7 +630,7 @@ fn fixtures_module(methods: &HashMap<String, Known>) -> Module {
                 ModuleName::new(known.module.clone()),
                 known.method.elm_name.clone(),
             );
-            let want = expected(fixture);
+            let want = &case.expect;
             let query: Vec<String> = want
                 .query
                 .iter()
@@ -561,7 +642,12 @@ fn fixtures_module(methods: &HashMap<String, Known>) -> Module {
                 format!("{}?{}", want.path, query.join("&"))
             };
             // A method without a rule is POSTed on the implicit route.
-            let verb = fixture.rule["verb"].as_str().unwrap_or("POST");
+            let verb = match case.binding {
+                Some(index) => binding(known.method.http.as_ref().expect("a rule"), index)
+                    .verb
+                    .as_str(),
+                None => "POST",
+            };
             let headers = want
                 .headers
                 .iter()
@@ -573,14 +659,14 @@ fn fixtures_module(methods: &HashMap<String, Known>) -> Module {
             apply(
                 qualified("Replay", "fixture"),
                 [
-                    string(format!("{}: {}", fixture.file, fixture.name)),
+                    string(case.name.clone()),
                     qualified(module.clone(), format!("decode{request}")),
                     call,
-                    match fixture.binding {
+                    match case.binding {
                         None => var("Nothing"),
                         Some(index) => apply(var("Just"), [int(index as i64)]),
                     },
-                    string(fixture.request.to_string()),
+                    string(case.request.clone()),
                     record([
                         ("method", string(verb)),
                         ("url", string(url)),
@@ -601,12 +687,8 @@ fn fixtures_module(methods: &HashMap<String, Known>) -> Module {
         })
         .collect();
     Module {
-        header: Some(
-            "Generated by the route fixtures test (crates/elm-connect-gen/tests/routes.rs) from \
-             conformance/routes. Do not edit; bless instead."
-                .into(),
-        ),
-        name: ModuleName::new("RouteFixtures"),
+        header: Some(header.into()),
+        name: ModuleName::new(name),
         doc: None,
         exposing: Exposing::All,
         imports,
@@ -629,7 +711,14 @@ fn the_elm_replay_is_current() {
     let methods = methods(&pool);
     let generated = generate(&pool, &["routes.proto"], &Options::default())
         .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
-    let fixtures = elm_connect_gen::elm::print::print_module(&fixtures_module(&methods));
+    let cases: Vec<Case> = fixtures().iter().map(Case::of_fixture).collect();
+    let fixtures = elm_connect_gen::elm::print::print_module(&replay_module(
+        "RouteFixtures",
+        "Generated by the route fixtures test (crates/elm-connect-gen/tests/routes.rs) from \
+         conformance/routes. Do not edit; bless instead.",
+        &cases,
+        &methods,
+    ));
     let failures: Vec<String> = generated
         .files
         .iter()
@@ -642,4 +731,406 @@ fn the_elm_replay_is_current() {
         "the Elm replay of the route fixtures is stale; run `just bless`:\n{}",
         failures.join("\n")
     );
+}
+
+// The route properties: requests sampled at random for every route of
+// `routes.proto`, each turned into its HTTP request by the reference and
+// replayed in Elm (`tests/RouteProperties.elm`, `RoutePropertiesTest.elm`)
+// as the fixtures are.
+
+/// The seed of the sampling and the number of requests sampled per route
+/// (each binding of each method, and the implicit route of a method
+/// without a rule). Changing either re-samples every request, which
+/// rewrites `tests/RouteProperties.elm`.
+const SEED: u64 = 0x2026_1015;
+const PER_ROUTE: usize = 16;
+
+/// SplitMix64: a generator whose sequence is fixed by its definition, so
+/// the pinned samples cannot change with a dependency's release, as
+/// `rand`'s `StdRng` may.
+struct Rng(u64);
+
+impl Rng {
+    fn next(&mut self) -> u64 {
+        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        let mut z = self.0;
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        z ^ (z >> 31)
+    }
+
+    /// A number in `0..n`.
+    fn below(&mut self, n: u64) -> u64 {
+        self.next() % n
+    }
+
+    /// A number in `low..=high`.
+    fn range(&mut self, low: i64, high: i64) -> i64 {
+        low + (self.next() % ((high - low) as u64 + 1)) as i64
+    }
+
+    /// True one time in `n`.
+    fn one_in(&mut self, n: u64) -> bool {
+        self.below(n) == 0
+    }
+
+    fn pick<T: Clone>(&mut self, items: &[T]) -> T {
+        items[self.below(items.len() as u64) as usize].clone()
+    }
+}
+
+/// A short string of what a URL must escape, what JSON and an Elm literal
+/// must escape, and multi-byte UTF-8, or empty. Only assigned characters:
+/// elm-format escapes unassigned ones, which the printer does not know.
+fn sample_string(rng: &mut Rng) -> String {
+    const CHARS: &str = "azAZ09-_.~/?#&=% +:@!$'()*,;[]\"\\\n\t\u{1}\u{7F}éßΩ中✓😀\u{10348}";
+    let chars: Vec<char> = CHARS.chars().collect();
+    let length = rng.pick(&[0, 1, 2, 3, 5, 8]);
+    (0..length).map(|_| rng.pick(&chars)).collect()
+}
+
+fn sample_i32(rng: &mut Rng) -> i32 {
+    match rng.below(4) {
+        0 => rng.pick(&[i32::MIN, i32::MAX, -1, 1]),
+        1 => rng.range(-1000, 1000) as i32,
+        _ => rng.next() as i32,
+    }
+}
+
+fn sample_i64(rng: &mut Rng) -> i64 {
+    const SAFE: i64 = (1 << 53) - 1;
+    match rng.below(4) {
+        0 => rng.pick(&[i64::MIN, i64::MAX, SAFE, SAFE + 1, SAFE + 2, -SAFE - 2]),
+        1 => rng.range(-1000, 1000),
+        _ => rng.next() as i64,
+    }
+}
+
+fn sample_u64(rng: &mut Rng) -> u64 {
+    match rng.below(4) {
+        0 => rng.pick(&[u64::MAX, 1 << 63, (1 << 53) + 1, 1]),
+        1 => rng.below(1000),
+        _ => rng.next(),
+    }
+}
+
+/// A double: the non-finite values, the extremes, `-0` and every magnitude
+/// between.
+fn sample_f64(rng: &mut Rng) -> f64 {
+    match rng.below(4) {
+        0 => rng.pick(&[
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::MAX,
+            f64::MIN,
+            f64::MIN_POSITIVE,
+            5e-324,
+            1e21,
+            1e-7,
+            0.1,
+            -0.0,
+        ]),
+        1 => rng.range(-1000, 1000) as f64 / 8.0,
+        _ => {
+            let x = f64::from_bits(rng.next());
+            if x.is_finite() && x != 0.0 { x } else { 1.5 }
+        }
+    }
+}
+
+fn sample_f32(rng: &mut Rng) -> f32 {
+    match rng.below(4) {
+        0 => rng.pick(&[f32::NAN, f32::INFINITY, f32::NEG_INFINITY, f32::MAX, 0.1]),
+        1 => rng.range(-1000, 1000) as f32 / 8.0,
+        _ => {
+            let x = f32::from_bits(rng.next() as u32);
+            if x.is_finite() && x != 0.0 { x } else { 1.5 }
+        }
+    }
+}
+
+/// A field mask path of proto field names whose lowerCamelCase form reads
+/// back as it: lowercase words, each starting with a letter.
+fn sample_path(rng: &mut Rng) -> String {
+    let word = |rng: &mut Rng| -> String {
+        let length = rng.range(1, 4);
+        (0..length)
+            .map(|i| {
+                if i == 0 || rng.below(3) > 0 {
+                    (b'a' + rng.below(26) as u8) as char
+                } else {
+                    (b'0' + rng.below(10) as u8) as char
+                }
+            })
+            .collect()
+    };
+    (0..rng.range(1, 3))
+        .map(|_| {
+            (0..rng.range(1, 2))
+                .map(|_| word(rng))
+                .collect::<Vec<_>>()
+                .join("_")
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+/// A well-known type with a JSON form of its own, sampled within what the
+/// runtime holds exactly; `None` for any other message.
+fn sample_well_known(rng: &mut Rng, descriptor: &MessageDescriptor) -> Option<DynamicMessage> {
+    let mut message = DynamicMessage::new(descriptor.clone());
+    match descriptor.full_name() {
+        // To the millisecond, which `Time.Posix` holds; finer digits are
+        // truncated by design (§3.5).
+        "google.protobuf.Timestamp" => {
+            let any = rng.range(-62_135_596_800, 253_402_300_799);
+            let seconds = rng.pick(&[-62_135_596_800, 253_402_300_799, 0, any, any]);
+            message.set_field_by_name("seconds", Value::I64(seconds));
+            message.set_field_by_name("nanos", Value::I32(rng.range(0, 999) as i32 * 1_000_000));
+        }
+        "google.protobuf.Duration" => {
+            let negative = rng.one_in(2);
+            let any = rng.range(0, 315_576_000_000);
+            let seconds = rng.pick(&[0, 1, 315_576_000_000, any, any]);
+            let nanos = match rng.below(4) {
+                0 => 0,
+                1 => rng.range(0, 999) * 1_000_000,
+                2 => rng.range(0, 999_999) * 1_000,
+                _ => rng.range(0, 999_999_999),
+            };
+            let sign = if negative { -1 } else { 1 };
+            message.set_field_by_name("seconds", Value::I64(sign * seconds));
+            message.set_field_by_name("nanos", Value::I32((sign * nanos) as i32));
+        }
+        "google.protobuf.FieldMask" => {
+            let paths = (0..rng.range(0, 3))
+                .map(|_| Value::String(sample_path(rng)))
+                .collect();
+            message.set_field_by_name("paths", Value::List(paths));
+        }
+        name if name.starts_with("google.protobuf.") && name.ends_with("Value") => {
+            // A wrapper: at its default a third of the time.
+            let field = descriptor.get_field_by_name("value").expect("a wrapper");
+            if !rng.one_in(3) {
+                let value = sample_value(rng, &field.kind(), 0);
+                message.set_field(&field, value);
+            }
+        }
+        _ => return None,
+    }
+    Some(message)
+}
+
+/// A value of kind `kind`; a message `depth` levels down.
+fn sample_value(rng: &mut Rng, kind: &Kind, depth: usize) -> Value {
+    match kind {
+        Kind::Double => Value::F64(sample_f64(rng)),
+        Kind::Float => Value::F32(sample_f32(rng)),
+        Kind::Int32 | Kind::Sint32 | Kind::Sfixed32 => Value::I32(sample_i32(rng)),
+        Kind::Int64 | Kind::Sint64 | Kind::Sfixed64 => Value::I64(sample_i64(rng)),
+        Kind::Uint32 | Kind::Fixed32 => Value::U32(rng.next() as u32),
+        Kind::Uint64 | Kind::Fixed64 => Value::U64(sample_u64(rng)),
+        Kind::Bool => Value::Bool(rng.one_in(2)),
+        Kind::String => Value::String(sample_string(rng)),
+        Kind::Bytes => Value::Bytes(
+            (0..rng.below(7))
+                .map(|_| rng.next() as u8)
+                .collect::<Vec<u8>>()
+                .into(),
+        ),
+        Kind::Enum(descriptor) => {
+            let values: Vec<i32> = descriptor.values().map(|v| v.number()).collect();
+            Value::EnumNumber(rng.pick(&values))
+        }
+        Kind::Message(descriptor) => Value::Message(sample_message(rng, descriptor, depth + 1)),
+    }
+}
+
+/// A map key of kind `kind`.
+fn sample_key(rng: &mut Rng, kind: &Kind) -> prost_reflect::MapKey {
+    use prost_reflect::MapKey;
+    match kind {
+        Kind::String => MapKey::String(sample_string(rng)),
+        Kind::Bool => MapKey::Bool(rng.one_in(2)),
+        Kind::Int32 | Kind::Sint32 | Kind::Sfixed32 => MapKey::I32(sample_i32(rng)),
+        Kind::Int64 | Kind::Sint64 | Kind::Sfixed64 => MapKey::I64(sample_i64(rng)),
+        Kind::Uint32 | Kind::Fixed32 => MapKey::U32(rng.next() as u32),
+        Kind::Uint64 | Kind::Fixed64 => MapKey::U64(sample_u64(rng)),
+        other => panic!("no map key of kind {other:?}"),
+    }
+}
+
+/// A message of type `descriptor`: each field without presence at its
+/// default about a third of the time; each field with presence unset, set
+/// to its default (a message set but empty), or set; a oneof unset or one
+/// member set; repeated and map fields with none to three elements.
+/// Past three levels down, messages are left empty.
+fn sample_message(rng: &mut Rng, descriptor: &MessageDescriptor, depth: usize) -> DynamicMessage {
+    if let Some(message) = sample_well_known(rng, descriptor) {
+        return message;
+    }
+    let mut message = DynamicMessage::new(descriptor.clone());
+    if depth > 3 {
+        return message;
+    }
+    for oneof in descriptor.oneofs().filter(|o| !o.is_synthetic()) {
+        let members: Vec<_> = oneof.fields().collect();
+        let choice = rng.below(members.len() as u64 + 1) as usize;
+        if let Some(field) = members.get(choice) {
+            // A set member at its default is still set.
+            let value = if rng.one_in(3) {
+                Value::default_value(&field.kind())
+            } else {
+                sample_value(rng, &field.kind(), depth)
+            };
+            message.set_field(field, value);
+        }
+    }
+    for field in descriptor.fields() {
+        if field
+            .containing_oneof()
+            .is_some_and(|oneof| !oneof.is_synthetic())
+        {
+            continue;
+        }
+        let kind = field.kind();
+        let value = if field.is_map() {
+            let Kind::Message(entry) = &kind else {
+                unreachable!()
+            };
+            let key_kind = entry.map_entry_key_field().kind();
+            let value_kind = entry.map_entry_value_field().kind();
+            let entries = (0..rng.below(4))
+                .map(|_| {
+                    (
+                        sample_key(rng, &key_kind),
+                        sample_value(rng, &value_kind, depth),
+                    )
+                })
+                .collect();
+            Some(Value::Map(entries))
+        } else if field.is_list() {
+            Some(Value::List(
+                (0..rng.below(4))
+                    .map(|_| sample_value(rng, &kind, depth))
+                    .collect(),
+            ))
+        } else if field.supports_presence() {
+            match rng.below(3) {
+                0 => None,
+                1 => Some(Value::default_value(&kind)),
+                _ => Some(sample_value(rng, &kind, depth)),
+            }
+        } else if rng.one_in(3) {
+            None
+        } else {
+            Some(sample_value(rng, &kind, depth))
+        };
+        if let Some(value) = value {
+            message.set_field(&field, value);
+        }
+    }
+    message
+}
+
+/// The request as proto3 JSON, written in one of the forms a parser must
+/// accept: usually as the generated encoders write it, sometimes with every
+/// default spelled out or with proto field names.
+fn sample_json(rng: &mut Rng, message: &DynamicMessage) -> Json {
+    let options = SerializeOptions::new()
+        .skip_default_fields(!rng.one_in(4))
+        .use_proto_field_name(rng.one_in(4));
+    message
+        .serialize_with_options(serde_json::value::Serializer, &options)
+        .expect("serialize")
+}
+
+/// The sampled requests, `PER_ROUTE` for each route of every method, in
+/// method and binding order, each with the message it was written from.
+fn samples(methods: &HashMap<String, Known>) -> Vec<(Case, DynamicMessage)> {
+    let mut rng = Rng(SEED);
+    let mut names: Vec<&String> = methods.keys().collect();
+    names.sort();
+    let mut cases = Vec::new();
+    for name in names {
+        let known = &methods[name];
+        let bindings: Vec<Option<usize>> = if known.method.http.is_some() {
+            (0..known.method.routes.len()).map(Some).collect()
+        } else {
+            vec![None]
+        };
+        for binding in bindings {
+            for n in 0..PER_ROUTE {
+                let message = sample_message(&mut rng, &known.input, 0);
+                let json = sample_json(&mut rng, &message);
+                let expect = match binding {
+                    Some(index) => reference(&known.method.routes[index], &message),
+                    None => implicit(name, &message),
+                };
+                let short = name.trim_start_matches("routes.v1.Routes.");
+                let case = Case {
+                    name: match binding {
+                        Some(index) => format!("{short} {index} #{n}"),
+                        None => format!("{short} #{n}"),
+                    },
+                    method: name.clone(),
+                    binding,
+                    request: json.to_string(),
+                    expect,
+                };
+                cases.push((case, message));
+            }
+        }
+    }
+    cases
+}
+
+/// Each sample's JSON is proto3 JSON that prost-reflect reads back as the
+/// message it was written from.
+#[test]
+fn the_samples_are_proto3_json_that_reads_back() {
+    let pool = pool();
+    let methods = methods(&pool);
+    let mut failures = Vec::new();
+    for (case, message) in samples(&methods) {
+        let input = &methods[&case.method].input;
+        let json: Json = serde_json::from_str(&case.request).expect("JSON");
+        match DynamicMessage::deserialize(input.clone(), json) {
+            Ok(read) => {
+                if to_json(&read) != to_json(&message) {
+                    failures.push(format!(
+                        "{}: {} reads back as {}, not {}",
+                        case.name,
+                        case.request,
+                        to_json(&read),
+                        to_json(&message)
+                    ));
+                }
+            }
+            Err(e) => failures.push(format!("{}: {}: {e}", case.name, case.request)),
+        }
+    }
+    assert!(failures.is_empty(), "\n{}", failures.join("\n"));
+}
+
+#[test]
+fn the_route_properties_are_current() {
+    let pool = pool();
+    let methods = methods(&pool);
+    let module = replay_module(
+        "RouteProperties",
+        "Generated by the route properties test (crates/elm-connect-gen/tests/routes.rs): \
+         requests sampled from conformance/routes/routes.proto, and what the reference makes \
+         of them. Do not edit; bless instead.",
+        &samples(&methods)
+            .into_iter()
+            .map(|(case, _)| case)
+            .collect::<Vec<_>>(),
+        &methods,
+    );
+    let content = elm_connect_gen::elm::print::print_module(&module);
+    if let Err(diff) = pinned("tests/RouteProperties.elm", &content) {
+        panic!("the route properties are stale; run `just bless`:\n{diff}");
+    }
 }

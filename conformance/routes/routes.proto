@@ -83,9 +83,13 @@ message FileRequest {
   string path = 1;
 }
 
+// Sent only as a body, so it may hold maps, which have no query form.
 message Resource {
   string name = 1;
   string display_name = 2;
+  map<string, string> labels = 3;
+  map<int64, Kind> kinds = 4;
+  map<bool, double> weights = 5;
 }
 
 message UpdateResourceRequest {

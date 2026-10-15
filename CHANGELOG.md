@@ -436,3 +436,28 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   file paths, imports and references following; the runtime's modules
   are untouched. A value that is not dot-separated Elm module segments
   is an error. The `module_prefix` conformance case pins it.
+- Property tests (design §7). Elm fuzz tests check the runtime's laws:
+  every proto3 JSON codec round-trips across its type's range (64-bit
+  integers past 2^53, floats' special values, both base64 alphabets,
+  timestamps of years 1 to 9999, durations to ±315,576,000,000 s, field
+  masks, enums, maps, `Struct` and the rest), the generated codecs leave
+  out defaults, and `Rpc.request` over Transcode keeps path values,
+  query and body apart and percent-encodes what it must. The route
+  fixtures' test samples 16 requests for each binding of `routes.proto`
+  (256 in all) from a fixed seed, and its reference's HTTP requests
+  for them are pinned in `tests/RouteProperties.elm` and replayed
+  through `Rpc.request` as the fixtures are (`just bless` rewrites the
+  file). `routes.proto`'s `Resource` gains three map fields for them,
+  which the live suite's `routes.mjs` now reads. The reference writes a
+  float in a path or query as the runtime does: `Infinity`, not Rust's
+  `inf`, and a finite value in ECMAScript's form.
+- A map or `Struct` key of `__proto__` is written: `Proto.Json.dict`,
+  `encodeStruct` and `object` build an object holding that key as text
+  and parse it, since assigning it to a JavaScript object sets the
+  prototype and `Json.Encode.object` lost it, while decoding kept it.
+- A lone surrogate in a path or query value is percent-encoded as U+FFFD,
+  as the WHATWG URL encoder writes it, where the bytes of the surrogate
+  itself were written, which is not UTF-8.
+- Docs: `-0` is written as `0` (JavaScript's JSON writer has no negative
+  zero); design §3.4 and `implicitFloat` said it was written.
+
