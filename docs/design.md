@@ -1385,7 +1385,11 @@ conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
 Run against Vanguard by the live suite (§7): GET with query
 parameters, POST with a body field, PATCH with an update mask in the
 query, DELETE, a custom verb, percent-encoded path values and the
-implicit route.
+implicit route; and every route fixture (`conformance/routes/`), each
+request checked against the fixture and Vanguard's reading of it
+against the fixture's request, with three divergences recorded (§7).
+Not verified live: `response_body` (no rule of either API has one),
+and the fields refused a query form, which never reach a server.
 
 The bindings a generated call carries (`Proto.Http.binding`, with
 `literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
@@ -1716,6 +1720,43 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `Transport Timeout`, as a Connect client gives its own deadline.
+Workstream 3, built 2026-10-15: the example server also serves the
+route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
+the request Vanguard decoded, and `conformance/live/routes.mjs` sends
+every fixture through the runtime with its binding. It checks (a) the
+request against the fixture (verb, path, query pairs as sent, body
+compared as the fixtures' own checks compare it, a fixture's headers),
+(b) HTTP 200 and the echo equal to the fixture's request, both read as
+proto3 JSON (a field without presence at its default left out, one
+with presence kept when set, 64-bit integers as strings, enums by name,
+bytes, durations and timestamps in one form), and (c) the runtime's
+`ok` equal to the echo. `cases/transcode.json` adds the error bodies as
+they go over the wire. Found, and recorded in
+`conformance/live/known-divergent.json`, where the run asserts
+Vanguard's answer so that a change either way is noticed:
+
+- `routes.proto` cannot be served whole: `GetMessage`'s first and third
+  bindings are both `GET /v1/messages/*`, and `UpdateMessage` and
+  `UpdateMessageWhole` share `PATCH /v1/messages/{message_id}`. Vanguard
+  refuses the second route; the server serves each refused binding on a
+  second transcoder under `/layer/1`, and its fixture runs there. The
+  fixtures join http.proto's separate examples into one rule; a client
+  can follow it, no router can serve it.
+- A `google.protobuf.StringValue` set to `""` is sent as `label=`, which
+  Vanguard rejects (it quotes a wrapper's value for protojson only when
+  non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
+  string.
+- A path variable under an unset message is sent as an empty segment
+  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejects as
+  no int32. The fixture's choice, and the runtime's; proto3 reads the
+  field as `0`, which the fixture writes for every other default, and
+  which Vanguard accepts. Left for a change of the fixture and runtime.
+- An unset body field sent as `{}` reaches the server as a set, empty
+  message. Neither end is wrong: the wire has no other form for it.
+
+Also seen, not a divergence: with `body: "*"` the runtime sends
+`"sub": {}` for a message whose only field the path holds, and writes
+fields at their defaults; the fixtures' comparison drops both.
 
 Recorded for later: documented and verified examples for Envoy's
 gRPC-JSON transcoder and grpc-gateway in front of the same service,

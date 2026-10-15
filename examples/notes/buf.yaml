@@ -1,7 +1,11 @@
-# The example's protos. googleapis comes from the Buf Schema Registry as a
-# dependency, so its files reach the plugins as imports and are not generated.
+# The example's protos, and the route fixtures' routes.proto, which the
+# live suite serves too: `routes` links to conformance/routes, since a
+# module cannot sit outside this directory. googleapis comes from the Buf
+# Schema Registry as a dependency, so its files reach the plugins as
+# imports and are not generated.
 version: v2
 modules:
   - path: proto
+  - path: routes
 deps:
   - buf.build/googleapis/googleapis

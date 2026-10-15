@@ -331,3 +331,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `known-failing-send.txt` (response headers and trailers, which only the
   halves give) listing the rest with reasons. The runner gains the
   `halves` way of sending, which reports the answer's status and headers.
+- Live verification of transcoding: the example server also serves the
+  route fixtures' `routes.v1.Routes` under Vanguard, echoing each
+  request, and `conformance/live/routes.mjs` sends every fixture through
+  the runtime and checks the request against the fixture, the echo
+  against the fixture's request (as proto3 JSON) and the runtime's
+  reading of the answer. Three fixtures part from Vanguard and two
+  bindings cannot be served beside the others; both are recorded in
+  `conformance/live/known-divergent.json` (design §7).
+  `cases/transcode.json` adds `google.rpc.Status` bodies as sent,
+  statuses without one, `grpc-status` headers and empty or non-JSON 2xx
+  answers; the runner reports each exchange's response body.
