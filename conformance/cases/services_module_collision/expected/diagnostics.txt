@@ -9,7 +9,7 @@ naming::module_collision
  4 │
    ╰────
   help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
-        and every service a module inside its package's
+        and every service becomes a module inside its package's
         (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
         segment in PascalCase, so a service can take the name of a package
         nested in its own, and names that differ only in case or underscores
@@ -42,7 +42,7 @@ naming::module_collision
  21 │   rpc GetNote(Note) returns (Note);
     ╰────
   help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
-        and every service a module inside its package's
+        and every service becomes a module inside its package's
         (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
         segment in PascalCase, so a service can take the name of a package
         nested in its own, and names that differ only in case or underscores

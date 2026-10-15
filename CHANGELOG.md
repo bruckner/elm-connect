@@ -256,3 +256,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.WellKnown.any`. The `types::any` diagnostic is gone, and the
   `any_field` conformance case is a golden one. An `Any` request field
   outside the body is `route::query_field`.
+- A `uint64` or `fixed64` field refuses a negative value when decoded
+  (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit unsigned kinds do;
+  `Proto.WellKnown.uint64Value` and `uint64ValueAsInt` likewise. The
+  `naming::module_collision` help reads "every service becomes a
+  module".

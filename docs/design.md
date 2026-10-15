@@ -467,8 +467,10 @@ dependencies; not prioritised.
   and the `Int64Value`/`UInt64Value` wrappers too. Map **keys** stay
   `String` under either setting: they are strings on the wire, and a
   `Dict String V` keyed by decimal text needs no range check.
-- The unsigned kinds share the signed range check (a negative `uint64`
-  decodes); the string form never checked sign either.
+- The unsigned 64-bit kinds refuse a negative value when decoded
+  (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit ones do; the
+  encoders are the signed ones. *(Decided 2026-10-14; a negative
+  `uint64` decoded before.)*
 
 ### 3.5 Well-known types
 
@@ -1443,12 +1445,7 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 
 ## 9. Open questions, collected
 
-1. Presence as companion data: instead of `Maybe` fields, generated
-   records could carry a presence set plus helpers (`hasBar`), a
-   pattern that would also give unknown fields a home; this trades
-   "simple, idiomatic Elm records" for an abstract structure. Not
-   decided; raised during the type-layer review.
-2. *(Closed 2026-10-13.)* `Any` (§3.5): `Proto.Any` packs and
+1. *(Closed 2026-10-13.)* `Any` (§3.5): `Proto.Any` packs and
    unpacks through the typed records (§3.9), describes through a
    registry, and holds a payload that arrived only as binary rather
    than failing on it; `Rpc` error details are `Any`s (§5.4).

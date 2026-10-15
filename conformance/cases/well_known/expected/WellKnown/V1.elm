@@ -221,7 +221,7 @@ decodeEvent =
         |> Proto.Json.field "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
         |> Proto.Json.field "weight" Nothing (Json.Decode.map Just Proto.Json.float)
         |> Proto.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.int64)
-        |> Proto.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.int64)
+        |> Proto.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.uint64)
         |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
         |> Proto.Json.field "total" Nothing (Json.Decode.map Just Proto.Json.uint32)
         |> Proto.Json.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)

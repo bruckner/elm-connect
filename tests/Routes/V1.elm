@@ -598,7 +598,7 @@ decodeEverything =
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.field "count" 0 Proto.Json.int32
         |> Proto.Json.field "big" "0" Proto.Json.int64
-        |> Proto.Json.field "ubig" "0" Proto.Json.int64
+        |> Proto.Json.field "ubig" "0" Proto.Json.uint64
         |> Proto.Json.field "flag" False Json.Decode.bool
         |> Proto.Json.field "ratio" 0.0 Proto.Json.float
         |> Proto.Json.field "scale" 0.0 Proto.Json.float

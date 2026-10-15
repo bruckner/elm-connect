@@ -6,8 +6,8 @@ module Proto.Json exposing
     , enum
     , intDict, boolMap, encodeBoolMap
     , int32, uint32
-    , int64, encodeInt64
-    , int64AsInt, encodeInt64AsInt
+    , int64, uint64, encodeInt64
+    , int64AsInt, uint64AsInt, encodeInt64AsInt
     , float, encodeFloat
     , bytes, encodeBytes
     , timestamp, encodeTimestamp
@@ -61,8 +61,8 @@ By default a 64-bit integer is held as its decimal string. Code generated with
 the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
 `Int` instead.
 
-@docs int64, encodeInt64
-@docs int64AsInt, encodeInt64AsInt
+@docs int64, uint64, encodeInt64
+@docs int64AsInt, uint64AsInt, encodeInt64AsInt
 
 
 # Floating point
@@ -836,6 +836,38 @@ already rounded when the JSON was parsed, and fails too.
 int64AsInt : Decoder Int
 int64AsInt =
     numeric |> Json.Decode.andThen int64Form
+
+
+{-| Decode an unsigned 64-bit integer (`uint64`, `fixed64`) as its decimal
+string: the forms [`int64`](#int64) accepts, zero or more.
+-}
+uint64 : Decoder String
+uint64 =
+    int64
+        |> Json.Decode.andThen
+            (\decimal ->
+                if String.startsWith "-" decimal then
+                    Json.Decode.fail ("Expecting a uint64 (0 or more) but got " ++ decimal)
+
+                else
+                    Json.Decode.succeed decimal
+            )
+
+
+{-| Decode an unsigned 64-bit integer as an `Int`, under the `int64=int`
+option: the forms [`int64AsInt`](#int64AsInt) accepts, from 0 to
+-}
+uint64AsInt : Decoder Int
+uint64AsInt =
+    int64AsInt
+        |> Json.Decode.andThen
+            (\number ->
+                if number < 0 then
+                    Json.Decode.fail ("Expecting a uint64 (0 or more) but got " ++ String.fromInt number)
+
+                else
+                    Json.Decode.succeed number
+            )
 
 
 int64Form : Numeric -> Decoder Int
