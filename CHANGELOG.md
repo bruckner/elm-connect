@@ -455,4 +455,7 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `encodeStruct` and `object` build an object holding that key as text
   and parse it, since assigning it to a JavaScript object sets the
   prototype and `Json.Encode.object` lost it, while decoding kept it.
+- A lone surrogate in a path or query value is percent-encoded as U+FFFD,
+  as the WHATWG URL encoder writes it, where the bytes of the surrogate
+  itself were written, which is not UTF-8.
 

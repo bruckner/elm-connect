@@ -159,6 +159,22 @@ suite =
         , keptResponses
         , retries
         , trailers
+        , percentEncoding
+        ]
+
+
+percentEncoding : Test
+percentEncoding =
+    let
+        encode : String -> String
+        encode =
+            Rpc.Internal.Http.percentEncode Rpc.Internal.Http.unreserved
+    in
+    describe "percentEncode"
+        [ test "writes a character outside the BMP as four bytes" <|
+            \_ -> encode "😀" |> Expect.equal "%F0%9F%98%80"
+        , test "writes a lone surrogate as U+FFFD" <|
+            \_ -> encode (String.left 1 "😀") |> Expect.equal "%EF%BF%BD"
         ]
 
 
