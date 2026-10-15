@@ -75,10 +75,14 @@ bless:
 
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,
-# against the example server over Connect and over transcoding. Not part of
-# `check`: it needs Go and the Buf Schema Registry; CI runs it as its own job.
+# against the example server over Connect and over transcoding, then the
+# route fixtures against its routes.v1 echo service under Vanguard. Not
+# part of `check`: it needs Go and the Buf Schema Registry; CI runs it as
+# its own job.
 live: live-gen live-build
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
+    node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
+    node conformance/live/routes.mjs --serve target/live/bin/notes-server
 
 # Regenerate the example's Go stubs and Elm client with buf, and fail if
 # they differ from what is committed (or staged). The plugins are built into

@@ -102,6 +102,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
         withCredentials: this.withCredentials,
         status: null,
         responseHeaders: null,
+        responseBody: null,
         outcome: "pending",
       };
       observe(exchange);
@@ -148,6 +149,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
           exchange.responseHeaders = Object.fromEntries(
             this.#responseHeaders.map(([k, v]) => [k.toLowerCase(), v]),
           );
+          exchange.responseBody = this.responseText;
           exchange.outcome = "load";
           this.dispatch("load");
           this.dispatch("loadend");

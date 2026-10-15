@@ -12,6 +12,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
 import Live.Notes
+import Live.Routes
 import Rpc
 import Rpc.ErrorCode
 
@@ -26,7 +27,7 @@ port results : Value -> Cmd msg
 -}
 tables : Dict ( String, String ) (Entry Msg)
 tables =
-    Dict.fromList Live.Notes.table
+    Dict.fromList (Live.Notes.table ++ Live.Routes.table)
 
 
 main : Program () Model Msg
