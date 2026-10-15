@@ -452,7 +452,8 @@ out:
   proto3 default (`Proto.Json.implicit zero encoder value`: `0`, `"0"`,
   `""`, `False`, the zero enum value); a float only at `0`
   (`Proto.Json.implicitFloat`), so `-0`, NaN and the infinities are
-  written.
+  written, `-0` as `0`: JavaScript's JSON writer has no negative zero,
+  and a server reads `+0` either way.
 - A field with presence (`Maybe`: `optional`, a message, a wrapper,
   `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Any`) is
   left out when `Nothing` and written when `Just`, at its default too

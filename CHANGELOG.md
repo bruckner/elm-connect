@@ -458,4 +458,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - A lone surrogate in a path or query value is percent-encoded as U+FFFD,
   as the WHATWG URL encoder writes it, where the bytes of the surrogate
   itself were written, which is not UTF-8.
+- Docs: `-0` is written as `0` (JavaScript's JSON writer has no negative
+  zero); design §3.4 and `implicitFloat` said it was written.
 
