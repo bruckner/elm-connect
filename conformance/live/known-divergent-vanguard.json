@@ -20,7 +20,7 @@
       "fixture": "fields with presence are sent at their defaults when set",
       "url": "GET /v1/query?maybe_count=0&maybe_name=&limit=0&label=&number=0",
       "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"label\\\" value for type \\\"message\\\": \"}",
-      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree.",
+      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree. Fix proposed in https://github.com/connectrpc/vanguard-go/pull/208.",
       "observed": {
         "trace": { "httpStatus": 400 },
         "result": {

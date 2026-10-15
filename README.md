@@ -356,6 +356,27 @@ For a server that serves rules alone, generate with
 `unbound_methods=error`, and a method without a rule is a diagnostic
 rather than a call that fails at run time.
 
+### Transcoder differences the live suite found
+
+The live suite runs every route fixture against two transcoders in front
+of the same service. Where a transcoder answered other than
+`google/api/http.proto` and proto3 JSON say:
+
+- grpc-gateway v2.32.0 forwards a `google.protobuf.FieldMask` query value's
+  paths as written, so a mask sent in the query in its JSON form
+  (`mask=displayName`) reaches the service as a path no field has, and
+  the call fails.
+- grpc-gateway v2.32.0, under its default unescaping mode, answers 404 for
+  a single-segment path variable holding `%2F`;
+  `UnescapingModeAllExceptReserved` serves it.
+- Vanguard v0.5.0 rejects an empty `google.protobuf.StringValue` sent as
+  `label=` with 400 `INVALID_ARGUMENT`; fix proposed in
+  [connectrpc/vanguard-go#208](https://github.com/connectrpc/vanguard-go/pull/208).
+
+The full readings, with the differences where neither side is wrong, are
+in `conformance/live/known-divergent-gateway.json` and
+`conformance/live/known-divergent-vanguard.json`.
+
 ## Developing
 
 ```sh
