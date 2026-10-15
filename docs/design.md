@@ -1244,10 +1244,15 @@ it.
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to.
 - Retry waits `backoff` ms before the second attempt and doubles it
-  before each one after, up to `attempts` tries in all. It applies only
-  to a `Status` or `Http` error whose code is one of `codes`, never to
-  a transport error (though it has a code, §5.4), and with
-  `idempotentOnly` only to idempotent calls.
+  before each one after, up to `attempts` tries in all. It applies to
+  any error whose code (§5.4) is one of `codes`, and with
+  `idempotentOnly` only to idempotent calls, so a network failure
+  retries when `Unavailable` is listed and a timeout when
+  `DeadlineExceeded` is. Clients in the wild treat a network failure as
+  the same event as a 503 and gate safety on idempotency; a timeout is
+  the ambiguous case, since the request may have reached the server,
+  and `DeadlineExceeded` belongs in `codes` only with `idempotentOnly`
+  or for calls safe to replay. *(Decided, 2026-10-15.)*
 
 ### 5.2 Rpc  *(Decided, 2026-10-13; built)*
 

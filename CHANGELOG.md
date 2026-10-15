@@ -329,4 +329,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `timeout`. `Trace.code` is a `Code`, no longer a `Maybe Code`:
   `Failed` on any error, a timeout included. Code that matches or
   builds `Rpc` errors by hand moves to `Status` and `Http`, or to
-  `Rpc.code error` for the common case.
+  `Rpc.code error` for the common case. The retry policy judges every
+  error by its code, so a network failure retries when `Unavailable` is
+  in `codes` and a timeout when `DeadlineExceeded` is.

@@ -317,11 +317,16 @@ connect =
     Connect { useGet = False, maxGetUrl = Nothing }
 
 
-{-| When to try a call again: when an attempt fails with a [`Status`](#Error)
-or [`Http`](#Error) error whose [`code`](#code) is one of `codes`, up to
-`attempts` tries in all, waiting `backoff` milliseconds before the second and
-twice as long before each one after. With `idempotentOnly`, only idempotent
-calls are retried. A `Transport` error is never retried, though it has a code.
+{-| When to try a call again: when an attempt fails with an error whose
+[`code`](#code) is one of `codes`, up to `attempts` tries in all, waiting
+`backoff` milliseconds before the second and twice as long before each one
+after. With `idempotentOnly`, only idempotent calls are retried.
+
+Every error is judged by its code, so a network failure reads as
+`Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
+may have reached the server, so `DeadlineExceeded` belongs in `codes` only
+with `idempotentOnly`, or for calls that are safe to replay.
+
 -}
 type alias Retry =
     { attempts : Int
@@ -1113,9 +1118,6 @@ attempt cfg c sent =
 retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
-        ( _, Err (Transport _) ) ->
-            Nothing
-
         ( Just policy, Err error ) ->
             Retry.delay policy fields.method.descriptor.idempotent tried (Just (code error))
 
