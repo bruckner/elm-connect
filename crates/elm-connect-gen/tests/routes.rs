@@ -217,8 +217,8 @@ fn text(value: &Value, kind: &Kind) -> String {
         Value::I64(n) => n.to_string(),
         Value::U32(n) => n.to_string(),
         Value::U64(n) => n.to_string(),
-        Value::F32(x) => x.to_string(),
-        Value::F64(x) => x.to_string(),
+        Value::F32(x) => number(f64::from(*x)),
+        Value::F64(x) => number(*x),
         Value::Bytes(b) => base64(b),
         Value::EnumNumber(n) => match kind {
             Kind::Enum(e) => e.get_value(*n).expect("a known value").name().to_owned(),
@@ -232,6 +232,59 @@ fn text(value: &Value, kind: &Kind) -> String {
         },
         other => panic!("no query text for {other:?}"),
     }
+}
+
+/// A float as text: proto3 JSON's `NaN`, `Infinity` and `-Infinity`, and a
+/// finite value as ECMAScript's Number-to-String writes it (`1e+21`,
+/// `1e-7`, `0.000001`, `-0` as `0`), which is what `JSON.stringify` and so
+/// a browser client sends. proto3 JSON fixes no form for a number and a
+/// server parses any; the expectation needs one.
+fn number(x: f64) -> String {
+    if x.is_nan() {
+        return "NaN".into();
+    }
+    if x.is_infinite() {
+        return if x > 0.0 { "Infinity" } else { "-Infinity" }.into();
+    }
+    if x == 0.0 {
+        return "0".into();
+    }
+    // Rust's `{:e}` writes the shortest digits that read back as `x`, as
+    // ECMAScript does, but when two such are equally close to `x` it rounds
+    // up, where ECMAScript takes the even one. A tie shows in `x`'s exact
+    // expansion (`{:.800e}` holds every digit of any double) as a 5
+    // followed by nothing past the shortest digits.
+    let shortest = format!("{:e}", x.abs());
+    let (mantissa, exponent) = shortest.split_once('e').expect("an exponent");
+    let mut digits = mantissa.replace('.', "");
+    let exact = format!("{:.800e}", x.abs());
+    let (exact_mantissa, exact_exponent) = exact.split_once('e').expect("an exponent");
+    let exact_digits = exact_mantissa.replace('.', "");
+    let (kept, rest) = exact_digits.split_at(digits.len());
+    let tie = rest.starts_with('5') && rest[1..].bytes().all(|b| b == b'0');
+    let odd = digits.ends_with(['1', '3', '5', '7', '9']);
+    if tie && odd && exact_exponent == exponent && kept != digits {
+        digits = kept.to_owned();
+    }
+    let k = digits.len() as i32;
+    let n = exponent.parse::<i32>().expect("an exponent") + 1;
+    let zeros = |count: i32| "0".repeat(count as usize);
+    let text = if k <= n && n <= 21 {
+        format!("{digits}{}", zeros(n - k))
+    } else if 0 < n && n <= 21 {
+        format!("{}.{}", &digits[..n as usize], &digits[n as usize..])
+    } else if -6 < n && n <= 0 {
+        format!("0.{}{digits}", zeros(-n))
+    } else {
+        let mantissa = if k == 1 {
+            digits.clone()
+        } else {
+            format!("{}.{}", &digits[..1], &digits[1..])
+        };
+        let sign = if n > 0 { '+' } else { '-' };
+        format!("{mantissa}e{sign}{}", (n - 1).abs())
+    };
+    if x < 0.0 { format!("-{text}") } else { text }
 }
 
 /// The field at proto path `path` of `message`: `None` when a message on
