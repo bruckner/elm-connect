@@ -161,17 +161,18 @@ Creating a note without a title fails with `INVALID_ARGUMENT` and a
 `google.rpc.BadRequest` detail; "Get notes/missing" fails with
 `NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code, the
 message, where the error was read from, the details it knows by type,
-and every detail as JSON:
+and every detail as JSON; an answer that stated no status shows the
+code inferred from it and the body as it came:
 
 ```elm examples/notes/elm/src/Main.elm#error
 viewError : Rpc.Error -> Html msg
 viewError error =
     case error of
-        Rpc.Rpc failure ->
+        Rpc.Status status answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString failure.code) ]
-                , p [] [ text failure.message ]
-                , p [] [ text ("Read from " ++ sourceToString failure.source) ]
+                [ h2 [] [ text (Rpc.ErrorCode.toString status.code) ]
+                , p [] [ text status.message ]
+                , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
@@ -182,7 +183,15 @@ viewError error =
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
                         (Rpc.details Google.Rpc.messageErrorInfo error)
                     )
-                , div [] (List.map viewDetail failure.details)
+                , div [] (List.map viewDetail status.details)
+                ]
+
+        Rpc.Http answer ->
+            section [ class "error" ]
+                [ h2 [] [ text (Rpc.ErrorCode.toString (Rpc.code error)) ]
+                , p [] [ text (Rpc.message error) ]
+                , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
+                , pre [] [ text answer.body ]
                 ]
 
         Rpc.Transport _ ->
@@ -200,22 +209,20 @@ sourceToString source =
         Rpc.ConnectBody ->
             "a Connect error body"
 
-        Rpc.StatusBody number ->
-            "a google.rpc.Status body, code " ++ String.fromInt number
+        Rpc.StatusBody ->
+            "a google.rpc.Status body"
 
         Rpc.GrpcHeaders ->
             "the grpc-status header"
-
-        Rpc.HttpStatus status ->
-            "the HTTP status " ++ String.fromInt status
 ```
 
 Over Connect the error arrives as a Connect error body
 (`{"code": "invalid_argument", …}`, each detail with its JSON as
 `debug`); over transcoding Vanguard sends a `google.rpc.Status` body
 (`{"code": 3, …}`). The error is the same `Rpc.Error` either way, and
-`source` says which body it was. `Rpc.Error` does not carry the raw
-answer; the network tab has it, status, headers and body.
+`source` says which body it was. The answer rides with the error as
+`Rpc.Response`, its status, headers and body, so a body in a shape the
+runtime does not read can still be shown, as the `Rpc.Http` branch does.
 
 ## The transport toggle
 

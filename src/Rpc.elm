@@ -5,7 +5,7 @@ module Rpc exposing
     , Config, config, Transport(..), connect, Retry
     , task, send
     , Trace, taskTraced, sendTraced
-    , Error(..), Source(..), errorToString, details
+    , Error(..), Source(..), Response, code, message, errorToString, details
     , Request, request, response, taskFromRequest
     )
 
@@ -65,7 +65,7 @@ own state:
 
 # Errors
 
-@docs Error, Source, errorToString, details
+@docs Error, Source, Response, code, message, errorToString, details
 
 
 # Requests and responses
@@ -80,7 +80,7 @@ application can rewrite a request before sending it with
 
 -}
 
-import Dict
+import Dict exposing (Dict)
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
@@ -132,10 +132,10 @@ applies it to each method's [`Method`](Proto-Method#Method) record:
 
 -}
 call : Method req res -> req -> Call req res
-call m message =
+call m req =
     Call
         { method = m
-        , message = message
+        , message = req
         , binding = 0
         , headers = []
         , timeout = Nothing
@@ -317,11 +317,16 @@ connect =
     Connect { useGet = False, maxGetUrl = Nothing }
 
 
-{-| When to try a call again: when an attempt fails with an [`Rpc`](#Error)
-error whose code is one of `codes`, up to `attempts` tries in all, waiting
+{-| When to try a call again: when an attempt fails with an error whose
+[`code`](#code) is one of `codes`, up to `attempts` tries in all, waiting
 `backoff` milliseconds before the second and twice as long before each one
-after. With `idempotentOnly`, only idempotent calls are retried. A transport
-error is never retried.
+after. With `idempotentOnly`, only idempotent calls are retried.
+
+Every error is judged by its code, so a network failure reads as
+`Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
+may have reached the server, so `DeadlineExceeded` belongs in `codes` only
+with `idempotentOnly`, or for calls that are safe to replay.
+
 -}
 type alias Retry =
     { attempts : Int
@@ -365,9 +370,9 @@ send cfg ((Call fields) as c) toMsg =
   - `request`: the request sent.
   - `httpStatus`: the HTTP status of the last answer, `Nothing` when there was
     none (a timeout, a network failure).
-  - `code`: how the call ended: `Just Ok` when it succeeded,
-    `Just (Failed code)` when it failed with an [`Rpc`](#Error) error, and
-    `Nothing` when it failed with a [`Transport`](#Error) error.
+  - `code`: how the call ended: `Ok` when it succeeded, and `Failed` with the
+    error's [`code`](#code) when it failed, so a timeout is
+    `Failed DeadlineExceeded`.
   - `duration`: milliseconds from before the first attempt to after the last.
   - `attempts`: how many times it was sent, retries included.
 
@@ -378,7 +383,7 @@ type alias Trace =
     , binding : Maybe Int
     , request : Request
     , httpStatus : Maybe Int
-    , code : Maybe Code
+    , code : Code
     , duration : Float
     , attempts : Int
     }
@@ -423,17 +428,14 @@ taskTraced cfg ((Call fields) as c) =
             )
 
 
-outcomeCode : Result Error res -> Maybe Code
+outcomeCode : Result Error res -> Code
 outcomeCode result =
     case result of
         Ok _ ->
-            Just Code.Ok
+            Code.Ok
 
-        Err (Rpc rpc) ->
-            Just (Code.Failed rpc.code)
-
-        Err (Transport _) ->
-            Nothing
+        Err error ->
+            Code.Failed (code error)
 
 
 {-| Send a call, giving what happened and the result to `toMsg`.
@@ -449,56 +451,125 @@ sendTraced cfg c toMsg =
 
 {-| Why a call failed.
 
-  - `Rpc`: the server answered with an error: its code, its message, its
-    details, and where in the answer they were found. Each detail is a message
-    packed in an [`Any`](Proto-Any#Any), read with [`details`](#details) or
+  - `Status`: the server answered with a status, in a Connect error body, a
+    `google.rpc.Status` body or the `grpc-status` headers: its code, its
+    message, its details, and where it was found ([`Source`](#Source)), with
+    the answer itself. Each detail is a message packed in an
+    [`Any`](Proto-Any#Any), read with [`details`](#details) or
     [`Proto.Any.unpack`](Proto-Any#unpack). The code is an
-    [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming `ok`
-    while failing reads as `Unknown`.
+    [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming
+    `ok` while failing reads as `Unknown`.
+  - `Http`: the server answered, but stated no status; [`code`](#code) infers
+    one from the HTTP status.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
     a successful answer whose body does not decode (`Http.BadBody`).
 
+Most code asks for the [`code`](#code) and [`message`](#message), which every
+error has:
+
+    case Rpc.code error of
+        Unauthenticated ->
+            signInAgain
+
+        _ ->
+            showMessage (Rpc.message error)
+
+The [`Response`](#Response) is kept whichever way the server answered, so an
+error in a shape the runtime does not read can still be:
+
+    case error of
+        Http response ->
+            myDecoder response.body
+
+        _ ->
+            Err (Rpc.errorToString error)
+
 -}
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Any, source : Source }
+    = Status { code : ErrorCode, message : String, details : List Any, source : Source } Response
+    | Http Response
     | Transport Http.Error
 
 
-{-| Where an `Rpc` error was read from.
+{-| Where a `Status` error was read from, tried in this order:
 
   - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
   - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
-    and Envoy send; the number is kept as received, and one outside `1` to
-    `16` is the code `Unknown`.
+    and Envoy send; a number outside `1` to `16` is the code `Unknown`, and the
+    number as sent is in the response's body.
   - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, when the
     browser exposes them; the message is percent-decoded, and the status text
     stands in when there is none.
-  - `HttpStatus`: none of the above; the code is inferred from this HTTP status
-    ([`Rpc.ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus)), the message is the
-    status text (`HTTP <status>` when there is none), and there are no
-    details.
+
+An answer with none of these is an `Http` error.
 
 -}
 type Source
     = ConnectBody
-    | StatusBody Int
+    | StatusBody
     | GrpcHeaders
-    | HttpStatus Int
 
 
-{-| A one-line description of an error, for logs.
+{-| An answer as it arrived: its HTTP status and status text, its headers as
+elm/http gives them, and its body.
 -}
-errorToString : Error -> String
-errorToString error =
-    case error of
-        Rpc rpc ->
-            ErrorCode.toString rpc.code
-                ++ (if String.isEmpty rpc.message then
-                        ""
+type alias Response =
+    { statusCode : Int
+    , statusText : String
+    , headers : Dict String String
+    , body : String
+    }
 
-                    else
-                        ": " ++ rpc.message
-                   )
+
+{-| An error's code. A `Status` error has the server's; an `Http` error's is
+inferred from its HTTP status by
+[`ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus); a `Transport`
+error's is the one the Connect clients give it: a timeout is
+`DeadlineExceeded`, a network failure `Unavailable`, a bad URL or an
+undecodable body `Internal`.
+-}
+code : Error -> ErrorCode
+code error =
+    case error of
+        Status status _ ->
+            status.code
+
+        Http answer ->
+            ErrorCode.fromHttpStatus answer.statusCode
+
+        Transport Http.Timeout ->
+            ErrorCode.DeadlineExceeded
+
+        Transport Http.NetworkError ->
+            ErrorCode.Unavailable
+
+        Transport (Http.BadUrl _) ->
+            ErrorCode.Internal
+
+        Transport (Http.BadBody _) ->
+            ErrorCode.Internal
+
+        Transport (Http.BadStatus status) ->
+            ErrorCode.fromHttpStatus status
+
+
+{-| An error's message: a `Status` error's as the server sent it, which may be
+empty; an `Http` error's status text, or `HTTP <status>` when there is none;
+a `Transport` error's description (`timeout`, `network error`,
+`bad URL: <url>`, `bad response body: <problem>`).
+-}
+message : Error -> String
+message error =
+    case error of
+        Status status _ ->
+            status.message
+
+        Http answer ->
+            if String.isEmpty answer.statusText then
+                "HTTP " ++ String.fromInt answer.statusCode
+
+            else
+                answer.statusText
 
         Transport Http.Timeout ->
             "timeout"
@@ -516,25 +587,44 @@ errorToString error =
             "bad response body: " ++ problem
 
 
+{-| A one-line description of an error, for logs: its [`code`](#code) and
+[`message`](#message), `not_found: no such note`, or the code alone when the
+message is empty.
+-}
+errorToString : Error -> String
+errorToString error =
+    let
+        text =
+            message error
+    in
+    ErrorCode.toString (code error)
+        ++ (if String.isEmpty text then
+                ""
+
+            else
+                ": " ++ text
+           )
+
+
 {-| The details of an error that are of this message type, in the order the
-server sent them, leaving out any that do not decode. A `Transport` error has
-none.
+server sent them, leaving out any that do not decode. Only a `Status` error
+has any.
 
     case Rpc.details Google.Rpc.messageBadRequest error of
         badRequest :: _ ->
             showViolations badRequest.fieldViolations
 
         [] ->
-            showMessage (Rpc.errorToString error)
+            showMessage (Rpc.message error)
 
 -}
 details : Message a -> Error -> List a
-details message error =
+details proto error =
     case error of
-        Rpc rpc ->
-            List.filterMap (Proto.Any.unpack message >> Maybe.andThen Result.toMaybe) rpc.details
+        Status status _ ->
+            List.filterMap (Proto.Any.unpack proto >> Maybe.andThen Result.toMaybe) status.details
 
-        Transport _ ->
+        _ ->
             []
 
 
@@ -1030,8 +1120,8 @@ attempt cfg c sent =
 retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
-        ( Just policy, Err (Rpc rpc) ) ->
-            Retry.delay policy fields.method.descriptor.idempotent tried (Just rpc.code)
+        ( Just policy, Err error ) ->
+            Retry.delay policy fields.method.descriptor.idempotent tried (Just (code error))
 
         _ ->
             Nothing
@@ -1052,42 +1142,39 @@ statusOf answer =
 
 {-| The error a failed answer stands for, whatever the transport: its Connect
 error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, its HTTP status.
+`grpc-message` headers, or failing all of those, an `Http` error. The answer is
+kept whichever it is.
 -}
 failure : Http.Metadata -> String -> Error
 failure metadata raw =
     let
-        statusText =
-            if String.isEmpty metadata.statusText then
-                "HTTP " ++ String.fromInt metadata.statusCode
-
-            else
-                metadata.statusText
+        answer =
+            { statusCode = metadata.statusCode
+            , statusText = metadata.statusText
+            , headers = metadata.headers
+            , body = raw
+            }
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
-        Ok rpc ->
-            Rpc rpc
+        Ok read ->
+            Status read answer
 
         Err _ ->
             case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
-                    Rpc
+                    Status
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
                                 |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault statusText
+                                |> Maybe.withDefault (message (Http answer))
                         , details = []
                         , source = GrpcHeaders
                         }
+                        answer
 
                 Nothing ->
-                    Rpc
-                        { code = ErrorCode.fromHttpStatus metadata.statusCode
-                        , message = statusText
-                        , details = []
-                        , source = HttpStatus metadata.statusCode
-                        }
+                    Http answer
 
 
 {-| A response header by name, whatever its case.
@@ -1101,6 +1188,12 @@ header key metadata =
         |> Maybe.map Tuple.second
 
 
+{-| A `Status` error as read, before the answer is attached.
+-}
+type alias Read =
+    { code : ErrorCode, message : String, details : List Any, source : Source }
+
+
 fromGrpc : Int -> ErrorCode
 fromGrpc number =
     ErrorCode.fromInt number |> Maybe.withDefault ErrorCode.Unknown
@@ -1109,9 +1202,9 @@ fromGrpc number =
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
 optional `details`.
 -}
-statusBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
+statusBody : Decoder Read
 statusBody =
-    Json.Decode.map3 (\number message found -> { code = fromGrpc number, message = message, details = found, source = StatusBody number })
+    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
         (optional "message" Json.Decode.string "")
         (optional "details" detailList [])
@@ -1120,9 +1213,9 @@ statusBody =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
+connectBody : Decoder Read
 connectBody =
-    Json.Decode.map3 (\code message found -> { code = code, message = message, details = found, source = ConnectBody })
+    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
             |> Json.Decode.map (ErrorCode.fromString >> Maybe.withDefault ErrorCode.Unknown)
         )

@@ -1272,9 +1272,15 @@ it.
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to.
 - Retry waits `backoff` ms before the second attempt and doubles it
-  before each one after, up to `attempts` tries in all. It applies only
-  to an `Rpc` error with one of `codes`, never to a transport error, and
-  with `idempotentOnly` only to idempotent calls.
+  before each one after, up to `attempts` tries in all. It applies to
+  any error whose code (§5.4) is one of `codes`, and with
+  `idempotentOnly` only to idempotent calls, so a network failure
+  retries when `Unavailable` is listed and a timeout when
+  `DeadlineExceeded` is. Clients in the wild treat a network failure as
+  the same event as a 503 and gate safety on idempotency; a timeout is
+  the ambiguous case, since the request may have reached the server,
+  and `DeadlineExceeded` belongs in `codes` only with `idempotentOnly`
+  or for calls safe to replay. *(Decided, 2026-10-15.)*
 
 ### 5.2 Rpc  *(Decided, 2026-10-13; built)*
 
@@ -1354,11 +1360,12 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
 - `Trace` is `{ service, method, binding, request, httpStatus, code,
   duration, attempts }`: `binding` is `Nothing` when no binding was used
   (Connect, the implicit route), `httpStatus` the last answer's HTTP
-  status, `code` how the call ended (`Just Ok` on success,
-  `Just (Failed c)` on an `Rpc` error, `Nothing` on a transport
-  failure), `duration` milliseconds by `Time.now` before the first
-  attempt and after the last. *(`httpStatus` and `code` decided,
-  2026-10-13.)*
+  status (`Nothing` on a transport failure), `code` how the call ended
+  (`Ok` on success, `Failed (Rpc.code error)` on any error, so a
+  timeout is `Failed DeadlineExceeded`), `duration` milliseconds by
+  `Time.now` before the first attempt and after the last. *(`httpStatus`
+  and `code` decided, 2026-10-13; `code` was `Nothing` on a transport
+  failure until every error had a code, 2026-10-15.)*
 - Only the pure halves are unit-tested; elm-test cannot run a `Task`,
   so `task`, `send`, the traced forms and the retry loop are checked by
   the compiler and by the retry policy's own tests, and run against a
@@ -1499,14 +1506,28 @@ is not met: connect-go, the suite's reference server, always sends it.
 
 ```elm
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Proto.Any.Any, source : Source }
+    = Status                    -- the server stated a status
+        { code : ErrorCode
+        , message : String
+        , details : List Proto.Any.Any
+        , source : Source
+        }
+        Response
+    | Http Response             -- it answered, but stated none
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
 
 type Source
     = ConnectBody               -- {"code": "not_found", …}
-    | StatusBody Int            -- google.rpc.Status, {"code": 5, …}; the number as received
+    | StatusBody                -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders               -- grpc-status / grpc-message headers
-    | HttpStatus Int            -- inferred from the status by Connect's table
+
+type alias Response =           -- elm/http's Http.Metadata names, and the body
+    { statusCode : Int, statusText : String, headers : Dict String String, body : String }
+
+code : Error -> ErrorCode       -- Http: by Connect's table; Transport: as below
+message : Error -> String
+details : Proto.Message.Message a -> Error -> List a
+errorToString : Error -> String -- "<code>: <message>", or "<code>" when the message is empty
 ```
 
 ```elm
@@ -1521,8 +1542,8 @@ Each module has `toString` / `fromString` (Connect's names), `toInt` /
 `fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`; for
 `Code`, `Ok` is `"ok"`, `0` and any 2xx. *(Decided, 2026-10-13.)* `Ok`
 is in `Code` so that a status can be reported whole (a `Trace`'s
-`code`), but an `Rpc` error carries an `ErrorCode`, so an error
-claiming `Ok` cannot be written; a failed answer whose body says `ok`
+`code`), but an error's code is an `ErrorCode`, so an error claiming
+`Ok` cannot be written; a failed answer whose body says `ok`
 or `0` reads as `Unknown`. The two types first shared `Rpc.Code`, the
 helpers for `Code` prefixed (`codeToString`, …); a module each gives
 both the plain names.
@@ -1542,17 +1563,57 @@ both the plain names.
   information without making every caller handle two types, and a
   server behind a transcoder can answer in either form.
 - A failed answer is read by one reader whatever the transport, in
-  order: a Connect error body (`code` a string the protocol names; an
+  order, and is a `Status` error when one of three readers finds a
+  status: a Connect error body (`code` a string the protocol names; an
   unknown name reads as `Unknown`; `message` `""` and `details` `[]`
   when absent); a `google.rpc.Status` body as grpc-gateway and Envoy
   send it (`code` an integer; one outside 1 to 16, `0` included, is
-  `Unknown`, the number kept in the source); the `grpc-status` and
-  `grpc-message` headers, when the browser exposes them (the message
-  percent-decoded, the status text when absent); then the HTTP status by the protocol's
-  table, with the status text as the message (`HTTP <status>` when
-  empty) and no details. The shape of `code` tells the two bodies
-  apart, so a server behind either transport may answer in either
-  form.
+  `Unknown`, the number as sent left in the body); the `grpc-status`
+  and `grpc-message` headers, when the browser exposes them (the
+  message percent-decoded, the status text when absent). The shape of
+  `code` tells the two bodies apart, so a server behind either
+  transport may answer in either form. An answer none of them reads is
+  an `Http` error: `code` infers its code from the HTTP status by the
+  protocol's table, `message` is the status text (`HTTP <status>` when
+  empty), and it has no details.
+- `Status` and `Http` errors keep the answer they were read from, a
+  `Response`: the status and status text and the headers as
+  elm/http's `Http.Metadata` gives them, and the body, whichever reader
+  recognised it, so an application can parse what the readers do not
+  (`Http response -> myDecoder response.body`). Some servers cannot be
+  changed to answer in a standard shape, and when the readers fall
+  through to the status table the body that said more was otherwise
+  lost. Reading the answer with the pure halves (§5.2) would work too,
+  but gives up the retry loop. A custom reader passed to the config as
+  a function is the possible next step, deferred until a second
+  application asks for it. A `Transport` error has no answer.
+  *(Decided, 2026-10-15.)*
+- Three constructors, and `code` and `message` for the common path
+  (`case Rpc.code error of Unauthenticated -> …`). *(Decided,
+  2026-10-15.)* The answer was first kept on one flat `Rpc` record
+  beside `source`, whose `HttpStatus Int` marked an inferred code,
+  until review found it bought nothing: Elm's record patterns bind
+  field names and never match field values, so the documented
+  `Rpc { source = HttpStatus 404, response }` did not parse, and
+  helpers serve as well. A code the server stated and one inferred
+  from the HTTP status are different kinds of error, which a
+  constructor says honestly while `code` still gives one code for
+  both. `Source`'s `Int`s went too: `StatusBody`'s duplicated the raw
+  body and `HttpStatus`'s `statusCode`. A `Status = { code, message,
+  details }` alias wrapped in the constructor was rejected, since
+  `google.rpc.Status` generated from the BSR is already a
+  `Google.Rpc.Status` record with `code : Int`, and two `Status`
+  records with different code types would confuse.
+- Every error has a code, a `Transport` error the one the Connect
+  clients give it: a timeout is `DeadlineExceeded`, a network failure
+  `Unavailable`, a bad URL or an undecodable success `Internal` (and
+  `Http.BadStatus n`, which the runtime never produces, `n` by the
+  status table). This settles whether a client timeout reads as
+  `DeadlineExceeded`: through `code` it does, while the constructor
+  still says no answer came. `message` gives a `Transport` error's
+  description (`timeout`, `network error`, `bad URL: <url>`,
+  `bad response body: <problem>`), and `errorToString` is the code and
+  the message for all three. *(Decided, 2026-10-15.)*
 - Error details are `Proto.Any.Any` values (§3.5). *(Decided,
   2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64
@@ -1564,8 +1625,8 @@ both the plain names.
   error's code and message with it. They were raw JSON values first,
   until `Any` was designed.
 - `Rpc.details : Proto.Message.Message a -> Error -> List a` gives the
-  details that are of that type and decode, in order; a `Transport`
-  error has none. A binary-only detail never decodes: details meant for
+  details that are of that type and decode, in order; an `Http` or
+  `Transport` error has none. A binary-only detail never decodes: details meant for
   this client need their JSON on the wire, as `debug` in a Connect body
   or, as always, in a `google.rpc.Status` body.
 

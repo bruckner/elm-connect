@@ -27,7 +27,7 @@
           "error": {
             "code": "invalid_argument",
             "message": "invalid parameter \"label\" value for type \"message\": ",
-            "source": "StatusBody 3"
+            "source": "StatusBody"
           }
         }
       }

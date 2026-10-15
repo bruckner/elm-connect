@@ -318,11 +318,11 @@ viewRequest request =
 viewError : Rpc.Error -> Html msg
 viewError error =
     case error of
-        Rpc.Rpc failure ->
+        Rpc.Status status answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString failure.code) ]
-                , p [] [ text failure.message ]
-                , p [] [ text ("Read from " ++ sourceToString failure.source) ]
+                [ h2 [] [ text (Rpc.ErrorCode.toString status.code) ]
+                , p [] [ text status.message ]
+                , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
@@ -333,7 +333,15 @@ viewError error =
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
                         (Rpc.details Google.Rpc.messageErrorInfo error)
                     )
-                , div [] (List.map viewDetail failure.details)
+                , div [] (List.map viewDetail status.details)
+                ]
+
+        Rpc.Http answer ->
+            section [ class "error" ]
+                [ h2 [] [ text (Rpc.ErrorCode.toString (Rpc.code error)) ]
+                , p [] [ text (Rpc.message error) ]
+                , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
+                , pre [] [ text answer.body ]
                 ]
 
         Rpc.Transport _ ->
@@ -351,14 +359,11 @@ sourceToString source =
         Rpc.ConnectBody ->
             "a Connect error body"
 
-        Rpc.StatusBody number ->
-            "a google.rpc.Status body, code " ++ String.fromInt number
+        Rpc.StatusBody ->
+            "a google.rpc.Status body"
 
         Rpc.GrpcHeaders ->
             "the grpc-status header"
-
-        Rpc.HttpStatus status ->
-            "the HTTP status " ++ String.fromInt status
 
 
 

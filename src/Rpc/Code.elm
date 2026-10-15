@@ -32,10 +32,10 @@ import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 
 {-| How an RPC ended: `Ok`, or failed with an error code.
 
-An [`Rpc.Rpc`](Rpc#Error) error carries an [`ErrorCode`](Rpc-ErrorCode#ErrorCode),
-so it cannot claim `Ok`; the runtime never produces one for a call that
-succeeded, and reads a failed answer whose body claims `ok` (or `0`) as
-`Unknown`. `Code` is for what reports either outcome, such as a
+Every [`Rpc.Error`](Rpc#Error) has an [`ErrorCode`](Rpc-ErrorCode#ErrorCode)
+([`Rpc.code`](Rpc#code)), so it cannot claim `Ok`; the runtime never produces
+one for a call that succeeded, and reads a failed answer whose body claims `ok`
+(or `0`) as `Unknown`. `Code` is for what reports either outcome, such as a
 [`Trace`](Rpc#Trace).
 
 `Ok` shares its name with `Result`'s, which every module imports, so refer to

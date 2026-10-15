@@ -375,3 +375,24 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   gives `List ( String, Maybe Value )`. `Proto.Json.encodeMaybe` is
   removed. The Rust route reference serializes with defaults left out
   too (design §3.4).
+- `Rpc.Error` has three constructors: `Status { code, message, details,
+  source } Response`, a status the server stated in a Connect body, a
+  `google.rpc.Status` body or the `grpc-status` headers; `Http
+  Response`, an answer that stated none; and `Transport Http.Error`,
+  unchanged. `Response` is `{ statusCode, statusText, headers, body }`,
+  the answer as it arrived, kept so an application can parse an error
+  body in a shape the runtime does not read (`Http response ->
+  myDecoder response.body`). `Source` loses its `HttpStatus` case and
+  `StatusBody`'s number. The new `Rpc.code` and `Rpc.message` give
+  every error a code and a message: an `Http` error's code is inferred
+  from its status by Connect's table, a `Transport` error's is the one
+  the Connect clients give (a timeout `DeadlineExceeded`, a network
+  failure `Unavailable`, a bad URL or undecodable body `Internal`).
+  `Rpc.errorToString` is `<code>: <message>` for all three, so a
+  transport error reads `deadline_exceeded: timeout` where it read
+  `timeout`. `Trace.code` is a `Code`, no longer a `Maybe Code`:
+  `Failed` on any error, a timeout included. Code that matches or
+  builds `Rpc` errors by hand moves to `Status` and `Http`, or to
+  `Rpc.code error` for the common case. The retry policy judges every
+  error by its code, so a network failure retries when `Unavailable` is
+  in `codes` and a timeout when `DeadlineExceeded` is.
