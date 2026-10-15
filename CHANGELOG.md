@@ -272,4 +272,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `elm_connect_gen::options`. A service without methods gets no module,
   which Elm would reject. The conformance harness pins a case's warnings
   in `expected/warnings.txt` (`services_streaming_skip` case).
+- A requested package is generated whole, from every compiled file
+  declaring it (protoc's `proto_file` holds the imports), so a field
+  whose type sits in an unrequested file of the same package is no
+  longer silently dropped (`packages_whole` case). Only packages with a
+  requested file are generated, as protoc plugins do; the
+  `generate::not_generated` help now names the ways to request an
+  imported file: `buf generate --include-imports`, the file on protoc's
+  command line, or the CLI's new `--include-imports` flag, which adds
+  the named files' transitive imports (bar `google/protobuf` and files
+  declaring nothing) to the generate set.
 

@@ -490,7 +490,42 @@ fn generate_set_must_be_closed_under_package_references() {
         "{}",
         first.message()
     );
-    assert!(first.help_text().contains("users/v1/user.proto"));
+    let help = first.help_text();
+    assert!(help.contains("users/v1/user.proto"), "{help}");
+    assert!(help.contains("buf generate --include-imports"), "{help}");
+    assert!(help.contains("with protoc"), "{help}");
+    assert!(help.contains("`--include-imports`"), "{help}");
+}
+
+#[test]
+fn a_requested_package_takes_its_unrequested_files() {
+    let files = [
+        (
+            "users/v1/group.proto",
+            "syntax = \"proto3\"; package users.v1; message Group {}",
+        ),
+        (
+            "users/v1/user.proto",
+            "syntax = \"proto3\"; package users.v1; import \"users/v1/group.proto\"; \
+             message User { users.v1.Group group = 1; }",
+        ),
+        (
+            "unrelated/v1/thing.proto",
+            "syntax = \"proto3\"; package unrelated.v1; message Thing {}",
+        ),
+    ];
+    let packages = build(&files, &["users/v1/user.proto"]).expect("builds");
+    let names: Vec<_> = packages.iter().map(|p| p.proto_name.as_str()).collect();
+    assert_eq!(names, ["users.v1"]);
+    assert_eq!(
+        packages[0].files,
+        ["users/v1/group.proto", "users/v1/user.proto"]
+    );
+    let user = message(&packages[0], "User");
+    let TypeRef::Message(group) = &field(user, "group").ty else {
+        panic!("group is a message");
+    };
+    assert_eq!(group.name, "Group");
 }
 
 #[test]

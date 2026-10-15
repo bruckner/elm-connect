@@ -47,7 +47,12 @@ codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
 maps, and custom types for enums and oneofs, a typed record per message
 and enum holding its codecs and descriptor, and a module per service
-with a call for every unary method.
+with a call for every unary method. Each package of the given files is
+generated whole, from every file declaring it; a package they only
+import is not generated, as with any protoc plugin, and a reference to
+it is an error naming the ways to add it (`buf generate
+--include-imports`, the file on protoc's command line, or the CLI's
+`--include-imports`). `google.protobuf` maps to the runtime instead.
 
 The runtime package has two roots, `Proto` for data and `Rpc` for
 calling:
@@ -76,7 +81,13 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route (below). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 
-[`docs/design.md`](docs/design.md) §3.4, §3.8, §3.9 and §4 have the details.
+The CLI alone also takes `--include-imports`, named after buf's: it
+generates the packages of every file the given ones import,
+transitively, as well (bar `google/protobuf` and files declaring
+nothing). Off by default, so the CLI generates what protoc and buf do
+from the same files.
+
+[`docs/design.md`](docs/design.md) §3.1, §3.4, §3.8, §3.9, §4 and §6 have the details.
 
 ## Using the generated client
 

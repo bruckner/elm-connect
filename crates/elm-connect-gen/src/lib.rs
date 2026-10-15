@@ -44,11 +44,15 @@ pub struct Generated {
 }
 
 /// Generates one Elm module per proto package declared by the files in
-/// `generate` (names as `pool` knows them), and one per service of each
-/// that has a method, sorted by path. A package of services alone still
-/// gets a package module, holding its registry. A service without methods,
-/// declared so or left so by `streaming=skip`, gets no module: Elm rejects
-/// a module that declares nothing.
+/// `generate` (names as `pool` knows them), each in full from every file of
+/// `pool` that declares it, and one per service of each that has a method,
+/// sorted by path. Only packages with a file in `generate` are generated,
+/// as protoc plugins do: a reference to any other package (bar
+/// `google.protobuf`, mapped to the runtime) is `generate::not_generated`,
+/// whose help names the ways to request it (design §3.1). A package of
+/// services alone still gets a package module, holding its registry. A
+/// service without methods, declared so or left so by `streaming=skip`,
+/// gets no module: Elm rejects a module that declares nothing.
 ///
 /// On any error, returns every error found instead: those of building
 /// the IR, or else the methods `options` reject, or else those of emitting

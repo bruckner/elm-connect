@@ -24,13 +24,16 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 
 /// Builds one [`Package`] per proto package declared by the files in
 /// `generate` (protoc's `file_to_generate`: names as the pool knows them),
-/// sorted by package name.
+/// sorted by package name. Each is built in full, from every file of the
+/// pool that declares it, so a package's module is the same whichever of
+/// its files were asked for (design §3.1).
 ///
 /// Every type those packages refer to must be in a generated package or be
-/// a supported well-known type: the generate set must be closed under
-/// package references (design §3.1). Files of `google.protobuf` in
-/// `generate` are skipped. Every method must be unary, and its request and
-/// response types are held to the same closure rule.
+/// a supported well-known type: a package with no file in `generate` is
+/// not generated, and a reference to it is a diagnostic naming the ways to
+/// add it (design §3.1, §3.8). Files of `google.protobuf` in `generate` are
+/// skipped. Every method must be unary, and its request and response types
+/// are held to the same rule.
 ///
 /// On any problem, returns every problem found instead.
 ///
@@ -63,34 +66,31 @@ pub fn build_with(
         ..Builder::default()
     };
 
-    let mut by_package: BTreeMap<String, Vec<FileDescriptor>> = BTreeMap::new();
-    let mut requested = BTreeSet::new();
+    // Files are checked for proto3 in the order asked for, then the rest
+    // of their packages'.
+    let mut asked = BTreeSet::new();
+    let mut checked = BTreeSet::new();
+    let mut requested = Vec::new();
     for &name in generate {
-        if !requested.insert(name) {
+        if !asked.insert(name) {
             continue;
         }
         let Some(file) = pool.get_file_by_name(name) else {
             builder.diagnostics.push(Problem::unknown_file(name));
             continue;
         };
-        if file.package_name() == WELL_KNOWN_PACKAGE {
-            continue;
+        if file.package_name() != WELL_KNOWN_PACKAGE {
+            checked.insert(name.to_owned());
+            builder.check_proto3(&file);
+            requested.push(file);
         }
-        let syntax = file.file_descriptor_proto().syntax();
-        if syntax != "proto3" {
-            let syntax = if syntax.is_empty() { "proto2" } else { syntax };
-            let site = builder.site(&file, &[tag::FILE_SYNTAX], format!("{syntax} here"));
-            builder
-                .diagnostics
-                .push(Problem::not_proto3(file.name(), syntax, site));
-        }
-        by_package
-            .entry(file.package_name().to_owned())
-            .or_default()
-            .push(file);
     }
-    for files in by_package.values_mut() {
-        files.sort_by(|a, b| a.name().cmp(b.name()));
+    let by_package = whole_packages(pool, requested);
+    builder.generated = by_package.keys().cloned().collect();
+    for file in by_package.values().flatten() {
+        if checked.insert(file.name().to_owned()) {
+            builder.check_proto3(file);
+        }
     }
 
     for (package, files) in &by_package {
@@ -144,6 +144,39 @@ pub fn build_with(
     } else {
         Err(errors)
     }
+}
+
+/// The files of every package to generate, by package name, each
+/// package's sorted by file name: the packages of `requested`, each with
+/// every file of `pool` that declares it. Files without a package are not
+/// one package: only the requested ones are taken, each reported as
+/// missing its package.
+fn whole_packages(
+    pool: &DescriptorPool,
+    requested: Vec<FileDescriptor>,
+) -> BTreeMap<String, Vec<FileDescriptor>> {
+    let mut by_package: BTreeMap<String, Vec<FileDescriptor>> = BTreeMap::new();
+    for file in requested {
+        by_package
+            .entry(file.package_name().to_owned())
+            .or_default()
+            .push(file);
+    }
+    for file in pool.files() {
+        let package = file.package_name();
+        if package.is_empty() {
+            continue;
+        }
+        if let Some(files) = by_package.get_mut(package)
+            && !files.iter().any(|f| f.name() == file.name())
+        {
+            files.push(file);
+        }
+    }
+    for files in by_package.values_mut() {
+        files.sort_by(|a, b| a.name().cmp(b.name()));
+    }
+    by_package
 }
 
 /// A `services::unbound_method` problem for every method of `packages`
@@ -222,6 +255,8 @@ struct Builder {
     diagnostics: Diagnostics,
     spans: HashMap<String, Spans>,
     modules: BTreeMap<String, ModuleName>,
+    /// Every package being generated, whether or not it has a module name.
+    generated: BTreeSet<String>,
     /// Every generated module name, a package's or a service's, so no two
     /// generated modules share one.
     module_names: Namespace,
@@ -232,6 +267,17 @@ struct Builder {
 }
 
 impl Builder {
+    /// Reports `file` if it is not proto3.
+    fn check_proto3(&mut self, file: &FileDescriptor) {
+        let syntax = file.file_descriptor_proto().syntax();
+        if syntax != "proto3" {
+            let syntax = if syntax.is_empty() { "proto2" } else { syntax };
+            let site = self.site(file, &[tag::FILE_SYNTAX], format!("{syntax} here"));
+            self.diagnostics
+                .push(Problem::not_proto3(file.name(), syntax, site));
+        }
+    }
+
     /// A site at `path` in `file`, or at its parent element when the
     /// compiler recorded nothing for `path` itself.
     fn site(&mut self, file: &FileDescriptor, path: &[i32], label: String) -> Site {
@@ -863,7 +909,7 @@ impl Builder {
             return None;
         }
 
-        if !self.modules.contains_key(&package) {
+        if !self.generated.contains(&package) {
             let site = self.site(
                 file,
                 type_path,
@@ -879,7 +925,8 @@ impl Builder {
             return None;
         }
 
-        // A type in a generated package with no name was reported already.
+        // A type in a generated package with no name, or whose package has
+        // no module name, was reported already.
         let name = self.types.get(&full_name)?.clone();
         let site = self.site(
             file,

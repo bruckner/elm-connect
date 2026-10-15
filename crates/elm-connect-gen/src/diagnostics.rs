@@ -369,7 +369,10 @@ impl Problem {
             ),
             format!(
                 "Generated Elm modules import the modules of every package they refer to, so \
-                 those packages must be generated too. Add `{file}` to the files to generate."
+                 those packages must be generated too, and only packages with a file to \
+                 generate are. Add `{file}` to the files to generate: with buf, run `buf \
+                 generate --include-imports`; with protoc, name `{file}` on the command line; \
+                 with the elm-connect CLI, pass `--include-imports`."
             ),
             vec![site],
         )
