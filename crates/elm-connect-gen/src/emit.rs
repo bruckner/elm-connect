@@ -70,8 +70,10 @@
 //!   `encodeBoolMap`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Proto.Json.enum`
-//!   decoder that reads a name or a number, an unknown one as the zero
-//!   value (design §3.3).
+//!   decoder that reads a name or a number, an unknown number as the zero
+//!   value and an unknown name as a failure; under [`EnumUnknown::Zero`]
+//!   the decoder is `Proto.Json.enumOrZero`, which reads an unknown name
+//!   as the zero value too (design §3.3).
 //! - A oneof is a custom type whose first constructor is the unset case,
 //!   held in one record field where its first member was declared. Its
 //!   encoder gives the set member's key and value for the message's
@@ -113,7 +115,7 @@ use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
     Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service, TypeName,
 };
-use crate::options::{Int64, Options};
+use crate::options::{EnumUnknown, Int64, Options};
 
 use self::field::{FieldShape, ValueShape};
 
@@ -249,6 +251,8 @@ struct Emitter {
     imports: BTreeMap<String, BTreeSet<String>>,
     /// How 64-bit integers are held where a field does not say.
     int64: Int64,
+    /// What an unknown enum value name reads as.
+    enum_unknown: EnumUnknown,
 }
 
 impl Emitter {
@@ -257,6 +261,7 @@ impl Emitter {
             module: module.clone(),
             imports: BTreeMap::new(),
             int64: options.int64,
+            enum_unknown: options.enum_unknown,
         }
     }
 

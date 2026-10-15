@@ -18,6 +18,7 @@ suite =
         , presenceTests
         , oneofTests
         , enumTests
+        , enumOrZeroTests
         , intDictTests
         , boolMapTests
         , int32Tests
@@ -285,6 +286,50 @@ enumTests =
                         |> Proto.Json.field "status" StatusUnspecified decodeStatus
                     )
                     """{"status":null}"""
+                    StatusUnspecified
+        ]
+
+
+decodeStatusOrZero : Decoder Status
+decodeStatusOrZero =
+    Proto.Json.enumOrZero "Status"
+        StatusUnspecified
+        [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
+        , ( "STATUS_ACTIVE", 1, StatusActive )
+        , ( "STATUS_STARTED", 1, StatusActive )
+        ]
+
+
+enumOrZeroTests : Test
+enumOrZeroTests =
+    describe "enumOrZero"
+        [ test "a name" <|
+            \_ -> decodes decodeStatusOrZero "\"STATUS_ACTIVE\"" StatusActive
+        , test "an alias by name is its number's constructor" <|
+            \_ -> decodes decodeStatusOrZero "\"STATUS_STARTED\"" StatusActive
+        , test "a number" <|
+            \_ -> decodes decodeStatusOrZero "1" StatusActive
+        , test "zero by name" <|
+            \_ -> decodes decodeStatusOrZero "\"STATUS_UNSPECIFIED\"" StatusUnspecified
+        , test "an unknown name is the zero value" <|
+            \_ -> decodes decodeStatusOrZero "\"STATUS_ARCHIVED\"" StatusUnspecified
+        , test "a name not matched exactly is the zero value" <|
+            \_ -> decodes decodeStatusOrZero "\"status_active\"" StatusUnspecified
+        , test "an unknown number is the zero value" <|
+            \_ -> decodes decodeStatusOrZero "7" StatusUnspecified
+        , test "a fractional number fails" <|
+            \_ -> fails decodeStatusOrZero "1.5"
+        , test "a boolean fails" <|
+            \_ -> fails decodeStatusOrZero "true"
+        , test "an object fails" <|
+            \_ -> fails decodeStatusOrZero "{}"
+        , test "a field holding an enum reads an unknown name as the zero value" <|
+            \_ ->
+                decodes
+                    (Json.Decode.succeed identity
+                        |> Proto.Json.field "status" StatusActive decodeStatusOrZero
+                    )
+                    """{"status":"STATUS_ARCHIVED"}"""
                     StatusUnspecified
         ]
 

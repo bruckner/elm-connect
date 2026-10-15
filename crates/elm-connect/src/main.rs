@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use elm_connect_gen::{Int64, Options, Streaming, UnboundMethods};
+use elm_connect_gen::{EnumUnknown, Int64, Options, Streaming, UnboundMethods};
 use miette::{Report, miette};
 
 /// Generate Elm clients for protobuf APIs.
@@ -40,6 +40,11 @@ enum Command {
         /// module, with a warning; the rest is generated).
         #[arg(long, value_name = "error|skip", default_value = "error")]
         streaming: Streaming,
+        /// What an enum value name the decoder does not know reads as:
+        /// `fail` (the decode fails) or `zero` (the zero value, as an
+        /// unknown number always does).
+        #[arg(long, value_name = "fail|zero", default_value = "fail")]
+        enum_unknown: EnumUnknown,
         /// An Elm name for a proto element, in place of the one the naming
         /// rules derive: `<proto full name>:<Elm name>`, such as
         /// `notes.v1.Note:Memo`; repeatable. The proto name is a package,
@@ -70,6 +75,7 @@ fn main() -> miette::Result<()> {
             int64,
             unbound_methods,
             streaming,
+            enum_unknown,
             rename,
             include_imports,
         } => {
@@ -77,6 +83,7 @@ fn main() -> miette::Result<()> {
             options.int64 = int64;
             options.unbound_methods = unbound_methods;
             options.streaming = streaming;
+            options.enum_unknown = enum_unknown;
             for entry in &rename {
                 options
                     .add_rename(entry)
@@ -142,6 +149,23 @@ mod tests {
             Streaming::Skip
         );
         assert!(streaming(&["--streaming", "drop"]).is_err());
+    }
+
+    fn enum_unknown(args: &[&str]) -> Result<EnumUnknown, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen { enum_unknown, .. } = cli.command;
+        Ok(enum_unknown)
+    }
+
+    #[test]
+    fn enum_unknown_defaults_to_fail_and_takes_zero() {
+        assert_eq!(enum_unknown(&[]).expect("parses"), EnumUnknown::Fail);
+        assert_eq!(
+            enum_unknown(&["--enum-unknown", "zero"]).expect("parses"),
+            EnumUnknown::Zero
+        );
+        assert!(enum_unknown(&["--enum-unknown", "variant"]).is_err());
     }
 
     fn rename(args: &[&str]) -> Result<Vec<String>, clap::Error> {

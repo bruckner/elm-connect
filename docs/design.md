@@ -366,14 +366,30 @@ rpc shared call =
   **name** fails the decode, as protobuf-go's protojson does:
   `Expecting a value of enum "Priority", but got "WHATEVER"`, the enum
   named as declared within its package (`Outer.Inner.Kind` when
-  nested). A name is matched exactly. An `<Enum>Unrecognized Int`
-  constructor, faithful and re-encoding what was received, is deferred
-  until users ask for it: every `case` on an enum would gain a branch
-  nobody wants to think about.
+  nested). A name is matched exactly.
+- **`enum_unknown=fail|zero`.** *(Decided, 2026-10-14; built.)* The
+  default, `fail`, is the behaviour above. `zero` reads an unknown
+  **name** as the zero value too, so nothing a JSON string or integer
+  holds fails an enum's decode (`Proto.Json.enumOrZero`, same arguments
+  as `Proto.Json.enum`; `enums_unknown_zero` case). It is for an
+  application whose clients outlive server deploys, where a value the
+  server adds reaches an old client as a name and must not fail the
+  whole message; proto3's convention that the zero value means
+  "unspecified" is what makes reading it there sound. `fail` stays the
+  default because strict is the default and escapes are options, and a
+  silently zeroed value is a dropped distinction (§3.8).
+  `Proto.Enum.fromName` and `fromNumber` are lookups, not decodes, and
+  give `Nothing` for an undeclared name or number under either value.
+  An `<Enum>Unrecognized Int` constructor, faithful and re-encoding
+  what was received, is still deferred until users ask for it: every
+  `case` on an enum would gain a branch nobody wants to think about.
+  `zero` was built first because it needs no change to the generated
+  types.
 - Generated shape *(Decided)*: the encoder is a `case` with one
   `Json.Encode.string "NAME"` branch per constructor, so the compiler
   checks it is total. The decoder is one call to the runtime's
-  `Proto.Json.enum`, given the enum's proto name, the zero
+  `Proto.Json.enum` (`Proto.Json.enumOrZero` under `enum_unknown=zero`),
+  given the enum's proto name, the zero
   constructor and a `( "NAME", number, Constructor )` row per value
   name. Inlined, the decoder would need two `case` expressions (one over
   names, one over numbers) with a fallback branch each, about three
@@ -774,7 +790,10 @@ Dropped distinctions:
   matters; not built.
 - **Unknown enum numbers** read as the zero value (§3.3), so a value
   the client does not know is indistinguishable from the zero value,
-  and re-encoding sends the zero value's name.
+  and re-encoding sends the zero value's name. `enum_unknown=zero`
+  widens the drop to unknown names, which the default, `fail`, refuses
+  instead: an option that loses more, chosen for clients that must
+  survive values added after them, not an escape.
 - **Presence of an `Empty` field.** A singular `google.protobuf.Empty`
   field is `()` (§3.5), so a message that sent `{}` and one that left
   the field out decode alike, and the encoder always sends `{}`.
@@ -1468,8 +1487,10 @@ both the plain names.
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
   `unbound_methods=implicit|error`, `streaming=error|skip`,
-  `rename=<proto full name>:<Elm name>` (repeatable), `module_prefix=`, and later perhaps
-  `enum_unknown=zero|variant` (§3.3 defers the variant). A
+  `enum_unknown=fail|zero`,
+  `rename=<proto full name>:<Elm name>` (repeatable), `module_prefix=`,
+  and later perhaps a `variant` value for `enum_unknown` (§3.3 defers
+  it). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
   2026-10-13.)*
@@ -1478,7 +1499,8 @@ both the plain names.
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
   --unbound-methods error`), `streaming` (§3.8;
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
-  skip`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
+  skip`), `enum_unknown` (§3.3; `--elm-connect_opt=enum_unknown=zero`,
+  or `elm-connect gen --enum-unknown zero`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
   repeated, or `elm-connect gen --rename notes.v1.Note:Memo`, repeated).
   The plugin parameter is comma-separated `key=value` pairs; an unknown
   key or value, or a key other than `rename` given twice, is an error,

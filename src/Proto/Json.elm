@@ -3,7 +3,7 @@ module Proto.Json exposing
     , encodeMaybe
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
-    , enum
+    , enum, enumOrZero
     , intDict, boolMap, encodeBoolMap
     , int32, uint32
     , int64, uint64, encodeInt64
@@ -40,7 +40,7 @@ Application code rarely needs them directly.
 
 # Enums
 
-@docs enum
+@docs enum, enumOrZero
 
 
 # Maps
@@ -421,7 +421,8 @@ its value's name, and a parser must also accept the number.
 A number the rows do not hold, such as one added to the server's proto after
 this client was generated, decodes as the zero value. A name the rows do not
 hold fails, as protobuf's own parsers do:
-`Expecting a value of enum "Status", but got "STATUS_PAUSED"`.
+`Expecting a value of enum "Status", but got "STATUS_PAUSED"`; for a decoder
+that reads it as the zero value instead, see [`enumOrZero`](#enumOrZero).
 
     type Status
         = StatusUnspecified
@@ -442,6 +443,36 @@ names decode to it. When two rows share a name or a number, the first wins.
 -}
 enum : String -> a -> List ( String, Int, a ) -> Decoder a
 enum enumName zero values =
+    enumWith
+        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ quote text))
+        zero
+        values
+
+
+{-| Decode an enum as [`enum`](#enum) does, with the same arguments, except
+that a name the rows do not hold decodes as the zero value too, as an unknown
+number does. Nothing a JSON string or integer holds fails; anything else (a
+fraction, a boolean, an object) still does, with elm/json's own error. No
+failure names the enum, so its name goes unused; it is taken so the two read
+alike. Code generated with `enum_unknown=zero` calls this one.
+
+It suits a client that outlives the server's deploys: a value the server adds
+reaches it as a name, and with `enum` that fails the whole message it is in.
+The zero value is the one proto3 reserves for "unspecified", which is what
+makes reading it here sound, but the distinction is dropped: the client cannot
+tell the value it does not know from the zero value, and re-encoding sends the
+zero value's name.
+
+-}
+enumOrZero : String -> a -> List ( String, Int, a ) -> Decoder a
+enumOrZero _ zero values =
+    enumWith (\_ -> Json.Decode.succeed zero) zero values
+
+
+{-| `enum` and `enumOrZero`, which differ in what an unknown name reads as.
+-}
+enumWith : (String -> Decoder a) -> a -> List ( String, Int, a ) -> Decoder a
+enumWith unknownName zero values =
     let
         lookup matches =
             values
@@ -462,8 +493,7 @@ enum enumName zero values =
                                 Json.Decode.succeed value
 
                             Nothing ->
-                                Json.Decode.fail
-                                    ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ quote text)
+                                unknownName text
 
                     Err int ->
                         lookup (\( _, number, _ ) -> number == int)
