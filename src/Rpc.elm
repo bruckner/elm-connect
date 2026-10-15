@@ -80,7 +80,7 @@ application can rewrite a request before sending it with
 
 -}
 
-import Dict
+import Dict exposing (Dict)
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
@@ -450,21 +450,39 @@ sendTraced cfg c toMsg =
 {-| Why a call failed.
 
   - `Rpc`: the server answered with an error: its code, its message, its
-    details, and where in the answer they were found. Each detail is a message
-    packed in an [`Any`](Proto-Any#Any), read with [`details`](#details) or
-    [`Proto.Any.unpack`](Proto-Any#unpack). The code is an
-    [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming `ok`
-    while failing reads as `Unknown`.
+    details, where in the answer they were found, and the answer itself. Each
+    detail is a message packed in an [`Any`](Proto-Any#Any), read with
+    [`details`](#details) or [`Proto.Any.unpack`](Proto-Any#unpack). The code
+    is an [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer
+    claiming `ok` while failing reads as `Unknown`. `response` is the answer as
+    it arrived, its status, its headers as elm/http gives them and its body,
+    kept whatever the source, so an error in a shape the reader does not know
+    can still be read:
+
+        case error of
+            Rpc { source = HttpStatus 404, response } ->
+                myDecoder response.body
+
+            _ ->
+                Err (Rpc.errorToString error)
+
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
     a successful answer whose body does not decode (`Http.BadBody`).
 
 -}
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Any, source : Source }
+    = Rpc
+        { code : ErrorCode
+        , message : String
+        , details : List Any
+        , source : Source
+        , response : { status : Int, headers : Dict String String, body : String }
+        }
     | Transport Http.Error
 
 
-{-| Where an `Rpc` error was read from.
+{-| Where an `Rpc` error was read from, tried in this order. Whichever it is, the
+error's `response` holds the whole answer.
 
   - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
   - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
@@ -1050,11 +1068,21 @@ statusOf answer =
 
 {-| The error a failed answer stands for, whatever the transport: its Connect
 error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, its HTTP status.
+`grpc-message` headers, or failing all of those, its HTTP status. The answer is
+kept whichever it is.
 -}
 failure : Http.Metadata -> String -> Error
 failure metadata raw =
     let
+        found read =
+            Rpc
+                { code = read.code
+                , message = read.message
+                , details = read.details
+                , source = read.source
+                , response = { status = metadata.statusCode, headers = metadata.headers, body = raw }
+                }
+
         statusText =
             if String.isEmpty metadata.statusText then
                 "HTTP " ++ String.fromInt metadata.statusCode
@@ -1063,13 +1091,13 @@ failure metadata raw =
                 metadata.statusText
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
-        Ok rpc ->
-            Rpc rpc
+        Ok read ->
+            found read
 
         Err _ ->
             case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
-                    Rpc
+                    found
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
@@ -1080,7 +1108,7 @@ failure metadata raw =
                         }
 
                 Nothing ->
-                    Rpc
+                    found
                         { code = ErrorCode.fromHttpStatus metadata.statusCode
                         , message = statusText
                         , details = []
@@ -1099,6 +1127,12 @@ header key metadata =
         |> Maybe.map Tuple.second
 
 
+{-| An error as read, before the answer is attached.
+-}
+type alias Read =
+    { code : ErrorCode, message : String, details : List Any, source : Source }
+
+
 fromGrpc : Int -> ErrorCode
 fromGrpc number =
     ErrorCode.fromInt number |> Maybe.withDefault ErrorCode.Unknown
@@ -1107,7 +1141,7 @@ fromGrpc number =
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
 optional `details`.
 -}
-statusBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
+statusBody : Decoder Read
 statusBody =
     Json.Decode.map3 (\number message found -> { code = fromGrpc number, message = message, details = found, source = StatusBody number })
         (Json.Decode.field "code" Json.Decode.int)
@@ -1118,7 +1152,7 @@ statusBody =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder { code : ErrorCode, message : String, details : List Any, source : Source }
+connectBody : Decoder Read
 connectBody =
     Json.Decode.map3 (\code message found -> { code = code, message = message, details = found, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string

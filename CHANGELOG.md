@@ -311,3 +311,10 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.WellKnown`. A `Method` built by hand takes the codecs in place
   of `request` and `response`; the typed records still serve `Any`,
   error details and reflection.
+- An `Rpc` error keeps the answer it was read from, as `response :
+  { status : Int, headers : Dict String String, body : String }`,
+  whichever source recognised it, so an application can parse an error
+  body in a shape the runtime does not read
+  (`Rpc { source = HttpStatus 404, response } -> myDecoder
+  response.body`). Code that builds an `Rpc` error by hand adds the
+  field; `Transport` is unchanged.

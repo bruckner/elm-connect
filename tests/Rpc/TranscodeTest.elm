@@ -335,11 +335,28 @@ responses =
 failed : Int -> String -> List ( String, String ) -> String -> Result Error String
 failed status text headers raw_ =
     respond rule (Http.BadStatus_ (metadata status text headers) raw_)
+        |> withoutResponse
 
 
-rpc : ErrorCode -> String -> Source -> Result Error String
+{-| An error with its answer blanked, for tests about what was read from it;
+`RpcTest` checks the answer itself.
+-}
+withoutResponse : Result Error a -> Result Error a
+withoutResponse =
+    Result.mapError
+        (\error ->
+            case error of
+                Rpc r ->
+                    Rpc { r | response = { status = 0, headers = Dict.empty, body = "" } }
+
+                Transport _ ->
+                    error
+        )
+
+
+rpc : ErrorCode -> String -> Source -> Result Error a
 rpc code message source =
-    Err (Rpc { code = code, message = message, details = [], source = source })
+    Err (Rpc { code = code, message = message, details = [], source = source, response = { status = 0, headers = Dict.empty, body = "" } })
 
 
 {-| The shared reader of failed answers, which both transports use.
@@ -405,6 +422,7 @@ errors =
                             Rpc.response (Rpc.config "https://api.example.com")
                                 (Rpc.call (raw []) Json.Encode.null)
                                 (Http.BadStatus_ (metadata 503 "" [ ( "grpc-status", "14" ) ]) answer)
+                                |> withoutResponse
                         )
                     |> Expect.equal [ rpc NotFound "" (StatusBody 5), rpc Unavailable "HTTP 503" GrpcHeaders ]
         ]

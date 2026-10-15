@@ -158,8 +158,9 @@ viaTranscoding =
 `Rpc.config` is Connect with every call POSTed; set `transport`,
 `headers`, `timeout`, `withCredentials` or `retry` with record syntax.
 Errors are one type for both transports, `Rpc.Error`: an `Rpc` failure
-with an `Rpc.ErrorCode.ErrorCode`, a message, details and where they were read
-from, or a `Transport` failure.
+with an `Rpc.ErrorCode.ErrorCode`, a message, details, where they were read
+from and the answer itself (status, headers and body, for errors in a shape
+the runtime does not read), or a `Transport` failure.
 
 ### Descriptors
 

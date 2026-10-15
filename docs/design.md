@@ -1415,7 +1415,13 @@ default, and is `Nothing` for a number the method has no binding of
 
 ```elm
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Proto.Any.Any, source : Source }
+    = Rpc
+        { code : ErrorCode
+        , message : String
+        , details : List Proto.Any.Any
+        , source : Source
+        , response : { status : Int, headers : Dict String String, body : String }
+        }
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
 
 type Source
@@ -1469,6 +1475,18 @@ both the plain names.
   empty) and no details. The shape of `code` tells the two bodies
   apart, so a server behind either transport may answer in either
   form.
+- An `Rpc` error keeps the answer it was read from, `response`: the
+  status, the headers as elm/http's `Http.Metadata` gives them, and the
+  body, whichever reader recognised it, so an application can parse
+  what the readers do not (`Rpc { source = HttpStatus 404, response }
+  -> myDecoder response.body`). Some servers cannot be changed to
+  answer in a standard shape, and when the readers fall through to the
+  status table the body that said more was otherwise lost. Reading the
+  answer with the pure halves (§5.2) would work too, but gives up the
+  retry loop. A custom reader passed to the config as a function is the
+  possible next step, deferred until a second application asks for it.
+  A `Transport` error has no answer and is unchanged. *(Decided,
+  2026-10-15.)*
 - Error details are `Proto.Any.Any` values (§3.5). *(Decided,
   2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64

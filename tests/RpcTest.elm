@@ -93,16 +93,38 @@ metadata status text =
 failed : Int -> String -> String -> Result Error String
 failed status text body =
     Rpc.response base (getNote { name = "x" }) (Http.BadStatus_ (metadata status text) body)
+        |> withoutResponse
+
+
+{-| An error with its answer blanked, for tests about what was read from it;
+`keptResponses` checks the answer itself.
+-}
+withoutResponse : Result Error a -> Result Error a
+withoutResponse =
+    Result.mapError
+        (\error ->
+            case error of
+                Rpc r ->
+                    Rpc { r | response = blank }
+
+                Transport _ ->
+                    error
+        )
+
+
+blank : { status : Int, headers : Dict.Dict String String, body : String }
+blank =
+    { status = 0, headers = Dict.empty, body = "" }
 
 
 fromStatus : ErrorCode -> Int -> String -> Result Error String
 fromStatus code status message =
-    Err (Rpc { code = code, message = message, details = [], source = HttpStatus status })
+    Err (Rpc { code = code, message = message, details = [], source = HttpStatus status, response = blank })
 
 
 fromBody : ErrorCode -> String -> Result Error String
 fromBody code message =
-    Err (Rpc { code = code, message = message, details = [], source = ConnectBody })
+    Err (Rpc { code = code, message = message, details = [], source = ConnectBody, response = blank })
 
 
 problemWord : Proto.Any.Problem -> String
@@ -121,6 +143,7 @@ suite =
         [ calls
         , requests
         , responses
+        , keptResponses
         , retries
         ]
 
@@ -284,6 +307,7 @@ responses =
         , test "another 2xx is an error inferred from its status" <|
             \_ ->
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 204 "No Content") "")
+                    |> withoutResponse
                     |> Expect.equal (fromStatus Unknown 204 "No Content")
         , test "a Connect error body gives code, message and details" <|
             \_ ->
@@ -398,13 +422,75 @@ responses =
                         ]
         , test "errorToString" <|
             \_ ->
-                [ Rpc { code = NotFound, message = "no note", details = [], source = ConnectBody }
-                , Rpc { code = Internal, message = "", details = [], source = HttpStatus 400 }
+                [ Rpc { code = NotFound, message = "no note", details = [], source = ConnectBody, response = blank }
+                , Rpc { code = Internal, message = "", details = [], source = HttpStatus 400, response = blank }
                 , Transport Http.Timeout
                 , Transport (Http.BadBody "oops")
                 ]
                     |> List.map Rpc.errorToString
                     |> Expect.equal [ "not_found: no note", "internal", "timeout", "bad response body: oops" ]
+        ]
+
+
+{-| The answer an `Rpc` error was read from, kept whichever source it was read
+from.
+-}
+keptResponses : Test
+keptResponses =
+    let
+        answer code headers body =
+            Rpc.response base
+                (getNote { name = "x" })
+                (Http.BadStatus_ { url = "https://api.example.com/notes.v1.Notes/GetNote", statusCode = code, statusText = "", headers = Dict.fromList headers } body)
+                |> Result.mapError
+                    (\error ->
+                        case error of
+                            Rpc r ->
+                                Just ( r.source, ( r.response.status, Dict.get "x-request-id" r.response.headers, r.response.body ) )
+
+                            Transport _ ->
+                                Nothing
+                    )
+
+        connect =
+            """{"code":"not_found","message":"no note"}"""
+
+        statusBody =
+            """{"code":5,"message":"no note"}"""
+
+        legacy =
+            """{"error":{"kind":"missing","id":42}}"""
+    in
+    describe "the answer an error was read from"
+        [ test "a Connect body" <|
+            \_ ->
+                answer 404 [ ( "x-request-id", "r1" ) ] connect
+                    |> Expect.equal (Err (Just ( ConnectBody, ( 404, Just "r1", connect ) )))
+        , test "a google.rpc.Status body" <|
+            \_ ->
+                answer 404 [ ( "x-request-id", "r2" ) ] statusBody
+                    |> Expect.equal (Err (Just ( StatusBody 5, ( 404, Just "r2", statusBody ) )))
+        , test "the grpc-status headers" <|
+            \_ ->
+                answer 503 [ ( "grpc-status", "14" ), ( "x-request-id", "r3" ) ] "upstream reset"
+                    |> Expect.equal (Err (Just ( GrpcHeaders, ( 503, Just "r3", "upstream reset" ) )))
+        , test "the HTTP status, the body in a shape the reader does not know" <|
+            \_ ->
+                answer 404 [ ( "x-request-id", "r4" ) ] legacy
+                    |> Expect.equal (Err (Just ( HttpStatus 404, ( 404, Just "r4", legacy ) )))
+        , test "a 2xx that is not a Connect success keeps its answer too" <|
+            \_ ->
+                Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 204 "No Content") "")
+                    |> Result.mapError
+                        (\error ->
+                            case error of
+                                Rpc r ->
+                                    Just ( r.response.status, r.response.body )
+
+                                Transport _ ->
+                                    Nothing
+                        )
+                    |> Expect.equal (Err (Just ( 204, "" )))
         ]
 
 
