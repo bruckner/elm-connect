@@ -1,0 +1,6 @@
+# Every change appends to the CHANGELOG's Unreleased list, so two branches
+# conflict there whenever both touch it. The union driver keeps both sides'
+# lines instead. It applies to local merges and rebases only; GitHub's
+# merge ignores it, so a branch behind main still shows a conflict there
+# until rebased.
+CHANGELOG.md merge=union
