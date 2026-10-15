@@ -1688,7 +1688,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   rather than falling back to the implicit route). Bodies compare with
   `null`s and defaults dropped.
 
-### Live verification *(Decided 2026-10-15)*
+### Live verification *(Decided 2026-10-15; built 2026-10-15)*
 
 The corpus and the route fixtures prove what is generated and what
 request a call becomes; nothing above proves that a server accepts
@@ -1696,25 +1696,26 @@ that request or that the runtime reads its answer. The HTTP path
 (`Rpc.task`, `send`, `sendTraced`, retries, timeouts,
 `withCredentials`, trackers, the error reader and the transcoding
 request builder) was compile-checked and unit-tested only. Five
-workstreams, in order, close that:
+workstreams, in order, closed that; all five are built (2026-10-15):
 
-1. **Runner** *(built)*: one example API, one server answering it over
+1. **Runner** *(built 2026-10-15)*: one example API, one server answering it over
    Connect and transcoding from one process, and a headless runner
    that drives the compiled runtime from Node over ports.
 2. **Connect conformance suite** (`connectrpc/conformance`)
-   *(built)*: a Node wrapper makes the runner a client under test, with
+   *(built 2026-10-15)*: a Node wrapper makes the runner a client under test, with
    a config declaring what is supported (unary, the JSON codec,
    HTTP/1.1, no compression, GET for idempotent methods). Streaming, the
    binary codec and gRPC-Web are declared unsupported rather than
    known-failing.
-3. **Transcoding live tests**: a table of calls against the server
+3. **Transcoding live tests** *(built 2026-10-15)*: a table of calls against the server
    asserting path, query, body, response and the `google.rpc.Status`
    error body, reusing the route fixtures' expectations where they
    overlap.
-4. **Examples**: `examples/notes/` gains a browser application over
+4. **Examples** *(built 2026-10-15)*: `examples/notes/` gains a browser application over
    either transport and a walkthrough; the README's snippets move into
    it so CI compiles them.
-5. **CI**: a `live` job on Ubuntu *(built with the runner)*.
+5. **CI** *(built 2026-10-15)*: a `live` job on Ubuntu, built with the
+   runner and given its caches with the examples.
 
 Decisions:
 
@@ -1819,9 +1820,54 @@ Also seen, not a divergence: with `body: "*"` the runtime sends
 `"sub": {}` for a message whose only field the path holds, and writes
 fields at their defaults; the fixtures' comparison drops both.
 
+Workstream 4, built 2026-10-15: `examples/notes/elm/` is a browser
+application (`Main.elm`) that lists, creates, edits with an update
+mask, archives and deletes notes, and shows each error's code, message,
+source and details (`google.rpc.BadRequest` and `ErrorInfo` by type,
+from `Google.Rpc`, which buf generates from googleapis'
+`error_details.proto` with `buf.gen.google-rpc.yaml`), with a toggle
+between the two transports. Every call goes through one function,
+`Api.rpc`, the wrapper §5.1 asks the docs for. It reuses the generated
+tree the runner compiles, `examples/notes/elm/generated`, whose drift
+`just live-gen` checks. The server's `-static` flag serves the page and
+the API from one origin; `just example-notes` builds and runs both. The
+walkthrough (`examples/notes/README.md`) and the root README quote it:
+each Elm, proto, JSON or YAML block names the file it is from in its
+fence (a `region` comment pair, consecutive lines, or `excerpt` for lines
+in order from a generated file), `examples/check-snippets.sh` checks
+every one in `just check`, and `just live` compiles the application and
+`src/Snippets/`, the README's examples the application does not
+contain. The service-module snippets of §2.1 and §4 stay illustrations:
+they elide (`…`) what the generated module spells out, and §4's is
+pinned by the `services` case's expected output. Not verified: the
+application is driven by hand in a browser, not by the live suite; the
+calls it makes are the suite's.
+
+Workstream 5, built 2026-10-15: the `live` job caches Go's modules and
+build cache with buf's modules, npm's downloads, Elm's packages and the
+`connectconformance` binary, each keyed on the files that pin it
+(`go.sum`, `buf.lock` and the buf templates; `package-lock.json`; the
+`elm.json`s; `fetch-conformance.sh`), and runs `just live`, which builds
+the example.
+
+What is now verified live, against connect-go and Vanguard: every
+method of the example API over both transports, from Node in CI and
+by hand from the example in a browser; `task`, `send`, `sendTraced`, retries, timeouts,
+`withCredentials`, trackers and Connect GET; the error reader's four
+sources with details; the transcoding request builder on every route
+fixture; and the Connect conformance suite's unary JSON cases. Not
+live: `taskFromRequest` with a rewritten request (§5.2),
+`response_body` (§5.3), and cancellation, which has no outcome (§5.2).
+
 Recorded for later: documented and verified examples for Envoy's
 gRPC-JSON transcoder and grpc-gateway in front of the same service,
-each run by the live suite.
+each run by the live suite. And a pass of small, well-documented
+examples for learning from (medium priority, 2026-10-15): the notes
+example was meant to double as the implementation to consult, and
+serves verification well, but carrying both transports, the error
+panel and the live suite's needs makes it too much to learn from
+first; teaching wants a few short examples that each show one thing,
+kept compiling the same way.
 
 ## 8. Compatibility and versioning
 

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notes: elm-connect example</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; }
+      pre { background: #f4f4f4; padding: 0.5rem; overflow-x: auto; font-size: 0.85rem; }
+      .error { border-left: 4px solid #c00; padding-left: 1rem; }
+      li { margin-bottom: 0.5rem; }
+      input, textarea { font: inherit; }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script src="elm.js"></script>
+    <script>
+      Elm.Main.init({ node: document.getElementById("app"), flags: window.location.origin });
+    </script>
+  </body>
+</html>

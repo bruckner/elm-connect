@@ -6,7 +6,8 @@
 // routes beside it (/healthz, /status/, /grpc-status/) on their handlers.
 // Beside it, routes.v1.Routes, the route fixtures' service, echoes each
 // request (routes.go), and GET /routes/layers says where each of its
-// bindings is served.
+// bindings is served. With -static, it also serves a directory's files, the
+// browser example among them, from the same origin as the API.
 package main
 
 import (
@@ -14,6 +15,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -54,11 +56,15 @@ const (
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "the address to listen on; port 0 picks a free one")
+	static := flag.String("static", "", "a directory whose files to serve too, index.html at /, such as ../elm/dist")
 	flag.Parse()
 
 	handler, err := newHandler(newStore())
 	if err != nil {
 		log.Fatal(err)
+	}
+	if *static != "" {
+		handler = withStatic(os.DirFS(*static), handler)
 	}
 	listener, err := net.Listen("tcp", *addr)
 	if err != nil {
@@ -127,6 +133,26 @@ func failWithGrpcStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Grpc-Status", r.PathValue("code"))
 	w.Header().Set("Grpc-Message", url.PathEscape("no backend; code "+r.PathValue("code")))
 	w.WriteHeader(http.StatusServiceUnavailable)
+}
+
+// withStatic serves the files of dir to GET and HEAD requests naming one,
+// index.html at /, and passes every other request to next. No API route names
+// a file, so the page and the API share one origin without CORS.
+func withStatic(dir fs.FS, next http.Handler) http.Handler {
+	files := http.FileServerFS(dir)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			name := strings.TrimPrefix(r.URL.Path, "/")
+			if name == "" {
+				name = "index.html"
+			}
+			if info, err := fs.Stat(dir, name); err == nil && !info.IsDir() {
+				files.ServeHTTP(w, r)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // echo sends a request's x-echo header back as a response header.
