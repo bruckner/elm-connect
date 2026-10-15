@@ -1,0 +1,37 @@
+// The enums case under enum_unknown=zero: the same protos, and the same
+// output but for each decoder, which is Proto.Json.enumOrZero, reading an
+// unknown name as the zero value as it does an unknown number.
+syntax = "proto3";
+
+package enums.v1;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_ARCHIVED = 2;
+}
+
+// Values without the conventional prefix, a negative number, and
+// aliases: names sharing a number are one constructor, named for the
+// first declared, which the encoder writes; the decoder reads them all.
+// PRIORITY_LOW would be the constructor PriorityLow, like LOW; as an
+// alias it claims no name, so the two do not collide.
+enum Priority {
+  option allow_alias = true;
+  NONE = 0;
+  LOW = 1;
+  HIGH = 2;
+  URGENT = 2;
+  BELOW_ZERO = -1;
+  PRIORITY_LOW = 1;
+  UNSET = 0;
+}
+
+message Task {
+  // Without presence, an enum field reads absence as its zero value.
+  Status status = 1;
+  // With presence, it is a Maybe.
+  optional Priority priority = 2;
+  repeated Status history = 3;
+  Status previous_status = 4;
+}

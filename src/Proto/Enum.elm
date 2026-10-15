@@ -57,7 +57,9 @@ toName enum value =
 
 
 {-| The value a proto name stands for, aliases included, or `Nothing` for a
-name the descriptor does not declare. Names are matched exactly.
+name the descriptor does not declare. Names are matched exactly. This is a
+lookup, not a decode: it gives `Nothing` for an unknown name even when the JSON
+decoder reads one as the zero value (`enum_unknown=zero`).
 -}
 fromName : Enum a -> String -> Maybe a
 fromName enum name =
@@ -85,7 +87,7 @@ toNumber enum value =
 
 {-| The value a number stands for, or `Nothing` for a number the descriptor
 does not declare. The JSON decoder reads an unknown number as the zero value
-instead.
+instead; this lookup does not.
 -}
 fromNumber : Enum a -> Int -> Maybe a
 fromNumber enum number =

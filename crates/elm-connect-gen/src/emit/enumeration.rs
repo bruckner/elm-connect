@@ -6,6 +6,7 @@ use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, int, list, pctor, pvar, string, ty, var};
 use crate::ir::Enum;
 use crate::naming::ENCODER_ARGUMENT;
+use crate::options::EnumUnknown;
 
 impl Emitter {
     /// `type Status = StatusUnspecified | ...`, one constructor per number,
@@ -52,8 +53,9 @@ impl Emitter {
         }
     }
 
-    /// `decodeStatus : Json.Decode.Decoder Status`: `Proto.Json.enum`
-    /// with the enum's proto name, the zero value and a
+    /// `decodeStatus : Json.Decode.Decoder Status`: `Proto.Json.enum`, or
+    /// `Proto.Json.enumOrZero` under `enum_unknown=zero`, with the enum's
+    /// proto name, the zero value and a
     /// `( name, number, constructor )` row per value name, an alias's row
     /// after its constructor's own.
     pub(super) fn enum_decoder(&mut self, enumeration: &Enum) -> Decl {
@@ -68,7 +70,11 @@ impl Emitter {
                     ])
                 })
         });
-        let decode = self.reference((PROTO_JSON, "enum"));
+        let decoder = match self.enum_unknown {
+            EnumUnknown::Fail => "enum",
+            EnumUnknown::Zero => "enumOrZero",
+        };
+        let decode = self.reference((PROTO_JSON, decoder));
         let body = apply(
             decode,
             [

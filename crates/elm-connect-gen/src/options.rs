@@ -17,6 +17,9 @@ pub struct Options {
     /// What a client, server or bidirectional streaming method gets
     /// (`streaming=`, design §3.8).
     pub streaming: Streaming,
+    /// What an enum value the generated decoder does not know reads as
+    /// (`enum_unknown=`, design §3.3).
+    pub enum_unknown: EnumUnknown,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
@@ -48,11 +51,12 @@ impl Options {
                 "int64" => options.int64 = value.parse()?,
                 "unbound_methods" => options.unbound_methods = value.parse()?,
                 "streaming" => options.streaming = value.parse()?,
+                "enum_unknown" => options.enum_unknown = value.parse()?,
                 "rename" => options.add_rename(value)?,
                 _ => {
                     return Err(format!(
                         "unknown option `{key}`; the options are: int64, unbound_methods, \
-                         streaming, rename"
+                         streaming, enum_unknown, rename"
                     ));
                 }
             }
@@ -166,6 +170,32 @@ impl std::str::FromStr for Streaming {
     }
 }
 
+/// What an enum value the generated decoder does not know reads as
+/// (design §3.3). An unknown number reads as the zero value either way.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum EnumUnknown {
+    /// An unknown name fails the decode, as protobuf's own parsers do
+    /// (`Proto.Json.enum`).
+    #[default]
+    Fail,
+    /// An unknown name reads as the zero value too, so nothing an enum
+    /// field receives fails (`Proto.Json.enumOrZero`): for clients that
+    /// outlive the server's deploys.
+    Zero,
+}
+
+impl std::str::FromStr for EnumUnknown {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "fail" => Ok(EnumUnknown::Fail),
+            "zero" => Ok(EnumUnknown::Zero),
+            _ => Err(format!("`enum_unknown` is `fail` or `zero`, not `{value}`")),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -200,6 +230,15 @@ mod tests {
         assert_eq!(streaming("streaming=error,int64=int"), Ok(Streaming::Error));
         assert!(error("streaming=drop").contains("`error` or `skip`"));
         assert!(error("streaming=skip,streaming=skip").contains("more than once"));
+        let enum_unknown = |parameter| Options::from_parameter(parameter).map(|o| o.enum_unknown);
+        assert_eq!(enum_unknown(""), Ok(EnumUnknown::Fail));
+        assert_eq!(enum_unknown("enum_unknown=zero"), Ok(EnumUnknown::Zero));
+        assert_eq!(
+            enum_unknown("enum_unknown=fail,streaming=skip"),
+            Ok(EnumUnknown::Fail)
+        );
+        assert!(error("enum_unknown=variant").contains("`fail` or `zero`"));
+        assert!(error("enum_unknown=zero,enum_unknown=zero").contains("more than once"));
     }
 
     #[test]

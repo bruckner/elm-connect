@@ -292,4 +292,10 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `options::unknown_rename`; collisions stay `naming::*`, and every
   `naming::*` help names the option (`rename` and `rename_invalid`
   cases).
-
+- Option `enum_unknown=fail|zero` (CLI `--enum-unknown`). `fail`, the
+  default, is unchanged: an unknown enum name fails the decode. `zero`
+  reads an unknown name as the zero value, as an unknown number always
+  is, for clients that outlive server deploys; generated decoders call
+  the new `Proto.Json.enumOrZero`, which takes `Proto.Json.enum`'s
+  arguments (`enums_unknown_zero` case). `Proto.Enum.fromName` and
+  `fromNumber` still give `Nothing` for undeclared names and numbers.
