@@ -2018,6 +2018,10 @@ kept compiling the same way.
 - Generated code states the runtime major it needs in a header comment;
   a mismatch surfaces as an Elm compile error against the runtime's
   types. Generator major == runtime major. *(Decided.)*
+- A drift check (`elm-connect check`, regenerating in memory and
+  diffing the committed tree, with the header's version checked against
+  the runtime) is wanted and deferred *(medium priority, 2026-10-15)*;
+  regenerating and `git diff` serves meanwhile.
 - Elm package versions follow Elm's enforced semver. Crate versions
   follow Cargo's.
 
