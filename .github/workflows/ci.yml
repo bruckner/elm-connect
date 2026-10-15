@@ -33,6 +33,27 @@ jobs:
           # For zizmor's online audits; the token has only `contents: read`.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  live:
+    # Design section 7, live verification: the runtime against the example
+    # server over Connect and transcoding. buf fetches googleapis from the
+    # Buf Schema Registry.
+    name: just live (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/.cache/buf
+          key: live-${{ runner.os }}-${{ hashFiles('mise.toml', 'examples/notes/server/go.sum', 'examples/notes/buf.lock') }}
+      - run: just live
+
   elm-compat:
     # Design section 8: Elm 0.19.2 is the development target; every
     # earlier 0.19 release is checked here. The runtime package and every
