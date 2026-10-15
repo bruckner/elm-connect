@@ -35,9 +35,12 @@ jobs:
 
   live:
     # Design section 7, live verification: the runtime against the example
-    # server over Connect and transcoding, then the Connect conformance
-    # suite (connectconformance from its GitHub release). buf fetches
-    # googleapis and the suite's protos from the Buf Schema Registry.
+    # server over Connect and transcoding, the route fixtures under Vanguard
+    # and the Connect conformance suite (connectconformance from its GitHub
+    # release), and the browser example's build, which compiles the README's
+    # excerpts. buf fetches googleapis and the suite's protos from the Buf
+    # Schema Registry. Each cache is keyed on what pins its contents, so a
+    # change to one pin refetches only that one.
     name: just live (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
@@ -46,13 +49,30 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Cache Go modules and builds, and buf's modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
             ~/.cache/buf
-          key: live-${{ runner.os }}-${{ hashFiles('mise.toml', 'examples/notes/server/go.sum', 'examples/notes/buf.lock') }}
+          key: live-go-buf-${{ runner.os }}-${{ hashFiles('mise.toml', 'examples/notes/server/go.sum', 'examples/notes/buf.lock', 'examples/notes/buf.gen*.yaml', 'conformance/live/suite/buf.gen.yaml') }}
+      - name: Cache npm's downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: live-npm-${{ runner.os }}-${{ hashFiles('conformance/live/package-lock.json') }}
+      - name: Cache Elm's packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.elm
+          key: live-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'conformance/live/elm.json', 'examples/notes/elm/elm.json') }}
+      - name: Cache connectconformance
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # fetch-conformance.sh holds the version and the SHA-256s.
+          path: conformance/live/build/connectconformance-*
+          key: live-connectconformance-${{ runner.os }}-${{ hashFiles('conformance/live/fetch-conformance.sh') }}
       - run: just live
 
   elm-compat:
