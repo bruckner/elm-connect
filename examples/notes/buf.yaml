@@ -1,0 +1,7 @@
+# The example's protos. googleapis comes from the Buf Schema Registry as a
+# dependency, so its files reach the plugins as imports and are not generated.
+version: v2
+modules:
+  - path: proto
+deps:
+  - buf.build/googleapis/googleapis
