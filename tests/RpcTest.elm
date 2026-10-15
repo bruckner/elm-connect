@@ -111,7 +111,7 @@ withoutResponse =
                 Http answer ->
                     httpError answer.statusCode answer.statusText
 
-                Transport _ ->
+                _ ->
                     error
         )
 
@@ -158,6 +158,18 @@ suite =
         , keptResponses
         , retries
         ]
+
+
+type Msg
+    = GotNote (Result Error String)
+
+
+{-| `cancel` is a command, which elm-test cannot run; this checks that it
+reports to the `toMsg` a call is sent with.
+-}
+cancelGotNote : Cmd Msg
+cancelGotNote =
+    Rpc.cancel "note-42" GotNote
 
 
 calls : Test
@@ -455,6 +467,7 @@ responses =
                 , Transport Http.NetworkError
                 , Transport (Http.BadUrl "::")
                 , Transport (Http.BadBody "oops")
+                , Rpc.Canceled
                 ]
                     |> List.map Rpc.errorToString
                     |> Expect.equal
@@ -466,7 +479,12 @@ responses =
                         , "unavailable: network error"
                         , "internal: bad URL: ::"
                         , "internal: bad response body: oops"
+                        , "canceled"
                         ]
+        , test "a canceled call has the code Canceled, no message and no details" <|
+            \_ ->
+                ( Rpc.code Rpc.Canceled, Rpc.message Rpc.Canceled, Rpc.details title Rpc.Canceled )
+                    |> Expect.equal ( Rpc.ErrorCode.Canceled, "", [] )
         ]
 
 
@@ -492,7 +510,7 @@ keptResponses =
                             Http got ->
                                 Just ( Nothing, kept got )
 
-                            Transport _ ->
+                            _ ->
                                 Nothing
                     )
 

@@ -332,3 +332,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Rpc.code error` for the common case. The retry policy judges every
   error by its code, so a network failure retries when `Unavailable` is
   in `codes` and a timeout when `DeadlineExceeded` is.
+- `Rpc.Error` gains `Canceled`, a call the application withdrew, and
+  `Rpc.cancel tracker toMsg` cancels a call sent with `Rpc.send` through
+  that tracker and reports `Err Canceled` to `toMsg`, where
+  `Http.cancel` alone reported nothing. Its code is `Canceled`, its
+  message empty and `errorToString` gives `canceled`. Code that matches
+  every `Rpc.Error` constructor adds a branch for it.

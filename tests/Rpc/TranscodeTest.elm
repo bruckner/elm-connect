@@ -353,7 +353,7 @@ withoutResponse =
                 Http answer ->
                     Http { blank | statusCode = answer.statusCode, statusText = answer.statusText }
 
-                Transport _ ->
+                _ ->
                     error
         )
 

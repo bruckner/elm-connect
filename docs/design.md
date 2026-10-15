@@ -1289,6 +1289,7 @@ task : Config -> Call req res -> Task Error res
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
 taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
 sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
+cancel : String -> (Result Error res -> msg) -> Cmd msg                  -- by tracker; reports Canceled
 
 -- pure halves
 type alias Request =
@@ -1329,6 +1330,20 @@ taskFromRequest : Config -> Call req res -> Request -> Task Error res
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and
   retrying needs a task. The traced forms are tasks too.
+- `cancel tracker toMsg` is `Http.cancel tracker` batched with a
+  command giving `toMsg` the error `Canceled` (§5.4). elm/http cancels
+  by killing the process that runs the request, which aborts it and
+  delivers no message, and a package outside `elm/` cannot define an
+  effect manager to intercept that, so the outcome is synthesised in
+  the same command. Once the request is aborted no result can follow;
+  the one race is an answer whose message was queued before the
+  cancel ran, which the application sees before the cancellation and
+  is told to keep, ignoring a cancellation that follows a result. It
+  is for `send` alone: a call sent with a retry policy has no tracker
+  and runs on, and the tasks (`task`, and `taskTraced` under
+  `sendTraced`) ignore the tracker; one killed with `Process.kill`
+  reports nothing and has no trace, its attempts and duration ending
+  with the process. *(Decided, 2026-10-15.)*
 - `Trace` is `{ service, method, binding, request, httpStatus, code,
   duration, attempts }`: `binding` is `Nothing` when no binding was used
   (Connect, the implicit route), `httpStatus` the last answer's HTTP
@@ -1431,6 +1446,7 @@ type Error
         Response
     | Http Response             -- it answered, but stated none
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
+    | Canceled                  -- the application withdrew the call (Rpc.cancel)
 
 type Source
     = ConnectBody               -- {"code": "not_found", …}
@@ -1440,7 +1456,7 @@ type Source
 type alias Response =           -- elm/http's Http.Metadata names, and the body
     { statusCode : Int, statusText : String, headers : Dict String String, body : String }
 
-code : Error -> ErrorCode       -- Http: by Connect's table; Transport: as below
+code : Error -> ErrorCode       -- Http: by Connect's table; Transport, Canceled: as below
 message : Error -> String
 details : Proto.Message.Message a -> Error -> List a
 errorToString : Error -> String -- "<code>: <message>", or "<code>" when the message is empty
@@ -1504,14 +1520,14 @@ both the plain names.
   a function is the possible next step, deferred until a second
   application asks for it. A `Transport` error has no answer.
   *(Decided, 2026-10-15.)*
-- Three constructors, and `code` and `message` for the common path
-  (`case Rpc.code error of Unauthenticated -> …`). *(Decided,
-  2026-10-15.)* The answer was first kept on one flat `Rpc` record
-  beside `source`, whose `HttpStatus Int` marked an inferred code,
-  until review found it bought nothing: Elm's record patterns bind
-  field names and never match field values, so the documented
-  `Rpc { source = HttpStatus 404, response }` did not parse, and
-  helpers serve as well. A code the server stated and one inferred
+- A constructor per kind of error, and `code` and `message` for the
+  common path (`case Rpc.code error of Unauthenticated -> …`).
+  *(Decided, 2026-10-15.)* The answer was first kept on one flat
+  `Rpc` record beside `source`, whose `HttpStatus Int` marked an
+  inferred code, until review found it bought nothing: Elm's record
+  patterns bind field names and never match field values, so the
+  documented `Rpc { source = HttpStatus 404, response }` did not
+  parse, and helpers serve as well. A code the server stated and one inferred
   from the HTTP status are different kinds of error, which a
   constructor says honestly while `code` still gives one code for
   both. `Source`'s `Int`s went too: `StatusBody`'s duplicated the raw
@@ -1529,7 +1545,14 @@ both the plain names.
   still says no answer came. `message` gives a `Transport` error's
   description (`timeout`, `network error`, `bad URL: <url>`,
   `bad response body: <problem>`), and `errorToString` is the code and
-  the message for all three. *(Decided, 2026-10-15.)*
+  the message for all of them. *(Decided, 2026-10-15.)*
+- `Canceled` is the outcome of a call the application withdrew with
+  `Rpc.cancel` (§5.2): nothing the server said counts. It is not a
+  `Transport` error, since elm/http has no `Http.Error` for it, and not
+  a `Status`, since the server did not state it. Its code is
+  `Canceled`, its message empty (so `errorToString` gives `canceled`)
+  and it has no details. The retry loop never sees it: it is made
+  outside the task. *(Decided, 2026-10-15.)*
 - Error details are `Proto.Any.Any` values (§3.5). *(Decided,
   2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64

@@ -3,7 +3,7 @@ module Rpc exposing
     , withHeaders, withTimeout, withTracker, viaBinding
     , method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
     , Config, config, Transport(..), connect, Retry
-    , task, send
+    , task, send, cancel
     , Trace, taskTraced, sendTraced
     , Error(..), Source(..), Response, code, message, errorToString, details
     , Request, request, response, taskFromRequest
@@ -55,7 +55,7 @@ own state:
 
 # Sending
 
-@docs task, send
+@docs task, send, cancel
 
 
 # Tracing
@@ -161,9 +161,9 @@ withTimeout ms (Call c) =
     Call { c | timeout = Just ms }
 
 
-{-| A tracker for this call, so `Http.cancel` can cancel it. elm/http tracks
-commands only, so only [`send`](#send) without a [`Retry`](#Retry) policy uses
-it; the other ways of sending ignore it.
+{-| A tracker for this call, so [`cancel`](#cancel) can cancel it. elm/http
+tracks commands only, so only [`send`](#send) without a [`Retry`](#Retry) policy
+uses it; the other ways of sending ignore it.
 -}
 withTracker : String -> Call req res -> Call req res
 withTracker tracker (Call c) =
@@ -325,7 +325,8 @@ after. With `idempotentOnly`, only idempotent calls are retried.
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
 may have reached the server, so `DeadlineExceeded` belongs in `codes` only
-with `idempotentOnly`, or for calls that are safe to replay.
+with `idempotentOnly`, or for calls that are safe to replay. A `Canceled` call
+is never retried, since it ends outside the retry loop.
 
 -}
 type alias Retry =
@@ -357,6 +358,37 @@ send cfg ((Call fields) as c) toMsg =
 
         Just _ ->
             Task.attempt toMsg (task cfg c)
+
+
+{-| Cancel a call sent with [`send`](#send) through a tracker
+([`withTracker`](#withTracker)), and report it as [`Canceled`](#Error) to the
+same `toMsg` the call was sent with.
+
+    Rpc.cancel "note-42" GotNote
+
+elm/http cancels a request by stopping the process that runs it, which aborts
+the request and delivers nothing, so the outcome is reported here instead.
+Once the request is aborted no result can follow, so the application sees the
+call end exactly once, except in one race: when the answer arrived and its
+message was queued before this command ran, the application sees the result
+and then the cancellation, and a cancellation that follows a result is to be
+ignored.
+
+Cancellation with an outcome is for `send` alone. A call sent with a
+[`Retry`](#Retry) policy has no tracker, so it is not aborted: it runs on, and
+its result follows the cancellation. The tasks, [`task`](#task) and
+[`taskTraced`](#taskTraced) under [`sendTraced`](#sendTraced), ignore the
+tracker; one run under `Process.spawn` and stopped with `Process.kill` reports
+nothing, and has no trace, since its attempts and duration end with the
+process.
+
+-}
+cancel : String -> (Result Error res -> msg) -> Cmd msg
+cancel tracker toMsg =
+    Cmd.batch
+        [ Http.cancel tracker
+        , Task.perform toMsg (Task.succeed (Err Canceled))
+        ]
 
 
 
@@ -463,6 +495,8 @@ sendTraced cfg c toMsg =
     one from the HTTP status.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
     a successful answer whose body does not decode (`Http.BadBody`).
+  - `Canceled`: the application withdrew the call with [`cancel`](#cancel);
+    nothing the server said counts.
 
 Most code asks for the [`code`](#code) and [`message`](#message), which every
 error has:
@@ -489,6 +523,7 @@ type Error
     = Status { code : ErrorCode, message : String, details : List Any, source : Source } Response
     | Http Response
     | Transport Http.Error
+    | Canceled
 
 
 {-| Where a `Status` error was read from, tried in this order:
@@ -526,7 +561,7 @@ inferred from its HTTP status by
 [`ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus); a `Transport`
 error's is the one the Connect clients give it: a timeout is
 `DeadlineExceeded`, a network failure `Unavailable`, a bad URL or an
-undecodable body `Internal`.
+undecodable body `Internal`; `Canceled` is `Canceled`.
 -}
 code : Error -> ErrorCode
 code error =
@@ -552,11 +587,15 @@ code error =
         Transport (Http.BadStatus status) ->
             ErrorCode.fromHttpStatus status
 
+        Canceled ->
+            ErrorCode.Canceled
+
 
 {-| An error's message: a `Status` error's as the server sent it, which may be
 empty; an `Http` error's status text, or `HTTP <status>` when there is none;
 a `Transport` error's description (`timeout`, `network error`,
-`bad URL: <url>`, `bad response body: <problem>`).
+`bad URL: <url>`, `bad response body: <problem>`); `Canceled`'s is empty, so
+[`errorToString`](#errorToString) gives `canceled`.
 -}
 message : Error -> String
 message error =
@@ -585,6 +624,9 @@ message error =
 
         Transport (Http.BadBody problem) ->
             "bad response body: " ++ problem
+
+        Canceled ->
+            ""
 
 
 {-| A one-line description of an error, for logs: its [`code`](#code) and
