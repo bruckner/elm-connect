@@ -1,5 +1,5 @@
 module Proto.WellKnown exposing
-    ( empty, timestamp, duration, fieldMask
+    ( empty, timestamp, duration, fieldMask, any
     , struct, value, listValue
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue
@@ -10,7 +10,7 @@ module Proto.WellKnown exposing
 gives the type. Generated code uses them for a method whose request or response
 is a well-known type.
 
-@docs empty, timestamp, duration, fieldMask
+@docs empty, timestamp, duration, fieldMask, any
 
 
 # JSON
@@ -31,8 +31,10 @@ A wrapper's Elm form is its scalar; a field of one is a `Maybe` of it. The
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Any exposing (Any)
 import Proto.Descriptor exposing (MessageDescriptor)
 import Proto.Duration as Duration exposing (Duration)
+import Proto.Internal.Any
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
 import Proto.Message exposing (Message)
@@ -76,6 +78,14 @@ duration =
 fieldMask : Message (List String)
 fieldMask =
     message Proto.Json.encodeFieldMask Proto.Json.fieldMask [] Descriptors.fieldMask
+
+
+{-| `google.protobuf.Any`, a [`Proto.Any.Any`](Proto-Any#Any); the default
+is the empty `Any`, with no type URL, written `{}`.
+-}
+any : Message Any
+any =
+    message Proto.Any.encodeJson Proto.Any.jsonDecoder (Proto.Internal.Any.Any "" (Proto.Internal.Any.InBinary "")) Descriptors.any
 
 
 {-| `google.protobuf.Struct`: a JSON object.

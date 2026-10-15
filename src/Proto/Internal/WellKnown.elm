@@ -1,5 +1,6 @@
 module Proto.Internal.WellKnown exposing
-    ( boolValue
+    ( any
+    , boolValue
     , bytesValue
     , doubleValue
     , duration
@@ -30,7 +31,8 @@ import Proto.Descriptor exposing (Cardinality(..), EnumDescriptor, Field, Kind(.
 
 messages : List MessageDescriptor
 messages =
-    [ timestamp
+    [ any
+    , timestamp
     , duration
     , fieldMask
     , empty
@@ -98,6 +100,17 @@ timestamp =
 duration : MessageDescriptor
 duration =
     secondsAndNanos "google.protobuf.Duration"
+
+
+any : MessageDescriptor
+any =
+    { typeName = "google.protobuf.Any"
+    , fields =
+        [ field "type_url" "typeUrl" 1 Singular (Scalar String)
+        , field "value" "value" 2 Singular (Scalar Bytes)
+        ]
+    , oneofs = []
+    }
 
 
 fieldMask : MessageDescriptor

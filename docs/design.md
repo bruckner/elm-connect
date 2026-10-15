@@ -485,7 +485,7 @@ argument.)*
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
 | `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | in scope; a diagnostic until designed | needs the descriptor layer (§9) |
+| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | *(Decided, 2026-10-13; built in the runtime)* the message's JSON plus `"@type"` on the wire |
 
 The in-house generator mapped `Timestamp` to `String` to avoid a
 dependency. With a runtime package required anyway (for the transports),
@@ -539,9 +539,31 @@ Built as proposed, with these details *(each Proposed)*:
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
-- `Any` is in scope for the library *(Decided, 2026-10-11)*, its
-  design pending the descriptor layer (§9); until then a field of it is
-  the `types::any` diagnostic (`any_field` case).
+- `Any` is in scope *(Decided, 2026-10-11)* and built in the runtime
+  as `Proto.Any` *(Decided, 2026-10-13)*: an opaque `Any` holding the
+  type URL and the packed message, either as its JSON or, when only
+  its protobuf binary arrived, as that binary (base64) alone. `pack`
+  (prefix `type.googleapis.com/`) and `packWith` (another prefix) take
+  the message's typed record (§3.9) and a value; `unpack` gives
+  `Nothing` for another type (by full name, the type URL after its last
+  `/`), else the decoded value or a `Problem`: `Json` for JSON that
+  does not decode, `BinaryOnly` for a binary payload, which the
+  runtime does not read. `is` tests the type, `typeUrl` and
+  `typeName` read it, and `describe` looks its descriptor up in a
+  `Proto.Registry`. `Proto.WellKnown.any : Message Any` is its record,
+  and `Proto.Registry.wellKnown` holds its tree (`type_url`, `value`).
+- `Any` on the wire is proto3 JSON's: the packed message's own object
+  plus `"@type"`, or, for a well-known type with a JSON form of its own
+  (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
+  `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
+  <that form>}`. That list lives in `Proto.Any`. `jsonDecoder` fails
+  on an object without `"@type"`, except `{}`, which is the empty `Any`
+  (no type URL; the record's default), as protojson reads it. A
+  binary-only `Any` has no proto3 JSON form; `encodeJson` writes it as
+  a Connect error detail, `{"type": <name>, "value": <base64>}`, which
+  `jsonDecoder` does not read back.
+- Generated `Any` fields are not built yet: a field of it is still the
+  `types::any` diagnostic (`any_field` case).
 
 ### 3.6 Oneof
 
@@ -780,10 +802,12 @@ registry =
   has no option to leave it out).
 - The well-known types' records are the runtime's, in
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
-  `struct`, `value`, `listValue` and the wrappers, the 64-bit ones in
-  both `int64` forms), and `Proto.Registry.wellKnown` holds their
-  trees. They live apart from `Proto.Message` so that a record for
-  `google.protobuf.Any` can join them without an import cycle.
+  `any`, `struct`, `value`, `listValue` and the wrappers, the 64-bit
+  ones in both `int64` forms), and `Proto.Registry.wellKnown` holds
+  their trees. They live apart from `Proto.Message` so that the record
+  for `google.protobuf.Any` (`Proto.Any`, §3.5), whose module needs
+  `Proto.Message` and `Proto.Registry`, can join them without an
+  import cycle.
 - No service, file or package descriptor: nothing consumes one, and a
   service module's namespace is its methods' names, so any fixed value
   name could collide with a method.
@@ -1090,7 +1114,8 @@ the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
 `Proto.Duration`, `Proto.Int64`), the descriptor trees
 (`Proto.Descriptor`), the HTTP bindings (`Proto.Http`), the typed records (`Proto.Message`,
 `Proto.Enum`, `Proto.Method`), the well-known types' records
-(`Proto.WellKnown`) and `Proto.Registry` (§3.9). They were `Connect.*` at first, a name that tied proto3
+(`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any`
+(§3.5). They were `Connect.*` at first, a name that tied proto3
 JSON to one of the two transports; no public `Connect` module remains.
 
 ```elm
@@ -1244,7 +1269,7 @@ default, and is `Nothing` for a number the method has no binding of
 
 ```elm
 type Error
-    = Rpc { code : ErrorCode, message : String, details : List Json.Encode.Value, source : Source }
+    = Rpc { code : ErrorCode, message : String, details : List Proto.Any.Any, source : Source }
     | Transport Http.Error      -- bad URL, timeout, network, undecodable success
 
 type Source
@@ -1298,8 +1323,21 @@ both the plain names.
   empty) and no details. The shape of `code` tells the two bodies
   apart, so a server behind either transport may answer in either
   form.
-- Error details are kept as raw JSON values. Typed details need
-  `google.protobuf.Any`, which is not designed yet (§3.5, §9).
+- Error details are `Proto.Any.Any` values (§3.5). *(Decided,
+  2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
+  `Any` objects; a Connect body as `{"type": <name>, "value": <base64
+  binary>, "debug": <JSON, optional>}`, read as an `Any` of that type
+  (`type.googleapis.com/` prefixed unless the name holds a `/`) whose
+  payload is `debug` when present and the binary alone otherwise. Each
+  detail is read in either form whichever body it came in, the proto3
+  form first; one in neither form is left out rather than losing the
+  error's code and message with it. They were raw JSON values first,
+  until `Any` was designed.
+- `Rpc.details : Proto.Message.Message a -> Error -> List a` gives the
+  details that are of that type and decode, in order; a `Transport`
+  error has none. A binary-only detail never decodes: details meant for
+  this client need their JSON on the wire, as `debug` in a Connect body
+  or, as always, in a `google.rpc.Status` body.
 
 ## 6. Generator  *(Decided unless marked)*
 
@@ -1401,8 +1439,10 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
    pattern that would also give unknown fields a home; this trades
    "simple, idiomatic Elm records" for an abstract structure. Not
    decided; raised during the type-layer review.
-2. `Any` (§3.5): the shape of pack and unpack, and its relation to the
-   generated descriptors (§4). The operator has prior notes.
+2. *(Closed 2026-10-13.)* `Any` (§3.5): `Proto.Any` packs and
+   unpacks through the typed records (§3.9), describes through a
+   registry, and holds a payload that arrived only as binary rather
+   than failing on it; `Rpc` error details are `Any`s (§5.4).
 
 Settled 2026-10-13, with the client's shape (§2, §4, §5): whether to
 fuse method and route for transcoding, and how to name additional

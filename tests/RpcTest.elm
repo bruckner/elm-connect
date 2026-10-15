@@ -5,8 +5,11 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode
+import Proto.Any
+import Proto.Duration
 import Proto.Http
 import Proto.Message exposing (Message)
+import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
 import Rpc.Internal.Retry as Retry
@@ -104,6 +107,16 @@ fromStatus code status message =
 fromBody : ErrorCode -> String -> Result Error String
 fromBody code message =
     Err (Rpc { code = code, message = message, details = [], source = ConnectBody })
+
+
+problemWord : Proto.Any.Problem -> String
+problemWord problem =
+    case problem of
+        Proto.Any.Json _ ->
+            "json"
+
+        Proto.Any.BinaryOnly ->
+            "binary only"
 
 
 suite : Test
@@ -280,18 +293,72 @@ responses =
             \_ ->
                 failed 404
                     "Not Found"
-                    """{"code":"not_found","message":"no note","details":[{"type":"google.rpc.RetryInfo","value":"CgIIPA"}]}"""
+                    """{"code":"not_found","message":"no note","details":[{"type":"google.rpc.RetryInfo","value":"CgIIPA"},{"type":"notes.v1.Note","value":"CgJoaQ","debug":{"title":"hi"}}]}"""
                     |> Result.mapError
                         (\error ->
                             case error of
                                 Rpc r ->
-                                    ( r.code, r.message, List.map (Json.Encode.encode 0) r.details )
+                                    ( r.code, r.message, List.map (\detail -> ( Proto.Any.typeUrl detail, Json.Encode.encode 0 (Proto.Any.encodeJson detail) )) r.details )
 
                                 Transport _ ->
                                     ( Internal, "transport", [] )
                         )
                     |> Expect.equal
-                        (Err ( NotFound, "no note", [ "{\"type\":\"google.rpc.RetryInfo\",\"value\":\"CgIIPA\"}" ] ))
+                        (Err
+                            ( NotFound
+                            , "no note"
+                            , [ ( "type.googleapis.com/google.rpc.RetryInfo", "{\"type\":\"google.rpc.RetryInfo\",\"value\":\"CgIIPA\"}" )
+                              , ( "type.googleapis.com/notes.v1.Note", "{\"@type\":\"type.googleapis.com/notes.v1.Note\",\"title\":\"hi\"}" )
+                              ]
+                            )
+                        )
+        , test "a Connect detail without debug holds its binary alone" <|
+            \_ ->
+                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ"}]}"""
+                    |> Result.mapError
+                        (\error ->
+                            case error of
+                                Rpc r ->
+                                    List.map
+                                        (\detail ->
+                                            ( Proto.Any.typeName detail
+                                            , Proto.Any.unpack title detail |> Maybe.map (Result.mapError problemWord)
+                                            , Json.Encode.encode 0 (Proto.Any.encodeJson detail)
+                                            )
+                                        )
+                                        r.details
+
+                                Transport _ ->
+                                    []
+                        )
+                    |> Expect.equal (Err [ ( "notes.v1.Note", Just (Err "binary only"), "{\"type\":\"notes.v1.Note\",\"value\":\"CgJoaQ\"}" ) ])
+        , test "a Status body's details are proto3 JSON Any objects" <|
+            \_ ->
+                failed 404
+                    "Not Found"
+                    """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"}]}"""
+                    |> Result.mapError
+                        (\error ->
+                            ( Rpc.details title error
+                            , Rpc.details Proto.WellKnown.duration error |> List.map Proto.Duration.milliseconds
+                            , case error of
+                                Rpc r ->
+                                    ( r.code, r.source, List.length r.details )
+
+                                Transport _ ->
+                                    ( Internal, HttpStatus 0, 0 )
+                            )
+                        )
+                    |> Expect.equal (Err ( [ "hi" ], [ 2000 ], ( NotFound, StatusBody 5, 2 ) ))
+        , test "details gives those of a type that decode, and a transport error has none" <|
+            \_ ->
+                ( failed 400
+                    "Bad Request"
+                    """{"code":"invalid_argument","details":[{"type":"notes.v1.Note","value":"","debug":{"title":"one"}},{"type":"notes.v1.Note","value":"CgA"},{"type":"notes.v1.Note","value":"","debug":{"title":2}},{"type":"other.v1.Thing","value":"","debug":{"title":"no"}},{"type":"notes.v1.Note","value":"","debug":{"title":"two"}}]}"""
+                    |> Result.mapError (Rpc.details title)
+                , Rpc.details title (Transport Http.Timeout)
+                )
+                    |> Expect.equal ( Err [ "one", "two" ], [] )
         , test "message and details are optional" <|
             \_ ->
                 failed 503 "Service Unavailable" """{"code":"unavailable"}"""

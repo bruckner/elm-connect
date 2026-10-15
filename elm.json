@@ -15,6 +15,7 @@
         "Proto.Method",
         "Proto.Registry",
         "Proto.WellKnown",
+        "Proto.Any",
         "Proto.Json",
         "Proto.Int64",
         "Proto.Duration",
