@@ -5,15 +5,14 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
-import Proto.WellKnown
 import Rpc
 
 
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        { request = Proto.WellKnown.any
-        , response = Proto.WellKnown.any
+        { encodeRequest = Proto.Any.encodeJson
+        , responseDecoder = Proto.Any.jsonDecoder
         , descriptor =
             { service = "envelope.v1.Relay"
             , name = "Forward"
@@ -28,8 +27,8 @@ forward =
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        { request = Envelope.V1.messageEnvelope
-        , response = Envelope.V1.messageEnvelope
+        { encodeRequest = Envelope.V1.encodeEnvelope
+        , responseDecoder = Envelope.V1.decodeEnvelope
         , descriptor =
             { service = "envelope.v1.Relay"
             , name = "Send"

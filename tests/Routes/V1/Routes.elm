@@ -11,8 +11,8 @@ import Rpc
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        { request = Routes.V1.messageGetMessageRequest
-        , response = Routes.V1.messageMessage
+        { encodeRequest = Routes.V1.encodeGetMessageRequest
+        , responseDecoder = Routes.V1.decodeMessage
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "GetMessage"
@@ -96,8 +96,8 @@ getMessage =
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        { request = Routes.V1.messageUpdateMessageRequest
-        , response = Routes.V1.messageMessage
+        { encodeRequest = Routes.V1.encodeUpdateMessageRequest
+        , responseDecoder = Routes.V1.decodeMessage
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "UpdateMessage"
@@ -125,8 +125,8 @@ updateMessage =
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        { request = Routes.V1.messageMessage
-        , response = Routes.V1.messageMessage
+        { encodeRequest = Routes.V1.encodeMessage
+        , responseDecoder = Routes.V1.decodeMessage
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "UpdateMessageWhole"
@@ -154,8 +154,8 @@ updateMessageWhole =
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        { request = Routes.V1.messageGetMessageRequest
-        , response = Routes.V1.messageMessage
+        { encodeRequest = Routes.V1.encodeGetMessageRequest
+        , responseDecoder = Routes.V1.decodeMessage
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "PostSub"
@@ -183,8 +183,8 @@ postSub =
 query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        { request = Routes.V1.messageEverything
-        , response = Routes.V1.messageEverything
+        { encodeRequest = Routes.V1.encodeEverything
+        , responseDecoder = Routes.V1.decodeEverything
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Query"
@@ -236,8 +236,8 @@ query =
 single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        { request = Routes.V1.messageEverything
-        , response = Routes.V1.messageEverything
+        { encodeRequest = Routes.V1.encodeEverything
+        , responseDecoder = Routes.V1.decodeEverything
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Single"
@@ -289,8 +289,8 @@ single =
 multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        { request = Routes.V1.messageEverything
-        , response = Routes.V1.messageEverything
+        { encodeRequest = Routes.V1.encodeEverything
+        , responseDecoder = Routes.V1.decodeEverything
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Multi"
@@ -341,8 +341,8 @@ multi =
 typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        { request = Routes.V1.messageEverything
-        , response = Routes.V1.messageEverything
+        { encodeRequest = Routes.V1.encodeEverything
+        , responseDecoder = Routes.V1.decodeEverything
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Typed"
@@ -394,8 +394,8 @@ typed =
 files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        { request = Routes.V1.messageFileRequest
-        , response = Routes.V1.messageFileRequest
+        { encodeRequest = Routes.V1.encodeFileRequest
+        , responseDecoder = Routes.V1.decodeFileRequest
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Files"
@@ -422,8 +422,8 @@ files =
 cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        { request = Routes.V1.messageResource
-        , response = Routes.V1.messageResource
+        { encodeRequest = Routes.V1.encodeResource
+        , responseDecoder = Routes.V1.decodeResource
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Cancel"
@@ -450,8 +450,8 @@ cancel =
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        { request = Routes.V1.messageUpdateResourceRequest
-        , response = Routes.V1.messageResource
+        { encodeRequest = Routes.V1.encodeUpdateResourceRequest
+        , responseDecoder = Routes.V1.decodeResource
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "UpdateResource"
@@ -478,8 +478,8 @@ updateResource =
 head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        { request = Routes.V1.messageFileRequest
-        , response = Routes.V1.messageFileRequest
+        { encodeRequest = Routes.V1.encodeFileRequest
+        , responseDecoder = Routes.V1.decodeFileRequest
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Head"
@@ -506,8 +506,8 @@ head =
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        { request = Routes.V1.messageGetMessageRequest
-        , response = Routes.V1.messageMessage
+        { encodeRequest = Routes.V1.encodeGetMessageRequest
+        , responseDecoder = Routes.V1.decodeMessage
         , descriptor =
             { service = "routes.v1.Routes"
             , name = "Unbound"

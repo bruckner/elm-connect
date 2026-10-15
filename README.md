@@ -63,7 +63,8 @@ calling:
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
 | `Proto.Descriptor` | descriptors as data: messages, enums and methods |
 | `Proto.Http` | a method's `google.api.http` rule as data |
-| `Proto.Message`, `Proto.Enum`, `Proto.Method` | typed records: a type's codecs with its descriptor |
+| `Proto.Message`, `Proto.Enum` | typed records: a type's codecs with its descriptor |
+| `Proto.Method` | a method's request encoder, response decoder and descriptor |
 | `Proto.WellKnown` | the well-known types' typed records |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |

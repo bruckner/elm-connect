@@ -125,8 +125,8 @@ applies it to each method's [`Method`](Proto-Method#Method) record:
 
     getNote =
         Rpc.call
-            { request = Notes.V1.messageGetNoteRequest
-            , response = Notes.V1.messageNote
+            { encodeRequest = Notes.V1.encodeGetNoteRequest
+            , responseDecoder = Notes.V1.decodeNote
             , descriptor = { service = "notes.v1.NotesService", name = "GetNote", … }
             }
 
@@ -235,7 +235,7 @@ requestMessage (Call c) =
 -}
 requestJson : Call req res -> Value
 requestJson (Call c) =
-    c.method.request.encodeJson c.message
+    c.method.encodeRequest c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
@@ -247,7 +247,7 @@ toJson (Call c) =
     Json.Encode.object
         [ ( "service", Json.Encode.string c.method.descriptor.service )
         , ( "method", Json.Encode.string c.method.descriptor.name )
-        , ( "request", c.method.request.encodeJson c.message )
+        , ( "request", c.method.encodeRequest c.message )
         ]
 
 
@@ -915,16 +915,16 @@ response cfg ((Call fields) as c) answer =
             case ( cfg.transport, route cfg c ) of
                 ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody fields.method.response.jsonDecoder raw
+                        decodeBody fields.method.responseDecoder raw
 
                     else
                         Err (failure metadata raw)
 
                 ( Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody fields.method.response.jsonDecoder) (orEmptyObject raw)
+                    decodeBody (responseDecoder rule.responseBody fields.method.responseDecoder) (orEmptyObject raw)
 
                 ( Transcode, Implicit ) ->
-                    decodeBody fields.method.response.jsonDecoder (orEmptyObject raw)
+                    decodeBody fields.method.responseDecoder (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)

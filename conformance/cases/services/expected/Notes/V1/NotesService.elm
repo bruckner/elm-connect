@@ -5,15 +5,15 @@ module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
 import Proto.Http
-import Proto.WellKnown
+import Proto.Json
 import Rpc
 
 
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { request = Notes.V1.messageGetNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeGetNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "GetNote"
@@ -51,8 +51,8 @@ getNote =
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        { request = Notes.V1.messageListNotesRequest
-        , response = Notes.V1.messageListNotesResponse
+        { encodeRequest = Notes.V1.encodeListNotesRequest
+        , responseDecoder = Notes.V1.decodeListNotesResponse
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "ListNotes"
@@ -88,8 +88,8 @@ listNotes =
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        { request = Notes.V1.messageCreateNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeCreateNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "CreateNote"
@@ -117,8 +117,8 @@ createNote =
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        { request = Notes.V1.messageUpdateNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeUpdateNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "UpdateNote"
@@ -145,8 +145,8 @@ updateNote =
 replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        { request = Notes.V1.messageNote
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeNote
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "ReplaceNote"
@@ -173,8 +173,8 @@ replaceNote =
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        { request = Notes.V1.messageDeleteNoteRequest
-        , response = Proto.WellKnown.empty
+        { encodeRequest = Notes.V1.encodeDeleteNoteRequest
+        , responseDecoder = Proto.Json.empty
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "DeleteNote"
@@ -201,8 +201,8 @@ deleteNote =
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        { request = Notes.V1.messageArchiveNoteRequest
-        , response = Notes.V1.messageNote
+        { encodeRequest = Notes.V1.encodeArchiveNoteRequest
+        , responseDecoder = Notes.V1.decodeNote
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "ArchiveNote"
@@ -229,8 +229,8 @@ archiveNote =
 readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
 readFile =
     Rpc.call
-        { request = Notes.V1.messageReadFileRequest
-        , response = Notes.V1.messageSummary
+        { encodeRequest = Notes.V1.encodeReadFileRequest
+        , responseDecoder = Notes.V1.decodeSummary
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "ReadFile"
@@ -257,8 +257,8 @@ readFile =
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        { request = Proto.WellKnown.empty
-        , response = Proto.WellKnown.empty
+        { encodeRequest = Proto.Json.encodeEmpty
+        , responseDecoder = Proto.Json.empty
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "Ping"
@@ -285,8 +285,8 @@ ping =
 summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        { request = Notes.V1.messageGetNoteRequest
-        , response = Notes.V1.messageSummary
+        { encodeRequest = Notes.V1.encodeGetNoteRequest
+        , responseDecoder = Notes.V1.decodeSummary
         , descriptor =
             { service = "notes.v1.NotesService"
             , name = "Summarize"

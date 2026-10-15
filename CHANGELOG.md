@@ -300,3 +300,14 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   the new `Proto.Json.enumOrZero`, which takes `Proto.Json.enum`'s
   arguments (`enums_unknown_zero` case). `Proto.Enum.fromName` and
   `fromNumber` still give `Nothing` for undeclared names and numbers.
+- `Proto.Method.Method` is `{ encodeRequest, responseDecoder,
+  descriptor }`: a method carries only what the wire needs, no longer
+  its types' `Message` records. Elm's dead-code elimination keeps a
+  top-level value whole, so every call used to bring both types'
+  defaults and descriptor trees into the bundle. Service modules
+  reference the codecs directly (`Notes.V1.encodeGetNoteRequest`,
+  `Notes.V1.decodeNote`; for a well-known type the runtime's, such as
+  `Proto.Json.encodeEmpty` and `Proto.Json.empty`) and no longer import
+  `Proto.WellKnown`. A `Method` built by hand takes the codecs in place
+  of `request` and `response`; the typed records still serve `Any`,
+  error details and reflection.
