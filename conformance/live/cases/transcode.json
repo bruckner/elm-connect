@@ -142,7 +142,7 @@
   },
   {
     "name": "transcode an empty 2xx body reads as {}",
-    "note": "A 204 has no body; the response is the message decoded from {}, every field at its default.",
+    "note": "A 204 has no body; the response is the message decoded from {}, every field at its default, which the runner's encoder leaves out.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -151,7 +151,7 @@
       "config": { "baseUrl": "{server}/status/204" }
     },
     "expect": {
-      "result": { "ok": { "name": "", "title": "", "tags": [], "visibility": "VISIBILITY_UNSPECIFIED", "createTime": null } },
+      "result": { "ok": { "name": { "$absent": true }, "title": { "$absent": true }, "tags": { "$absent": true }, "visibility": { "$absent": true }, "createTime": { "$absent": true } } },
       "trace": { "httpStatus": 204, "code": "ok" },
       "wire": [{ "status": 204, "responseBody": "" }]
     }

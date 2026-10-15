@@ -212,7 +212,7 @@ import Proto.Any
 
 packed : Proto.Any.Any
 packed =
-    -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries", …}
+    -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
     let
         note =
             Notes.V1.defaultNote

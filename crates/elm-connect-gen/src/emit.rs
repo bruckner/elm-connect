@@ -44,19 +44,20 @@
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
 //!   (`Json.Decode.Decoder Foo`).
-//! - Encoders emit every field, default values included. proto3 JSON lets
-//!   a writer omit or include them; always including them keeps the
-//!   encoder one expression per field. This is the current rule, not yet
-//!   reviewed (design §3.4).
+//! - Encoders are `Proto.Json.object` over one `( jsonName, Maybe Value )`
+//!   pair per field, and leave out every field at its default, as
+//!   protobuf-go's `protojson` does: a field without presence at its zero
+//!   value, a `Maybe` when `Nothing`, a list or map when empty (design
+//!   §3.4). A parser reads a missing field as its default.
 //! - Decoders are a pipeline of `Proto.Json.field` steps from
 //!   `Json.Decode.succeed`, so they read the same at any field count
 //!   (design §8). A missing or `null` field reads as its proto3 zero value.
 //!   A field whose JSON name differs from its proto name uses
 //!   `Proto.Json.fieldEither`, which accepts both keys (design §3.4).
 //! - A field with presence (proto3 `optional`, or message-typed) is a
-//!   `Maybe`: `Nothing` encodes as `null`, and an absent or `null` field
+//!   `Maybe`: `Nothing` is left out, and an absent or `null` field
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
-//!   array; absent or `null` decodes as `[]`. Both reuse the one
+//!   array unless empty; absent or `null` decodes as `[]`. Both reuse the one
 //!   `Proto.Json.field` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
@@ -64,10 +65,10 @@
 //!   option either way.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Json.Encode.dict`; absent or `null` decodes as `Dict.empty`. A map
+//!   `Proto.Json.dict`; absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
 //!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
-//!   `encodeBoolMap`; absent or `null` decodes as `[]`.
+//!   `boolDict`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Proto.Json.enum`
 //!   decoder that reads a name or a number, an unknown number as the zero
@@ -637,7 +638,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Proto.Json.encodeMaybe Other.V1.encodeB value.b"),
+            printed.contains("Maybe.map Other.V1.encodeB value.b"),
             "{printed}"
         );
         assert!(

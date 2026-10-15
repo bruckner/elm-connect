@@ -190,74 +190,74 @@ encodeColor value =
 
 encodeCreated : Created -> Json.Encode.Value
 encodeCreated value =
-    Json.Encode.object [ ( "title", Json.Encode.string value.title ) ]
+    Proto.Json.object [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title ) ]
 
 
 encodeNoteEvent : NoteEvent -> Json.Encode.Value
 encodeNoteEvent value =
-    Json.Encode.object
-        ([ ( "id", Json.Encode.string value.id )
-         , ( "tags", Json.Encode.list Json.Encode.string value.tags )
+    Proto.Json.object
+        ([ ( "id", Proto.Json.implicit "" Json.Encode.string value.id )
+         , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
          ]
             ++ encodeNoteEventKind value.kind
             ++ encodeNoteEventSource value.source
         )
 
 
-encodeNoteEventKind : NoteEventKind -> List ( String, Json.Encode.Value )
+encodeNoteEventKind : NoteEventKind -> List ( String, Maybe Json.Encode.Value )
 encodeNoteEventKind value =
     case value of
         NoteEventKindUnset ->
             []
 
         NoteEventKindCreated member ->
-            [ ( "created", encodeCreated member ) ]
+            [ ( "created", Just (encodeCreated member) ) ]
 
         NoteEventKindTitleChanged member ->
-            [ ( "titleChanged", Json.Encode.string member ) ]
+            [ ( "titleChanged", Just (Json.Encode.string member) ) ]
 
         NoteEventKindRecolored member ->
-            [ ( "recolored", encodeColor member ) ]
+            [ ( "recolored", Just (encodeColor member) ) ]
 
         NoteEventKindDeletedAt member ->
-            [ ( "deletedAt", Proto.Json.encodeInt64 member ) ]
+            [ ( "deletedAt", Just (Proto.Json.encodeInt64 member) ) ]
 
         NoteEventKindArchived ->
-            [ ( "archived", Json.Encode.object [] ) ]
+            [ ( "archived", Just (Json.Encode.object []) ) ]
 
         NoteEventKindClearedAll ->
-            [ ( "clearedAll", Json.Encode.object [] ) ]
+            [ ( "clearedAll", Just (Json.Encode.object []) ) ]
 
 
-encodeNoteEventSource : NoteEventSource -> List ( String, Json.Encode.Value )
+encodeNoteEventSource : NoteEventSource -> List ( String, Maybe Json.Encode.Value )
 encodeNoteEventSource value =
     case value of
         NoteEventSourceUnset ->
             []
 
         NoteEventSourceUser member ->
-            [ ( "user", Json.Encode.string member ) ]
+            [ ( "user", Just (Json.Encode.string member) ) ]
 
         NoteEventSourceAutomated member ->
-            [ ( "automated", Json.Encode.bool member ) ]
+            [ ( "automated", Just (Json.Encode.bool member) ) ]
 
 
 encodeChoice : Choice -> Json.Encode.Value
 encodeChoice value =
-    Json.Encode.object (encodeChoiceValue value.value)
+    Proto.Json.object (encodeChoiceValue value.value)
 
 
-encodeChoiceValue : ChoiceValue -> List ( String, Json.Encode.Value )
+encodeChoiceValue : ChoiceValue -> List ( String, Maybe Json.Encode.Value )
 encodeChoiceValue value =
     case value of
         ChoiceValueUnset ->
             []
 
         ChoiceValueNumber member ->
-            [ ( "number", Proto.Json.encodeFloat member ) ]
+            [ ( "number", Just (Proto.Json.encodeFloat member) ) ]
 
         ChoiceValueText member ->
-            [ ( "label", Json.Encode.string member ) ]
+            [ ( "label", Just (Json.Encode.string member) ) ]
 
 
 

@@ -343,29 +343,29 @@ encodeOuterInnerKind value =
 
 encodeOuter : Outer -> Json.Encode.Value
 encodeOuter value =
-    Json.Encode.object
-        [ ( "inner", Proto.Json.encodeMaybe encodeOuterInner value.inner )
-        , ( "kind", encodeOuterInnerKind value.kind )
-        , ( "all", Json.Encode.list encodeOuterInnerDeepest value.all )
+    Proto.Json.object
+        [ ( "inner", Maybe.map encodeOuterInner value.inner )
+        , ( "kind", Proto.Json.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+        , ( "all", Proto.Json.repeated encodeOuterInnerDeepest value.all )
         ]
 
 
 encodeOuterInner : OuterInner -> Json.Encode.Value
 encodeOuterInner value =
-    Json.Encode.object [ ( "deepest", Proto.Json.encodeMaybe encodeOuterInnerDeepest value.deepest ) ]
+    Proto.Json.object [ ( "deepest", Maybe.map encodeOuterInnerDeepest value.deepest ) ]
 
 
 encodeOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
 encodeOuterInnerDeepest value =
-    Json.Encode.object [ ( "kind", encodeOuterInnerKind value.kind ) ]
+    Proto.Json.object [ ( "kind", Proto.Json.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind ) ]
 
 
 encodeNode : Node -> Json.Encode.Value
 encodeNode value =
-    Json.Encode.object
-        [ ( "label", Json.Encode.string value.label )
-        , ( "children", Json.Encode.list encodeNode_ value.children )
-        , ( "byName", Json.Encode.dict identity encodeNode_ value.byName )
+    Proto.Json.object
+        [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label )
+        , ( "children", Proto.Json.repeated encodeNode_ value.children )
+        , ( "byName", Proto.Json.dict identity encodeNode_ value.byName )
         ]
 
 
@@ -376,9 +376,9 @@ encodeNode_ (Node_ value) =
 
 encodePerson : Person -> Json.Encode.Value
 encodePerson value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "employer", Proto.Json.encodeMaybe encodeCompany_ value.employer )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "employer", Maybe.map encodeCompany_ value.employer )
         ]
 
 
@@ -389,9 +389,9 @@ encodePerson_ (Person_ value) =
 
 encodeCompany : Company -> Json.Encode.Value
 encodeCompany value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "staff", Json.Encode.list encodePerson_ value.staff )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "staff", Proto.Json.repeated encodePerson_ value.staff )
         ]
 
 
@@ -402,30 +402,30 @@ encodeCompany_ (Company_ value) =
 
 encodeForest : Forest -> Json.Encode.Value
 encodeForest value =
-    Json.Encode.object [ ( "trees", Json.Encode.list encodeNode value.trees ) ]
+    Proto.Json.object [ ( "trees", Proto.Json.repeated encodeNode value.trees ) ]
 
 
 encodeExpr : Expr -> Json.Encode.Value
 encodeExpr value =
-    Json.Encode.object (encodeExprValue value.value)
+    Proto.Json.object (encodeExprValue value.value)
 
 
-encodeExprValue : ExprValue -> List ( String, Json.Encode.Value )
+encodeExprValue : ExprValue -> List ( String, Maybe Json.Encode.Value )
 encodeExprValue value =
     case value of
         ExprValueUnset ->
             []
 
         ExprValueNumber member ->
-            [ ( "number", Proto.Json.encodeInt64 member ) ]
+            [ ( "number", Just (Proto.Json.encodeInt64 member) ) ]
 
         ExprValueSum member ->
-            [ ( "sum", encodeSum member ) ]
+            [ ( "sum", Just (encodeSum member) ) ]
 
 
 encodeSum : Sum -> Json.Encode.Value
 encodeSum value =
-    Json.Encode.object [ ( "terms", Json.Encode.list encodeExpr value.terms ) ]
+    Proto.Json.object [ ( "terms", Proto.Json.repeated encodeExpr value.terms ) ]
 
 
 
