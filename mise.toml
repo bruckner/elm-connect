@@ -18,6 +18,10 @@ gitleaks = "8.30.1"
 # test runner under node.
 node = "24.21.0"
 just = "1.58.0"
+# The live suite (`just live`, conformance/live/): the example server is Go,
+# and buf generates its stubs and the example's Elm.
+go = "1.27.2"
+buf = "1.73.0"
 
 [settings]
 # Newer mise runs npm tools via a node launcher; elm-test-rs's native binary breaks that (SyntaxError).

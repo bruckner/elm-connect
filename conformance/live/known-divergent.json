@@ -1,0 +1,64 @@
+{
+  "description": "Where Vanguard and the route fixtures part, found by routes.mjs on 2026-10-15 against connect-go v2.0.1 and Vanguard v0.5.0 (conformance/README.md, design section 7). servedApart: bindings Vanguard will not serve beside the others; the example server serves each under its prefix, and the fixture runs there. fixtures: fixtures whose live call does not agree with the fixture; `vanguard` is matched against the runner's result and must keep matching, `url` is the request the runtime makes, `answer` Vanguard's, `reading` who is right by google/api/http.proto and proto3 JSON.",
+  "servedApart": [
+    {
+      "method": "routes.v1.Routes.GetMessage",
+      "binding": 2,
+      "prefix": "/layer/1",
+      "reason": "GET /v1/messages/{message_id} and binding 0, GET /v1/{name=messages/*}, match the same paths; Vanguard refuses a second route for a verb and path it has (\"target for /v1/messages/*, method GET already exists\"). routes.proto joins http.proto's separate examples into one rule, which a client can follow but no router can serve whole."
+    },
+    {
+      "method": "routes.v1.Routes.UpdateMessageWhole",
+      "binding": 0,
+      "prefix": "/layer/1",
+      "reason": "PATCH /v1/messages/{message_id} is UpdateMessage's route too; as above (\"target for /v1/messages/*, method PATCH already exists: routes.v1.Routes.UpdateMessage\")."
+    }
+  ],
+  "fixtures": [
+    {
+      "file": "query.json",
+      "fixture": "fields with presence are sent at their defaults when set",
+      "url": "GET /v1/query?maybe_count=0&maybe_name=&limit=0&label=&number=0",
+      "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"label\\\" value for type \\\"message\\\": \"}",
+      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree.",
+      "vanguard": {
+        "trace": { "httpStatus": 400 },
+        "result": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "invalid parameter \"label\" value for type \"message\": ",
+            "source": "StatusBody"
+          }
+        }
+      }
+    },
+    {
+      "file": "query.json",
+      "fixture": "a path value under an unset message is empty; defaults are written",
+      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/",
+      "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"inner.deep.b\\\": unexpected end of JSON input\"}",
+      "reading": "The fixture (and the runtime, which follows it). http.proto does not say what a path variable under an unset message is, but proto3 reads inner.deep.b as 0 there, and the fixture writes every other default (0, false, KIND_UNSPECIFIED); an empty segment is no int32, and Vanguard rejects it. DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0 is accepted. Not changed here: the fixtures' expectations stay as they are in this change.",
+      "vanguard": {
+        "trace": { "httpStatus": 400 },
+        "result": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "invalid parameter \"inner.deep.b\": unexpected end of JSON input",
+            "source": "StatusBody"
+          }
+        }
+      }
+    },
+    {
+      "file": "bodies.json",
+      "fixture": "an unset body field is an empty object",
+      "url": "PATCH /v1/messages/1 with body {}",
+      "answer": "200, echoing {\"messageId\":\"1\",\"message\":{}}",
+      "reading": "Neither is wrong; the wire cannot say it. With body: \"message\" the body is the field's value, so a server reads {} as message set and empty, where the request left it unset. A client could send no body for an unset field, but http.proto gives that no meaning either; proto3 JSON has none for a present-but-empty message other than {}.",
+      "vanguard": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "text": { "$json": { "messageId": "1", "message": {} } } } }
+      }
+    }
+  ]
+}

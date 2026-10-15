@@ -1,0 +1,179 @@
+[
+  {
+    "name": "transcode NOT_FOUND: a google.rpc.Status body with ErrorInfo",
+    "note": "The answer on the wire is a google.rpc.Status (code a number, details Any), not a Connect error body, and the runtime reads it as one.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/missing" }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/missing does not exist",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": { "name": "notes/missing" }
+            }
+          ]
+        }
+      },
+      "wire": [
+        {
+          "status": 404,
+          "responseBody": {
+            "$json": {
+              "code": 5,
+              "message": "notes/missing does not exist",
+              "details": [{ "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "NOTE_NOT_FOUND" }]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode INVALID_ARGUMENT: a google.rpc.Status body with BadRequest",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "transcode",
+      "request": { "note": { "body": "untitled" } }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.BadRequest",
+              "fieldViolations": [{ "field": "title", "description": "a note needs a title" }]
+            }
+          ]
+        }
+      },
+      "wire": [
+        {
+          "status": 400,
+          "responseBody": {
+            "$json": {
+              "code": 3,
+              "message": "a note needs a title",
+              "details": [{ "@type": "type.googleapis.com/google.rpc.BadRequest" }]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode 404 without a Status body",
+    "note": "The code is the HTTP status's, as Connect maps it (404 is unimplemented), and the error keeps the answer it was read from.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/status/404" }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "unimplemented",
+          "message": "Not Found",
+          "details": [],
+          "source": "HttpStatus",
+          "response": { "statusCode": 404, "body": { "$match": "^Not Found" } }
+        }
+      },
+      "trace": { "httpStatus": 404, "code": "unimplemented" },
+      "wire": [{ "status": 404, "responseBody": "Not Found\n" }]
+    }
+  },
+  {
+    "name": "transcode an unmapped status without a Status body",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/status/418" }
+    },
+    "expect": {
+      "result": {
+        "error": { "code": "unknown", "message": "I'm a teapot", "details": [], "source": "HttpStatus" }
+      },
+      "trace": { "httpStatus": 418 }
+    }
+  },
+  {
+    "name": "transcode grpc-status NOT_FOUND",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/grpc-status/5" }
+    },
+    "expect": {
+      "result": {
+        "error": { "code": "not_found", "message": "no backend; code 5", "details": [], "source": "GrpcHeaders" }
+      },
+      "trace": { "httpStatus": 503, "code": "not_found" },
+      "wire": [{ "status": 503, "responseBody": "" }]
+    }
+  },
+  {
+    "name": "transcode grpc-status UNAUTHENTICATED",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/grpc-status/16" }
+    },
+    "expect": {
+      "result": {
+        "error": { "code": "unauthenticated", "message": "no backend; code 16", "details": [], "source": "GrpcHeaders" }
+      }
+    }
+  },
+  {
+    "name": "transcode an empty 2xx body reads as {}",
+    "note": "A 204 has no body; the response is the message decoded from {}, every field at its default.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/status/204" }
+    },
+    "expect": {
+      "result": { "ok": { "name": "", "title": "", "tags": [], "visibility": "VISIBILITY_UNSPECIFIED", "createTime": null } },
+      "trace": { "httpStatus": 204, "code": "ok" },
+      "wire": [{ "status": 204, "responseBody": "" }]
+    }
+  },
+  {
+    "name": "transcode a 2xx body that is not JSON",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/status/201" }
+    },
+    "expect": {
+      "result": { "transport": { "$match": "^BadBody " } },
+      "trace": { "httpStatus": 201 }
+    }
+  }
+]

@@ -311,6 +311,37 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `Proto.WellKnown`. A `Method` built by hand takes the codecs in place
   of `request` and `response`; the typed records still serve `Any`,
   error details and reflection.
+- Live verification: `just live` runs the runtime against a server.
+  `examples/notes/` holds an example API (`notes.v1.NotesService`), a Go
+  server answering it over Connect (connect-go) and HTTP transcoding
+  (Vanguard) from one port, and the Go and Elm buf generates for it;
+  `conformance/live/` a headless Elm program over the runtime, driven
+  from Node through an `XMLHttpRequest` over `node:http`, and a smoke
+  suite of every method over both transports, error bodies with
+  details, `grpc-status` headers, bare statuses, timeouts, retries,
+  Connect GET, bindings, trackers and each way of sending. CI runs it
+  as the `live` job; Go and buf join the toolchain pin.
+- Live verification runs the Connect conformance suite
+  (`connectrpc/conformance` v1.0.6, `just live-conformance`, part of
+  `just live`): `conformance/live/conformance.mjs` makes the runner its
+  client under test for unary calls over Connect with JSON on HTTP/1.1,
+  `conformance.yaml` declaring the rest unsupported. Calls go through the
+  pure halves and again through `Rpc.sendTraced`; 39 and 34 of 40 test
+  cases pass, `known-failing.txt` (cancellation) and
+  `known-failing-send.txt` (response headers and trailers, which only the
+  halves give) listing the rest with reasons. The runner gains the
+  `halves` way of sending, which reports the answer's status and headers.
+- Live verification of transcoding: the example server also serves the
+  route fixtures' `routes.v1.Routes` under Vanguard, echoing each
+  request, and `conformance/live/routes.mjs` sends every fixture through
+  the runtime and checks the request against the fixture, the echo
+  against the fixture's request (as proto3 JSON) and the runtime's
+  reading of the answer. Three fixtures part from Vanguard and two
+  bindings cannot be served beside the others; both are recorded in
+  `conformance/live/known-divergent.json` (design §7).
+  `cases/transcode.json` adds `google.rpc.Status` bodies as sent,
+  statuses without one, `grpc-status` headers and empty or non-JSON 2xx
+  answers; the runner reports each exchange's response body.
 - `Rpc.Error` has three constructors: `Status { code, message, details,
   source } Response`, a status the server stated in a Connect body, a
   `google.rpc.Status` body or the `grpc-status` headers; `Http

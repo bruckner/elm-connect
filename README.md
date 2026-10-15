@@ -37,6 +37,9 @@ elm.json, src/, tests/    the Elm runtime package and its tests
 conformance/
   cases/            proto inputs and the Elm expected from them
   harness/          Elm application the expected output compiles in
+  routes/           route fixtures: the HTTP request a call becomes
+  live/             the runtime run against a live server (`just live`)
+examples/notes/     an example API, its Go server and generated Elm client
 docs/               design and decisions
 mise.toml           toolchain pin
 Justfile            task recipes; `just` lists them
@@ -318,7 +321,7 @@ that route as follows:
 |---|---|
 | grpc-gateway | with `generate_unbound_methods=true` |
 | Envoy gRPC-JSON transcoder | with `auto_mapping: true` |
-| Vanguard | always |
+| Vanguard | always (v0.5 serves rules only; the Connect handler mounted beside it serves the route) |
 | A Connect handler (connect-go, connect-es, …) | always: it is the Connect request |
 
 For a server that serves rules alone, generate with
@@ -333,6 +336,18 @@ just check      # the gate CI runs
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
+
+**Live verification.** `just live` runs the runtime, compiled into a
+headless Elm program and driven from Node, against
+[`examples/notes`](examples/notes): a Go server answering over Connect
+(connect-go) and HTTP transcoding (Vanguard) from one port. Every
+method over both transports, errors with details, timeouts, retries and
+Connect GET are covered; [`conformance/README.md`](conformance/README.md)
+has the case format, and CI runs it on every pull request.
+`just live` also runs the official
+[Connect conformance suite](https://github.com/connectrpc/conformance)'s
+unary JSON test cases (v1.0.6) against the runtime: 39 of 40 pass, the
+known failure being cancellation.
 
 ## License
 

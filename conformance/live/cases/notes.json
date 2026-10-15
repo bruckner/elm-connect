@@ -1,0 +1,1658 @@
+[
+  {
+    "name": "connect GetNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome",
+          "title": "Welcome",
+          "tags": [
+            "intro",
+            "example"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "createTime": "2026-01-01T00:00:00Z",
+          "ttl": "90s",
+          "metadata": {
+            "lang": "en"
+          },
+          "extra": {
+            "owner": "ada",
+            "pinned": true,
+            "stars": 3
+          },
+          "link": "https://example.com/welcome",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
+          },
+          "revision": "9007199254740993"
+        }
+      },
+      "trace": {
+        "binding": null,
+        "httpStatus": 200,
+        "code": "ok",
+        "attempts": 1,
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/GetNote$"
+          },
+          "headers": [
+            [
+              "Connect-Protocol-Version",
+              "1"
+            ]
+          ],
+          "body": {
+            "$json": {
+              "name": "notes/welcome"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "connect ListNotes",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ListNotes",
+      "transport": "connect",
+      "request": {
+        "pageSize": 10,
+        "filter": "Welcome",
+        "visibility": "VISIBILITY_PUBLIC"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "notes": [
+            {
+              "name": "notes/welcome"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "request": {
+          "body": {
+            "$json": {
+              "pageSize": 10,
+              "filter": "Welcome",
+              "visibility": "VISIBILITY_PUBLIC"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "connect CreateNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "connect",
+      "request": {
+        "note": {
+          "name": "notes/from-connect",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.500s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          }
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-connect",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.500s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          },
+          "createTime": {
+            "$match": "Z$"
+          },
+          "revision": {
+            "$absent": true
+          }
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok"
+      }
+    }
+  },
+  {
+    "name": "connect UpdateNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "UpdateNote",
+      "transport": "connect",
+      "request": {
+        "note": {
+          "name": "notes/from-connect",
+          "body": "Second draft"
+        },
+        "updateMask": "body"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-connect",
+          "title": "Created",
+          "body": "Second draft",
+          "revision": "1"
+        }
+      },
+      "trace": {
+        "request": {
+          "body": {
+            "$json": {
+              "note": {
+                "name": "notes/from-connect",
+                "body": "Second draft"
+              },
+              "updateMask": "body"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "connect ArchiveNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ArchiveNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/from-connect"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-connect",
+          "visibility": "VISIBILITY_PRIVATE",
+          "tags": [
+            "a",
+            "b",
+            "archived"
+          ],
+          "revision": "2"
+        }
+      }
+    }
+  },
+  {
+    "name": "connect DeleteNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "DeleteNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/from-connect"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok"
+      }
+    }
+  },
+  {
+    "name": "connect NOT_FOUND with ErrorInfo",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/from-connect"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/from-connect does not exist",
+          "source": "ConnectBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/from-connect"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "not_found"
+      }
+    }
+  },
+  {
+    "name": "connect INVALID_ARGUMENT with BadRequest",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "connect",
+      "request": {
+        "note": {
+          "body": "untitled"
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": "ConnectBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.BadRequest",
+              "fieldViolations": [
+                {
+                  "field": "title",
+                  "description": "a note needs a title"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 400,
+        "code": "invalid_argument"
+      }
+    }
+  },
+  {
+    "name": "connect Ping",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {}
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "binding": null,
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/Ping$"
+          },
+          "body": "{}"
+        }
+      }
+    }
+  },
+  {
+    "name": "connect useGet GetNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "useGet": true
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "request": {
+          "method": "GET",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/GetNote\\?connect=v1&encoding=json&message=%7B%22name%22%3A%22notes%2Fwelcome%22%7D$"
+          },
+          "headers": [],
+          "body": null
+        }
+      },
+      "wire": [
+        {
+          "method": "GET",
+          "body": null,
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect useGet Ping",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "useGet": true
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "request": {
+          "method": "GET",
+          "url": {
+            "$match": "/Ping\\?connect=v1&encoding=json&message=%7B%7D$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "connect useGet POSTs a method with side effects",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "connect",
+      "request": {
+        "note": {}
+      },
+      "config": {
+        "useGet": true
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument"
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "POST"
+        }
+      }
+    }
+  },
+  {
+    "name": "connect useGet POSTs past maxGetUrl",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "useGet": true,
+        "maxGetUrl": 40
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "POST",
+          "headers": [
+            [
+              "Connect-Protocol-Version",
+              "1"
+            ]
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "connect x-echo header",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "headers": [
+          [
+            "x-echo",
+            "from connect"
+          ]
+        ]
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "request": {
+          "headers": [
+            [
+              "x-echo",
+              "from connect"
+            ],
+            [
+              "Connect-Protocol-Version",
+              "1"
+            ]
+          ]
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "x-echo",
+                "from connect"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "x-echo": "from connect"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect timeout",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/slow"
+      },
+      "config": {
+        "timeout": 500
+      }
+    },
+    "expect": {
+      "result": {
+        "transport": "Timeout"
+      },
+      "trace": {
+        "httpStatus": null,
+        "code": "deadline_exceeded",
+        "attempts": 1,
+        "request": {
+          "timeout": 500,
+          "headers": [
+            [
+              "Connect-Protocol-Version",
+              "1"
+            ],
+            [
+              "Connect-Timeout-Ms",
+              "500"
+            ]
+          ]
+        }
+      },
+      "wire": [
+        {
+          "timeout": 500,
+          "outcome": "timeout"
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect retry",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/flaky"
+      },
+      "config": {
+        "retry": {
+          "attempts": 2,
+          "backoff": 10,
+          "codes": [
+            "unavailable"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/flaky"
+        }
+      },
+      "trace": {
+        "attempts": 2,
+        "httpStatus": 200,
+        "code": "ok"
+      },
+      "wire": [
+        {
+          "status": 503
+        },
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect withCredentials",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "withCredentials": true
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "request": {
+          "withCredentials": true
+        }
+      },
+      "wire": [
+        {
+          "withCredentials": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect answer without an error body",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "baseUrl": "{server}/status/404"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "unimplemented",
+          "message": "Not Found",
+          "details": [],
+          "source": "HttpStatus"
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "unimplemented"
+      }
+    }
+  },
+  {
+    "name": "connect grpc-status headers",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "baseUrl": "{server}/grpc-status/8"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "resource_exhausted",
+          "message": "no backend; code 8",
+          "details": [],
+          "source": "GrpcHeaders"
+        }
+      },
+      "trace": {
+        "httpStatus": 503,
+        "code": "resource_exhausted"
+      }
+    }
+  },
+  {
+    "name": "connect network error",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "baseUrl": "http://127.0.0.1:1"
+      }
+    },
+    "expect": {
+      "result": {
+        "transport": "NetworkError"
+      },
+      "trace": {
+        "httpStatus": null,
+        "code": "unavailable"
+      }
+    }
+  },
+  {
+    "name": "connect bad URL",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "baseUrl": "http://exa mple.com"
+      }
+    },
+    "expect": {
+      "result": {
+        "transport": {
+          "$match": "^BadUrl http://exa mple\\.com/notes\\.v1\\.NotesService/Ping$"
+        }
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "connect Rpc.send",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": null,
+      "wire": [
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect Rpc.send with a tracker",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "connect",
+      "request": {
+        "note": {
+          "name": "notes/tracked",
+          "title": "Tracked"
+        }
+      },
+      "send": "send",
+      "tracker": "create"
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/tracked"
+        }
+      },
+      "progress": {
+        "sending": 1,
+        "receiving": 1
+      }
+    }
+  },
+  {
+    "name": "connect Rpc.send with a retry policy",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/flaky"
+      },
+      "config": {
+        "retry": {
+          "attempts": 2,
+          "backoff": 10,
+          "codes": [
+            "unavailable"
+          ],
+          "idempotentOnly": false
+        }
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/flaky"
+        }
+      },
+      "wire": [
+        {
+          "status": 503
+        },
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "connect Rpc.task",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/missing"
+      },
+      "send": "task"
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/missing does not exist",
+          "source": "ConnectBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/missing"
+              }
+            }
+          ]
+        }
+      },
+      "trace": null
+    }
+  },
+  {
+    "name": "transcode GetNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome",
+          "title": "Welcome",
+          "tags": [
+            "intro",
+            "example"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "createTime": "2026-01-01T00:00:00Z",
+          "ttl": "90s",
+          "metadata": {
+            "lang": "en"
+          },
+          "extra": {
+            "owner": "ada",
+            "pinned": true,
+            "stars": 3
+          },
+          "link": "https://example.com/welcome",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
+          },
+          "revision": "9007199254740993"
+        }
+      },
+      "trace": {
+        "binding": 0,
+        "httpStatus": 200,
+        "code": "ok",
+        "request": {
+          "method": "GET",
+          "url": {
+            "$match": "/v1/notes/welcome$"
+          },
+          "headers": [],
+          "body": null
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode ListNotes",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ListNotes",
+      "transport": "transcode",
+      "request": {
+        "pageSize": 1,
+        "filter": "Welcome",
+        "visibility": "VISIBILITY_PUBLIC"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "notes": [
+            {
+              "name": "notes/welcome"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "GET",
+          "url": {
+            "$match": "/v1/notes\\?page_size=1&filter=Welcome&visibility=VISIBILITY_PUBLIC$"
+          },
+          "body": null
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode ListNotes pages",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ListNotes",
+      "transport": "transcode",
+      "request": {
+        "pageSize": 1
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "notes": [
+            {
+              "name": "notes/flaky"
+            }
+          ],
+          "nextPageToken": "1"
+        }
+      },
+      "trace": {
+        "request": {
+          "url": {
+            "$match": "/v1/notes\\?page_size=1$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode CreateNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "transcode",
+      "request": {
+        "note": {
+          "name": "notes/from-transcode",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.500s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          }
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-transcode",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.500s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          },
+          "revision": {
+            "$absent": true
+          }
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/v1/notes$"
+          },
+          "body": {
+            "$json": {
+              "name": "notes/from-transcode",
+              "title": "Created",
+              "body": "First draft",
+              "tags": [
+                "a",
+                "b"
+              ],
+              "visibility": "VISIBILITY_PUBLIC",
+              "ttl": "3.500s",
+              "metadata": {
+                "k": "v"
+              },
+              "extra": {
+                "n": 1,
+                "list": [
+                  true,
+                  null,
+                  "x"
+                ]
+              },
+              "text": "hello",
+              "attachment": {
+                "@type": "type.googleapis.com/google.protobuf.Duration",
+                "value": "1s"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode UpdateNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "UpdateNote",
+      "transport": "transcode",
+      "request": {
+        "note": {
+          "name": "notes/from-transcode",
+          "body": "Second draft"
+        },
+        "updateMask": "body"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-transcode",
+          "title": "Created",
+          "body": "Second draft",
+          "revision": "1"
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "PATCH",
+          "url": {
+            "$match": "/v1/notes/from-transcode\\?update_mask=body$"
+          },
+          "body": {
+            "$json": {
+              "name": "notes/from-transcode",
+              "body": "Second draft"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode ArchiveNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ArchiveNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/from-transcode"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-transcode",
+          "visibility": "VISIBILITY_PRIVATE",
+          "tags": [
+            "a",
+            "b",
+            "archived"
+          ],
+          "revision": "2"
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/v1/notes/from-transcode:archive$"
+          },
+          "body": "{}"
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode DeleteNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "DeleteNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/from-transcode"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "request": {
+          "method": "DELETE",
+          "url": {
+            "$match": "/v1/notes/from-transcode$"
+          },
+          "body": null
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode NOT_FOUND with ErrorInfo",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/from-transcode"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/from-transcode does not exist",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/from-transcode"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "not_found"
+      }
+    }
+  },
+  {
+    "name": "transcode INVALID_ARGUMENT with BadRequest",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "transcode",
+      "request": {
+        "note": {
+          "body": "untitled"
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.BadRequest",
+              "fieldViolations": [
+                {
+                  "field": "title",
+                  "description": "a note needs a title"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 400,
+        "code": "invalid_argument"
+      }
+    }
+  },
+  {
+    "name": "transcode percent-encoded path",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/a b+c"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/a b+c does not exist",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/a b+c"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "request": {
+          "url": {
+            "$match": "/v1/notes/a%20b%2Bc$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode answer without an error body",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "baseUrl": "{server}/status/503"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "unavailable",
+          "message": "Service Unavailable",
+          "details": [],
+          "source": "HttpStatus"
+        }
+      },
+      "trace": {
+        "httpStatus": 503,
+        "request": {
+          "url": {
+            "$match": "/status/503/v1/notes/welcome$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode grpc-status headers",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "baseUrl": "{server}/grpc-status/7"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "permission_denied",
+          "message": "no backend; code 7",
+          "source": "GrpcHeaders"
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode Ping over the implicit route",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "transcode",
+      "request": {}
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "binding": null,
+        "httpStatus": 200,
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/Ping$"
+          },
+          "headers": [
+            [
+              "Connect-Protocol-Version",
+              "1"
+            ]
+          ],
+          "body": "{}"
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode x-echo header",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "headers": [
+          [
+            "x-echo",
+            "from transcode"
+          ]
+        ]
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "request": {
+          "headers": [
+            [
+              "x-echo",
+              "from transcode"
+            ]
+          ]
+        }
+      },
+      "wire": [
+        {
+          "responseHeaders": {
+            "x-echo": "from transcode"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode timeout",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/slow"
+      },
+      "config": {
+        "timeout": 500
+      }
+    },
+    "expect": {
+      "result": {
+        "transport": "Timeout"
+      },
+      "trace": {
+        "httpStatus": null,
+        "code": "deadline_exceeded",
+        "request": {
+          "timeout": 500,
+          "headers": []
+        }
+      },
+      "wire": [
+        {
+          "timeout": 500,
+          "outcome": "timeout"
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode retry",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/flaky"
+      },
+      "config": {
+        "retry": {
+          "attempts": 2,
+          "backoff": 10,
+          "codes": [
+            "unavailable"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/flaky"
+        }
+      },
+      "trace": {
+        "attempts": 2,
+        "httpStatus": 200,
+        "code": "ok"
+      },
+      "wire": [
+        {
+          "status": 503
+        },
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode retry skips a method with side effects when idempotentOnly",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ArchiveNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/flaky"
+      },
+      "config": {
+        "retry": {
+          "attempts": 2,
+          "backoff": 10,
+          "codes": [
+            "unavailable"
+          ],
+          "idempotentOnly": true
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "unavailable",
+          "source": "StatusBody"
+        }
+      },
+      "trace": {
+        "attempts": 1,
+        "httpStatus": 503
+      },
+      "wire": [
+        {
+          "status": 503
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode the call after a failure of notes/flaky succeeds",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/flaky"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/flaky"
+        }
+      },
+      "trace": {
+        "attempts": 1
+      }
+    }
+  },
+  {
+    "name": "transcode Rpc.send",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "DeleteNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/tracked"
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "wire": [
+        {
+          "method": "DELETE",
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode Rpc.task",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/tracked"
+      },
+      "send": "task"
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/tracked does not exist",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/tracked"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode binding 0 named",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "binding": 0
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "binding": 0
+      }
+    }
+  },
+  {
+    "name": "transcode binding out of range",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "binding": 1
+    },
+    "expect": {
+      "result": {
+        "runner": "binding 1 is not one notes.v1.NotesService/GetNote has"
+      },
+      "trace": null,
+      "wire": []
+    }
+  },
+  {
+    "name": "transcode binding of a method without a rule",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "transcode",
+      "request": {},
+      "binding": 0
+    },
+    "expect": {
+      "result": {
+        "runner": "binding 0 is not one notes.v1.NotesService/Ping has"
+      },
+      "wire": []
+    }
+  }
+]
