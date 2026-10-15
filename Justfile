@@ -83,9 +83,10 @@ bless:
 # compiled into conformance/live's headless program and run from Node,
 # against the example server over Connect and over transcoding, then the
 # route fixtures against its routes.v1 echo service under Vanguard, then the
-# Connect conformance suite. Not part of `check`: it needs Go and the Buf
-# Schema Registry; CI runs it as its own job. It builds the browser example
-# too, so the README's excerpts of it compile.
+# Connect conformance suite. Not part of `check`: it needs Go, and the
+# network for Go's modules, npm's packages and connectconformance (buf
+# generates from vendored protos); CI runs it as its own job. It builds the
+# browser example too, so the README's excerpts of it compile.
 live: live-gen live-build example-notes-build && live-conformance
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
@@ -139,8 +140,9 @@ live-conformance: live-conformance-gen live-build
 
 # Install the live runner's npm packages as package-lock.json pins them, and
 # regenerate the conformance suite's Elm and JavaScript with buf from its
-# protos on the Buf Schema Registry, failing if they differ from what is
-# committed (or staged). protoc-gen-elm-connect is built as in live-gen.
+# vendored protos (conformance/live/suite/proto), failing if they differ
+# from what is committed (or staged). protoc-gen-elm-connect is built as in
+# live-gen.
 live-conformance-gen:
     cd conformance/live && npm ci --ignore-scripts --no-audit --no-fund
     mkdir -p target/live/bin
@@ -149,6 +151,34 @@ live-conformance-gen:
     cd conformance/live/suite && PATH="$PWD/../../../target/live/bin:$PWD/../node_modules/.bin:$PATH" buf generate
     git diff --exit-code -- conformance/live/suite
     @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
+
+# The Buf Schema Registry modules the vendored protos come from, at the
+# commits they were exported from; protos-refresh re-exports them.
+googleapis_module := "buf.build/googleapis/googleapis:c17df5b2beca46928cc87d5656bd5343" # gitleaks:allow (a BSR commit)
+conformance_module := "buf.build/connectrpc/conformance:d37ba00b58084ea7a4480086db6e4be0" # gitleaks:allow (a BSR commit)
+
+# Re-export the vendored protos from the Buf Schema Registry at the commits
+# above, with their license files: the googleapis files the notes example
+# imports into examples/notes/third_party/googleapis, and the Connect
+# conformance suite's into conformance/live/suite/proto. Each directory's
+# README.md stays; update its commit and date by hand when a pin moves,
+# then run `just live` to regenerate against them.
+protos-refresh:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    buf export {{googleapis_module}} --all -o "$tmp/googleapis" \
+        --path google/api/annotations.proto \
+        --path google/api/http.proto \
+        --path google/rpc/error_details.proto
+    buf export {{conformance_module}} --all -o "$tmp/conformance"
+    dest=examples/notes/third_party/googleapis
+    rm -rf "$dest/google" "$dest/LICENSE"
+    cp -R "$tmp/googleapis/google" "$tmp/googleapis/LICENSE" "$dest/"
+    dest=conformance/live/suite/proto
+    rm -rf "$dest/connectrpc" "$dest/LICENSE"
+    cp -R "$tmp/conformance/connectrpc" "$tmp/conformance/LICENSE" "$dest/"
 
 # Build the notes example: the server, and the browser application into
 # examples/notes/elm/dist (index.html and elm.js, optimized), and compile the

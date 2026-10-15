@@ -164,8 +164,9 @@ live/
                       (none right now)
   fetch-conformance.sh
                       fetches connectconformance at its pinned release
-  suite/              buf.gen.yaml, and the Elm (elm/) and JavaScript (js/)
-                      generated from the suite's protos
+  suite/              buf.yaml and buf.gen.yaml, the suite's protos
+                      (proto/, vendored; README.md: provenance), and the
+                      Elm (elm/) and JavaScript (js/) generated from them
   package.json        @bufbuild/protobuf and protoc-gen-es, pinned with
                       package-lock.json
   build/              the compiled program and connectconformance (gitignored)
@@ -357,8 +358,10 @@ case to fail, so the lists cannot go stale. One test case pattern per line
 `connectconformance` reads only the first `--known-failing` flag it is
 given, so the `sendTraced` run joins the two files in `build/`.
 
-`suite/buf.gen.yaml` generates both from
-`buf.build/connectrpc/conformance` at the commit its v1.0.6 label names;
+`suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's
+protos exported from `buf.build/connectrpc/conformance` at the commit its
+v1.0.6 label names (`just protos-refresh` re-exports them), so generation
+needs no network;
 `just live-conformance-gen` installs the npm packages with `npm ci`,
 regenerates, and fails if the output differs from what is committed.
 ### The route fixtures, live

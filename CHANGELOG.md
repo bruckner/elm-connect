@@ -423,3 +423,10 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `--include-imports` already skipped them; other `google/api` files,
   such as `httpbody.proto`, still generate. `just live-gen` checks the
   notes example under `buf generate --include-imports`.
+- The live suite generates without the network: the googleapis files the
+  notes example imports and the Connect conformance suite's protos are
+  vendored (`examples/notes/third_party/googleapis/`,
+  `conformance/live/suite/proto/`), exported from the Buf Schema Registry
+  at the commits that were pinned, so a cold buf cache no longer depends
+  on the registry being up. `examples/notes/buf.lock` is gone, and `just
+  protos-refresh` re-exports both. The generated code is unchanged.

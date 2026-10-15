@@ -1,11 +1,12 @@
-# The example's protos, and the route fixtures' routes.proto, which the
-# live suite serves too: `routes` links to conformance/routes, since a
-# module cannot sit outside this directory. googleapis comes from the Buf
-# Schema Registry as a dependency, so its files reach the plugins as
-# imports and are not generated.
+# The example's protos; the route fixtures' routes.proto, which the live
+# suite serves too (`routes` links to conformance/routes, since a module
+# cannot sit outside this directory); and the googleapis files they import,
+# vendored under third_party/googleapis (its README.md) so that generation
+# needs no network. The templates generate from `proto` and `routes` only,
+# so googleapis reaches the plugins as imports, except where
+# buf.gen.google-rpc.yaml asks for error_details.proto.
 version: v2
 modules:
   - path: proto
   - path: routes
-deps:
-  - buf.build/googleapis/googleapis
+  - path: third_party/googleapis
