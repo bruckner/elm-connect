@@ -13,6 +13,11 @@
 //
 //   node run.mjs --server http://127.0.0.1:8080 cases/notes.json
 //   node run.mjs --serve path/to/server cases/notes.json   # starts it on a free port
+//   node run.mjs --serve path/to/server --prefix /gateway --transport transcode cases/notes.json
+//
+// --prefix runs the cases against the server's base URL with the prefix
+// added (grpc-gateway's, under /gateway), and --transport only the cases
+// sent over that transport.
 //
 // Formats: conformance/README.md, "Live verification".
 
@@ -131,25 +136,27 @@ export function serve(binary) {
   });
 }
 
-// The envelope of a case: its call with the case's name as id, and the
-// server's URL as the config's baseUrl unless the case gives one, in which
-// "{server}" stands for it.
-export function envelopeOf(c, baseUrl) {
+// The envelope of a case: its call with the case's name as id, and baseUrl
+// as the config's baseUrl unless the case gives one, in which "{server}"
+// stands for the server's URL, without baseUrl's prefix: the canned answers
+// (/status/, /grpc-status/) are the server's, under no transcoder.
+export function envelopeOf(c, baseUrl, server = baseUrl) {
   const config = { ...(c.call.config ?? {}) };
-  config.baseUrl = config.baseUrl === undefined ? baseUrl : config.baseUrl.replaceAll("{server}", baseUrl);
+  config.baseUrl = config.baseUrl === undefined ? baseUrl : config.baseUrl.replaceAll("{server}", server);
   return { id: c.name, ...c.call, config };
 }
 
-// Run the cases of a file in order against baseUrl. Each case is
-// {name, note?, call, expect, skip?}; see envelopeOf for the call.
-export async function runCases(runner, cases, baseUrl, { log = console.log } = {}) {
+// Run the cases of a file in order against baseUrl, the server's URL with
+// a transcoder's prefix if any (envelopeOf). Each case is
+// {name, note?, call, expect, skip?}.
+export async function runCases(runner, cases, baseUrl, { log = console.log, server = baseUrl } = {}) {
   const failed = [];
   for (const c of cases) {
     if (c.skip) {
       log(`skip  ${c.name}: ${c.skip}`);
       continue;
     }
-    const result = await runner.call(envelopeOf(c, baseUrl));
+    const result = await runner.call(envelopeOf(c, baseUrl, server));
     const problems = mismatches(c.expect ?? {}, result);
     if (problems.length === 0) {
       log(`ok    ${c.name}`);
@@ -166,17 +173,19 @@ export async function runCases(runner, cases, baseUrl, { log = console.log } = {
 }
 
 async function main(argv) {
-  const args = { files: [] };
+  const args = { files: [], prefix: "" };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--server") args.server = argv[++i];
     else if (arg === "--serve") args.serve = argv[++i];
     else if (arg === "--elm") args.elm = argv[++i];
     else if (arg === "--print") args.print = true;
+    else if (arg === "--prefix") args.prefix = argv[++i];
+    else if (arg === "--transport") args.transport = argv[++i];
     else args.files.push(arg);
   }
   if ((!args.server && !args.serve) || args.files.length === 0) {
-    console.error("usage: run.mjs (--server URL | --serve BINARY) [--elm build/elm.js] [--print] CASES.json ...");
+    console.error("usage: run.mjs (--server URL | --serve BINARY) [--elm build/elm.js] [--prefix /PATH] [--transport T] [--print] CASES.json ...");
     process.exit(2);
   }
   const server = args.serve ? await serve(args.serve) : { url: args.server, stop: async () => {} };
@@ -184,14 +193,15 @@ async function main(argv) {
   try {
     const runner = await createRunner({ elm: args.elm });
     for (const file of args.files) {
-      const cases = JSON.parse(await readFile(file, "utf8"));
+      const cases = JSON.parse(await readFile(file, "utf8")).filter((c) => !args.transport || c.call.transport === args.transport);
+      const baseUrl = server.url + args.prefix;
       if (args.print) {
         for (const c of cases.filter((c) => !c.skip)) {
-          const result = await runner.call(envelopeOf(c, server.url));
+          const result = await runner.call(envelopeOf(c, baseUrl, server.url));
           console.log(JSON.stringify(result));
         }
       } else {
-        failed = failed.concat(await runCases(runner, cases, server.url));
+        failed = failed.concat(await runCases(runner, cases, baseUrl, { server: server.url }));
       }
     }
   } finally {

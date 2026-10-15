@@ -36,9 +36,11 @@ jobs:
   live:
     # Design section 7, live verification: the runtime against the example
     # server over Connect and transcoding, the route fixtures under Vanguard
-    # and the Connect conformance suite (connectconformance from its GitHub
-    # release), and the browser example's build, which compiles the README's
-    # excerpts. buf generates from vendored protos and fetches nothing.
+    # and grpc-gateway, the Connect conformance suite (connectconformance
+    # from its GitHub release), and the browser example's build, which
+    # compiles the README's excerpts. buf generates from vendored protos and
+    # fetches nothing; the protoc plugins are Go tools, cached with Go's
+    # build cache.
     # Each cache is keyed on what pins its contents, so a change to one pin
     # refetches only that one.
     name: just live (ubuntu-latest)

@@ -1,0 +1,24 @@
+# `buf generate --template buf.gen.gateway.yaml`, run here by `just live-gen`
+# beside buf.gen.yaml: grpc-gateway's reverse proxy for notes.v1 and
+# routes.v1, beside the types in server/gen. generate_unbound_methods serves
+# a method without a rule at its implicit route, POST
+# /<package>.<Service>/<Method> with body "*".
+#
+# protoc-gen-grpc-gateway refuses two bindings of one service with the same
+# verb and path template ("duplicate annotation"), and routes.proto has two:
+# UpdateMessage and UpdateMessageWhole are both PATCH
+# /v1/messages/{message_id}. UpdateMessageWhole is left out here and
+# generated alone by buf.gen.gateway-apart.yaml, for a second gateway mux.
+version: v2
+inputs:
+  - directory: proto
+  - directory: routes
+    exclude_types:
+      - routes.v1.Routes.UpdateMessageWhole
+plugins:
+  - local: protoc-gen-grpc-gateway
+    out: server/gen
+    opt:
+      - module=github.com/bruckner/elm-connect/examples/notes/server/gen
+      - Mroutes.proto=github.com/bruckner/elm-connect/examples/notes/server/gen/routes/v1;routesv1
+      - generate_unbound_methods=true

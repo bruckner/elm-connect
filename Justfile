@@ -82,20 +82,26 @@ bless:
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,
 # against the example server over Connect and over transcoding, then the
-# route fixtures against its routes.v1 echo service under Vanguard, then the
-# Connect conformance suite. Not part of `check`: it needs Go, and the
-# network for Go's modules, npm's packages and connectconformance (buf
-# generates from vendored protos); CI runs it as its own job. It builds the
-# browser example too, so the README's excerpts of it compile.
+# route fixtures against its routes.v1 echo service under Vanguard; then the
+# transcoding cases and the route fixtures again under grpc-gateway, which
+# the server mounts at /gateway; then the Connect conformance suite. Not
+# part of `check`: it needs Go, and the network for Go's modules, npm's
+# packages and connectconformance (buf generates from vendored protos); CI
+# runs it as its own job. It builds the browser example too, so the README's
+# excerpts of it compile.
 live: live-gen live-build example-notes-build && live-conformance
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
-    node conformance/live/routes.mjs --serve target/live/bin/notes-server
+    node conformance/live/routes.mjs --serve target/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
+    node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+    node conformance/live/routes.mjs --serve target/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
 
-# Regenerate the example's Go stubs and Elm client with buf, and fail if
+# Regenerate the example's Go stubs, grpc-gateway's proxies (two templates;
+# buf.gen.gateway.yaml says why) and the Elm client with buf, and fail if
 # they differ from what is committed (or staged). The plugins are built into
-# target/live/bin: protoc-gen-go and protoc-gen-connect-go at the versions the
-# server's go.mod pins, protoc-gen-elm-connect from this workspace.
+# target/live/bin: protoc-gen-go, protoc-gen-connect-go, protoc-gen-go-grpc and
+# protoc-gen-grpc-gateway at the versions the server's go.mod pins,
+# protoc-gen-elm-connect from this workspace.
 #
 # Then generate the Elm again under `buf generate --include-imports`, into
 # target/live/include-imports, and fail unless it is the committed set,
@@ -104,10 +110,12 @@ live: live-gen live-build example-notes-build && live-conformance
 # `google.api.http`, and none for `google/protobuf`.
 live-gen:
     mkdir -p target/live/bin
-    cd examples/notes/server && go build -o ../../../target/live/bin/ google.golang.org/protobuf/cmd/protoc-gen-go connectrpc.com/connect/v2/cmd/protoc-gen-connect-go
+    cd examples/notes/server && go build -o ../../../target/live/bin/ google.golang.org/protobuf/cmd/protoc-gen-go connectrpc.com/connect/v2/cmd/protoc-gen-connect-go google.golang.org/grpc/cmd/protoc-gen-go-grpc github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
     cargo build -p protoc-gen-elm-connect
     cp target/debug/protoc-gen-elm-connect target/live/bin/
     cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate
+    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.gateway.yaml
+    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.gateway-apart.yaml
     cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
     git diff --exit-code -- examples/notes/server/gen examples/notes/elm/generated
     @test -z "$(git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated; exit 1)

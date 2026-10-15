@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // The route fixtures, live: every fixture in conformance/routes/ is sent by
 // the runtime over the Transcode transport to the example server, which
-// serves routes.v1.Routes under Vanguard and echoes each request as Vanguard
+// serves routes.v1.Routes under a transcoder, Vanguard at its root and
+// grpc-gateway under /gateway, and echoes each request as the transcoder
 // decoded it. For each fixture it checks
 //
 //   (a) the request the runtime made: verb, path, query pairs (as sent,
@@ -10,14 +11,20 @@
 //       to the fixture's request, both read as proto3 JSON (normalize);
 //   (c) the runtime's reading of that answer: `ok`, equal to the echo.
 //
-// A fixture Vanguard rejects or echoes differently is recorded in
-// known-divergent.json with Vanguard's answer, and the run stays green
-// while that answer holds; one that starts agreeing fails until its entry
-// is removed. The bindings the server cannot serve beside the others are
-// listed there too, and must match the server's GET /routes/layers.
+// A fixture the transcoder rejects or echoes differently is recorded in its
+// known-divergent file (known-divergent-vanguard.json,
+// known-divergent-gateway.json) with the transcoder's answer, and the run
+// stays green while that answer holds; one that starts agreeing fails until
+// its entry is removed. The bindings the transcoder cannot serve beside the
+// others are listed there too, and must match the server's GET
+// <prefix>/routes/layers. Its probes are requests the runtime does not make
+// (an unknown query parameter, a verb without a route), sent with fetch,
+// whose answers must match the ones recorded, so that where the transcoders
+// differ beyond the fixtures is asserted too.
 //
 //   node routes.mjs --serve path/to/server
 //   node routes.mjs --server http://127.0.0.1:8080
+//   node routes.mjs --serve path/to/server --prefix /gateway --known known-divergent-gateway.json
 //
 // Formats: conformance/README.md, "Live verification".
 
@@ -432,22 +439,43 @@ function sortKeys(v) {
 // RUNNING
 
 // Run every fixture against the server at url. Gives the names that failed.
+// url is the transcoder's: the server's with its prefix, if any.
 export async function runFixtures(runner, url, { log = console.log, known } = {}) {
   const schema = parseProto(await readFile(path.join(routesDir, "routes.proto"), "utf8"));
   const failed = [];
 
   // Where each binding is served, and the bindings served apart, which
-  // must be the ones known-divergent.json lists.
+  // must be the ones the known-divergent file lists.
   const layers = await (await fetch(`${url}/routes/layers`)).json();
   const prefixes = new Map(layers.map((b) => [`${b.method} ${b.binding}`, b.prefix]));
   const apart = layers.filter((b) => b.layer > 0).map((b) => `${b.method} ${b.binding} ${b.prefix}`);
   const listed = known.servedApart.map((b) => `${b.method} ${b.binding} ${b.prefix}`);
   if (JSON.stringify(apart.sort()) !== JSON.stringify(listed.sort())) {
     failed.push("served apart");
-    log(`FAIL  bindings served apart\n        known-divergent.json ${JSON.stringify(listed)}\n        server               ${JSON.stringify(apart)}`);
+    log(`FAIL  bindings served apart\n        known-divergent ${JSON.stringify(listed)}\n        server          ${JSON.stringify(apart)}`);
   } else {
     for (const b of layers.filter((b) => b.layer > 0)) {
       log(`apart ${b.method} binding ${b.binding} under ${b.prefix}: ${b.reason}`);
+    }
+  }
+
+  for (const probe of known.probes ?? []) {
+    const name = `probe: ${probe.name}`;
+    const { method, path: target, body } = probe.request;
+    const res = await fetch(url + target, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+    const text = await res.text();
+    let parsed = text;
+    try {
+      parsed = JSON.parse(text);
+    } catch {}
+    const answer = { status: res.status, body: parsed };
+    const differs = mismatches(probe.observed, answer);
+    if (differs.length > 0) {
+      failed.push(name);
+      log(`FAIL  ${name}\n        answers otherwise than the known-divergent file records`);
+      report(log, differs, answer);
+    } else {
+      log(`ok    ${name}`);
     }
   }
 
@@ -471,16 +499,16 @@ export async function runFixtures(runner, url, { log = console.log, known } = {}
       const { problems, notes } = check(schema, fixture, result, baseUrl);
       const divergence = known.fixtures.find((d) => d.file === file && d.fixture === fixture.name);
       if (divergence) {
-        const differs = mismatches(divergence.vanguard, result);
+        const differs = mismatches(divergence.observed, result);
         if (problems.length === 0) {
           failed.push(name);
-          log(`FAIL  ${name}\n        agrees now: remove it from known-divergent.json`);
+          log(`FAIL  ${name}\n        agrees now: remove it from the known-divergent file`);
         } else if (differs.length > 0) {
           failed.push(name);
-          log(`FAIL  ${name}\n        diverges otherwise than known-divergent.json records`);
+          log(`FAIL  ${name}\n        diverges otherwise than the known-divergent file records`);
           report(log, problems.concat(differs), result);
         } else {
-          log(`known ${name}: see known-divergent.json`);
+          log(`known ${name}: see the known-divergent file`);
         }
       } else if (problems.length === 0) {
         log(`ok    ${name}${prefix ? ` (under ${prefix})` : ""}`);
@@ -503,20 +531,21 @@ function report(log, problems, result) {
 }
 
 async function main(argv) {
-  const args = { known: path.join(here, "known-divergent.json") };
+  const args = { known: path.join(here, "known-divergent-vanguard.json"), prefix: "" };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--server") args.server = argv[++i];
     else if (arg === "--serve") args.serve = argv[++i];
     else if (arg === "--elm") args.elm = argv[++i];
     else if (arg === "--known") args.known = argv[++i];
+    else if (arg === "--prefix") args.prefix = argv[++i];
     else {
       console.error(`unknown argument ${arg}`);
       process.exit(2);
     }
   }
   if (!args.server && !args.serve) {
-    console.error("usage: routes.mjs (--server URL | --serve BINARY) [--elm build/elm.js] [--known known-divergent.json]");
+    console.error("usage: routes.mjs (--server URL | --serve BINARY) [--elm build/elm.js] [--prefix /PATH] [--known known-divergent-vanguard.json]");
     process.exit(2);
   }
   const known = JSON.parse(await readFile(args.known, "utf8"));
@@ -524,7 +553,7 @@ async function main(argv) {
   let failed;
   try {
     const runner = await createRunner({ elm: args.elm });
-    failed = await runFixtures(runner, server.url, { known });
+    failed = await runFixtures(runner, server.url + args.prefix, { known });
   } finally {
     await server.stop();
   }

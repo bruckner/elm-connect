@@ -461,3 +461,15 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - Docs: `-0` is written as `0` (JavaScript's JSON writer has no negative
   zero); design §3.4 and `implicitFloat` said it was written.
 
+- The live suite runs against grpc-gateway (v2.32.0) as well as Vanguard:
+  the notes example's server mounts it under `/gateway`, proxying over
+  gRPC to the same service, and `just live` runs the transcode cases (32
+  pass) and the route fixtures against it (20 agree; 6 diverge, recorded
+  in `conformance/live/known-divergent-gateway.json` with a reading of
+  who is right: among them, the gateway keeps a `FieldMask` query value's
+  paths in their JSON form and its default unescaping splits `%2F` in a
+  single-segment variable). `routes.mjs` and `run.mjs` take `--prefix`,
+  `run.mjs` `--transport`, and Vanguard's file is now
+  `known-divergent-vanguard.json`, its matched answer under `observed`.
+  Both files hold probes, requests the runtime does not make, asserting
+  where the two transcoders answer differently.

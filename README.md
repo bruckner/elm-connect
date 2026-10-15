@@ -368,8 +368,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
 **Live verification.** `just live` runs the runtime, compiled into a
 headless Elm program and driven from Node, against
 [`examples/notes`](examples/notes): a Go server answering over Connect
-(connect-go) and HTTP transcoding (Vanguard) from one port. Every
-method over both transports, errors with details, timeouts, retries and
+(connect-go) and HTTP transcoding (Vanguard, and grpc-gateway under
+`/gateway`) from one port. Every method over both transports, errors with details, timeouts, retries and
 Connect GET and cancellation are covered; [`conformance/README.md`](conformance/README.md)
 has the case format, and CI runs it on every pull request.
 `just live` also runs the official

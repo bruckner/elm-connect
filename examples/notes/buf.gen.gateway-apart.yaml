@@ -1,0 +1,18 @@
+# `buf generate --template buf.gen.gateway-apart.yaml`, run here by `just
+# live-gen` after buf.gen.gateway.yaml: grpc-gateway's proxy for the one
+# routes.v1 method that template leaves out, UpdateMessageWhole, whose route
+# is UpdateMessage's too. standalone puts it in a package of its own,
+# server/gen/routes/v1/apart, importing the types, so that the server can
+# register it on a second gateway mux.
+version: v2
+inputs:
+  - directory: routes
+    types:
+      - routes.v1.Routes.UpdateMessageWhole
+plugins:
+  - local: protoc-gen-grpc-gateway
+    out: server/gen/routes/v1/apart
+    opt:
+      - paths=source_relative
+      - Mroutes.proto=github.com/bruckner/elm-connect/examples/notes/server/gen/routes/v1;routesv1
+      - standalone=true

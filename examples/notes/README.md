@@ -18,7 +18,9 @@ third_party/googleapis/      the googleapis files the API imports (README.md: pr
 buf.gen.yaml                 Go stubs into server/gen, Elm into elm/generated
 buf.gen.google-rpc.yaml      Elm for google.rpc's error details into elm/generated
 buf.gen.include-imports.yaml the Elm of both, run with --include-imports to check it adds nothing
-server/                      the Go server (connect-go and Vanguard); routes.go echoes routes.v1
+buf.gen.gateway.yaml         grpc-gateway's proxies into server/gen
+buf.gen.gateway-apart.yaml   the one routes.v1 method it generates apart
+server/                      the Go server (connect-go, Vanguard and grpc-gateway); routes.go echoes routes.v1
 elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService, Google.Rpc
 elm/src/Main.elm             the application
 elm/src/Api.elm              the one function every call is sent through
@@ -342,6 +344,9 @@ It prints `listening on http://127.0.0.1:8080` and serves:
 | `routes.v1.Routes` at its rules and Connect routes | the route fixtures' service, echoing each request (`server/routes.go`) |
 | `/layer/<n>/…` | the bindings of `routes.v1.Routes` Vanguard will not serve beside the others |
 | `GET /routes/layers` | where each binding of `routes.v1.Routes` is served, as JSON |
+| `/gateway/…` | the rules' routes and `Ping`'s again, under grpc-gateway (below) |
+| `/gateway/layer/1/…` | `routes.v1.Routes.UpdateMessageWhole`, which protoc-gen-grpc-gateway will not generate beside `UpdateMessage` |
+| `GET /gateway/routes/layers` | where each binding of `routes.v1.Routes` is served under `/gateway`, as JSON |
 
 The store is in memory and starts with three notes: `notes/welcome`, with
 every field set, `notes/slow` and `notes/flaky`. Calls naming
@@ -357,3 +362,65 @@ curl -s http://127.0.0.1:8080/v1/notes/welcome
 curl -s -X POST http://127.0.0.1:8080/notes.v1.NotesService/GetNote \
   -H 'Content-Type: application/json' -d '{"name": "notes/welcome"}'
 ```
+
+## Behind grpc-gateway
+
+The server serves the transcoding routes a second time under `/gateway`,
+through [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)
+v2, so the live suite runs the runtime against both transcoders. A client
+of it needs only another `baseUrl`, `http://127.0.0.1:8080/gateway`:
+
+```sh
+curl -s http://127.0.0.1:8080/gateway/v1/notes/welcome
+```
+
+grpc-gateway is a reverse proxy that calls the service over gRPC. buf
+generates its Go: grpc-go's client (`protoc-gen-go-grpc`, in
+`buf.gen.yaml`) and the proxy, with `generate_unbound_methods=true` so
+that `Ping`, which has no rule, is served at its implicit route:
+
+```yaml examples/notes/buf.gen.gateway.yaml
+plugins:
+  - local: protoc-gen-grpc-gateway
+    out: server/gen
+    opt:
+      - module=github.com/bruckner/elm-connect/examples/notes/server/gen
+      - Mroutes.proto=github.com/bruckner/elm-connect/examples/notes/server/gen/routes/v1;routesv1
+      - generate_unbound_methods=true
+```
+
+`server/gateway.go` registers it on a gateway mux over a gRPC connection
+to the server's own address, where connect-go answers, and mounts it with
+the prefix stripped, so the rules' paths are served as written beneath it:
+
+```go examples/notes/server/gateway.go
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	gateway := runtime.NewServeMux()
+	if err := notesv1.RegisterNotesServiceHandler(ctx, gateway, conn); err != nil {
+		return err
+	}
+	if err := routesv1.RegisterRoutesHandler(ctx, gateway, conn); err != nil {
+		return err
+	}
+	mux.Handle(gatewayPrefix+"/", http.StripPrefix(gatewayPrefix, gateway))
+```
+
+gRPC needs HTTP/2, which the server accepts without TLS beside HTTP/1.1:
+
+```go examples/notes/server/main.go
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+```
+
+A service error crosses gRPC with its details, and the gateway writes it
+as a `google.rpc.Status` body, as Vanguard does, so the runtime reads it
+the same way. Where the two transcoders answer differently, an unknown
+query parameter, a `FieldMask` in the query, a `/` in a single-segment
+path variable, among others, is recorded in
+`conformance/live/known-divergent-gateway.json` with a reading of who is
+right.

@@ -202,7 +202,10 @@ live/
   build/              the compiled program and connectconformance (gitignored)
   cases/transcode.json  error bodies over REST, as sent and as read
   routes.mjs          the route fixtures, live (below)
-  known-divergent.json  where Vanguard and the fixtures part
+  known-divergent-vanguard.json
+                      where Vanguard and the fixtures part
+  known-divergent-gateway.json
+                      where grpc-gateway and the fixtures part
   build/              the compiled program (gitignored)
 ```
 
@@ -210,12 +213,18 @@ live/
 just live                                     # regenerate, build, start the server, run
 node conformance/live/run.mjs --server http://127.0.0.1:8080 conformance/live/cases/notes.json
 node conformance/live/run.mjs --serve target/live/bin/notes-server --print conformance/live/cases/notes.json
+node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json
 ```
 
 `just live` regenerates the example with buf and fails if the output
 differs from what is committed, builds the server and `Live.elm`
 (unoptimized), starts the server on a free port and runs the suite.
-`--print` prints each result instead of checking it.
+`--print` prints each result instead of checking it. `--prefix` adds a
+path to the server's URL for the cases' `baseUrl`: the server serves
+transcoding twice, by Vanguard at its root and by grpc-gateway under
+`/gateway`, and `just live` runs the transcoding cases under both.
+`--transport` runs only the cases of one transport; the transcode cases
+of `notes.json` make the notes they change, so they run alone.
 
 An **envelope**, what the runner sends:
 
@@ -312,7 +321,9 @@ A **case file** is a JSON array of cases, run in order:
 ```
 
 `call` is an envelope without `id` (the case's name) whose `baseUrl`
-defaults to the server's, `{server}` standing for it in one given.
+defaults to the server's with `--prefix`, `{server}` standing for the
+server's without it in one given: the canned answers (`/status/<n>/`,
+`/grpc-status/<code>/`) are the server's own, under no transcoder.
 `expect` is matched against the result: an object matches when each of
 its keys does, other keys ignored; an array element by element, with
 the same length; anything else by equality. `{"$match": "<regex>"}`
@@ -398,8 +409,8 @@ regenerates, and fails if the output differs from what is committed.
 
 The example server serves `routes/routes.proto` too
 (`examples/notes/routes` links to `routes/`, so buf generates it with
-the example), each method
-echoing the request Vanguard decoded: the request itself when the
+the example), under Vanguard and under grpc-gateway, each method
+echoing the request the transcoder decoded: the request itself when the
 response is of its type, otherwise the request as proto3 JSON in
 `Message.text` or `Resource.display_name`. `routes.mjs` sends every
 fixture through the runner (`transport` `transcode`, the fixture's
@@ -418,17 +429,28 @@ fixture through the runner (`transport` `transcode`, the fixture's
 - the runtime's `ok`, normalized, equal to the echo.
 
 ```sh
-node conformance/live/routes.mjs --serve target/live/bin/notes-server
+node conformance/live/routes.mjs --serve target/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
+node conformance/live/routes.mjs --serve target/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
 node conformance/live/routes.mjs --server http://127.0.0.1:8080
 ```
 
-Vanguard will not serve two routes for one verb and path, so the
-server serves a binding it refuses on another transcoder under
-`/layer/<n>` (`GET /routes/layers` lists where each binding is), and
-its fixture runs with that prefix on `baseUrl`. `known-divergent.json`
-lists those bindings under `servedApart`, which must equal the
-server's, and under `fixtures` each fixture whose live call disagrees:
-the request (`url`), Vanguard's answer, a `reading` of who is right,
-and `vanguard`, matched against the result as a case's `expect` is.
-A listed fixture passes while that answer holds, and fails once it
-agrees, until its entry is removed.
+Each transcoder has its known-divergent file: Vanguard's
+(`known-divergent-vanguard.json`, the default) and grpc-gateway's
+(`known-divergent-gateway.json`, run with `--prefix /gateway`). Vanguard
+will not serve two routes for one verb and path, and
+protoc-gen-grpc-gateway will not generate two bindings with one verb and
+path template, so the server serves a binding the transcoder refuses on
+another under `<prefix>/layer/<n>` (`GET <prefix>/routes/layers` lists
+where each binding is), and its fixture runs with that prefix on
+`baseUrl`. The file lists those bindings under `servedApart`, which must
+equal the server's; under `fixtures` each fixture whose live call
+disagrees: the request (`url`), the transcoder's `answer`, a `reading` of
+who is right, and `observed`, matched against the result as a case's
+`expect` is; and under `probes` requests the runtime does not make (an
+unknown query parameter, a verb without a route, `PATCH` without an
+update mask), sent with `fetch` as written (`request`: `method`, `path`
+under the prefix, `body`), whose `observed` is matched against `{status,
+body}`, the body parsed as JSON. The probes are the same in both files and
+record where the two transcoders answer differently. A listed fixture
+passes while that answer holds, and fails once it agrees, until its entry
+is removed; a probe fails when its answer changes.

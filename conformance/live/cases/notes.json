@@ -1575,13 +1575,35 @@
     }
   },
   {
+    "name": "transcode CreateNote, for Rpc.send to delete",
+    "note": "The transcode cases make the notes they delete, so that they run alone (run.mjs --transport transcode), as they do under grpc-gateway.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "transcode",
+      "request": {
+        "note": {
+          "name": "notes/sent",
+          "title": "Sent"
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/sent"
+        }
+      }
+    }
+  },
+  {
     "name": "transcode Rpc.send",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
       "transport": "transcode",
       "request": {
-        "name": "notes/tracked"
+        "name": "notes/sent"
       },
       "send": "send"
     },
@@ -1604,7 +1626,7 @@
       "method": "GetNote",
       "transport": "transcode",
       "request": {
-        "name": "notes/tracked"
+        "name": "notes/sent"
       },
       "send": "task"
     },
@@ -1612,7 +1634,7 @@
       "result": {
         "error": {
           "code": "not_found",
-          "message": "notes/tracked does not exist",
+          "message": "notes/sent does not exist",
           "source": "StatusBody",
           "details": [
             {
@@ -1620,7 +1642,7 @@
               "reason": "NOTE_NOT_FOUND",
               "domain": "notes.example.com",
               "metadata": {
-                "name": "notes/tracked"
+                "name": "notes/sent"
               }
             }
           ]
