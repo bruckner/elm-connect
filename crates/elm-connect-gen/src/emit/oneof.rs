@@ -34,10 +34,11 @@ impl Emitter {
         }
     }
 
-    /// `encodeFooKind : FooKind -> List ( String, Json.Encode.Value )`: the
-    /// set member under its JSON name, or nothing when unset, for the
-    /// message's encoder to add to its object. A member of
-    /// `google.protobuf.Empty` encodes as `{}`.
+    /// `encodeFooKind : FooKind -> List ( String, Maybe Json.Encode.Value )`:
+    /// the set member under its JSON name, or nothing when unset, for the
+    /// message's encoder to add to its `Proto.Json.object`. The set member
+    /// is always `Just`, even at its type's default: being set is what a
+    /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
@@ -60,13 +61,13 @@ impl Emitter {
                     pattern,
                     list([Expr::Tuple(vec![
                         string(variant.json_name.clone()),
-                        encoded,
+                        apply(var("Just"), [encoded]),
                     ])]),
                 )
             })
             .collect();
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let pair = Type::Tuple(vec![ty("String", []), value_type]);
+        let pair = Type::Tuple(vec![ty("String", []), ty("Maybe", [value_type])]);
         Decl::Value {
             doc: None,
             name: shape.oneof.encoder_name(),

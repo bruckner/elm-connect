@@ -61,10 +61,13 @@ impl Emitter {
         }
     }
 
-    /// `encodeFoo : Foo -> Json.Encode.Value`: a JSON object with every
-    /// field under its JSON name, followed by the members each oneof's
-    /// encoder gives (none when it is unset). Key order means nothing in
-    /// JSON, so the fields come first, whatever the declaration order.
+    /// `encodeFoo : Foo -> Json.Encode.Value`: `Proto.Json.object` of every
+    /// field under its JSON name, each as a `Maybe Json.Encode.Value` that
+    /// is `Nothing` when the field is left out
+    /// ([`encode_field`](Self::encode_field)), followed by the members
+    /// each oneof's encoder gives (none when it is unset). Key order means
+    /// nothing in JSON, so the fields come first, whatever the declaration
+    /// order.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Decl {
         let pairs: Vec<Expr> = shape
             .fields
@@ -87,7 +90,8 @@ impl Emitter {
             .collect();
         // A message without fields or oneofs has nothing to read from its
         // argument.
-        let param = if pairs.is_empty() && oneofs.is_empty() {
+        let nothing = pairs.is_empty() && oneofs.is_empty();
+        let param = if nothing {
             Pattern::Wildcard
         } else {
             pvar(ENCODER_ARGUMENT)
@@ -101,7 +105,13 @@ impl Emitter {
             .rev()
             .reduce(|right, left| binop(BinOp::Append, left, right))
             .expect("at least the fields' list");
-        let object = self.reference((JSON_ENCODE, "object"));
+        // `Json.Encode.object []` when there is nothing to leave out, so a
+        // module of empty messages needs no `Proto.Json`.
+        let object = if nothing {
+            self.reference((JSON_ENCODE, "object"))
+        } else {
+            self.reference((PROTO_JSON, "object"))
+        };
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
             doc: None,

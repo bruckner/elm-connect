@@ -360,3 +360,18 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   writes; the route fixture and Vanguard now agree on the request, and
   the server reading the messages on the way as set is recorded in
   `conformance/live/known-divergent.json` (design §5.3, §7).
+- Generated encoders leave out every field at its default, as
+  protobuf-go's `protojson` (and so connect-go) does: a field without
+  presence at its zero value (a float only at `0`, so `-0`, NaN and the
+  infinities are written), a `Maybe` when `Nothing` (no more `null`), a
+  list or map when empty. A field with presence is written whenever it
+  is `Just`, at its default too, and so is a oneof's set member; `Value`
+  fields and `Empty` fields (`{}`) are always written. Decoding is
+  unchanged: a missing field reads as its default. Request bodies
+  shrink, and an application comparing encoded JSON as text will see
+  smaller objects. A message encoder is now `Proto.Json.object` over
+  `( String, Maybe Value )` pairs, with the new `Proto.Json.implicit`,
+  `implicitFloat`, `repeated`, `dict` and `boolDict`; a oneof encoder
+  gives `List ( String, Maybe Value )`. `Proto.Json.encodeMaybe` is
+  removed. The Rust route reference serializes with defaults left out
+  too (design §3.4).

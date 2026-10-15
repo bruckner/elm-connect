@@ -412,88 +412,88 @@ encodeVisibility value =
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "title", Json.Encode.string value.title )
-        , ( "visibility", encodeVisibility value.visibility )
-        , ( "tags", Json.Encode.list Json.Encode.string value.tags )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        , ( "visibility", Proto.Json.implicit VisibilityUnspecified encodeVisibility value.visibility )
+        , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
         ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Json.Encode.object [ ( "name", Json.Encode.string value.name ) ]
+    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
 
 
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
 encodeListNotesRequest value =
-    Json.Encode.object
-        [ ( "parent", Json.Encode.string value.parent )
-        , ( "pageSize", Json.Encode.int value.pageSize )
-        , ( "pageToken", Json.Encode.string value.pageToken )
-        , ( "filter", Proto.Json.encodeMaybe encodeListNotesRequestFilter value.filter )
-        , ( "tags", Json.Encode.list Json.Encode.string value.tags )
-        , ( "archived", Proto.Json.encodeMaybe Json.Encode.bool value.archived )
-        , ( "revision", Proto.Json.encodeInt64 value.revision )
+    Proto.Json.object
+        [ ( "parent", Proto.Json.implicit "" Json.Encode.string value.parent )
+        , ( "pageSize", Proto.Json.implicit 0 Json.Encode.int value.pageSize )
+        , ( "pageToken", Proto.Json.implicit "" Json.Encode.string value.pageToken )
+        , ( "filter", Maybe.map encodeListNotesRequestFilter value.filter )
+        , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
+        , ( "archived", Maybe.map Json.Encode.bool value.archived )
+        , ( "revision", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.revision )
         ]
 
 
 encodeListNotesRequestFilter : ListNotesRequestFilter -> Json.Encode.Value
 encodeListNotesRequestFilter value =
-    Json.Encode.object
-        [ ( "visibility", encodeVisibility value.visibility )
-        , ( "since", Proto.Json.encodeMaybe Proto.Json.encodeTimestamp value.since )
+    Proto.Json.object
+        [ ( "visibility", Proto.Json.implicit VisibilityUnspecified encodeVisibility value.visibility )
+        , ( "since", Maybe.map Proto.Json.encodeTimestamp value.since )
         ]
 
 
 encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
 encodeListNotesResponse value =
-    Json.Encode.object
-        [ ( "notes", Json.Encode.list encodeNote value.notes )
-        , ( "nextPageToken", Json.Encode.string value.nextPageToken )
+    Proto.Json.object
+        [ ( "notes", Proto.Json.repeated encodeNote value.notes )
+        , ( "nextPageToken", Proto.Json.implicit "" Json.Encode.string value.nextPageToken )
         ]
 
 
 encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
-    Json.Encode.object
-        [ ( "parent", Json.Encode.string value.parent )
-        , ( "note", Proto.Json.encodeMaybe encodeNote value.note )
+    Proto.Json.object
+        [ ( "parent", Proto.Json.implicit "" Json.Encode.string value.parent )
+        , ( "note", Maybe.map encodeNote value.note )
         ]
 
 
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
-    Json.Encode.object
-        [ ( "note", Proto.Json.encodeMaybe encodeNote value.note )
-        , ( "updateMask", Proto.Json.encodeMaybe Proto.Json.encodeFieldMask value.updateMask )
+    Proto.Json.object
+        [ ( "note", Maybe.map encodeNote value.note )
+        , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
         ]
 
 
 encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
 encodeDeleteNoteRequest value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "force", Json.Encode.bool value.force )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "force", Proto.Json.implicit False Json.Encode.bool value.force )
         ]
 
 
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "reason", Json.Encode.string value.reason )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "reason", Proto.Json.implicit "" Json.Encode.string value.reason )
         ]
 
 
 encodeReadFileRequest : ReadFileRequest -> Json.Encode.Value
 encodeReadFileRequest value =
-    Json.Encode.object [ ( "path", Json.Encode.string value.path ) ]
+    Proto.Json.object [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path ) ]
 
 
 encodeSummary : Summary -> Json.Encode.Value
 encodeSummary value =
-    Json.Encode.object [ ( "text", Json.Encode.string value.text ) ]
+    Proto.Json.object [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text ) ]
 
 
 

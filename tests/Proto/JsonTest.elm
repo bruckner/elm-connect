@@ -16,6 +16,7 @@ suite =
         [ fieldTests
         , fieldEitherTests
         , presenceTests
+        , encodingTests
         , oneofTests
         , enumTests
         , enumOrZeroTests
@@ -136,10 +137,65 @@ presenceTests =
             \_ -> decodes decodeShapes """{"count":null,"tags":null}""" (Shapes Nothing [])
         , test "a null element of a list fails" <|
             \_ -> fails decodeShapes """{"tags":[null]}"""
-        , test "encodeMaybe encodes a value" <|
-            \_ -> encodesTo (Proto.Json.encodeMaybe Json.Encode.int (Just 3)) "3"
-        , test "encodeMaybe encodes Nothing as null" <|
-            \_ -> encodesTo (Proto.Json.encodeMaybe Json.Encode.int Nothing) "null"
+        ]
+
+
+encodingTests : Test
+encodingTests =
+    let
+        object fields =
+            Proto.Json.object [ ( "f", fields ) ]
+    in
+    describe "encoding fields"
+        [ test "object leaves out the fields given Nothing, in order otherwise" <|
+            \_ ->
+                encodesTo
+                    (Proto.Json.object
+                        [ ( "a", Just (Json.Encode.int 1) )
+                        , ( "b", Nothing )
+                        , ( "c", Just Json.Encode.null )
+                        ]
+                    )
+                    """{"a":1,"c":null}"""
+        , test "implicit leaves out the default" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> encodesTo (object (Proto.Json.implicit "" Json.Encode.string "")) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicit 0 Json.Encode.int 0)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicit "0" Proto.Json.encodeInt64 "0")) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicit False Json.Encode.bool False)) "{}"
+                    ]
+                    ()
+        , test "implicit writes any other value" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> encodesTo (object (Proto.Json.implicit "" Json.Encode.string " ")) """{"f":" "}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicit 0 Json.Encode.int -1)) """{"f":-1}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicit "0" Proto.Json.encodeInt64 "9007199254740993")) """{"f":"9007199254740993"}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicit False Json.Encode.bool True)) """{"f":true}"""
+                    ]
+                    ()
+        , test "implicitFloat leaves out only 0" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> encodesTo (object (Proto.Json.implicitFloat 0)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloat 1.5)) """{"f":1.5}"""
+                    , \_ -> Expect.notEqual Nothing (Proto.Json.implicitFloat (0 * -1))
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloat (0 / 0))) """{"f":"NaN"}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloat (-1 / 0))) """{"f":"-Infinity"}"""
+                    ]
+                    ()
+        , test "repeated, dict and boolDict leave out the empty" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> encodesTo (object (Proto.Json.repeated Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.repeated Json.Encode.int [ 0 ])) """{"f":[0]}"""
+                    , \_ -> encodesTo (object (Proto.Json.dict String.fromInt Json.Encode.int Dict.empty)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.dict String.fromInt Json.Encode.int (Dict.singleton 1 0))) """{"f":{"1":0}}"""
+                    , \_ -> encodesTo (object (Proto.Json.boolDict Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.boolDict Json.Encode.int [ ( True, 0 ) ])) """{"f":{"true":0}}"""
+                    ]
+                    ()
         ]
 
 

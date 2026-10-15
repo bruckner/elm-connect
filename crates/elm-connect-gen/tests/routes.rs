@@ -196,11 +196,13 @@ fn base64(bytes: &[u8]) -> String {
     out
 }
 
+/// `message` as proto3 JSON, as the generated encoders write it: fields at
+/// their defaults left out.
 fn to_json(message: &DynamicMessage) -> Json {
     message
         .serialize_with_options(
             serde_json::value::Serializer,
-            &SerializeOptions::new().skip_default_fields(false),
+            &SerializeOptions::new().skip_default_fields(true),
         )
         .expect("serialize")
 }

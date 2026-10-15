@@ -107,7 +107,8 @@ Vanguard). `request` is proto3 JSON. `path`
 percent-encoded; `headers`, optional and `[]` when absent, are those
 the route itself adds; `body` is JSON or `null` for none.
 Bodies compare after dropping `null`s and default values, which a writer
-may omit or spell out. Nothing in a fixture is specific to this client,
+may omit or spell out; the fixtures write them as the generated encoders
+and the Rust reference do, defaults left out. Nothing in a fixture is specific to this client,
 so a server-side implementation can check itself against the same file.
 
 `crates/elm-connect-gen/tests/routes.rs` holds both ends to them:

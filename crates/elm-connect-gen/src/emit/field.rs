@@ -105,7 +105,7 @@ pub(super) enum Present<'p> {
     /// cycle of record fields ([`Field::cyclic`]).
     Wrapped(&'p Wrapper),
     /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
-    /// is `null` on the wire when unset.
+    /// is left out of the JSON when unset.
     Wrapper(Repr),
     /// `google.protobuf.Timestamp`: `Time.Posix`.
     Timestamp,
@@ -171,34 +171,54 @@ impl Emitter {
         }
     }
 
-    /// The JSON of a field whose Elm value is `value`.
+    /// The JSON of a field whose Elm value is `value`, as a
+    /// `Maybe Json.Encode.Value` for `Proto.Json.object`: `Nothing` when
+    /// the field is left out (design §3.2). A field without presence is
+    /// left out at its proto3 default, a field with presence when
+    /// `Nothing`, a repeated or map field when empty. A field of
+    /// `google.protobuf.Value` is always written, since `null` is one of
+    /// its values, and so is one of `google.protobuf.Empty`, as `{}`: Elm
+    /// holds it as `()`, without the presence its proto type has, and
+    /// writing it keeps it set (design §3.5).
     pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
-        let encoder = match shape {
+        let (helper, args) = match shape {
+            FieldShape::Plain(zeroed @ (Zeroed::Json | Zeroed::Empty)) => {
+                let encoded = self.encode_value(ValueShape::Zeroed(zeroed), value);
+                return apply(var("Just"), [encoded]);
+            }
+            FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
+                return apply(self.reference((PROTO_JSON, "implicitFloat")), [value]);
+            }
             FieldShape::Plain(zeroed) => {
-                return self.encode_value(ValueShape::Zeroed(zeroed), value);
+                let zero = self.field_default(shape);
+                let encoder = self.value_encoder(ValueShape::Zeroed(zeroed));
+                (
+                    self.reference((PROTO_JSON, "implicit")),
+                    vec![zero, encoder],
+                )
             }
             FieldShape::Maybe(inner) => {
-                let inner = self.value_encoder(inner);
-                apply(self.reference((PROTO_JSON, "encodeMaybe")), [inner])
+                let encoder = self.value_encoder(inner);
+                (qualified("Maybe", "map"), vec![encoder])
             }
             FieldShape::List(inner) => {
-                let inner = self.value_encoder(inner);
-                apply(self.reference((JSON_ENCODE, "list")), [inner])
+                let encoder = self.value_encoder(inner);
+                (self.reference((PROTO_JSON, "repeated")), vec![encoder])
             }
             FieldShape::Dict(key, inner) => {
-                let inner = self.value_encoder(inner);
+                let encoder = self.value_encoder(inner);
                 let key = match key {
                     KeyShape::String => var("identity"),
                     KeyShape::Int => qualified(CORE_STRING, "fromInt"),
                 };
-                apply(self.reference((JSON_ENCODE, "dict")), [key, inner])
+                (self.reference((PROTO_JSON, "dict")), vec![key, encoder])
             }
             FieldShape::BoolMap(inner) => {
-                let inner = self.value_encoder(inner);
-                apply(self.reference((PROTO_JSON, "encodeBoolMap")), [inner])
+                let encoder = self.value_encoder(inner);
+                (self.reference((PROTO_JSON, "boolDict")), vec![encoder])
             }
         };
-        call(encoder, [value])
+        apply(helper, args.into_iter().chain([value]))
     }
 
     /// The decoder of a field, and the value an absent or `null` field

@@ -94,15 +94,15 @@ registry =
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Json.Encode.object
-        [ ( "title", Json.Encode.string value.title )
-        , ( "tags", Json.Encode.list encodeTag value.tags )
+    Proto.Json.object
+        [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        , ( "tags", Proto.Json.repeated encodeTag value.tags )
         ]
 
 
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
-    Json.Encode.object [ ( "label", Json.Encode.string value.label ) ]
+    Proto.Json.object [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label ) ]
 
 
 
