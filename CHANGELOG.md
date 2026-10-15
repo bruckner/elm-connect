@@ -473,3 +473,6 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   `known-divergent-vanguard.json`, its matched answer under `observed`.
   Both files hold probes, requests the runtime does not make, asserting
   where the two transcoders answer differently.
+- The notes example's transport selector gains a third choice, HTTP
+  transcoding via grpc-gateway, which sends the same calls to the
+  server's `/gateway`.

@@ -243,16 +243,33 @@ an application that does would add.
 
 ## The transport toggle
 
-The toggle changes the transport in `Shared`, and every call after it,
-from the same generated code, goes over the other wire form:
+The toggle sets the transport in `Shared`, and the API's URL with it:
+the server's own origin for Connect and for Vanguard's transcoding, the
+`/gateway` beneath it for grpc-gateway's. Every call after it, from the
+same generated code, goes over the other wire form:
 
 ```elm examples/notes/elm/src/Main.elm#toggle
-SetTransport transport ->
+SetWire wire ->
     let
         shared =
             model.shared
+
+        ( transport, path ) =
+            case wire of
+                ViaConnect ->
+                    ( Rpc.connect, "" )
+
+                ViaVanguard ->
+                    ( Rpc.Transcode, "" )
+
+                ViaGateway ->
+                    ( Rpc.Transcode, "/gateway" )
     in
-    list { model | shared = { shared | transport = transport } }
+    list
+        { model
+            | wire = wire
+            , shared = { shared | transport = transport, apiUrl = model.origin ++ path }
+        }
 ```
 
 ## The update mask
@@ -368,7 +385,9 @@ curl -s -X POST http://127.0.0.1:8080/notes.v1.NotesService/GetNote \
 The server serves the transcoding routes a second time under `/gateway`,
 through [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)
 v2, so the live suite runs the runtime against both transcoders. A client
-of it needs only another `baseUrl`, `http://127.0.0.1:8080/gateway`:
+of it needs only another `baseUrl`, `http://127.0.0.1:8080/gateway`; the
+page's third transport choice, "HTTP transcoding via grpc-gateway", is
+that URL (the toggle, above):
 
 ```sh
 curl -s http://127.0.0.1:8080/gateway/v1/notes/welcome
