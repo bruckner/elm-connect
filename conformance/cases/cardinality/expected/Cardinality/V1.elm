@@ -127,25 +127,25 @@ registry =
 
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
-    Json.Encode.object [ ( "name", Json.Encode.string value.name ) ]
+    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
 
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Json.Encode.object
-        [ ( "subtitle", Proto.Json.encodeMaybe Json.Encode.string value.subtitle )
-        , ( "stars", Proto.Json.encodeMaybe Json.Encode.int value.stars )
-        , ( "score", Proto.Json.encodeMaybe Proto.Json.encodeFloat value.score )
-        , ( "views", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.views )
-        , ( "author", Proto.Json.encodeMaybe encodeAuthor value.author )
-        , ( "editor", Proto.Json.encodeMaybe encodeAuthor value.editor )
-        , ( "tags", Json.Encode.list Json.Encode.string value.tags )
-        , ( "counts", Json.Encode.list Json.Encode.int value.counts )
-        , ( "weights", Json.Encode.list Proto.Json.encodeFloat value.weights )
-        , ( "reviewers", Json.Encode.list encodeAuthor value.reviewers )
-        , ( "title", Json.Encode.string value.title )
-        , ( "relatedLinks", Json.Encode.list Json.Encode.string value.relatedLinks )
-        , ( "isDraft", Proto.Json.encodeMaybe Json.Encode.bool value.isDraft )
+    Proto.Json.object
+        [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
+        , ( "stars", Maybe.map Json.Encode.int value.stars )
+        , ( "score", Maybe.map Proto.Json.encodeFloat value.score )
+        , ( "views", Maybe.map Proto.Json.encodeInt64 value.views )
+        , ( "author", Maybe.map encodeAuthor value.author )
+        , ( "editor", Maybe.map encodeAuthor value.editor )
+        , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
+        , ( "counts", Proto.Json.repeated Json.Encode.int value.counts )
+        , ( "weights", Proto.Json.repeated Proto.Json.encodeFloat value.weights )
+        , ( "reviewers", Proto.Json.repeated encodeAuthor value.reviewers )
+        , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        , ( "relatedLinks", Proto.Json.repeated Json.Encode.string value.relatedLinks )
+        , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
         ]
 
 

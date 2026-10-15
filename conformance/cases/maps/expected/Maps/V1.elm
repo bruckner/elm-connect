@@ -150,22 +150,22 @@ encodeRole value =
 
 encodeMember : Member -> Json.Encode.Value
 encodeMember value =
-    Json.Encode.object [ ( "name", Json.Encode.string value.name ) ]
+    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
 
 
 encodeTeam : Team -> Json.Encode.Value
 encodeTeam value =
-    Json.Encode.object
-        [ ( "labels", Json.Encode.dict identity Json.Encode.string value.labels )
-        , ( "bySeat", Json.Encode.dict String.fromInt Json.Encode.string value.bySeat )
-        , ( "scores", Json.Encode.dict String.fromInt Proto.Json.encodeFloat value.scores )
-        , ( "flags", Json.Encode.dict String.fromInt Json.Encode.bool value.flags )
-        , ( "totals", Json.Encode.dict String.fromInt Proto.Json.encodeInt64 value.totals )
-        , ( "byId", Json.Encode.dict identity Json.Encode.string value.byId )
-        , ( "counts", Json.Encode.dict identity Json.Encode.int value.counts )
-        , ( "members", Json.Encode.dict identity encodeMember value.members )
-        , ( "roles", Json.Encode.dict String.fromInt encodeRole value.roles )
-        , ( "byFlag", Proto.Json.encodeBoolMap Json.Encode.string value.byFlag )
+    Proto.Json.object
+        [ ( "labels", Proto.Json.dict identity Json.Encode.string value.labels )
+        , ( "bySeat", Proto.Json.dict String.fromInt Json.Encode.string value.bySeat )
+        , ( "scores", Proto.Json.dict String.fromInt Proto.Json.encodeFloat value.scores )
+        , ( "flags", Proto.Json.dict String.fromInt Json.Encode.bool value.flags )
+        , ( "totals", Proto.Json.dict String.fromInt Proto.Json.encodeInt64 value.totals )
+        , ( "byId", Proto.Json.dict identity Json.Encode.string value.byId )
+        , ( "counts", Proto.Json.dict identity Json.Encode.int value.counts )
+        , ( "members", Proto.Json.dict identity encodeMember value.members )
+        , ( "roles", Proto.Json.dict String.fromInt encodeRole value.roles )
+        , ( "byFlag", Proto.Json.boolDict Json.Encode.string value.byFlag )
         ]
 
 

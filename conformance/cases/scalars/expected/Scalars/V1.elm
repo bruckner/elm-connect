@@ -137,24 +137,24 @@ registry =
 
 encodeScalars : Scalars -> Json.Encode.Value
 encodeScalars value =
-    Json.Encode.object
-        [ ( "doubleValue", Proto.Json.encodeFloat value.doubleValue )
-        , ( "floatValue", Proto.Json.encodeFloat value.floatValue )
-        , ( "int32Value", Json.Encode.int value.int32Value )
-        , ( "int64Value", Proto.Json.encodeInt64 value.int64Value )
-        , ( "uint32Value", Json.Encode.int value.uint32Value )
-        , ( "uint64Value", Proto.Json.encodeInt64 value.uint64Value )
-        , ( "sint32Value", Json.Encode.int value.sint32Value )
-        , ( "sint64Value", Proto.Json.encodeInt64 value.sint64Value )
-        , ( "fixed32Value", Json.Encode.int value.fixed32Value )
-        , ( "fixed64Value", Proto.Json.encodeInt64 value.fixed64Value )
-        , ( "sfixed32Value", Json.Encode.int value.sfixed32Value )
-        , ( "sfixed64Value", Proto.Json.encodeInt64 value.sfixed64Value )
-        , ( "boolValue", Json.Encode.bool value.boolValue )
-        , ( "text", Json.Encode.string value.stringValue )
-        , ( "bytesValue", Proto.Json.encodeBytes value.bytesValue )
-        , ( "smallCount", Proto.Json.encodeInt64AsInt value.smallCount )
-        , ( "exactTotal", Proto.Json.encodeInt64 value.exactTotal )
+    Proto.Json.object
+        [ ( "doubleValue", Proto.Json.implicitFloat value.doubleValue )
+        , ( "floatValue", Proto.Json.implicitFloat value.floatValue )
+        , ( "int32Value", Proto.Json.implicit 0 Json.Encode.int value.int32Value )
+        , ( "int64Value", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.int64Value )
+        , ( "uint32Value", Proto.Json.implicit 0 Json.Encode.int value.uint32Value )
+        , ( "uint64Value", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.uint64Value )
+        , ( "sint32Value", Proto.Json.implicit 0 Json.Encode.int value.sint32Value )
+        , ( "sint64Value", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.sint64Value )
+        , ( "fixed32Value", Proto.Json.implicit 0 Json.Encode.int value.fixed32Value )
+        , ( "fixed64Value", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.fixed64Value )
+        , ( "sfixed32Value", Proto.Json.implicit 0 Json.Encode.int value.sfixed32Value )
+        , ( "sfixed64Value", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.sfixed64Value )
+        , ( "boolValue", Proto.Json.implicit False Json.Encode.bool value.boolValue )
+        , ( "text", Proto.Json.implicit "" Json.Encode.string value.stringValue )
+        , ( "bytesValue", Proto.Json.implicit "" Proto.Json.encodeBytes value.bytesValue )
+        , ( "smallCount", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.smallCount )
+        , ( "exactTotal", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.exactTotal )
         ]
 
 

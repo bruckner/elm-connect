@@ -352,6 +352,29 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   and compiled by `just live`; the `Any` example, which built a `Note`
   from two fields it does not have, is fixed. The `live` CI job caches npm, Elm and
   `connectconformance` as well as Go and buf.
+- A path variable the request's JSON has no value for, such as one
+  under an unset message, is sent as the field's proto3 default (`0`,
+  `false`, an enum's zero name) instead of an empty segment, which a
+  server parsing it as a number or enum rejects. `Proto.Http.variable`
+  takes the default's text as a third argument, which the generator
+  writes; the route fixture and Vanguard now agree on the request, and
+  the server reading the messages on the way as set is recorded in
+  `conformance/live/known-divergent.json` (design §5.3, §7).
+- Generated encoders leave out every field at its default, as
+  protobuf-go's `protojson` (and so connect-go) does: a field without
+  presence at its zero value (a float only at `0`, so `-0`, NaN and the
+  infinities are written), a `Maybe` when `Nothing` (no more `null`), a
+  list or map when empty. A field with presence is written whenever it
+  is `Just`, at its default too, and so is a oneof's set member; `Value`
+  fields and `Empty` fields (`{}`) are always written. Decoding is
+  unchanged: a missing field reads as its default. Request bodies
+  shrink, and an application comparing encoded JSON as text will see
+  smaller objects. A message encoder is now `Proto.Json.object` over
+  `( String, Maybe Value )` pairs, with the new `Proto.Json.implicit`,
+  `implicitFloat`, `repeated`, `dict` and `boolDict`; a oneof encoder
+  gives `List ( String, Maybe Value )`. `Proto.Json.encodeMaybe` is
+  removed. The Rust route reference serializes with defaults left out
+  too (design §3.4).
 - `Rpc.Trace` gains `headers` and `trailers`: the last answer's response
   metadata, split as a Connect unary answer carries it, trailers being
   the headers named `trailer-<name>`; names are lowercased and a

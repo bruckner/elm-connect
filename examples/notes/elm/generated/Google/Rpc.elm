@@ -472,110 +472,110 @@ registry =
 
 encodeErrorInfo : ErrorInfo -> Json.Encode.Value
 encodeErrorInfo value =
-    Json.Encode.object
-        [ ( "reason", Json.Encode.string value.reason )
-        , ( "domain", Json.Encode.string value.domain )
-        , ( "metadata", Json.Encode.dict identity Json.Encode.string value.metadata )
+    Proto.Json.object
+        [ ( "reason", Proto.Json.implicit "" Json.Encode.string value.reason )
+        , ( "domain", Proto.Json.implicit "" Json.Encode.string value.domain )
+        , ( "metadata", Proto.Json.dict identity Json.Encode.string value.metadata )
         ]
 
 
 encodeRetryInfo : RetryInfo -> Json.Encode.Value
 encodeRetryInfo value =
-    Json.Encode.object [ ( "retryDelay", Proto.Json.encodeMaybe Proto.Json.encodeDuration value.retryDelay ) ]
+    Proto.Json.object [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay ) ]
 
 
 encodeDebugInfo : DebugInfo -> Json.Encode.Value
 encodeDebugInfo value =
-    Json.Encode.object
-        [ ( "stackEntries", Json.Encode.list Json.Encode.string value.stackEntries )
-        , ( "detail", Json.Encode.string value.detail )
+    Proto.Json.object
+        [ ( "stackEntries", Proto.Json.repeated Json.Encode.string value.stackEntries )
+        , ( "detail", Proto.Json.implicit "" Json.Encode.string value.detail )
         ]
 
 
 encodeQuotaFailure : QuotaFailure -> Json.Encode.Value
 encodeQuotaFailure value =
-    Json.Encode.object [ ( "violations", Json.Encode.list encodeQuotaFailureViolation value.violations ) ]
+    Proto.Json.object [ ( "violations", Proto.Json.repeated encodeQuotaFailureViolation value.violations ) ]
 
 
 encodeQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
 encodeQuotaFailureViolation value =
-    Json.Encode.object
-        [ ( "subject", Json.Encode.string value.subject )
-        , ( "description", Json.Encode.string value.description )
-        , ( "apiService", Json.Encode.string value.apiService )
-        , ( "quotaMetric", Json.Encode.string value.quotaMetric )
-        , ( "quotaId", Json.Encode.string value.quotaId )
-        , ( "quotaDimensions", Json.Encode.dict identity Json.Encode.string value.quotaDimensions )
-        , ( "quotaValue", Proto.Json.encodeInt64 value.quotaValue )
-        , ( "futureQuotaValue", Proto.Json.encodeMaybe Proto.Json.encodeInt64 value.futureQuotaValue )
+    Proto.Json.object
+        [ ( "subject", Proto.Json.implicit "" Json.Encode.string value.subject )
+        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
+        , ( "apiService", Proto.Json.implicit "" Json.Encode.string value.apiService )
+        , ( "quotaMetric", Proto.Json.implicit "" Json.Encode.string value.quotaMetric )
+        , ( "quotaId", Proto.Json.implicit "" Json.Encode.string value.quotaId )
+        , ( "quotaDimensions", Proto.Json.dict identity Json.Encode.string value.quotaDimensions )
+        , ( "quotaValue", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.quotaValue )
+        , ( "futureQuotaValue", Maybe.map Proto.Json.encodeInt64 value.futureQuotaValue )
         ]
 
 
 encodePreconditionFailure : PreconditionFailure -> Json.Encode.Value
 encodePreconditionFailure value =
-    Json.Encode.object [ ( "violations", Json.Encode.list encodePreconditionFailureViolation value.violations ) ]
+    Proto.Json.object [ ( "violations", Proto.Json.repeated encodePreconditionFailureViolation value.violations ) ]
 
 
 encodePreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
 encodePreconditionFailureViolation value =
-    Json.Encode.object
-        [ ( "type", Json.Encode.string value.type_ )
-        , ( "subject", Json.Encode.string value.subject )
-        , ( "description", Json.Encode.string value.description )
+    Proto.Json.object
+        [ ( "type", Proto.Json.implicit "" Json.Encode.string value.type_ )
+        , ( "subject", Proto.Json.implicit "" Json.Encode.string value.subject )
+        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
         ]
 
 
 encodeBadRequest : BadRequest -> Json.Encode.Value
 encodeBadRequest value =
-    Json.Encode.object [ ( "fieldViolations", Json.Encode.list encodeBadRequestFieldViolation value.fieldViolations ) ]
+    Proto.Json.object [ ( "fieldViolations", Proto.Json.repeated encodeBadRequestFieldViolation value.fieldViolations ) ]
 
 
 encodeBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
 encodeBadRequestFieldViolation value =
-    Json.Encode.object
-        [ ( "field", Json.Encode.string value.field )
-        , ( "description", Json.Encode.string value.description )
-        , ( "reason", Json.Encode.string value.reason )
-        , ( "localizedMessage", Proto.Json.encodeMaybe encodeLocalizedMessage value.localizedMessage )
+    Proto.Json.object
+        [ ( "field", Proto.Json.implicit "" Json.Encode.string value.field )
+        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
+        , ( "reason", Proto.Json.implicit "" Json.Encode.string value.reason )
+        , ( "localizedMessage", Maybe.map encodeLocalizedMessage value.localizedMessage )
         ]
 
 
 encodeRequestInfo : RequestInfo -> Json.Encode.Value
 encodeRequestInfo value =
-    Json.Encode.object
-        [ ( "requestId", Json.Encode.string value.requestId )
-        , ( "servingData", Json.Encode.string value.servingData )
+    Proto.Json.object
+        [ ( "requestId", Proto.Json.implicit "" Json.Encode.string value.requestId )
+        , ( "servingData", Proto.Json.implicit "" Json.Encode.string value.servingData )
         ]
 
 
 encodeResourceInfo : ResourceInfo -> Json.Encode.Value
 encodeResourceInfo value =
-    Json.Encode.object
-        [ ( "resourceType", Json.Encode.string value.resourceType )
-        , ( "resourceName", Json.Encode.string value.resourceName )
-        , ( "owner", Json.Encode.string value.owner )
-        , ( "description", Json.Encode.string value.description )
+    Proto.Json.object
+        [ ( "resourceType", Proto.Json.implicit "" Json.Encode.string value.resourceType )
+        , ( "resourceName", Proto.Json.implicit "" Json.Encode.string value.resourceName )
+        , ( "owner", Proto.Json.implicit "" Json.Encode.string value.owner )
+        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
         ]
 
 
 encodeHelp : Help -> Json.Encode.Value
 encodeHelp value =
-    Json.Encode.object [ ( "links", Json.Encode.list encodeHelpLink value.links ) ]
+    Proto.Json.object [ ( "links", Proto.Json.repeated encodeHelpLink value.links ) ]
 
 
 encodeHelpLink : HelpLink -> Json.Encode.Value
 encodeHelpLink value =
-    Json.Encode.object
-        [ ( "description", Json.Encode.string value.description )
-        , ( "url", Json.Encode.string value.url )
+    Proto.Json.object
+        [ ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
+        , ( "url", Proto.Json.implicit "" Json.Encode.string value.url )
         ]
 
 
 encodeLocalizedMessage : LocalizedMessage -> Json.Encode.Value
 encodeLocalizedMessage value =
-    Json.Encode.object
-        [ ( "locale", Json.Encode.string value.locale )
-        , ( "message", Json.Encode.string value.message )
+    Proto.Json.object
+        [ ( "locale", Proto.Json.implicit "" Json.Encode.string value.locale )
+        , ( "message", Proto.Json.implicit "" Json.Encode.string value.message )
         ]
 
 
