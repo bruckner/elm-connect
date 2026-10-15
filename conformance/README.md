@@ -21,10 +21,10 @@ cases/<case>/
 A case expects either modules or `diagnostics.txt`, never both. Inputs are
 compiled with protox, with `input/` and `include/` as the include paths,
 and every file under `input/` is requested; nothing under `include/` is.
-A package the requested ones refer to is generated all the same, as the
-closure (design §3.1), so an `include/` file can still have modules in
-`expected/` (`packages_closure` case). Without `options.txt` a case is generated with the default
-options.
+A requested package is generated whole (design §3.1), so an `include/`
+file of a requested package is in its module (`packages_whole` case);
+one of any other package is not generated. Without `options.txt` a
+case is generated with the default options.
 
 ## The checks
 

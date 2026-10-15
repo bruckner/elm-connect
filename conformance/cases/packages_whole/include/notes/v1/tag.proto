@@ -1,0 +1,8 @@
+// Compiled but not requested; its package is, so it is generated.
+syntax = "proto3";
+
+package notes.v1;
+
+message Tag {
+  string label = 1;
+}
