@@ -1800,7 +1800,13 @@ live: `taskFromRequest` with a rewritten request (§5.2),
 
 Recorded for later: documented and verified examples for Envoy's
 gRPC-JSON transcoder and grpc-gateway in front of the same service,
-each run by the live suite.
+each run by the live suite. And a pass of small, well-documented
+examples for learning from (medium priority, 2026-10-15): the notes
+example was meant to double as the implementation to consult, and
+serves verification well, but carrying both transports, the error
+panel and the live suite's needs makes it too much to learn from
+first; teaching wants a few short examples that each show one thing,
+kept compiling the same way.
 
 ## 8. Compatibility and versioning
 
