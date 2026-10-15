@@ -95,6 +95,12 @@ live: live-gen live-build example-notes-build && live-conformance
 # they differ from what is committed (or staged). The plugins are built into
 # target/live/bin: protoc-gen-go and protoc-gen-connect-go at the versions the
 # server's go.mod pins, protoc-gen-elm-connect from this workspace.
+#
+# Then generate the Elm again under `buf generate --include-imports`, into
+# target/live/include-imports, and fail unless it is the committed set,
+# file for file. This proves the plugin, asked for every import, generates
+# no `Google.Api` module from the googleapis files that only carry
+# `google.api.http`, and none for `google/protobuf`.
 live-gen:
     mkdir -p target/live/bin
     cd examples/notes/server && go build -o ../../../target/live/bin/ google.golang.org/protobuf/cmd/protoc-gen-go connectrpc.com/connect/v2/cmd/protoc-gen-connect-go
@@ -104,6 +110,9 @@ live-gen:
     cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
     git diff --exit-code -- examples/notes/server/gen examples/notes/elm/generated
     @test -z "$(git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated; exit 1)
+    rm -rf target/live/include-imports
+    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --include-imports --template buf.gen.include-imports.yaml -o ../../target/live/include-imports
+    diff -r target/live/include-imports/elm/generated examples/notes/elm/generated
 
 # Build the example server and the live runner's Elm program. The bare
 # `elm make` resolves dependencies first, as in elm-check.

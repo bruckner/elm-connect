@@ -255,6 +255,19 @@ rpc shared call =
   `google.protobuf` is never generated as a package: its supported
   types map to the runtime (§3.5), and the rest are
   `types::unsupported_well_known`.
+  Nor are the two googleapis files that declare `google.api.http`,
+  `google/api/http.proto` and `google/api/annotations.proto`, the ones
+  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`
+  is the one test both binaries use). The plugin drops them from
+  `file_to_generate`, and the CLI's `--include-imports` never adds
+  them. Why: they are options plumbing, not API types, and `buf
+  generate --include-imports` asks for every import, so every API with
+  HTTP rules would otherwise get a `Google.Api` module of `Http`,
+  `HttpRule` and `CustomHttpPattern` that nothing refers to. The rule
+  is by file name and no wider: other `google/api` files, such as
+  `httpbody.proto`, declare types APIs take and return, and generate
+  when asked for. `just live-gen` runs the notes example under `buf
+  generate --include-imports` and checks it gives the committed files.
   Why not generate the closure by default: a protoc plugin generates
   `file_to_generate` and resolves the rest from `proto_file`, and buf
   already offers the closure as an opt-in (`--include-imports`, and
@@ -1708,7 +1721,8 @@ both the plain names.
   named after buf's: the CLI also requests every file the named ones
   import, transitively, that declares a message, enum or service, bar
   `google/protobuf/*` (the runtime's) and the googleapis files the CLI
-  embeds for `google.api.http`. Off by default, so the CLI generates
+  embeds for `google.api.http`, which the plugin skips among its files
+  to generate too (§3.1). Off by default, so the CLI generates
   what protoc and buf generate from the same files (§3.1). It is the
   CLI's driver choosing the generate set, not a generator option:
   protoc and buf choose it themselves, and the plugin cannot widen it.
@@ -1811,7 +1825,11 @@ Decisions:
   which is the implicit route (§5.3).
 - buf generates the example, so the plugin runs under buf for real:
   googleapis is a Buf Schema Registry dependency, its files reach the
-  plugin as imports only, and nothing is generated for them.
+  plugin as imports only, and nothing is generated for them. `just
+  live-gen` also generates the Elm under `buf generate
+  --include-imports` (`buf.gen.include-imports.yaml`) and checks it
+  gives the committed files, so the googleapis files that only carry
+  `google.api.http` are not generated when asked for either (§3.1).
 - HTTP/1.1 only, without TLS: elm/http cannot choose a protocol, and a
   browser handles the rest.
 - The runner sends through its own `XMLHttpRequest` over `node:http`

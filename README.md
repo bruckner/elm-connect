@@ -55,7 +55,11 @@ generated whole, from every file declaring it; a package they only
 import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate
 --include-imports`, the file on protoc's command line, or the CLI's
-`--include-imports`). `google.protobuf` maps to the runtime instead.
+`--include-imports`). `google.protobuf` maps to the runtime instead, and
+`google/api/http.proto` and `google/api/annotations.proto`, which only
+carry `google.api.http`, are never generated, so `buf generate
+--include-imports` gives no `Google.Api` module of their messages. Other
+`google/api` files, such as `httpbody.proto`, generate when asked for.
 
 The runtime package has two roots, `Proto` for data and `Rpc` for
 calling:

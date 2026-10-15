@@ -16,6 +16,7 @@ proto/notes/v1/notes.proto   the API; its comments document each method's errors
 buf.yaml, buf.lock           the modules; googleapis comes from the Buf Schema Registry
 buf.gen.yaml                 Go stubs into server/gen, Elm into elm/generated
 buf.gen.google-rpc.yaml      Elm for google.rpc's error details into elm/generated
+buf.gen.include-imports.yaml the Elm of both, run with --include-imports to check it adds nothing
 server/                      the Go server (connect-go and Vanguard); routes.go echoes routes.v1
 elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService, Google.Rpc
 elm/src/Main.elm             the application
@@ -79,7 +80,12 @@ buf generate --template buf.gen.google-rpc.yaml
 ```
 
 `just live-gen` runs both and fails if the output differs from what is
-committed.
+committed. It then runs `buf generate --include-imports --template
+buf.gen.include-imports.yaml` into a scratch directory and fails unless
+that gives the same files: with every import asked for, the plugin still
+writes no `Google.Api` module, since it skips `google/api/http.proto`
+and `google/api/annotations.proto`, which only carry `google.api.http`,
+and `google.protobuf` maps to the runtime.
 
 ## The runtime in `elm.json`
 
