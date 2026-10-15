@@ -157,10 +157,14 @@ viaTranscoding =
 
 `Rpc.config` is Connect with every call POSTed; set `transport`,
 `headers`, `timeout`, `withCredentials` or `retry` with record syntax.
-Errors are one type for both transports, `Rpc.Error`: an `Rpc` failure
-with an `Rpc.ErrorCode.ErrorCode`, a message, details, where they were read
-from and the answer itself (status, headers and body, for errors in a shape
-the runtime does not read), or a `Transport` failure.
+Errors are one type for both transports, `Rpc.Error`: a `Status` the
+server stated (an `Rpc.ErrorCode.ErrorCode`, a message, details and
+where they were read from), an `Http` answer that stated none, or a
+`Transport` failure with no answer. Every error has a code and a
+message, `Rpc.code error` and `Rpc.message error`, a timeout reading as
+`DeadlineExceeded`; the `Status` and `Http` errors keep the answer
+itself (status, headers and body) for errors in a shape the runtime
+does not read.
 
 ### Descriptors
 
@@ -267,16 +271,11 @@ withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
             (\error ->
-                case error of
-                    Rpc.Rpc { code } ->
-                        if code == Rpc.ErrorCode.Unauthenticated then
-                            refresh |> Task.andThen (\fresh -> rpc fresh call)
+                if Rpc.code error == Rpc.ErrorCode.Unauthenticated then
+                    refresh |> Task.andThen (\fresh -> rpc fresh call)
 
-                        else
-                            Task.fail error
-
-                    _ ->
-                        Task.fail error
+                else
+                    Task.fail error
             )
 ```
 
