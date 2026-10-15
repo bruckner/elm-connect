@@ -699,6 +699,55 @@ Built, as the `naming` and `naming_collision` cases show:
   (`display_name` and `oneof displayName`), which
   `naming::field_collision` reports with both sites.
 
+**Rename map** *(Decided, 2026-10-14; built)*. The naming rules are
+fixed, so a proto name they turn into no Elm name, or into one that
+collides, or simply into an unwanted one, needs a way past them that
+leaves the protos alone: the option `rename=<proto full name>:<Elm
+name>`, repeatable (`--elm-connect_opt=rename=notes.v1.Note:Memo,
+rename=notes.v1.Note.title:heading`; CLI `--rename notes.v1.Note:Memo
+--rename ...`). `:` separates the two because protoc splits its
+parameter on commas and `=` is taken. The given name replaces the
+converted one as it is, and what it names decides what it becomes, by
+what the proto name resolves to among the generated packages:
+
+- a package (`notes.v1`): its whole module name, dotted (`Notes.Api`);
+  its service modules sit under it (`Notes.Api.NotesService`);
+- a service (`notes.v1.NotesService`): its module's last segment;
+- a method (`notes.v1.NotesService.GetNote`): its value;
+- a message or enum, nested ones in proto's dotted form
+  (`notes.v1.Note`, `notes.v1.Note.Revision`, `notes.v1.Visibility`):
+  its type, flattened or not;
+- a field (`notes.v1.Note.title`): its record field;
+- a oneof (`notes.v1.Note.kind`): its record field, and its custom type,
+  which is named from the oneof (`kind` gives `NoteKind`) and so from
+  the new name (`body` gives `NoteBody`, and `NoteBodyUnset`,
+  `NoteBodyText`);
+- a field of a oneof (`notes.v1.Note.link`): its constructor;
+- an enum value, under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`,
+  though protobuf scopes it beside the enum): its constructor.
+
+Names derived from a renamed one follow it through the rules above: a
+type's codecs, default and typed record (`Memo` gives `encodeMemo`,
+`defaultMemo`, `messageMemo`), a recursive message's wrapper (`Memo_`),
+an enum's other constructors (`Audience` gives `AudienceUnspecified`),
+a oneof's type and constructors, and a nested type's name (renaming
+`Note` to `Memo` makes `Note.Revision` `MemoRevision`, unless it is
+renamed too). Wire names, the descriptors and the JSON never change.
+
+The given name must suit its role, or it is `options::invalid_rename`,
+naming the role and the rule: a module name's segments (and a service's
+one segment) an ASCII uppercase letter followed by letters, digits or
+underscores; a type or constructor an ASCII uppercase letter followed
+by letters and digits, with no underscore, so it cannot meet a
+recursive wrapper's (`Node_`); a value or record field an ASCII
+lowercase letter followed by letters, digits or underscores, and not a
+reserved word. An enum value alias has no constructor of its own to
+rename, which is `options::invalid_rename` too. A proto name that
+resolves to nothing in the generated packages is
+`options::unknown_rename`. Names that collide after renaming are the
+`naming::*_collision` diagnostics, as before, and each `naming::*` help
+text names the escape (`rename` and `rename_invalid` cases).
+
 ### 3.8 Dead ends
 
 Valid proto constructs whose Elm form drops a distinction the proto
@@ -740,13 +789,16 @@ case names it):
   flattening (`naming::type_collision`), two constructors in one module,
   such as enum values or oneof members (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
-  `naming_collision` case). No escape yet.
+  `naming_collision` case). Escape: rename one of them with `rename=`
+  (§3.7).
 - **Names with no Elm form**: a package segment, type, field or method
   whose converted name is not a valid Elm identifier
   (`naming::invalid_module`, `naming::invalid_type`,
   `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
-  case), and a file without a package declaration
-  (`naming::invalid_module`). No escape yet.
+  case). Escape: give it a name with `rename=` (§3.7). A file without a
+  package declaration (`naming::invalid_module` too) has no escape yet:
+  a rename names its element by proto full name, and the file's
+  package has none; its help text says to add a package.
 - **A `google.protobuf` type without a mapping**
   (`types::unsupported_well_known`), such as `Api` or `Type`. `Any`
   was refused here (`types::any`) until it was built (§3.5). No escape
@@ -777,15 +829,16 @@ case names it):
   does, would be one.
 - **Method values that collide**: two methods of one service whose
   values have one name (`GetSettings` and `Get_Settings`;
-  `naming::value_collision`, `services_value_collision` case). No escape
-  yet.
+  `naming::value_collision`, `services_value_collision` case). Escape:
+  rename one with `rename=` (§3.7).
 - **Modules that collide**: two services of one package whose module
   names coincide (`Archive` and `archive`), a service module that is
   also a package's (`NotesService` in `notes.v1` beside the package
   `notes.v1.notes_service`), and two packages with one module name
   (`naming::module_collision`, `services_module_collision` case); and a
   service whose name has no module form (`naming::invalid_service`,
-  `services_invalid` case). No escape yet.
+  `services_invalid` case). Escape: rename the service or package with
+  `rename=` (§3.7).
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4). The option is the user's own
@@ -1415,7 +1468,7 @@ both the plain names.
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
   `unbound_methods=implicit|error`, `streaming=error|skip`,
-  `module_prefix=`, and later perhaps
+  `rename=<proto full name>:<Elm name>` (repeatable), `module_prefix=`, and later perhaps
   `enum_unknown=zero|variant` (§3.3 defers the variant). A
   `transports=` option, choosing which transports' values were
   generated, went with the shape it chose between (§4). *(Decided,
@@ -1425,9 +1478,11 @@ both the plain names.
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
   --unbound-methods error`), `streaming` (§3.8;
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
-  skip`). The plugin parameter is
-  comma-separated `key=value` pairs; an unknown key or value, or a key
-  given twice, is an error. A conformance case sets options with an
+  skip`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
+  repeated, or `elm-connect gen --rename notes.v1.Note:Memo`, repeated).
+  The plugin parameter is comma-separated `key=value` pairs; an unknown
+  key or value, or a key other than `rename` given twice, is an error,
+  as is a `rename` without its `:` or one renaming a proto name twice. A conformance case sets options with an
   `options.txt` holding that parameter.
 - The CLI's `--include-imports` flag *(Decided, 2026-10-15; built)*,
   named after buf's: the CLI also requests every file the named ones

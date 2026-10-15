@@ -282,4 +282,15 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   command line, or the CLI's new `--include-imports` flag, which adds
   the named files' transitive imports (bar `google/protobuf` and files
   declaring nothing) to the generate set.
+- Option `rename=<proto full name>:<Elm name>` (CLI `--rename`), the
+  only option that repeats: an Elm name used as it is in place of the
+  derived one, for a package (its module), service (its module's last
+  segment), method, message or enum (nested ones too), field, oneof (its
+  field, and its type through it), oneof member or enum value (their
+  constructors). Derived names follow a renamed one, a nested type's
+  included. A name that does not suit its role is
+  `options::invalid_rename`, a proto name that names nothing generated
+  `options::unknown_rename`; collisions stay `naming::*`, and every
+  `naming::*` help names the option (`rename` and `rename_invalid`
+  cases).
 

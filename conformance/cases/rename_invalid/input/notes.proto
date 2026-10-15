@@ -1,0 +1,22 @@
+// Renames that fail (options.txt): Elm names the renamed element cannot
+// take, a proto name that names nothing generated, and an enum value
+// alias, which has no constructor of its own.
+syntax = "proto3";
+
+package notes.v1;
+
+enum Status {
+  option allow_alias = true;
+  STATUS_UNSPECIFIED = 0;
+  STATUS_DONE = 1;
+  STATUS_FINISHED = 1;
+}
+
+message Note {
+  string title = 1;
+  Status status = 2;
+}
+
+service NotesService {
+  rpc GetNote(Note) returns (Note);
+}

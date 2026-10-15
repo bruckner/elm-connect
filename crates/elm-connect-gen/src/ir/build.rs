@@ -9,6 +9,7 @@ use prost_reflect::{
 };
 
 use super::graph::strongly_connected;
+use super::rename;
 use super::{
     Cardinality, Enum, EnumValue, Field, HttpRule, HttpVerb, JsType, MapKey, Message, Method,
     ModuleName, Oneof, OneofVariant, Package, ScalarKind, Service, TypeName, TypeRef, WellKnown,
@@ -53,7 +54,9 @@ pub struct Built {
 }
 
 /// [`build`], under the options that shape the IR: `streaming=skip`
-/// leaves streaming methods out of their services, each a warning.
+/// leaves streaming methods out of their services, each a warning, and
+/// the rename map gives Elm names in place of derived ones, each checked
+/// against what it renames (design §3.7).
 ///
 /// On any error, returns every error found instead.
 pub fn build_with(
@@ -92,9 +95,17 @@ pub fn build_with(
             builder.check_proto3(file);
         }
     }
+    builder.check_renames(pool, &options.rename, &by_package);
 
     for (package, files) in &by_package {
-        match naming::module_name(package) {
+        let module = match builder.renames.get(package) {
+            Some(given) => {
+                let segments = given.split('.').map(str::to_owned).collect();
+                ModuleName::new(segments).ok_or(NameError::EmptyPackage)
+            }
+            None => naming::module_name(package),
+        };
+        match module {
             Ok(module) => {
                 let what = format!("package `{package}`");
                 let origin = builder.origin(&files[0], &[], tag::FILE_PACKAGE, what);
@@ -264,9 +275,61 @@ struct Builder {
     references: Vec<Reference>,
     /// What a streaming method gets.
     streaming: Streaming,
+    /// The rename map's entries that name a generated element and suit it:
+    /// Elm names by proto full name (an enum value's under its enum's).
+    renames: HashMap<String, String>,
 }
 
 impl Builder {
+    /// Checks every entry of `renames` against what it names among the
+    /// packages of `by_package`, reporting those that name nothing
+    /// generated or give a name it cannot take, and keeps the rest.
+    fn check_renames(
+        &mut self,
+        pool: &DescriptorPool,
+        renames: &BTreeMap<String, String>,
+        by_package: &BTreeMap<String, Vec<FileDescriptor>>,
+    ) {
+        for (proto, elm) in renames {
+            let Some(target) = rename::resolve(pool, proto)
+                .filter(|target| by_package.contains_key(&target.package))
+            else {
+                self.diagnostics.push(Problem::unknown_rename(proto));
+                continue;
+            };
+            let what = target.role.what();
+            let Some((becomes, rule)) = target.role.rule() else {
+                let site = self.site(&target.file, &target.path, format!("{what} here"));
+                self.diagnostics.push(Problem::rename_alias(proto, site));
+                continue;
+            };
+            if target.role.accepts(elm) {
+                self.renames.insert(proto.clone(), elm.clone());
+            } else {
+                let site = self.site(&target.file, &target.path, format!("{what} here"));
+                self.diagnostics.push(Problem::invalid_rename(
+                    proto, elm, what, becomes, rule, site,
+                ));
+            }
+        }
+    }
+
+    /// The constructor of the value `value_name` of the enum
+    /// `enum_full_name` (whose proto name is `enum_proto_name` and Elm name
+    /// `enum_elm_name`): its rename, or the naming rule's.
+    fn enum_constructor(
+        &self,
+        enum_full_name: &str,
+        enum_elm_name: &str,
+        enum_proto_name: &str,
+        value_name: &str,
+    ) -> String {
+        match self.renames.get(&format!("{enum_full_name}.{value_name}")) {
+            Some(given) => given.clone(),
+            None => naming::enum_constructor(enum_elm_name, enum_proto_name, value_name),
+        }
+    }
+
     /// Reports `file` if it is not proto3.
     fn check_proto3(&mut self, file: &FileDescriptor) {
         let syntax = file.file_descriptor_proto().syntax();
@@ -318,7 +381,19 @@ impl Builder {
                 .unwrap_or(full_name)
                 .split('.')
                 .collect();
-            match naming::type_name(&nested) {
+            // A nested type's name follows its enclosing message's Elm
+            // name, renamed or not, as an enum's constructors follow the
+            // enum's; the enclosing message is named first.
+            let enclosing = full_name
+                .rsplit_once('.')
+                .filter(|(parent, _)| *parent != package)
+                .and_then(|(parent, last)| Some((builder.types.get(parent)?, last)));
+            let name = match (builder.renames.get(full_name), enclosing) {
+                (Some(given), _) => Ok(given.clone()),
+                (None, Some((parent, last))) => Ok(naming::nested_type_name(&parent.name, last)),
+                (None, None) => naming::type_name(&nested),
+            };
+            match name {
                 Ok(name) => {
                     builder.types.insert(
                         full_name.to_owned(),
@@ -385,7 +460,14 @@ impl Builder {
         for file in files {
             for service in file.services() {
                 let full_name = service.full_name();
-                let service_module = match naming::service_module(module, service.name()) {
+                let service_module = match self.renames.get(full_name) {
+                    Some(given) => {
+                        let segments = [module.segments(), std::slice::from_ref(given)].concat();
+                        ModuleName::new(segments).ok_or(NameError::Empty)
+                    }
+                    None => naming::service_module(module, service.name()),
+                };
+                let service_module = match service_module {
                     Ok(service_module) => {
                         let what = format!("service `{full_name}`");
                         let origin = self.origin(file, service.path(), tag::SERVICE_NAME, what);
@@ -525,7 +607,11 @@ impl Builder {
             Kind::Message(method.output()),
         );
 
-        let elm_name = match naming::method_name(method.name()) {
+        let elm_name = match self.renames.get(full_name) {
+            Some(given) => Ok(given.clone()),
+            None => naming::method_name(method.name()),
+        };
+        let elm_name = match elm_name {
             Ok(name) => name,
             Err(error) => {
                 let converted = match error {
@@ -624,7 +710,12 @@ impl Builder {
                 first.aliases.push(value.name().to_owned());
                 continue;
             }
-            let elm_ctor = naming::enum_constructor(&elm_name, enumeration.name(), value.name());
+            let elm_ctor = self.enum_constructor(
+                enumeration.full_name(),
+                &elm_name,
+                enumeration.name(),
+                value.name(),
+            );
             let what = format!("enum value `{}`", value.name());
             let origin = self.origin(file, value.path(), tag::ENUM_VALUE_NAME, what);
             self.claim_constructor(constructors, package, &elm_ctor, origin);
@@ -697,7 +788,12 @@ impl Builder {
                     ));
                 }
 
-                let elm_type_name = naming::oneof_type_name(&elm_name, oneof.name());
+                // A renamed oneof's type is named from its new field name.
+                let type_from = self
+                    .renames
+                    .get(oneof.full_name())
+                    .map_or(oneof.name(), String::as_str);
+                let elm_type_name = naming::oneof_type_name(&elm_name, type_from);
                 let unset_ctor = naming::oneof_unset_constructor(&elm_type_name);
                 let what = format!("oneof `{}` of `{full_name}`", oneof.name());
                 let origin = self.origin(file, oneof.path(), tag::ONEOF_NAME, what.clone());
@@ -712,7 +808,10 @@ impl Builder {
 
                 let mut variants = Vec::new();
                 for member in oneof.fields() {
-                    let elm_ctor = naming::oneof_variant_constructor(&elm_type_name, member.name());
+                    let elm_ctor = match self.renames.get(member.full_name()) {
+                        Some(given) => given.clone(),
+                        None => naming::oneof_variant_constructor(&elm_type_name, member.name()),
+                    };
                     let what = format!("oneof field `{}` of `{full_name}`", member.name());
                     let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
                     self.claim_constructor(constructors, package, &elm_ctor, origin);
@@ -787,7 +886,14 @@ impl Builder {
         element: &[i32],
         name_tag: i32,
     ) -> Option<String> {
-        match naming::field_name(proto_name) {
+        let renamed = self
+            .renames
+            .get(&format!("{}.{proto_name}", message.full_name()));
+        let name = match renamed {
+            Some(given) => Ok(given.clone()),
+            None => naming::field_name(proto_name),
+        };
+        match name {
             Ok(name) => Some(name),
             Err(error) => {
                 let converted = match error {
@@ -941,7 +1047,7 @@ impl Builder {
         Some(match enum_names {
             None => TypeRef::Message(name),
             Some((enum_name, zero_value)) => TypeRef::Enum {
-                zero_ctor: naming::enum_constructor(&name.name, &enum_name, &zero_value),
+                zero_ctor: self.enum_constructor(&full_name, &name.name, &enum_name, &zero_value),
                 name,
             },
         })
@@ -1118,7 +1224,7 @@ fn all_enums(file: &FileDescriptor) -> Vec<EnumDescriptor> {
 /// The values of `enumeration` in declaration order, so the zero value
 /// proto3 requires first is first. prost-reflect's `values()` iterates in
 /// number order, which puts a negative value before it.
-fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDescriptor> {
+pub(super) fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDescriptor> {
     enumeration
         .enum_descriptor_proto()
         .value

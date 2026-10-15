@@ -28,7 +28,8 @@ naming::invalid_method
  18 │
     ╰────
   help: A method's Elm value is its name with the first letter lowercased and
-        underscores dropped, and must start with a letter. Rename the method.
+        underscores dropped, and must start with a letter. Rename the method,
+        or rename it with `rename=<proto full name>:<Elm name>`.
 
 route::rule
 
@@ -82,4 +83,5 @@ naming::invalid_service
     ╰────
   help: Each service becomes an Elm module inside its package's, named for the
         service in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and
-        an Elm module segment must start with a letter. Rename the service.
+        an Elm module segment must start with a letter. Rename the service, or
+        rename it with `rename=<proto full name>:<Elm name>`.

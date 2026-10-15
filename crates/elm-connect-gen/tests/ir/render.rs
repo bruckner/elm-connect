@@ -38,7 +38,8 @@ const EXPECTED: &str = r#"naming::field_collision
   help: Elm record fields are the proto field names in lowerCamelCase, so
         names that differ only in underscores or reserved-word escaping end up
         the same, and a record cannot have two fields with one name. Rename
-        one of them in the proto.
+        one of them in the proto, or rename one with `rename=<proto full
+        name>:<Elm name>`.
 "#;
 
 #[test]

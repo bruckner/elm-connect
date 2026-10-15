@@ -1,7 +1,7 @@
 //! The generator's options (design §6): what a protoc plugin parameter or
 //! the CLI's flags set.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
@@ -17,13 +17,18 @@ pub struct Options {
     /// What a client, server or bidirectional streaming method gets
     /// (`streaming=`, design §3.8).
     pub streaming: Streaming,
+    /// The rename map (`rename=`, design §3.7): Elm names given by proto
+    /// full name, each used in place of the name the naming rules would
+    /// derive. [`Options::add_rename`] adds one; the IR builder checks
+    /// each against the element it names.
+    pub rename: BTreeMap<String, String>,
 }
 
 impl Options {
     /// The options a protoc plugin parameter sets: comma-separated
-    /// `key=value` pairs, such as `int64=int`, each option at most once.
-    /// The empty parameter is the defaults. An unknown key or value is an
-    /// error saying which.
+    /// `key=value` pairs, such as `int64=int`, each option at most once
+    /// but `rename`, which repeats. The empty parameter is the defaults.
+    /// An unknown key or value is an error saying which.
     pub fn from_parameter(parameter: &str) -> Result<Self, String> {
         let mut options = Options::default();
         let mut seen = BTreeSet::new();
@@ -36,22 +41,51 @@ impl Options {
                 return Err(format!("expected `key=value`, got `{pair}`"));
             };
             let (key, value) = (key.trim(), value.trim());
-            if !seen.insert(key.to_owned()) {
+            if key != "rename" && !seen.insert(key.to_owned()) {
                 return Err(format!("`{key}` is given more than once"));
             }
             match key {
                 "int64" => options.int64 = value.parse()?,
                 "unbound_methods" => options.unbound_methods = value.parse()?,
                 "streaming" => options.streaming = value.parse()?,
+                "rename" => options.add_rename(value)?,
                 _ => {
                     return Err(format!(
                         "unknown option `{key}`; the options are: int64, unbound_methods, \
-                         streaming"
+                         streaming, rename"
                     ));
                 }
             }
         }
         Ok(options)
+    }
+
+    /// Adds one entry of the rename map, written `<proto full name>:<Elm
+    /// name>` (`notes.v1.Note:Memo`). Neither side may be empty, and a
+    /// proto name may be renamed once. Whether the Elm name suits what the
+    /// proto name denotes is the IR builder's to check, since that needs
+    /// the descriptors.
+    pub fn add_rename(&mut self, entry: &str) -> Result<(), String> {
+        let (proto, elm) = parse_rename(entry)?;
+        if self.rename.contains_key(&proto) {
+            return Err(format!("`rename` renames `{proto}` more than once"));
+        }
+        self.rename.insert(proto, elm);
+        Ok(())
+    }
+}
+
+/// One entry of the rename map, `<proto full name>:<Elm name>`, as its two
+/// sides, trimmed: what [`Options::add_rename`] accepts.
+pub fn parse_rename(entry: &str) -> Result<(String, String), String> {
+    match entry.split_once(':') {
+        Some((proto, elm)) if !proto.trim().is_empty() && !elm.trim().is_empty() => {
+            Ok((proto.trim().to_owned(), elm.trim().to_owned()))
+        }
+        _ => Err(format!(
+            "`rename` is `<proto full name>:<Elm name>`, such as `notes.v1.Note:Memo`, not \
+             `{entry}`"
+        )),
     }
 }
 
@@ -166,5 +200,29 @@ mod tests {
         assert_eq!(streaming("streaming=error,int64=int"), Ok(Streaming::Error));
         assert!(error("streaming=drop").contains("`error` or `skip`"));
         assert!(error("streaming=skip,streaming=skip").contains("more than once"));
+    }
+
+    #[test]
+    fn rename_repeats_and_takes_proto_and_elm_names() {
+        let rename = |parameter| Options::from_parameter(parameter).map(|o| o.rename);
+        assert_eq!(rename(""), Ok(BTreeMap::new()));
+        assert_eq!(
+            rename("rename=notes.v1.Note:Memo, rename = notes.v1.Note.title : heading"),
+            Ok(BTreeMap::from([
+                ("notes.v1.Note".to_owned(), "Memo".to_owned()),
+                ("notes.v1.Note.title".to_owned(), "heading".to_owned()),
+            ]))
+        );
+        let error = |parameter| Options::from_parameter(parameter).unwrap_err();
+        assert!(error("rename=notes.v1.Note").contains("`<proto full name>:<Elm name>`"));
+        assert!(error("rename=notes.v1.Note:").contains("`<proto full name>:<Elm name>`"));
+        assert!(error("rename=:Memo").contains("`<proto full name>:<Elm name>`"));
+        assert!(
+            error("rename=notes.v1.Note:Memo,rename=notes.v1.Note:Note")
+                .contains("renames `notes.v1.Note` more than once")
+        );
+        assert!(
+            error("rename=a.B:C,int64=int,int64=int").contains("`int64` is given more than once")
+        );
     }
 }

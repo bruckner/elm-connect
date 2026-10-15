@@ -16,4 +16,5 @@ naming::value_collision
   help: A service's module defines one value per method, its name with the
         first letter lowercased and underscores dropped, so names that differ
         only in those ways end up the same, and a module cannot define two
-        values with one name. Rename one of the methods in the proto.
+        values with one name. Rename one of the methods in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.

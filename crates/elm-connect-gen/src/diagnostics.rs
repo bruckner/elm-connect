@@ -51,6 +51,10 @@ pub enum Code {
     ImportCycle,
     /// A file to generate is not in the descriptor set.
     UnknownFile,
+    /// A `rename` gives a name the element it renames cannot take.
+    InvalidRename,
+    /// A `rename` names nothing that is generated.
+    UnknownRename,
     /// A file to generate is not proto3.
     NotProto3,
     /// The protos use a construct the generator does not emit yet.
@@ -98,6 +102,8 @@ impl Code {
             Code::NotGenerated => "generate::not_generated",
             Code::ImportCycle => "generate::import_cycle",
             Code::UnknownFile => "generate::unknown_file",
+            Code::InvalidRename => "options::invalid_rename",
+            Code::UnknownRename => "options::unknown_rename",
             Code::NotProto3 => "generate::not_proto3",
             Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
@@ -242,7 +248,8 @@ impl Problem {
             format!("The message `{message}` has two fields that both become `{elm_name}` in Elm."),
             "Elm record fields are the proto field names in lowerCamelCase, so names that \
              differ only in underscores or reserved-word escaping end up the same, and a record \
-             cannot have two fields with one name. Rename one of them in the proto.",
+             cannot have two fields with one name. Rename one of them in the proto, or \
+             rename one with `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -257,7 +264,8 @@ impl Problem {
             ),
             "Every message, enum and oneof of a package becomes a type in one Elm module, \
              nested names joined (`Outer.Inner` becomes `OuterInner`), and a module cannot \
-             define two types with one name. Rename one of them in the proto.",
+             define two types with one name. Rename one of them in the proto, or rename one \
+             with `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -273,7 +281,8 @@ impl Problem {
             ),
             "Enum values, oneof cases and the record constructor of every message all share \
              one constructor namespace in an Elm module, so these cannot both keep this name. \
-             Rename one of them in the proto.",
+             Rename one of them in the proto, or rename one with \
+             `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -300,7 +309,8 @@ impl Problem {
             ),
             "Each package segment becomes a segment of the Elm module name in PascalCase \
              (`notes.v1` becomes `Notes.V1`), and an Elm module segment must start with a \
-             letter. Rename the package.",
+             letter. Rename the package, or rename it with \
+             `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
@@ -315,7 +325,8 @@ impl Problem {
                  type name."
             ),
             "Elm type names must start with an uppercase letter. Rename the proto type so its \
-             PascalCase form starts with one.",
+             PascalCase form starts with one, or rename it with \
+             `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
@@ -331,7 +342,8 @@ impl Problem {
             ),
             "Elm record fields must start with a lowercase letter. elm-connect converts proto \
              field names to lowerCamelCase without changing their first letter, so the proto \
-             name should be lower_snake_case, starting with a letter.",
+             name should be lower_snake_case, starting with a letter. Rename it in the \
+             proto, or rename it with `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
@@ -439,7 +451,8 @@ impl Problem {
             "A service's module defines one value per method, its name with the first letter \
              lowercased and underscores dropped, so names that differ only in those ways end \
              up the same, and a module cannot define two values with one name. Rename one of \
-             the methods in the proto.",
+             the methods in the proto, or rename one with \
+             `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -454,7 +467,8 @@ impl Problem {
              service becomes a module inside its package's (`notes.v1.NotesService` becomes \
              `Notes.V1.NotesService`), each segment in PascalCase, so a service can take the \
              name of a package nested in its own, and names that differ only in case or \
-             underscores end up the same. Rename the service or the package.",
+             underscores end up the same. Rename the service or the package, or rename one \
+             with `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -470,7 +484,8 @@ impl Problem {
             ),
             "Each service becomes an Elm module inside its package's, named for the service \
              in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and an Elm module \
-             segment must start with a letter. Rename the service.",
+             segment must start with a letter. Rename the service, or rename it with \
+             `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
@@ -556,7 +571,8 @@ impl Problem {
                  value name."
             ),
             "A method's Elm value is its name with the first letter lowercased and \
-             underscores dropped, and must start with a letter. Rename the method.",
+             underscores dropped, and must start with a letter. Rename the method, or rename \
+             it with `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
@@ -577,6 +593,53 @@ impl Problem {
             "Each proto package becomes one Elm module, and Elm modules cannot import each \
              other in a cycle. Move the types that refer to each other into one package.",
             sites,
+        )
+    }
+
+    /// The `rename` of `proto` gives `elm`, which `proto`, being `what`
+    /// (such as "a message"), cannot take: it becomes `becomes` (such as
+    /// "an Elm type"), whose names follow `rule`.
+    pub fn invalid_rename(
+        proto: &str,
+        elm: &str,
+        what: &str,
+        becomes: &str,
+        rule: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::InvalidRename,
+            format!("The rename of `{proto}` gives `{elm}`, which {what} cannot be named."),
+            format!(
+                "`{proto}` is {what}, which becomes {becomes}, and a rename's name is used \
+                 as it is, so it must be {rule}."
+            ),
+            vec![site],
+        )
+    }
+
+    /// The `rename` of `proto` names an enum value alias, which has no
+    /// constructor of its own.
+    pub fn rename_alias(proto: &str, site: Site) -> Self {
+        Problem::new(
+            Code::InvalidRename,
+            format!("The rename of `{proto}` names an enum value alias."),
+            "An alias shares the constructor of the first value declared with its number, and \
+             has no Elm name of its own. Rename that first value instead.",
+            vec![site],
+        )
+    }
+
+    /// The `rename` of `proto` names nothing that is generated.
+    pub fn unknown_rename(proto: &str) -> Self {
+        Problem::new(
+            Code::UnknownRename,
+            format!("The rename of `{proto}` names nothing elm-connect generates."),
+            "A rename names a package, service, method, message, enum, field, oneof or enum \
+             value of a generated package by its proto full name: nested names dotted \
+             (`notes.v1.Note.Revision`, `notes.v1.Note.title`), an enum value under its enum \
+             (`notes.v1.Visibility.VISIBILITY_PUBLIC`). Check the name against the protos.",
+            Vec::new(),
         )
     }
 
