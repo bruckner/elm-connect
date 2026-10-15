@@ -58,7 +58,7 @@ registry =
 
 encodeLine : Line -> Json.Encode.Value
 encodeLine value =
-    Json.Encode.object [ ( "text", Json.Encode.string value.text ) ]
+    Proto.Json.object [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text ) ]
 
 
 

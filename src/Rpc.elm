@@ -855,6 +855,8 @@ queryPairs json (Param p) =
                             List.filterMap scalarText elements
 
                         Err _ ->
+                            -- Generated encoders leave a default out; JSON
+                            -- from another encoder may spell it.
                             case scalarText value of
                                 Just text ->
                                     if Just text == p.zero then

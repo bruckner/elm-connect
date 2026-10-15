@@ -94,9 +94,9 @@ encodeRole value =
 
 encodeUser : User -> Json.Encode.Value
 encodeUser value =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string value.name )
-        , ( "role", encodeRole value.role )
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "role", Proto.Json.implicit RoleUnspecified encodeRole value.role )
         ]
 
 

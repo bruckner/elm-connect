@@ -1,6 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither
-    , encodeMaybe
+    , object, implicit, implicitFloat, repeated, dict, boolDict
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , enum, enumOrZero
@@ -27,9 +27,23 @@ Application code rarely needs them directly.
 @docs field, fieldEither
 
 
-# Presence
+# Encoding fields
 
-@docs encodeMaybe
+A generated encoder leaves out every field at its proto3 default, as protobuf's
+own JSON writers do: a field without presence at its zero value, a field with
+presence (`Maybe`) when `Nothing`, a repeated or map field when empty. A parser
+reads a missing field as its default, so nothing is lost.
+
+    encodeNote : Note -> Value
+    encodeNote value =
+        object
+            [ ( "title", implicit "" Json.Encode.string value.title )
+            , ( "score", implicitFloat value.score )
+            , ( "author", Maybe.map encodeAuthor value.author )
+            , ( "tags", repeated Json.Encode.string value.tags )
+            ]
+
+@docs object, implicit, implicitFloat, repeated, dict, boolDict
 
 
 # Oneofs
@@ -148,8 +162,8 @@ valueAt : List String -> a -> Decoder a -> Decoder a
 valueAt names default decoder =
     Json.Decode.dict Json.Decode.value
         |> Json.Decode.andThen
-            (\object ->
-                case spelledAs names object of
+            (\keys ->
+                case spelledAs names keys of
                     Err problem ->
                         Json.Decode.fail problem
 
@@ -181,8 +195,8 @@ spellings jsonName protoName =
 value; an error naming them when it holds more than one.
 -}
 spelledAs : List String -> Dict.Dict String Value -> Result String (Maybe ( String, Value ))
-spelledAs names object =
-    case List.filterMap (\name -> Dict.get name object |> Maybe.map (Tuple.pair name)) names of
+spelledAs names keys =
+    case List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names of
         [] ->
             Ok Nothing
 
@@ -203,22 +217,88 @@ isNull raw =
     Json.Decode.decodeValue (Json.Decode.null ()) raw == Ok ()
 
 
-{-| Encode a field with presence: `Nothing` as JSON `null`, which proto3 JSON
-reads as an absent field, and a value with the given encoder.
+{-| A message's JSON object: each field that has a value, under its JSON name.
+A field given `Nothing` is left out.
 
-    encodeMaybe Json.Encode.int (Just 3) -- 3
-
-    encodeMaybe Json.Encode.int Nothing -- null
+    object
+        [ ( "title", Just (Json.Encode.string "Hi") )
+        , ( "author", Nothing )
+        ]
+    -- {"title":"Hi"}
 
 -}
-encodeMaybe : (a -> Value) -> Maybe a -> Value
-encodeMaybe encode maybe =
-    case maybe of
-        Just value ->
-            encode value
+object : List ( String, Maybe Value ) -> Value
+object fields =
+    fields
+        |> List.filterMap (\( key, value ) -> Maybe.map (Tuple.pair key) value)
+        |> Json.Encode.object
 
-        Nothing ->
-            Json.Encode.null
+
+{-| A field without presence: `Nothing` when it holds its proto3 default, the
+first argument, else its JSON. For a string, a number held as an `Int`, a
+64-bit integer held as its decimal string, a `Bool`, bytes or an enum; a
+`Float` uses [`implicitFloat`](#implicitFloat).
+
+    implicit "" Json.Encode.string "" -- Nothing
+
+    implicit 0 Json.Encode.int 3 -- Just 3
+
+-}
+implicit : a -> (a -> Value) -> a -> Maybe Value
+implicit zero encode value =
+    if value == zero then
+        Nothing
+
+    else
+        Just (encode value)
+
+
+{-| A `double` or `float` field without presence: `Nothing` at `0`, else its
+JSON as [`encodeFloat`](#encodeFloat) writes it. `-0`, NaN and the infinities
+are not the default and are written.
+-}
+implicitFloat : Float -> Maybe Value
+implicitFloat number =
+    if number == 0 && 1 / number > 0 then
+        Nothing
+
+    else
+        Just (encodeFloat number)
+
+
+{-| A repeated field: `Nothing` when empty, else a JSON array of its elements.
+-}
+repeated : (a -> Value) -> List a -> Maybe Value
+repeated encode values =
+    if List.isEmpty values then
+        Nothing
+
+    else
+        Just (Json.Encode.list encode values)
+
+
+{-| A map field: `Nothing` when empty, else a JSON object, keyed as
+`Json.Encode.dict` keys it.
+-}
+dict : (k -> String) -> (v -> Value) -> Dict.Dict k v -> Maybe Value
+dict key encode entries =
+    if Dict.isEmpty entries then
+        Nothing
+
+    else
+        Just (Json.Encode.dict key encode entries)
+
+
+{-| A map field with `bool` keys: `Nothing` when empty, else the object
+[`encodeBoolMap`](#encodeBoolMap) writes.
+-}
+boolDict : (a -> Value) -> List ( Bool, a ) -> Maybe Value
+boolDict encode pairs =
+    if List.isEmpty pairs then
+        Nothing
+
+    else
+        Just (encodeBoolMap encode pairs)
 
 
 {-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
@@ -270,8 +350,8 @@ members : String -> a -> List (Member a) -> Decoder a
 members oneofName unset candidates =
     Json.Decode.dict Json.Decode.value
         |> Json.Decode.andThen
-            (\object ->
-                case presentMembers object candidates of
+            (\keys ->
+                case presentMembers keys candidates of
                     Err problem ->
                         Json.Decode.fail problem
 
@@ -294,13 +374,13 @@ members oneofName unset candidates =
 {-| The members the object holds, each with the key it is written under.
 -}
 presentMembers : Dict.Dict String Value -> List (Member a) -> Result String (List ( String, Decoder a ))
-presentMembers object candidates =
+presentMembers keys candidates =
     case candidates of
         [] ->
             Ok []
 
         (Member candidate) :: rest ->
-            case spelledAs candidate.names object of
+            case spelledAs candidate.names keys of
                 Err problem ->
                     Err problem
 
@@ -318,7 +398,7 @@ presentMembers object candidates =
                                 Nothing ->
                                     []
                     in
-                    Result.map ((++) here) (presentMembers object rest)
+                    Result.map ((++) here) (presentMembers keys rest)
 
 
 {-| `"a" and "b"`, `"a", "b" and "c"`.
@@ -518,7 +598,7 @@ intDict decoder =
             (\pairs ->
                 List.foldr
                     (\( key, value ) result ->
-                        Result.map2 (\int dict -> Dict.insert int value dict)
+                        Result.map2 (\int entries -> Dict.insert int value entries)
                             (String.toInt key |> Result.fromMaybe key)
                             result
                     )
@@ -531,8 +611,8 @@ intDict decoder =
 fromKeyResult : Result String (Dict.Dict Int a) -> Decoder (Dict.Dict Int a)
 fromKeyResult result =
     case result of
-        Ok dict ->
-            Json.Decode.succeed dict
+        Ok entries ->
+            Json.Decode.succeed entries
 
         Err key ->
             Json.Decode.fail ("Expecting an integer map key, but got \"" ++ key ++ "\"")

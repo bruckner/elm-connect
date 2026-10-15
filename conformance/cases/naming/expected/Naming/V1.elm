@@ -176,32 +176,32 @@ encodeHttpMethod value =
 
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
-    Json.Encode.object
-        ([ ( "type", Json.Encode.string value.type_ )
-         , ( "if", Json.Encode.bool value.if_ )
-         , ( "port", Json.Encode.int value.port_ )
-         , ( "alias", Json.Encode.string value.alias )
-         , ( "screenName", Json.Encode.string value.displayName )
-         , ( "httpUrl", Json.Encode.string value.httpUrl )
-         , ( "v2Count", Json.Encode.int value.v2Count )
-         , ( "shape", encodeShape value.shape )
-         , ( "method", encodeHttpMethod value.method )
+    Proto.Json.object
+        ([ ( "type", Proto.Json.implicit "" Json.Encode.string value.type_ )
+         , ( "if", Proto.Json.implicit False Json.Encode.bool value.if_ )
+         , ( "port", Proto.Json.implicit 0 Json.Encode.int value.port_ )
+         , ( "alias", Proto.Json.implicit "" Json.Encode.string value.alias )
+         , ( "screenName", Proto.Json.implicit "" Json.Encode.string value.displayName )
+         , ( "httpUrl", Proto.Json.implicit "" Json.Encode.string value.httpUrl )
+         , ( "v2Count", Proto.Json.implicit 0 Json.Encode.int value.v2Count )
+         , ( "shape", Proto.Json.implicit ShapeUnspecified encodeShape value.shape )
+         , ( "method", Proto.Json.implicit HttpMethodUnspecified encodeHttpMethod value.method )
          ]
             ++ encodeTagCase value.case_
         )
 
 
-encodeTagCase : TagCase -> List ( String, Json.Encode.Value )
+encodeTagCase : TagCase -> List ( String, Maybe Json.Encode.Value )
 encodeTagCase value =
     case value of
         TagCaseUnset ->
             []
 
         TagCaseThen member ->
-            [ ( "then", Json.Encode.string member ) ]
+            [ ( "then", Just (Json.Encode.string member) ) ]
 
         TagCaseOf member ->
-            [ ( "of", Json.Encode.int member ) ]
+            [ ( "of", Just (Json.Encode.int member) ) ]
 
 
 

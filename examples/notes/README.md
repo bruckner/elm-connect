@@ -281,7 +281,7 @@ The same actions, over each transport (requests to `127.0.0.1:8080`):
 
 | Action | Connect | HTTP transcoding |
 |---|---|---|
-| list | `POST /notes.v1.NotesService/ListNotes`, body `{"pageSize":0,…}` | `GET /v1/notes` |
+| list | `POST /notes.v1.NotesService/ListNotes`, body `{}` (every field at its default) | `GET /v1/notes` |
 | create | `POST /notes.v1.NotesService/CreateNote`, body `{"note":{…}}` | `POST /v1/notes`, body the note |
 | save title and tags | `POST /notes.v1.NotesService/UpdateNote`, body `{"note":{…},"updateMask":"title,tags"}` | `PATCH /v1/notes/welcome?update_mask=title,tags`, body the note |
 | archive | `POST /notes.v1.NotesService/ArchiveNote`, body `{"name":"notes/…"}` | `POST /v1/notes/…:archive` |
