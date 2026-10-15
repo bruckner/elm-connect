@@ -34,19 +34,13 @@
     },
     {
       "file": "query.json",
-      "fixture": "a path value under an unset message is empty; defaults are written",
-      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/",
-      "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"inner.deep.b\\\": unexpected end of JSON input\"}",
-      "reading": "The fixture (and the runtime, which follows it). http.proto does not say what a path variable under an unset message is, but proto3 reads inner.deep.b as 0 there, and the fixture writes every other default (0, false, KIND_UNSPECIFIED); an empty segment is no int32, and Vanguard rejects it. DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0 is accepted. Not changed here: the fixtures' expectations stay as they are in this change.",
+      "fixture": "a path value under an unset message is its default; defaults are written",
+      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0",
+      "answer": "200, echoing {\"inner\":{\"deep\":{\"b\":0}}} with the other defaults",
+      "reading": "Neither is wrong; the wire cannot say it. proto3 reads inner.deep.b as 0 when inner is unset, so the runtime writes 0 (an empty segment is no int32, and Vanguard rejects it as \"unexpected end of JSON input\"). A server sets the field a path segment names, and with it every message on the way, so it reads inner and inner.deep as set and empty where the request left them unset. No path can leave a message unset.",
       "vanguard": {
-        "trace": { "httpStatus": 400 },
-        "result": {
-          "error": {
-            "code": "invalid_argument",
-            "message": "invalid parameter \"inner.deep.b\": unexpected end of JSON input",
-            "source": "StatusBody"
-          }
-        }
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "inner": { "deep": {} } } }
       }
     },
     {

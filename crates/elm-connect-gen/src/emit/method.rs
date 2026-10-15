@@ -135,7 +135,11 @@ impl Emitter {
                 self.reference((PROTO_HTTP, "literal")),
                 [string(text.clone())],
             ),
-            PathSegment::Variable { field, template } => {
+            PathSegment::Variable {
+                field,
+                template,
+                zero,
+            } => {
                 let names = inline_list(field.json.iter().map(|name| string(name.clone())));
                 let template: Vec<Expr> = template
                     .iter()
@@ -143,7 +147,7 @@ impl Emitter {
                     .collect();
                 apply(
                     self.reference((PROTO_HTTP, "variable")),
-                    [names, inline_list(template)],
+                    [names, inline_list(template), string(zero.clone())],
                 )
             }
         }

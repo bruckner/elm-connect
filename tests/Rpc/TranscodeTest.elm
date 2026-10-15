@@ -101,22 +101,22 @@ paths =
     describe "paths"
         [ test "a single-segment variable escapes everything but unreserved characters" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "messages", Proto.Http.variable [ "messageId" ] [] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "messages", Proto.Http.variable [ "messageId" ] [] "" ] }
                     """{"messageId":"a/b c?d#e!*'()é~._-"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/a%2Fb%20c%3Fd%23e%21%2A%27%28%29%C3%A9~._-"
         , test "a multi-segment variable keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] "" ] }
                     """{"name":"messages/1 2"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/1%202"
         , test "** keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] "" ] }
                     """{"path":"files/a/b/c.txt"}"""
                     |> Expect.equal "https://api.example.com/v1/files/a/b/c.txt"
         , test "{name=*} is one segment" <|
             \_ ->
-                url { rule | path = [ Proto.Http.variable [ "name" ] [ Proto.Http.wildcard ] ] } """{"name":"a/b"}"""
+                url { rule | path = [ Proto.Http.variable [ "name" ] [ Proto.Http.wildcard ] "" ] } """{"name":"a/b"}"""
                     |> Expect.equal "https://api.example.com/a%2Fb"
         , test "a nested field, numbers, booleans and a custom verb" <|
             \_ ->
@@ -124,21 +124,35 @@ paths =
                     { rule
                         | path =
                             [ Proto.Http.literal "v1"
-                            , Proto.Http.variable [ "sub", "subfield" ] []
-                            , Proto.Http.variable [ "n" ] []
-                            , Proto.Http.variable [ "f" ] []
-                            , Proto.Http.variable [ "b" ] []
+                            , Proto.Http.variable [ "sub", "subfield" ] [] ""
+                            , Proto.Http.variable [ "n" ] [] "0"
+                            , Proto.Http.variable [ "f" ] [] "0"
+                            , Proto.Http.variable [ "b" ] [] "false"
                             ]
                         , customVerb = Just "cancel"
                     }
                     """{"sub":{"subfield":"x"},"n":42,"f":1.5,"b":true}"""
                     |> Expect.equal "https://api.example.com/v1/x/42/1.5/true:cancel"
-        , test "an absent value is empty, and a trailing slash on the base URL is dropped" <|
+        , test "an absent string is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
                 (Rpc.request { config | baseUrl = "/api/" }
-                    (bound { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "sub", "subfield" ] [] ] } """{"sub":null}""")
+                    (bound { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "sub", "subfield" ] [] "" ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
+        , test "a value under an unset message is the field's default" <|
+            \_ ->
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "inner", "deep", "b" ] [] "0", Proto.Http.variable [ "inner", "kind" ] [] "KIND_UNSPECIFIED" ] }
+                    """{"inner":null}"""
+                    |> Expect.equal "https://api.example.com/v1/0/KIND_UNSPECIFIED"
+        , test "a value missing from the JSON is the field's default" <|
+            \_ ->
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "n" ] [] "0", Proto.Http.variable [ "b" ] [] "false" ] } "{}"
+                    |> Expect.equal "https://api.example.com/v1/0/false"
+        , test "a value at its default in a set message is written as it is" <|
+            \_ ->
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "inner", "deep", "b" ] [] "0" ] }
+                    """{"inner":{"deep":{"b":0}}}"""
+                    |> Expect.equal "https://api.example.com/v1/0"
         ]
 
 
@@ -189,7 +203,7 @@ bodies =
                 body
                     { rule
                         | body = Proto.Http.wholeBody
-                        , path = [ Proto.Http.variable [ "id" ] [], Proto.Http.variable [ "sub", "subfield" ] [] ]
+                        , path = [ Proto.Http.variable [ "id" ] [] "", Proto.Http.variable [ "sub", "subfield" ] [] "" ]
                     }
                     """{"id":"1","text":"hi","sub":{"subfield":"x","other":2}}"""
                     |> Expect.equal (Just """{"text":"hi","sub":{"other":2}}""")
@@ -198,7 +212,7 @@ bodies =
                 body
                     { rule
                         | body = Proto.Http.bodyField "message"
-                        , path = [ Proto.Http.variable [ "message", "messageId" ] [] ]
+                        , path = [ Proto.Http.variable [ "message", "messageId" ] [] "" ]
                     }
                     """{"messageId":"1","message":{"messageId":"1","text":"hi"}}"""
                     |> Expect.equal (Just """{"messageId":"1","text":"hi"}""")

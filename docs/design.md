@@ -167,7 +167,7 @@ getNote =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -1002,7 +1002,7 @@ getNote =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -1442,6 +1442,17 @@ default, and is `Nothing` for a number the method has no binding of
   unreserved characters); a variable matching one segment (`{name}`,
   `{name=*}`) escapes `/` as `%2F`, any other keeps it. A wildcard
   outside a variable never reaches the runtime (`route::template`).
+- A path variable the request's JSON has no value for (a message on
+  the way unset, or the field absent or `null`) is the text of the
+  field's proto3 default, which the generator writes into the binding
+  (`Proto.Http.variable`'s last argument: `0`, `""`, `false`, an enum's
+  zero name). proto3 reads the field as its default there, and a
+  server parses the segment as the field's type: Vanguard rejected the
+  empty segment the runtime sent before
+  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`, `invalid parameter
+  "inner.deep.b": unexpected end of JSON input`) and accepts `0`. A
+  server reads every message on the way as set, which the wire cannot
+  avoid (§7). *(Decided, 2026-10-15.)*
 - Path from the template and the request; body from the `body` field
   (`*`, a named field, or none); remaining request fields as query
   parameters on GET and DELETE, omitting zero values. *(Decided for
@@ -1837,11 +1848,13 @@ Vanguard's answer so that a change either way is noticed:
   Vanguard rejects (it quotes a wrapper's value for protojson only when
   non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
   string.
-- A path variable under an unset message is sent as an empty segment
-  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejects as
-  no int32. The fixture's choice, and the runtime's; proto3 reads the
-  field as `0`, which the fixture writes for every other default, and
-  which Vanguard accepts. Left for a change of the fixture and runtime.
+- A path variable under an unset message was sent as an empty segment
+  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejected as
+  no int32. The runtime now writes the field's default (§5.3), and
+  Vanguard accepts `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
+  `inner` and `inner.deep` as set and empty where the request left
+  them unset. Neither end is wrong: a path segment sets its field and
+  every message on the way, and no path leaves them unset.
 - An unset body field sent as `{}` reaches the server as a set, empty
   message. Neither end is wrong: the wire has no other form for it.
 

@@ -254,6 +254,19 @@ fn field_at(message: &DynamicMessage, path: &[String]) -> Option<(Value, Kind)> 
     Some((message.get_field(&field).into_owned(), field.kind()))
 }
 
+/// The kind of the field at proto path `path` of messages of `descriptor`.
+fn leaf_kind(descriptor: &MessageDescriptor, path: &[String]) -> Kind {
+    let kind = descriptor
+        .get_field_by_name(&path[0])
+        .expect("a field the route names")
+        .kind();
+    match (&kind, path.len()) {
+        (_, 1) => kind,
+        (Kind::Message(inner), _) => leaf_kind(inner, &path[1..]),
+        _ => panic!("{} is not a message", path[0]),
+    }
+}
+
 /// `message` without the field at `path`.
 fn clear(message: &mut DynamicMessage, path: &[String]) {
     let field = message
@@ -276,9 +289,15 @@ fn reference(route: &Route, request: &DynamicMessage) -> Http {
         match segment {
             PathSegment::Literal(text) => segments.push(text.clone()),
             PathSegment::Variable { field, .. } => {
-                let value = field_at(request, &field.proto)
-                    .map(|(value, kind)| text(&value, &kind))
-                    .unwrap_or_default();
+                // Unset (a message on the way, or the field with presence),
+                // the field reads as its proto3 default.
+                let value = match field_at(request, &field.proto) {
+                    Some((value, kind)) => text(&value, &kind),
+                    None => {
+                        let kind = leaf_kind(&request.descriptor(), &field.proto);
+                        text(&Value::default_value(&kind), &kind)
+                    }
+                };
                 segments.push(encode(&value, !segment.is_single()));
                 bound.push(field.proto.clone());
             }

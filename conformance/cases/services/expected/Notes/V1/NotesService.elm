@@ -25,7 +25,7 @@ getNote =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -36,7 +36,7 @@ getNote =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -64,7 +64,7 @@ listNotes =
                     { method = "GET"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
                         , Proto.Http.literal "notes"
                         ]
                     , customVerb = Nothing
@@ -101,7 +101,7 @@ createNote =
                     { method = "POST"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
                         , Proto.Http.literal "notes"
                         ]
                     , customVerb = Nothing
@@ -130,7 +130,7 @@ updateNote =
                     { method = "PATCH"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.bodyField "note"
@@ -158,7 +158,7 @@ replaceNote =
                     { method = "PUT"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.wholeBody
@@ -186,7 +186,7 @@ deleteNote =
                     { method = "DELETE"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
@@ -214,7 +214,7 @@ archiveNote =
                     { method = "POST"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
                         ]
                     , customVerb = Just "archive"
                     , body = Proto.Http.wholeBody
@@ -242,7 +242,7 @@ readFile =
                     { method = "HEAD"
                     , path =
                         [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
                         ]
                     , customVerb = Nothing
                     , body = Proto.Http.noBody
