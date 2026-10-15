@@ -29,7 +29,7 @@ type Segment
     = Literal String
     | Wildcard
     | DoubleWildcard
-    | Variable (List String) (List Segment)
+    | Variable (List String) (List Segment) String
 
 
 type Body

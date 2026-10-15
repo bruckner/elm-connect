@@ -260,13 +260,13 @@ fixtures =
         , headers = []
         , body = Nothing
         }
-    , Replay.fixture "query: a path value under an unset message is empty; defaults are written"
+    , Replay.fixture "query: a path value under an unset message is its default; defaults are written"
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
         "{}"
         { method = "DELETE"
-        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/0/"
+        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/0/0"
         , headers = []
         , body = Nothing
         }
