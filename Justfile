@@ -76,10 +76,10 @@ bless:
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,
 # against the example server over Connect and over transcoding, then the
-# route fixtures against its routes.v1 echo service under Vanguard. Not
-# part of `check`: it needs Go and the Buf Schema Registry; CI runs it as
-# its own job.
-live: live-gen live-build
+# route fixtures against its routes.v1 echo service under Vanguard, then the
+# Connect conformance suite. Not part of `check`: it needs Go and the Buf
+# Schema Registry; CI runs it as its own job.
+live: live-gen live-build && live-conformance
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve target/live/bin/notes-server
@@ -104,8 +104,37 @@ live-build:
     -@cd conformance/live && elm make >/dev/null 2>&1
     cd conformance/live && elm make src/Live.elm --output=build/elm.js
 
+# The Connect conformance suite (design section 7, conformance/README.md):
+# connectconformance, fetched at its pinned release, starts its reference
+# server and runs its unary JSON test cases through conformance.mjs, once
+# with each call sent through the runtime's pure halves and once with
+# Rpc.sendTraced. Each run must pass but for its known-failing cases.
+# connectconformance reads only the first --known-failing flag, so the second
+# run's list is the two files joined.
+live-conformance: live-conformance-gen live-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd conformance/live
+    runner="$(./fetch-conformance.sh)"
+    "$runner" --mode client --conf conformance.yaml --known-failing @known-failing.txt -- node conformance.mjs --send halves
+    cat known-failing.txt known-failing-send.txt > build/known-failing-send.txt
+    "$runner" --mode client --conf conformance.yaml --known-failing @build/known-failing-send.txt -- node conformance.mjs --send sendTraced
+
+# Install the live runner's npm packages as package-lock.json pins them, and
+# regenerate the conformance suite's Elm and JavaScript with buf from its
+# protos on the Buf Schema Registry, failing if they differ from what is
+# committed (or staged). protoc-gen-elm-connect is built as in live-gen.
+live-conformance-gen:
+    cd conformance/live && npm ci --ignore-scripts --no-audit --no-fund
+    mkdir -p target/live/bin
+    cargo build -p protoc-gen-elm-connect
+    cp target/debug/protoc-gen-elm-connect target/live/bin/
+    cd conformance/live/suite && PATH="$PWD/../../../target/live/bin:$PWD/../node_modules/.bin:$PATH" buf generate
+    git diff --exit-code -- conformance/live/suite
+    @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
+
 # Remove build output.
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff
-    rm -rf conformance/live/elm-stuff conformance/live/build
+    rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules

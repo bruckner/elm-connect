@@ -343,6 +343,10 @@ headless Elm program and driven from Node, against
 method over both transports, errors with details, timeouts, retries and
 Connect GET are covered; [`conformance/README.md`](conformance/README.md)
 has the case format, and CI runs it on every pull request.
+`just live` also runs the official
+[Connect conformance suite](https://github.com/connectrpc/conformance)'s
+unary JSON test cases (v1.0.6) against the runtime: 39 of 40 pass, the
+known failure being cancellation.
 
 ## License
 
