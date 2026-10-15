@@ -550,7 +550,7 @@
       },
       "trace": {
         "httpStatus": null,
-        "code": null,
+        "code": "deadline_exceeded",
         "attempts": 1,
         "request": {
           "timeout": 500,
@@ -659,7 +659,7 @@
           "code": "unimplemented",
           "message": "Not Found",
           "details": [],
-          "source": "HttpStatus 404"
+          "source": "HttpStatus"
         }
       },
       "trace": {
@@ -711,7 +711,7 @@
       },
       "trace": {
         "httpStatus": null,
-        "code": null
+        "code": "unavailable"
       }
     }
   },
@@ -1193,7 +1193,7 @@
         "error": {
           "code": "not_found",
           "message": "notes/from-transcode does not exist",
-          "source": "StatusBody 5",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.ErrorInfo",
@@ -1229,7 +1229,7 @@
         "error": {
           "code": "invalid_argument",
           "message": "a note needs a title",
-          "source": "StatusBody 3",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.BadRequest",
@@ -1264,7 +1264,7 @@
         "error": {
           "code": "not_found",
           "message": "notes/a b+c does not exist",
-          "source": "StatusBody 5",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.ErrorInfo",
@@ -1305,7 +1305,7 @@
           "code": "unavailable",
           "message": "Service Unavailable",
           "details": [],
-          "source": "HttpStatus 503"
+          "source": "HttpStatus"
         }
       },
       "trace": {
@@ -1434,7 +1434,7 @@
       },
       "trace": {
         "httpStatus": null,
-        "code": null,
+        "code": "deadline_exceeded",
         "request": {
           "timeout": 500,
           "headers": []
@@ -1513,7 +1513,7 @@
       "result": {
         "error": {
           "code": "unavailable",
-          "source": "StatusBody 14"
+          "source": "StatusBody"
         }
       },
       "trace": {
@@ -1587,7 +1587,7 @@
         "error": {
           "code": "not_found",
           "message": "notes/tracked does not exist",
-          "source": "StatusBody 5",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.ErrorInfo",

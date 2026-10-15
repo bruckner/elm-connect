@@ -214,14 +214,28 @@ encodeResult encodeResponse result =
         Ok response ->
             Encode.object [ ( "ok", encodeResponse response ) ]
 
-        Err (Rpc.Rpc rpc) ->
+        Err (Rpc.Status status answer) ->
             Encode.object
                 [ ( "error"
                   , Encode.object
-                        [ ( "code", Encode.string (Rpc.ErrorCode.toString rpc.code) )
-                        , ( "message", Encode.string rpc.message )
-                        , ( "details", Encode.list Proto.Any.encodeJson rpc.details )
-                        , ( "source", Encode.string (sourceToString rpc.source) )
+                        [ ( "code", Encode.string (Rpc.ErrorCode.toString status.code) )
+                        , ( "message", Encode.string status.message )
+                        , ( "details", Encode.list Proto.Any.encodeJson status.details )
+                        , ( "source", Encode.string (sourceToString status.source) )
+                        , ( "response", encodeResponse_ answer )
+                        ]
+                  )
+                ]
+
+        Err ((Rpc.Http answer) as error) ->
+            Encode.object
+                [ ( "error"
+                  , Encode.object
+                        [ ( "code", Encode.string (Rpc.ErrorCode.toString (Rpc.code error)) )
+                        , ( "message", Encode.string (Rpc.message error) )
+                        , ( "details", Encode.list Proto.Any.encodeJson [] )
+                        , ( "source", Encode.string "HttpStatus" )
+                        , ( "response", encodeResponse_ answer )
                         ]
                   )
                 ]
@@ -230,20 +244,29 @@ encodeResult encodeResponse result =
             Encode.object [ ( "transport", Encode.string (httpErrorToString problem) ) ]
 
 
+{-| The answer an error was read from: its status and body. The headers are
+left out; the trace carries what a case wants of them.
+-}
+encodeResponse_ : Rpc.Response -> Value
+encodeResponse_ answer =
+    Encode.object
+        [ ( "statusCode", Encode.int answer.statusCode )
+        , ( "statusText", Encode.string answer.statusText )
+        , ( "body", Encode.string answer.body )
+        ]
+
+
 sourceToString : Rpc.Source -> String
 sourceToString source =
     case source of
         Rpc.ConnectBody ->
             "ConnectBody"
 
-        Rpc.StatusBody number ->
-            "StatusBody " ++ String.fromInt number
+        Rpc.StatusBody ->
+            "StatusBody"
 
         Rpc.GrpcHeaders ->
             "GrpcHeaders"
-
-        Rpc.HttpStatus status ->
-            "HttpStatus " ++ String.fromInt status
 
 
 httpErrorToString : Http.Error -> String
@@ -274,7 +297,7 @@ encodeTrace trace =
         , ( "httpStatus", maybe Encode.int trace.httpStatus )
         , ( "headers", Encode.dict identity Encode.string trace.headers )
         , ( "trailers", Encode.dict identity Encode.string trace.trailers )
-        , ( "code", maybe (Rpc.Code.toString >> Encode.string) trace.code )
+        , ( "code", Encode.string (Rpc.Code.toString trace.code) )
         , ( "attempts", Encode.int trace.attempts )
         , ( "duration", Encode.float trace.duration )
         , ( "request", encodeRequest trace.request )

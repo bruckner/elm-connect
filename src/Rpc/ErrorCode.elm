@@ -6,9 +6,9 @@ module Rpc.ErrorCode exposing
     )
 
 {-| The codes an RPC fails with, shared by both transports. Connect writes them
-as strings (`"not_found"`), `google.rpc.Status` as gRPC's numbers (`5`). An
-[`Rpc.Rpc`](Rpc#Error) error carries one; [`Rpc.Code`](Rpc-Code) adds `Ok`, for
-what reports either outcome.
+as strings (`"not_found"`), `google.rpc.Status` as gRPC's numbers (`5`). Every
+[`Rpc.Error`](Rpc#Error) has one ([`Rpc.code`](Rpc#code));
+[`Rpc.Code`](Rpc-Code) adds `Ok`, for what reports either outcome.
 
 @docs ErrorCode
 

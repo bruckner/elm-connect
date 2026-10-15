@@ -239,9 +239,11 @@ A **result**, what comes back:
 ```
 
 `result` is one of `{"ok": <response as proto3 JSON>}`, `{"error":
-{"code", "message", "details", "source"}}` (the code as Connect names
-it, each detail as `Proto.Any.encodeJson` writes it, the source as
-`ConnectBody`, `StatusBody 5`, `GrpcHeaders` or `HttpStatus 404`),
+{"code", "message", "details", "source", "response"}}` (the code as
+Connect names it, each detail as `Proto.Any.encodeJson` writes it, the
+source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
+for a code inferred from the status, and `response` the answer the
+error was read from: `statusCode`, `statusText` and `body`),
 `{"transport": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `BadStatus <n>`, `BadBody <problem>`) and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown

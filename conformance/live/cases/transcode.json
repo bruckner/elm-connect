@@ -13,7 +13,7 @@
         "error": {
           "code": "not_found",
           "message": "notes/missing does not exist",
-          "source": "StatusBody 5",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.ErrorInfo",
@@ -51,7 +51,7 @@
         "error": {
           "code": "invalid_argument",
           "message": "a note needs a title",
-          "source": "StatusBody 3",
+          "source": "StatusBody",
           "details": [
             {
               "@type": "type.googleapis.com/google.rpc.BadRequest",
@@ -76,7 +76,7 @@
   },
   {
     "name": "transcode 404 without a Status body",
-    "note": "The code is the HTTP status's, as Connect maps it (404 is unimplemented). That the error keeps the body it was read from (response.body, \"Not Found\\n\") is not asserted: the runtime does not keep it yet.",
+    "note": "The code is the HTTP status's, as Connect maps it (404 is unimplemented), and the error keeps the answer it was read from.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -86,7 +86,13 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unimplemented", "message": "Not Found", "details": [], "source": "HttpStatus 404" }
+        "error": {
+          "code": "unimplemented",
+          "message": "Not Found",
+          "details": [],
+          "source": "HttpStatus",
+          "response": { "statusCode": 404, "body": { "$match": "^Not Found" } }
+        }
       },
       "trace": { "httpStatus": 404, "code": "unimplemented" },
       "wire": [{ "status": 404, "responseBody": "Not Found\n" }]
@@ -103,7 +109,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unknown", "message": "I'm a teapot", "details": [], "source": "HttpStatus 418" }
+        "error": { "code": "unknown", "message": "I'm a teapot", "details": [], "source": "HttpStatus" }
       },
       "trace": { "httpStatus": 418 }
     }

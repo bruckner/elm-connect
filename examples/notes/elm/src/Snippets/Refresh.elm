@@ -18,16 +18,11 @@ withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
             (\error ->
-                case error of
-                    Rpc.Rpc { code } ->
-                        if code == Rpc.ErrorCode.Unauthenticated then
-                            refresh |> Task.andThen (\fresh -> rpc fresh call)
+                if Rpc.code error == Rpc.ErrorCode.Unauthenticated then
+                    refresh |> Task.andThen (\fresh -> rpc fresh call)
 
-                        else
-                            Task.fail error
-
-                    _ ->
-                        Task.fail error
+                else
+                    Task.fail error
             )
 
 
