@@ -3,6 +3,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::ir::ModuleName;
+
 /// How to generate (design §6). The options design §6 lists that are not
 /// here arrive with the features they control.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -25,6 +27,10 @@ pub struct Options {
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
     /// each against the element it names.
     pub rename: BTreeMap<String, String>,
+    /// The module every generated module goes inside (`module_prefix=`,
+    /// design §3.1): with `Api`, `notes.v1` becomes `Api.Notes.V1`. The
+    /// runtime's modules are not generated, so never prefixed.
+    pub module_prefix: Option<ModuleName>,
 }
 
 impl Options {
@@ -53,10 +59,11 @@ impl Options {
                 "streaming" => options.streaming = value.parse()?,
                 "enum_unknown" => options.enum_unknown = value.parse()?,
                 "rename" => options.add_rename(value)?,
+                "module_prefix" => options.module_prefix = Some(parse_module_prefix(value)?),
                 _ => {
                     return Err(format!(
                         "unknown option `{key}`; the options are: int64, unbound_methods, \
-                         streaming, enum_unknown, rename"
+                         streaming, enum_unknown, rename, module_prefix"
                     ));
                 }
             }
@@ -91,6 +98,18 @@ pub fn parse_rename(entry: &str) -> Result<(String, String), String> {
              `{entry}`"
         )),
     }
+}
+
+/// A `module_prefix` value: dot-separated Elm module segments, each an
+/// ASCII uppercase letter followed by ASCII letters, digits or
+/// underscores, such as `Api.Notes`.
+pub fn parse_module_prefix(value: &str) -> Result<ModuleName, String> {
+    ModuleName::parse(value).ok_or_else(|| {
+        format!(
+            "`module_prefix` is dot-separated Elm module segments, such as `Api.Notes`, not \
+             `{value}`"
+        )
+    })
 }
 
 /// How 64-bit integers (`int64`, `uint64`, `sint64`, `fixed64`,
@@ -263,5 +282,38 @@ mod tests {
         assert!(
             error("rename=a.B:C,int64=int,int64=int").contains("`int64` is given more than once")
         );
+    }
+
+    #[test]
+    fn module_prefix_takes_elm_module_segments_once() {
+        let prefix = |parameter| {
+            Options::from_parameter(parameter)
+                .map(|o| o.module_prefix.map(|module| module.to_string()))
+        };
+        assert_eq!(prefix(""), Ok(None));
+        assert_eq!(prefix("module_prefix=Api"), Ok(Some("Api".to_owned())));
+        assert_eq!(
+            prefix("module_prefix = Api.Notes_2 ,int64=int"),
+            Ok(Some("Api.Notes_2".to_owned()))
+        );
+        let error = |parameter: &str| Options::from_parameter(parameter).unwrap_err();
+        for invalid in [
+            "",
+            "api",
+            "Api.",
+            ".Api",
+            "Api..Notes",
+            "Api.1V",
+            "Api-Notes",
+        ] {
+            assert_eq!(
+                error(&format!("module_prefix={invalid}")),
+                format!(
+                    "`module_prefix` is dot-separated Elm module segments, such as \
+                     `Api.Notes`, not `{invalid}`"
+                )
+            );
+        }
+        assert!(error("module_prefix=Api,module_prefix=Api").contains("more than once"));
     }
 }

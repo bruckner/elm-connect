@@ -430,3 +430,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   at the commits that were pinned, so a cold buf cache no longer depends
   on the registry being up. `examples/notes/buf.lock` is gone, and `just
   protos-refresh` re-exports both. The generated code is unchanged.
+- Option `module_prefix=<Elm module>` (CLI `--module-prefix`), such as
+  `module_prefix=Api.Notes`: every module the run generates goes inside
+  it, package and service modules alike, a renamed package's too, with
+  file paths, imports and references following; the runtime's modules
+  are untouched. A value that is not dot-separated Elm module segments
+  is an error. The `module_prefix` conformance case pins it.

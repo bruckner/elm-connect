@@ -90,6 +90,7 @@ Both binaries take the same options: the protoc plugin as
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
+| `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
 For example, to give `notes.v1.Note` the Elm type `Memo` and its field
 `title` the record field `heading`:
@@ -100,6 +101,14 @@ protoc --elm-connect_out=generated \
   notes.proto
 elm-connect gen notes.proto --out generated \
   --rename notes.v1.Note:Memo --rename notes.v1.Note.title:heading
+```
+
+To generate every module inside `Api`, so `notes.v1` becomes `Api.Notes.V1`
+in `generated/Api/Notes/V1.elm`:
+
+```sh
+protoc --elm-connect_out=generated --elm-connect_opt=module_prefix=Api notes.proto
+elm-connect gen notes.proto --out generated --module-prefix Api
 ```
 
 The CLI alone also takes `--include-imports`, named after buf's: it

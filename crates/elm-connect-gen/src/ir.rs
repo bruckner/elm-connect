@@ -175,6 +175,20 @@ impl ModuleName {
         (!segments.is_empty() && segments.iter().all(valid)).then_some(ModuleName { segments })
     }
 
+    /// A module name written dot-separated, such as `Api.Notes`, or
+    /// `None` as for [`ModuleName::new`].
+    pub fn parse(dotted: &str) -> Option<Self> {
+        ModuleName::new(dotted.split('.').map(str::to_owned).collect())
+    }
+
+    /// This module name inside `prefix`: `Notes.V1` under `Api` is
+    /// `Api.Notes.V1`.
+    pub fn under(&self, prefix: &ModuleName) -> ModuleName {
+        ModuleName {
+            segments: [prefix.segments(), self.segments()].concat(),
+        }
+    }
+
     /// The dot-separated segments, outermost first.
     pub fn segments(&self) -> &[String] {
         &self.segments
@@ -717,6 +731,15 @@ mod tests {
         assert_eq!(new(&["1V"]), None);
         assert_eq!(new(&["No-tes"]), None);
         assert_eq!(new(&[""]), None);
+        let parse = |dotted| ModuleName::parse(dotted).map(|module| module.to_string());
+        assert_eq!(parse("Api.Notes").as_deref(), Some("Api.Notes"));
+        assert_eq!(parse(""), None);
+        assert_eq!(parse("Api."), None);
+        assert_eq!(parse("api.Notes"), None);
+        let under = ModuleName::parse("Notes.V1")
+            .zip(ModuleName::parse("Api"))
+            .map(|(module, prefix)| module.under(&prefix).to_string());
+        assert_eq!(under.as_deref(), Some("Api.Notes.V1"));
     }
 
     #[test]
