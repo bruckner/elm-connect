@@ -1,0 +1,47 @@
+services::streaming
+
+  ⚠ The method `chat.v1.Chat.Listen` is server streaming, so it is left out of
+  │ the generated code.
+    ╭─[chat.proto:14:29]
+ 13 │   rpc Send(Line) returns (Line);
+ 14 │   rpc Listen(Line) returns (stream Line);
+    ·                             ───┬──
+    ·                                ╰── streams here
+ 15 │   rpc Talk(stream Line) returns (stream Line);
+    ╰────
+  help: elm-connect generates unary calls only, and `streaming=skip` leaves
+        each streaming method out of its service's module rather than failing.
+        Calls to this method are not generated; drop the option to make it an
+        error again.
+
+services::streaming
+
+  ⚠ The method `chat.v1.Chat.Talk` is bidirectional streaming, so it is left
+  │ out of the generated code.
+    ╭─[chat.proto:15:12]
+ 14 │   rpc Listen(Line) returns (stream Line);
+ 15 │   rpc Talk(stream Line) returns (stream Line);
+    ·            ───┬──
+    ·               ╰── streams here
+ 16 │ }
+    ╰────
+  help: elm-connect generates unary calls only, and `streaming=skip` leaves
+        each streaming method out of its service's module rather than failing.
+        Calls to this method are not generated; drop the option to make it an
+        error again.
+
+services::streaming
+
+  ⚠ The method `chat.v1.Uploads.Upload` is client streaming, so it is left out
+  │ of the generated code.
+    ╭─[chat.proto:19:14]
+ 18 │ service Uploads {
+ 19 │   rpc Upload(stream Line) returns (Line);
+    ·              ───┬──
+    ·                 ╰── streams here
+ 20 │ }
+    ╰────
+  help: elm-connect generates unary calls only, and `streaming=skip` leaves
+        each streaming method out of its service's module rather than failing.
+        Calls to this method are not generated; drop the option to make it an
+        error again.

@@ -9,6 +9,10 @@
 //! the protoc plugin does not have; [`Diagnostics::attach_sources`] adds it
 //! when it is known, and a problem without it still renders, naming the
 //! proto elements by their full names.
+//!
+//! Most problems are errors, which fail the run. A few are warnings: what
+//! an option told the generator to leave out (`streaming=skip`), reported
+//! beside a successful run so the omission is never silent.
 
 mod spans;
 
@@ -161,6 +165,7 @@ pub struct Site {
 #[derive(Clone, Debug)]
 pub struct Problem {
     code: Code,
+    warning: bool,
     message: String,
     help: String,
     sites: Vec<Site>,
@@ -188,6 +193,7 @@ impl Problem {
     fn new(code: Code, message: String, help: impl Into<String>, sites: Vec<Site>) -> Self {
         Problem {
             code,
+            warning: false,
             message,
             help: help.into(),
             sites,
@@ -195,9 +201,23 @@ impl Problem {
         }
     }
 
+    /// The problem as a warning: reported, but not failing the run.
+    fn warning(self) -> Self {
+        Problem {
+            warning: true,
+            ..self
+        }
+    }
+
     /// What kind of problem this is.
     pub fn code(&self) -> Code {
         self.code
+    }
+
+    /// Whether this is a warning, which a successful run reports beside its
+    /// output, rather than an error, which fails the run.
+    pub fn is_warning(&self) -> bool {
+        self.warning
     }
 
     /// What was found.
@@ -366,10 +386,27 @@ impl Problem {
             ),
             "elm-connect generates unary calls only: Connect streaming and the transcoders' \
              streaming each frame messages differently, and neither has an Elm design yet. \
-             Move the streaming methods to a service in a package you do not generate, or \
-             leave their files out of the files to generate.",
+             Pass `streaming=skip` to leave streaming methods out and generate the rest.",
             vec![site],
         )
+    }
+
+    /// The method `method` streams (`which`, as for [`Problem::streaming`])
+    /// and `streaming=skip` leaves it out of its service's module: a
+    /// warning.
+    pub fn streaming_skipped(method: &str, which: &str, site: Site) -> Self {
+        Problem::new(
+            Code::Streaming,
+            format!(
+                "The method `{method}` is {which} streaming, so it is left out of the \
+                 generated code."
+            ),
+            "elm-connect generates unary calls only, and `streaming=skip` leaves each \
+             streaming method out of its service's module rather than failing. Calls to this \
+             method are not generated; drop the option to make it an error again.",
+            vec![site],
+        )
+        .warning()
     }
 
     /// The method `method` has no `google.api.http` rule, and
@@ -642,7 +679,11 @@ impl Diagnostic for Problem {
     }
 
     fn severity(&self) -> Option<Severity> {
-        Some(Severity::Error)
+        Some(if self.warning {
+            Severity::Warning
+        } else {
+            Severity::Error
+        })
     }
 
     fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
@@ -697,7 +738,9 @@ impl Diagnostic for Elsewhere {
 }
 
 /// Every problem a run found, in the order found. A run that returns
-/// `Diagnostics` as its error has at least one.
+/// `Diagnostics` as its error has at least one, and only errors; the
+/// warnings of a successful run come back as `Diagnostics` of warnings
+/// alone.
 #[derive(Clone, Debug, Default)]
 pub struct Diagnostics {
     problems: Vec<Problem>,
@@ -729,6 +772,20 @@ impl Diagnostics {
         self.problems.iter()
     }
 
+    /// The errors and the warnings, each in the order found.
+    pub fn split_warnings(self) -> (Diagnostics, Diagnostics) {
+        let (warnings, errors) = self.problems.into_iter().partition(Problem::is_warning);
+        (
+            Diagnostics { problems: errors },
+            Diagnostics { problems: warnings },
+        )
+    }
+
+    /// Whether every problem is a warning (and so does any vacuously).
+    fn all_warnings(&self) -> bool {
+        self.problems.iter().all(Problem::is_warning)
+    }
+
     /// Gives every problem the source text of its files, so it renders
     /// with snippets. `sources` maps proto file names to their text;
     /// `columns` says how the compiler counted columns. A file missing from
@@ -752,9 +809,11 @@ impl<'a> IntoIterator for &'a Diagnostics {
 
 impl fmt::Display for Diagnostics {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.problems.len() {
-            1 => f.write_str("elm-connect found a problem in the protos"),
-            n => write!(f, "elm-connect found {n} problems in the protos"),
+        match (self.all_warnings(), self.problems.len()) {
+            (true, 1) => f.write_str("elm-connect has a warning about the protos"),
+            (true, n) => write!(f, "elm-connect has {n} warnings about the protos"),
+            (false, 1) => f.write_str("elm-connect found a problem in the protos"),
+            (false, n) => write!(f, "elm-connect found {n} problems in the protos"),
         }
     }
 }
@@ -762,6 +821,14 @@ impl fmt::Display for Diagnostics {
 impl std::error::Error for Diagnostics {}
 
 impl Diagnostic for Diagnostics {
+    fn severity(&self) -> Option<Severity> {
+        Some(if self.all_warnings() {
+            Severity::Warning
+        } else {
+            Severity::Error
+        })
+    }
+
     fn related<'a>(&'a self) -> Option<Box<dyn Iterator<Item = &'a dyn Diagnostic> + 'a>> {
         Some(Box::new(
             self.problems

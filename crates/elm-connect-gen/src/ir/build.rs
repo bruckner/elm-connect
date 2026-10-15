@@ -16,6 +16,7 @@ use super::{
 };
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
+use crate::options::{Options, Streaming};
 use crate::route::{self, Route};
 
 /// The package whose types are well-known types, never generated.
@@ -32,8 +33,35 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 /// response types are held to the same closure rule.
 ///
 /// On any problem, returns every problem found instead.
+///
+/// This is [`build_with`] under the default options, which give no
+/// warnings.
 pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, Diagnostics> {
-    let mut builder = Builder::default();
+    build_with(pool, generate, &Options::default()).map(|built| built.packages)
+}
+
+/// A built IR, and what building it warned about.
+#[derive(Clone, Debug)]
+pub struct Built {
+    /// One package per proto package, as [`build`] gives them.
+    pub packages: Vec<Package>,
+    /// The warnings, in the order found: what `options` left out.
+    pub warnings: Diagnostics,
+}
+
+/// [`build`], under the options that shape the IR: `streaming=skip`
+/// leaves streaming methods out of their services, each a warning.
+///
+/// On any error, returns every error found instead.
+pub fn build_with(
+    pool: &DescriptorPool,
+    generate: &[&str],
+    options: &Options,
+) -> Result<Built, Diagnostics> {
+    let mut builder = Builder {
+        streaming: options.streaming,
+        ..Builder::default()
+    };
 
     let mut by_package: BTreeMap<String, Vec<FileDescriptor>> = BTreeMap::new();
     let mut requested = BTreeSet::new();
@@ -110,10 +138,11 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
     mark_cycles(&mut packages);
     builder.check_import_cycles(&by_package);
 
-    if builder.diagnostics.is_empty() {
-        Ok(packages)
+    let (errors, warnings) = builder.diagnostics.split_warnings();
+    if errors.is_empty() {
+        Ok(Built { packages, warnings })
     } else {
-        Err(builder.diagnostics)
+        Err(errors)
     }
 }
 
@@ -198,6 +227,8 @@ struct Builder {
     module_names: Namespace,
     types: HashMap<String, TypeName>,
     references: Vec<Reference>,
+    /// What a streaming method gets.
+    streaming: Streaming,
 }
 
 impl Builder {
@@ -428,8 +459,10 @@ impl Builder {
         };
         if let Some((which, stream_tag)) = streaming {
             let site = self.site(file, &[path, &[stream_tag]].concat(), "streams here".into());
-            self.diagnostics
-                .push(Problem::streaming(full_name, which, site));
+            self.diagnostics.push(match self.streaming {
+                Streaming::Error => Problem::streaming(full_name, which, site),
+                Streaming::Skip => Problem::streaming_skipped(full_name, which, site),
+            });
             return None;
         }
 

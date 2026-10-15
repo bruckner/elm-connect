@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use elm_connect_gen::{Int64, Options, UnboundMethods};
+use elm_connect_gen::{Int64, Options, Streaming, UnboundMethods};
+use miette::Report;
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -34,6 +35,11 @@ enum Command {
         /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
         #[arg(long, value_name = "implicit|error", default_value = "implicit")]
         unbound_methods: UnboundMethods,
+        /// What a client, server or bidirectional streaming method gets:
+        /// `error` (a diagnostic) or `skip` (left out of its service's
+        /// module, with a warning; the rest is generated).
+        #[arg(long, value_name = "error|skip", default_value = "error")]
+        streaming: Streaming,
     },
 }
 
@@ -45,12 +51,17 @@ fn main() -> miette::Result<()> {
             out,
             int64,
             unbound_methods,
+            streaming,
         } => {
             let mut options = Options::default();
             options.int64 = int64;
             options.unbound_methods = unbound_methods;
+            options.streaming = streaming;
             let generated = elm_connect::generate(&files, &includes, &options)?;
-            for path in elm_connect::write(&generated, &out)? {
+            if !generated.warnings.is_empty() {
+                eprintln!("{:?}", Report::new(generated.warnings));
+            }
+            for path in elm_connect::write(&generated.files, &out)? {
                 println!("{}", path.display());
             }
             Ok(())
@@ -89,6 +100,23 @@ mod tests {
             UnboundMethods::Error
         );
         assert!(unbound_methods(&["--unbound-methods", "drop"]).is_err());
+    }
+
+    fn streaming(args: &[&str]) -> Result<Streaming, clap::Error> {
+        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
+        let cli = Cli::try_parse_from(base.iter().chain(args))?;
+        let Command::Gen { streaming, .. } = cli.command;
+        Ok(streaming)
+    }
+
+    #[test]
+    fn streaming_defaults_to_error_and_takes_skip() {
+        assert_eq!(streaming(&[]).expect("parses"), Streaming::Error);
+        assert_eq!(
+            streaming(&["--streaming", "skip"]).expect("parses"),
+            Streaming::Skip
+        );
+        assert!(streaming(&["--streaming", "drop"]).is_err());
     }
 
     #[test]

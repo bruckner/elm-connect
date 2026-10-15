@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::Columns;
-use elm_connect_gen::{GeneratedFile, Options};
+use elm_connect_gen::{Generated, GeneratedFile, Options};
 use miette::{IntoDiagnostic, Report, WrapErr};
 use protox::prost_reflect::DescriptorPool;
 
@@ -63,19 +63,28 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
 /// `options` say.
 ///
 /// Problems in the protos come back as one `Report` whose snippets point
-/// into the proto sources.
+/// into the proto sources; the warnings of a successful run carry their
+/// snippets too.
 pub fn generate(
     files: &[PathBuf],
     includes: &[PathBuf],
     options: &Options,
-) -> Result<Vec<GeneratedFile>, Report> {
+) -> Result<Generated, Report> {
     let compiled = compile(files, includes)?;
     let inputs: Vec<&str> = compiled.inputs.iter().map(String::as_str).collect();
-    elm_connect_gen::generate(&compiled.pool, &inputs, options).map_err(|mut diagnostics| {
-        // protox records columns in bytes.
-        diagnostics.attach_sources(&compiled.sources, Columns::Bytes);
-        Report::new(diagnostics)
-    })
+    // protox records columns in bytes.
+    match elm_connect_gen::generate(&compiled.pool, &inputs, options) {
+        Ok(mut generated) => {
+            generated
+                .warnings
+                .attach_sources(&compiled.sources, Columns::Bytes);
+            Ok(generated)
+        }
+        Err(mut diagnostics) => {
+            diagnostics.attach_sources(&compiled.sources, Columns::Bytes);
+            Err(Report::new(diagnostics))
+        }
+    }
 }
 
 /// Writes each generated file under `out`, creating directories as

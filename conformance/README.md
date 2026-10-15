@@ -12,6 +12,8 @@ cases/<case>/
                          are compiled but not generated
   expected/
     <Module/Path>.elm    the Elm generated from the input, one file per module
+    warnings.txt         beside the modules, when generating warns: the
+                         warnings (`streaming=skip`'s skipped methods)
   or
     diagnostics.txt      the problems generating reports instead
 ```
@@ -28,8 +30,10 @@ options.
 case; `just check` runs them with the other Rust tests.
 
 - **golden**: regenerating each modules case gives exactly its expected
-  files, byte for byte, none missing and none extra. A failure shows a
-  unified diff.
+  files, byte for byte, none missing and none extra, and warns exactly
+  its `warnings.txt`, rendered as `diagnostics.txt` is, or not at all
+  when it has none. A failure shows a unified diff. A unit test in the
+  same file exercises the warnings' mismatch and blessing paths.
 - **diagnostics**: generating each `diagnostics.txt` case fails, and the
   problems, rendered narrow (80 columns, no colour) with the proto sources
   attached, are exactly `diagnostics.txt`. A unit test in the same file
@@ -59,8 +63,8 @@ just bless
 ```
 
 runs the golden and diagnostics tests with `ELM_CONNECT_BLESS=1`, which
-rewrites each case's `expected/` (adding, replacing and deleting modules,
-or rewriting `diagnostics.txt`) instead of comparing. Read the diff before
+rewrites each case's `expected/` (adding, replacing and deleting modules
+and `warnings.txt`, or rewriting `diagnostics.txt`) instead of comparing. Read the diff before
 committing it: the blessed output is what users will maintain against.
 
 To add a case, create `cases/<name>/input/` with its protos and bless. For

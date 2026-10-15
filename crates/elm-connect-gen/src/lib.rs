@@ -10,12 +10,13 @@ pub mod emit;
 pub mod googleapis;
 pub mod ir;
 pub mod naming;
+pub mod options;
 pub mod route;
 
 use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
-pub use crate::emit::{Int64, Options, UnboundMethods};
+pub use crate::options::{Int64, Options, Streaming, UnboundMethods};
 
 /// The version of the generator, stamped into everything it emits.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -30,20 +31,34 @@ pub struct GeneratedFile {
     pub content: String,
 }
 
+/// What a successful run gives: the files, and what the run warned about.
+#[derive(Clone, Debug)]
+pub struct Generated {
+    /// One file per module, sorted by path.
+    pub files: Vec<GeneratedFile>,
+    /// The warnings, in the order found: what the options left out, such
+    /// as the streaming methods `streaming=skip` skips. Empty under the
+    /// default options. Rendering them is the caller's business; both
+    /// binaries print them to stderr.
+    pub warnings: Diagnostics,
+}
+
 /// Generates one Elm module per proto package declared by the files in
-/// `generate` (names as `pool` knows them), and one per service of each,
-/// sorted by path. A package of services alone still gets a package
-/// module, holding its registry.
+/// `generate` (names as `pool` knows them), and one per service of each
+/// that has a method, sorted by path. A package of services alone still
+/// gets a package module, holding its registry. A service without methods,
+/// declared so or left so by `streaming=skip`, gets no module: Elm rejects
+/// a module that declares nothing.
 ///
-/// On any problem, returns every problem found instead: those of building
+/// On any error, returns every error found instead: those of building
 /// the IR, or else the methods `options` reject, or else those of emitting
-/// every package.
+/// every package. Warnings come back only with the files.
 pub fn generate(
     pool: &DescriptorPool,
     generate: &[&str],
     options: &Options,
-) -> Result<Vec<GeneratedFile>, Diagnostics> {
-    let packages = ir::build(pool, generate)?;
+) -> Result<Generated, Diagnostics> {
+    let ir::Built { packages, warnings } = ir::build_with(pool, generate, options)?;
     if options.unbound_methods == UnboundMethods::Error {
         let unbound = ir::unbound_methods(pool, &packages);
         if !unbound.is_empty() {
@@ -56,7 +71,7 @@ pub fn generate(
         match emit::emit(package, options) {
             Ok(module) => {
                 files.push(file(&module));
-                for service in &package.services {
+                for service in package.services.iter().filter(|s| !s.methods.is_empty()) {
                     files.push(file(&emit::emit_service(package, service, options)));
                 }
             }
@@ -71,7 +86,7 @@ pub fn generate(
         return Err(diagnostics);
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(files)
+    Ok(Generated { files, warnings })
 }
 
 /// The file of `module`: `Notes/V1/NotesService.elm` for

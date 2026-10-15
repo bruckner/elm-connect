@@ -36,7 +36,7 @@ mod graph;
 
 use std::fmt;
 
-pub use build::{build, unbound_methods};
+pub use build::{Built, build, build_with, unbound_methods};
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.
@@ -71,7 +71,8 @@ pub struct Service {
     /// name.
     pub module: ModuleName,
     /// The methods, in declaration order. Streaming methods are
-    /// diagnostics, so every method here is unary.
+    /// diagnostics, or under `streaming=skip` left out, so every method
+    /// here is unary.
     pub methods: Vec<Method>,
 }
 

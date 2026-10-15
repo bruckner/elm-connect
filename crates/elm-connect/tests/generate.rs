@@ -22,7 +22,7 @@ fn scalars_case_generates_its_expected_output() {
     .unwrap_or_else(|report| panic!("{report:?}"));
     let out = Path::new(env!("CARGO_TARGET_TMPDIR")).join("cli-scalars");
     let _ = fs::remove_dir_all(&out);
-    let written = elm_connect::write(&generated, &out).expect("write the output");
+    let written = elm_connect::write(&generated.files, &out).expect("write the output");
 
     assert_eq!(written, [out.join("Scalars/V1.elm")]);
     let expected = fs::read_to_string(case.join("expected/Scalars/V1.elm")).expect("blessed");
@@ -77,5 +77,28 @@ fn google_api_annotations_need_no_include_path() {
     assert_eq!(
         rule.map(|rule| rule.template.as_str()),
         Some("/v1/{name=notes/*}")
+    );
+}
+
+#[test]
+fn warnings_come_back_with_the_files() {
+    let case = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../conformance/cases/services_streaming_skip");
+    let mut options = Options::default();
+    options.streaming = elm_connect_gen::Streaming::Skip;
+    let generated = elm_connect::generate(
+        &[PathBuf::from("chat.proto")],
+        &[case.join("input")],
+        &options,
+    )
+    .unwrap_or_else(|report| panic!("{report:?}"));
+
+    let paths: Vec<&str> = generated.files.iter().map(|f| f.path.as_str()).collect();
+    assert_eq!(paths, ["Chat/V1.elm", "Chat/V1/Chat.elm"]);
+    let warnings = elm_connect_gen::diagnostics::render_narrow(&generated.warnings);
+    assert_eq!(
+        warnings,
+        fs::read_to_string(case.join("expected/warnings.txt")).expect("blessed"),
+        "the CLI's warnings carry the proto source, as the corpus pins them"
     );
 }

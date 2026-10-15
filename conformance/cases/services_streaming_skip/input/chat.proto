@@ -1,0 +1,20 @@
+// Under `streaming=skip`, streaming methods are left out, each a warning,
+// and the rest is generated. A service whose every method streams is left
+// with no methods, and so gets no module.
+syntax = "proto3";
+
+package chat.v1;
+
+message Line {
+  string text = 1;
+}
+
+service Chat {
+  rpc Send(Line) returns (Line);
+  rpc Listen(Line) returns (stream Line);
+  rpc Talk(stream Line) returns (stream Line);
+}
+
+service Uploads {
+  rpc Upload(stream Line) returns (Line);
+}
