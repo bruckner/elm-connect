@@ -38,9 +38,9 @@ jobs:
     # server over Connect and transcoding, the route fixtures under Vanguard
     # and the Connect conformance suite (connectconformance from its GitHub
     # release), and the browser example's build, which compiles the README's
-    # excerpts. buf fetches googleapis and the suite's protos from the Buf
-    # Schema Registry. Each cache is keyed on what pins its contents, so a
-    # change to one pin refetches only that one.
+    # excerpts. buf generates from vendored protos and fetches nothing.
+    # Each cache is keyed on what pins its contents, so a change to one pin
+    # refetches only that one.
     name: just live (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
@@ -49,14 +49,13 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - name: Cache Go modules and builds, and buf's modules
+      - name: Cache Go modules and builds
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-            ~/.cache/buf
-          key: live-go-buf-${{ runner.os }}-${{ hashFiles('mise.toml', 'examples/notes/server/go.sum', 'examples/notes/buf.lock', 'examples/notes/buf.gen*.yaml', 'conformance/live/suite/buf.gen.yaml') }}
+          key: live-go-${{ runner.os }}-${{ hashFiles('mise.toml', 'examples/notes/server/go.sum') }}
       - name: Cache npm's downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

@@ -14,6 +14,14 @@ Version 2.0; a copy of the license is in [LICENSE-APACHE](LICENSE-APACHE)
 and at <http://www.apache.org/licenses/LICENSE-2.0>. Each file carries
 its own copyright and license header.
 
+The notes example vendors three googleapis files,
+`examples/notes/third_party/googleapis/google/api/annotations.proto`,
+`google/api/http.proto` and `google/rpc/error_details.proto`, exported
+unmodified from the Buf Schema Registry's `buf.build/googleapis/googleapis`
+module (its README.md names the commit). They are Copyright Google LLC and
+licensed under the Apache License, Version 2.0; the module's license is
+beside them in `examples/notes/third_party/googleapis/LICENSE`.
+
 ## Connect conformance suite
 
 `conformance/live/suite/elm/` and `conformance/live/suite/js/` are
@@ -24,3 +32,9 @@ v1.0.6, which are Copyright The Connect Authors and licensed under the
 Apache License, Version 2.0; a copy of the license is in
 [LICENSE-APACHE](LICENSE-APACHE). The generated JavaScript keeps the
 protos' license header.
+
+The protos themselves are vendored, unmodified, in
+`conformance/live/suite/proto/`, exported from the Buf Schema Registry's
+`buf.build/connectrpc/conformance` module at the commit labelled v1.0.6
+(its README.md names it), with the module's license in
+`conformance/live/suite/proto/LICENSE`.

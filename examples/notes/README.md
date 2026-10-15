@@ -13,7 +13,8 @@ its file, and `just live` compiles the application.
 
 ```
 proto/notes/v1/notes.proto   the API; its comments document each method's errors
-buf.yaml, buf.lock           the modules; googleapis comes from the Buf Schema Registry
+buf.yaml                     the modules: proto, routes and the vendored googleapis
+third_party/googleapis/      the googleapis files the API imports (README.md: provenance)
 buf.gen.yaml                 Go stubs into server/gen, Elm into elm/generated
 buf.gen.google-rpc.yaml      Elm for google.rpc's error details into elm/generated
 buf.gen.include-imports.yaml the Elm of both, run with --include-imports to check it adds nothing
@@ -72,8 +73,8 @@ codecs) and `elm/generated/Notes/V1/NotesService.elm` (one function per
 method), and the two write the same files. googleapis reaches buf's
 plugins as imports only, so nothing is generated for it. The application
 also reads `google.rpc` error details, so `buf.gen.google-rpc.yaml`
-generates `google/rpc/error_details.proto` from the same googleapis
-module, at the commit `buf.lock` pins, into `Google.Rpc`:
+generates `google/rpc/error_details.proto` from the vendored googleapis
+module into `Google.Rpc`:
 
 ```sh
 buf generate --template buf.gen.google-rpc.yaml
@@ -86,6 +87,9 @@ that gives the same files: with every import asked for, the plugin still
 writes no `Google.Api` module, since it skips `google/api/http.proto`
 and `google/api/annotations.proto`, which only carry `google.api.http`,
 and `google.protobuf` maps to the runtime.
+None of them needs the network: the googleapis files are in
+`third_party/googleapis/`, and `just protos-refresh` re-exports them
+from the Buf Schema Registry at the commit its README names.
 
 ## The runtime in `elm.json`
 

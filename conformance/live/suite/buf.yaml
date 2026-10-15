@@ -1,0 +1,6 @@
+# The Connect conformance suite's protos, vendored under proto/ (its
+# README.md says from where and how to refresh them), so that generation
+# needs no network.
+version: v2
+modules:
+  - path: proto

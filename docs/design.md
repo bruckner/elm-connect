@@ -1647,7 +1647,7 @@ both the plain names.
   both. `Source`'s `Int`s went too: `StatusBody`'s duplicated the raw
   body and `HttpStatus`'s `statusCode`. A `Status = { code, message,
   details }` alias wrapped in the constructor was rejected, since
-  `google.rpc.Status` generated from the BSR is already a
+  `google.rpc.Status` generated from googleapis is already a
   `Google.Rpc.Status` record with `code : Int`, and two `Status`
   records with different code types would confuse.
 - Every error has a code, a `Transport` error the one the Connect
@@ -1824,12 +1824,21 @@ Decisions:
   alone, and a method without one is reached on its Connect route,
   which is the implicit route (§5.3).
 - buf generates the example, so the plugin runs under buf for real:
-  googleapis is a Buf Schema Registry dependency, its files reach the
+  googleapis is a module of the example's workspace, its files reach the
   plugin as imports only, and nothing is generated for them. `just
   live-gen` also generates the Elm under `buf generate
   --include-imports` (`buf.gen.include-imports.yaml`) and checks it
   gives the committed files, so the googleapis files that only carry
   `google.api.http` are not generated when asked for either (§3.1).
+- *(Decided 2026-10-15.)* The protos generation reads are vendored, not
+  fetched: googleapis' few files the example imports
+  (`examples/notes/third_party/googleapis/`) and the conformance suite's
+  (`conformance/live/suite/proto/`), each exported once with `buf export`
+  at the commit the Buf Schema Registry pinned and refreshed by `just
+  protos-refresh`. Fetching them was a dependency on the registry being
+  up whenever buf's cache was cold, a developer's first run or CI's
+  after a pin changed, and the registry was unavailable five times in one
+  day of runs; vendored, `buf generate` needs no network.
 - HTTP/1.1 only, without TLS: elm/http cannot choose a protocol, and a
   browser handles the rest.
 - The runner sends through its own `XMLHttpRequest` over `node:http`
@@ -1860,7 +1869,8 @@ the example server's `go.mod`), runs its reference server and
 `ClientCompatRequest`s with the JavaScript protoc-gen-es generates, makes
 each call through the runner with the Elm protoc-gen-elm-connect
 generates from the same protos (`streaming=skip`; the three streaming
-methods are its only warnings), and reports what the runtime gave. The
+methods are its only warnings; the protos are v1.0.6's, vendored in
+`conformance/live/suite/proto/`), and reports what the runtime gave. The
 config (`conformance.yaml`) selects 40 test cases: basic success,
 `Unimplemented`, every error code, Connect's mapping of a bare HTTP
 status, error metadata, duplicate metadata, Unicode messages, deadline
@@ -1956,11 +1966,10 @@ application is driven by hand in a browser, not by the live suite; the
 calls it makes are the suite's.
 
 Workstream 5, built 2026-10-15: the `live` job caches Go's modules and
-build cache with buf's modules, npm's downloads, Elm's packages and the
-`connectconformance` binary, each keyed on the files that pin it
-(`go.sum`, `buf.lock` and the buf templates; `package-lock.json`; the
-`elm.json`s; `fetch-conformance.sh`), and runs `just live`, which builds
-the example.
+build cache, npm's downloads, Elm's packages and the `connectconformance`
+binary, each keyed on the files that pin it (`go.sum`;
+`package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and runs
+`just live`, which builds the example.
 
 What is now verified live, against connect-go and Vanguard: every
 method of the example API over both transports, from Node in CI and

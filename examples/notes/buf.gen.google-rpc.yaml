@@ -1,14 +1,14 @@
 # `buf generate --template buf.gen.google-rpc.yaml`, run here by `just
 # live-gen` beside buf.gen.yaml: the Elm for google.rpc's error details
 # (`Google.Rpc`: ErrorInfo, BadRequest and the rest), which the browser
-# example reads the server's error details with. The module is googleapis
-# at the commit buf.lock pins, and only error_details.proto is generated;
-# the Go server takes the same messages from genproto.
+# example reads the server's error details with, from the vendored
+# googleapis copy of error_details.proto. The Go server takes the same
+# messages from genproto.
 version: v2
 inputs:
-  - module: buf.build/googleapis/googleapis:c17df5b2beca46928cc87d5656bd5343 # gitleaks:allow (a BSR commit)
+  - directory: .
     paths:
-      - google/rpc/error_details.proto
+      - third_party/googleapis/google/rpc/error_details.proto
 plugins:
   - local: protoc-gen-elm-connect
     out: elm/generated
