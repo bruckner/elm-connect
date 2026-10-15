@@ -38,9 +38,9 @@ type alias Envelope =
 
 
 {-| Which of the runtime's ways of sending a call to use. `Halves` sends
-through the pure halves, as an application that needs the response's headers
-does: `Rpc.request`, `Http.request` with the answer kept whole, and
-`Rpc.response`.
+through the pure halves, as an application that needs the whole answer does:
+`Rpc.request`, `Http.request` with the answer kept whole, and `Rpc.response`.
+`Traced` gives the answer's status, headers and trailers in the trace.
 -}
 type Sending
     = Traced
@@ -272,6 +272,8 @@ encodeTrace trace =
         , ( "method", Encode.string trace.method )
         , ( "binding", maybe Encode.int trace.binding )
         , ( "httpStatus", maybe Encode.int trace.httpStatus )
+        , ( "headers", Encode.dict identity Encode.string trace.headers )
+        , ( "trailers", Encode.dict identity Encode.string trace.trailers )
         , ( "code", maybe (Rpc.Code.toString >> Encode.string) trace.code )
         , ( "attempts", Encode.int trace.attempts )
         , ( "duration", Encode.float trace.duration )

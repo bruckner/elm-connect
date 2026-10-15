@@ -12,6 +12,7 @@ import Proto.Message exposing (Message)
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
+import Rpc.Internal.Http
 import Rpc.Internal.Retry as Retry
 import Test exposing (Test, describe, test)
 
@@ -122,6 +123,7 @@ suite =
         , requests
         , responses
         , retries
+        , trailers
         ]
 
 
@@ -438,4 +440,76 @@ retries =
             \_ ->
                 Retry.delay { policy | attempts = 1 } True 1 (Just Unavailable)
                     |> Expect.equal Nothing
+        ]
+
+
+trailers : Test
+trailers =
+    let
+        split pairs =
+            Rpc.splitTrailers (Dict.fromList pairs)
+
+        answered headers =
+            { url = "https://api.example.com/notes.v1.Notes/GetNote"
+            , statusCode = 200
+            , statusText = "OK"
+            , headers = Dict.fromList headers
+            }
+
+        -- How taskTraced fills a Trace's headers and trailers from an answer.
+        traceMetadata answer =
+            Rpc.Internal.Http.metadataOf answer
+                |> Maybe.map (.headers >> Rpc.splitTrailers)
+    in
+    describe "headers and trailers"
+        [ test "a trailer- header of any case is a trailer, its name without the prefix" <|
+            \_ ->
+                split [ ( "Trailer-X-Custom-Trailer", "a" ), ( "TRAILER-x-other", "b" ), ( "trailer-lower", "c" ) ]
+                    |> Expect.equal
+                        { headers = Dict.empty
+                        , trailers = Dict.fromList [ ( "x-custom-trailer", "a" ), ( "x-other", "b" ), ( "lower", "c" ) ]
+                        }
+        , test "header names are lowercased" <|
+            \_ ->
+                split [ ( "Content-Type", "application/json" ), ( "X-Custom-Header", "v" ) ]
+                    |> Expect.equal
+                        { headers = Dict.fromList [ ( "content-type", "application/json" ), ( "x-custom-header", "v" ) ]
+                        , trailers = Dict.empty
+                        }
+        , test "no trailer- headers leave the trailers empty" <|
+            \_ ->
+                (split [ ( "trailer", "x-custom-trailer" ), ( "grpc-trailer-x", "v" ) ]).trailers
+                    |> Expect.equal Dict.empty
+        , test "a header named trailer- alone stays a header" <|
+            \_ ->
+                split [ ( "Trailer-", "v" ) ]
+                    |> Expect.equal { headers = Dict.fromList [ ( "trailer-", "v" ) ], trailers = Dict.empty }
+        , test "names differing only in case are joined with a comma" <|
+            \_ ->
+                split [ ( "X-Dup", "a" ), ( "x-dup", "b" ), ( "Trailer-T", "c" ), ( "trailer-t", "d" ) ]
+                    |> Expect.equal
+                        { headers = Dict.fromList [ ( "x-dup", "a, b" ) ]
+                        , trailers = Dict.fromList [ ( "t", "c, d" ) ]
+                        }
+        , test "an answer's headers reach the trace split" <|
+            \_ ->
+                Http.GoodStatus_ (answered [ ( "content-type", "application/json" ), ( "x-custom-header", "foo, bar" ), ( "trailer-x-custom-trailer", "baz" ) ]) "{}"
+                    |> traceMetadata
+                    |> Expect.equal
+                        (Just
+                            { headers = Dict.fromList [ ( "content-type", "application/json" ), ( "x-custom-header", "foo, bar" ) ]
+                            , trailers = Dict.fromList [ ( "x-custom-trailer", "baz" ) ]
+                            }
+                        )
+        , test "an error answer's headers reach the trace split" <|
+            \_ ->
+                Http.BadStatus_ (answered [ ( "trailer-x-custom-trailer", "baz" ) ]) "{}"
+                    |> traceMetadata
+                    |> Maybe.map .trailers
+                    |> Expect.equal (Just (Dict.fromList [ ( "x-custom-trailer", "baz" ) ]))
+        , test "no answer, no metadata" <|
+            \_ ->
+                [ Http.Timeout_, Http.NetworkError_, Http.BadUrl_ "x" ]
+                    |> List.map traceMetadata
+                    |> Expect.equal [ Nothing, Nothing, Nothing ]
         ]

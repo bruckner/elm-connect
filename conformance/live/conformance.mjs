@@ -11,13 +11,14 @@
 //
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
-// Rpc.response), which is the one way an application gets an answer's status
-// and headers; or `sendTraced`, `send` or `task`, which give the response or
-// the error only. What is reported is what the mode gives an application: the
-// decoded response or the `Rpc.Error`, and with `halves` the answer's status
-// and headers. The runner's `wire` log is never read. What the runtime cannot
-// do is in known-failing.txt, and what only the halves can in
-// known-failing-send.txt.
+// Rpc.response), which give an application the answer's status and headers;
+// `sendTraced`, which gives them in the Rpc.Trace, its headers and trailers
+// already split; or `send` or `task`, which give the response or the error
+// only. What is reported is what the mode gives an application: the decoded
+// response or the `Rpc.Error`, and with `halves` or `sendTraced` the answer's
+// status, headers and trailers. The runner's `wire` log is never read. What
+// the runtime cannot do is in known-failing.txt, and what only the halves
+// can in known-failing-send.txt.
 //
 // Formats and the reasoning: conformance/README.md, "The Connect conformance
 // suite"; design section 7.
@@ -92,12 +93,12 @@ async function answer(runner, send, request) {
   const result = outcome.result;
   if (result.runner !== undefined) return failed(request, `the runner refused the call: ${result.runner}`);
 
-  const { responseHeaders, responseTrailers } = metadata(outcome.response);
+  const { responseHeaders, responseTrailers } = outcome.trace ? traced(outcome.trace) : metadata(outcome.response);
   const response = {
     responseHeaders,
     responseTrailers,
     payloads: [],
-    httpStatusCode: outcome.response?.status,
+    httpStatusCode: outcome.trace ? (outcome.trace.httpStatus ?? undefined) : outcome.response?.status,
   };
   if (result.ok !== undefined) {
     let decoded;
@@ -154,6 +155,13 @@ function metadata(answer) {
     else responseHeaders.push({ name: lower, value: [value] });
   }
   return { responseHeaders, responseTrailers };
+}
+
+// A trace's headers and trailers, which Rpc.Trace has split as metadata()
+// does, each value one as elm/http gives it.
+function traced(trace) {
+  const list = (pairs) => Object.entries(pairs).map(([name, value]) => ({ name, value: [value] }));
+  return { responseHeaders: list(trace.headers), responseTrailers: list(trace.trailers) };
 }
 
 // A Connect code name (`not_found`) as the suite's Code (CODE_NOT_FOUND).

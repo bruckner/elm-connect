@@ -352,3 +352,11 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   and compiled by `just live`; the `Any` example, which built a `Note`
   from two fields it does not have, is fixed. The `live` CI job caches npm, Elm and
   `connectconformance` as well as Go and buf.
+- `Rpc.Trace` gains `headers` and `trailers`: the last answer's response
+  metadata, split as a Connect unary answer carries it, trailers being
+  the headers named `trailer-<name>`; names are lowercased and a
+  repeated header's values come joined with `", "`. `Rpc.splitTrailers`
+  applies the same rule to the `Http.Metadata` the pure halves give.
+  The Connect conformance suite's five header and trailer test cases now
+  pass through `Rpc.sendTraced` (39 of 40), and `known-failing-send.txt`
+  lists none.
