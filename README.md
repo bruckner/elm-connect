@@ -233,7 +233,9 @@ viaTranscoding =
 `Rpc.config` is Connect with every call POSTed; set `transport`
 (`Rpc.Transport.connect`, `connectGet` or `transcode`), `headers`,
 `timeout`, `withCredentials` or `retry` (`Rpc.Retry.on [ Unavailable ]`,
-with jittered, capped backoff) with record syntax.
+with jittered, capped backoff) with record syntax. `Rpc.checkConfig`
+reports a config's problems, such as a `baseUrl` with a query, where
+the application builds it rather than at the first call.
 Errors are one type for both transports, `Rpc.Error`: a `Status` the
 server stated (an `Rpc.Code.Code`, a message, details and
 where they were read from), an `Http` answer that stated none, a

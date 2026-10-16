@@ -682,3 +682,10 @@ tag (design §8).
 - `Rpc.Config`, `Rpc.Request` and `Rpc.Response` are frozen records
   (design §8.3): a new option goes on `Transport`, `Retry` or `Call`,
   or on a future `Rpc.Client`, never into `Config`.
+- `Rpc.checkConfig : Config -> List String` reports a config's problems
+  where the application builds it, today a `baseUrl` holding `?` or
+  `#`; sending such a config still fails with `Http.BadUrl`.
+- `Rpc.Response` gains `url`, the URL the answer came from after any
+  redirect (`Http.Metadata.url`).
+- `Rpc.idempotent : Call -> Bool` is replaced by `Rpc.idempotency :
+  Call -> Proto.Method.Idempotency`, the descriptor's three levels.

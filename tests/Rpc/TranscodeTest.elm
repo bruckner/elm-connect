@@ -361,7 +361,7 @@ withoutResponse =
 
 blank : Rpc.Response
 blank =
-    { statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
+    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
 
 
 stated : Code -> String -> Source -> Result Error a

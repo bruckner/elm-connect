@@ -1313,7 +1313,9 @@ keeps.
   but not to cache. Transcoding takes its verb from the rule.
   *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
   `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
-  under `idempotentOnly`.
+  under `idempotentOnly`. `Rpc.idempotency` reads it from a call; it was
+  `Rpc.idempotent : Call -> Bool` until the descriptor's three levels
+  made that a misnomer.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
@@ -1480,6 +1482,7 @@ type alias Config =                       -- frozen (§8.3)
     }
 
 config : String -> Config                 -- Connect, POST only, nothing else set
+checkConfig : Config -> List String       -- the config's problems, [] when none
 
 -- Rpc.Transport: opaque
 connect, connectGet, transcode : Transport
@@ -1554,7 +1557,12 @@ it.
   or `#` would put it in the query or fragment. Such a call is not
   sent: every way of sending fails it with `Transport (Http.BadUrl
   url)`, the URL it would have used. The pure `Rpc.request` still
-  builds that URL, since it has no error to give.
+  builds that URL, since it has no error to give. `Rpc.checkConfig`
+  reports it where the application builds its config, at start-up or
+  when its settings change, rather than at the first call: a pure
+  `Config -> List String`, empty when nothing is wrong, read as a list
+  so later releases can report more (invalid header values among
+  them). *(Decided, 2026-10-16.)*
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
   code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
@@ -1612,7 +1620,8 @@ viaBinding : Int -> Call req res -> Maybe (Call req res)                -- trans
 -- reading
 method : Call req res -> Proto.Method.Method req res
 descriptor : Call req res -> Proto.Method.Descriptor
-serviceName, methodName, idempotent, requestMessage, requestJson
+serviceName, methodName, requestMessage, requestJson
+idempotency : Call req res -> Proto.Method.Idempotency
 toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
 
 -- sending
@@ -1644,10 +1653,10 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   codec names left room for binary codecs beside them, which Elm's
   rules for records never allowed.
 - The accessors are `method` (the `Method`), `descriptor` (its
-  descriptor), `serviceName`, `methodName` and `idempotent` (whether
-  the method is `IdempotencyNoSideEffects`); the
-  string accessors were `service` and `method` until `method` named
-  the record. *(Decided, 2026-10-13.)*
+  descriptor), `serviceName`, `methodName` and `idempotency` (the
+  descriptor's, §4); the string accessors were `service` and `method`
+  until `method` named the record. *(Decided, 2026-10-13;
+  `idempotency` 2026-10-16.)*
 - `viaBinding n` is `Just` the call over binding `n` when the
   descriptor has one (`0` the rule's own, `1` and up its additional
   bindings), `Nothing` otherwise; a method without a rule gives
@@ -1878,8 +1887,9 @@ type Source
     | StatusBody                -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders               -- grpc-status / grpc-message headers
 
-type alias Response =           -- elm/http's Http.Metadata names, and the body; frozen (§8.3)
-    { statusCode : Int, statusText : String, headers : Dict String String, body : String }
+type alias Response =           -- elm/http's Http.Metadata, and the body; frozen (§8.3)
+    { url : String, statusCode : Int, statusText : String
+    , headers : Dict String String, body : String }
 
 code : Error -> Rpc.Code.Code   -- Http: by Connect's table; Transport, Canceled: as below
 message : Error -> String
@@ -1936,8 +1946,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   protocol's table, `message` is the status text (`HTTP <status>` when
   empty), and it has no details.
 - `Status` and `Http` errors keep the answer they were read from, a
-  `Response`: the status and status text and the headers as
-  elm/http's `Http.Metadata` gives them, and the body, whichever reader
+  `Response`: the URL it came from (after any redirect), the status and
+  status text and the headers as elm/http's `Http.Metadata` gives
+  them, and the body, whichever reader
   recognised it, so an application can parse what the readers do not
   (`Http response -> myDecoder response.body`). Some servers cannot be
   changed to answer in a standard shape, and when the readers fall

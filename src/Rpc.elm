@@ -1,8 +1,8 @@
 module Rpc exposing
     ( Call, call
     , withHeaders, withTimeout, withTracker, viaBinding
-    , method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
-    , Config, config
+    , method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
+    , Config, config, checkConfig
     , task, send, cancel
     , taskTraced, sendTraced
     , Error(..), Source(..), Response, code, message, errorToString, details
@@ -45,12 +45,12 @@ own state:
 
 # Reading a call
 
-@docs method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
+@docs method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
 
 
 # Config
 
-@docs Config, config
+@docs Config, config, checkConfig
 
 
 # Sending
@@ -225,12 +225,15 @@ methodName (Call c) =
     Method.name (Method.toDescriptor c.method)
 
 
-{-| Whether the method has no side effects: its idempotency is
-[`IdempotencyNoSideEffects`](Proto-Method#Idempotency).
+{-| What the proto says repeating the call does: nothing at all
+(`IdempotencyNoSideEffects`, which Connect may send as a GET), nothing more
+than the first time (`IdempotencyIdempotent`), or nothing it says
+(`IdempotencyUnknown`). A retry policy retries only the first two unless told
+otherwise.
 -}
-idempotent : Call req res -> Bool
-idempotent (Call c) =
-    Method.idempotency (Method.toDescriptor c.method) == IdempotencyNoSideEffects
+idempotency : Call req res -> Idempotency
+idempotency (Call c) =
+    Method.idempotency (Method.toDescriptor c.method)
 
 
 {-| The request the call sends.
@@ -276,6 +279,7 @@ application's state with record syntax:
     `/api`). A trailing `/` is dropped. A call's path is appended to it, so it
     can hold no query or fragment: a call sent with a `baseUrl` holding `?` or
     `#` is not sent, and fails with `Transport (Http.BadUrl url)`.
+    [`checkConfig`](#checkConfig) finds that where the config is built.
   - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
   - `timeout`: milliseconds. Connect also tells the server, in
     `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
@@ -312,6 +316,33 @@ config baseUrl =
     , withCredentials = False
     , retry = Nothing
     }
+
+
+{-| What is wrong with a config, one sentence each, or `[]` when nothing is:
+the problems sending would otherwise find one call at a time. Run it where the
+application builds its config, at start-up or when its settings change, and
+report what it finds there:
+
+    case Rpc.checkConfig cfg of
+        [] ->
+            Ok cfg
+
+        problems ->
+            Err (String.join "; " problems)
+
+Today it finds a `baseUrl` holding a query or a fragment. A call sent with
+such a config still fails with `Transport (Http.BadUrl url)`; this finds it
+before any call is made. Later releases may find more, so the result is
+read as a list rather than matched.
+
+-}
+checkConfig : Config -> List String
+checkConfig cfg =
+    if badBaseUrl cfg then
+        [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
+
+    else
+        []
 
 
 
@@ -502,11 +533,14 @@ type Source
     | GrpcHeaders
 
 
-{-| An answer as it arrived: its HTTP status and status text, its headers as
-elm/http gives them, and its body. The record's fields are fixed.
+{-| An answer as it arrived: the URL it came from (after any redirect), its
+HTTP status and status text, its headers as elm/http gives them, and its body.
+The fields are elm/http's `Http.Metadata` and the body; the record's fields
+are fixed.
 -}
 type alias Response =
-    { statusCode : Int
+    { url : String
+    , statusCode : Int
     , statusText : String
     , headers : Dict String String
     , body : String
@@ -1204,7 +1238,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry,
 retryDelay cfg c tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Rpc.Internal.Retry.delay policy (Method.idempotency (descriptor c)) tried (code error)
+            Rpc.Internal.Retry.delay policy (idempotency c) tried (code error)
                 |> Maybe.map (Tuple.pair policy)
 
         _ ->
@@ -1220,7 +1254,8 @@ failure : Http.Metadata -> String -> Error
 failure metadata raw =
     let
         answer =
-            { statusCode = metadata.statusCode
+            { url = metadata.url
+            , statusCode = metadata.statusCode
             , statusText = metadata.statusText
             , headers = metadata.headers
             , body = raw

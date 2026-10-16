@@ -132,7 +132,7 @@ withoutResponse =
 
 blank : Rpc.Response
 blank =
-    { statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
+    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
 
 
 httpError : Int -> String -> Error
@@ -172,6 +172,7 @@ suite =
         , keptResponses
         , retries
         , transports
+        , configs
         , bodies
         , traces
         , trailers
@@ -232,8 +233,8 @@ calls =
     describe "calls"
         [ test "read back" <|
             \_ ->
-                ( ( Rpc.serviceName c, Rpc.methodName c ), ( Rpc.idempotent c, Rpc.requestMessage c ) )
-                    |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( True, { name = "notes/42" } ) )
+                ( ( Rpc.serviceName c, Rpc.methodName c ), ( Rpc.idempotency c, Rpc.requestMessage c ) )
+                    |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( Proto.Method.IdempotencyNoSideEffects, { name = "notes/42" } ) )
         , test "the method and its descriptor are the ones the call was made from" <|
             \_ ->
                 ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.method c) { name = "x" }) ), Proto.Method.name (Rpc.descriptor c), Proto.Method.output (Rpc.descriptor c) )
@@ -355,8 +356,8 @@ requests =
                     |> Expect.equal "POST"
         , test "connectGet POSTs an idempotent call with effects: only IdempotencyNoSideEffects is a GET" <|
             \_ ->
-                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.idempotent (deleteNote { name = "x" }) )
-                    |> Expect.equal ( "POST", False )
+                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.idempotency (deleteNote { name = "x" }) )
+                    |> Expect.equal ( "POST", Proto.Method.IdempotencyIdempotent )
         , test "GET is off by default" <|
             \_ ->
                 (Rpc.request base (getNote { name = "x" })).method
@@ -645,6 +646,21 @@ keptResponses =
                                     Nothing
                         )
                     |> Expect.equal (Err (Just ( 204, "No Content", "" )))
+        , test "the URL the answer came from, after any redirect" <|
+            \_ ->
+                Rpc.response base
+                    (getNote { name = "x" })
+                    (Http.BadStatus_ { url = "https://api.example.com/moved", statusCode = 404, statusText = "", headers = Dict.empty } "")
+                    |> Result.mapError
+                        (\error ->
+                            case error of
+                                Http got ->
+                                    got.url
+
+                                _ ->
+                                    ""
+                        )
+                    |> Expect.equal (Err "https://api.example.com/moved")
         ]
 
 
@@ -800,6 +816,27 @@ transports =
             \_ ->
                 base.transport
                     |> Expect.equal Rpc.Transport.connect
+        ]
+
+
+configs : Test
+configs =
+    describe "checkConfig"
+        [ test "a base URL that is an origin or a path is fine" <|
+            \_ ->
+                [ "https://api.example.com", "https://api.example.com/v1/", "/api", "" ]
+                    |> List.map (Rpc.config >> Rpc.checkConfig)
+                    |> Expect.equal [ [], [], [], [] ]
+        , test "a base URL holding a query or a fragment is reported" <|
+            \_ ->
+                [ "https://api.example.com/?key=1", "https://api.example.com/#top" ]
+                    |> List.map (Rpc.config >> Rpc.checkConfig >> List.length)
+                    |> Expect.equal [ 1, 1 ]
+        , test "the report names the base URL" <|
+            \_ ->
+                Rpc.checkConfig (Rpc.config "https://api.example.com/?key=1")
+                    |> List.all (String.contains "https://api.example.com/?key=1")
+                    |> Expect.equal True
         ]
 
 
