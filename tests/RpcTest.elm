@@ -175,6 +175,18 @@ percentEncoding =
             \_ -> encode "😀" |> Expect.equal "%F0%9F%98%80"
         , test "writes a lone surrogate as U+FFFD" <|
             \_ -> encode (String.left 1 "😀") |> Expect.equal "%EF%BF%BD"
+        , test "decodes 100,000 characters without exhausting the stack" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x")
+                    |> Expect.equal (Just (String.repeat 100000 "x"))
+        , test "decodes 100,000 escapes without exhausting the stack" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 25000 "%F0%9F%98%80")
+                    |> Expect.equal (Just (String.repeat 25000 "😀"))
+        , test "fails on a byte that is not UTF-8 at the end of a long text" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x" ++ "%FF")
+                    |> Expect.equal Nothing
         ]
 
 
@@ -338,6 +350,17 @@ responses =
             \_ ->
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{\"title\":\"hi\"}")
                     |> Expect.equal (Ok "hi")
+        , test "a 100,000-character grpc-message is decoded without exhausting the stack" <|
+            \_ ->
+                let
+                    long =
+                        String.repeat 50000 "%C3%A9" ++ String.repeat 50000 "x"
+                in
+                Rpc.response base
+                    (getNote { name = "x" })
+                    (Http.BadStatus_ { url = "", statusCode = 503, statusText = "", headers = Dict.fromList [ ( "grpc-status", "14" ), ( "grpc-message", long ) ] } "")
+                    |> Result.mapError Rpc.message
+                    |> Expect.equal (Err (String.repeat 50000 "é" ++ String.repeat 50000 "x"))
         , test "200 with a body that does not decode is a transport error" <|
             \_ ->
                 case Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{}") of

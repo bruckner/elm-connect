@@ -513,3 +513,7 @@ tag (design §8).
 - `Proto.Json.intDict` accepts only canonical decimal keys within
   32 bits: `"07"` (which collided with `"7"`), `"+5"`, `"-0"` and keys
   past 2^32 − 1 or below −2^31 now fail.
+- Percent-decoding a `grpc-message` header and parsing a timestamp's
+  fraction no longer recurse once per character, so a long header (from
+  about 5,000 characters) no longer overflows the stack inside elm/http's
+  load handler and leaves the call without a result.
