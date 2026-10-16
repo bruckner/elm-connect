@@ -22,27 +22,35 @@
 //!   encoders, decoders. Each section has the enums, then the messages,
 //!   each followed by its recursion wrapper and its oneofs; the defaults
 //!   section has the messages alone, and is left out when there are none,
-//!   and the descriptors section has each enum's and message's typed
-//!   record.
+//!   and the descriptors section has each enum's and message's descriptor
+//!   followed by its typed value.
 //! - A service's module, `Notes.V1.NotesService`, holds one function per
 //!   method from its request to an `Rpc.Call`, written point-free as
-//!   `Rpc.call` of the method's `Proto.Method.Method` record: the typed
-//!   records of its request and response (`Notes.V1.messageNote`, or the
-//!   runtime's for a well-known type) and its descriptor, holding its
-//!   service, name, idempotency, type names and bindings, the bindings
-//!   its HTTP rule's own and then its additional ones, as data
-//!   (`Proto.Http.binding`). A method without a rule has no
+//!   `Rpc.call` of the method's `Proto.Method.Method`, built by
+//!   `Proto.Method.method` from the encoder of its request and the decoder
+//!   of its response (`Notes.V1.encodeGetNoteRequest`, or the runtime's
+//!   for a well-known type) and its descriptor, built by
+//!   `Proto.Descriptor.method` from its service, name, idempotency, type
+//!   names and bindings, the bindings its HTTP rule's own and then its
+//!   additional ones, as data (`Proto.Http.binding`). A method without a rule has no
 //!   bindings, and the runtime calls it over the implicit route. Every
 //!   name the module refers to is qualified, so a method's name cannot
 //!   shadow or clash with one.
-//! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
-//!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
-//!   and its descriptor, every declared name with its number. The
-//!   message descriptors are written inline, faithful to the proto: each
-//!   field's names, number, cardinality, kind (other types by full name)
-//!   and oneof. The section ends with the package's `registry`: its own
-//!   descriptors, then the registries of the packages its module imports
+//! - A message's descriptor, `descriptorFoo :
+//!   Proto.Descriptor.MessageDescriptor`, is built with
+//!   `Proto.Descriptor.message` from its full name and one
+//!   `Proto.Descriptor.field` per field, faithful to the proto: its names,
+//!   number, cardinality and kind (other types by full name), then a
+//!   modifier only for what it has beyond those (`inOneof`,
+//!   `withBehavior`, `withDeprecated`). An enum's, `descriptorBar :
+//!   Proto.Descriptor.EnumDescriptor`, holds every declared name with its
+//!   number. Each type's typed value follows its descriptor:
+//!   `messageFoo : Proto.Message.Message Foo`, built by
+//!   `Proto.Message.message` from its encoder, decoder, default and
+//!   descriptor, and `enumBar : Proto.Enum.Enum Bar` likewise with its
+//!   zero value. The section ends with the package's `registry`: its own
+//!   descriptors (the `descriptorFoo` values, so a program using it keeps
+//!   no codecs), then the registries of the packages its module imports
 //!   and the well-known types', so it is transitive.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
@@ -149,6 +157,8 @@ const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
 const PROTO_HTTP: &str = "Proto.Http";
 /// The runtime package's typed message records.
 const PROTO_MESSAGE: &str = "Proto.Message";
+/// The runtime package's typed method values.
+const PROTO_METHOD: &str = "Proto.Method";
 /// The runtime package's typed enum records.
 const PROTO_ENUM: &str = "Proto.Enum";
 /// The runtime package's registry of descriptors.
@@ -377,6 +387,7 @@ impl Emitter {
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
             types.push(self.enum_type(enumeration));
+            descriptors.push(self.enum_descriptor(enumeration));
             descriptors.push(self.enum_record(enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
@@ -384,6 +395,7 @@ impl Emitter {
         for shape in &messages {
             types.push(self.message_alias(shape));
             defaults.push(self.message_default(shape));
+            descriptors.push(self.message_descriptor(shape));
             descriptors.push(self.message_record(shape));
             encoders.push(self.message_encoder(shape));
             decoders.push(self.message_decoder(shape));
@@ -596,6 +608,7 @@ mod tests {
             ty,
             cyclic: false,
             jstype: crate::ir::JsType::Normal,
+            annotations: crate::ir::Annotations::default(),
         }
     }
 
@@ -670,6 +683,7 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Descriptor",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version"
@@ -693,16 +707,22 @@ mod tests {
         let on = printed(&Options::default());
         assert!(
             on.contains(
-                "fields = [ { name = \"n\", jsonName = \"n\", number = 1, cardinality = \
-                 Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar \
-                 Proto.Descriptor.Sfixed64, oneof = Nothing } ]"
+                "descriptorA =\n    Proto.Descriptor.message \"t.v1.A\" [ \
+                 Proto.Descriptor.field \"n\" \"n\" 1 (Proto.Descriptor.Map \
+                 Proto.Descriptor.Bool) (Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64) ]"
+            ),
+            "{on}"
+        );
+        assert!(
+            on.contains(
+                "messageA =\n    Proto.Message.message encodeA decodeA defaultA descriptorA"
             ),
             "{on}"
         );
         assert!(
             on.contains(
                 "registry =\n    Proto.Registry.union (Proto.Registry.fromDescriptors \
-                 [ messageA.descriptor ] []) Proto.Registry.wellKnown"
+                 [ descriptorA ] []) Proto.Registry.wellKnown"
             ),
             "{on}"
         );
@@ -798,7 +818,7 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
-            printed.contains("kind = Proto.Descriptor.Message \"other.v1.B\""),
+            printed.contains("(Proto.Descriptor.Message \"other.v1.B\")"),
             "{printed}"
         );
         assert!(
@@ -857,7 +877,7 @@ mod tests {
             elm_name: name.to_lowercase(),
             input,
             output,
-            idempotent: false,
+            idempotency: crate::ir::Idempotency::Unknown,
             http: None,
             routes: Vec::new(),
         };
@@ -893,7 +913,9 @@ mod tests {
             [
                 "Json.Encode",
                 "Proto.Any",
+                "Proto.Descriptor",
                 "Proto.Json",
+                "Proto.Method",
                 "Proto.Version",
                 "Rpc",
                 "T.V1"
@@ -901,10 +923,10 @@ mod tests {
         );
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "{ encodeRequest = T.V1.encodeA\n        , responseDecoder = T.V1.decodeA",
+            "(Proto.Method.method T.V1.encodeA T.V1.decodeA ",
             // Qualified, or `identity` would be the method itself.
-            "{ encodeRequest = Basics.identity\n        , responseDecoder = Proto.Json.empty",
-            "{ encodeRequest = Proto.Json.encodeInt64AsInt\n        , responseDecoder = Proto.Any.jsonDecoder",
+            "(Proto.Method.method Basics.identity Proto.Json.empty ",
+            "(Proto.Method.method Proto.Json.encodeInt64AsInt Proto.Any.jsonDecoder ",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

@@ -583,3 +583,40 @@ tag (design §8).
 - `elm-connect gen` warns on stderr about each stale generated file it
   leaves under `--out` (by `check`'s rule; it deletes nothing) and says
   how many modules it wrote.
+- `Proto.Message.Message`, `Proto.Enum.Enum` and `Proto.Method.Method`
+  are opaque, so they can gain what a later release needs as a
+  modifier without breaking generated code. They are built by
+  `Proto.Message.message`, `Proto.Enum.enum` and `Proto.Method.method`,
+  each taking its codecs, default (not for a method) and descriptor in
+  order, and read by `encode`, `decoder`, `default` and `descriptor`
+  (`encodeRequest`, `responseDecoder` and `descriptor` for a method).
+  The record fields `encodeJson`, `jsonDecoder` and `descriptor` are
+  gone; `messageNote.descriptor` is `Proto.Message.descriptor
+  messageNote`.
+- The descriptor trees are opaque, built by `Proto.Descriptor`'s
+  positional `message`, `field`, `enum`, `value` and `method` and read
+  through a module per type: `Proto.MessageDescriptor`, `Proto.Field`,
+  `Proto.EnumDescriptor`, `Proto.EnumValue` (new, replacing the
+  `{ name, number }` record) and `Proto.MethodDescriptor`. A message's
+  oneofs are derived from its fields' `inOneof`. Generated modules use
+  the builders, writing a field's oneof, behavior and deprecation as
+  modifiers only where set: the Connect conformance suite's generated
+  Elm is 6 % smaller (124,818 to 117,797 bytes), its descriptors
+  section 12 %.
+- Generated modules give each message and enum a top-level descriptor,
+  `descriptorNote` and `descriptorVisibility`, which `messageNote` and
+  `enumVisibility` hold, and the package `registry` is built from them,
+  so a program using the registry no longer keeps every type's codecs.
+- `Proto.Descriptor.MethodDescriptor` carries `idempotency :
+  Idempotency` (`Unknown`, `NoSideEffects`, `Idempotent`) in place of
+  `idempotent : Bool`, which was true for `NO_SIDE_EFFECTS` alone. A
+  retry policy with `idempotentOnly` now retries an `IDEMPOTENT` method
+  too; Connect still sends only a `NoSideEffects` method as a GET.
+  `Rpc.idempotent` keeps its meaning, the method has no side effects.
+- Descriptors carry each field's `google.api.field_behavior`
+  (`Proto.Field.behavior`, a list of the new `Proto.Descriptor.Behavior`)
+  and `deprecated` option, and each enum value's `deprecated`
+  (`Proto.EnumValue.deprecated`). The CLI embeds
+  `google/api/field_behavior.proto`, which neither binary generates;
+  `annotations` conformance case. `Proto.Descriptor.Cardinality` gains
+  `Required`, for proto2, which the generator does not give yet.

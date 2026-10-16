@@ -32,22 +32,12 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Any)
-import Proto.Descriptor exposing (MessageDescriptor)
 import Proto.Duration as Duration exposing (Duration)
 import Proto.Internal.Any
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
-import Proto.Message exposing (Message)
+import Proto.Message exposing (Message, message)
 import Time
-
-
-message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> MessageDescriptor -> Message a
-message encodeJson jsonDecoder default descriptor =
-    { encodeJson = encodeJson
-    , jsonDecoder = jsonDecoder
-    , default = default
-    , descriptor = descriptor
-    }
 
 
 {-| `google.protobuf.Empty`: `()`, written `{}`.

@@ -21,11 +21,16 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
 ];
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 16] = [
+pub const RUNTIME_MODULES: [&str; 21] = [
     "Rpc",
     "Rpc.Code",
     "Rpc.ErrorCode",
     "Proto.Descriptor",
+    "Proto.MessageDescriptor",
+    "Proto.Field",
+    "Proto.EnumDescriptor",
+    "Proto.EnumValue",
+    "Proto.MethodDescriptor",
     "Proto.Http",
     "Proto.Message",
     "Proto.Enum",
@@ -243,7 +248,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
+/// `descriptor`)
 /// followed by a type name. Type names are unique within a module and
 /// start with an uppercase letter, and no prefix is another's, so two such
 /// names never collide: neither within one prefix nor across two. (A
@@ -275,6 +281,18 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
+
+/// The descriptor of a message or an enum (`Proto.Descriptor`'s
+/// `MessageDescriptor` or `EnumDescriptor`): `descriptor` followed by the
+/// type's Elm name (`Note` becomes `descriptorNote`). Like
+/// [`default_name`], a prefix and a type name; one prefix serves both,
+/// since a message and an enum never share a name in one module.
+pub fn descriptor_name(type_elm_name: &str) -> String {
+    format!("{DESCRIPTOR_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`descriptor_name`].
+const DESCRIPTOR_PREFIX: &str = "descriptor";
 
 /// The value holding a package's descriptors and those of every package
 /// it imports (`Proto.Registry.Registry`). Every other top-level value of a
@@ -437,12 +455,14 @@ mod tests {
         assert_eq!(default_name("OuterInner"), "defaultOuterInner");
         assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
         assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
+        assert_eq!(descriptor_name("OuterInner"), "descriptorOuterInner");
         let prefixes = [
             "encode",
             "decode",
             DEFAULT_PREFIX,
             MESSAGE_PREFIX,
             ENUM_PREFIX,
+            DESCRIPTOR_PREFIX,
         ];
         for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
             assert!(prefixes.iter().all(|prefix| !local.starts_with(prefix)));

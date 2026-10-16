@@ -83,56 +83,50 @@ defaultEmpty =
 -- DESCRIPTORS
 
 
+descriptorScalars : Proto.Descriptor.MessageDescriptor
+descriptorScalars =
+    Proto.Descriptor.message "scalars.v1.Scalars"
+        [ Proto.Descriptor.field "double_value" "doubleValue" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Double)
+        , Proto.Descriptor.field "float_value" "floatValue" 2 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Float)
+        , Proto.Descriptor.field "int32_value" "int32Value" 3 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Int32)
+        , Proto.Descriptor.field "int64_value" "int64Value" 4 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Int64)
+        , Proto.Descriptor.field "uint32_value" "uint32Value" 5 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Uint32)
+        , Proto.Descriptor.field "uint64_value" "uint64Value" 6 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Uint64)
+        , Proto.Descriptor.field "sint32_value" "sint32Value" 7 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Sint32)
+        , Proto.Descriptor.field "sint64_value" "sint64Value" 8 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Sint64)
+        , Proto.Descriptor.field "fixed32_value" "fixed32Value" 9 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Fixed32)
+        , Proto.Descriptor.field "fixed64_value" "fixed64Value" 10 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Fixed64)
+        , Proto.Descriptor.field "sfixed32_value" "sfixed32Value" 11 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Sfixed32)
+        , Proto.Descriptor.field "sfixed64_value" "sfixed64Value" 12 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64)
+        , Proto.Descriptor.field "bool_value" "boolValue" 13 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Bool)
+        , Proto.Descriptor.field "string_value" "text" 14 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "bytes_value" "bytesValue" 15 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Bytes)
+        , Proto.Descriptor.field "small_count" "smallCount" 16 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Int64)
+        , Proto.Descriptor.field "exact_total" "exactTotal" 17 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Uint64)
+        ]
+
+
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
-    { encodeJson = encodeScalars
-    , jsonDecoder = decodeScalars
-    , default = defaultScalars
-    , descriptor =
-        { typeName = "scalars.v1.Scalars"
-        , fields =
-            [ { name = "double_value", jsonName = "doubleValue", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
-            , { name = "float_value", jsonName = "floatValue", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Float, oneof = Nothing }
-            , { name = "int32_value", jsonName = "int32Value", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "int64_value", jsonName = "int64Value", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "uint32_value", jsonName = "uint32Value", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "uint64_value", jsonName = "uint64Value", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            , { name = "sint32_value", jsonName = "sint32Value", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint32, oneof = Nothing }
-            , { name = "sint64_value", jsonName = "sint64Value", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint64, oneof = Nothing }
-            , { name = "fixed32_value", jsonName = "fixed32Value", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed32, oneof = Nothing }
-            , { name = "fixed64_value", jsonName = "fixed64Value", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed64, oneof = Nothing }
-            , { name = "sfixed32_value", jsonName = "sfixed32Value", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed32, oneof = Nothing }
-            , { name = "sfixed64_value", jsonName = "sfixed64Value", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64, oneof = Nothing }
-            , { name = "bool_value", jsonName = "boolValue", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "string_value", jsonName = "text", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "bytes_value", jsonName = "bytesValue", number = 15, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "small_count", jsonName = "smallCount", number = 16, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "exact_total", jsonName = "exactTotal", number = 17, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeScalars decodeScalars defaultScalars descriptorScalars
+
+
+descriptorEmpty : Proto.Descriptor.MessageDescriptor
+descriptorEmpty =
+    Proto.Descriptor.message "scalars.v1.Empty" []
 
 
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
-    { encodeJson = encodeEmpty
-    , jsonDecoder = decodeEmpty
-    , default = defaultEmpty
-    , descriptor =
-        { typeName = "scalars.v1.Empty"
-        , fields = []
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeEmpty decodeEmpty defaultEmpty descriptorEmpty
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageScalars.descriptor
-            , messageEmpty.descriptor
+            [ descriptorScalars
+            , descriptorEmpty
             ]
             []
         )

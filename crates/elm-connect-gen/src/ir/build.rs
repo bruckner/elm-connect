@@ -11,9 +11,9 @@ use prost_reflect::{
 use super::graph::strongly_connected;
 use super::rename;
 use super::{
-    Cardinality, Enum, EnumValue, Field, HttpRule, HttpVerb, JsType, MapKey, Message, Method,
-    ModuleName, Oneof, OneofVariant, Package, ScalarKind, Service, TypeName, TypeRef, WellKnown,
-    Wrapper,
+    Annotations, Cardinality, Enum, EnumValue, Field, FieldBehavior, HttpRule, HttpVerb,
+    Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant, Package,
+    ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
@@ -683,7 +683,7 @@ impl Builder {
             elm_name,
             input: input?,
             output: output?,
-            idempotent: idempotent(method),
+            idempotency: idempotency(method),
             http,
             routes,
         };
@@ -803,8 +803,13 @@ impl Builder {
 
         let mut values: Vec<EnumValue> = Vec::new();
         let mut declared = Vec::new();
+        let mut deprecated = Vec::new();
         for value in declared_values(enumeration) {
             declared.push(value.name().to_owned());
+            let options = value.enum_value_descriptor_proto().options.as_ref();
+            if options.is_some_and(|options| options.deprecated()) {
+                deprecated.push(value.name().to_owned());
+            }
             // An alias joins the constructor of the first value with its
             // number and claims no name of its own.
             if let Some(first) = values.iter_mut().find(|v| v.number == value.number()) {
@@ -841,7 +846,11 @@ impl Builder {
             values.next()?,
             values.collect(),
         )
-        .map(|built| built.with_declaration_order(declared))
+        .map(|built| {
+            built
+                .with_declaration_order(declared)
+                .with_deprecated(deprecated)
+        })
     }
 
     fn message(
@@ -925,6 +934,7 @@ impl Builder {
                             ty,
                             cyclic: false,
                             jstype: jstype(&member),
+                            annotations: annotations(&member),
                         });
                     }
                 }
@@ -964,6 +974,7 @@ impl Builder {
                     ty,
                     cyclic: false,
                     jstype: jstype(&field),
+                    annotations: annotations(&field),
                 });
             }
         }
@@ -1334,14 +1345,57 @@ pub(super) fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDesc
         .collect()
 }
 
-/// Whether `method` declares `idempotency_level = NO_SIDE_EFFECTS`.
-fn idempotent(method: &MethodDescriptor) -> bool {
+/// The `idempotency_level` `method` declares.
+fn idempotency(method: &MethodDescriptor) -> Idempotency {
     use prost_types::method_options::IdempotencyLevel;
-    method
+    let level = method
         .method_descriptor_proto()
         .options
         .as_ref()
-        .is_some_and(|options| options.idempotency_level() == IdempotencyLevel::NoSideEffects)
+        .map(|options| options.idempotency_level());
+    match level {
+        Some(IdempotencyLevel::NoSideEffects) => Idempotency::NoSideEffects,
+        Some(IdempotencyLevel::Idempotent) => Idempotency::Idempotent,
+        Some(IdempotencyLevel::IdempotencyUnknown) | None => Idempotency::Unknown,
+    }
+}
+
+/// The full name of the `google.api.field_behavior` extension of
+/// `FieldOptions`.
+const FIELD_BEHAVIOR_EXTENSION: &str = "google.api.field_behavior";
+
+/// What `field`'s options say about it: its `google.api.field_behavior`
+/// values and its `deprecated` option. The extension is read as
+/// [`http_rule`] reads `google.api.http`: from the options as the pool
+/// decoded them, so a pool without `google/api/field_behavior.proto` has no
+/// behavior to find, and neither has a proto that does not import it.
+/// The unspecified zero and numbers this release does not know are
+/// dropped.
+fn annotations(field: &FieldDescriptor) -> Annotations {
+    let deprecated = field
+        .field_descriptor_proto()
+        .options
+        .as_ref()
+        .is_some_and(|options| options.deprecated());
+    let behavior = field
+        .parent_pool()
+        .get_extension_by_name(FIELD_BEHAVIOR_EXTENSION)
+        .filter(|extension| field.options().has_extension(extension))
+        .map(
+            |extension| match field.options().get_extension(&extension).as_ref() {
+                Value::List(values) => values
+                    .iter()
+                    .filter_map(Value::as_enum_number)
+                    .filter_map(FieldBehavior::from_number)
+                    .collect(),
+                _ => Vec::new(),
+            },
+        )
+        .unwrap_or_default();
+    Annotations {
+        behavior,
+        deprecated,
+    }
 }
 
 /// The full name of the `google.api.http` extension of `MethodOptions`.

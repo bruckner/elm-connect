@@ -4,9 +4,11 @@ import Expect
 import Json.Decode
 import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
-import Proto.Descriptor exposing (Cardinality(..), Kind(..), Scalar(..))
+import Proto.Descriptor exposing (Cardinality(..), Kind(..), MessageDescriptor, Scalar(..))
 import Proto.Duration as Duration exposing (Duration)
-import Proto.Message exposing (Message)
+import Proto.Field as Field
+import Proto.Message as Message exposing (Message)
+import Proto.MessageDescriptor
 import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
@@ -20,26 +22,33 @@ type alias Note =
 -}
 messageNote : Message Note
 messageNote =
-    { encodeJson =
-        \value ->
+    noteAs descriptorNote
+
+
+descriptorNote : MessageDescriptor
+descriptorNote =
+    Proto.Descriptor.message "notes.v1.Note"
+        [ Proto.Descriptor.field "title" "title" 1 Singular (Scalar String)
+        , Proto.Descriptor.field "pinned" "pinned" 2 Singular (Scalar Bool)
+        ]
+
+
+{-| Note's codecs under another descriptor.
+-}
+noteAs : MessageDescriptor -> Message Note
+noteAs =
+    Message.message
+        (\value ->
             Json.Encode.object
                 [ ( "title", Json.Encode.string value.title )
                 , ( "pinned", Json.Encode.bool value.pinned )
                 ]
-    , jsonDecoder =
-        Json.Decode.map2 Note
+        )
+        (Json.Decode.map2 Note
             (Json.Decode.field "title" Json.Decode.string)
             (Json.Decode.field "pinned" Json.Decode.bool)
-    , default = { title = "", pinned = False }
-    , descriptor =
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "title", jsonName = "title", number = 1, cardinality = Singular, kind = Scalar String, oneof = Nothing }
-            , { name = "pinned", jsonName = "pinned", number = 2, cardinality = Singular, kind = Scalar Bool, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+        )
+        { title = "", pinned = False }
 
 
 note : Note
@@ -151,13 +160,13 @@ suite =
             \_ ->
                 let
                     registry =
-                        Registry.union (Registry.fromDescriptors [ messageNote.descriptor ] []) Registry.wellKnown
+                        Registry.union (Registry.fromDescriptors [ descriptorNote ] []) Registry.wellKnown
                 in
                 [ Any.pack messageNote note
-                , Any.pack WellKnown.timestamp WellKnown.timestamp.default
-                , Any.packWith "example.com" { messageNote | descriptor = { typeName = "other.v1.Thing", fields = [], oneofs = [] } } note
+                , Any.pack WellKnown.timestamp (Message.default WellKnown.timestamp)
+                , Any.packWith "example.com" (noteAs (Proto.Descriptor.message "other.v1.Thing" [])) note
                 ]
-                    |> List.map (Any.describe registry >> Maybe.map (\found -> ( found.typeName, List.map .jsonName found.fields )))
+                    |> List.map (Any.describe registry >> Maybe.map (\found -> ( Proto.MessageDescriptor.typeName found, List.map Field.jsonName (Proto.MessageDescriptor.fields found) )))
                     |> Expect.equal
                         [ Just ( "notes.v1.Note", [ "title", "pinned" ] )
                         , Just ( "google.protobuf.Timestamp", [ "seconds", "nanos" ] )
@@ -169,7 +178,7 @@ suite =
                   , read """{"@type":"type.googleapis.com/google.protobuf.Duration"}""" |> Result.map written
                   )
                 , ( read "{}" |> Result.map Any.typeUrl
-                  , written WellKnown.any.default
+                  , written (Message.default WellKnown.any)
                   )
                 )
                     |> Expect.equal

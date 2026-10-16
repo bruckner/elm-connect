@@ -1,5 +1,6 @@
 module Proto.Enum exposing
-    ( Enum, typeName
+    ( Enum, enum
+    , encode, decoder, default, descriptor, typeName
     , toName, fromName, toNumber, fromNumber
     )
 
@@ -7,7 +8,12 @@ module Proto.Enum exposing
 descriptor, together. Generated code gives one per enum
 (`Notes.V1.enumVisibility : Enum Visibility`).
 
-@docs Enum, typeName
+@docs Enum, enum
+
+
+# Reading
+
+@docs encode, decoder, default, descriptor, typeName
 
 
 # Names and numbers
@@ -19,31 +25,84 @@ descriptor, together. Generated code gives one per enum
 import Json.Decode
 import Json.Encode
 import Proto.Descriptor exposing (EnumDescriptor)
+import Proto.EnumDescriptor
+import Proto.EnumValue
 
 
-{-| An enum type whose Elm values are `a`:
-
-  - `encodeJson` and `jsonDecoder`: its proto3 JSON codecs.
-  - `default`: its zero value, which an absent field reads as.
-  - `descriptor`: what the proto says about it.
+{-| An enum type whose Elm values are `a`. It is opaque: built by
+[`enum`](#enum) and read by the functions below, so that what it carries can
+grow as a new modifier without breaking code generated before.
 
 The names and numbers below come from the descriptor and the codecs, which
 read every declared name and number, aliases (`allow_alias`) included.
 
 -}
-type alias Enum a =
-    { encodeJson : a -> Json.Encode.Value
-    , jsonDecoder : Json.Decode.Decoder a
-    , default : a
-    , descriptor : EnumDescriptor
-    }
+type Enum a
+    = Enum
+        { encode : a -> Json.Encode.Value
+        , decoder : Json.Decode.Decoder a
+        , default : a
+        , descriptor : EnumDescriptor
+        }
+
+
+{-| An enum type from its proto3 JSON encoder and decoder, its zero value
+(which an absent field reads as) and its descriptor. Generated code writes:
+
+    enumVisibility : Proto.Enum.Enum Visibility
+    enumVisibility =
+        Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
+
+-}
+enum : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> EnumDescriptor -> Enum a
+enum encodeJson jsonDecoder zero enumDescriptor =
+    Enum
+        { encode = encodeJson
+        , decoder = jsonDecoder
+        , default = zero
+        , descriptor = enumDescriptor
+        }
+
+
+{-| A value as proto3 JSON.
+-}
+encode : Enum a -> a -> Json.Encode.Value
+encode (Enum e) =
+    e.encode
+
+
+{-| The proto3 JSON decoder.
+-}
+decoder : Enum a -> Json.Decode.Decoder a
+decoder (Enum e) =
+    e.decoder
+
+
+{-| The zero value.
+-}
+default : Enum a -> a
+default (Enum e) =
+    e.default
+
+
+{-| What the proto says about the enum.
+-}
+descriptor : Enum a -> EnumDescriptor
+descriptor (Enum e) =
+    e.descriptor
 
 
 {-| The enum's full name, such as `notes.v1.Visibility`.
 -}
 typeName : Enum a -> String
-typeName enum =
-    enum.descriptor.typeName
+typeName (Enum e) =
+    Proto.EnumDescriptor.typeName e.descriptor
+
+
+declared : Enum a -> List ( String, Int )
+declared (Enum e) =
+    Proto.EnumDescriptor.values e.descriptor
+        |> List.map (\v -> ( Proto.EnumValue.name v, Proto.EnumValue.number v ))
 
 
 {-| The proto name of a value, such as `"VISIBILITY_PUBLIC"`: the one its
@@ -58,8 +117,8 @@ decodes as the zero value or fails, see
 
 -}
 toName : Enum a -> a -> String
-toName enum value =
-    Json.Decode.decodeValue Json.Decode.string (enum.encodeJson value)
+toName (Enum e) value =
+    Json.Decode.decodeValue Json.Decode.string (e.encode value)
         |> Result.withDefault ""
 
 
@@ -69,9 +128,9 @@ lookup, not a decode: it gives `Nothing` for an unknown name even when the JSON
 decoder reads one as the zero value (`enum_unknown=zero`).
 -}
 fromName : Enum a -> String -> Maybe a
-fromName enum name =
-    if List.any (\declared -> declared.name == name) enum.descriptor.values then
-        Json.Decode.decodeValue enum.jsonDecoder (Json.Encode.string name)
+fromName enum_ name =
+    if List.any (\( declaredName, _ ) -> declaredName == name) (declared enum_) then
+        Json.Decode.decodeValue (decoder enum_) (Json.Encode.string name)
             |> Result.toMaybe
 
     else
@@ -84,13 +143,13 @@ the descriptor does not declare, and so for a value with no name
 number.
 -}
 toNumber : Enum a -> a -> Int
-toNumber enum value =
+toNumber enum_ value =
     let
         name =
-            toName enum value
+            toName enum_ value
     in
-    find (\declared -> declared.name == name) enum.descriptor.values
-        |> Maybe.map .number
+    find (\( declaredName, _ ) -> declaredName == name) (declared enum_)
+        |> Maybe.map Tuple.second
         |> Maybe.withDefault 0
 
 
@@ -99,9 +158,9 @@ does not declare. The JSON decoder reads an unknown number as the zero value
 instead; this lookup does not.
 -}
 fromNumber : Enum a -> Int -> Maybe a
-fromNumber enum number =
-    if List.any (\declared -> declared.number == number) enum.descriptor.values then
-        Json.Decode.decodeValue enum.jsonDecoder (Json.Encode.int number)
+fromNumber enum_ number =
+    if List.any (\( _, declaredNumber ) -> declaredNumber == number) (declared enum_) then
+        Json.Decode.decodeValue (decoder enum_) (Json.Encode.int number)
             |> Result.toMaybe
 
     else

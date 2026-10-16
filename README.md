@@ -48,18 +48,19 @@ Justfile            task recipes; `just` lists them
 Both binaries generate record types, their default values and JSON
 codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
-maps, and custom types for enums and oneofs, a typed record per message
-and enum holding its codecs and descriptor, and a module per service
+maps, and custom types for enums and oneofs, a descriptor per message
+and enum and a typed value holding its codecs and descriptor, and a module per service
 with a call for every unary method. Each package of the given files is
 generated whole, from every file declaring it; a package they only
 import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate
 --include-imports`, the file on protoc's command line, or the CLI's
 `--include-imports`). `google.protobuf` maps to the runtime instead.
-The plugin never generates `google/api/http.proto` and
-`google/api/annotations.proto`, which only carry `google.api.http`, so
-`buf generate --include-imports` gives no `Google.Api` module of their
-messages; other files imported for their options alone, such as
+The plugin never generates `google/api/http.proto`,
+`google/api/annotations.proto` and `google/api/field_behavior.proto`,
+which only carry the options the generator reads (`google.api.http` and
+`google.api.field_behavior`), so `buf generate --include-imports` gives
+no `Google.Api` module of their types; other files imported for their options alone, such as
 `google/api/client.proto`, it generates when buf asks for them. The
 CLI's `--include-imports` generates no file nothing refers to, so none
 of these. Other `google/api` files, such as `httpbody.proto`, generate
@@ -72,11 +73,12 @@ calling:
 |---|---|
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
-| `Proto.Descriptor` | descriptors as data: messages, enums and methods |
+| `Proto.Descriptor` | descriptors as data: their builders and the unions to match on |
+| `Proto.MessageDescriptor`, `Proto.Field`, `Proto.EnumDescriptor`, `Proto.EnumValue`, `Proto.MethodDescriptor` | reading a descriptor, a module per type |
 | `Proto.Http` | a method's `google.api.http` rule as data |
-| `Proto.Message`, `Proto.Enum` | typed records: a type's codecs with its descriptor |
+| `Proto.Message`, `Proto.Enum` | typed values: a type's codecs with its default and descriptor |
 | `Proto.Method` | a method's request encoder, response decoder and descriptor |
-| `Proto.WellKnown` | the well-known types' typed records |
+| `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
@@ -238,15 +240,21 @@ does not read.
 
 ### Descriptors
 
-Each message and enum also has a typed record, `Notes.V1.messageNote`
-and `Notes.V1.enumVisibility`, holding its codecs and its descriptor:
-its full name and its fields (or values) as data. `Notes.V1.registry`
-holds the descriptors of the package, of every package it imports and
-of the well-known types, by full name:
+Each message and enum also has a descriptor, `Notes.V1.descriptorNote`
+and `Notes.V1.descriptorVisibility`: its full name and its fields (or
+values) as data, each field with its `google.api.field_behavior` and
+whether it is deprecated. A typed value, `Notes.V1.messageNote` and
+`Notes.V1.enumVisibility`, holds the type's codecs with its default and
+descriptor. Both are opaque, read through a module per type
+(`Proto.MessageDescriptor`, `Proto.Field`, `Proto.Message`, …).
+`Notes.V1.registry` holds the descriptors of the package, of every
+package it imports and of the well-known types, by full name:
 
 ```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
 import Notes.V1
+import Proto.Field
 import Proto.Message
+import Proto.MessageDescriptor
 import Proto.Registry
 
 
@@ -260,7 +268,7 @@ noteFields : List String
 noteFields =
     -- the proto names of Note's fields, in declaration order
     Proto.Registry.message "notes.v1.Note" Notes.V1.registry
-        |> Maybe.map (.fields >> List.map .name)
+        |> Maybe.map (Proto.MessageDescriptor.fields >> List.map Proto.Field.name)
         |> Maybe.withDefault []
 ```
 

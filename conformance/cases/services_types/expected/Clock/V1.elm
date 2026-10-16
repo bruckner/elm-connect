@@ -43,22 +43,19 @@ defaultAlarm =
 -- DESCRIPTORS
 
 
+descriptorAlarm : Proto.Descriptor.MessageDescriptor
+descriptorAlarm =
+    Proto.Descriptor.message "clock.v1.Alarm" [ Proto.Descriptor.field "at" "at" 1 Proto.Descriptor.Singular (Proto.Descriptor.Message "google.protobuf.Timestamp") ]
+
+
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
-    { encodeJson = encodeAlarm
-    , jsonDecoder = decodeAlarm
-    , default = defaultAlarm
-    , descriptor =
-        { typeName = "clock.v1.Alarm"
-        , fields = [ { name = "at", jsonName = "at", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeAlarm decodeAlarm defaultAlarm descriptorAlarm
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageAlarm.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorAlarm ] []) Proto.Registry.wellKnown
 
 
 

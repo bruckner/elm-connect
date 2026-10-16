@@ -4,7 +4,9 @@
 module Api.Example.Notes.V1.NotesService exposing (..)
 
 import Api.Example.Notes.V1
+import Proto.Descriptor
 import Proto.Http
+import Proto.Method
 import Proto.Version
 import Rpc
 
@@ -19,15 +21,13 @@ elmConnectVersion_ =
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
-        { encodeRequest = Api.Example.Notes.V1.encodeGetNoteRequest
-        , responseDecoder = Api.Example.Notes.V1.decodeNote
-        , descriptor =
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = False
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings =
+        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
+            Api.Example.Notes.V1.decodeNote
+            (Proto.Descriptor.method "notes.v1.NotesService"
+                "GetNote"
+                Proto.Descriptor.Unknown
+                "notes.v1.GetNoteRequest"
+                "notes.v1.Note"
                 [ Proto.Http.binding
                     { method = "GET"
                     , path =
@@ -40,5 +40,5 @@ getNote =
                     , query = []
                     }
                 ]
-            }
-        }
+            )
+        )

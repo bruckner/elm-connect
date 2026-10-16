@@ -2,28 +2,26 @@ module Proto.RegistryTest exposing (suite)
 
 import Expect
 import Proto.Descriptor exposing (Cardinality(..), EnumDescriptor, Kind(..), MessageDescriptor, Scalar(..))
+import Proto.EnumDescriptor
+import Proto.Field as Field
+import Proto.MessageDescriptor as MessageDescriptor
 import Proto.Registry as Registry
 import Test exposing (Test, describe, test)
 
 
 note : String -> MessageDescriptor
 note title =
-    { typeName = "notes.v1.Note"
-    , fields = [ { name = title, jsonName = title, number = 1, cardinality = Singular, kind = Scalar String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Descriptor.message "notes.v1.Note" [ Proto.Descriptor.field title title 1 Singular (Scalar String) ]
 
 
 visibility : EnumDescriptor
 visibility =
-    { typeName = "notes.v1.Visibility"
-    , values = [ { name = "VISIBILITY_UNSPECIFIED", number = 0 } ]
-    }
+    Proto.Descriptor.enum "notes.v1.Visibility" [ Proto.Descriptor.value "VISIBILITY_UNSPECIFIED" 0 ]
 
 
 fieldName : Maybe MessageDescriptor -> Maybe String
 fieldName =
-    Maybe.andThen (.fields >> List.head) >> Maybe.map .name
+    Maybe.andThen (MessageDescriptor.fields >> List.head) >> Maybe.map Field.name
 
 
 resolves : Kind -> Bool
@@ -48,8 +46,8 @@ suite =
                     registry =
                         Registry.fromDescriptors [ note "title" ] [ visibility ]
                 in
-                ( Registry.message "notes.v1.Note" registry |> Maybe.map .typeName
-                , Registry.enum "notes.v1.Visibility" registry |> Maybe.map .typeName
+                ( Registry.message "notes.v1.Note" registry |> Maybe.map MessageDescriptor.typeName
+                , Registry.enum "notes.v1.Visibility" registry |> Maybe.map Proto.EnumDescriptor.typeName
                 , ( Registry.message "notes.v1.Visibility" registry, Registry.enum "notes.v1.Note" registry )
                 )
                     |> Expect.equal ( Just "notes.v1.Note", Just "notes.v1.Visibility", ( Nothing, Nothing ) )
@@ -80,7 +78,7 @@ suite =
         , test "the well-known types" <|
             \_ ->
                 Registry.messages Registry.wellKnown
-                    |> List.map .typeName
+                    |> List.map MessageDescriptor.typeName
                     |> Expect.equal
                         [ "google.protobuf.Any"
                         , "google.protobuf.BoolValue"
@@ -103,15 +101,15 @@ suite =
         , test "every type a well-known message refers to is in the registry" <|
             \_ ->
                 Registry.messages Registry.wellKnown
-                    |> List.concatMap .fields
-                    |> List.filter (\field -> not (resolves field.kind))
+                    |> List.concatMap MessageDescriptor.fields
+                    |> List.filter (\field -> not (resolves (Field.kind field)))
                     |> Expect.equal []
         , test "Value is a oneof of its six kinds, and Struct a map of Values" <|
             \_ ->
                 ( Registry.message "google.protobuf.Value" Registry.wellKnown
-                    |> Maybe.map (\value -> ( value.oneofs, List.map (\field -> ( field.jsonName, field.oneof )) value.fields ))
+                    |> Maybe.map (\value -> ( MessageDescriptor.oneofs value, List.map (\field -> ( Field.jsonName field, Field.oneof field )) (MessageDescriptor.fields value) ))
                 , Registry.message "google.protobuf.Struct" Registry.wellKnown
-                    |> Maybe.map (.fields >> List.map (\field -> ( field.cardinality, field.kind )))
+                    |> Maybe.map (MessageDescriptor.fields >> List.map (\field -> ( Field.cardinality field, Field.kind field )))
                 )
                     |> Expect.equal
                         ( Just

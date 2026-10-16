@@ -98,86 +98,82 @@ defaultChoice =
 -- DESCRIPTORS
 
 
+descriptorColor : Proto.Descriptor.EnumDescriptor
+descriptorColor =
+    Proto.Descriptor.enum "oneofs.v1.Color"
+        [ Proto.Descriptor.value "COLOR_UNSPECIFIED" 0
+        , Proto.Descriptor.value "COLOR_RED" 1
+        ]
+
+
 enumColor : Proto.Enum.Enum Color
 enumColor =
-    { encodeJson = encodeColor
-    , jsonDecoder = decodeColor
-    , default = ColorUnspecified
-    , descriptor =
-        { typeName = "oneofs.v1.Color"
-        , values =
-            [ { name = "COLOR_UNSPECIFIED", number = 0 }
-            , { name = "COLOR_RED", number = 1 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeColor decodeColor ColorUnspecified descriptorColor
+
+
+descriptorCreated : Proto.Descriptor.MessageDescriptor
+descriptorCreated =
+    Proto.Descriptor.message "oneofs.v1.Created" [ Proto.Descriptor.field "title" "title" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String) ]
 
 
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    { encodeJson = encodeCreated
-    , jsonDecoder = decodeCreated
-    , default = defaultCreated
-    , descriptor =
-        { typeName = "oneofs.v1.Created"
-        , fields = [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeCreated decodeCreated defaultCreated descriptorCreated
+
+
+descriptorNoteEvent : Proto.Descriptor.MessageDescriptor
+descriptorNoteEvent =
+    Proto.Descriptor.message "oneofs.v1.NoteEvent"
+        [ Proto.Descriptor.field "id" "id" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "created" "created" 2 Proto.Descriptor.Singular (Proto.Descriptor.Message "oneofs.v1.Created")
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "title_changed" "titleChanged" 3 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "recolored" "recolored" 4 Proto.Descriptor.Singular (Proto.Descriptor.Enum "oneofs.v1.Color")
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "deleted_at" "deletedAt" 5 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Int64)
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "archived" "archived" 9 Proto.Descriptor.Singular (Proto.Descriptor.Message "google.protobuf.Empty")
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "cleared_all" "clearedAll" 10 Proto.Descriptor.Singular (Proto.Descriptor.Message "google.protobuf.Empty")
+            |> Proto.Descriptor.inOneof "kind"
+        , Proto.Descriptor.field "user" "user" 6 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+            |> Proto.Descriptor.inOneof "source"
+        , Proto.Descriptor.field "automated" "automated" 7 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Bool)
+            |> Proto.Descriptor.inOneof "source"
+        , Proto.Descriptor.field "tags" "tags" 8 Proto.Descriptor.Repeated (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        ]
 
 
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    { encodeJson = encodeNoteEvent
-    , jsonDecoder = decodeNoteEvent
-    , default = defaultNoteEvent
-    , descriptor =
-        { typeName = "oneofs.v1.NoteEvent"
-        , fields =
-            [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "created", jsonName = "created", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "oneofs.v1.Created", oneof = Just "kind" }
-            , { name = "title_changed", jsonName = "titleChanged", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "kind" }
-            , { name = "recolored", jsonName = "recolored", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "oneofs.v1.Color", oneof = Just "kind" }
-            , { name = "deleted_at", jsonName = "deletedAt", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "kind" }
-            , { name = "archived", jsonName = "archived", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Just "kind" }
-            , { name = "cleared_all", jsonName = "clearedAll", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Just "kind" }
-            , { name = "user", jsonName = "user", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "source" }
-            , { name = "automated", jsonName = "automated", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Just "source" }
-            , { name = "tags", jsonName = "tags", number = 8, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs =
-            [ "kind"
-            , "source"
-            ]
-        }
-    }
+    Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent descriptorNoteEvent
+
+
+descriptorChoice : Proto.Descriptor.MessageDescriptor
+descriptorChoice =
+    Proto.Descriptor.message "oneofs.v1.Choice"
+        [ Proto.Descriptor.field "number" "number" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.Double)
+            |> Proto.Descriptor.inOneof "value"
+        , Proto.Descriptor.field "text" "label" 2 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+            |> Proto.Descriptor.inOneof "value"
+        ]
 
 
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    { encodeJson = encodeChoice
-    , jsonDecoder = decodeChoice
-    , default = defaultChoice
-    , descriptor =
-        { typeName = "oneofs.v1.Choice"
-        , fields =
-            [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Just "value" }
-            , { name = "text", jsonName = "label", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "value" }
-            ]
-        , oneofs = [ "value" ]
-        }
-    }
+    Proto.Message.message encodeChoice decodeChoice defaultChoice descriptorChoice
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageCreated.descriptor
-            , messageNoteEvent.descriptor
-            , messageChoice.descriptor
+            [ descriptorCreated
+            , descriptorNoteEvent
+            , descriptorChoice
             ]
-            [ enumColor.descriptor ]
+            [ descriptorColor ]
         )
         Proto.Registry.wellKnown
 

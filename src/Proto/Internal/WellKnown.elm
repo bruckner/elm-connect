@@ -26,7 +26,7 @@ in `Proto.WellKnown` so that `Proto.Registry` can hold them without depending
 on the codecs.
 -}
 
-import Proto.Descriptor exposing (Cardinality(..), EnumDescriptor, Field, Kind(..), MessageDescriptor, Scalar(..))
+import Proto.Descriptor exposing (Cardinality(..), EnumDescriptor, Field, Kind(..), MessageDescriptor, Scalar(..), field, inOneof, message)
 
 
 messages : List MessageDescriptor
@@ -53,43 +53,20 @@ messages =
 
 enums : List EnumDescriptor
 enums =
-    [ { typeName = "google.protobuf.NullValue"
-      , values = [ { name = "NULL_VALUE", number = 0 } ]
-      }
-    ]
-
-
-field : String -> String -> Int -> Cardinality -> Kind -> Field
-field name jsonName number cardinality kind =
-    { name = name
-    , jsonName = jsonName
-    , number = number
-    , cardinality = cardinality
-    , kind = kind
-    , oneof = Nothing
-    }
+    [ Proto.Descriptor.enum "google.protobuf.NullValue" [ Proto.Descriptor.value "NULL_VALUE" 0 ] ]
 
 
 member : String -> String -> Int -> Kind -> Field
 member name jsonName number kind =
-    { name = name
-    , jsonName = jsonName
-    , number = number
-    , cardinality = Singular
-    , kind = kind
-    , oneof = Just "kind"
-    }
+    field name jsonName number Singular kind |> inOneof "kind"
 
 
 secondsAndNanos : String -> MessageDescriptor
 secondsAndNanos typeName =
-    { typeName = typeName
-    , fields =
+    message typeName
         [ field "seconds" "seconds" 1 Singular (Scalar Int64)
         , field "nanos" "nanos" 2 Singular (Scalar Int32)
         ]
-    , oneofs = []
-    }
 
 
 timestamp : MessageDescriptor
@@ -104,43 +81,30 @@ duration =
 
 any : MessageDescriptor
 any =
-    { typeName = "google.protobuf.Any"
-    , fields =
+    message "google.protobuf.Any"
         [ field "type_url" "typeUrl" 1 Singular (Scalar String)
         , field "value" "value" 2 Singular (Scalar Bytes)
         ]
-    , oneofs = []
-    }
 
 
 fieldMask : MessageDescriptor
 fieldMask =
-    { typeName = "google.protobuf.FieldMask"
-    , fields = [ field "paths" "paths" 1 Repeated (Scalar String) ]
-    , oneofs = []
-    }
+    message "google.protobuf.FieldMask" [ field "paths" "paths" 1 Repeated (Scalar String) ]
 
 
 empty : MessageDescriptor
 empty =
-    { typeName = "google.protobuf.Empty"
-    , fields = []
-    , oneofs = []
-    }
+    message "google.protobuf.Empty" []
 
 
 struct : MessageDescriptor
 struct =
-    { typeName = "google.protobuf.Struct"
-    , fields = [ field "fields" "fields" 1 (Map String) (Message "google.protobuf.Value") ]
-    , oneofs = []
-    }
+    message "google.protobuf.Struct" [ field "fields" "fields" 1 (Map String) (Message "google.protobuf.Value") ]
 
 
 value : MessageDescriptor
 value =
-    { typeName = "google.protobuf.Value"
-    , fields =
+    message "google.protobuf.Value"
         [ member "null_value" "nullValue" 1 (Enum "google.protobuf.NullValue")
         , member "number_value" "numberValue" 2 (Scalar Double)
         , member "string_value" "stringValue" 3 (Scalar String)
@@ -148,24 +112,16 @@ value =
         , member "struct_value" "structValue" 5 (Message "google.protobuf.Struct")
         , member "list_value" "listValue" 6 (Message "google.protobuf.ListValue")
         ]
-    , oneofs = [ "kind" ]
-    }
 
 
 listValue : MessageDescriptor
 listValue =
-    { typeName = "google.protobuf.ListValue"
-    , fields = [ field "values" "values" 1 Repeated (Message "google.protobuf.Value") ]
-    , oneofs = []
-    }
+    message "google.protobuf.ListValue" [ field "values" "values" 1 Repeated (Message "google.protobuf.Value") ]
 
 
 wrapper : String -> Scalar -> MessageDescriptor
 wrapper name scalar =
-    { typeName = "google.protobuf." ++ name
-    , fields = [ field "value" "value" 1 Singular (Scalar scalar) ]
-    , oneofs = []
-    }
+    message ("google.protobuf." ++ name) [ field "value" "value" 1 Singular (Scalar scalar) ]
 
 
 doubleValue : MessageDescriptor

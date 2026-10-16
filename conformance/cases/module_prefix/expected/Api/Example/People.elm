@@ -50,40 +50,35 @@ defaultUser =
 -- DESCRIPTORS
 
 
+descriptorRole : Proto.Descriptor.EnumDescriptor
+descriptorRole =
+    Proto.Descriptor.enum "users.v1.Role"
+        [ Proto.Descriptor.value "ROLE_UNSPECIFIED" 0
+        , Proto.Descriptor.value "ROLE_EDITOR" 1
+        ]
+
+
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { encodeJson = encodeRole
-    , jsonDecoder = decodeRole
-    , default = RoleUnspecified
-    , descriptor =
-        { typeName = "users.v1.Role"
-        , values =
-            [ { name = "ROLE_UNSPECIFIED", number = 0 }
-            , { name = "ROLE_EDITOR", number = 1 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorUser : Proto.Descriptor.MessageDescriptor
+descriptorUser =
+    Proto.Descriptor.message "users.v1.User"
+        [ Proto.Descriptor.field "name" "name" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "role" "role" 2 Proto.Descriptor.Singular (Proto.Descriptor.Enum "users.v1.Role")
+        ]
 
 
 messageUser : Proto.Message.Message User
 messageUser =
-    { encodeJson = encodeUser
-    , jsonDecoder = decodeUser
-    , default = defaultUser
-    , descriptor =
-        { typeName = "users.v1.User"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "role", jsonName = "role", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeUser decodeUser defaultUser descriptorUser
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageUser.descriptor ] [ enumRole.descriptor ]) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorUser ] [ descriptorRole ]) Proto.Registry.wellKnown
 
 
 

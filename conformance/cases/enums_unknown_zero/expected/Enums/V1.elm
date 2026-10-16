@@ -62,66 +62,59 @@ defaultTask =
 -- DESCRIPTORS
 
 
+descriptorStatus : Proto.Descriptor.EnumDescriptor
+descriptorStatus =
+    Proto.Descriptor.enum "enums.v1.Status"
+        [ Proto.Descriptor.value "STATUS_UNSPECIFIED" 0
+        , Proto.Descriptor.value "STATUS_ACTIVE" 1
+        , Proto.Descriptor.value "STATUS_ARCHIVED" 2
+        ]
+
+
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
-    { encodeJson = encodeStatus
-    , jsonDecoder = decodeStatus
-    , default = StatusUnspecified
-    , descriptor =
-        { typeName = "enums.v1.Status"
-        , values =
-            [ { name = "STATUS_UNSPECIFIED", number = 0 }
-            , { name = "STATUS_ACTIVE", number = 1 }
-            , { name = "STATUS_ARCHIVED", number = 2 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified descriptorStatus
+
+
+descriptorPriority : Proto.Descriptor.EnumDescriptor
+descriptorPriority =
+    Proto.Descriptor.enum "enums.v1.Priority"
+        [ Proto.Descriptor.value "NONE" 0
+        , Proto.Descriptor.value "LOW" 1
+        , Proto.Descriptor.value "HIGH" 2
+        , Proto.Descriptor.value "URGENT" 2
+        , Proto.Descriptor.value "BELOW_ZERO" -1
+        , Proto.Descriptor.value "PRIORITY_LOW" 1
+        , Proto.Descriptor.value "UNSET" 0
+        ]
 
 
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
-    { encodeJson = encodePriority
-    , jsonDecoder = decodePriority
-    , default = PriorityNone
-    , descriptor =
-        { typeName = "enums.v1.Priority"
-        , values =
-            [ { name = "NONE", number = 0 }
-            , { name = "LOW", number = 1 }
-            , { name = "HIGH", number = 2 }
-            , { name = "URGENT", number = 2 }
-            , { name = "BELOW_ZERO", number = -1 }
-            , { name = "PRIORITY_LOW", number = 1 }
-            , { name = "UNSET", number = 0 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodePriority decodePriority PriorityNone descriptorPriority
+
+
+descriptorTask : Proto.Descriptor.MessageDescriptor
+descriptorTask =
+    Proto.Descriptor.message "enums.v1.Task"
+        [ Proto.Descriptor.field "status" "status" 1 Proto.Descriptor.Singular (Proto.Descriptor.Enum "enums.v1.Status")
+        , Proto.Descriptor.field "priority" "priority" 2 Proto.Descriptor.Optional (Proto.Descriptor.Enum "enums.v1.Priority")
+        , Proto.Descriptor.field "history" "history" 3 Proto.Descriptor.Repeated (Proto.Descriptor.Enum "enums.v1.Status")
+        , Proto.Descriptor.field "previous_status" "previousStatus" 4 Proto.Descriptor.Singular (Proto.Descriptor.Enum "enums.v1.Status")
+        ]
 
 
 messageTask : Proto.Message.Message Task
 messageTask =
-    { encodeJson = encodeTask
-    , jsonDecoder = decodeTask
-    , default = defaultTask
-    , descriptor =
-        { typeName = "enums.v1.Task"
-        , fields =
-            [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            , { name = "priority", jsonName = "priority", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Enum "enums.v1.Priority", oneof = Nothing }
-            , { name = "history", jsonName = "history", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            , { name = "previous_status", jsonName = "previousStatus", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTask decodeTask defaultTask descriptorTask
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
-            [ enumStatus.descriptor
-            , enumPriority.descriptor
+        (Proto.Registry.fromDescriptors [ descriptorTask ]
+            [ descriptorStatus
+            , descriptorPriority
             ]
         )
         Proto.Registry.wellKnown

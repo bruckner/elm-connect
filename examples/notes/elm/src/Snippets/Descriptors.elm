@@ -6,7 +6,9 @@ module Snippets.Descriptors exposing (noteFields, noteUrl)
 -- region descriptors
 
 import Notes.V1
+import Proto.Field
 import Proto.Message
+import Proto.MessageDescriptor
 import Proto.Registry
 
 
@@ -20,7 +22,7 @@ noteFields : List String
 noteFields =
     -- the proto names of Note's fields, in declaration order
     Proto.Registry.message "notes.v1.Note" Notes.V1.registry
-        |> Maybe.map (.fields >> List.map .name)
+        |> Maybe.map (Proto.MessageDescriptor.fields >> List.map Proto.Field.name)
         |> Maybe.withDefault []
 
 

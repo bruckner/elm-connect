@@ -26,7 +26,9 @@ imports, and the well-known types.
 
 import Dict exposing (Dict)
 import Proto.Descriptor exposing (EnumDescriptor, MessageDescriptor)
+import Proto.EnumDescriptor
 import Proto.Internal.WellKnown as WellKnown
+import Proto.MessageDescriptor
 
 
 {-| Message and enum descriptors, each by its full name.
@@ -51,20 +53,24 @@ the first is kept.
 fromDescriptors : List MessageDescriptor -> List EnumDescriptor -> Registry
 fromDescriptors messageDescriptors enumDescriptors =
     Registry
-        { messages = keyed messageDescriptors
-        , enums = keyed enumDescriptors
+        { messages = keyed Proto.MessageDescriptor.typeName messageDescriptors
+        , enums = keyed Proto.EnumDescriptor.typeName enumDescriptors
         }
 
 
-keyed : List { a | typeName : String } -> Dict String { a | typeName : String }
-keyed =
+keyed : (d -> String) -> List d -> Dict String d
+keyed nameOf =
     List.foldl
         (\descriptor dict ->
-            if Dict.member descriptor.typeName dict then
+            let
+                name =
+                    nameOf descriptor
+            in
+            if Dict.member name dict then
                 dict
 
             else
-                Dict.insert descriptor.typeName descriptor dict
+                Dict.insert name descriptor dict
         )
         Dict.empty
 

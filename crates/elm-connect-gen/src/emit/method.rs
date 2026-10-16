@@ -4,17 +4,19 @@
 //! bindings written out as data.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_HTTP, RPC};
+use super::{Emitter, Int64, PROTO_DESCRIPTOR, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{apply, inline_list, list, qualified, record, string, ty_fn, var};
-use crate::ir::{Method, TypeRef};
+use crate::ir::{Idempotency, Method, TypeRef};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
     /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
-    /// `Rpc.call` of the method's `Proto.Method.Method`: the encoder of its
-    /// request, the decoder of its response, and its descriptor (service,
-    /// name, idempotency, type names and bindings). A method without an
+    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
+    /// `Proto.Method.method` from the encoder of its request, the decoder
+    /// of its response, and its descriptor, built by
+    /// `Proto.Descriptor.method` from its service, name, idempotency, type
+    /// names and bindings. A method without an
     /// HTTP rule has no bindings; the runtime calls it over the implicit
     /// route.
     ///
@@ -26,28 +28,35 @@ impl Emitter {
         let response = self.method_type(&method.output);
         let encode_request = self.request_encoder(&method.input);
         let response_decoder = self.response_decoder(&method.output);
-        let idempotent = if method.idempotent { "True" } else { "False" };
+        let idempotency = self.reference((
+            PROTO_DESCRIPTOR,
+            match method.idempotency {
+                Idempotency::Unknown => "Unknown",
+                Idempotency::NoSideEffects => "NoSideEffects",
+                Idempotency::Idempotent => "Idempotent",
+            },
+        ));
         let bindings: Vec<Expr> = method
             .routes
             .iter()
             .map(|route| self.binding(route))
             .collect();
-        let descriptor = record([
-            ("service", string(service)),
-            ("name", string(method.proto_name.clone())),
-            ("idempotent", var(idempotent)),
-            ("input", string(proto_full_name(&method.input))),
-            ("output", string(proto_full_name(&method.output))),
-            ("bindings", list(bindings)),
-        ]);
-        let body = apply(
-            self.reference((RPC, "call")),
-            [record([
-                ("encodeRequest", encode_request),
-                ("responseDecoder", response_decoder),
-                ("descriptor", descriptor),
-            ])],
+        let descriptor = apply(
+            self.reference((PROTO_DESCRIPTOR, "method")),
+            [
+                string(service),
+                string(method.proto_name.clone()),
+                idempotency,
+                string(proto_full_name(&method.input)),
+                string(proto_full_name(&method.output)),
+                list(bindings),
+            ],
         );
+        let built = apply(
+            self.reference((PROTO_METHOD, "method")),
+            [encode_request, response_decoder, descriptor],
+        );
+        let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {
             doc: None,

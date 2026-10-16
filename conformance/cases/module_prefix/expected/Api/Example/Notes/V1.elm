@@ -58,42 +58,36 @@ defaultGetNoteRequest =
 -- DESCRIPTORS
 
 
+descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote =
+    Proto.Descriptor.message "notes.v1.Note"
+        [ Proto.Descriptor.field "name" "name" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "author" "author" 2 Proto.Descriptor.Singular (Proto.Descriptor.Message "users.v1.User")
+        , Proto.Descriptor.field "required_role" "requiredRole" 3 Proto.Descriptor.Singular (Proto.Descriptor.Enum "users.v1.Role")
+        ]
+
+
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "author", jsonName = "author", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
-            , { name = "required_role", jsonName = "requiredRole", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+descriptorGetNoteRequest : Proto.Descriptor.MessageDescriptor
+descriptorGetNoteRequest =
+    Proto.Descriptor.message "notes.v1.GetNoteRequest" [ Proto.Descriptor.field "name" "name" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String) ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    { encodeJson = encodeGetNoteRequest
-    , jsonDecoder = decodeGetNoteRequest
-    , default = defaultGetNoteRequest
-    , descriptor =
-        { typeName = "notes.v1.GetNoteRequest"
-        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest descriptorGetNoteRequest
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageNote.descriptor
-            , messageGetNoteRequest.descriptor
+            [ descriptorNote
+            , descriptorGetNoteRequest
             ]
             []
         )

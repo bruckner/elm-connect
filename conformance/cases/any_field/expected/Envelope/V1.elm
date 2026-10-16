@@ -58,29 +58,28 @@ defaultEnvelope =
 -- DESCRIPTORS
 
 
+descriptorEnvelope : Proto.Descriptor.MessageDescriptor
+descriptorEnvelope =
+    Proto.Descriptor.message "envelope.v1.Envelope"
+        [ Proto.Descriptor.field "id" "id" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "payload" "payload" 2 Proto.Descriptor.Singular (Proto.Descriptor.Message "google.protobuf.Any")
+        , Proto.Descriptor.field "attachments" "attachments" 3 Proto.Descriptor.Repeated (Proto.Descriptor.Message "google.protobuf.Any")
+        , Proto.Descriptor.field "headers" "headers" 4 (Proto.Descriptor.Map Proto.Descriptor.String) (Proto.Descriptor.Message "google.protobuf.Any")
+        , Proto.Descriptor.field "packed" "packed" 5 Proto.Descriptor.Singular (Proto.Descriptor.Message "google.protobuf.Any")
+            |> Proto.Descriptor.inOneof "body"
+        , Proto.Descriptor.field "text" "text" 6 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+            |> Proto.Descriptor.inOneof "body"
+        ]
+
+
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    { encodeJson = encodeEnvelope
-    , jsonDecoder = decodeEnvelope
-    , default = defaultEnvelope
-    , descriptor =
-        { typeName = "envelope.v1.Envelope"
-        , fields =
-            [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "payload", jsonName = "payload", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            , { name = "attachments", jsonName = "attachments", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            , { name = "headers", jsonName = "headers", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            , { name = "packed", jsonName = "packed", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Just "body" }
-            , { name = "text", jsonName = "text", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "body" }
-            ]
-        , oneofs = [ "body" ]
-        }
-    }
+    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope descriptorEnvelope
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageEnvelope.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorEnvelope ] []) Proto.Registry.wellKnown
 
 
 

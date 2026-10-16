@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+// What a descriptor carries beyond a field's type: `google.api.field_behavior`
+// and `deprecated` on fields, oneof members and enum values become
+// modifiers, written only where set; a method's idempotency level is
+// carried whole.
+package tasks.v1;
+
+import "google/api/field_behavior.proto";
+
+enum State {
+  STATE_UNSPECIFIED = 0;
+  STATE_OPEN = 1;
+  STATE_STALE = 2 [deprecated = true];
+}
+
+message Task {
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string title = 2 [(google.api.field_behavior) = REQUIRED];
+  State state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  repeated string labels = 4 [(google.api.field_behavior) = UNORDERED_LIST];
+  string owner = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_behavior) = IMMUTABLE,
+    deprecated = true
+  ];
+  string notes = 6;
+  oneof due {
+    string date = 7 [(google.api.field_behavior) = INPUT_ONLY];
+    string never = 8 [deprecated = true];
+  }
+}
+
+message GetTaskRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+service Tasks {
+  rpc GetTask(GetTaskRequest) returns (Task) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PutTask(Task) returns (Task) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc CloseTask(GetTaskRequest) returns (Task);
+}

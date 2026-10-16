@@ -86,11 +86,12 @@ import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
 import Proto.Any exposing (Any)
-import Proto.Descriptor exposing (MethodDescriptor)
+import Proto.Descriptor exposing (Idempotency(..), MethodDescriptor)
 import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
 import Proto.Message exposing (Message)
-import Proto.Method exposing (Method)
+import Proto.Method as Method exposing (Method)
+import Proto.MethodDescriptor
 import Rpc.Code as Code exposing (Code)
 import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 import Rpc.Internal.Http as Internal
@@ -121,14 +122,14 @@ type Call req res
 
 
 {-| A call of a method with a request, without any adjustment. Generated code
-applies it to each method's [`Method`](Proto-Method#Method) record:
+applies it to each method's [`Method`](Proto-Method#Method):
 
     getNote =
         Rpc.call
-            { encodeRequest = Notes.V1.encodeGetNoteRequest
-            , responseDecoder = Notes.V1.decodeNote
-            , descriptor = { service = "notes.v1.NotesService", name = "GetNote", … }
-            }
+            (Proto.Method.method Notes.V1.encodeGetNoteRequest
+                Notes.V1.decodeNote
+                (Proto.Descriptor.method "notes.v1.NotesService" "GetNote" …)
+            )
 
 -}
 call : Method req res -> req -> Call req res
@@ -180,7 +181,7 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Call c) =
-    if index >= 0 && index < List.length c.method.descriptor.bindings then
+    if index >= 0 && index < List.length (Proto.MethodDescriptor.bindings (Method.descriptor c.method)) then
         Just (Call { c | binding = index })
 
     else
@@ -202,28 +203,29 @@ method (Call c) =
 -}
 descriptor : Call req res -> MethodDescriptor
 descriptor (Call c) =
-    c.method.descriptor
+    Method.descriptor c.method
 
 
 {-| The fully-qualified service name, such as `notes.v1.Notes`.
 -}
 serviceName : Call req res -> String
 serviceName (Call c) =
-    c.method.descriptor.service
+    Proto.MethodDescriptor.service (Method.descriptor c.method)
 
 
 {-| The method name as declared, such as `GetNote`.
 -}
 methodName : Call req res -> String
 methodName (Call c) =
-    c.method.descriptor.name
+    Proto.MethodDescriptor.name (Method.descriptor c.method)
 
 
-{-| Whether the method has no side effects.
+{-| Whether the method has no side effects: its idempotency is
+[`NoSideEffects`](Proto-Descriptor#Idempotency).
 -}
 idempotent : Call req res -> Bool
 idempotent (Call c) =
-    c.method.descriptor.idempotent
+    Proto.MethodDescriptor.idempotency (Method.descriptor c.method) == NoSideEffects
 
 
 {-| The request the call sends.
@@ -237,7 +239,7 @@ requestMessage (Call c) =
 -}
 requestJson : Call req res -> Value
 requestJson (Call c) =
-    c.method.encodeRequest c.message
+    Method.encodeRequest c.method c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
@@ -247,9 +249,9 @@ not included.
 toJson : Call req res -> Value
 toJson (Call c) =
     Json.Encode.object
-        [ ( "service", Json.Encode.string c.method.descriptor.service )
-        , ( "method", Json.Encode.string c.method.descriptor.name )
-        , ( "request", c.method.encodeRequest c.message )
+        [ ( "service", Json.Encode.string (serviceName (Call c)) )
+        , ( "method", Json.Encode.string (methodName (Call c)) )
+        , ( "request", requestJson (Call c) )
         ]
 
 
@@ -301,8 +303,8 @@ config baseUrl =
 
 {-| The protocol calls are sent over.
 
-  - `Connect`: the Connect protocol. With `useGet`, an idempotent call is a GET
-    with the request in the query, which caches can serve; with `maxGetUrl`, a
+  - `Connect`: the Connect protocol. With `useGet`, a call of a method without
+    side effects (`NoSideEffects`) is a GET with the request in the query, which caches can serve; with `maxGetUrl`, a
     GET whose URL would be longer than that many characters is POSTed instead.
   - `Transcode`: HTTP transcoding, by the method's `google.api.http` rule. A
     method without one is called over the implicit route
@@ -325,7 +327,8 @@ connect =
 {-| When to try a call again: when an attempt fails with an error whose
 [`code`](#code) is one of `codes`, up to `attempts` tries in all, waiting
 `backoff` milliseconds before the second and twice as long before each one
-after. With `idempotentOnly`, only idempotent calls are retried.
+after. With `idempotentOnly`, only calls of a method declared `NoSideEffects` or
+`Idempotent` are retried.
 
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
@@ -438,7 +441,7 @@ type alias Trace =
 {-| Send a call, and say what happened along with the result.
 -}
 taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
-taskTraced cfg ((Call fields) as c) =
+taskTraced cfg c =
     let
         sent =
             request cfg c
@@ -458,8 +461,8 @@ taskTraced cfg ((Call fields) as c) =
                                                     |> Maybe.map (.headers >> splitTrailers)
                                                     |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
                                         in
-                                        ( { service = fields.method.descriptor.service
-                                          , method = fields.method.descriptor.name
+                                        ( { service = serviceName c
+                                          , method = methodName c
                                           , binding =
                                                 case route cfg c of
                                                     Bound index _ ->
@@ -737,8 +740,8 @@ type alias Request =
 {-| The request a call sends.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
-as its body and `Connect-Protocol-Version: 1`. With `useGet`, an idempotent
-call is a GET of the same URL with the query
+as its body and `Connect-Protocol-Version: 1`. With `useGet`, a call of a
+`NoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
 would be longer than `maxGetUrl`. A timeout is sent as `Connect-Timeout-Ms`,
 rounded up to a whole millisecond. The config's headers come first, then the
@@ -786,7 +789,7 @@ route cfg (Call fields) =
         Transcode ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding fields.method.descriptor.bindings) of
+            case List.head (List.drop fields.binding (Proto.MethodDescriptor.bindings (Method.descriptor fields.method))) of
                 Just (Binding rule) ->
                     Bound fields.binding rule
 
@@ -798,7 +801,7 @@ connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req 
 connectRequest options cfg ((Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ fields.method.descriptor.service ++ "/" ++ fields.method.descriptor.name
+            trimSlash cfg.baseUrl ++ "/" ++ serviceName c ++ "/" ++ methodName c
 
         json =
             Json.Encode.encode 0 (requestJson c)
@@ -827,7 +830,7 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && fields.method.descriptor.idempotent && fits then
+    if options.useGet && Proto.MethodDescriptor.idempotency (Method.descriptor fields.method) == NoSideEffects && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
@@ -1112,16 +1115,16 @@ response cfg ((Call fields) as c) answer =
             case ( cfg.transport, route cfg c ) of
                 ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody fields.method.responseDecoder raw
+                        decodeBody (Method.responseDecoder fields.method) raw
 
                     else
                         Err (failure metadata raw)
 
                 ( Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody fields.method.responseDecoder) (orEmptyObject raw)
+                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) (orEmptyObject raw)
 
                 ( Transcode, Implicit ) ->
-                    decodeBody fields.method.responseDecoder (orEmptyObject raw)
+                    decodeBody (Method.responseDecoder fields.method) (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -1263,7 +1266,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy fields.method.descriptor.idempotent tried (code error)
+            Retry.delay policy (Proto.MethodDescriptor.idempotency (Method.descriptor fields.method)) tried (code error)
 
         _ ->
             Nothing

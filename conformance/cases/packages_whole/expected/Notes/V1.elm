@@ -55,41 +55,35 @@ defaultTag =
 -- DESCRIPTORS
 
 
+descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote =
+    Proto.Descriptor.message "notes.v1.Note"
+        [ Proto.Descriptor.field "title" "title" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String)
+        , Proto.Descriptor.field "tags" "tags" 2 Proto.Descriptor.Repeated (Proto.Descriptor.Message "notes.v1.Tag")
+        ]
+
+
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "tags", jsonName = "tags", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Tag", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+descriptorTag : Proto.Descriptor.MessageDescriptor
+descriptorTag =
+    Proto.Descriptor.message "notes.v1.Tag" [ Proto.Descriptor.field "label" "label" 1 Proto.Descriptor.Singular (Proto.Descriptor.Scalar Proto.Descriptor.String) ]
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    { encodeJson = encodeTag
-    , jsonDecoder = decodeTag
-    , default = defaultTag
-    , descriptor =
-        { typeName = "notes.v1.Tag"
-        , fields = [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTag decodeTag defaultTag descriptorTag
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageNote.descriptor
-            , messageTag.descriptor
+            [ descriptorNote
+            , descriptorTag
             ]
             []
         )

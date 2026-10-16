@@ -3,13 +3,15 @@ module Rpc.Internal.Retry exposing (Policy, delay)
 {-| When to try a call again. Not exposed; `Rpc.Retry` is `Policy`.
 -}
 
+import Proto.Descriptor exposing (Idempotency(..))
 import Rpc.ErrorCode exposing (ErrorCode)
 
 
 {-| The retry policy of a config: `attempts` tries in all, waiting `backoff`
 milliseconds before the second and twice as long before each one after, when
-an attempt fails with one of `codes`; only for idempotent calls when
-`idempotentOnly`.
+an attempt fails with one of `codes`; when `idempotentOnly`, only for a
+method declared `NoSideEffects` or `Idempotent`, whose repeat changes nothing
+more.
 -}
 type alias Policy =
     { attempts : Int
@@ -20,15 +22,16 @@ type alias Policy =
 
 
 {-| How long to wait before trying again, after `tried` attempts of a call
-(`idempotent` or not) whose last one failed with `code`, or `Nothing` to stop.
+of a method of this idempotency whose last one failed with `code`, or
+`Nothing` to stop.
 -}
-delay : Policy -> Bool -> Int -> ErrorCode -> Maybe Float
-delay policy idempotent tried code =
+delay : Policy -> Idempotency -> Int -> ErrorCode -> Maybe Float
+delay policy idempotency tried code =
     if
         tried
             < policy.attempts
             && List.member code policy.codes
-            && (idempotent || not policy.idempotentOnly)
+            && (idempotency /= Unknown || not policy.idempotentOnly)
     then
         Just (policy.backoff * toFloat (2 ^ (tried - 1)))
 

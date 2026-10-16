@@ -93,14 +93,28 @@ pub struct Method {
     pub input: TypeRef,
     /// The response type, under the same rule as [`Method::input`].
     pub output: TypeRef,
-    /// Whether the method declares `idempotency_level = NO_SIDE_EFFECTS`,
-    /// which lets Connect call it with GET.
-    pub idempotent: bool,
+    /// The method's declared `idempotency_level`.
+    pub idempotency: Idempotency,
     /// The method's `google.api.http` rule, if it has one.
     pub http: Option<HttpRule>,
     /// One route per HTTP binding: the rule's own first, then each
     /// additional binding's. Empty without a rule.
     pub routes: Vec<crate::route::Route>,
+}
+
+/// A method's `idempotency_level` option, as `descriptor.proto` declares
+/// it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Idempotency {
+    /// `IDEMPOTENCY_UNKNOWN`, or no option: the method may have side
+    /// effects.
+    #[default]
+    Unknown,
+    /// `NO_SIDE_EFFECTS`: Connect may call it with GET, and an
+    /// idempotent-only retry policy may retry it.
+    NoSideEffects,
+    /// `IDEMPOTENT`: an idempotent-only retry policy may retry it.
+    Idempotent,
 }
 
 /// A `google.api.http` rule as written: the verb and path template, the
@@ -300,6 +314,12 @@ impl Message {
     pub fn value_name(&self) -> String {
         crate::naming::message_value_name(&self.elm_name)
     }
+
+    /// The Elm name of the message's descriptor, such as
+    /// `descriptorNote`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::descriptor_name(&self.elm_name)
+    }
 }
 
 /// A message field outside any real oneof: one Elm record field.
@@ -328,6 +348,59 @@ pub struct Field {
     /// The field's `jstype` option; [`JsType::Normal`] unless the field is
     /// a 64-bit integer that sets it.
     pub jstype: JsType,
+    /// What the field's options say about it beyond its type.
+    pub annotations: Annotations,
+}
+
+/// What a field's options say about it that the descriptor carries:
+/// its `google.api.field_behavior` values in order, and whether it is
+/// `deprecated`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Annotations {
+    /// The `google.api.field_behavior` values, in the order the proto
+    /// gives them; empty when the extension is not in the descriptor pool.
+    pub behavior: Vec<FieldBehavior>,
+    /// The standard `deprecated` option.
+    pub deprecated: bool,
+}
+
+/// One value of `google.api.FieldBehavior`, but its unspecified zero.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FieldBehavior {
+    /// `OPTIONAL`.
+    Optional,
+    /// `REQUIRED`.
+    Required,
+    /// `OUTPUT_ONLY`.
+    OutputOnly,
+    /// `INPUT_ONLY`.
+    InputOnly,
+    /// `IMMUTABLE`.
+    Immutable,
+    /// `UNORDERED_LIST`.
+    UnorderedList,
+    /// `NON_EMPTY_DEFAULT`.
+    NonEmptyDefault,
+    /// `IDENTIFIER`.
+    Identifier,
+}
+
+impl FieldBehavior {
+    /// The value of this number, or `None` for the unspecified zero and
+    /// for a number this release does not know.
+    pub fn from_number(number: i32) -> Option<Self> {
+        Some(match number {
+            1 => FieldBehavior::Optional,
+            2 => FieldBehavior::Required,
+            3 => FieldBehavior::OutputOnly,
+            4 => FieldBehavior::InputOnly,
+            5 => FieldBehavior::Immutable,
+            6 => FieldBehavior::UnorderedList,
+            7 => FieldBehavior::NonEmptyDefault,
+            8 => FieldBehavior::Identifier,
+            _ => return None,
+        })
+    }
 }
 
 /// The standard field option `jstype` of a 64-bit integer field, which
@@ -596,6 +669,9 @@ pub struct OneofVariant {
     pub cyclic: bool,
     /// The member's `jstype` option, as for [`Field::jstype`].
     pub jstype: JsType,
+    /// What the member's options say about it, as for
+    /// [`Field::annotations`].
+    pub annotations: Annotations,
 }
 
 /// An enum: one Elm custom type with a constructor per number.
@@ -617,6 +693,8 @@ pub struct Enum {
     rest: Vec<EnumValue>,
     /// Every value name in declaration order, aliases included.
     declared: Vec<String>,
+    /// The value names, aliases included, marked `deprecated`.
+    deprecated: Vec<String>,
 }
 
 impl Enum {
@@ -641,7 +719,20 @@ impl Enum {
             zero,
             rest,
             declared,
+            deprecated: Vec::new(),
         })
+    }
+
+    /// The enum with these value names (each a value's or an alias's)
+    /// marked `deprecated`.
+    pub fn with_deprecated(mut self, names: Vec<String>) -> Self {
+        self.deprecated = names;
+        self
+    }
+
+    /// Whether the value name `name` is marked `deprecated`.
+    pub fn is_deprecated(&self, name: &str) -> bool {
+        self.deprecated.iter().any(|deprecated| deprecated == name)
     }
 
     /// The enum with its value names in this declaration order: each
@@ -695,6 +786,12 @@ impl Enum {
     /// The Elm name of the enum's typed record, such as `enumStatus`.
     pub fn value_name(&self) -> String {
         crate::naming::enum_value_name(&self.elm_name)
+    }
+
+    /// The Elm name of the enum's descriptor, such as
+    /// `descriptorStatus`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::descriptor_name(&self.elm_name)
     }
 }
 
