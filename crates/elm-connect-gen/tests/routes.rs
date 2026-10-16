@@ -20,7 +20,7 @@
 //!   placeholder (`ELM_CONNECT_BLESS=1` rewrites them), and
 //!   `tests/RouteFixturesTest.elm` replays them through `Rpc.request`
 //!   with the Transcode transport, choosing the binding with
-//!   `Rpc.viaBinding`; a fixture naming a binding the generated method
+//!   `Rpc.Call.viaBinding`; a fixture naming a binding the generated method
 //!   lacks fails there.
 //!
 //! Bodies compare as JSON after dropping `null`s and default values

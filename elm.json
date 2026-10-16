@@ -6,6 +6,7 @@
     "version": "0.1.0",
     "exposed-modules": [
         "Rpc",
+        "Rpc.Call",
         "Rpc.Code",
         "Rpc.Transport",
         "Rpc.Retry",

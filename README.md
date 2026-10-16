@@ -80,7 +80,8 @@ calling:
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
-| `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
+| `Rpc` | building a call, config, sending over Connect or HTTP transcoding, errors |
+| `Rpc.Call` | a call: adjusting it and reading it back |
 | `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
 | `Rpc.Trace` | what happened when a call was sent, for logs |
 | `Rpc.Body` | a request's body, in the pure halves |

@@ -138,7 +138,7 @@ so a server-side implementation can check itself against the same file.
   data (`tests/RouteFixtures.elm`) are pinned in the runtime's tests,
   where `tests/RouteFixturesTest.elm` replays each through `Rpc.request`
   with the Transcode transport, applying the generated function of the
-  fixture's method and choosing its binding with `Rpc.viaBinding`; a
+  fixture's method and choosing its binding with `Rpc.Call.viaBinding`; a
   fixture naming a binding the method lacks fails. `just bless` rewrites
   all three, and the route properties below.
 
@@ -269,8 +269,8 @@ An **envelope**, what the runner sends:
 
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
-`binding` (applied with `Rpc.viaBinding`), `send` (`sendTraced`, the
-default, `send`, `task` or `halves`), `tracker` (`Rpc.withTracker`) and
+`binding` (applied with `Rpc.Call.viaBinding`), `send` (`sendTraced`, the
+default, `send`, `task` or `halves`), `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
 (`Rpc.Transport.connectGet`, `withMaxGetUrl`). `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),

@@ -11,6 +11,7 @@ import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Rpc
 import Rpc.Body
+import Rpc.Call
 import Rpc.Transport
 import Test exposing (Test, test)
 
@@ -51,7 +52,7 @@ fixture name decoder method binding json expected =
                             Ok (method message)
 
                         Just index ->
-                            Rpc.viaBinding index (method message)
+                            Rpc.Call.viaBinding index (method message)
                                 |> Result.fromMaybe ("the method has no binding " ++ String.fromInt index)
                 )
             |> Result.map (Rpc.request transcode)

@@ -21,8 +21,9 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
 ];
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 20] = [
+pub const RUNTIME_MODULES: [&str; 21] = [
     "Rpc",
+    "Rpc.Call",
     "Rpc.Code",
     "Rpc.Transport",
     "Rpc.Retry",

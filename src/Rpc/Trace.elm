@@ -47,7 +47,7 @@ type alias Trace =
 
 
 {-| The call's fully-qualified service name, such as `notes.v1.NotesService`,
-as [`Rpc.serviceName`](Rpc#serviceName) gives it.
+as [`Rpc.Call.serviceName`](Rpc-Call#serviceName) gives it.
 -}
 serviceName : Trace -> String
 serviceName (Internal.Trace t) =
@@ -55,7 +55,7 @@ serviceName (Internal.Trace t) =
 
 
 {-| The call's method name as declared, such as `GetNote`, as
-[`Rpc.methodName`](Rpc#methodName) gives it.
+[`Rpc.Call.methodName`](Rpc-Call#methodName) gives it.
 -}
 methodName : Trace -> String
 methodName (Internal.Trace t) =
@@ -72,8 +72,9 @@ transport (Internal.Trace t) =
 
 
 {-| The HTTP binding the call went over (as
-[`Rpc.viaBinding`](Rpc#viaBinding) numbers them), or `Nothing` when there was
-none to use: over Connect, or the implicit route of a method without a rule.
+[`Rpc.Call.viaBinding`](Rpc-Call#viaBinding) numbers them), or `Nothing` when
+there was none to use: over Connect, or the implicit route of a method without
+a rule.
 -}
 binding : Trace -> Maybe Int
 binding (Internal.Trace t) =
@@ -170,8 +171,8 @@ attempts (Internal.Trace t) =
         "attempts": 1
     }
 
-`service` and `method` are the keys [`Rpc.toJson`](Rpc#toJson) gives a call.
-The request's headers are pairs, in order, since a name may repeat; the
+`service` and `method` are the keys [`Rpc.Call.toJson`](Rpc-Call#toJson) gives
+a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `binding`, `httpStatus`, the body and the
 timeout are `null` when absent.

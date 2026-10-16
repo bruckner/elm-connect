@@ -13,6 +13,7 @@ import Proto.Method exposing (Idempotency(..))
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
 import Rpc.Body
+import Rpc.Call
 import Rpc.Code exposing (Code(..))
 import Rpc.Internal.Http
 import Rpc.Internal.Retry as Retry
@@ -233,29 +234,29 @@ calls =
     describe "calls"
         [ test "read back" <|
             \_ ->
-                ( ( Rpc.serviceName c, Rpc.methodName c ), ( Rpc.idempotency c, Rpc.requestMessage c ) )
+                ( ( Rpc.Call.serviceName c, Rpc.Call.methodName c ), ( Rpc.Call.idempotency c, Rpc.Call.requestMessage c ) )
                     |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( Proto.Method.IdempotencyNoSideEffects, { name = "notes/42" } ) )
         , test "the method and its descriptor are the ones the call was made from" <|
             \_ ->
-                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.method c) { name = "x" }) ), Proto.Method.name (Rpc.descriptor c), Proto.Method.output (Rpc.descriptor c) )
+                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.Call.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.Call.method c) { name = "x" }) ), Proto.Method.name (Rpc.Call.descriptor c), Proto.Method.output (Rpc.Call.descriptor c) )
                     |> Expect.equal ( ( "notes.v1.GetNoteRequest", "{\"name\":\"x\"}" ), "GetNote", "notes.v1.Note" )
         , test "requestJson is the request's JSON" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.requestJson c)
+                Json.Encode.encode 0 (Rpc.Call.requestJson c)
                     |> Expect.equal "{\"name\":\"notes/42\"}"
         , test "viaBinding gives a call for each binding the method has, and only those" <|
             \_ ->
                 [ -1, 0, 1, 2 ]
-                    |> List.map (\index -> Rpc.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.methodName)
+                    |> List.map (\index -> Rpc.Call.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Just "ListNotes", Just "ListNotes", Nothing ]
         , test "a method without bindings has none to choose" <|
             \_ ->
                 [ -1, 0, 1 ]
-                    |> List.map (\index -> Rpc.viaBinding index c |> Maybe.map Rpc.methodName)
+                    |> List.map (\index -> Rpc.Call.viaBinding index c |> Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "toJson names the method and holds the request" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.toJson (Rpc.withTimeout 5 c))
+                Json.Encode.encode 0 (Rpc.Call.toJson (Rpc.Call.withTimeout 5 c))
                     |> Expect.equal "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"request\":{\"name\":\"notes/42\"}}"
         ]
 
@@ -287,8 +288,8 @@ requests =
         , test "a call's headers follow the config's, in the order added" <|
             \_ ->
                 getNote { name = "x" }
-                    |> Rpc.withHeaders [ ( "X-A", "1" ) ]
-                    |> Rpc.withHeaders [ ( "X-B", "2" ) ]
+                    |> Rpc.Call.withHeaders [ ( "X-A", "1" ) ]
+                    |> Rpc.Call.withHeaders [ ( "X-B", "2" ) ]
                     |> Rpc.request { base | headers = [ ( "Authorization", "Bearer t" ) ] }
                     |> .headers
                     |> Expect.equal
@@ -304,7 +305,7 @@ requests =
         , test "a call's timeout replaces the config's" <|
             \_ ->
                 getNote { name = "x" }
-                    |> Rpc.withTimeout 20
+                    |> Rpc.Call.withTimeout 20
                     |> Rpc.request { base | timeout = Just 1000 }
                     |> (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal
@@ -328,7 +329,7 @@ requests =
         , test "a call's timeout that is not a positive number leaves the config's" <|
             \_ ->
                 [ 0, -5, 0 / 0 ]
-                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.withTimeout t (getNote { name = "x" })))
+                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.Call.withTimeout t (getNote { name = "x" })))
                     |> List.map (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal (List.repeat 3 ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1000" ) ], Just 1000 ))
         , test "withCredentials is carried to the request" <|
@@ -356,7 +357,7 @@ requests =
                     |> Expect.equal "POST"
         , test "connectGet POSTs an idempotent call with effects: only IdempotencyNoSideEffects is a GET" <|
             \_ ->
-                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.idempotency (deleteNote { name = "x" }) )
+                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.Call.idempotency (deleteNote { name = "x" }) )
                     |> Expect.equal ( "POST", Proto.Method.IdempotencyIdempotent )
         , test "GET is off by default" <|
             \_ ->
@@ -374,7 +375,7 @@ requests =
         , test "Connect ignores the binding chosen" <|
             \_ ->
                 listNotes { name = "x" }
-                    |> Rpc.viaBinding 1
+                    |> Rpc.Call.viaBinding 1
                     |> Maybe.map (Rpc.request base)
                     |> Expect.equal (Just (Rpc.request base (listNotes { name = "x" })))
         ]

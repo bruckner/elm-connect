@@ -17,6 +17,7 @@ import Json.Encode as Encode exposing (Value)
 import Proto.Any
 import Rpc
 import Rpc.Body
+import Rpc.Call
 import Rpc.Code
 import Rpc.Trace
 import Task
@@ -105,7 +106,7 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
                             Ok plain
 
                         Just index ->
-                            Rpc.viaBinding index plain
+                            Rpc.Call.viaBinding index plain
                                 |> Result.fromMaybe
                                     ("binding "
                                         ++ String.fromInt index
@@ -143,7 +144,7 @@ sendWith envelope encodeResponse toMsg c =
         tracked =
             case tracker of
                 Just name ->
-                    Rpc.withTracker name c
+                    Rpc.Call.withTracker name c
 
                 Nothing ->
                     c

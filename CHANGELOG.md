@@ -687,5 +687,11 @@ tag (design §8).
   `#`; sending such a config still fails with `Http.BadUrl`.
 - `Rpc.Response` gains `url`, the URL the answer came from after any
   redirect (`Http.Metadata.url`).
-- `Rpc.idempotent : Call -> Bool` is replaced by `Rpc.idempotency :
+- `Rpc.idempotent : Call -> Bool` is replaced by `Rpc.Call.idempotency :
   Call -> Proto.Method.Idempotency`, the descriptor's three levels.
+- A call's modifiers and readers move from `Rpc` to a new `Rpc.Call`
+  module, where its type is defined: `withHeaders`, `withTimeout`,
+  `withTracker`, `viaBinding`, `method`, `descriptor`, `serviceName`,
+  `methodName`, `idempotency`, `requestMessage`, `requestJson` and
+  `toJson`. `Rpc.call` and the type's alias `Rpc.Call` stay, so
+  generated code is unchanged.

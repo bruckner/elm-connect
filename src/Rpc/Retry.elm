@@ -43,7 +43,7 @@ type alias Retry =
 the second up to 200 ms and twice as long before each one after, never more
 than 30 seconds, and only calls of a method declared
 `IdempotencyNoSideEffects` or `IdempotencyIdempotent`
-([`Rpc.idempotency`](Rpc#idempotency)).
+([`Rpc.Call.idempotency`](Rpc-Call#idempotency)).
 
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out

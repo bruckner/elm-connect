@@ -17,6 +17,7 @@ import Routes.V1
 import Routes.V1.Routes
 import Rpc
 import Rpc.Body
+import Rpc.Call
 import Rpc.Transport
 import Test exposing (Test, describe, fuzz)
 
@@ -53,7 +54,7 @@ has no such binding, which the tests below never ask for.
 -}
 sendVia : Int -> (req -> Rpc.Call req res) -> req -> Rpc.Request
 sendVia index method message =
-    Rpc.viaBinding index (method message)
+    Rpc.Call.viaBinding index (method message)
         |> Maybe.withDefault (method message)
         |> Rpc.request transcode
 

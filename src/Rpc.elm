@@ -1,7 +1,5 @@
 module Rpc exposing
     ( Call, call
-    , withHeaders, withTimeout, withTracker, viaBinding
-    , method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
     , Config, config, checkConfig
     , task, send, cancel
     , taskTraced, sendTraced
@@ -37,15 +35,7 @@ own state:
 
 @docs Call, call
 
-
-# Adjusting a call
-
-@docs withHeaders, withTimeout, withTracker, viaBinding
-
-
-# Reading a call
-
-@docs method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
+[`Rpc.Call`](Rpc-Call) adjusts a call and reads it back.
 
 
 # Config
@@ -93,7 +83,9 @@ import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, 
 import Proto.Message exposing (Message)
 import Proto.Method as Method exposing (Idempotency(..), Method)
 import Rpc.Body as Body exposing (Body)
+import Rpc.Call
 import Rpc.Code as Code exposing (Code)
+import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Trace
@@ -109,21 +101,17 @@ import Time
 -- CALLS
 
 
-{-| A method applied to its request: everything needed to send it, and the
-per-call adjustments made to it. Generated code builds one per method:
+{-| A method applied to its request, as generated code builds one per method:
 
     Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
 
+It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
+(`withHeaders`, `withTimeout`, `withTracker`, `viaBinding`) and read
+(`serviceName`, `methodName`, `descriptor`, `toJson`, …).
+
 -}
-type Call req res
-    = Call
-        { method : Method req res
-        , message : req
-        , binding : Int
-        , headers : List ( String, String )
-        , timeout : Maybe Float
-        , tracker : Maybe String
-        }
+type alias Call req res =
+    Rpc.Call.Call req res
 
 
 {-| A call of a method with a request, without any adjustment. Generated code
@@ -139,7 +127,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
 -}
 call : Method req res -> req -> Call req res
 call m req =
-    Call
+    Rpc.Internal.Call.Call
         { method = m
         , message = req
         , binding = 0
@@ -147,120 +135,6 @@ call m req =
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-
--- ADJUSTING A CALL
-
-
-{-| Headers to send with this call, after the config's.
--}
-withHeaders : List ( String, String ) -> Call req res -> Call req res
-withHeaders extra (Call c) =
-    Call { c | headers = c.headers ++ extra }
-
-
-{-| A timeout for this call in milliseconds, in place of the config's. One
-that is not a positive number (`0`, a negative number, NaN or infinity) is
-ignored, and the config's applies.
--}
-withTimeout : Float -> Call req res -> Call req res
-withTimeout ms (Call c) =
-    Call { c | timeout = Just ms }
-
-
-{-| A tracker for this call, so [`cancel`](#cancel) can cancel it. elm/http
-tracks commands only, so only [`send`](#send) without a
-[`Retry`](Rpc-Retry#Retry) policy uses it; the other ways of sending ignore it.
--}
-withTracker : String -> Call req res -> Call req res
-withTracker tracker (Call c) =
-    Call { c | tracker = Just tracker }
-
-
-{-| The call over another of its method's HTTP bindings, for transcoding: `0`
-is the rule's own, which a call takes unless told otherwise, and `1` and up
-its `additional_bindings` in order. `Nothing` when the method has no binding
-of that number; a method without a rule has none, and its call goes over the
-implicit route. Connect has no use for bindings and ignores the choice.
--}
-viaBinding : Int -> Call req res -> Maybe (Call req res)
-viaBinding index (Call c) =
-    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
-        Just (Call { c | binding = index })
-
-    else
-        Nothing
-
-
-
--- READING A CALL
-
-
-{-| The method the call is of.
--}
-method : Call req res -> Method req res
-method (Call c) =
-    c.method
-
-
-{-| What the proto says about the method the call is of.
--}
-descriptor : Call req res -> Method.Descriptor
-descriptor (Call c) =
-    Method.toDescriptor c.method
-
-
-{-| The fully-qualified service name, such as `notes.v1.Notes`.
--}
-serviceName : Call req res -> String
-serviceName (Call c) =
-    Method.service (Method.toDescriptor c.method)
-
-
-{-| The method name as declared, such as `GetNote`.
--}
-methodName : Call req res -> String
-methodName (Call c) =
-    Method.name (Method.toDescriptor c.method)
-
-
-{-| What the proto says repeating the call does: nothing at all
-(`IdempotencyNoSideEffects`, which Connect may send as a GET), nothing more
-than the first time (`IdempotencyIdempotent`), or nothing it says
-(`IdempotencyUnknown`). A retry policy retries only the first two unless told
-otherwise.
--}
-idempotency : Call req res -> Idempotency
-idempotency (Call c) =
-    Method.idempotency (Method.toDescriptor c.method)
-
-
-{-| The request the call sends.
--}
-requestMessage : Call req res -> req
-requestMessage (Call c) =
-    c.message
-
-
-{-| The request's proto3 JSON.
--}
-requestJson : Call req res -> Value
-requestJson (Call c) =
-    Method.encodeRequest c.method c.message
-
-
-{-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
-deduplication keys or a queue of calls to send later. Per-call adjustments are
-not included.
--}
-toJson : Call req res -> Value
-toJson (Call c) =
-    Json.Encode.object
-        [ ( "service", Json.Encode.string (serviceName (Call c)) )
-        , ( "method", Json.Encode.string (methodName (Call c)) )
-        , ( "request", requestJson (Call c) )
-        ]
 
 
 
@@ -359,7 +233,7 @@ task cfg c =
 {-| Send a call, giving the result to `toMsg`.
 -}
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
-send cfg ((Call fields) as c) toMsg =
+send cfg ((Rpc.Internal.Call.Call fields) as c) toMsg =
     if cfg.retry == Nothing && not (badBaseUrl cfg) then
         Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
 
@@ -368,8 +242,8 @@ send cfg ((Call fields) as c) toMsg =
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
-([`withTracker`](#withTracker)), and report it as [`Canceled`](#Error) to the
-same `toMsg` the call was sent with.
+([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), and report it as
+[`Canceled`](#Error) to the same `toMsg` the call was sent with.
 
     Rpc.cancel "note-42" GotNote
 
@@ -427,8 +301,8 @@ taskTraced cfg c =
                                                     |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
                                         in
                                         ( Rpc.Internal.Trace.Trace
-                                            { serviceName = serviceName c
-                                            , methodName = methodName c
+                                            { serviceName = Rpc.Call.serviceName c
+                                            , methodName = Rpc.Call.methodName c
                                             , transport = Rpc.Transport.name cfg.transport
                                             , binding =
                                                 case route cfg c of
@@ -749,7 +623,7 @@ type Route
 
 
 route : Config -> Call req res -> Route
-route cfg (Call fields) =
+route cfg (Rpc.Internal.Call.Call fields) =
     case cfg.transport of
         Rpc.Internal.Transport.Connect _ ->
             Implicit
@@ -766,13 +640,13 @@ route cfg (Call fields) =
 
 
 connectRequest : { get : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
-connectRequest options cfg ((Call fields) as c) =
+connectRequest options cfg ((Rpc.Internal.Call.Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ serviceName c ++ "/" ++ methodName c
+            trimSlash cfg.baseUrl ++ "/" ++ Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c
 
         json =
-            Json.Encode.encode 0 (requestJson c)
+            Json.Encode.encode 0 (Rpc.Call.requestJson c)
 
         timeout =
             callTimeout cfg c
@@ -820,10 +694,10 @@ connectRequest options cfg ((Call fields) as c) =
 {-| The request over one binding of a method's rule.
 -}
 transcodeRequest : Rule -> Config -> Call req res -> Request
-transcodeRequest rule cfg ((Call fields) as c) =
+transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
     let
         json =
-            requestJson c
+            Rpc.Call.requestJson c
 
         path =
             List.map (pathSegment json) rule.path
@@ -1018,7 +892,7 @@ remove fieldPath json =
 
 
 callTimeout : Config -> Call req res -> Maybe Float
-callTimeout cfg (Call fields) =
+callTimeout cfg (Rpc.Internal.Call.Call fields) =
     case usableTimeout fields.timeout of
         Just ms ->
             Just ms
@@ -1077,7 +951,7 @@ body reading as `{}`, and the response decoded from the field the binding's
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg ((Call fields) as c) answer =
+response cfg ((Rpc.Internal.Call.Call fields) as c) answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             case ( cfg.transport, route cfg c ) of
@@ -1238,7 +1112,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry,
 retryDelay cfg c tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Rpc.Internal.Retry.delay policy (idempotency c) tried (code error)
+            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (code error)
                 |> Maybe.map (Tuple.pair policy)
 
         _ ->

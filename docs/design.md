@@ -1291,8 +1291,8 @@ keeps.
   its idempotency, the full names of its types and its bindings.
   The descriptor's name is `descriptor` followed by the method's Elm
   name with its first letter uppercased, so a `rename` renames both. No
-  `Proto.Method.Method` value is generated; `Rpc.method` and
-  `Rpc.descriptor` read the method and its descriptor back from any
+  `Proto.Method.Method` value is generated; `Rpc.Call.method` and
+  `Rpc.Call.descriptor` read the method and its descriptor back from any
   call of it. Elm keeps a top-level value whole, and the call refers to
   the descriptor value, so a program that calls the method keeps what
   it kept when the descriptor was written inline, and one that does
@@ -1313,16 +1313,16 @@ keeps.
   but not to cache. Transcoding takes its verb from the rule.
   *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
   `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
-  under `idempotentOnly`. `Rpc.idempotency` reads it from a call; it was
-  `Rpc.idempotent : Call -> Bool` until the descriptor's three levels
-  made that a misnomer.
+  under `idempotentOnly`. `Rpc.Call.idempotency` reads it from a call;
+  it was `Rpc.idempotent : Call -> Bool` until the descriptor's three
+  levels made that a misnomer.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
   `Proto.Http.binding` of the verb, the path as literals and variables, the
   custom verb, the body, the response body and the query parameters.
   The runtime walks them and never parses a template. A call picks an
-  additional binding with `Rpc.viaBinding n`, `Nothing` for a number
+  additional binding with `Rpc.Call.viaBinding n`, `Nothing` for a number
   the method has no binding of, so additional bindings need no names of
   their own.
 - **The implicit route.** A method without a rule has `bindings = []`,
@@ -1343,9 +1343,9 @@ keeps.
   option away for the rest.
 - `Rpc.Call req res` keeps the request type, not just the response
   type. A call is a value an application can hold, log
-  (`Rpc.toJson`), read back (`Rpc.requestMessage`) and send again, so
-  a retry or token-refresh wrapper closes over it, and a queue can
-  store it; `req` keeps those uses typed.
+  (`Rpc.Call.toJson`), read back (`Rpc.Call.requestMessage`) and send
+  again, so a retry or token-refresh wrapper closes over it, and a
+  queue can store it; `req` keeps those uses typed.
 
 The first shape built was different: one module per package holding,
 after the codecs, a `Connect.Method` per method (`getNote`) and a
@@ -1593,11 +1593,12 @@ it.
 
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 *(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside a
-module per type it takes or gives: `Rpc.Transport` and `Rpc.Retry`
-(§5.1), `Rpc.Trace`, `Rpc.Body` and `Rpc.Code` (§5.4). Each of the
-first four is opaque, its constructors in `Rpc.Internal.*` (where the
-rest of the internals live) so that `Rpc` can build and read it and
-users cannot, and its public module names it by an alias. The data modules, which generated code calls whatever
+module per type it takes or gives: `Rpc.Call` (below),
+`Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body` and
+`Rpc.Code` (§5.4). Each of the first five is opaque, its constructors
+in `Rpc.Internal.*` (where the rest of the internals live) so that
+`Rpc` can build and read it and users cannot, and its public module
+names it by an alias. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
 `Proto.Duration`, `Proto.Int64`), the typed values and descriptor
 trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
@@ -1608,8 +1609,8 @@ HTTP bindings (`Proto.Http`), the well-known types' values
 JSON to one of the two transports; no public `Connect` module remains.
 
 ```elm
+-- Rpc.Call
 type Call req res      -- opaque: method, request, binding, per-call adjustments
-call : Proto.Method.Method req res -> req -> Call req res
 
 -- per call
 withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
@@ -1623,6 +1624,10 @@ descriptor : Call req res -> Proto.Method.Descriptor
 serviceName, methodName, requestMessage, requestJson
 idempotency : Call req res -> Proto.Method.Idempotency
 toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
+
+-- Rpc
+type alias Call req res = Rpc.Call.Call req res
+call : Proto.Method.Method req res -> req -> Call req res
 
 -- sending
 task : Config -> Call req res -> Task Error res
@@ -1652,7 +1657,15 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   fields 2026-10-15; opaque 2026-10-16.)* The record form claimed its
   codec names left room for binary codecs beside them, which Elm's
   rules for records never allowed.
-- The accessors are `method` (the `Method`), `descriptor` (its
+- A call's modifiers and readers live in `Rpc.Call`, the module its
+  type is named in, as each opaque type has its own; `Rpc.call`, the
+  constructor generated code applies, stays in `Rpc` beside an alias
+  `Rpc.Call` of the type, so generated code imports `Rpc` alone and
+  its `Rpc.Call req res` annotations name the alias. *(Decided,
+  2026-10-16.)* They were in `Rpc`, where `Rpc.descriptor` read as too
+  generic beside the config, errors and requests the module also
+  handles.
+- The readers are `method` (the `Method`), `descriptor` (its
   descriptor), `serviceName`, `methodName` and `idempotency` (the
   descriptor's, §4); the string accessors were `service` and `method`
   until `method` named the record. *(Decided, 2026-10-13;
@@ -1710,7 +1723,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `method`, `url`, `headers` as pairs, `body`, `timeout` and
   `withCredentials`, `httpStatus`, `headers` and `trailers` as objects,
   `code` as Connect spells it or `"ok"`, `duration`, `attempts`); `service`
-  and `method` are `Rpc.toJson`'s keys for a call. `toString` is one
+  and `method` are `Rpc.Call.toJson`'s keys for a call. `toString` is one
   log line without the request, whose URL and body hold the message
   and whose headers may hold credentials. *(Opaque, `code : Maybe Code` and
   `transport` decided 2026-10-16; `httpStatus` and `code` 2026-10-13,
@@ -1794,7 +1807,7 @@ The bindings a generated call carries (`Proto.Http.binding`, with
 `literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
 `wholeBody`, `bodyField` and `param`) are the parsed `google.api.http`
 rule, the rule's own binding first and its
-`additional_bindings` after; `Rpc.viaBinding n` picks one, `0` by
+`additional_bindings` after; `Rpc.Call.viaBinding n` picks one, `0` by
 default, and is `Nothing` for a number the method has no binding of
 (§5.2).
 
@@ -2129,7 +2142,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   the JSON walk the runtime does, and in Elm by replaying each fixture
   through `Rpc.request` with a Transcode config, the call built by the
   generated service module and its binding chosen with
-  `Rpc.viaBinding` (a fixture naming a binding the method lacks fails
+  `Rpc.Call.viaBinding` (a fixture naming a binding the method lacks fails
   rather than falling back to the implicit route). Bodies compare with
   `null`s and defaults dropped.
 - Property tests *(built 2026-10-15)*, in two layers. Elm fuzz tests
@@ -2623,7 +2636,7 @@ Within a major version:
 Settled 2026-10-13, with the client's shape (§2, §4, §5): whether to
 fuse method and route for transcoding, and how to name additional
 bindings. A call is data built per method, carrying every binding, so
-there is nothing to fuse, and `Rpc.viaBinding n` picks a binding
+there is nothing to fuse, and `Rpc.Call.viaBinding n` picks a binding
 without a name for it. Route presence left the type with them: a
 method without a rule takes the implicit route, and
 `unbound_methods=error` is the strict form. The config is data, so

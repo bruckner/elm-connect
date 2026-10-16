@@ -10,6 +10,7 @@ import Proto.Http
 import Proto.Method exposing (Idempotency(..), Method)
 import Rpc exposing (Error(..), Source(..))
 import Rpc.Body
+import Rpc.Call
 import Rpc.Code exposing (Code(..))
 import Rpc.Transport
 import Test exposing (Test, describe, test)
@@ -217,8 +218,8 @@ bodies =
         , test "the method, headers, timeout and credentials come through, the call's headers last" <|
             \_ ->
                 bound { rule | method = "PATCH" } "{}"
-                    |> Rpc.withHeaders [ ( "X-Call", "1" ) ]
-                    |> Rpc.withTimeout 10
+                    |> Rpc.Call.withHeaders [ ( "X-Call", "1" ) ]
+                    |> Rpc.Call.withTimeout 10
                     |> Rpc.request { config | headers = [ ( "Authorization", "Bearer t" ) ], timeout = Just 30, withCredentials = True }
                     |> (\r -> ( ( r.method, r.headers ), ( r.timeout, r.withCredentials ) ))
                     |> Expect.equal ( ( "PATCH", [ ( "Authorization", "Bearer t" ), ( "X-Call", "1" ) ] ), ( Just 10, True ) )
@@ -247,12 +248,12 @@ routes =
                     |> Expect.equal "https://api.example.com/v1/first"
         , test "viaBinding picks an additional binding" <|
             \_ ->
-                Rpc.viaBinding 1 twice
+                Rpc.Call.viaBinding 1 twice
                     |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
-                Rpc.viaBinding 0 twice
+                Rpc.Call.viaBinding 0 twice
                     |> Maybe.map (Rpc.request config >> .url)
                     |> Expect.equal (Just "https://api.example.com/v1/first")
         , test "a method without a rule is the Connect POST, verbatim" <|
@@ -274,8 +275,8 @@ routes =
                     |> Expect.equal (Ok "hi")
         , test "there is no binding past the end, and none for a method without a rule" <|
             \_ ->
-                [ Rpc.viaBinding 2 twice, Rpc.viaBinding -1 twice, Rpc.viaBinding 0 unbound, Rpc.viaBinding 1 unbound ]
-                    |> List.map (Maybe.map Rpc.methodName)
+                [ Rpc.Call.viaBinding 2 twice, Rpc.Call.viaBinding -1 twice, Rpc.Call.viaBinding 0 unbound, Rpc.Call.viaBinding 1 unbound ]
+                    |> List.map (Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing, Nothing ]
         ]
 
