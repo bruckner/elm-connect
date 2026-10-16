@@ -730,3 +730,9 @@ tag (design §8).
   nothing sent and never retried. `Rpc.checkConfig` reports such
   config headers by name; `Rpc.request` still builds the request. A
   trace of a call that was not sent has `attempts` 0.
+- Over transcoding, a binding's literal segments and custom verb are
+  percent-encoded where a path segment cannot hold a character (RFC
+  3986 `pchar`; a valid `%XX` escape is kept), so a hand-built
+  `Proto.Http.literal` holding `#`, `?`, `/` or a space cannot change
+  the URL's shape. Generated bindings, which the generator already
+  checks, are unchanged.
