@@ -123,8 +123,10 @@ async function answer(runner, send, request) {
     };
   } else if (result.canceled !== undefined) {
     response.error = { code: Code.CANCELED, message: "" };
+  } else if (result.badResponse !== undefined) {
+    response.error = { code: Code.UNKNOWN, message: `BadResponse ${result.badResponse.problem}` };
   } else {
-    response.error = transportError(result.transport);
+    response.error = noAnswerError(result.noAnswer);
   }
   return create(ClientCompatResponseSchema, {
     testName: request.testName,
@@ -192,10 +194,10 @@ function detail(json) {
   return fromJson(AnySchema, json, { registry });
 }
 
-// The error a transport failure stands for. A timeout is the client's own
-// deadline passing; anything else did not get an answer the runtime could
-// read as one.
-function transportError(problem) {
+// The error a call that got no answer stands for. A timeout is the client's
+// own deadline passing; anything else did not get an answer the runtime
+// could read as one.
+function noAnswerError(problem) {
   if (problem === "Timeout") return { code: Code.DEADLINE_EXCEEDED, message: "Timeout" };
   if (problem === "NetworkError") return { code: Code.UNAVAILABLE, message: "NetworkError" };
   return { code: Code.UNKNOWN, message: problem };

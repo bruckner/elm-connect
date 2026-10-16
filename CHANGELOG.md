@@ -706,3 +706,15 @@ tag (design §8).
   beside a retry policy the call reported `Canceled` and then its
   result. An application that wants a message batches its own, and
   ignores, by request id, a result that arrives after it cancelled.
+- `Rpc.Error` is reshaped, in a module of its own with its readers:
+  `RpcStatus StatusError Response` (was `Status`), `HttpStatus
+  Response` (was `Http`), `BadResponse String Response` (a 2xx whose
+  body did not decode, which was `Transport (Http.BadBody _)` and lost
+  the answer) and `NoAnswer Reason`, `Reason` being `Timeout`,
+  `NetworkError` or `BadUrl String` (was `Transport Http.Error`, so
+  elm/http's type is no longer in the API). `Rpc.code`, `Rpc.message`,
+  `Rpc.details` and `Rpc.errorToString` move to `Rpc.Error.code`,
+  `message`, `details` and `toString`, and `Source` to `Rpc.Error`;
+  `Rpc.Error` stays as an alias of the type. A bad URL's message
+  leaves out the URL's user, password and query, and a bad URL is
+  never retried.

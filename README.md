@@ -80,11 +80,12 @@ calling:
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
-| `Rpc` | building a call, config, sending over Connect or HTTP transcoding, errors |
+| `Rpc` | building a call, config, sending over Connect or HTTP transcoding |
 | `Rpc.Call` | a call: adjusting it and reading it back |
 | `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
 | `Rpc.Trace` | what happened when a call was sent, for logs |
 | `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
+| `Rpc.Error` | why a call failed: its kind, code, message and details |
 | `Rpc.Code` | the codes an RPC fails with |
 | `Proto.Version` | the releases generated code can name (below) |
 
@@ -237,14 +238,26 @@ viaTranscoding =
 with jittered, capped backoff) with record syntax. `Rpc.checkConfig`
 reports a config's problems, such as a `baseUrl` with a query, where
 the application builds it rather than at the first call.
-Errors are one type for both transports, `Rpc.Error`: a `Status` the
-server stated (an `Rpc.Code.Code`, a message, details and
-where they were read from), an `Http` answer that stated none, or a
-`Transport` failure with no answer. Every error has a code and a
-message, `Rpc.code error` and `Rpc.message error`, a timeout reading as
-`DeadlineExceeded`; the `Status` and `Http` errors keep the answer
-itself (status, headers and body) for errors in a shape the runtime
-does not read.
+Errors are one type for both transports, `Rpc.Error`, defined in
+`Rpc.Error` with its readers. Every error has a code and a message,
+`Rpc.Error.code error` and `Rpc.Error.message error`, and is one of:
+
+- `RpcStatus`: the server stated a status, in a Connect error body, a
+  `google.rpc.Status` body or the `grpc-status` headers: its code (an
+  `Rpc.Code.Code`), message, details and where it was read from.
+- `HttpStatus`: the server answered with a failure and stated no
+  status; the code is inferred from the HTTP status (a 404 is
+  `Unimplemented`, a 503 `Unavailable`).
+- `BadResponse`: the server answered with success, but the body did not
+  decode as the response, as when the schema drifted between client
+  and server; code `Internal`, the message quoting elm/json's problem.
+- `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
+  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`) or a `BadUrl`
+  (`Internal`, and never sent).
+
+The first three keep the answer itself (URL, status, headers and body),
+for errors in a shape the runtime does not read and bodies that do not
+decode.
 
 ### Descriptors
 
@@ -327,7 +340,7 @@ title any =
             Nothing
 ```
 
-An error's details are `Any`s, and `Rpc.details` gives those of one
+An error's details are `Any`s, and `Rpc.Error.details` gives those of one
 type, here `google.rpc.BadRequest` from a package generated from
 `google/rpc/error_details.proto` (the notes example generates it with buf
 from googleapis):
@@ -335,11 +348,12 @@ from googleapis):
 ```elm examples/notes/elm/src/Snippets/Details.elm#details
 import Google.Rpc
 import Rpc
+import Rpc.Error
 
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.details Google.Rpc.messageBadRequest error
+    Rpc.Error.details Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 ```
@@ -381,7 +395,7 @@ withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
             (\error ->
-                if Rpc.code error == Rpc.Code.Unauthenticated then
+                if Rpc.Error.code error == Rpc.Code.Unauthenticated then
                     refresh |> Task.andThen (\fresh -> rpc fresh call)
 
                 else

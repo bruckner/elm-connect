@@ -116,7 +116,7 @@ trailers (Internal.Trace t) =
     t.trailers
 
 
-{-| The code of the error the call ended with, [`Rpc.code`](Rpc#code) of
+{-| The code of the error the call ended with, [`Rpc.Error.code`](Rpc-Error#code) of
 it, so a timeout is `Just DeadlineExceeded`; `Nothing` when it succeeded.
 -}
 code : Trace -> Maybe Code

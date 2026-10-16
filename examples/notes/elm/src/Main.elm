@@ -19,6 +19,7 @@ import Proto.Any
 import Rpc
 import Rpc.Body
 import Rpc.Code
+import Rpc.Error
 import Rpc.Transport
 import Task
 
@@ -342,7 +343,7 @@ viewRequest request =
 viewError : Rpc.Error -> Html msg
 viewError error =
     case error of
-        Rpc.Status status answer ->
+        Rpc.Error.RpcStatus status answer ->
             section [ class "error" ]
                 [ h2 [] [ text (Rpc.Code.toString status.code) ]
                 , p [] [ text status.message ]
@@ -350,26 +351,34 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.details Google.Rpc.messageErrorInfo error)
+                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
 
-        Rpc.Http answer ->
+        Rpc.Error.HttpStatus answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.code error)) ]
-                , p [] [ text (Rpc.message error) ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                , p [] [ text (Rpc.Error.message error) ]
                 , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
                 , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 
-        Rpc.Transport _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.errorToString error) ] ]
+        Rpc.Error.BadResponse _ answer ->
+            section [ class "error" ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                , p [] [ text (Rpc.Error.message error) ]
+                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with a body that is not the response:") ]
+                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                ]
+
+        Rpc.Error.NoAnswer _ ->
+            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
 viewDetail : Proto.Any.Any -> Html msg
@@ -377,16 +386,16 @@ viewDetail detail =
     pre [] [ text (Json.Encode.encode 2 (Proto.Any.encodeJson detail)) ]
 
 
-sourceToString : Rpc.Source -> String
+sourceToString : Rpc.Error.Source -> String
 sourceToString source =
     case source of
-        Rpc.ConnectBody ->
+        Rpc.Error.ConnectBody ->
             "a Connect error body"
 
-        Rpc.StatusBody ->
+        Rpc.Error.StatusBody ->
             "a google.rpc.Status body"
 
-        Rpc.GrpcHeaders ->
+        Rpc.Error.GrpcHeaders ->
             "the grpc-status header"
 
 

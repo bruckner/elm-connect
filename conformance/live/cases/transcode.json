@@ -172,7 +172,7 @@
       "config": { "baseUrl": "{server}/status/201" }
     },
     "expect": {
-      "result": { "transport": { "$match": "^BadBody " } },
+      "result": { "badResponse": { "problem": { "$match": "." }, "response": { "statusCode": 201 } } },
       "trace": { "httpStatus": 201 }
     }
   }

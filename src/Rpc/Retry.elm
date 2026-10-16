@@ -38,7 +38,7 @@ type alias Retry =
 
 
 {-| Retry an attempt that fails with an error whose
-[`code`](Rpc#code) is one of `codes`, up to 3 attempts in all, waiting before
+[`code`](Rpc-Error#code) is one of `codes`, up to 3 attempts in all, waiting before
 the second up to 200 ms and twice as long before each one after, never more
 than 30 seconds, and only calls of a method declared
 `IdempotencyNoSideEffects` or `IdempotencyIdempotent`
@@ -47,7 +47,9 @@ than 30 seconds, and only calls of a method declared
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
 may have reached the server, so `DeadlineExceeded` belongs in `codes` only for
-calls that are safe to replay, which the idempotent-only default keeps to.
+calls that are safe to replay, which the idempotent-only default keeps to. A
+bad URL is never retried, whatever its code: nothing was sent, and nothing
+would change.
 
 Each wait is drawn uniformly from zero to its bound ("full jitter"), so
 clients that failed together do not retry together; the draw is seeded from

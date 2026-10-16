@@ -1,6 +1,6 @@
 module Rpc.Response exposing (Response)
 
-{-| An HTTP answer as data: what an [`Rpc.Error`](Rpc#Error) keeps of the
+{-| An HTTP answer as data: what an [`Rpc.Error`](Rpc-Error#Error) keeps of the
 answer when the server sent one, so you can read its status, headers and
 body after a call fails.
 

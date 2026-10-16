@@ -547,7 +547,7 @@
     },
     "expect": {
       "result": {
-        "transport": "Timeout"
+        "noAnswer": "Timeout"
       },
       "trace": {
         "httpStatus": null,
@@ -734,7 +734,7 @@
     },
     "expect": {
       "result": {
-        "transport": "NetworkError"
+        "noAnswer": "NetworkError"
       },
       "trace": {
         "httpStatus": null,
@@ -755,7 +755,7 @@
     },
     "expect": {
       "result": {
-        "transport": {
+        "noAnswer": {
           "$match": "^BadUrl http://exa mple\\.com/notes\\.v1\\.NotesService/Ping$"
         }
       },
@@ -1458,7 +1458,7 @@
     },
     "expect": {
       "result": {
-        "transport": "Timeout"
+        "noAnswer": "Timeout"
       },
       "trace": {
         "httpStatus": null,

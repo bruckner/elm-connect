@@ -317,8 +317,10 @@ Connect names it, each detail as `Proto.Any.encodeJson` writes it, the
 source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
 for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`),
-`{"transport": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
-`BadStatus <n>`, `BadBody <problem>`), `{"canceled": true}` for a call
+`{"badResponse": {"problem", "response"}}` for a successful answer whose
+body did not decode (elm/json's problem, and the answer as above),
+`{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`) for an
+`Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
 method or a binding the method lacks. `trace` is the `Rpc.Trace` as `Rpc.Trace.toJson` writes it
@@ -399,9 +401,9 @@ sends a unary call's trailers. With `halves` the wrapper splits the
 answer's headers itself; with `sendTraced` it reports the `Trace`'s
 `headers` and `trailers`, which `Rpc.splitTrailers` has split. Either
 way a repeated header is one value, joined with `", "` as elm/http gives
-it, which the suite accepts. A transport failure is reported as an
+it, which the suite accepts. A call with no answer is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
+anything else, and a bad response, as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure
