@@ -154,7 +154,9 @@ withHeaders extra (Call c) =
     Call { c | headers = c.headers ++ extra }
 
 
-{-| A timeout for this call in milliseconds, in place of the config's.
+{-| A timeout for this call in milliseconds, in place of the config's. One
+that is not a positive number (`0`, a negative number, NaN or infinity) is
+ignored, and the config's applies.
 -}
 withTimeout : Float -> Call req res -> Call req res
 withTimeout ms (Call c) =
@@ -261,10 +263,13 @@ application's state with record syntax.
 
   - `transport`: the protocol, with its own options.
   - `baseUrl`: the server, with any routing prefix (`https://api.example.com`,
-    `/api`). A trailing `/` is dropped.
+    `/api`). A trailing `/` is dropped. A call's path is appended to it, so it
+    can hold no query or fragment: a call sent with a `baseUrl` holding `?` or
+    `#` is not sent, and fails with `Transport (Http.BadUrl url)`.
   - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
   - `timeout`: milliseconds. Connect also tells the server, in
-    `Connect-Timeout-Ms`.
+    `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
+    negative number, NaN or infinity) means no timeout, as `Nothing` does.
   - `withCredentials`: send cookies and other credentials cross-origin
     (`Http.riskyRequest`).
   - `retry`: whether and when to try a failed call again.
@@ -352,12 +357,11 @@ task cfg c =
 -}
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
 send cfg ((Call fields) as c) toMsg =
-    case cfg.retry of
-        Nothing ->
-            Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
+    if cfg.retry == Nothing && not (badBaseUrl cfg) then
+        Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
 
-        Just _ ->
-            Task.attempt toMsg (task cfg c)
+    else
+        Task.attempt toMsg (task cfg c)
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
@@ -614,6 +618,12 @@ empty; an `Http` error's status text, or `HTTP <status>` when there is none;
 a `Transport` error's description (`timeout`, `network error`,
 `bad URL: <url>`, `bad response body: <problem>`); `Canceled`'s is empty, so
 [`errorToString`](#errorToString) gives `canceled`.
+
+A body that does not decode is quoted in its problem, so the problem can be as
+long as the response and hold data the application never shows; the message
+keeps its first 300 characters, then `…`. The whole problem stays in the
+error, `Transport (Http.BadBody problem)`.
+
 -}
 message : Error -> String
 message error =
@@ -641,10 +651,21 @@ message error =
             "HTTP " ++ String.fromInt status
 
         Transport (Http.BadBody problem) ->
-            "bad response body: " ++ problem
+            "bad response body: " ++ excerpt problem
 
         Canceled ->
             ""
+
+
+{-| The first 300 characters of a text, and `…` when there were more.
+-}
+excerpt : String -> String
+excerpt text =
+    if String.length text > 300 then
+        String.left 300 text ++ "…"
+
+    else
+        text
 
 
 {-| A one-line description of an error, for logs: its [`code`](#code) and
@@ -1027,12 +1048,36 @@ remove fieldPath json =
 
 callTimeout : Config -> Call req res -> Maybe Float
 callTimeout cfg (Call fields) =
-    case fields.timeout of
+    case usableTimeout fields.timeout of
         Just ms ->
             Just ms
 
         Nothing ->
-            cfg.timeout
+            usableTimeout cfg.timeout
+
+
+{-| A timeout only when it is a positive number of milliseconds. elm/http hands
+the value to XHR, whose unsigned conversion turns a negative one into weeks and
+NaN or `0` into none, while the header would claim 1 ms or the maximum; read as
+no timeout instead, the header and the client agree.
+-}
+usableTimeout : Maybe Float -> Maybe Float
+usableTimeout timeout =
+    case timeout of
+        Just ms ->
+            if ms > 0 && not (isInfinite ms) then
+                Just ms
+
+            else
+                Nothing
+
+        Nothing ->
+            Nothing
+
+
+badBaseUrl : Config -> Bool
+badBaseUrl cfg =
+    Internal.badBaseUrl cfg.baseUrl
 
 
 trimSlash : String -> String
@@ -1192,7 +1237,11 @@ attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
 attempt cfg c sent =
     let
         once =
-            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
+            if badBaseUrl cfg then
+                Task.succeed ( Nothing, Err (Transport (Http.BadUrl sent.url)) )
+
+            else
+                Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
 
         loop tried =
             once

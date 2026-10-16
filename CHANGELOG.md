@@ -517,3 +517,12 @@ tag (design §8).
   fraction no longer recurse once per character, so a long header (from
   about 5,000 characters) no longer overflows the stack inside elm/http's
   load handler and leaves the call without a result.
+- A timeout that is not a positive number (`0`, negative, NaN,
+  infinite) is no timeout: no `Connect-Timeout-Ms` header and no
+  elm/http timeout, rather than a 1 ms or maximal header and an XHR
+  timeout of none or weeks. A call's such timeout leaves the config's.
+- A call whose config's `baseUrl` holds `?` or `#` is not sent and fails
+  with `Transport (Http.BadUrl url)`.
+- `Rpc.message` (and so `Rpc.errorToString`) quotes at most 300
+  characters of a bad response body's problem, then `…`; the whole
+  problem stays in `Transport (Http.BadBody problem)`.

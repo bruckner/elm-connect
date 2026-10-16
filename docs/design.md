@@ -1258,9 +1258,9 @@ the coming transports belong in it too.
 ```elm
 type alias Config =
     { transport : Transport
-    , baseUrl : String                    -- a trailing "/" is dropped
+    , baseUrl : String                    -- a trailing "/" is dropped; no "?" or "#"
     , headers : List ( String, String )   -- e.g. ( "Authorization", "Bearer …" )
-    , timeout : Maybe Float               -- ms; Connect also sends Connect-Timeout-Ms
+    , timeout : Maybe Float               -- ms, > 0; Connect also sends Connect-Timeout-Ms
     , withCredentials : Bool              -- Http.riskyRequest when True
     , retry : Maybe Retry
     }
@@ -1310,7 +1310,17 @@ it.
   call whose GET URL would be longer than that many characters, for
   servers and proxies that cap URL length.
 - A timeout is also the elm/http timeout, so the client gives up at the
-  same moment it asked the server to.
+  same moment it asked the server to. A timeout that is not a positive
+  number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
+  and a call's such timeout leaves the config's in force: elm/http
+  hands the value to XHR, whose unsigned conversion makes a negative
+  one weeks long and `0` or NaN none, while the header would claim
+  1 ms or the maximum.
+- A call's path is appended to `baseUrl`, so a `baseUrl` holding `?`
+  or `#` would put it in the query or fragment. Such a call is not
+  sent: every way of sending fails it with `Transport (Http.BadUrl
+  url)`, the URL it would have used. The pure `Rpc.request` still
+  builds that URL, since it has no error to give.
 - Retry waits `backoff` ms before the second attempt and doubles it
   before each one after, up to `attempts` tries in all. It applies to
   any error whose code (§5.4) is one of `codes`, and with
@@ -1475,7 +1485,8 @@ all 40 passing.
   protocol recommends; no protocol-version header, which GET carries in
   the query.
 - `Connect-Timeout-Ms` is the timeout rounded up to a whole
-  millisecond, between 1 and 9,999,999,999 (ten digits).
+  millisecond, between 1 and 9,999,999,999 (ten digits); a timeout that
+  is not a positive number sends none (§5.1).
 - Success is status 200 with a body the response decoder accepts; a 200
   whose body it rejects is `Transport (Http.BadBody _)`. Any other
   answer is read as an error (§5.4).
@@ -1686,7 +1697,10 @@ both the plain names.
   still says no answer came. `message` gives a `Transport` error's
   description (`timeout`, `network error`, `bad URL: <url>`,
   `bad response body: <problem>`), and `errorToString` is the code and
-  the message for all of them. *(Decided, 2026-10-15.)*
+  the message for all of them. *(Decided, 2026-10-15.)* elm/json's
+  problem quotes the JSON it rejected, which can be the whole response,
+  so the message keeps the first 300 characters of it and `…`; the
+  whole problem stays in the `Http.BadBody`.
 - `Canceled` is the outcome of a call the application withdrew with
   `Rpc.cancel` (§5.2): nothing the server said counts. It is not a
   `Transport` error, since elm/http has no `Http.Error` for it, and not

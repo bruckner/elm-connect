@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
+module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
 {-| What the transports share: percent-encoding, sending a built request, and
 reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
@@ -193,6 +193,14 @@ hexByte byte =
 hexDigit : Int -> String
 hexDigit digit =
     String.slice digit (digit + 1) "0123456789ABCDEF"
+
+
+{-| Whether a base URL holds a query or a fragment, after which a call's path
+cannot go.
+-}
+badBaseUrl : String -> Bool
+badBaseUrl url =
+    String.contains "?" url || String.contains "#" url
 
 
 type alias Request r =
