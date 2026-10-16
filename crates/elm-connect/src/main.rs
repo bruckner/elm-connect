@@ -1,8 +1,9 @@
 use std::path::PathBuf;
+use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::ir::ModuleName;
-use elm_connect_gen::{EnumUnknown, Int64, Options, Streaming, UnboundMethods};
+use elm_connect_gen::{EnumUnknown, Generated, Int64, Options, Streaming, UnboundMethods};
 use miette::{Report, miette};
 
 /// Generate Elm clients for protobuf APIs.
@@ -16,56 +17,98 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Compile .proto files and generate Elm modules from them.
-    Gen {
-        /// The .proto files to generate from, relative to an include directory.
-        #[arg(required = true)]
-        files: Vec<PathBuf>,
-        /// A directory to search for imports; repeatable. Defaults to `.`.
-        #[arg(short = 'I', long = "proto-path", value_name = "DIR")]
-        includes: Vec<PathBuf>,
-        /// The directory to write Elm modules into.
-        #[arg(short, long, value_name = "DIR")]
-        out: PathBuf,
-        /// How to hold 64-bit integers: `string` (exact) or `int` (Elm's
-        /// `Int`, exact within ±(2^53 − 1); larger values fail to decode).
-        /// A field's `jstype` option overrides it.
-        #[arg(long, value_name = "string|int", default_value = "string")]
-        int64: Int64,
-        /// What a method without a `google.api.http` rule gets: `implicit`
-        /// (a call the runtime sends over the implicit route,
-        /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
-        #[arg(long, value_name = "implicit|error", default_value = "implicit")]
-        unbound_methods: UnboundMethods,
-        /// What a client, server or bidirectional streaming method gets:
-        /// `error` (a diagnostic) or `skip` (left out of its service's
-        /// module, with a warning; the rest is generated).
-        #[arg(long, value_name = "error|skip", default_value = "error")]
-        streaming: Streaming,
-        /// What an enum value name the decoder does not know reads as:
-        /// `fail` (the decode fails) or `zero` (the zero value, as an
-        /// unknown number always does).
-        #[arg(long, value_name = "fail|zero", default_value = "fail")]
-        enum_unknown: EnumUnknown,
-        /// An Elm name for a proto element, in place of the one the naming
-        /// rules derive: `<proto full name>:<Elm name>`, such as
-        /// `notes.v1.Note:Memo`; repeatable. The proto name is a package,
-        /// service, method, message, enum, field, oneof or enum value.
-        #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
-        rename: Vec<String>,
-        /// The module every generated module goes inside, such as
-        /// `Api.Notes`: `notes.v1` then becomes `Api.Notes.V1`, in
-        /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
-        #[arg(long, value_name = "MODULE", value_parser = elm_connect_gen::parse_module_prefix)]
-        module_prefix: Option<ModuleName>,
-        /// Also generate the packages of every file the given ones import,
-        /// transitively, as `buf generate --include-imports` does; without
-        /// it, a reference to a package none of the given files declares is
-        /// an error. `google/protobuf` files are never generated, nor are
-        /// `google/api/http.proto` and `google/api/annotations.proto`,
-        /// which only carry `google.api.http`.
-        #[arg(long)]
-        include_imports: bool,
-    },
+    Gen(GenArgs),
+    /// Generate as `gen` would, in memory, and compare with the modules
+    /// under `--out`: exit status 0 when they are current, 1 when a module
+    /// is missing, differs or is stale (a file elm-connect generated that
+    /// generating no longer gives). Takes exactly `gen`'s arguments.
+    Check(GenArgs),
+}
+
+/// What to generate from and how: the arguments `gen` and `check` share.
+#[derive(Args)]
+struct GenArgs {
+    /// The .proto files to generate from, relative to an include directory.
+    #[arg(required = true)]
+    files: Vec<PathBuf>,
+    /// A directory to search for imports; repeatable. Defaults to `.`.
+    #[arg(short = 'I', long = "proto-path", value_name = "DIR")]
+    includes: Vec<PathBuf>,
+    /// The directory of the Elm modules: `gen` writes them there, and
+    /// `check` compares them with what it would write.
+    #[arg(short, long, value_name = "DIR")]
+    out: PathBuf,
+    /// How to hold 64-bit integers: `string` (exact) or `int` (Elm's
+    /// `Int`, exact within ±(2^53 − 1); larger values fail to decode).
+    /// A field's `jstype` option overrides it.
+    #[arg(long, value_name = "string|int", default_value = "string")]
+    int64: Int64,
+    /// What a method without a `google.api.http` rule gets: `implicit`
+    /// (a call the runtime sends over the implicit route,
+    /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
+    #[arg(long, value_name = "implicit|error", default_value = "implicit")]
+    unbound_methods: UnboundMethods,
+    /// What a client, server or bidirectional streaming method gets:
+    /// `error` (a diagnostic) or `skip` (left out of its service's
+    /// module, with a warning; the rest is generated).
+    #[arg(long, value_name = "error|skip", default_value = "error")]
+    streaming: Streaming,
+    /// What an enum value name the decoder does not know reads as:
+    /// `fail` (the decode fails) or `zero` (the zero value, as an
+    /// unknown number always does).
+    #[arg(long, value_name = "fail|zero", default_value = "fail")]
+    enum_unknown: EnumUnknown,
+    /// An Elm name for a proto element, in place of the one the naming
+    /// rules derive: `<proto full name>:<Elm name>`, such as
+    /// `notes.v1.Note:Memo`; repeatable. The proto name is a package,
+    /// service, method, message, enum, field, oneof or enum value.
+    #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
+    rename: Vec<String>,
+    /// The module every generated module goes inside, such as
+    /// `Api.Notes`: `notes.v1` then becomes `Api.Notes.V1`, in
+    /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
+    #[arg(long, value_name = "MODULE", value_parser = elm_connect_gen::parse_module_prefix)]
+    module_prefix: Option<ModuleName>,
+    /// Also generate the packages of every file the given ones import,
+    /// transitively, as `buf generate --include-imports` does; without
+    /// it, a reference to a package none of the given files declares is
+    /// an error. `google/protobuf` files are never generated, nor are
+    /// `google/api/http.proto` and `google/api/annotations.proto`,
+    /// which only carry `google.api.http`.
+    #[arg(long)]
+    include_imports: bool,
+}
+
+impl GenArgs {
+    /// The generator's options the flags set.
+    fn options(&self) -> miette::Result<Options> {
+        let mut options = Options::default();
+        options.int64 = self.int64;
+        options.unbound_methods = self.unbound_methods;
+        options.streaming = self.streaming;
+        options.enum_unknown = self.enum_unknown;
+        options.module_prefix = self.module_prefix.clone();
+        for entry in &self.rename {
+            options
+                .add_rename(entry)
+                .map_err(|err| miette!("--rename: {err}"))?;
+        }
+        Ok(options)
+    }
+
+    /// Generates as the flags say, printing any warnings to stderr.
+    fn generate(&self) -> miette::Result<Generated> {
+        let generated = elm_connect::generate(
+            &self.files,
+            &self.includes,
+            self.include_imports,
+            &self.options()?,
+        )?;
+        if !generated.warnings.is_empty() {
+            eprintln!("{:?}", Report::new(generated.warnings.clone()));
+        }
+        Ok(generated)
+    }
 }
 
 /// A `--rename` value, checked for its `<proto full name>:<Elm name>`
@@ -74,39 +117,24 @@ fn rename_entry(value: &str) -> Result<String, String> {
     elm_connect_gen::parse_rename(value).map(|_| value.to_owned())
 }
 
-fn main() -> miette::Result<()> {
+fn main() -> miette::Result<ExitCode> {
     match Cli::parse().command {
-        Command::Gen {
-            files,
-            includes,
-            out,
-            int64,
-            unbound_methods,
-            streaming,
-            enum_unknown,
-            rename,
-            module_prefix,
-            include_imports,
-        } => {
-            let mut options = Options::default();
-            options.int64 = int64;
-            options.unbound_methods = unbound_methods;
-            options.streaming = streaming;
-            options.enum_unknown = enum_unknown;
-            options.module_prefix = module_prefix;
-            for entry in &rename {
-                options
-                    .add_rename(entry)
-                    .map_err(|err| miette!("--rename: {err}"))?;
-            }
-            let generated = elm_connect::generate(&files, &includes, include_imports, &options)?;
-            if !generated.warnings.is_empty() {
-                eprintln!("{:?}", Report::new(generated.warnings));
-            }
-            for path in elm_connect::write(&generated.files, &out)? {
+        Command::Gen(args) => {
+            let generated = args.generate()?;
+            for path in elm_connect::write(&generated.files, &args.out)? {
                 println!("{}", path.display());
             }
-            Ok(())
+            Ok(ExitCode::SUCCESS)
+        }
+        Command::Check(args) => {
+            let generated = args.generate()?;
+            let check = elm_connect::check(&generated.files, &args.out)?;
+            print!("{}", check.render());
+            Ok(if check.is_current() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            })
         }
     }
 }
@@ -115,20 +143,64 @@ fn main() -> miette::Result<()> {
 mod tests {
     use super::*;
 
-    fn int64(args: &[&str]) -> Result<Int64, clap::Error> {
+    /// `gen`'s arguments, parsed from `a.proto --out out` and `args`.
+    fn gen_args(args: &[&str]) -> Result<GenArgs, clap::Error> {
         let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen { int64, .. } = cli.command;
-        Ok(int64)
+        match Cli::try_parse_from(base.iter().chain(args))?.command {
+            Command::Gen(args) => Ok(args),
+            Command::Check(_) => unreachable!("parsed as gen"),
+        }
+    }
+
+    #[test]
+    fn check_takes_the_arguments_of_gen() {
+        let args = [
+            "elm-connect",
+            "check",
+            "a.proto",
+            "b.proto",
+            "-I",
+            "protos",
+            "--out",
+            "generated",
+            "--int64",
+            "int",
+            "--unbound-methods",
+            "error",
+            "--streaming",
+            "skip",
+            "--enum-unknown",
+            "zero",
+            "--rename",
+            "notes.v1.Note:Memo",
+            "--module-prefix",
+            "Api",
+            "--include-imports",
+        ];
+        let Command::Check(args) = Cli::try_parse_from(args).expect("parses").command else {
+            panic!("parsed as check");
+        };
+        assert_eq!(
+            args.files,
+            [PathBuf::from("a.proto"), PathBuf::from("b.proto")]
+        );
+        assert_eq!(args.includes, [PathBuf::from("protos")]);
+        assert_eq!(args.out, PathBuf::from("generated"));
+        let options = args.options().expect("valid options");
+        assert_eq!(options.int64, Int64::Int);
+        assert_eq!(options.unbound_methods, UnboundMethods::Error);
+        assert_eq!(options.streaming, Streaming::Skip);
+        assert_eq!(options.enum_unknown, EnumUnknown::Zero);
+        assert!(args.include_imports);
+        assert!(Cli::try_parse_from(["elm-connect", "check", "a.proto"]).is_err());
+    }
+
+    fn int64(args: &[&str]) -> Result<Int64, clap::Error> {
+        gen_args(args).map(|args| args.int64)
     }
 
     fn unbound_methods(args: &[&str]) -> Result<UnboundMethods, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen {
-            unbound_methods, ..
-        } = cli.command;
-        Ok(unbound_methods)
+        gen_args(args).map(|args| args.unbound_methods)
     }
 
     #[test]
@@ -145,10 +217,7 @@ mod tests {
     }
 
     fn streaming(args: &[&str]) -> Result<Streaming, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen { streaming, .. } = cli.command;
-        Ok(streaming)
+        gen_args(args).map(|args| args.streaming)
     }
 
     #[test]
@@ -162,10 +231,7 @@ mod tests {
     }
 
     fn enum_unknown(args: &[&str]) -> Result<EnumUnknown, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen { enum_unknown, .. } = cli.command;
-        Ok(enum_unknown)
+        gen_args(args).map(|args| args.enum_unknown)
     }
 
     #[test]
@@ -179,10 +245,7 @@ mod tests {
     }
 
     fn rename(args: &[&str]) -> Result<Vec<String>, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen { rename, .. } = cli.command;
-        Ok(rename)
+        gen_args(args).map(|args| args.rename)
     }
 
     #[test]
@@ -204,10 +267,7 @@ mod tests {
     }
 
     fn module_prefix(args: &[&str]) -> Result<Option<String>, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen { module_prefix, .. } = cli.command;
-        Ok(module_prefix.map(|module| module.to_string()))
+        gen_args(args).map(|args| args.module_prefix.map(|module| module.to_string()))
     }
 
     #[test]
@@ -230,12 +290,7 @@ mod tests {
     }
 
     fn include_imports(args: &[&str]) -> Result<bool, clap::Error> {
-        let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
-        let cli = Cli::try_parse_from(base.iter().chain(args))?;
-        let Command::Gen {
-            include_imports, ..
-        } = cli.command;
-        Ok(include_imports)
+        gen_args(args).map(|args| args.include_imports)
     }
 
     #[test]

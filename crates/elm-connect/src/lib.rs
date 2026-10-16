@@ -146,3 +146,260 @@ pub fn write(files: &[GeneratedFile], out: &Path) -> Result<Vec<PathBuf>, Report
         })
         .collect()
 }
+
+/// How a tree of generated modules differs from what generating gives now.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Drift {
+    /// A module generating gives has no file under the output directory.
+    Missing {
+        /// The module's path under the output directory.
+        path: String,
+    },
+    /// A module's file differs from what generating gives.
+    Differs {
+        /// The module's path under the output directory.
+        path: String,
+        /// The file as it is.
+        on_disk: String,
+        /// The file as generating gives it.
+        generated: String,
+    },
+    /// A file under the output directory opens with elm-connect's
+    /// generated-file notice, but generating does not give it: left over
+    /// from a package or service since removed or renamed.
+    Stale {
+        /// The file's path under the output directory.
+        path: String,
+    },
+}
+
+/// What [`check`] found: every module of the tree that drifted, by path.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Check {
+    /// The output directory checked.
+    pub out: PathBuf,
+    /// How many modules generating gives.
+    pub modules: usize,
+    /// Each module or file that drifted, sorted by path; empty when the
+    /// tree is current.
+    pub drift: Vec<Drift>,
+}
+
+/// The line comment that opens every module elm-connect generates.
+fn header_start() -> String {
+    format!("-- {}", elm_connect_gen::HEADER_PREFIX)
+}
+
+/// Compares `files`, as generating gives them, with the tree under `out`:
+/// a module whose file is missing, a file whose content differs, and a
+/// stale file, one under `out` whose first line is elm-connect's
+/// generated-file notice that `files` does not hold. Other `.elm` files
+/// under `out` are left alone, since an application may keep its own
+/// modules beside the generated ones. A missing `out` is a tree with
+/// nothing in it.
+pub fn check(files: &[GeneratedFile], out: &Path) -> Result<Check, Report> {
+    let mut drift = Vec::new();
+    for file in files {
+        let path = out.join(&file.path);
+        match fs::read_to_string(&path) {
+            Ok(on_disk) if on_disk == file.content => {}
+            Ok(on_disk) => drift.push(Drift::Differs {
+                path: file.path.clone(),
+                on_disk,
+                generated: file.content.clone(),
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                drift.push(Drift::Missing {
+                    path: file.path.clone(),
+                });
+            }
+            Err(error) => {
+                return Err(error)
+                    .into_diagnostic()
+                    .wrap_err_with(|| format!("reading {}", path.display()));
+            }
+        }
+    }
+    let generated: BTreeSet<&str> = files.iter().map(|file| file.path.as_str()).collect();
+    for path in elm_files_under(out)? {
+        if generated.contains(path.as_str()) {
+            continue;
+        }
+        let full = out.join(&path);
+        let text = fs::read_to_string(&full)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("reading {}", full.display()))?;
+        if text.starts_with(&header_start()) {
+            drift.push(Drift::Stale { path });
+        }
+    }
+    drift.sort_by(|a, b| a.path().cmp(b.path()));
+    Ok(Check {
+        out: out.to_owned(),
+        modules: files.len(),
+        drift,
+    })
+}
+
+impl Drift {
+    /// The path under the output directory this is about.
+    pub fn path(&self) -> &str {
+        match self {
+            Drift::Missing { path } | Drift::Differs { path, .. } | Drift::Stale { path } => path,
+        }
+    }
+}
+
+impl Check {
+    /// Whether the tree is what generating gives.
+    pub fn is_current(&self) -> bool {
+        self.drift.is_empty()
+    }
+
+    /// When the tree differs only in the version it names, the version or
+    /// versions that generated it: every drifted module is one whose file
+    /// differs only on its header line and its `elmConnectVersion_` line,
+    /// and none is missing or stale. `None` otherwise.
+    pub fn version_only(&self) -> Option<Vec<String>> {
+        let mut versions = BTreeSet::new();
+        for drift in &self.drift {
+            let Drift::Differs {
+                on_disk, generated, ..
+            } = drift
+            else {
+                return None;
+            };
+            if without_version(on_disk) != without_version(generated) {
+                return None;
+            }
+            versions.insert(header_version(on_disk)?.to_owned());
+        }
+        (!versions.is_empty()).then(|| versions.into_iter().collect())
+    }
+
+    /// The report a person reads: nothing to say when current, the
+    /// versions when only they differ, and otherwise each missing and
+    /// stale file and a unified diff of each that differs.
+    pub fn render(&self) -> String {
+        let out = self.out.display();
+        if self.is_current() {
+            return format!(
+                "{} generated modules under {out} are current.\n",
+                self.modules
+            );
+        }
+        let mut report = String::new();
+        if let Some(versions) = self.version_only() {
+            let by = versions.join(", ");
+            report.push_str(&format!(
+                "The modules under {out} were generated by elm-connect {by}; this is \
+                 elm-connect {}. They differ from its output only in the version they name. \
+                 Regenerate them with `elm-connect gen` and the same arguments, and use the \
+                 runtime package of the same version (`bruckner/elm-connect` {}).\n",
+                elm_connect_gen::VERSION,
+                elm_connect_gen::VERSION,
+            ));
+            return report;
+        }
+        for drift in &self.drift {
+            match drift {
+                Drift::Missing { path } => {
+                    report.push_str(&format!("missing: {out}/{path} is not there\n"));
+                }
+                Drift::Stale { path } => report.push_str(&format!(
+                    "stale: {out}/{path} was generated by elm-connect, but generating no longer \
+                     gives it\n"
+                )),
+                Drift::Differs {
+                    path,
+                    on_disk,
+                    generated,
+                } => report.push_str(&format!(
+                    "differs: {out}/{path}\n{}",
+                    similar::TextDiff::from_lines(on_disk, generated)
+                        .unified_diff()
+                        .context_radius(3)
+                        .header(&format!("{out}/{path}"), &format!("generated/{path}"))
+                )),
+            }
+        }
+        report.push_str(&format!(
+            "The generated modules under {out} are out of date; run `elm-connect gen` with the \
+             same arguments to regenerate them, and delete any stale file.\n"
+        ));
+        report
+    }
+}
+
+/// The version on `content`'s header line: `0.1.0` of `-- Generated by
+/// elm-connect 0.1.0 from ...`.
+fn header_version(content: &str) -> Option<&str> {
+    let rest = content.strip_prefix(&header_start())?;
+    rest.split_once(' ').map(|(version, _)| version)
+}
+
+/// `content` with the version on its header line and the `Proto.Version`
+/// value its `elmConnectVersion_` names both blanked, so two modules that
+/// differ only in the release that generated them compare equal.
+fn without_version(content: &str) -> String {
+    content
+        .lines()
+        .enumerate()
+        .map(|(index, line)| {
+            if index == 0
+                && let Some(version) = header_version(content)
+            {
+                return line.replacen(version, "", 1);
+            }
+            match line.strip_prefix("    Proto.Version.") {
+                Some(name) if is_sentinel(name) => "    Proto.Version.".to_owned(),
+                _ => line.to_owned(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Whether `name` has the form of a `Proto.Version` value, `v{major}_{minor}`.
+fn is_sentinel(name: &str) -> bool {
+    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    name.strip_prefix('v')
+        .and_then(|rest| rest.split_once('_'))
+        .is_some_and(|(major, minor)| digits(major) && digits(minor))
+}
+
+/// Every `.elm` file under `dir`, as `/`-separated paths relative to it;
+/// none if `dir` does not exist.
+fn elm_files_under(dir: &Path) -> Result<Vec<String>, Report> {
+    fn walk(dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Report> {
+        let entries = match fs::read_dir(dir) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => {
+                return Err(error)
+                    .into_diagnostic()
+                    .wrap_err_with(|| format!("reading {}", dir.display()));
+            }
+        };
+        for entry in entries {
+            let entry = entry
+                .into_diagnostic()
+                .wrap_err_with(|| format!("reading {}", dir.display()))?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let path = format!("{prefix}{name}");
+            let kind = entry
+                .file_type()
+                .into_diagnostic()
+                .wrap_err_with(|| format!("reading {}", entry.path().display()))?;
+            if kind.is_dir() {
+                walk(&entry.path(), &format!("{path}/"), out)?;
+            } else if name.ends_with(".elm") {
+                out.push(path);
+            }
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    walk(dir, "", &mut out)?;
+    Ok(out)
+}
