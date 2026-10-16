@@ -175,6 +175,7 @@ suite =
         , retries
         , transports
         , configs
+        , headerRules
         , bodies
         , traces
         , trailers
@@ -847,6 +848,55 @@ configs =
                 Rpc.checkConfig (Rpc.config "https://api.example.com/?key=1")
                     |> List.all (String.contains "https://api.example.com/?key=1")
                     |> Expect.equal True
+        , test "a header a request cannot carry is reported by name, its value left out" <|
+            \_ ->
+                let
+                    cfg =
+                        Rpc.config "https://api.example.com"
+                in
+                Rpc.checkConfig { cfg | headers = [ ( "Authorization", "Bearer s3cr3t\n" ), ( "X-Fine", "  ok  " ), ( "Bad Name", "v" ) ] }
+                    |> List.map (\problem -> ( String.contains "\"Authorization\"" problem || String.contains "\"Bad Name\"" problem, String.contains "s3cr3t" problem ))
+                    |> Expect.equal [ ( True, False ), ( True, False ) ]
+        ]
+
+
+headerRules : Test
+headerRules =
+    describe "header validation"
+        [ test "a value is refused for a newline, NUL or a character above U+00FF" <|
+            \_ ->
+                [ "ab\ncd", "ab\u{000D}cd", "名", "a\u{0000}b", "fine", "café", "", "a\tb" ]
+                    |> List.map Rpc.Internal.Http.validHeaderValue
+                    |> Expect.equal [ False, False, False, False, True, True, True, True ]
+        , test "a value with spaces and tabs at either end is fine, a trailing newline is not" <|
+            \_ ->
+                [ "  Bearer x  ", "\tx\t", "x\n", "\u{000D}\nx" ]
+                    |> List.map Rpc.Internal.Http.validHeaderValue
+                    |> Expect.equal [ True, True, False, False ]
+        , test "a lone surrogate is refused" <|
+            \_ ->
+                Rpc.Internal.Http.validHeaderValue (String.left 1 "😀")
+                    |> Expect.equal False
+        , test "a name must be a token" <|
+            \_ ->
+                [ "X-Request-Id", "x_y.z~!#$%&'*+^`|", "", "Bad Name", "a:b", "a\nb", "Ä", "(x)" ]
+                    |> List.map Rpc.Internal.Http.validHeaderName
+                    |> Expect.equal [ True, True, False, False, False, False, False, False ]
+        , test "the first header a browser would refuse is named" <|
+            \_ ->
+                [ [ ( "A", "1" ), ( "B", "名" ), ( "C d", "3" ) ], [ ( "A", "1" ) ], [] ]
+                    |> List.map Rpc.Internal.Http.invalidHeader
+                    |> Expect.equal [ Just "B", Nothing, Nothing ]
+        , test "the pure request keeps an invalid header, for sending to refuse" <|
+            \_ ->
+                (Rpc.request base (getNote { name = "x" } |> Rpc.Call.withHeaders [ ( "X-User", "名" ) ])).headers
+                    |> List.member ( "X-User", "名" )
+                    |> Expect.equal True
+        , test "an invalid header is Internal, named in the message without its value" <|
+            \_ ->
+                NoAnswer (InvalidHeader "X-User")
+                    |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal ( Internal, "invalid header \"X-User\"" )
         ]
 
 

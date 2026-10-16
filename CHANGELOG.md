@@ -722,3 +722,11 @@ tag (design §8).
   (`send : Config -> (Result Error res -> msg) -> Call req res -> Cmd
   msg`), so a call pipes into them as into `Rpc.task`:
   `Notes.getNote req |> Rpc.send config GotNote`.
+- A header a browser refuses (a name that is not an HTTP token, a value
+  holding NUL, CR, LF or a character above U+00FF once spaces and tabs
+  at either end are trimmed) no longer reaches elm/http, where
+  `setRequestHeader` threw and stopped the whole program: every way of
+  sending fails such a call with `NoAnswer (InvalidHeader name)`,
+  nothing sent and never retried. `Rpc.checkConfig` reports such
+  config headers by name; `Rpc.request` still builds the request. A
+  trace of a call that was not sent has `attempts` 0.

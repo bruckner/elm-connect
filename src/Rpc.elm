@@ -156,6 +156,11 @@ application's state with record syntax:
     `#` is not sent, and fails with `NoAnswer (BadUrl url)`.
     [`checkConfig`](#checkConfig) finds that where the config is built.
   - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
+    A name must be an HTTP token (letters, digits and `` !#$%&'*+-.^_`|~ ``),
+    and a value, but for spaces and tabs at either end, can hold no NUL, CR
+    or LF and no character above U+00FF, which a browser refuses. A call
+    with such a header is not sent, and fails with
+    `NoAnswer (InvalidHeader name)`; the header is never altered to fit.
   - `timeout`: milliseconds. Connect also tells the server, in
     `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
     negative number, NaN or infinity) means no timeout, as `Nothing` does.
@@ -201,19 +206,39 @@ report what it finds there:
         problems ->
             Err (String.join "; " problems)
 
-Today it finds a `baseUrl` holding a query or a fragment. A call sent with
-such a config still fails with `NoAnswer (BadUrl url)`; this finds it
-before any call is made. Later releases may find more, so the result is
-read as a list rather than matched.
+Today it finds a `baseUrl` holding a query or a fragment, and headers a
+request cannot carry, each by its name (a value is left out, since it may be
+a credential). A call sent with such a config still fails with
+`NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
+before any call is made. Later releases may find more, so the result is read
+as a list rather than matched.
 
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    if badBaseUrl cfg then
+    (if badBaseUrl cfg then
         [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
 
-    else
+     else
         []
+    )
+        ++ List.filterMap
+            (\( name, value ) ->
+                if not (Internal.validHeaderName name) then
+                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
+
+                else if not (Internal.validHeaderValue value) then
+                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
+
+                else
+                    Nothing
+            )
+            cfg.headers
+
+
+quote : String -> String
+quote text =
+    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 
@@ -224,6 +249,9 @@ checkConfig cfg =
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.task config
+
+A call whose URL or headers cannot be sent (see [`Config`](#Config)) is not:
+it fails with `NoAnswer`, and nothing reaches elm/http.
 
 -}
 task : Config -> Call req res -> Task Error res
@@ -241,11 +269,15 @@ into [`task`](#task):
 -}
 send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
 send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
-    if cfg.retry == Nothing && not (badBaseUrl cfg) then
-        Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
+    let
+        sent =
+            request cfg c
+    in
+    if cfg.retry == Nothing && unsendable cfg sent == Nothing then
+        Internal.send (response cfg c) toMsg fields.tracker sent
 
     else
-        Task.attempt toMsg (task cfg c)
+        Task.attempt toMsg (taskFromRequest cfg c sent)
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
@@ -384,7 +416,9 @@ type alias Request =
     Rpc.Request.Request
 
 
-{-| The request a call sends.
+{-| The request a call sends. It is built whatever the config holds, a `baseUrl`
+with a query or a header a request cannot carry included; sending it is what
+refuses those.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
 as its body and `Connect-Protocol-Version: 1`. With
@@ -861,7 +895,8 @@ splitTrailers =
 
 
 {-| Send a request in place of the one a call would send, and read the answer as
-the call's. The config's retry policy applies.
+the call's. The config's retry policy applies. A request whose URL or headers
+cannot be sent is not, as with [`task`](#task).
 -}
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 taskFromRequest cfg c sent =
@@ -891,11 +926,7 @@ attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
 attempt cfg c sent =
     let
         once =
-            if badBaseUrl cfg then
-                Task.succeed ( Nothing, Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url)) )
-
-            else
-                Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
+            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
 
         loop tried =
             once
@@ -911,7 +942,26 @@ attempt cfg c sent =
                                 Task.succeed { attempts = tried, metadata = metadata, result = result }
                     )
     in
-    loop 1
+    case unsendable cfg sent of
+        Just error ->
+            Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
+
+        Nothing ->
+            loop 1
+
+
+{-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
+fragment, or a header a browser refuses, on which XHR's `setRequestHeader`
+throws outside elm/http's handler and stops the program for good.
+-}
+unsendable : Config -> Request -> Maybe Error
+unsendable cfg sent =
+    if badBaseUrl cfg then
+        Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
+
+    else
+        Internal.invalidHeader sent.headers
+            |> Maybe.map (Rpc.Error.NoAnswer << Rpc.Error.InvalidHeader)
 
 
 {-| The config's policy and the bound on the wait before trying again, or

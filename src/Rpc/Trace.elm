@@ -132,7 +132,8 @@ duration (Internal.Trace t) =
     t.duration
 
 
-{-| How many times the call was sent, retries included.
+{-| How many times the call was sent, retries included: `0` when it was not
+sent at all, for a bad `baseUrl` or a header a request cannot carry.
 -}
 attempts : Trace -> Int
 attempts (Internal.Trace t) =

@@ -1580,8 +1580,24 @@ it.
   reports it where the application builds its config, at start-up or
   when its settings change, rather than at the first call: a pure
   `Config -> List String`, empty when nothing is wrong, read as a list
-  so later releases can report more (invalid header values among
-  them). *(Decided, 2026-10-16.)*
+  so later releases can report more. It reports invalid config headers
+  too (below), each by name, its value left out since it may be a
+  credential. *(Decided, 2026-10-16.)*
+- A header a browser refuses is never handed to elm/http: a name that is
+  not an RFC 9110 token, or a value that, once the spaces and tabs at
+  either end are trimmed, holds NUL, CR or LF or a character above
+  U+00FF (XHR's values are byte strings). XHR's `setRequestHeader`
+  throws on such a header, and elm/http calls it outside any handler,
+  inside the scheduler's step, so one bad value (a token with a
+  newline, a display name in CJK) stopped every Elm process for good:
+  no HTTP, no ports, no timers. Every way of sending (`send`,
+  `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
+  config's and the call's headers first, and a call with one fails
+  with `NoAnswer (InvalidHeader name)`, nothing sent and never retried
+  (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
+  never altered to fit: a changed credential would fail later and less
+  clearly. The pure `Rpc.request` still builds the request, which has
+  no error to give. *(Decided, 2026-10-16.)*
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
   code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
@@ -1944,7 +1960,7 @@ type Error
     | NoAnswer Reason                   -- nothing came back, or nothing was sent
 
 type Reason                             -- frozen (§8.3)
-    = Timeout | NetworkError | BadUrl String
+    = Timeout | NetworkError | BadUrl String | InvalidHeader String
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
@@ -2056,12 +2072,12 @@ two types shared one module, the helpers for `Code` prefixed.)
 - Every error has a code, the one the Connect clients give it when the
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
-  `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl`
-  `Internal`. This settles whether a client timeout reads as
+  `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
+  `InvalidHeader` `Internal`. This settles whether a client timeout reads as
   `DeadlineExceeded`: through `code` it does, while the constructor
   still says no answer came. `message` gives a description for those
-  (`timeout`, `network error`, `bad URL: <url>`, `bad response body:
-  <problem>`), and `toString` is the code and the message for all of
+  (`timeout`, `network error`, `bad URL: <url>`, `invalid header
+  "<name>"`, `bad response body: <problem>`), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
   the whole response, so the message keeps the first 300 characters of
   it and `…`; the whole problem stays in the error. A bad URL is
@@ -2074,8 +2090,11 @@ two types shared one module, the helpers for `Code` prefixed.)
   request can have before an answer is one of the reasons, and a later
   kind of failure that arrives with an answer (a malformed stream
   envelope, a failed decompression) is a `BadResponse`, whose problem
-  says what. A bad URL is never retried, whatever the policy's codes:
-  nothing was sent, and nothing would change. *(Decided, 2026-10-16.)*
+  says what. A bad URL and an invalid header are never retried,
+  whatever the policy's codes: nothing was sent, and nothing would
+  change. `InvalidHeader` has its home here rather than in a
+  constructor of its own beside `NoAnswer`, since it is one more reason
+  nothing was sent (§5.1). *(Decided, 2026-10-16.)*
 - The shape until 2026-10-16 was `Status { code, message, details,
   source } Response | Http Response | Transport Http.Error | Canceled`
   (2026-10-15). Review found three of the four names clashing:

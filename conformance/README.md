@@ -319,7 +319,8 @@ for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`),
 `{"badResponse": {"problem", "response"}}` for a successful answer whose
 body did not decode (elm/json's problem, and the answer as above),
-`{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`) for an
+`{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
+`InvalidHeader <name>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown

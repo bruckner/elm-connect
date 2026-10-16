@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
+module Rpc.Internal.Http exposing (badBaseUrl, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with the percent-encoding the transports share. Not
@@ -197,6 +197,78 @@ hexByte byte =
 hexDigit : Int -> String
 hexDigit digit =
     String.slice digit (digit + 1) "0123456789ABCDEF"
+
+
+{-| The name of the first header a browser would refuse: one whose name is not
+an HTTP token, or whose value a request cannot carry. XHR's `setRequestHeader`
+throws on either, and elm/http calls it outside any handler, so the throw
+would stop every Elm process for good.
+-}
+invalidHeader : List ( String, String ) -> Maybe String
+invalidHeader headers =
+    case headers of
+        [] ->
+            Nothing
+
+        ( name, value ) :: rest ->
+            if validHeaderName name && validHeaderValue value then
+                invalidHeader rest
+
+            else
+                Just name
+
+
+{-| Whether a header name is an RFC 9110 token: one or more letters, digits
+and `` !#$%&'*+-.^_`|~ ``.
+-}
+validHeaderName : String -> Bool
+validHeaderName name =
+    not (String.isEmpty name) && String.all tchar name
+
+
+tchar : Char -> Bool
+tchar char =
+    Char.isAlphaNum char && Char.toCode char < 128 || String.contains (String.fromChar char) "!#$%&'*+-.^_`|~"
+
+
+{-| Whether a browser accepts a header value: after the spaces and tabs at
+either end, which it trims, no NUL, CR or LF, and no character above U+00FF
+(XHR's values are byte strings).
+-}
+validHeaderValue : String -> Bool
+validHeaderValue value =
+    String.toList value
+        |> dropWhitespace
+        |> List.reverse
+        |> dropWhitespace
+        |> List.all byteChar
+
+
+dropWhitespace : List Char -> List Char
+dropWhitespace chars =
+    case chars of
+        char :: rest ->
+            if char == ' ' || char == '\t' then
+                dropWhitespace rest
+
+            else
+                chars
+
+        [] ->
+            []
+
+
+{-| A character a header value can hold: up to U+00FF, but NUL, LF and CR. A
+lone surrogate's code is NaN, which every comparison fails, so the bound is
+written to reject it.
+-}
+byteChar : Char -> Bool
+byteChar char =
+    let
+        code =
+            Char.toCode char
+    in
+    (code <= 0xFF) && code /= 0 && code /= 0x0A && code /= 0x0D
 
 
 {-| Whether a base URL holds a query or a fragment, after which a call's path

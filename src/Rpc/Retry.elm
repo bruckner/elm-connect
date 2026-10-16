@@ -48,8 +48,8 @@ Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
 may have reached the server, so `DeadlineExceeded` belongs in `codes` only for
 calls that are safe to replay, which the idempotent-only default keeps to. A
-bad URL is never retried, whatever its code: nothing was sent, and nothing
-would change.
+bad URL or an invalid header is never retried, whatever its code: nothing was
+sent, and nothing would change.
 
 Each wait is drawn uniformly from zero to its bound ("full jitter"), so
 clients that failed together do not retry together; the draw is seeded from
