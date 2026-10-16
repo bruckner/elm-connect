@@ -763,6 +763,65 @@
     }
   },
   {
+    "name": "connect invalid header value",
+    "note": "A header value a browser refuses (here above U+00FF) is never handed to XHR: the call fails without sending anything, and is not retried.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "headers": [
+          [
+            "X-User",
+            "名"
+          ]
+        ],
+        "retry": {
+          "codes": [
+            "internal"
+          ],
+          "attempts": 3
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "InvalidHeader X-User"
+      },
+      "trace": {
+        "attempts": 0,
+        "httpStatus": null,
+        "code": "internal"
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "connect Rpc.send with an invalid header name",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "connect",
+      "request": {},
+      "config": {
+        "headers": [
+          [
+            "Bad Name",
+            "v"
+          ]
+        ]
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "InvalidHeader Bad Name"
+      },
+      "wire": []
+    }
+  },
+  {
     "name": "connect Rpc.send",
     "call": {
       "service": "notes.v1.NotesService",

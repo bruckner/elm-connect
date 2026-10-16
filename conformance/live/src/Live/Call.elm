@@ -361,3 +361,6 @@ reasonToString reason =
 
         Rpc.Error.BadUrl url ->
             "BadUrl " ++ url
+
+        Rpc.Error.InvalidHeader name ->
+            "InvalidHeader " ++ name

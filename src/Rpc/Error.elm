@@ -25,6 +25,7 @@ error has:
 
 -}
 
+import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Message exposing (Message)
 import Rpc.Code as Code exposing (Code)
@@ -73,6 +74,9 @@ type Error
     unreachable or a browser's CORS check refused the answer.
   - `BadUrl`: the URL the call would be sent to cannot be: a `baseUrl` holding
     `?` or `#`, or one the browser refuses. Nothing was sent.
+  - `InvalidHeader`: a header, named here, that a request cannot carry: its
+    name is not an HTTP token, or its value holds NUL, CR, LF or a character
+    above U+00FF. Nothing was sent.
 
 These are every way a request can fail before an answer, and the type is
 fixed.
@@ -82,6 +86,7 @@ type Reason
     = Timeout
     | NetworkError
     | BadUrl String
+    | InvalidHeader String
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -124,7 +129,7 @@ type Source
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus).
   - `BadResponse`: `Internal`.
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL `Internal`.
+    `Unavailable`, a bad URL or an invalid header `Internal`.
 
 -}
 code : Error -> Code
@@ -148,6 +153,9 @@ code error =
         NoAnswer (BadUrl _) ->
             Code.Internal
 
+        NoAnswer (InvalidHeader _) ->
+            Code.Internal
+
 
 {-| An error's message:
 
@@ -157,11 +165,13 @@ code error =
     the JSON it rejected, which can be the whole response and hold data the
     application never shows, so the message keeps its first 300 characters,
     then `…`; the whole problem stays in the error.
-  - `NoAnswer`: `timeout`, `network error` or `bad URL: <url>`. A bad URL is printed as its scheme, host and
+  - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>` or
+    `invalid header "<name>"`. A bad URL is printed as its scheme, host and
     path, without the user and password a URL can hold, and without its query
     and fragment, which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
-    stays in the error.
+    stays in the error. An invalid header is named, its value left out, since
+    it may be a credential.
 
 -}
 message : Error -> String
@@ -188,6 +198,9 @@ message error =
 
         NoAnswer (BadUrl url) ->
             "bad URL: " ++ printableUrl url
+
+        NoAnswer (InvalidHeader name) ->
+            "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

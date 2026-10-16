@@ -238,8 +238,11 @@ viaTranscoding =
 (`Rpc.Transport.connect`, `connectGet` or `transcode`), `headers`,
 `timeout`, `withCredentials` or `retry` (`Rpc.Retry.on [ Unavailable ]`,
 with jittered, capped backoff) with record syntax. `Rpc.checkConfig`
-reports a config's problems, such as a `baseUrl` with a query, where
-the application builds it rather than at the first call.
+reports a config's problems, such as a `baseUrl` with a query or a
+header value with a newline, where the application builds it rather
+than at the first call. A header a browser would refuse (a name that is
+not an HTTP token, a value with NUL, CR, LF or a character above
+U+00FF) is never sent: the call fails with `InvalidHeader`.
 Errors are one type for both transports, `Rpc.Error`, defined in
 `Rpc.Error` with its readers. Every error has a code and a message,
 `Rpc.Error.code error` and `Rpc.Error.message error`, and is one of:
@@ -254,8 +257,8 @@ Errors are one type for both transports, `Rpc.Error`, defined in
   decode as the response, as when the schema drifted between client
   and server; code `Internal`, the message quoting elm/json's problem.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
-  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`) or a `BadUrl`
-  (`Internal`, and never sent).
+  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`), a `BadUrl` or
+  an `InvalidHeader` (both `Internal`, and never sent).
 
 The first three keep the answer itself (URL, status, headers and body),
 for errors in a shape the runtime does not read and bodies that do not
