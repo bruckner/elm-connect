@@ -23,13 +23,15 @@ config =
 viaConnect : Cmd Msg
 viaConnect =
     -- POST https://api.example.com/notes.v1.NotesService/GetNote
-    Rpc.send config (Notes.getNote { name = "notes/42" }) GotNote
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.send config GotNote
 
 
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
-    Rpc.send { config | transport = Rpc.Transport.transcode } (Notes.getNote { name = "notes/42" }) GotNote
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
 
 
 

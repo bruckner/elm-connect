@@ -191,16 +191,16 @@ sendWith envelope encodeResponse toMsg c =
     case envelope.sending of
         Traced ->
             uncancellable "sendTraced"
-                |> Result.map (Sent (Rpc.sendTraced envelope.config tracked (\trace -> report (Rpc.Trace.toJson trace))))
+                |> Result.map (Sent (Rpc.sendTraced envelope.config (\trace -> report (Rpc.Trace.toJson trace)) tracked))
 
         Plain ->
             case envelope.config.retry of
                 Just _ ->
                     uncancellable "send and a retry policy"
-                        |> Result.map (Sent (Rpc.send envelope.config tracked (report Encode.null)))
+                        |> Result.map (Sent (Rpc.send envelope.config (report Encode.null) tracked))
 
                 Nothing ->
-                    Ok (Sent (Rpc.send envelope.config tracked (report Encode.null)) cancelling)
+                    Ok (Sent (Rpc.send envelope.config (report Encode.null) tracked) cancelling)
 
         AsTask ->
             uncancellable "task"

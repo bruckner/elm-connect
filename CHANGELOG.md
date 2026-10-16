@@ -718,3 +718,7 @@ tag (design §8).
   `Rpc.Error` stays as an alias of the type. A bad URL's message
   leaves out the URL's user, password and query, and a bad URL is
   never retried.
+- `Rpc.send` and `Rpc.sendTraced` take the message before the call
+  (`send : Config -> (Result Error res -> msg) -> Call req res -> Cmd
+  msg`), so a call pipes into them as into `Rpc.task`:
+  `Notes.getNote req |> Rpc.send config GotNote`.
