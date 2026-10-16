@@ -1737,7 +1737,9 @@ both the plain names.
 ## 6. Generator  *(Decided unless marked)*
 
 - Rust. One workspace: `elm-connect-gen` (library), `protoc-gen-elm-connect`
-  (protoc plugin, reads `CodeGeneratorRequest` on stdin), `elm-connect`
+  (protoc plugin, reads `CodeGeneratorRequest` on stdin; it answers
+  `--version` and `--help` without reading it, and run from a terminal
+  with no arguments prints its usage), `elm-connect`
   (standalone CLI on `protox`, compiles `.proto` directly; no protoc).
 - Output is produced from a typed Elm AST and a Wadler-style pretty
   printer tuned to match `elm-format`. The conformance suite runs

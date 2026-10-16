@@ -533,3 +533,7 @@ tag (design §8).
   panicked in its descriptor pool (exit 101), and the CLI printed
   protox's parse error. Design §1.3 said editions were accepted; it now
   says they are not, in this release.
+- `protoc-gen-elm-connect --version` prints the plugin's version and
+  `--help` its usage, before reading stdin; run from a terminal with no
+  arguments it prints its usage and exits 2 rather than wait silently
+  for a request, and an unknown argument exits 2.

@@ -89,8 +89,9 @@ generated code is from release 0.2 and the installed package is not.
 Regenerate with the binary matching the package, or install the package
 version the generated code names. A newer package of the same major
 version accepts code an older binary of that major generated. The first
-line of a generated module names the exact version that wrote it.
-Design §8 has the policy.
+line of a generated module names the exact version that wrote it, and
+`elm-connect --version` and `protoc-gen-elm-connect --version` print
+each binary's. Design §8 has the policy.
 
 ## Options
 

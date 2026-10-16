@@ -6,12 +6,16 @@
 //! Warnings, such as the streaming methods `streaming=skip` leaves out, go
 //! to stderr, which protoc passes through: a response has no field for
 //! them, and its `error` would fail the run.
+//!
+//! `--version` and `--help` are answered before stdin is read, and run
+//! from a terminal without either, the plugin prints its usage rather
+//! than wait for a request.
 
-use std::io::{self, Read, Write};
+use std::io::{self, IsTerminal, Read, Write};
 use std::process::ExitCode;
 
 use elm_connect_gen::diagnostics::{Diagnostics, Problem, Site, render_narrow};
-use elm_connect_gen::{Options, generate, googleapis};
+use elm_connect_gen::{Options, VERSION, generate, googleapis};
 use prost::Message;
 use prost_reflect::DescriptorPool;
 use prost_types::compiler::code_generator_response::{Feature, File};
@@ -166,7 +170,60 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     }
 }
 
+/// What `--help` prints, and what a run without a request on stdin prints
+/// to stderr.
+fn usage() -> String {
+    format!(
+        "protoc-gen-elm-connect {VERSION}: generate Elm clients for protobuf APIs.
+
+A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
+
+    protoc --elm-connect_out=generated notes.proto
+    protoc --elm-connect_out=generated --elm-connect_opt=int64=int notes.proto
+
+Options go in the plugin parameter, comma-separated `key=value` pairs:
+int64, unbound_methods, streaming, enum_unknown, rename (repeatable) and
+module_prefix. To generate without protoc, use the `elm-connect` CLI.
+
+Usage: protoc-gen-elm-connect [--version | --help]
+"
+    )
+}
+
+/// What the command line asks for before any request is read: `None` to
+/// answer a request on stdin, or the exit status after answering the
+/// command line itself. protoc and buf pass no arguments.
+fn command_line(args: &[String], stdin_is_terminal: bool) -> Option<ExitCode> {
+    match args.first().map(String::as_str) {
+        Some("--version" | "-V") => {
+            println!("protoc-gen-elm-connect {VERSION}");
+            Some(ExitCode::SUCCESS)
+        }
+        Some("--help" | "-h") => {
+            print!("{}", usage());
+            Some(ExitCode::SUCCESS)
+        }
+        Some(other) => {
+            eprint!(
+                "protoc-gen-elm-connect: unknown argument `{other}`\n\n{}",
+                usage()
+            );
+            Some(ExitCode::from(2))
+        }
+        // Run from a terminal, it would wait for a request no one sends.
+        None if stdin_is_terminal => {
+            eprint!("{}", usage());
+            Some(ExitCode::from(2))
+        }
+        None => None,
+    }
+}
+
 fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(status) = command_line(&args, io::stdin().is_terminal()) {
+        return status;
+    }
     let mut input = Vec::new();
     if let Err(err) = io::stdin().read_to_end(&mut input) {
         eprintln!("protoc-gen-elm-connect: reading the request: {err}");
@@ -585,5 +642,25 @@ service Uploads {
             Some(Feature::Proto3Optional as u64),
             "editions are not claimed"
         );
+    }
+
+    #[test]
+    fn the_command_line_is_answered_before_stdin() {
+        let args = |args: &[&str]| args.iter().map(|&a| a.to_owned()).collect::<Vec<_>>();
+        assert_eq!(
+            command_line(&args(&["--version"]), false),
+            Some(ExitCode::SUCCESS)
+        );
+        assert_eq!(
+            command_line(&args(&["--help"]), true),
+            Some(ExitCode::SUCCESS)
+        );
+        assert_eq!(
+            command_line(&args(&["--out"]), false),
+            Some(ExitCode::from(2))
+        );
+        assert_eq!(command_line(&args(&[]), true), Some(ExitCode::from(2)));
+        assert_eq!(command_line(&args(&[]), false), None);
+        assert!(usage().starts_with(&format!("protoc-gen-elm-connect {VERSION}:")));
     }
 }
