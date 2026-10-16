@@ -620,3 +620,7 @@ tag (design §8).
   `google/api/field_behavior.proto`, which neither binary generates;
   `annotations` conformance case. `Proto.Descriptor.Cardinality` gains
   `Required`, for proto2, which the generator does not give yet.
+- The notes example has an update-mask snippet
+  (`Snippets.UpdateMask`: a `google.protobuf.FieldMask` from two values
+  of a message, and a check of a mask's paths), with tests that
+  `just check` runs.

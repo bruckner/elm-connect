@@ -25,6 +25,7 @@ elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService,
 elm/src/Main.elm             the application
 elm/src/Api.elm              the one function every call is sent through
 elm/src/Snippets/            the root README's examples, compiled with the application
+elm/tests/                   tests of the snippets that compute (UpdateMask), run by `just check`
 elm/index.html               the page: elm.js and nothing else
 routes/                      a link to conformance/routes: the route fixtures' API, served too
 ```

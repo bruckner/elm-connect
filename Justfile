@@ -1,10 +1,10 @@
 # Recipes for working on elm-connect. `just` lists them.
 
 # Elm sources elm-format owns: the runtime package, its tests, the live
-# runner and the browser example. The conformance corpus is checked by its own test (`cargo test
+# runner and the browser example with its tests. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src examples/notes/elm/src"
+elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests"
 
 [private]
 default:
@@ -41,11 +41,14 @@ test:
 #
 # Compile the runtime package with its documentation checked (`--docs`
 # rejects an exposed value without docs, as publishing would), and run its
-# tests. The conformance harness is compiled by `cargo test`.
+# tests. Then run the browser example's tests, which test the README
+# excerpts that are more than a call (src/Snippets) against the example's
+# generated modules. The conformance harness is compiled by `cargo test`.
 elm-check:
     -@elm make --output=/dev/null >/dev/null 2>&1
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
+    cd examples/notes/elm && elm-test-rs
 
 # Check that every tagged code block of the README and the notes example's
 # walkthrough is an excerpt of the file it names (examples/check-snippets.sh).
