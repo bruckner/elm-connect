@@ -1,7 +1,7 @@
 //! The Elm side of each proto scalar (design §3.4): its type, its zero
 //! value, and the library functions that encode and decode it.
 
-use super::{Int64, JSON_DECODE, JSON_ENCODE, PROTO_JSON};
+use super::{Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_JSON};
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{int, string, ty, var};
 use crate::ir::ScalarKind;
@@ -58,29 +58,31 @@ pub(super) fn repr(kind: ScalarKind, int64: Int64) -> Repr {
     }
 }
 
-/// The Elm type of a scalar.
-pub(super) fn elm_type(repr: Repr) -> Type {
-    let name = match repr {
-        Repr::Float => "Float",
-        Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => "Int",
-        Repr::Bool => "Bool",
-        Repr::Int64 | Repr::UInt64 | Repr::String | Repr::Bytes => "String",
-    };
-    ty(name, [])
-}
+impl Emitter {
+    /// The Elm type of a scalar.
+    pub(super) fn scalar_type(&mut self, repr: Repr) -> Type {
+        let name = match repr {
+            Repr::Float => "Float",
+            Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => "Int",
+            Repr::Bool => "Bool",
+            Repr::Int64 | Repr::UInt64 | Repr::String | Repr::Bytes => "String",
+        };
+        ty(self.core(name), [])
+    }
 
-/// The proto3 zero value of a scalar, which an absent or `null` field
-/// reads as.
-pub(super) fn zero_value(repr: Repr) -> Expr {
-    match repr {
-        Repr::Float => Expr::Float(0.0),
-        Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => int(0),
-        Repr::Bool => var("False"),
-        // The decimal string of 0: an empty string would re-encode as an
-        // int64 no proto3 JSON parser accepts.
-        Repr::Int64 | Repr::UInt64 => string("0"),
-        // The empty string is also the base64 of no bytes.
-        Repr::String | Repr::Bytes => string(""),
+    /// The proto3 zero value of a scalar, which an absent or `null` field
+    /// reads as.
+    pub(super) fn scalar_zero(&mut self, repr: Repr) -> Expr {
+        match repr {
+            Repr::Float => Expr::Float(0.0),
+            Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => int(0),
+            Repr::Bool => var(self.core("False")),
+            // The decimal string of 0: an empty string would re-encode as an
+            // int64 no proto3 JSON parser accepts.
+            Repr::Int64 | Repr::UInt64 => string("0"),
+            // The empty string is also the base64 of no bytes.
+            Repr::String | Repr::Bytes => string(""),
+        }
     }
 }
 

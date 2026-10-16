@@ -157,8 +157,8 @@ impl Emitter {
     ) -> Expr {
         let kind = self.kind(ty);
         let oneof = match oneof {
-            Some(name) => apply(var("Just"), [string(name)]),
-            None => var("Nothing"),
+            Some(name) => apply(var(self.core("Just")), [string(name)]),
+            None => var(self.core("Nothing")),
         };
         inline_record([
             ("name", string(name)),

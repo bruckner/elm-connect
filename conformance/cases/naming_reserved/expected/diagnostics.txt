@@ -1,0 +1,58 @@
+naming::reserved_name
+
+  × The message `reserved.v1.Dict` becomes the Elm type `Dict`, but its module
+  │ also uses `Dict.Dict` as `Dict`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a type
+        of the same name in the same module takes their place and the module
+        does not compile. Rename it with `rename=reserved.v1.Dict:<Elm name>`.
+
+naming::reserved_name
+
+  × The message `reserved.v1.Duration` becomes the Elm type `Duration`, but
+  │ its module also uses `Proto.Duration.Duration` as `Duration`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a type
+        of the same name in the same module takes their place and the module
+        does not compile. Rename it with `rename=reserved.v1.Duration:<Elm
+        name>`.
+
+naming::reserved_name
+
+  × The message `reserved.v1.Just` becomes the Elm constructor `Just`, but its
+  │ module also uses `Maybe.Just` as `Just`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a
+        constructor of the same name in the same module takes their place and
+        the module does not compile. Rename it with
+        `rename=reserved.v1.Just:<Elm name>`.
+
+naming::reserved_name
+
+  × The message `reserved.v1.Note` becomes the Elm type `String`, but its
+  │ module also uses `String.String` as `String`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a type
+        of the same name in the same module takes their place and the module
+        does not compile. Rename it with `rename=reserved.v1.Note:<Elm name>`.
+
+naming::reserved_name
+
+  × The enum `reserved.v1.Maybe` becomes the Elm type `Maybe`, but its module
+  │ also uses `Maybe.Maybe` as `Maybe`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a type
+        of the same name in the same module takes their place and the module
+        does not compile. Rename it with `rename=reserved.v1.Maybe:<Elm
+        name>`.
+
+naming::reserved_name
+
+  × The enum value `SHADE_DARK` of `reserved.v1.Shade` becomes the Elm
+  │ constructor `Nothing`, but its module also uses `Maybe.Nothing` as
+  │ `Nothing`.
+  help: Generated code refers to some types and constructors of elm/core and
+        of the runtime unqualified, as Elm code conventionally does, so a
+        constructor of the same name in the same module takes their place and
+        the module does not compile. Rename it with
+        `rename=reserved.v1.Shade.SHADE_DARK:<Elm name>`.

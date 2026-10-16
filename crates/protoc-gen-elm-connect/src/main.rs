@@ -6,12 +6,16 @@
 //! Warnings, such as the streaming methods `streaming=skip` leaves out, go
 //! to stderr, which protoc passes through: a response has no field for
 //! them, and its `error` would fail the run.
+//!
+//! `--version` and `--help` are answered before stdin is read, and run
+//! from a terminal without either, the plugin prints its usage rather
+//! than wait for a request.
 
-use std::io::{self, Read, Write};
+use std::io::{self, IsTerminal, Read, Write};
 use std::process::ExitCode;
 
-use elm_connect_gen::diagnostics::render_narrow;
-use elm_connect_gen::{Options, generate, googleapis};
+use elm_connect_gen::diagnostics::{Diagnostics, Problem, Site, render_narrow};
+use elm_connect_gen::{Options, VERSION, generate, googleapis};
 use prost::Message;
 use prost_reflect::DescriptorPool;
 use prost_types::compiler::code_generator_response::{Feature, File};
@@ -29,10 +33,51 @@ struct RawProtoFiles {
     proto_file: Vec<Vec<u8>>,
 }
 
-/// The descriptor pool of the files in `request` (its encoded bytes), with
-/// extension options kept.
-fn pool(request: &[u8]) -> Result<DescriptorPool, String> {
-    let raw = RawProtoFiles::decode(request).map_err(|err| err.to_string())?;
+/// The fields of a `FileDescriptorProto` that say whether it is an
+/// editions file, read before the pool is built: a descriptor pool cannot
+/// take one (design §1.3).
+#[derive(Clone, PartialEq, prost::Message)]
+struct FileHeader {
+    #[prost(string, optional, tag = "1")]
+    name: Option<String>,
+    #[prost(string, optional, tag = "12")]
+    syntax: Option<String>,
+    /// `FileDescriptorProto.edition`, a `google.protobuf.Edition`.
+    #[prost(int32, optional, tag = "14")]
+    edition: Option<i32>,
+}
+
+/// An `input::editions` problem for every file of `raw` that declares an
+/// edition.
+fn editions(raw: &RawProtoFiles) -> Diagnostics {
+    let mut diagnostics = Diagnostics::new();
+    for file in &raw.proto_file {
+        let Ok(header) = FileHeader::decode(file.as_slice()) else {
+            continue;
+        };
+        if header.syntax.as_deref() != Some("editions") {
+            continue;
+        }
+        let name = header.name.unwrap_or_default();
+        // `google.protobuf.Edition`'s numbers for the editions protoc
+        // accepts; any other is named generically.
+        let edition = match header.edition {
+            Some(1000) => Some("2023"),
+            Some(1001) => Some("2024"),
+            _ => None,
+        };
+        let site = Site {
+            file: name.clone(),
+            span: None,
+            label: "the edition".into(),
+        };
+        diagnostics.push(Problem::editions(&name, edition, site));
+    }
+    diagnostics
+}
+
+/// The descriptor pool of `raw`'s files, with extension options kept.
+fn pool(raw: &RawProtoFiles) -> Result<DescriptorPool, String> {
     let mut pool = DescriptorPool::new();
     for file in &raw.proto_file {
         pool.decode_file_descriptor_proto(file.as_slice())
@@ -71,7 +116,19 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
             return (response(Some(error), Vec::new()), String::new());
         }
     };
-    let pool = match pool(bytes) {
+    let raw = match RawProtoFiles::decode(bytes) {
+        Ok(raw) => raw,
+        Err(err) => {
+            let error = format!("elm-connect: reading the descriptors: {err}");
+            return (response(Some(error), Vec::new()), String::new());
+        }
+    };
+    let unsupported = editions(&raw);
+    if !unsupported.is_empty() {
+        let error = render_narrow(&unsupported);
+        return (response(Some(error), Vec::new()), String::new());
+    }
+    let pool = match pool(&raw) {
         Ok(pool) => pool,
         Err(err) => {
             let error = format!("elm-connect: reading the descriptors: {err}");
@@ -113,7 +170,60 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     }
 }
 
+/// What `--help` prints, and what a run without a request on stdin prints
+/// to stderr.
+fn usage() -> String {
+    format!(
+        "protoc-gen-elm-connect {VERSION}: generate Elm clients for protobuf APIs.
+
+A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
+
+    protoc --elm-connect_out=generated notes.proto
+    protoc --elm-connect_out=generated --elm-connect_opt=int64=int notes.proto
+
+Options go in the plugin parameter, comma-separated `key=value` pairs:
+int64, unbound_methods, streaming, enum_unknown, rename (repeatable) and
+module_prefix. To generate without protoc, use the `elm-connect` CLI.
+
+Usage: protoc-gen-elm-connect [--version | --help]
+"
+    )
+}
+
+/// What the command line asks for before any request is read: `None` to
+/// answer a request on stdin, or the exit status after answering the
+/// command line itself. protoc and buf pass no arguments.
+fn command_line(args: &[String], stdin_is_terminal: bool) -> Option<ExitCode> {
+    match args.first().map(String::as_str) {
+        Some("--version" | "-V") => {
+            println!("protoc-gen-elm-connect {VERSION}");
+            Some(ExitCode::SUCCESS)
+        }
+        Some("--help" | "-h") => {
+            print!("{}", usage());
+            Some(ExitCode::SUCCESS)
+        }
+        Some(other) => {
+            eprint!(
+                "protoc-gen-elm-connect: unknown argument `{other}`\n\n{}",
+                usage()
+            );
+            Some(ExitCode::from(2))
+        }
+        // Run from a terminal, it would wait for a request no one sends.
+        None if stdin_is_terminal => {
+            eprint!("{}", usage());
+            Some(ExitCode::from(2))
+        }
+        None => None,
+    }
+}
+
 fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(status) = command_line(&args, io::stdin().is_terminal()) {
+        return status;
+    }
     let mut input = Vec::new();
     if let Err(err) = io::stdin().read_to_end(&mut input) {
         eprintln!("protoc-gen-elm-connect: reading the request: {err}");
@@ -370,7 +480,8 @@ service Notes {
         .encode(&mut request)
         .expect("encode");
 
-        let pool = pool(&request).expect("a pool");
+        let raw = RawProtoFiles::decode(request.as_slice()).expect("the files");
+        let pool = pool(&raw).expect("a pool");
         let packages = elm_connect_gen::ir::build(&pool, &["notes.proto"]).expect("the IR builds");
         let method = &packages[0].services[0].methods[0];
         let rule = method.http.as_ref().expect("the rule survives");
@@ -484,5 +595,72 @@ service Uploads {
         );
         let api = response.file[0].content.as_deref().expect("content");
         assert!(api.contains("type alias HttpBody ="), "{api}");
+    }
+
+    #[test]
+    fn an_editions_file_is_a_diagnostic_not_a_panic() {
+        let file = prost_types::FileDescriptorProto {
+            name: Some("ed.proto".into()),
+            package: Some("e.v1".into()),
+            syntax: Some("editions".into()),
+            message_type: vec![prost_types::DescriptorProto {
+                name: Some("M".into()),
+                ..prost_types::DescriptorProto::default()
+            }],
+            ..prost_types::FileDescriptorProto::default()
+        };
+        // prost-types has no field for the edition; a second encoding
+        // merges it in, as protoc's own encoding would carry it.
+        let mut bytes = file.encode_to_vec();
+        FileHeader {
+            edition: Some(1000),
+            ..FileHeader::default()
+        }
+        .encode(&mut bytes)
+        .expect("encode");
+        let mut request = CodeGeneratorRequest {
+            file_to_generate: vec!["ed.proto".into()],
+            ..CodeGeneratorRequest::default()
+        }
+        .encode_to_vec();
+        RawProtoFiles {
+            proto_file: vec![bytes],
+        }
+        .encode(&mut request)
+        .expect("encode");
+
+        let (response, warnings) = run(&request);
+        let error = response.error.expect("an error");
+        assert!(error.starts_with("input::editions\n"), "{error}");
+        assert!(error.contains("`ed.proto`"), "{error}");
+        assert!(error.contains("`edition = \"2023\"`"), "{error}");
+        assert!(error.contains("syntax = \"proto3\""), "{error}");
+        assert!(response.file.is_empty());
+        assert_eq!(warnings, "");
+        assert_eq!(
+            response.supported_features,
+            Some(Feature::Proto3Optional as u64),
+            "editions are not claimed"
+        );
+    }
+
+    #[test]
+    fn the_command_line_is_answered_before_stdin() {
+        let args = |args: &[&str]| args.iter().map(|&a| a.to_owned()).collect::<Vec<_>>();
+        assert_eq!(
+            command_line(&args(&["--version"]), false),
+            Some(ExitCode::SUCCESS)
+        );
+        assert_eq!(
+            command_line(&args(&["--help"]), true),
+            Some(ExitCode::SUCCESS)
+        );
+        assert_eq!(
+            command_line(&args(&["--out"]), false),
+            Some(ExitCode::from(2))
+        );
+        assert_eq!(command_line(&args(&[]), true), Some(ExitCode::from(2)));
+        assert_eq!(command_line(&args(&[]), false), None);
+        assert!(usage().starts_with(&format!("protoc-gen-elm-connect {VERSION}:")));
     }
 }

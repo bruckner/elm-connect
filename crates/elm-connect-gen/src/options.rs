@@ -31,6 +31,40 @@ pub struct Options {
     /// design §3.1): with `Api`, `notes.v1` becomes `Api.Notes.V1`. The
     /// runtime's modules are not generated, so never prefixed.
     pub module_prefix: Option<ModuleName>,
+    /// How the options are written where they were given, so that a
+    /// diagnostic's help names an option the way its reader writes it.
+    /// Not an option itself: each binary sets its own.
+    pub spelling: Spelling,
+}
+
+/// How a front end's options are written.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Spelling {
+    /// The protoc plugin's parameter: `rename=notes.v1.Note:Memo`.
+    #[default]
+    Parameter,
+    /// The CLI's flags: `--rename notes.v1.Note:Memo`.
+    Flags,
+}
+
+impl Spelling {
+    /// The `rename` option for the proto element `proto`, with a
+    /// placeholder for the Elm name, quoted: `` `rename=notes.v1.Note:<Elm
+    /// name>` ``.
+    pub fn rename(self, proto: &str) -> String {
+        match self {
+            Spelling::Parameter => format!("`rename={proto}:<Elm name>`"),
+            Spelling::Flags => format!("`--rename {proto}:<Elm name>`"),
+        }
+    }
+
+    /// The `module_prefix` option with a placeholder, quoted.
+    pub fn module_prefix(self) -> &'static str {
+        match self {
+            Spelling::Parameter => "`module_prefix=<Elm module>`",
+            Spelling::Flags => "`--module-prefix <Elm module>`",
+        }
+    }
 }
 
 impl Options {

@@ -57,6 +57,11 @@ pub enum Code {
     UnknownRename,
     /// A file to generate is not proto3.
     NotProto3,
+    /// A file declares an edition (`edition = "2023";`), which elm-connect
+    /// does not support.
+    Editions,
+    /// A file's name cannot be written into a generated module's header.
+    FileName,
     /// The protos use a construct the generator does not emit yet.
     Unimplemented,
     /// A method streams requests or responses.
@@ -74,6 +79,12 @@ pub enum Code {
     ModuleCollision,
     /// A service has no valid Elm module name.
     InvalidService,
+    /// A type or constructor of a generated module takes a name the
+    /// module's code uses unqualified for a library's.
+    ReservedName,
+    /// A generated module takes the name of a module of the runtime
+    /// package or of a package it depends on.
+    ReservedModule,
     /// An HTTP rule has no pattern, or nests additional bindings.
     RouteRule,
     /// An HTTP rule's path template does not parse, or has a wildcard
@@ -106,6 +117,8 @@ impl Code {
             Code::InvalidRename => "options::invalid_rename",
             Code::UnknownRename => "options::unknown_rename",
             Code::NotProto3 => "generate::not_proto3",
+            Code::Editions => "input::editions",
+            Code::FileName => "input::file_name",
             Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
             Code::UnboundMethod => "services::unbound_method",
@@ -113,6 +126,8 @@ impl Code {
             Code::InvalidMethod => "naming::invalid_method",
             Code::ModuleCollision => "naming::module_collision",
             Code::InvalidService => "naming::invalid_service",
+            Code::ReservedName => "naming::reserved_name",
+            Code::ReservedModule => "naming::reserved_module",
             Code::RouteRule => "route::rule",
             Code::RouteTemplate => "route::template",
             Code::RoutePathField => "route::path_field",
@@ -491,6 +506,73 @@ impl Problem {
         )
     }
 
+    /// Two generated modules, `first` and `second`, differ only in case,
+    /// so their files are one file where file names ignore case.
+    pub fn module_case_collision(
+        first: &str,
+        second: &str,
+        escapes: &str,
+        sites: (Site, Site),
+    ) -> Self {
+        Problem::new(
+            Code::ModuleCollision,
+            format!(
+                "The generated modules `{first}` and `{second}` differ only in case, so they \
+                 are written to the same file on macOS and Windows."
+            ),
+            format!(
+                "Each module is written to a file named for it (`Notes.V1` to \
+                 `Notes/V1.elm`), and the default file systems of macOS and Windows ignore \
+                 case, so one of these would overwrite the other. Rename the service or the \
+                 package, or rename one with {escapes}."
+            ),
+            vec![sites.0, sites.1],
+        )
+    }
+
+    /// `what` (such as "package `time`") becomes the Elm module `module`,
+    /// a module of `owner` (such as "elm/time"), which an application
+    /// cannot also define. `escapes` names the options that move it.
+    pub fn reserved_module(
+        what: &str,
+        module: &str,
+        owner: &str,
+        escapes: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::ReservedModule,
+            format!("The {what} becomes the Elm module `{module}`, which is a module of {owner}."),
+            format!(
+                "An application that depends on {owner} cannot define a module of the same \
+                 name: every `import {module}`, in the generated code or the application's, \
+                 becomes ambiguous. Move the module with {escapes}."
+            ),
+            vec![site],
+        )
+    }
+
+    /// `what` (such as "message `notes.v1.Dict`") becomes the Elm `kind`
+    /// ("type" or "constructor") `name`, which the generated module also
+    /// uses unqualified for `home.name`. `rename` is the option that
+    /// renames it, as its reader writes it.
+    pub fn reserved_name(what: &str, kind: &str, name: &str, home: &str, rename: &str) -> Self {
+        Problem::new(
+            Code::ReservedName,
+            format!(
+                "The {what} becomes the Elm {kind} `{name}`, but its module also uses \
+                 `{home}.{name}` as `{name}`."
+            ),
+            format!(
+                "Generated code refers to some types and constructors of elm/core and of the \
+                 runtime unqualified, as Elm code conventionally does, so a {kind} of the same \
+                 name in the same module takes their place and the module does not compile. \
+                 Rename it with {rename}."
+            ),
+            Vec::new(),
+        )
+    }
+
     /// The service `service`'s name does not start with a letter once
     /// converted to PascalCase.
     pub fn invalid_service(service: &str, site: Site) -> Self {
@@ -518,6 +600,16 @@ impl Problem {
                 format!("{binding} has no path."),
                 "A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path \
                  template, or `custom` to a kind and a path.",
+            ),
+            E::CustomKind { kind, reason } => (
+                Code::RouteRule,
+                format!(
+                    "{binding} has the custom kind `{}`, which {reason}.",
+                    kind.escape_debug()
+                ),
+                "A `custom` rule's kind is the request's HTTP method: a token of letters, \
+                 digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`, `TRACE` or \
+                 `TRACK`, which browsers refuse.",
             ),
             E::NestedBindings => (
                 Code::RouteRule,
@@ -680,6 +772,39 @@ impl Problem {
             "elm-connect implements the proto3 JSON mapping; proto2 features like `required` \
              and default values have no Elm mapping. Use `syntax = \"proto3\";`.",
             vec![site],
+        )
+    }
+
+    /// `file` declares an edition, `edition` when it is known (`"2023"`).
+    pub fn editions(file: &str, edition: Option<&str>, site: Site) -> Self {
+        let declares = match edition {
+            Some(edition) => format!("declares `edition = \"{edition}\"`"),
+            None => "declares an edition".to_owned(),
+        };
+        Problem::new(
+            Code::Editions,
+            format!("The file `{file}` {declares}, but elm-connect generates proto3 only."),
+            "This release of elm-connect does not support editions: it implements the proto3 \
+             JSON mapping, and an edition's features (closed enums, required fields, \
+             explicit presence by default) have no Elm form here yet. Declare \
+             `syntax = \"proto3\";` instead, if the file uses no feature beyond proto3's.",
+            vec![site],
+        )
+    }
+
+    /// The name of `file` holds a control character, which would break
+    /// the generated header comment that names it.
+    pub fn file_name(file: &str) -> Self {
+        Problem::new(
+            Code::FileName,
+            format!(
+                "The file name `{}` holds a control character.",
+                file.escape_debug()
+            ),
+            "The first line of a generated module is a comment naming the files it was \
+             generated from, which a newline or another control character in a name would \
+             break. Rename the file.",
+            Vec::new(),
         )
     }
 

@@ -1,0 +1,1 @@
+rename=reserved.v1.Note:String,rename=reserved.v1.Shade.SHADE_DARK:Nothing

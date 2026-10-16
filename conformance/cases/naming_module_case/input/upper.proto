@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// `Shop.Api` and `Shop.API` are one file where case is ignored.
+package shop.API;
+
+message Item {
+  string name = 1;
+}

@@ -5,10 +5,10 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use elm_connect_gen::diagnostics::Columns;
-use elm_connect_gen::{Generated, GeneratedFile, Options, googleapis};
+use elm_connect_gen::diagnostics::{Columns, Diagnostics, LineColSpan, Problem, Site};
+use elm_connect_gen::{Generated, GeneratedFile, Options};
 use miette::{IntoDiagnostic, Report, WrapErr};
-use protox::prost_reflect::DescriptorPool;
+use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
 
 /// What compiling the inputs gives the generator.
 #[derive(Debug)]
@@ -16,45 +16,76 @@ pub struct Compiled {
     /// Every resolved file, imports included.
     pub pool: DescriptorPool,
     /// The names, as `pool` knows them, of the files named on the command
-    /// line: the set to generate.
+    /// line: the set to generate, each of its packages whole.
     pub inputs: Vec<String>,
+    /// The names of the imported files to generate as well, each of its
+    /// package alone: empty unless [`Compiled::include_imports`] filled it.
+    pub imports: Vec<String>,
     /// The text of every resolved file read from disk, by name, for
     /// diagnostics.
     pub sources: HashMap<String, String>,
 }
 
 impl Compiled {
-    /// Adds to `inputs` every file they import, transitively, that declares
-    /// a message, enum or service: what `--include-imports` asks for, the
-    /// way `buf generate --include-imports` does. `google/protobuf` files
-    /// map to the runtime and the googleapis files elm-connect embeds only
-    /// carry `google.api.http`, so neither is added.
+    /// Sets `imports` to what `--include-imports` asks for: every imported
+    /// file that declares a message or enum the requested packages refer
+    /// to, through fields and methods, transitively, since such a file is
+    /// generated whole and its own references count too. A file imported
+    /// only for its options, such as `google/api/annotations.proto` or
+    /// `google/api/client.proto`, declares nothing referred to and is left
+    /// out, as are `google/protobuf` files, which map to the runtime, and
+    /// files of the requested packages, which are generated whole anyway.
     pub fn include_imports(&mut self) {
-        let mut seen: BTreeSet<String> = self.inputs.iter().cloned().collect();
-        let mut pending: Vec<String> = self.inputs.clone();
-        while let Some(name) = pending.pop() {
-            let Some(file) = self.pool.get_file_by_name(&name) else {
-                continue;
-            };
-            for import in file.dependencies() {
-                let name = import.name();
+        let requested: BTreeSet<String> = self
+            .inputs
+            .iter()
+            .filter_map(|name| self.pool.get_file_by_name(name))
+            .map(|file| file.package_name().to_owned())
+            .collect();
+        let mut pending: Vec<FileDescriptor> = self
+            .pool
+            .files()
+            .filter(|file| requested.contains(file.package_name()))
+            .collect();
+        let mut imports = BTreeSet::new();
+        while let Some(file) = pending.pop() {
+            for referenced in referenced_files(&file) {
+                let name = referenced.name();
                 if name.starts_with("google/protobuf/")
-                    || googleapis::is_embedded(name)
-                    || !seen.insert(name.to_owned())
+                    || requested.contains(referenced.package_name())
+                    || !imports.insert(name.to_owned())
                 {
                     continue;
                 }
-                pending.push(name.to_owned());
-                let declares = import.messages().next().is_some()
-                    || import.enums().next().is_some()
-                    || import.services().next().is_some();
-                if declares {
-                    self.inputs.push(name.to_owned());
-                }
+                pending.push(referenced);
             }
         }
-        self.inputs.sort();
+        self.imports = imports.into_iter().collect();
     }
+}
+
+/// The files declaring the messages and enums `file`'s messages and
+/// methods refer to, its own among them.
+fn referenced_files(file: &FileDescriptor) -> Vec<FileDescriptor> {
+    let mut messages: Vec<MessageDescriptor> = file.messages().collect();
+    let mut referenced = Vec::new();
+    while let Some(message) = messages.pop() {
+        messages.extend(message.child_messages());
+        for field in message.fields() {
+            match field.kind() {
+                Kind::Message(target) => referenced.push(target.parent_file()),
+                Kind::Enum(target) => referenced.push(target.parent_file()),
+                _ => {}
+            }
+        }
+    }
+    for service in file.services() {
+        for method in service.methods() {
+            referenced.push(method.input().parent_file());
+            referenced.push(method.output().parent_file());
+        }
+    }
+    referenced
 }
 
 /// Compiles `files` against the `includes` search path (`.` if empty),
@@ -71,10 +102,13 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     } else {
         includes.to_vec()
     };
-    let mut compiler =
-        protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(includes));
+    let mut compiler = protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(
+        includes.iter().cloned(),
+    ));
     compiler.include_source_info(true).include_imports(true);
-    compiler.open_files(files)?;
+    if let Err(error) = compiler.open_files(files) {
+        return Err(editions_problem(&error, &includes).unwrap_or_else(|| error.into()));
+    }
     let mut inputs = Vec::new();
     let mut sources = HashMap::new();
     for file in compiler.files() {
@@ -89,8 +123,87 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     Ok(Compiled {
         pool: compiler.descriptor_pool(),
         inputs,
+        imports: Vec::new(),
         sources,
     })
+}
+
+/// The `input::editions` problem for a parse `error` in a file that
+/// declares an edition, which protox cannot parse: the file is found
+/// again on `includes` and its first statement read. `None` for any other
+/// error.
+fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
+    if !error.is_parse() {
+        return None;
+    }
+    let name = error.file()?;
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
+    let (edition, span) = declared_edition(&source)?;
+    let site = Site {
+        file: name.to_owned(),
+        span: Some(span),
+        label: "the edition".into(),
+    };
+    let mut diagnostics = Diagnostics::new();
+    diagnostics.push(Problem::editions(name, Some(&edition), site));
+    let sources = HashMap::from([(name.to_owned(), source)]);
+    diagnostics.attach_sources(&sources, Columns::Bytes);
+    Some(Report::new(diagnostics))
+}
+
+/// The edition `source` declares, `2023` of `edition = "2023";`, and the
+/// span of that statement, when its first statement is one.
+fn declared_edition(source: &str) -> Option<(String, LineColSpan)> {
+    let bytes = source.as_bytes();
+    // Past whitespace and comments from `at`.
+    let skip = |mut at: usize| loop {
+        let rest = &source[at..];
+        let trimmed = rest.trim_start();
+        at += rest.len() - trimmed.len();
+        if trimmed.starts_with("//") {
+            at += trimmed.find('\n').unwrap_or(trimmed.len());
+        } else if let Some(comment) = trimmed.strip_prefix("/*") {
+            at += 2 + comment.find("*/").map_or(comment.len(), |end| end + 2);
+        } else {
+            return at;
+        }
+    };
+    let start = skip(0);
+    let after = start + "edition".len();
+    let keyword = source.get(start..after)? == "edition"
+        && !bytes
+            .get(after)
+            .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
+    if !keyword {
+        return None;
+    }
+    let at = skip(after);
+    let at = skip(at + source[at..].strip_prefix('=').map(|_| 1)?);
+    let quote = *bytes.get(at).filter(|b| matches!(b, b'"' | b'\''))?;
+    let len = source[at + 1..].find(char::from(quote))?;
+    let edition = source[at + 1..at + 1 + len].to_owned();
+    let mut end = at + len + 2;
+    let semicolon = skip(end);
+    if source[semicolon..].starts_with(';') {
+        end = semicolon + 1;
+    }
+    let position = |offset: usize| {
+        let before = &source[..offset];
+        let line = before.matches('\n').count();
+        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+        (u32::try_from(line).ok(), u32::try_from(col).ok())
+    };
+    let (start_line, start_col) = position(start);
+    let (end_line, end_col) = position(end);
+    let span = LineColSpan {
+        start_line: start_line?,
+        start_col: start_col?,
+        end_line: end_line?,
+        end_col: end_col?,
+    };
+    Some((edition, span))
 }
 
 /// Compiles `files` against `includes` and generates Elm from them as
@@ -112,8 +225,9 @@ pub fn generate(
         compiled.include_imports();
     }
     let inputs: Vec<&str> = compiled.inputs.iter().map(String::as_str).collect();
+    let imports: Vec<&str> = compiled.imports.iter().map(String::as_str).collect();
     // protox records columns in bytes.
-    match elm_connect_gen::generate(&compiled.pool, &inputs, options) {
+    match elm_connect_gen::generate_with_imports(&compiled.pool, &inputs, &imports, options) {
         Ok(mut generated) => {
             generated
                 .warnings
@@ -165,8 +279,9 @@ pub enum Drift {
         generated: String,
     },
     /// A file under the output directory opens with elm-connect's
-    /// generated-file notice, but generating does not give it: left over
-    /// from a package or service since removed or renamed.
+    /// generated-file notice naming a proto file generating read, but
+    /// generating does not give it: left over from a package or service
+    /// since removed or renamed.
     Stale {
         /// The file's path under the output directory.
         path: String,
@@ -190,13 +305,53 @@ fn header_start() -> String {
     format!("-- {}", elm_connect_gen::HEADER_PREFIX)
 }
 
+/// The stale files under `out`, as `/`-separated paths relative to it,
+/// sorted: each `.elm` file whose first line is elm-connect's
+/// generated-file notice naming a proto file one of `files` was generated
+/// from, but which `files` does not hold. So a module another `gen`
+/// writes to the same directory from other protos is not stale, while one
+/// of a package or service since removed from these protos is. Other
+/// `.elm` files are left alone, since an application may keep its own
+/// modules beside the generated ones. A missing `out` has none.
+pub fn stale(files: &[GeneratedFile], out: &Path) -> Result<Vec<String>, Report> {
+    let generated: BTreeSet<&str> = files.iter().map(|file| file.path.as_str()).collect();
+    let sources: BTreeSet<&str> = files
+        .iter()
+        .flat_map(|file| header_files(&file.content))
+        .collect();
+    let mut stale = Vec::new();
+    for path in elm_files_under(out)? {
+        if generated.contains(path.as_str()) {
+            continue;
+        }
+        let full = out.join(&path);
+        let text = fs::read_to_string(&full)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("reading {}", full.display()))?;
+        if header_files(&text).any(|file| sources.contains(file)) {
+            stale.push(path);
+        }
+    }
+    stale.sort();
+    Ok(stale)
+}
+
+/// The proto files the header line of `content` names, `a.proto` and
+/// `b.proto` of `-- Generated by elm-connect 0.1.0 from a.proto, b.proto.
+/// Do not edit; regenerate instead.`; none if it has no such line.
+fn header_files(content: &str) -> impl Iterator<Item = &str> {
+    let first = content.lines().next().unwrap_or_default();
+    first
+        .strip_prefix(&header_start())
+        .and_then(|rest| rest.split_once(" from "))
+        .and_then(|(_, rest)| rest.strip_suffix(". Do not edit; regenerate instead."))
+        .into_iter()
+        .flat_map(|files| files.split(", "))
+}
+
 /// Compares `files`, as generating gives them, with the tree under `out`:
 /// a module whose file is missing, a file whose content differs, and a
-/// stale file, one under `out` whose first line is elm-connect's
-/// generated-file notice that `files` does not hold. Other `.elm` files
-/// under `out` are left alone, since an application may keep its own
-/// modules beside the generated ones. A missing `out` is a tree with
-/// nothing in it.
+/// [`stale`] file. A missing `out` is a tree with nothing in it.
 pub fn check(files: &[GeneratedFile], out: &Path) -> Result<Check, Report> {
     let mut drift = Vec::new();
     for file in files {
@@ -220,18 +375,8 @@ pub fn check(files: &[GeneratedFile], out: &Path) -> Result<Check, Report> {
             }
         }
     }
-    let generated: BTreeSet<&str> = files.iter().map(|file| file.path.as_str()).collect();
-    for path in elm_files_under(out)? {
-        if generated.contains(path.as_str()) {
-            continue;
-        }
-        let full = out.join(&path);
-        let text = fs::read_to_string(&full)
-            .into_diagnostic()
-            .wrap_err_with(|| format!("reading {}", full.display()))?;
-        if text.starts_with(&header_start()) {
-            drift.push(Drift::Stale { path });
-        }
+    for path in stale(files, out)? {
+        drift.push(Drift::Stale { path });
     }
     drift.sort_by(|a, b| a.path().cmp(b.path()));
     Ok(Check {
@@ -307,8 +452,8 @@ impl Check {
                     report.push_str(&format!("missing: {out}/{path} is not there\n"));
                 }
                 Drift::Stale { path } => report.push_str(&format!(
-                    "stale: {out}/{path} was generated by elm-connect, but generating no longer \
-                     gives it\n"
+                    "stale: {out}/{path} was generated by elm-connect from these protos, but \
+                     generating no longer gives it\n"
                 )),
                 Drift::Differs {
                     path,
@@ -319,7 +464,10 @@ impl Check {
                     similar::TextDiff::from_lines(on_disk, generated)
                         .unified_diff()
                         .context_radius(3)
-                        .header(&format!("{out}/{path}"), &format!("generated/{path}"))
+                        .header(
+                            &format!("{out}/{path} (on disk)"),
+                            &format!("{out}/{path} (generated)")
+                        )
                 )),
             }
         }

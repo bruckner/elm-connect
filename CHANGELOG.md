@@ -528,3 +528,58 @@ tag (design §8).
   problem stays in `Transport (Http.BadBody problem)`.
 - `Proto.Enum.toName` and `toNumber` document what they give for a
   value the encoder writes as other than a name (`""` and `0`).
+- A file that declares an edition is `input::editions`, naming the file
+  and its edition and asking for `syntax = "proto3";`: the plugin
+  panicked in its descriptor pool (exit 101), and the CLI printed
+  protox's parse error. Design §1.3 said editions were accepted; it now
+  says they are not, in this release.
+- `protoc-gen-elm-connect --version` prints the plugin's version and
+  `--help` its usage, before reading stdin; run from a terminal with no
+  arguments it prints its usage and exits 2 rather than wait silently
+  for a request, and an unknown argument exits 2.
+- `naming::reserved_name`: a message, enum, oneof or enum value whose Elm
+  type or constructor takes a name its module's code uses unqualified
+  (`Dict`, `Duration`, `String`, `Int`, `Float`, `Bool`, `List`,
+  `Maybe`, `Just`, `Nothing`, `False`), directly or by `rename`, is an
+  error naming the escape; the module did not compile, and `gen` exited
+  0. Only names the module actually uses count: a message `Dict` in a
+  package without maps still generates. `naming::reserved_module`: a
+  package or service whose module is one of the runtime's (`Rpc`,
+  `Proto.*`) or of elm/core, elm/json, elm/http or elm/time (`Time`,
+  `Json.Decode`), which made every import of it ambiguous, is an error
+  naming `rename` and `module_prefix`. The help of both writes the
+  option as the front end takes it (`--rename` from the CLI, `rename=`
+  from the plugin). Two generated modules whose names differ only in
+  case are `naming::module_collision`: their files overwrote each other
+  on macOS and Windows.
+- HTTP rules whose literals or custom verb are not URL path text are
+  `route::template`: a literal or verb holds RFC 3986 `pchar`s alone (a
+  `?`, `#`, space, control or non-ASCII character, or a `%` opening no
+  escape, was written into the URL as it was), and a literal is not a
+  dot segment (`..` in `/v1/../admin` left the base URL's path). A
+  `custom` kind that is not an HTTP token, or is `CONNECT`, `TRACE` or
+  `TRACK`, is `route::rule`; one with CRLF in it reached `xhr.open`.
+  The `routes_unsafe` case pins them.
+- A proto file whose name holds a newline or another control character
+  is `input::file_name`: the name went into the generated header comment
+  as it was, and the text after the newline into the module.
+- The CLI's `--include-imports` generates only the imported files that
+  declare a message or enum the requested packages refer to,
+  transitively, and builds each imported package from those files
+  alone. A file imported for its options alone, such as
+  `google/api/client.proto` or `field_behavior.proto`, no longer brings
+  a `Google.Api` module of every type of the package (`HttpRule`
+  among them) into the output; a referred-to `google/api/httpbody.proto`
+  gives a `Google.Api` of `HttpBody` alone. An imported file of
+  services alone is no longer generated. The README's sentence on
+  `Google.Api` now says what each binary does.
+- `elm-connect check` counts a generated file as stale only when its
+  first line names one of the protos it was run on, so two `gen` runs
+  sharing an `--out` no longer fail each other's check; it exits 2, not
+  1, when it cannot tell (bad arguments, a proto that does not compile,
+  an unreadable directory), so 1 always means drift; and its diffs label
+  both sides with the real path, `(on disk)` and `(generated)`, where
+  the second said `generated/`. Its help says to give it `gen`'s `-I`.
+- `elm-connect gen` warns on stderr about each stale generated file it
+  leaves under `--out` (by `check`'s rule; it deletes nothing) and says
+  how many modules it wrote.

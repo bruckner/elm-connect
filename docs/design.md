@@ -60,8 +60,15 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack.
 - gRPC-web.
-- proto2 syntax. Editions are accepted where they reduce to proto3
-  semantics.
+- proto2 syntax, and editions. A file that declares an edition
+  (`edition = "2023";`) is `input::editions`, from either binary, before
+  anything is generated, even where its features would reduce to proto3
+  semantics: protox, under the CLI, does not parse editions, and the
+  plugin answers protoc before building its descriptor pool, which
+  cannot take an editions file. The plugin does not claim
+  `FEATURE_SUPPORTS_EDITIONS`, so protoc says the same in its own words.
+  Supporting the editions that reduce to proto3 is additive, an error
+  becoming output.
 - Server code generation.
 
 ## 2. The layering  *(Decided; reshaped 2026-10-13)*
@@ -262,16 +269,17 @@ rpc shared call =
   case). It points at the reference, names the file to add, and names
   the ways to add it: `buf generate --include-imports`, the file on
   protoc's command line, or the CLI's `--include-imports` (§6), which
-  adds the transitive imports of the named files.
+  adds the imported files declaring what the named files' packages
+  refer to, transitively.
   `google.protobuf` is never generated as a package: its supported
   types map to the runtime (§3.5), and the rest are
   `types::unsupported_well_known`.
   Nor are the two googleapis files that declare `google.api.http`,
   `google/api/http.proto` and `google/api/annotations.proto`, the ones
-  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`
-  is the one test both binaries use). The plugin drops them from
-  `file_to_generate`, and the CLI's `--include-imports` never adds
-  them. Why: they are options plumbing, not API types, and `buf
+  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`).
+  The plugin drops them from `file_to_generate`, and the CLI's
+  `--include-imports` never adds them, as it adds no file nothing refers
+  to (§6). Why: they are options plumbing, not API types, and `buf
   generate --include-imports` asks for every import, so every API with
   HTTP rules would otherwise get a `Google.Api` module of `Http`,
   `HttpRule` and `CustomHttpPattern` that nothing refers to. The rule
@@ -923,7 +931,31 @@ case names it):
   (`naming::module_collision`, `services_module_collision` case); and a
   service whose name has no module form (`naming::invalid_service`,
   `services_invalid` case). Escape: rename the service or package with
-  `rename=` (§3.7).
+  `rename=` (§3.7). Two module names that differ only in case (`Shop.Api`
+  and `Shop.API`) collide too, since their files are one file on the
+  case-insensitive file systems macOS and Windows default to
+  (`naming::module_collision`, `naming_module_case` case).
+- **Names an application already has** *(built 2026-10-16)*: a generated
+  module named like a module of the runtime (`Rpc`, `Proto.Json`; the
+  `exposed-modules` of `elm.json`) or of a package it depends on (elm/core's
+  `Dict`, `Time`, `Json.Decode`, `Http`; `naming::reserved_module`,
+  `naming_reserved_module` case), since every import of it would be
+  ambiguous; and a type or constructor named like one its module's code
+  uses unqualified (`naming::reserved_name`, `naming_reserved` case). The
+  latter are the default imports of elm/core the emitter writes bare
+  (`Int`, `Float`, `Bool`, `String`, `List`, `Maybe`, `Just`, `Nothing`,
+  `False`) and the types it imports exposed (`Dict`, `Proto.Duration`'s
+  `Duration`), and the check is of what the module uses: a message
+  `Dict` in a package without a map field compiles and is left alone
+  (`naming_reserved_unused` case), and gains the diagnostic with its
+  first map field. Both are errors, not warnings, as the output would
+  not compile. A `rename` to such a name is the same problem. Escape:
+  `rename=`, and for a module `module_prefix=` (§3.7, §3.1); the help
+  writes them as the front end in use takes them (`--rename` and
+  `--module-prefix` from the CLI). Qualifying the library names in an
+  affected module would generate working code instead; it is left open,
+  since it makes a module's text depend on what its package declares,
+  and a `rename` already gets past the clash.
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4). The option is the user's own
@@ -1220,6 +1252,17 @@ gets exactly this as data and never parses a template.
   hold `{`, `}`, `*`, `=` or `:`, nor be empty; a variable may not nest
   another; `**` is the last segment only; the custom verb is the text
   after the last `:` that follows the last `/` outside braces.
+- The runtime writes literals and the custom verb into the URL as they
+  are, so each must be URL path text that stays where it is
+  (`route::template` otherwise, `routes_unsafe` case): RFC 3986 `pchar`s
+  alone (letters, digits, `-._~!$&'()+,;@`, and `%` only as an escape of
+  two hex digits), so no `?`, `#`, space, control or non-ASCII
+  character; and a literal is not a dot segment (`.`, `..`, or either
+  with `%2e` for a dot), which a URL resolves against the segment before
+  it and so could leave the base URL's path.
+- A `custom` rule's kind is the request's method: an RFC 9110 token, and
+  not `CONNECT`, `TRACE` or `TRACK`, which browsers refuse to send
+  (`route::rule` otherwise).
 - A bare `*` or `**` outside a variable is refused (`route::template`):
   a server can match it, but a client has no field to fill it from.
 - A path variable names a non-repeated scalar or enum field, possibly
@@ -1730,7 +1773,9 @@ both the plain names.
 ## 6. Generator  *(Decided unless marked)*
 
 - Rust. One workspace: `elm-connect-gen` (library), `protoc-gen-elm-connect`
-  (protoc plugin, reads `CodeGeneratorRequest` on stdin), `elm-connect`
+  (protoc plugin, reads `CodeGeneratorRequest` on stdin; it answers
+  `--version` and `--help` without reading it, and run from a terminal
+  with no arguments prints its usage), `elm-connect`
   (standalone CLI on `protox`, compiles `.proto` directly; no protoc).
 - Output is produced from a typed Elm AST and a Wadler-style pretty
   printer tuned to match `elm-format`. The conformance suite runs
@@ -1764,12 +1809,23 @@ both the plain names.
   as is a `rename` without its `:` or one renaming a proto name twice,
   or a `module_prefix` that is not dot-separated Elm module segments. A conformance case sets options with an
   `options.txt` holding that parameter.
-- The CLI's `--include-imports` flag *(Decided, 2026-10-15; built)*,
-  named after buf's: the CLI also requests every file the named ones
-  import, transitively, that declares a message, enum or service, bar
-  `google/protobuf/*` (the runtime's) and the googleapis files the CLI
-  embeds for `google.api.http`, which the plugin skips among its files
-  to generate too (§3.1). Off by default, so the CLI generates
+- The CLI's `--include-imports` flag *(Decided, 2026-10-15; built;
+  narrowed 2026-10-16)*, named after buf's: the CLI also generates every
+  imported file that declares a message or enum the requested packages
+  refer to, through fields and method types, transitively (a file
+  generated is generated whole, so its own references count too), bar
+  `google/protobuf/*` (the runtime's). A package such a file declares is
+  generated from those files alone, not whole as a requested package is
+  (§3.1): an import used only for its options, such as
+  `google/api/client.proto`, `field_behavior.proto` or the googleapis
+  files the CLI embeds for `google.api.http`, contributes nothing, and
+  before this rule it brought a `Google.Api` module of some thirty
+  unused types, `HttpRule` among them, into every API that imported
+  one. A service is never referred to, so an imported file of services
+  alone is not generated either (`crates/elm-connect/tests/generate.rs`).
+  The plugin cannot do the same under `buf generate --include-imports`,
+  which sends every import as a file to generate: there it skips only
+  the embedded googleapis files. Off by default, so the CLI generates
   what protoc and buf generate from the same files (§3.1). It is the
   CLI's driver choosing the generate set, not a generator option:
   protoc and buf choose it themselves, and the plugin cannot widen it.
@@ -1786,6 +1842,9 @@ both the plain names.
   `unbound_methods=error` (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
+  The `naming::reserved_*` checks (§3.8) are errors: what they report
+  would not compile, and an error at generation names the proto element
+  and the escape where the Elm compiler's error would name neither.
   A diagnostic is an error, failing the run, or a warning, reporting
   what an escape left out (§3.8) beside a successful run: rendered the
   same way with miette's warning styling (`⚠`), printed to stderr by
@@ -2233,7 +2292,8 @@ Within a major version:
   wrote it: `-- Generated by elm-connect 0.1.0 from notes.proto. Do not
   edit; regenerate instead.` It is provenance for bug reports, as every
   peer generator writes, and nothing checks it; `elmConnectVersion_` is
-  what the compiler checks.
+  what the compiler checks. A file whose name holds a control character,
+  which would end the comment early, is `input::file_name`.
 - The conformance corpus's expected modules and the route replay's
   modules in `tests/Routes` carry a placeholder on that line, the major
   and minor version with `X` for the patch: `-- Generated by
@@ -2253,14 +2313,29 @@ Within a major version:
 - `elm-connect check` *(built)* takes exactly `gen`'s arguments and
   options, generates in memory, and compares with the tree under
   `--out`: a module whose file is missing, a file whose content differs
-  (printed as a unified diff), and a stale file, an `.elm` file under
-  `--out` whose first line is the generated-file notice above but which
-  generating no longer gives. Files without the notice are left alone,
-  since an application may keep its own modules in the same directory.
+  (printed as a unified diff, its sides labelled with the real path, `(on
+  disk)` and `(generated)`), and a stale file, an `.elm` file under
+  `--out` whose first line is the generated-file notice above naming a
+  proto file the run generated from, but which generating no longer
+  gives. Files without the notice are left alone, since an application
+  may keep its own modules in the same directory. *(Decided 2026-10-16.)*
+  A generated file whose notice names none of the run's protos is left
+  alone too: two `gen` runs may share an `--out` (two APIs, or one
+  package under other options), and each run's check would otherwise
+  call the other's modules stale. Matching the notice's `from` list is
+  smaller than a `--stale=report|ignore` flag and needs no choice from
+  the user; its cost is that a module whose protos were all removed
+  from the command line is no longer reported, which a regenerate into
+  an emptied directory catches. The notice names each proto by its path
+  under the include directory, so `check` must be given `gen`'s `-I`
+  too, or every module differs on its first line. `gen` deletes nothing;
+  after writing it warns on stderr about each stale file by the same
+  rule, and says how many modules it wrote.
   When every difference is in the header line or the `elmConnectVersion_`
   line, it prints one message naming the version that generated the
   tree and its own, and says to regenerate. It exits 0 when the tree is
-  current and 1 on drift; an error generating fails as `gen` fails.
+  current, 1 on drift, and 2 when it cannot tell: bad arguments, an
+  error generating, an unreadable directory (`gen` exits 1 on an error).
 - The plugin cannot check, since protoc writes its files. With protoc
   or buf, run `elm-connect check` on the same protos and options, or
   regenerate and `git diff --exit-code` the output.

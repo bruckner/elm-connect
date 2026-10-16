@@ -1,0 +1,48 @@
+naming::reserved_module
+
+  × The package `json.decode` becomes the Elm module `Json.Decode`, which is a
+  │ module of elm/json.
+   ╭─[json/decode.proto:4:1]
+ 3 │ // elm/json's module is `Json.Decode`.
+ 4 │ package json.decode;
+   · ──────────┬─────────
+   ·           ╰── package `json.decode` becomes `Json.Decode`
+ 5 │
+   ╰────
+  help: An application that depends on elm/json cannot define a module of the
+        same name: every `import Json.Decode`, in the generated code or the
+        application's, becomes ambiguous. Move the module with
+        `rename=json.decode:<Elm name>` or `module_prefix=<Elm module>`.
+
+naming::reserved_module
+
+  × The package `rpc` becomes the Elm module `Rpc`, which is a module of the
+  │ runtime package bruckner/elm-connect.
+   ╭─[rpc.proto:4:1]
+ 3 │ // The runtime's calls live in `Rpc`.
+ 4 │ package rpc;
+   · ──────┬─────
+   ·       ╰── package `rpc` becomes `Rpc`
+ 5 │
+   ╰────
+  help: An application that depends on the runtime package bruckner/elm-
+        connect cannot define a module of the same name: every `import Rpc`,
+        in the generated code or the application's, becomes ambiguous. Move
+        the module with `rename=rpc:<Elm name>` or `module_prefix=<Elm
+        module>`.
+
+naming::reserved_module
+
+  × The package `time` becomes the Elm module `Time`, which is a module of
+  │ elm/time.
+   ╭─[time.proto:4:1]
+ 3 │ // elm/time's module is `Time`.
+ 4 │ package time;
+   · ──────┬──────
+   ·       ╰── package `time` becomes `Time`
+ 5 │
+   ╰────
+  help: An application that depends on elm/time cannot define a module of the
+        same name: every `import Time`, in the generated code or the
+        application's, becomes ambiguous. Move the module with
+        `rename=time:<Elm name>` or `module_prefix=<Elm module>`.
