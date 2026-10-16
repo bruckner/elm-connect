@@ -598,6 +598,16 @@ impl Problem {
                 "A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path \
                  template, or `custom` to a kind and a path.",
             ),
+            E::CustomKind { kind, reason } => (
+                Code::RouteRule,
+                format!(
+                    "{binding} has the custom kind `{}`, which {reason}.",
+                    kind.escape_debug()
+                ),
+                "A `custom` rule's kind is the request's HTTP method: a token of letters, \
+                 digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`, `TRACE` or \
+                 `TRACK`, which browsers refuse.",
+            ),
             E::NestedBindings => (
                 Code::RouteRule,
                 format!("{binding} has additional bindings of its own."),

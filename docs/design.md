@@ -1251,6 +1251,17 @@ gets exactly this as data and never parses a template.
   hold `{`, `}`, `*`, `=` or `:`, nor be empty; a variable may not nest
   another; `**` is the last segment only; the custom verb is the text
   after the last `:` that follows the last `/` outside braces.
+- The runtime writes literals and the custom verb into the URL as they
+  are, so each must be URL path text that stays where it is
+  (`route::template` otherwise, `routes_unsafe` case): RFC 3986 `pchar`s
+  alone (letters, digits, `-._~!$&'()+,;@`, and `%` only as an escape of
+  two hex digits), so no `?`, `#`, space, control or non-ASCII
+  character; and a literal is not a dot segment (`.`, `..`, or either
+  with `%2e` for a dot), which a URL resolves against the segment before
+  it and so could leave the base URL's path.
+- A `custom` rule's kind is the request's method: an RFC 9110 token, and
+  not `CONNECT`, `TRACE` or `TRACK`, which browsers refuse to send
+  (`route::rule` otherwise).
 - A bare `*` or `**` outside a variable is refused (`route::template`):
   a server can match it, but a client has no field to fill it from.
 - A path variable names a non-repeated scalar or enum field, possibly

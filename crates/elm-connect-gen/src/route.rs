@@ -111,17 +111,29 @@ fn syntax(reason: impl Into<String>) -> SyntaxError {
 /// nor be empty; a variable may not nest another; `**` must be the last
 /// segment, inside a variable or not; the custom verb is the text after
 /// the last `:` that follows the last `/` and lies outside braces.
+///
+/// The runtime writes literals and the verb into the URL as they are, so
+/// each must already be URL text that stays in its place: RFC 3986
+/// `pchar`s alone (see [`url_text`]), and a literal not a dot segment,
+/// which a URL resolves against the segment before it, so `/../admin`
+/// would leave the base URL's path.
 pub fn parse_template(template: &str) -> Result<Template, SyntaxError> {
     let Some(rest) = template.strip_prefix('/') else {
         return Err(syntax("a template starts with `/`"));
     };
     let (path, verb) = split_verb(rest);
-    if let Some(verb) = &verb
-        && (verb.is_empty() || !verb.chars().all(literal_char))
-    {
-        return Err(syntax(format!(
-            "the custom verb `:{verb}` is not a literal"
-        )));
+    if let Some(verb) = &verb {
+        if verb.is_empty() || !verb.chars().all(literal_char) {
+            return Err(syntax(format!(
+                "the custom verb `:{verb}` is not a literal"
+            )));
+        }
+        url_text(verb).map_err(|reason| {
+            syntax(format!(
+                "the custom verb `:{}` {reason}",
+                verb.escape_debug()
+            ))
+        })?;
     }
     let mut parser = Parser {
         chars: path.chars().collect(),
@@ -146,7 +158,74 @@ pub fn parse_template(template: &str) -> Result<Template, SyntaxError> {
     {
         return Err(syntax("`**` may only be the last segment"));
     }
+    for segment in flat {
+        if let Segment::Literal(text) = segment {
+            let shown = text.escape_debug();
+            url_text(text).map_err(|reason| syntax(format!("the literal `{shown}` {reason}")))?;
+            if is_dot_segment(text) {
+                return Err(syntax(format!(
+                    "the literal `{shown}` is a dot segment, which a URL resolves away"
+                )));
+            }
+        }
+    }
     Ok(Template { segments, verb })
+}
+
+/// Checks that `text` is URL path text the runtime can write as it is:
+/// RFC 3986 `pchar`s (letters, digits, `-._~`, the sub-delimiters
+/// `!$&'()*+,;=`, `:` and `@`), with `%` only opening an escape of two hex
+/// digits. Anything else, such as `?`, `#`, a space, a control character
+/// or a non-ASCII letter, would change the URL's meaning or need encoding.
+/// Err is the reason, as a phrase.
+fn url_text(text: &str) -> Result<(), String> {
+    let bytes = text.as_bytes();
+    let mut at = 0;
+    while at < bytes.len() {
+        let b = bytes[at];
+        if b == b'%' {
+            let escape = bytes.get(at + 1..at + 3);
+            if !escape.is_some_and(|hex| hex.iter().all(u8::is_ascii_hexdigit)) {
+                return Err("holds a `%` that opens no escape like `%2F`".into());
+            }
+            at += 3;
+            continue;
+        }
+        if !(b.is_ascii_alphanumeric() || b"-._~!$&'()*+,;=:@".contains(&b)) {
+            let c = text[at..].chars().next().unwrap_or_default();
+            return Err(format!(
+                "holds `{}`, which a URL path cannot hold as it is; write it \
+                 percent-encoded",
+                c.escape_debug()
+            ));
+        }
+        at += 1;
+    }
+    Ok(())
+}
+
+/// Whether `text` is `.` or `..`, with any dot written `%2e`, as URL
+/// parsers read them.
+fn is_dot_segment(text: &str) -> bool {
+    let dots = text.to_ascii_lowercase().replace("%2e", ".");
+    dots == "." || dots == ".."
+}
+
+/// Why `kind`, a custom rule's HTTP method, cannot be sent: not an RFC 9110
+/// token, or a method browsers forbid (`CONNECT`, `TRACE`, `TRACK`). None
+/// when it can.
+fn custom_kind_problem(kind: &str) -> Option<&'static str> {
+    let token = !kind.is_empty()
+        && kind
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b));
+    if !token {
+        return Some("is not an HTTP method name");
+    }
+    let forbidden = ["CONNECT", "TRACE", "TRACK"]
+        .iter()
+        .any(|method| method.eq_ignore_ascii_case(kind));
+    forbidden.then_some("is a method browsers refuse to send")
 }
 
 /// The template after the leading `/`, split into the path and the custom
@@ -419,6 +498,13 @@ pub enum RouteError {
     },
     /// An additional binding has additional bindings of its own.
     NestedBindings,
+    /// A `custom` rule's kind is not a method a client can send.
+    CustomKind {
+        /// The kind.
+        kind: String,
+        /// Why, as a phrase.
+        reason: String,
+    },
 }
 
 /// Checks `rule` (one binding; its own additional bindings are reported,
@@ -437,6 +523,14 @@ pub fn resolve(
     if rule.template.is_empty() || matches!(&rule.verb, HttpVerb::Custom(kind) if kind.is_empty()) {
         errors.push(RouteError::NoPattern);
         return Err(errors);
+    }
+    if let HttpVerb::Custom(kind) = &rule.verb
+        && let Some(reason) = custom_kind_problem(kind)
+    {
+        errors.push(RouteError::CustomKind {
+            kind: kind.clone(),
+            reason: reason.to_owned(),
+        });
     }
     let template = match parse_template(&rule.template) {
         Ok(template) => template,
@@ -826,6 +920,54 @@ mod tests {
         ] {
             let error = parse_template(template).expect_err(template);
             assert!(error.reason.contains(reason), "{template}: {error}");
+        }
+    }
+
+    #[test]
+    fn literals_and_verbs_are_url_text() {
+        for template in [
+            "/v1/a-b_c~d.e/{name}",
+            "/v1/!$&'()+,;@/{name}",
+            "/v1/%2F%e2%82%ac/{name}:do-it.now",
+            "/v1/{name=shelves/*}/...:x",
+        ] {
+            parse_template(template).unwrap_or_else(|e| panic!("{template}: {e}"));
+        }
+        for (template, reason) in [
+            ("/../admin/{a}", "the literal `..` is a dot segment"),
+            ("/v1/./{a}", "the literal `.` is a dot segment"),
+            ("/v1/%2e%2E/{a}", "the literal `%2e%2E` is a dot segment"),
+            ("/v1/.%2e/{a}", "dot segment"),
+            ("/v1/{a=x/../*}", "the literal `..` is a dot segment"),
+            ("/v1/x#y/{a}", "the literal `x#y` holds `#`"),
+            ("/v1/x?y/{a}", "holds `?`"),
+            ("/v1/\u{1}/{a}", "the literal `\\u{1}` holds `\\u{1}`"),
+            ("/v1/caf\u{e9}/{a}", "holds `\u{e9}`"),
+            ("/v1/100%/{a}", "a `%` that opens no escape"),
+            ("/v1/%zz/{a}", "a `%` that opens no escape"),
+            ("/v1/{a}:run?x", "the custom verb `:run?x` holds `?`"),
+            ("/v1/{a}:a\"b", "holds `\\\"`"),
+        ] {
+            let error = parse_template(template).expect_err(template);
+            assert!(error.reason.contains(reason), "{template}: {error}");
+        }
+    }
+
+    #[test]
+    fn custom_kinds_are_methods_a_browser_sends() {
+        for kind in ["GET", "LIST", "PROPFIND", "x-y.z"] {
+            assert_eq!(custom_kind_problem(kind), None, "{kind}");
+        }
+        for (kind, reason) in [
+            ("", "not an HTTP method"),
+            ("GET\r\nX-Evil: 1", "not an HTTP method"),
+            ("SPACE KIND", "not an HTTP method"),
+            ("TRACE", "browsers refuse"),
+            ("connect", "browsers refuse"),
+            ("Track", "browsers refuse"),
+        ] {
+            let problem = custom_kind_problem(kind).expect(kind);
+            assert!(problem.contains(reason), "{kind}: {problem}");
         }
     }
 

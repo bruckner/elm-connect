@@ -552,3 +552,11 @@ tag (design §8).
   from the plugin). Two generated modules whose names differ only in
   case are `naming::module_collision`: their files overwrote each other
   on macOS and Windows.
+- HTTP rules whose literals or custom verb are not URL path text are
+  `route::template`: a literal or verb holds RFC 3986 `pchar`s alone (a
+  `?`, `#`, space, control or non-ASCII character, or a `%` opening no
+  escape, was written into the URL as it was), and a literal is not a
+  dot segment (`..` in `/v1/../admin` left the base URL's path). A
+  `custom` kind that is not an HTTP token, or is `CONNECT`, `TRACE` or
+  `TRACK`, is `route::rule`; one with CRLF in it reached `xhr.open`.
+  The `routes_unsafe` case pins them.

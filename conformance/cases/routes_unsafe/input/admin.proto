@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package admin.v1;
+
+import "google/api/annotations.proto";
+
+message Item {
+  string name = 1;
+}
+
+// Rules a client must not follow: the runtime writes literals, verbs and
+// kinds into the request as they are.
+service Admin {
+  // `..` would leave the base URL's path.
+  rpc Escape(Item) returns (Item) {
+    option (google.api.http) = { get: "/v1/../admin/{name}" };
+  }
+  // `#` would end the path.
+  rpc Fragment(Item) returns (Item) {
+    option (google.api.http) = { get: "/v1/items#top/{name}" };
+  }
+  // `?` would start a query.
+  rpc Query(Item) returns (Item) {
+    option (google.api.http) = { post: "/v1/{name}:run?force" body: "*" };
+  }
+  // A header injected through the method.
+  rpc Header(Item) returns (Item) {
+    option (google.api.http) = {
+      custom: { kind: "GET\r\nX-Injected: 1" path: "/v1/{name}" }
+    };
+  }
+  // A method browsers refuse to send.
+  rpc Trace(Item) returns (Item) {
+    option (google.api.http) = {
+      custom: { kind: "TRACE" path: "/v1/{name}" }
+    };
+  }
+}

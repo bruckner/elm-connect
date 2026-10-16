@@ -1,0 +1,79 @@
+route::template
+
+  × The HTTP rule of `admin.v1.Admin.Escape` has the path `/v1/../admin/{name}
+  │ `, which does not parse: the literal `..` is a dot segment, which a URL
+  │ resolves away.
+    ╭─[admin.proto:16:5]
+ 15 │   rpc Escape(Item) returns (Item) {
+ 16 │     option (google.api.http) = { get: "/v1/../admin/{name}" };
+    ·     ─────────────────────────────┬────────────────────────────
+    ·                                  ╰── in this rule
+ 17 │   }
+    ╰────
+  help: A path template is `/` and segments separated by `/`, each a literal,
+        `*`, `**` (last only) or a variable like `{name}` or `{name=messages/
+        *}`, optionally followed by a custom verb like `:cancel`.
+
+route::template
+
+  × The HTTP rule of `admin.v1.Admin.Fragment` has the path `/v1/items#top/
+  │ {name}`, which does not parse: the literal `items#top` holds `#`, which a
+  │ URL path cannot hold as it is; write it percent-encoded.
+    ╭─[admin.proto:20:5]
+ 19 │   rpc Fragment(Item) returns (Item) {
+ 20 │     option (google.api.http) = { get: "/v1/items#top/{name}" };
+    ·     ─────────────────────────────┬─────────────────────────────
+    ·                                  ╰── in this rule
+ 21 │   }
+    ╰────
+  help: A path template is `/` and segments separated by `/`, each a literal,
+        `*`, `**` (last only) or a variable like `{name}` or `{name=messages/
+        *}`, optionally followed by a custom verb like `:cancel`.
+
+route::template
+
+  × The HTTP rule of `admin.v1.Admin.Query` has the path `/v1/{name}:run?
+  │ force`, which does not parse: the custom verb `:run?force` holds `?`,
+  │ which a URL path cannot hold as it is; write it percent-encoded.
+    ╭─[admin.proto:24:5]
+ 23 │   rpc Query(Item) returns (Item) {
+ 24 │     option (google.api.http) = { post: "/v1/{name}:run?force" body: "*" };
+    ·     ───────────────────────────────────┬──────────────────────────────────
+    ·                                        ╰── in this rule
+ 25 │   }
+    ╰────
+  help: A path template is `/` and segments separated by `/`, each a literal,
+        `*`, `**` (last only) or a variable like `{name}` or `{name=messages/
+        *}`, optionally followed by a custom verb like `:cancel`.
+
+route::rule
+
+  × The HTTP rule of `admin.v1.Admin.Header` has the custom kind `GET\r\nX-
+  │ Injected: 1`, which is not an HTTP method name.
+    ╭─[admin.proto:28:5]
+ 27 │       rpc Header(Item) returns (Item) {
+ 28 │ ╭─▶     option (google.api.http) = {
+ 29 │ │         custom: { kind: "GET\r\nX-Injected: 1" path: "/v1/{name}" }
+ 30 │ ├─▶     };
+    · ╰──── in this rule
+ 31 │       }
+    ╰────
+  help: A `custom` rule's kind is the request's HTTP method: a token of
+        letters, digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`,
+        `TRACE` or `TRACK`, which browsers refuse.
+
+route::rule
+
+  × The HTTP rule of `admin.v1.Admin.Trace` has the custom kind `TRACE`, which
+  │ is a method browsers refuse to send.
+    ╭─[admin.proto:34:5]
+ 33 │       rpc Trace(Item) returns (Item) {
+ 34 │ ╭─▶     option (google.api.http) = {
+ 35 │ │         custom: { kind: "TRACE" path: "/v1/{name}" }
+ 36 │ ├─▶     };
+    · ╰──── in this rule
+ 37 │       }
+    ╰────
+  help: A `custom` rule's kind is the request's HTTP method: a token of
+        letters, digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`,
+        `TRACE` or `TRACK`, which browsers refuse.
