@@ -3,7 +3,7 @@
     "name": "bruckner/elm-connect",
     "summary": "Runtime for Elm code generated from protobuf APIs by elm-connect",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "exposed-modules": [
         "Rpc",
         "Rpc.Code",
@@ -19,7 +19,8 @@
         "Proto.Json",
         "Proto.Int64",
         "Proto.Duration",
-        "Proto.Timestamp"
+        "Proto.Timestamp",
+        "Proto.Version"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

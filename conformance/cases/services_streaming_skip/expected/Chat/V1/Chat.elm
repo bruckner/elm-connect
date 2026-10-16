@@ -4,7 +4,15 @@
 module Chat.V1.Chat exposing (..)
 
 import Chat.V1
+import Proto.Version
 import Rpc
+
+
+{-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+-}
+elmConnectVersion_ : Proto.Version.Generated
+elmConnectVersion_ =
+    Proto.Version.v0_1
 
 
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line

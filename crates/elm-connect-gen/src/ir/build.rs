@@ -647,6 +647,15 @@ impl Builder {
             routes,
         };
 
+        if built.elm_name == naming::VERSION_VALUE {
+            let site = self.site(
+                file,
+                &[path, &[tag::METHOD_NAME]].concat(),
+                format!("method `{full_name}` is renamed to `{}`", built.elm_name),
+            );
+            self.diagnostics
+                .push(Problem::reserved_value(full_name, &built.elm_name, site));
+        }
         let what = format!("method `{full_name}`");
         let origin = self.origin(file, path, tag::METHOD_NAME, what);
         if let Some((first, second)) = values.claim(&built.elm_name, origin) {

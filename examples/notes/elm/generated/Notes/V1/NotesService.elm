@@ -6,7 +6,15 @@ module Notes.V1.NotesService exposing (..)
 import Notes.V1
 import Proto.Http
 import Proto.Json
+import Proto.Version
 import Rpc
+
+
+{-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+-}
+elmConnectVersion_ : Proto.Version.Generated
+elmConnectVersion_ =
+    Proto.Version.v0_1
 
 
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note

@@ -77,6 +77,20 @@ calling:
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
 | `Rpc.Code`, `Rpc.ErrorCode` | the codes an RPC ends with |
+| `Proto.Version` | the releases generated code can name (below) |
+
+The Elm package and the two binaries share one version number and are
+released together; generate with the binary whose version matches the
+package your application installs. Every generated module names the
+release it was generated for (`elmConnectVersion_ = Proto.Version.v0_1`),
+so a mismatch is a compile error rather than a surprise at run time: if
+the compiler reports that `Proto.Version` does not expose `v0_2`, the
+generated code is from release 0.2 and the installed package is not.
+Regenerate with the binary matching the package, or install the package
+version the generated code names. A newer package of the same major
+version accepts code an older binary of that major generated. The first
+line of a generated module names the exact version that wrote it.
+Design §8 has the policy.
 
 ## Options
 

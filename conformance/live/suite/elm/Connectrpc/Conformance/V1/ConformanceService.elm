@@ -4,7 +4,15 @@
 module Connectrpc.Conformance.V1.ConformanceService exposing (..)
 
 import Connectrpc.Conformance.V1
+import Proto.Version
 import Rpc
+
+
+{-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+-}
+elmConnectVersion_ : Proto.Version.Generated
+elmConnectVersion_ =
+    Proto.Version.v0_1
 
 
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse

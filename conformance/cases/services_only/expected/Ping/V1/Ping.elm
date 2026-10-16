@@ -4,8 +4,16 @@
 module Ping.V1.Ping exposing (..)
 
 import Proto.Json
+import Proto.Version
 import Rpc
 import Time
+
+
+{-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+-}
+elmConnectVersion_ : Proto.Version.Generated
+elmConnectVersion_ =
+    Proto.Version.v0_1
 
 
 ping : () -> Rpc.Call () Time.Posix

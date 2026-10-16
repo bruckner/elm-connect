@@ -476,3 +476,13 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
 - The notes example's transport selector gains a third choice, HTTP
   transcoding via grpc-gateway, which sends the same calls to the
   server's `/gateway`.
+- Generated code names the elm-connect release it was generated for:
+  every module imports the runtime's new `Proto.Version` and defines
+  `elmConnectVersion_ = Proto.Version.v0_1` (the generator's major and
+  minor version), so a runtime package from another release is a
+  compile error naming `Proto.Version`. The trailing underscore marks
+  the name as the generator's own, as in a recursive message's wrapper
+  (`Node_`): derived value names drop underscores, so no proto name
+  derives to it, and a `rename` to it is `naming::value_collision`.
+  `elm.json`'s version is now `0.1.0`, the crates' version, which it
+  follows in lockstep (design §8).

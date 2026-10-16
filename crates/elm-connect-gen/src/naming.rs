@@ -217,11 +217,20 @@ const ENUM_PREFIX: &str = "enum";
 /// uppercase, so an all-lowercase name cannot be one of them.
 pub const REGISTRY: &str = "registry";
 
+/// The value every generated module defines, naming the `Proto.Version`
+/// value of the release that generated it (design §8). Its trailing
+/// underscore marks it as the generator's own, as with a recursive
+/// message's wrapper (`Node_`): a derived value name drops underscores,
+/// and only the reserved-word escape adds one, so no proto name derives to
+/// it. Only a `rename` can give a method this name, and that is
+/// `naming::value_collision`.
+pub const VERSION_VALUE: &str = "elmConnectVersion_";
+
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
 /// today starts with one of the prefixes [`default_name`] lists, or is
-/// [`REGISTRY`].
+/// [`REGISTRY`] or [`VERSION_VALUE`], or is a method's.
 pub const ENCODER_ARGUMENT: &str = "value";
 
 /// The variable a oneof's encoder binds the value of the set member to, in
@@ -347,6 +356,12 @@ mod tests {
             assert_eq!(name, name.to_ascii_lowercase());
         }
         assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY));
+        assert!(
+            prefixes
+                .iter()
+                .all(|prefix| !VERSION_VALUE.starts_with(prefix))
+        );
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&VERSION_VALUE));
     }
 
     #[test]
