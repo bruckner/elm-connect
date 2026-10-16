@@ -49,8 +49,8 @@ main =
 a tracker, by its id.
 
 A call is reported once, by the first outcome: a cancelled call can have two,
-its result and `Canceled`, when the answer comes in before the cancellation
-runs, and the later is dropped.
+its result and the cancellation the runner records, when the answer comes in
+before the cancellation runs, and the later is dropped.
 
 -}
 type alias Model =

@@ -700,3 +700,9 @@ tag (design §8).
   frozen records; `Rpc` aliases both, so annotations naming
   `Rpc.Request` and `Rpc.Response` compile unchanged, and
   `Rpc.Trace.request` gives an `Rpc.Request.Request`.
+- `Rpc.cancel : String -> Cmd msg` is plain `Http.cancel` again: a
+  cancelled call reports nothing, and the `Canceled` error is removed.
+  The synthetic outcome was reported when nothing was in flight, and
+  beside a retry policy the call reported `Canceled` and then its
+  result. An application that wants a message batches its own, and
+  ignores, by request id, a result that arrives after it cancelled.

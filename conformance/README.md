@@ -282,12 +282,14 @@ answer kept whole, and `Rpc.response`.
 
 With `cancelAfterMs` the runner cancels the call that many milliseconds
 after sending it with `Rpc.cancel`, under the envelope's tracker or, without
-one, its `id`, and reports whichever outcome comes first, the result or
-`{"canceled": true}`; a later one is dropped, so a call is reported once.
-Only `send` without a retry policy and `halves` put the tracker on the
-request; `sendTraced`, `task` and `send` with a retry policy ignore it, so an
-envelope sending one of those with `cancelAfterMs` is refused (`{"runner":
-…}`) rather than reported `Canceled` while the call runs on.
+one, its `id`. `Rpc.cancel` reports nothing, so the runner records the
+cancellation itself, as an application does, and reports whichever outcome
+comes first, the result or `{"canceled": true}`; a later one is dropped, so
+a call is reported once. Only `send` without a retry policy and `halves` put
+the tracker on the request; `sendTraced`, `task` and `send` with a retry
+policy ignore it, so an envelope sending one of those with `cancelAfterMs` is
+refused (`{"runner": …}`) rather than reported cancelled while the call runs
+on.
 
 A **result**, what comes back:
 
@@ -317,7 +319,7 @@ for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`),
 `{"transport": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `BadStatus <n>`, `BadBody <problem>`), `{"canceled": true}` for a call
-withdrawn with `Rpc.cancel`, and `{"runner": <why>}` for an
+the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
 method or a binding the method lacks. `trace` is the `Rpc.Trace` as `Rpc.Trace.toJson` writes it
 (`error` the code as Connect names it, `null` on success), and `null`
@@ -399,7 +401,7 @@ answer's headers itself; with `sendTraced` it reports the `Trace`'s
 way a repeated header is one value, joined with `", "` as elm/http gives
 it, which the suite accepts. A transport failure is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-anything else as `unknown`; `{"canceled": true}` as `canceled`. What is reported is only what the runtime gives
+anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure

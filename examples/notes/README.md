@@ -210,9 +210,6 @@ viewError error =
         Rpc.Transport _ ->
             section [ class "error" ] [ p [] [ text (Rpc.errorToString error) ] ]
 
-        Rpc.Canceled ->
-            section [ class "error" ] [ p [] [ text "Cancelled before an answer came." ] ]
-
 
 viewDetail : Proto.Any.Any -> Html msg
 viewDetail detail =
@@ -239,8 +236,6 @@ Over Connect the error arrives as a Connect error body
 `source` says which body it was. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
 runtime does not read can still be shown, as the `Rpc.Http` branch does.
-The page never cancels a call, but a branch for `Rpc.Canceled` is what
-an application that does would add.
 
 ## The transport toggle
 

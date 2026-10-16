@@ -69,9 +69,9 @@ type alias Entry msg =
 
 
 {-| A call's commands: `send` sends it and reports the outcome; `cancel`, for
-an envelope with `cancelAfter`, cancels it with `Rpc.cancel` and reports
-`Canceled` to the same `toMsg`. The caller reports whichever outcome comes
-first.
+an envelope with `cancelAfter`, cancels it with `Rpc.cancel`, which reports
+nothing, and reports `{"canceled": true}` itself, as an application records
+that it withdrew a call. The caller reports whichever outcome comes first.
 -}
 type alias Sent msg =
     { send : Cmd msg, cancel : Maybe (Cmd msg) }
@@ -124,7 +124,7 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
 aborted: one sent with `send` without a retry policy, or through the halves
 with the tracker on `Http.request`. `sendTraced`, `task` and `send` with a
 retry policy ignore the tracker, so a call sent so with `cancelAfter` is
-refused rather than reported `Canceled` while it runs on. A call to be
+refused rather than reported cancelled while it runs on. A call to be
 cancelled without a tracker of its own gets its id as one.
 -}
 sendWith : Envelope -> (res -> Value) -> (Outcome -> msg) -> Rpc.Call req res -> Result String (Sent msg)
@@ -160,10 +160,21 @@ sendWith envelope encodeResponse toMsg c =
                 , response = answer
                 }
 
-        cancelling toResultMsg =
+        cancelling =
             case ( envelope.cancelAfter, tracker ) of
                 ( Just _, Just name ) ->
-                    Just (Rpc.cancel name toResultMsg)
+                    Just
+                        (Cmd.batch
+                            [ Rpc.cancel name
+                            , Task.succeed
+                                { id = envelope.id
+                                , result = Encode.object [ ( "canceled", Encode.bool True ) ]
+                                , trace = Encode.null
+                                , response = Encode.null
+                                }
+                                |> Task.perform toMsg
+                            ]
+                        )
 
                 _ ->
                     Nothing
@@ -188,7 +199,7 @@ sendWith envelope encodeResponse toMsg c =
                         |> Result.map (Sent (Rpc.send envelope.config tracked (report Encode.null)))
 
                 Nothing ->
-                    Ok (Sent (Rpc.send envelope.config tracked (report Encode.null)) (cancelling (report Encode.null)))
+                    Ok (Sent (Rpc.send envelope.config tracked (report Encode.null)) cancelling)
 
         AsTask ->
             uncancellable "task"
@@ -197,7 +208,7 @@ sendWith envelope encodeResponse toMsg c =
         Halves ->
             Ok
                 (Sent (sendHalves envelope.config tracked tracker (\( answer, result ) -> reportWith Encode.null answer result))
-                    (cancelling (reportWith Encode.null Encode.null))
+                    cancelling
                 )
 
 
@@ -301,9 +312,6 @@ encodeResult encodeResponse result =
 
         Err (Rpc.Transport problem) ->
             Encode.object [ ( "transport", Encode.string (httpErrorToString problem) ) ]
-
-        Err Rpc.Canceled ->
-            Encode.object [ ( "canceled", Encode.bool True ) ]
 
 
 {-| The answer an error was read from: its status and body. The headers are
