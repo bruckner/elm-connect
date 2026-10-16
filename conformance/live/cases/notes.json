@@ -577,7 +577,7 @@
   },
   {
     "name": "connect cancel",
-    "note": "Rpc.cancel 100 ms into a call notes/slow answers after 2 s: the request is aborted and the call reported Canceled, once.",
+    "note": "Rpc.cancel 100 ms into a call notes/slow answers after 2 s: the request is aborted and the runner reports the cancellation it recorded, once.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",

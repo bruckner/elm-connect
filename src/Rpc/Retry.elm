@@ -47,8 +47,7 @@ than 30 seconds, and only calls of a method declared
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
 may have reached the server, so `DeadlineExceeded` belongs in `codes` only for
-calls that are safe to replay, which the idempotent-only default keeps to. A
-`Canceled` call is never retried, since it ends outside the retry loop.
+calls that are safe to replay, which the idempotent-only default keeps to.
 
 Each wait is drawn uniformly from zero to its bound ("full jitter"), so
 clients that failed together do not retry together; the draw is seeded from
