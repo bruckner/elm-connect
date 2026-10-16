@@ -538,9 +538,10 @@ just the form encoders write. *(Proposed; built.)*
   looked up among the object's own keys instead, in time linear in
   them. A message with a field fails on any JSON that is not an object,
   arrays included; when no field is present the check is constant-time
-  too, and never lists the keys, so an unknown `hasOwnProperty` key
-  cannot break it under elm/json 1.1.3, whose key listing calls the
-  object's own `hasOwnProperty`.
+  too, and never lists the keys. The package requires elm/json 1.1.4,
+  which lists an object's keys without calling the object's own
+  `hasOwnProperty`, so a key of that name decodes wherever keys are
+  listed: a prototype-named field, a map, a `Struct` or an `Any`.
 
 **Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
 text exactly as received; nothing normalises it. `Proto.Json.bytes`
