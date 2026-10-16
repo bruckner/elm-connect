@@ -1594,11 +1594,15 @@ it.
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 *(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside a
 module per type it takes or gives: `Rpc.Call` (below),
-`Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body` and
-`Rpc.Code` (§5.4). Each of the first five is opaque, its constructors
-in `Rpc.Internal.*` (where the rest of the internals live) so that
-`Rpc` can build and read it and users cannot, and its public module
-names it by an alias. The data modules, which generated code calls whatever
+`Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body`,
+`Rpc.Request`, `Rpc.Response` and `Rpc.Code` (§5.4). The first five
+are opaque, each with its constructors in `Rpc.Internal.*` (where the
+rest of the internals live) so that `Rpc` can build and read it and
+users cannot, and its public module names it by an alias. `Request`
+and `Response` are frozen records, each declared once in its module so
+that `Rpc`, `Rpc.Trace` and the internals share it without an import
+cycle; `Rpc` aliases both, so `Rpc.Request` and `Rpc.Response` name
+them in annotations as before. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
 `Proto.Duration`, `Proto.Int64`), the typed values and descriptor
 trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
@@ -1609,6 +1613,14 @@ HTTP bindings (`Proto.Http`), the well-known types' values
 JSON to one of the two transports; no public `Connect` module remains.
 
 ```elm
+-- Rpc.Request, Rpc.Response: frozen (§8.3)
+type alias Request =
+    { method : String, url : String, headers : List ( String, String )
+    , body : Rpc.Body.Body, timeout : Maybe Float, withCredentials : Bool }
+type alias Response =
+    { url : String, statusCode : Int, statusText : String
+    , headers : Dict String String, body : String }
+
 -- Rpc.Call
 type Call req res      -- opaque: method, request, binding, per-call adjustments
 
@@ -1637,9 +1649,8 @@ sendTraced : Config -> Call req res -> (Rpc.Trace.Trace -> Result Error res -> m
 cancel : String -> (Result Error res -> msg) -> Cmd msg                  -- by tracker; reports Canceled
 
 -- pure halves
-type alias Request =                                                    -- frozen (§8.3)
-    { method : String, url : String, headers : List ( String, String )
-    , body : Rpc.Body.Body, timeout : Maybe Float, withCredentials : Bool }
+type alias Request = Rpc.Request.Request
+type alias Response = Rpc.Response.Response
 request : Config -> Call req res -> Request
 response : Config -> Call req res -> Http.Response String -> Result Error res
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
@@ -1900,6 +1911,7 @@ type Source
     | StatusBody                -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders               -- grpc-status / grpc-message headers
 
+-- Rpc.Response.Response, which Rpc aliases
 type alias Response =           -- elm/http's Http.Metadata, and the body; frozen (§8.3)
     { url : String, statusCode : Int, statusText : String
     , headers : Dict String String, body : String }
@@ -2548,8 +2560,9 @@ Within a major version:
   runtime gives, `Rpc.Transport.Transport`, `Rpc.Retry.Retry`,
   `Rpc.Trace.Trace` and `Rpc.Body.Body`. The records an application
   builds or reads with record syntax are frozen within a major:
-  `Rpc.Config`, `Rpc.Request` and `Rpc.Response`. A new config knob
-  goes where §5.1 routes it (a protocol's on `Transport`, a retry's on
+  `Rpc.Config`, `Rpc.Request.Request` and `Rpc.Response.Response`
+  (which `Rpc` also names `Rpc.Request` and `Rpc.Response`). A new
+  config knob goes where §5.1 routes it (a protocol's on `Transport`, a retry's on
   `Retry`, a call's on `Call`, hooks on a future `Rpc.Client`), never
   into `Config`. The public unions are
   frozen within a major, since users match on them exhaustively:

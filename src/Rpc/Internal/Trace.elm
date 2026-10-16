@@ -7,7 +7,7 @@ added without breaking code that reads one.
 
 import Dict exposing (Dict)
 import Rpc.Code exposing (Code)
-import Rpc.Internal.Http exposing (Request)
+import Rpc.Request exposing (Request)
 
 
 {-| A trace; `Rpc.Trace`'s accessors say what each field holds.

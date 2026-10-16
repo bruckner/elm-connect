@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (Request, badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
+module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
 {-| What the transports share: percent-encoding, sending a built request, and
 reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
@@ -8,6 +8,7 @@ import Bitwise
 import Dict exposing (Dict)
 import Http
 import Rpc.Internal.Body as Body
+import Rpc.Request exposing (Request)
 import Task exposing (Task)
 
 
@@ -202,18 +203,6 @@ cannot go.
 badBaseUrl : String -> Bool
 badBaseUrl url =
     String.contains "?" url || String.contains "#" url
-
-
-{-| `Rpc.Request`, which `Rpc.Trace` holds too and cannot import from `Rpc`.
--}
-type alias Request =
-    { method : String
-    , url : String
-    , headers : List ( String, String )
-    , body : Body.Body
-    , timeout : Maybe Float
-    , withCredentials : Bool
-    }
 
 
 {-| The request as a task, its response read by `read`. A body is sent as

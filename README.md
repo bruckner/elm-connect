@@ -84,7 +84,7 @@ calling:
 | `Rpc.Call` | a call: adjusting it and reading it back |
 | `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
 | `Rpc.Trace` | what happened when a call was sent, for logs |
-| `Rpc.Body` | a request's body, in the pure halves |
+| `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
 | `Rpc.Code` | the codes an RPC fails with |
 | `Proto.Version` | the releases generated code can name (below) |
 

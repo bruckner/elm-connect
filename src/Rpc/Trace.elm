@@ -33,9 +33,10 @@ beside the result.
 
 import Dict exposing (Dict)
 import Json.Encode as Encode exposing (Value)
-import Rpc.Body as Body exposing (Body)
+import Rpc.Body as Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Internal.Trace as Internal
+import Rpc.Request exposing (Request)
 
 
 {-| A trace. Only the runtime makes one, and its constructor is private
@@ -81,18 +82,9 @@ binding (Internal.Trace t) =
     t.binding
 
 
-{-| The request sent, an [`Rpc.Request`](Rpc#Request).
+{-| The request sent.
 -}
-request :
-    Trace
-    ->
-        { method : String
-        , url : String
-        , headers : List ( String, String )
-        , body : Body
-        , timeout : Maybe Float
-        , withCredentials : Bool
-        }
+request : Trace -> Request
 request (Internal.Trace t) =
     t.request
 

@@ -90,6 +90,8 @@ import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Trace
 import Rpc.Internal.Transport
+import Rpc.Request
+import Rpc.Response
 import Rpc.Retry exposing (Retry)
 import Rpc.Trace exposing (Trace)
 import Rpc.Transport exposing (Transport)
@@ -407,18 +409,11 @@ type Source
     | GrpcHeaders
 
 
-{-| An answer as it arrived: the URL it came from (after any redirect), its
-HTTP status and status text, its headers as elm/http gives them, and its body.
-The fields are elm/http's `Http.Metadata` and the body; the record's fields
-are fixed.
+{-| An answer as it arrived, its URL, status, status text, headers and body:
+[`Rpc.Response.Response`](Rpc-Response#Response).
 -}
 type alias Response =
-    { url : String
-    , statusCode : Int
-    , statusText : String
-    , headers : Dict String String
-    , body : String
-    }
+    Rpc.Response.Response
 
 
 {-| An error's code. A `Status` error has the server's; an `Http` error's is
@@ -556,26 +551,11 @@ details proto error =
 -- REQUESTS AND RESPONSES
 
 
-{-| An HTTP request, ready to send.
-
-elm/http has no request value of its own: `Http.request` takes a record with
-opaque headers and body and an `expect`. `Request` is the data form of that
-record without `expect` and `tracker`: headers as pairs, the body an
-[`Rpc.Body`](Rpc-Body) holding the JSON text, and `withCredentials` deciding
-whether the runtime calls `Http.request` or `Http.riskyRequest`.
-
-A body is sent as `application/json`, and `timeout` is in milliseconds. The
-record's fields are fixed; a body of another kind would be another `Body`.
-
+{-| An HTTP request, ready to send: the data form of the record
+`Http.request` takes, [`Rpc.Request.Request`](Rpc-Request#Request).
 -}
 type alias Request =
-    { method : String
-    , url : String
-    , headers : List ( String, String )
-    , body : Body
-    , timeout : Maybe Float
-    , withCredentials : Bool
-    }
+    Rpc.Request.Request
 
 
 {-| The request a call sends.

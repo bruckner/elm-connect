@@ -695,3 +695,8 @@ tag (design §8).
   `methodName`, `idempotency`, `requestMessage`, `requestJson` and
   `toJson`. `Rpc.call` and the type's alias `Rpc.Call` stay, so
   generated code is unchanged.
+- `Rpc.Request` and `Rpc.Response` are each declared in a module of
+  their own (`Rpc.Request.Request`, `Rpc.Response.Response`), the same
+  frozen records; `Rpc` aliases both, so annotations naming
+  `Rpc.Request` and `Rpc.Response` compile unchanged, and
+  `Rpc.Trace.request` gives an `Rpc.Request.Request`.

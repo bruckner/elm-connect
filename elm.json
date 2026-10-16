@@ -12,6 +12,8 @@
         "Rpc.Retry",
         "Rpc.Trace",
         "Rpc.Body",
+        "Rpc.Request",
+        "Rpc.Response",
         "Proto.Http",
         "Proto.Message",
         "Proto.Field",
