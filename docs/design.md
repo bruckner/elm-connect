@@ -1769,9 +1769,10 @@ The harness is *(Decided and built)*: `conformance/cases/` and the
 any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 
 - `conformance/cases/<case>/input/*.proto` and `expected/*.elm`. A test
-  regenerates and diffs; a second test runs `elm make` over all expected
-  output against the runtime at the repo's version; a third runs
-  `elm-format --validate`.
+  regenerates and diffs, the patch of the version on each module's
+  header line read as a placeholder, `0.1.X` (§8.4); a second test runs
+  `elm make` over all expected output against the runtime at the repo's
+  version; a third runs `elm-format --validate`.
 - Route fixtures: a JSON file of `(template, request) → (path, query,
   body)` expectations, checked against the generator's parser. The same
   file is intended to be consumable by a server-side implementation so
@@ -2099,7 +2100,140 @@ panel and the live suite's needs makes it too much to learn from
 first; teaching wants a few short examples that each show one thing,
 kept compiling the same way.
 
-## 8. Compatibility and versioning
+## 8. Compatibility and versioning  *(Decided; built)*
+
+### 8.1 One version
+
+- The Elm package (`elm.json`) and the three crates (the Cargo
+  workspace's version) carry one version number and are released
+  together, under one git tag: the bare version, `1.2.3`, without a
+  `v`, because the Elm package index requires a release's tag to equal
+  its version.
+- A release's magnitude is the largest any surface needs (§8.3). Elm
+  computes the runtime's magnitude from its API diff and enforces it at
+  publish, so the runtime can be no lower than that; when the generator
+  alone needs a minor or a major, the runtime's number is pushed up on
+  purpose through `Proto.Version` (§8.2), whose new value is an
+  addition Elm counts as a minor, and whose removed values are a major.
+- Why lockstep: generated code and the runtime are halves of one
+  program that reach an application by two channels, and the only
+  pairing worth supporting is one the gate has compiled together. One
+  number makes that pairing obvious to a user (make them match) and to
+  the compiler (§8.2); independent numbers would need a compatibility
+  table, and a CI matrix to keep it true.
+- Before 1.0.0, both carry the same `0.x` number (`0.1.0` now). Elm
+  checks the number only at publish, which requires `1.0.0` for a
+  package's first release, so the package and the crates move to
+  `1.0.0` together at its first publish. Until then an application
+  takes the runtime from this repository at the matching tag.
+
+### 8.2 The compatibility sentinel
+
+- The runtime's `Proto.Version` exposes an opaque type, `Generated`,
+  and one value of it per released minor: `v0_1` now. Every generated
+  module imports it and defines, after its imports,
+
+  ```elm
+  {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+  -}
+  elmConnectVersion_ : Proto.Version.Generated
+  elmConnectVersion_ =
+      Proto.Version.v0_1
+  ```
+
+  naming the value of the release that generated it,
+  `v{major}_{minor}` of the generator's version
+  (`elm_connect_gen::SENTINEL`, derived from `CARGO_PKG_VERSION` at
+  build time). This is protobuf-go's `protoimpl.EnforceVersion` and
+  swift-protobuf's `ProtobufAPIVersion_N` in Elm: a mismatch is a
+  compile error at a line that names the problem, before any codec
+  disagrees at run time.
+- The trailing underscore marks the name as the generator's own, as it
+  does a recursive message's wrapper (`Node_`, §3.2): a derived value
+  name drops underscores when casing, and only the reserved-word escape
+  adds one, so no proto name derives to `elmConnectVersion_`. Only a
+  deliberate `rename` can give a method that name, and that is
+  `naming::value_collision`.
+- A value is added at every minor release, and every value of a major
+  is kept until the next major removes them all. So a runtime newer
+  than the generated code, within its major, compiles it; an older
+  runtime fails with Elm's own error, "The `Proto.Version` module does
+  not expose a `v0_2` variable", and the module's documentation says
+  what that means: regenerate with the generator matching the package,
+  or install the package version the generated code names. Before 1.0,
+  the `v0_N` values accumulate through `0.x`, and 1.0.0 removes them
+  all and exposes `v1_0` alone.
+- The sentinel is strict: generated code names the release that
+  generated it, not the oldest runtime it could run against, so the
+  ordinary gate, the corpus compiled against the runtime of the same
+  commit (§7), proves exactly the pair that ships. A looser variant is
+  recorded for later: as protobuf-go's generated code names a minimum
+  runtime vintage, the generator could name the oldest release whose
+  runtime has everything the generated code uses. That changes only
+  the generator (which value it names) and adds a CI job compiling the
+  corpus against that older runtime.
+
+### 8.3 The surfaces and their promises
+
+Within a major version:
+
+- **Generated code to runtime.** Enforced by the sentinel (§8.2): a
+  pairing it admits compiles.
+- **Generated code to user code.** Regenerating the same protos with
+  the same options gives code the same application compiles against:
+  the same modules, types, constructors, record fields and values, at
+  the same types, plus possibly new definitions.
+- **Wire behaviour.** What a call sends and how its answer is read is
+  pinned by the route fixtures, the conformance corpus and the live
+  suite, the Connect conformance suite among it (§7). A fix that makes
+  a wrong encoding right is a patch, though it changes what is sent.
+- **The CLI's and the plugin's options, and diagnostic codes.**
+  Additive: options, values and codes are added, and none is removed or
+  changes meaning. A diagnostic's text, help and rendering are not a
+  contract.
+- **The `elm-connect-gen` crate.** Published so that `cargo install`
+  builds the binaries; its API is not covered by this contract and may
+  change in any release, as its crate documentation says.
+
+### 8.4 Provenance
+
+- The first line of a generated module names the exact version that
+  wrote it: `-- Generated by elm-connect 0.1.0 from notes.proto. Do not
+  edit; regenerate instead.` It is provenance for bug reports, as every
+  peer generator writes, and nothing checks it; `elmConnectVersion_` is
+  what the compiler checks.
+- The conformance corpus's expected modules and the route replay's
+  modules in `tests/Routes` carry a placeholder on that line, the major
+  and minor version with `X` for the patch: `-- Generated by
+  elm-connect 0.1.X from ...` (`elm_connect_gen::HEADER_VERSION_PLACEHOLDER`,
+  derived beside the sentinel's name). Their tests put it in place of
+  the version before comparing, and `just bless` writes it, so a patch
+  release leaves them alone. A minor or major release still re-blesses
+  each, for the header's minor and the `elmConnectVersion_` line, which
+  is real code the harness compiles. The other committed generated
+  trees keep the real version: the notes example's, which is what a
+  user sees and whose drift `just live` fails on, and the conformance
+  suite's, which the plugin writes through buf; every release
+  regenerates them.
+
+### 8.5 The drift check
+
+- `elm-connect check` *(built)* takes exactly `gen`'s arguments and
+  options, generates in memory, and compares with the tree under
+  `--out`: a module whose file is missing, a file whose content differs
+  (printed as a unified diff), and a stale file, an `.elm` file under
+  `--out` whose first line is the generated-file notice above but which
+  generating no longer gives. Files without the notice are left alone,
+  since an application may keep its own modules in the same directory.
+  When every difference is in the header line or the `elmConnectVersion_`
+  line, it prints one message naming the version that generated the
+  tree and its own, and says to regenerate. It exits 0 when the tree is
+  current and 1 on drift; an error generating fails as `gen` fails.
+- The plugin cannot check, since protoc writes its files. With protoc
+  or buf, run `elm-connect check` on the same protos and options, or
+  regenerate and `git diff --exit-code` the output.
+
+### 8.6 Elm compilers
 
 - Elm 0.19.2 is the development target; 0.19.0 and 0.19.1 are checked
   in CI. *(Decided.)* Built: a CI job per earlier release installs the
@@ -2109,15 +2243,6 @@ kept compiling the same way.
   harness set to that release. Nothing the 0.19.2 output needs is refused
   by 0.19.0 or 0.19.1 so far. Decoders for messages with more than eight
   fields use the runtime's pipeline helpers rather than `map8` chunking.
-- Generated code states the runtime major it needs in a header comment;
-  a mismatch surfaces as an Elm compile error against the runtime's
-  types. Generator major == runtime major. *(Decided.)*
-- A drift check (`elm-connect check`, regenerating in memory and
-  diffing the committed tree, with the header's version checked against
-  the runtime) is wanted and deferred *(medium priority, 2026-10-15)*;
-  regenerating and `git diff` serves meanwhile.
-- Elm package versions follow Elm's enforced semver. Crate versions
-  follow Cargo's.
 
 ## 9. Open questions, collected
 
@@ -2150,3 +2275,14 @@ without breaking it.
 Streaming (both transports), binary protobuf, gRPC-web, proto2,
 interceptors (§9), server generation. Each has a sentence above
 saying why; none is a permanent no.
+
+Emitting the runtime *(Proposed; not built)*: an option for the
+generator to write the runtime's own modules (`Proto.*`, `Rpc`,
+`Rpc.*`) beside the generated code, from a copy of `src/` embedded in
+the binary at build time. Before 1.0 the package is not on the package
+index (§8.1), so an application vendors the runtime by hand; this would
+make vendoring one flag, and under lockstep exact: the runtime written
+is the one released with the generator, so the sentinel (§8.2) always
+matches. What it would need settling: whether `check` treats the
+emitted runtime as generated (it would carry the notice), and how an
+application that later installs the package drops the copy.

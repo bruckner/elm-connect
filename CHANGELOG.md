@@ -1,7 +1,8 @@
 # Changelog
 
 All notable changes to this project are recorded here. The Elm package
-follows Elm's enforced semantic versioning; the crates follow Cargo's.
+and the crates share one version and are released together, under one
+tag (design §8).
 
 ## Unreleased
 
@@ -498,3 +499,8 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   elm-connect, no longer generated); a tree that differs only in the
   version it names gets one message naming both versions. Exits 1 on
   drift.
+- Design §8 states the compatibility and versioning policy: one version
+  for the Elm package and the crates, released under a bare `X.Y.Z` tag;
+  the `Proto.Version` sentinel and what each surface promises within a
+  major; the header line as provenance; the drift check. §10 records a
+  proposal to emit the runtime's modules beside the generated code.
