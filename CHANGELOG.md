@@ -648,3 +648,37 @@ tag (design §8).
   (`Snippets.UpdateMask`: a `google.protobuf.FieldMask` from two values
   of a message, and a check of a mask's paths), with tests that
   `just check` runs.
+- `Rpc.Transport` is an opaque type in its own module, built by
+  `connect`, `connectGet` (an `IdempotencyNoSideEffects` method's call
+  as a GET),
+  `transcode` and `withMaxGetUrl`, and named by `name` (`"connect"`,
+  `"transcode"`), so a protocol or an option can be added in a minor.
+  It replaces `Rpc.Transport(..)`, `Connect { useGet, maxGetUrl } |
+  Transcode`, and `Rpc.connect`: `{ config | transport =
+  Rpc.Transport.transcode }`.
+- `Rpc.Retry` is an opaque type in its own module: `Rpc.Retry.on codes`
+  retries those codes with defaults (3 attempts, 200 ms doubling, a
+  30 s cap, full jitter, idempotent methods only), changed by
+  `withAttempts`, `withBackoff`, `withMaxBackoff`, `withoutJitter` and
+  `allowNonIdempotent`. It replaces the `{ attempts, backoff, codes,
+  idempotentOnly }` record. Waits are capped and jittered: no wait
+  exceeds 2^31 − 1 ms, past which `setTimeout` ran a long backoff at
+  once, and each is drawn uniformly below its bound, seeded from the
+  clock, so clients that failed together do not retry together.
+- `Rpc.ErrorCode` is renamed `Rpc.Code`, its type `Code`, with the same
+  constructors and helpers. The former `Rpc.Code` (`Ok | Failed
+  ErrorCode`) is removed: success has no code.
+- `Rpc.Trace` is an opaque type in its own module, read by
+  `serviceName`, `methodName`, `transport` (new: the config's transport
+  name), `binding`, `request`, `httpStatus`, `headers`, `trailers`,
+  `code` (now `Maybe Code`, `Nothing` on success),
+  `duration` and `attempts`, with `toJson` (every field, stable keys)
+  and `toString` (one log line, without the request). The record fields
+  `service` and `method` are now `serviceName` and `methodName`, as on a
+  call.
+- `Rpc.Request`'s `body` is an opaque `Rpc.Body` (`Rpc.Body.none`,
+  `text`, read by `toText`) in place of `Maybe String`, so a body of
+  bytes can be added in a minor.
+- `Rpc.Config`, `Rpc.Request` and `Rpc.Response` are frozen records
+  (design §8.3): a new option goes on `Transport`, `Retry` or `Call`,
+  or on a future `Rpc.Client`, never into `Config`.

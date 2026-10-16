@@ -7,7 +7,10 @@
     "exposed-modules": [
         "Rpc",
         "Rpc.Code",
-        "Rpc.ErrorCode",
+        "Rpc.Transport",
+        "Rpc.Retry",
+        "Rpc.Trace",
+        "Rpc.Body",
         "Proto.Http",
         "Proto.Message",
         "Proto.Field",

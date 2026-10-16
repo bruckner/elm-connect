@@ -81,7 +81,10 @@ calling:
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
-| `Rpc.Code`, `Rpc.ErrorCode` | the codes an RPC ends with |
+| `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
+| `Rpc.Trace` | what happened when a call was sent, for logs |
+| `Rpc.Body` | a request's body, in the pure halves |
+| `Rpc.Code` | the codes an RPC fails with |
 | `Proto.Version` | the releases generated code can name (below) |
 
 The Elm package and the two binaries share one version number and are
@@ -203,6 +206,7 @@ config, also data, says where to send it and how; `Rpc.task` and
 import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
+import Rpc.Transport
 
 
 type Msg
@@ -223,13 +227,15 @@ viaConnect =
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
-    Rpc.send { config | transport = Rpc.Transcode } (Notes.getNote { name = "notes/42" }) GotNote
+    Rpc.send { config | transport = Rpc.Transport.transcode } (Notes.getNote { name = "notes/42" }) GotNote
 ```
 
-`Rpc.config` is Connect with every call POSTed; set `transport`,
-`headers`, `timeout`, `withCredentials` or `retry` with record syntax.
+`Rpc.config` is Connect with every call POSTed; set `transport`
+(`Rpc.Transport.connect`, `connectGet` or `transcode`), `headers`,
+`timeout`, `withCredentials` or `retry` (`Rpc.Retry.on [ Unavailable ]`,
+with jittered, capped backoff) with record syntax.
 Errors are one type for both transports, `Rpc.Error`: a `Status` the
-server stated (an `Rpc.ErrorCode.ErrorCode`, a message, details and
+server stated (an `Rpc.Code.Code`, a message, details and
 where they were read from), an `Http` answer that stated none, a
 `Transport` failure with no answer, or `Canceled`, a call the
 application withdrew with `Rpc.cancel`. Every error has a code and a
@@ -373,7 +379,7 @@ withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
             (\error ->
-                if Rpc.code error == Rpc.ErrorCode.Unauthenticated then
+                if Rpc.code error == Rpc.Code.Unauthenticated then
                     refresh |> Task.andThen (\fresh -> rpc fresh call)
 
                 else
@@ -383,8 +389,8 @@ withRefresh refresh shared call =
 
 Several calls failing at once would each refresh; an application that
 cares keeps the refresh single-flight in its update. For retrying on
-codes such as `Unavailable`, the config's `retry` policy needs no
-wrapper.
+codes such as `Unavailable`, the config's `retry` policy
+(`Rpc.Retry`) needs no wrapper.
 
 ### Rewriting a request
 

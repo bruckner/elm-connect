@@ -9,7 +9,9 @@ import Proto.Any
 import Proto.Http
 import Proto.Method exposing (Idempotency(..), Method)
 import Rpc exposing (Error(..), Source(..))
-import Rpc.ErrorCode exposing (ErrorCode(..))
+import Rpc.Body
+import Rpc.Code exposing (Code(..))
+import Rpc.Transport
 import Test exposing (Test, describe, test)
 
 
@@ -57,7 +59,7 @@ config =
         base =
             Rpc.config "https://api.example.com"
     in
-    { base | transport = Rpc.Transcode }
+    { base | transport = Rpc.Transport.transcode }
 
 
 json : String -> Value
@@ -73,7 +75,7 @@ url r request =
 
 body : Rule -> String -> Maybe String
 body r request =
-    (Rpc.request config (bound r request)).body
+    Rpc.Body.toText (Rpc.request config (bound r request)).body
 
 
 suite : Test
@@ -246,7 +248,7 @@ routes =
         , test "viaBinding picks an additional binding" <|
             \_ ->
                 Rpc.viaBinding 1 twice
-                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, r.body )))
+                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
@@ -258,7 +260,7 @@ routes =
                 Rpc.request { config | timeout = Just 20 } unbound
                     |> Expect.equal
                         (Rpc.request
-                            { config | transport = Rpc.connect, timeout = Just 20 }
+                            { config | transport = Rpc.Transport.connect, timeout = Just 20 }
                             unbound
                         )
         , test "the implicit route is a POST to the service and method" <|
@@ -362,7 +364,7 @@ blank =
     { statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
 
 
-stated : ErrorCode -> String -> Source -> Result Error a
+stated : Code -> String -> Source -> Result Error a
 stated code message source =
     Err (Status { code = code, message = message, details = [], source = source } blank)
 

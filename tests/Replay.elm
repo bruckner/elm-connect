@@ -10,6 +10,8 @@ import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Rpc
+import Rpc.Body
+import Rpc.Transport
 import Test exposing (Test, test)
 
 
@@ -72,7 +74,7 @@ replay case_ =
                     { method = request.method
                     , url = request.url
                     , headers = request.headers
-                    , body = Maybe.map normalize request.body
+                    , body = Maybe.map normalize (Rpc.Body.toText request.body)
                     }
                         |> Expect.equal
                             { method = case_.expected.method
@@ -88,7 +90,7 @@ transcode =
         base =
             Rpc.config ""
     in
-    { base | transport = Rpc.Transcode }
+    { base | transport = Rpc.Transport.transcode }
 
 
 {-| A JSON body, normalized as the Rust half of the fixtures normalizes it:

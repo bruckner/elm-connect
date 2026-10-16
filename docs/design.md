@@ -232,10 +232,10 @@ Notes.getNote { name = "notes/42" } |> Rpc.task config
     : Task Rpc.Error Note
 
 -- GET https://api.example.com/v1/notes/42
-Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transcode }
+Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transport.transcode }
 
 -- POST https://api.example.com/notes.v1.NotesService/Summarize, the implicit route
-Notes.summarize request |> Rpc.task { config | transport = Rpc.Transcode }
+Notes.summarize request |> Rpc.task { config | transport = Rpc.Transport.transcode }
 ```
 
 An application usually sends every call through one function of its
@@ -1308,10 +1308,10 @@ keeps.
   `Proto.Method.IdempotencyUnknown` when unset,
   `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
   only an `IdempotencyNoSideEffects` method as a GET; a retry policy
-  with `idempotentOnly` retries either level, since an `IDEMPOTENT`
-  method (a typical `Delete` or `Put`) is safe to repeat but not to
-  cache. Transcoding takes its verb from the
-  rule. *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
+  (idempotent-only by default) retries either level, since an
+  `IDEMPOTENT` method (a typical `Delete` or `Put`) is safe to repeat
+  but not to cache. Transcoding takes its verb from the rule.
+  *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
   `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
   under `idempotentOnly`.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
@@ -1467,31 +1467,35 @@ which inlining cannot give; the codecs for timestamps as `Time.Posix`
 and the `Int64` helpers are one copy rather than one per module; and
 the coming transports belong in it too.
 
-### 5.1 Config  *(Decided, 2026-10-13; built)*
+### 5.1 Config  *(Decided, 2026-10-13; built; frozen 2026-10-16)*
 
 ```elm
-type alias Config =
-    { transport : Transport
+type alias Config =                       -- frozen (§8.3)
+    { transport : Rpc.Transport.Transport
     , baseUrl : String                    -- a trailing "/" is dropped; no "?" or "#"
     , headers : List ( String, String )   -- e.g. ( "Authorization", "Bearer …" )
     , timeout : Maybe Float               -- ms, > 0; Connect also sends Connect-Timeout-Ms
     , withCredentials : Bool              -- Http.riskyRequest when True
-    , retry : Maybe Retry
+    , retry : Maybe Rpc.Retry.Retry
     }
 
-type Transport
-    = Connect { useGet : Bool, maxGetUrl : Maybe Int }
-    | Transcode                     -- no options yet
+config : String -> Config                 -- Connect, POST only, nothing else set
 
-type alias Retry =
-    { attempts : Int, backoff : Float, codes : List ErrorCode, idempotentOnly : Bool }
+-- Rpc.Transport: opaque
+connect, connectGet, transcode : Transport
+withMaxGetUrl : Int -> Transport -> Transport
+name : Transport -> String                -- "connect" | "transcode"
 
-config : String -> Config   -- Connect, POST only, nothing else set
-connect : Transport         -- Connect { useGet = False, maxGetUrl = Nothing }
+-- Rpc.Retry: opaque
+on : List Rpc.Code.Code -> Retry          -- 3 attempts, 200 ms doubling, 30 s cap, jitter, idempotent only
+withAttempts : Int -> Retry -> Retry
+withBackoff, withMaxBackoff : Float -> Retry -> Retry
+withoutJitter, allowNonIdempotent : Retry -> Retry
 ```
 
 The config is data: a record with no function in it, transport options
-inside the `Transport` constructor. That is the point of it. Elm 0.19
+inside the opaque `Transport` and retry options inside the opaque
+`Retry`, both data too, so `==` still holds. That is the point of it. Elm 0.19
 throws at run time on `==` over functions, so a config holding one
 could not be compared, kept in a model safely, or passed through
 `Html.Lazy`; data can also be printed, stored, and built per call from
@@ -1516,13 +1520,29 @@ need for hooks appears, an opaque `Rpc.Client` built from a `Config`
 plus hooks can be added beside `task : Config -> …` without breaking
 it.
 
+- `Config` stays a record, so it is built per call with record syntax,
+  and is frozen: a new knob never becomes a field of it. Each has a
+  home that can grow within a major: a protocol-level knob (a binary
+  format, compression, gRPC-web, `Grpc-Timeout` for transcoding, a
+  proxy's quirks, stream framing) on `Transport`; a retry knob on
+  `Retry`; a per-call one on `Call`; hooks on a future opaque
+  `Rpc.Client` (an addition, so a minor); and JSON codec options are
+  the generator's, decided when code is generated. *(Decided,
+  2026-10-16.)* `Transport` was the exposed union `Connect { useGet,
+  maxGetUrl } | Transcode` and `Retry` a record until then; nearly every
+  protocol on the roadmap would have changed the union, and a cap or
+  jitter would have added a field to the record, each a major.
 - Headers are name–value pairs rather than `Http.Header`, which is
   opaque, so a built request can be inspected and compared.
-- `useGet` is off by default, as in connect-es: a GET is only worth it
-  where a cache sits in front of the server, and the application knows
-  that, not the generator. *(Decided, 2026-10-11.)* `maxGetUrl` POSTs a
-  call whose GET URL would be longer than that many characters, for
-  servers and proxies that cap URL length.
+- GET is off by default (`connect`), as in connect-es: a GET is only
+  worth it where a cache sits in front of the server, and the
+  application knows that, not the generator. *(Decided, 2026-10-11.)*
+  `connectGet` sends an `IdempotencyNoSideEffects` method's call as a
+  GET, which
+  puts the request in URLs, and so in history and logs;
+  `withMaxGetUrl n` POSTs a call whose GET URL would be longer than `n`
+  characters, for servers and proxies that cap URL length. `name` gives
+  the protocol for traces and logs.
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
   number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
@@ -1535,23 +1555,41 @@ it.
   sent: every way of sending fails it with `Transport (Http.BadUrl
   url)`, the URL it would have used. The pure `Rpc.request` still
   builds that URL, since it has no error to give.
-- Retry waits `backoff` ms before the second attempt and doubles it
-  before each one after, up to `attempts` tries in all. It applies to
-  any error whose code (§5.4) is one of `codes`, and with
-  `idempotentOnly` only to calls of an `IdempotencyNoSideEffects` or
-  `IdempotencyIdempotent` method (§4), so a network failure retries when `Unavailable` is listed and a timeout when
-  `DeadlineExceeded` is. Clients in the wild treat a network failure as
-  the same event as a 503 and gate safety on idempotency; a timeout is
-  the ambiguous case, since the request may have reached the server,
-  and `DeadlineExceeded` belongs in `codes` only with `idempotentOnly`
-  or for calls safe to replay. *(Decided, 2026-10-15.)*
+- A retry policy is `Rpc.Retry.on codes`: the codes are always the
+  caller's, and the rest has defaults. It applies to any error whose
+  code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
+  calls of an `IdempotencyNoSideEffects` or `IdempotencyIdempotent`
+  method (§4) unless
+  `allowNonIdempotent`, so a network failure retries when `Unavailable`
+  is listed and a timeout when `DeadlineExceeded` is. Clients in the
+  wild treat a network failure as the same event as a 503 and gate
+  safety on idempotency; a timeout is the ambiguous case, since the
+  request may have reached the server, and `DeadlineExceeded` belongs
+  in `codes` only for calls safe to replay, which the idempotent-only
+  default keeps to. *(Decided, 2026-10-15.)*
+- The wait before the second attempt is bounded by the backoff, 200 ms
+  by default, doubling before each one after, never above the cap, 30 s
+  by default (`withMaxBackoff`), nor above 2^31 − 1 ms, past which
+  `setTimeout` (under `Process.sleep`) runs at once. Each wait is
+  drawn uniformly from zero to its bound, full jitter, so clients that
+  failed together do not retry together. The draw needs no `Random`
+  command: the loop reads `Time.now` when an attempt fails and hashes
+  its milliseconds with the attempt number (a 32-bit integer hash), so
+  clients a millisecond apart draw unrelated waits. `withoutJitter`
+  waits each bound in full. *(Decided, 2026-10-16.)* The policy was
+  `{ attempts, backoff, codes, idempotentOnly }` without cap or jitter
+  until then: a long policy overflowed `setTimeout` into a tight loop,
+  and clients retried a recovering server in lockstep.
 
 ### 5.2 Rpc  *(Decided, 2026-10-13; built)*
 
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
-*(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside
-`Rpc.Code` and `Rpc.ErrorCode` (§5.4); its internals live under
-`Rpc.Internal.*`. The data modules, which generated code calls whatever
+*(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside a
+module per type it takes or gives: `Rpc.Transport` and `Rpc.Retry`
+(§5.1), `Rpc.Trace`, `Rpc.Body` and `Rpc.Code` (§5.4). Each of the
+first four is opaque, its constructors in `Rpc.Internal.*` (where the
+rest of the internals live) so that `Rpc` can build and read it and
+users cannot, and its public module names it by an alias. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
 `Proto.Duration`, `Proto.Int64`), the typed values and descriptor
 trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
@@ -1580,14 +1618,14 @@ toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
 -- sending
 task : Config -> Call req res -> Task Error res
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
-taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
-sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
+taskTraced : Config -> Call req res -> Task Never ( Rpc.Trace.Trace, Result Error res )
+sendTraced : Config -> Call req res -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Cmd msg
 cancel : String -> (Result Error res -> msg) -> Cmd msg                  -- by tracker; reports Canceled
 
 -- pure halves
-type alias Request =
+type alias Request =                                                    -- frozen (§8.3)
     { method : String, url : String, headers : List ( String, String )
-    , body : Maybe String, timeout : Maybe Float, withCredentials : Bool }
+    , body : Rpc.Body.Body, timeout : Maybe Float, withCredentials : Bool }
 request : Config -> Call req res -> Request
 response : Config -> Call req res -> Http.Response String -> Result Error res
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
@@ -1619,8 +1657,13 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `Request` is the data form of the record `Http.request` takes,
   without `expect` and `tracker`: elm/http has no request value of its
   own, and its headers and body are opaque. Headers are pairs, the body
-  the JSON string, and `withCredentials` picks `Http.request` or
-  `Http.riskyRequest`.
+  an opaque `Rpc.Body` (`none`, `text`, read by `toText`), and
+  `withCredentials` picks `Http.request` or `Http.riskyRequest`. It
+  stays a record, so a rewriter changes it with record syntax, and is
+  frozen. The body was `Maybe String` until 2026-10-16: the bytes that
+  streaming envelopes, gRPC-web, binary protobuf and compression need
+  will arrive as another kind of `Body` (`bytes`), a minor, rather than
+  as a field.
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
@@ -1643,18 +1686,29 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   (`task`, and `taskTraced` under `sendTraced`) ignore the tracker;
   one killed with `Process.kill` reports nothing and has no trace, its
   attempts and duration ending with the process. *(Decided, 2026-10-15.)*
-- `Trace` is `{ service, method, binding, request, httpStatus, headers,
-  trailers, code, duration, attempts }`: `binding` is `Nothing` when no
-  binding was used (Connect, the implicit route), `httpStatus` the last
-  answer's HTTP status (`Nothing` on a transport failure), `headers` and
-  `trailers` its response metadata as `splitTrailers` divides it (both
-  empty when there was no answer), `code` how the call ended (`Ok` on
-  success, `Failed (Rpc.code error)` on any error, so a timeout is
-  `Failed DeadlineExceeded`), `duration` milliseconds by `Time.now`
-  before the first attempt and after the last. *(`httpStatus` and `code`
-  decided, 2026-10-13; `code` was `Nothing` on a transport failure until
-  every error had a code, and `headers` and `trailers` added,
-  2026-10-15.)*
+- `Rpc.Trace` is opaque, made only by the runtime and read by
+  accessors: `serviceName` and `methodName` (as a call's are named),
+  `transport` (`Rpc.Transport.name` of the config's), `binding`
+  (`Nothing` when none was used: Connect, the implicit route),
+  `request`, `httpStatus` (the last answer's, `Nothing` on a transport
+  failure), `headers` and `trailers` (its response metadata as
+  `splitTrailers` divides it, both empty when there was no answer),
+  `code` (`Rpc.code` of the error the call ended with, `Nothing` on
+  success, so a timeout is `Just DeadlineExceeded`), `duration`
+  (milliseconds by `Time.now` before the first attempt and after the
+  last) and `attempts`. `toJson` gives every field under stable keys
+  (`service`, `method`, `transport`, `binding`, `request` with
+  `method`, `url`, `headers` as pairs, `body`, `timeout` and
+  `withCredentials`, `httpStatus`, `headers` and `trailers` as objects,
+  `code` as Connect spells it or `"ok"`, `duration`, `attempts`); `service`
+  and `method` are `Rpc.toJson`'s keys for a call. `toString` is one
+  log line without the request, whose URL and body hold the message
+  and whose headers may hold credentials. *(Opaque, `code : Maybe Code` and
+  `transport` decided 2026-10-16; `httpStatus` and `code` 2026-10-13,
+  `headers` and `trailers` 2026-10-15.)* It was a record, so a new
+  field (per-attempt statuses, sizes once compression exists) would
+  have been a major; its `code : Rpc.Code` repeated the result beside
+  it.
 - `splitTrailers` is the Connect unary rule for an answer's metadata:
   a header named `trailer-<name>`, in any case, is the trailer
   `<name>`, and the rest are headers; every name is lowercased. A
@@ -1672,7 +1726,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   the compiler and by the retry policy's own tests, and run against a
   server by the live suite (§7, live verification): `sendTraced`,
   `send` with and without a retry policy, `task`, the retry loop over
-  `UNAVAILABLE` and its `idempotentOnly` gate, timeouts,
+  `UNAVAILABLE` and its idempotent-only gate, timeouts,
   `withCredentials` reaching the request, a tracker's progress, and
   each field of the `Trace`. The Connect conformance suite (§7) runs
   `Rpc.request` and `Rpc.response` with elm/http between them, and
@@ -1698,7 +1752,7 @@ all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
-  With `useGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
+  With `connectGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
   `?connect=v1&encoding=json&message=<JSON>`, the JSON percent-encoded
   (every byte but RFC 3986's unreserved characters), in the order the
   protocol recommends; no protocol-version header, which GET carries in
@@ -1809,7 +1863,7 @@ is not met: connect-go, the suite's reference server, always sends it.
 ```elm
 type Error
     = Status                    -- the server stated a status
-        { code : ErrorCode
+        { code : Rpc.Code.Code
         , message : String
         , details : List Proto.Any.Any
         , source : Source
@@ -1824,32 +1878,34 @@ type Source
     | StatusBody                -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders               -- grpc-status / grpc-message headers
 
-type alias Response =           -- elm/http's Http.Metadata names, and the body
+type alias Response =           -- elm/http's Http.Metadata names, and the body; frozen (§8.3)
     { statusCode : Int, statusText : String, headers : Dict String String, body : String }
 
-code : Error -> ErrorCode       -- Http: by Connect's table; Transport, Canceled: as below
+code : Error -> Rpc.Code.Code   -- Http: by Connect's table; Transport, Canceled: as below
 message : Error -> String
 details : Proto.Message.Message a -> Error -> List a
 errorToString : Error -> String -- "<code>: <message>", or "<code>" when the message is empty
 ```
 
 ```elm
--- Rpc.ErrorCode
-type ErrorCode = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
-
 -- Rpc.Code
-type Code = Ok | Failed ErrorCode
+type Code = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
 ```
 
-Each module has `toString` / `fromString` (Connect's names), `toInt` /
-`fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`; for
-`Code`, `Ok` is `"ok"`, `0` and any 2xx. *(Decided, 2026-10-13.)* `Ok`
-is in `Code` so that a status can be reported whole (a `Trace`'s
-`code`), but an error's code is an `ErrorCode`, so an error claiming
-`Ok` cannot be written; a failed answer whose body says `ok`
-or `0` reads as `Unknown`. The two types first shared `Rpc.Code`, the
-helpers for `Code` prefixed (`codeToString`, …); a module each gives
-both the plain names.
+`Rpc.Code` has `toString` / `fromString` (Connect's names), `toInt` /
+`fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`.
+Success has no code: the `Result` a call ends with says whether it
+succeeded, as in connect-go, connect-es and connect-kotlin, whose
+`Code` is the sixteen error codes alone. A failed answer whose body
+says `ok` or `0` reads as `Unknown`. *(Decided, 2026-10-16.)* On
+2026-10-13 two modules were decided instead: `Rpc.ErrorCode` for these
+sixteen and `Rpc.Code`, `Ok | Failed ErrorCode`, so that a `Trace`
+could report a status whole. That decision is reversed: `Code` existed
+only for the trace, whose result already said whether the call
+succeeded, it copied every helper to add one case, and its `Ok` clashed
+with `Result.Ok` in every module. The trace's `error : Maybe Code`
+says the same, and the sixteen codes took the name `Code`. (Before that the
+two types shared one module, the helpers for `Code` prefixed.)
 
 - `toHttpStatus` is the status a Connect server sends with a code, the
   Connect protocol's table, which is `google/rpc/code.proto`'s HTTP
@@ -2457,19 +2513,26 @@ Within a major version:
   Additive: options, values and codes are added, and none is removed or
   changes meaning. A diagnostic's text, help and rendering are not a
   contract.
-- **The runtime's types: opaque or frozen.** A type generated code
-  builds is opaque, built by functions and read by functions, so it can
-  grow within a major by new modifiers and readers and code generated
-  by an earlier minor keeps compiling: `Proto.Message.Message`,
-  `Proto.Enum.Enum` and `Proto.Method.Method` (§3.9), with `Rpc.Call`,
-  `Proto.Any.Any` and `Proto.Registry.Registry`, and the descriptor
-  trees, the `Descriptor` of `Proto.Message`, `Proto.Field`,
-  `Proto.Enum`, `Proto.EnumValue` and `Proto.Method` (§3.9). The
-  public unions are frozen within a major, since users match on them
-  exhaustively: `Proto.Field.Cardinality` (with `CardinalityRequired`
-  reserved for proto2), `Kind`, `Scalar` and `Behavior`, and
-  `Proto.Method.Idempotency`; a value `google.api.FieldBehavior` gains
-  waits for a major, and until then the generator drops it.
+- **The runtime's types: opaque or frozen.** Every type generated code
+  builds is opaque, built by functions and read by accessors, so it can
+  grow within a major by new modifiers and accessors, and code
+  generated by an earlier minor keeps compiling: `Proto.Message.Message`,
+  `Proto.Enum.Enum`, `Proto.Method.Method`, and the descriptor trees,
+  the `Descriptor` of `Proto.Message`, `Proto.Field`, `Proto.Enum`,
+  `Proto.EnumValue` and `Proto.Method` (§3.9), with `Rpc.Call`, `Proto.Any.Any` and
+  `Proto.Registry.Registry`; so are the types a config holds or the
+  runtime gives, `Rpc.Transport.Transport`, `Rpc.Retry.Retry`,
+  `Rpc.Trace.Trace` and `Rpc.Body.Body`. The records an application
+  builds or reads with record syntax are frozen within a major:
+  `Rpc.Config`, `Rpc.Request` and `Rpc.Response`. A new config knob
+  goes where §5.1 routes it (a protocol's on `Transport`, a retry's on
+  `Retry`, a call's on `Call`, hooks on a future `Rpc.Client`), never
+  into `Config`. The public unions are
+  frozen within a major, since users match on them exhaustively:
+  `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
+  proto2), `Kind`, `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
+  and `Rpc.Code`; a value `google.api.FieldBehavior`
+  gains waits for a major, and until then the generator drops it.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.
@@ -2564,6 +2627,10 @@ single-flight in the application's shell) or onto the pure halves
 If hooks are wanted after all, an opaque `Rpc.Client` built from a
 `Config` plus hooks can be added beside `Rpc.task : Config -> …`
 without breaking it.
+
+Recorded 2026-10-16: a retry policy does not read `Retry-After` (a 429
+or 503's seconds) or a `google.rpc.RetryInfo` detail. Honouring either
+is additive, a modifier of the opaque `Rpc.Retry` (§5.1).
 
 ## 10. Out of scope but recorded
 

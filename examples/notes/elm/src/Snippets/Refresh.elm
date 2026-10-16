@@ -5,7 +5,7 @@ module Snippets.Refresh exposing (withRefresh)
 
 import Api exposing (Shared, rpc)
 import Rpc
-import Rpc.ErrorCode
+import Rpc.Code
 import Task exposing (Task)
 
 
@@ -18,7 +18,7 @@ withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
             (\error ->
-                if Rpc.code error == Rpc.ErrorCode.Unauthenticated then
+                if Rpc.code error == Rpc.Code.Unauthenticated then
                     refresh |> Task.andThen (\fresh -> rpc fresh call)
 
                 else

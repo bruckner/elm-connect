@@ -16,8 +16,9 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Proto.Any
 import Rpc
+import Rpc.Body
 import Rpc.Code
-import Rpc.ErrorCode
+import Rpc.Trace
 import Task
 
 
@@ -76,7 +77,7 @@ type alias Sent msg =
 
 
 {-| What became of a call, as JSON: the result, the trace when the call was
-sent with `Rpc.sendTraced` (`null` otherwise), and the answer's status and
+sent with `Rpc.sendTraced` (`Rpc.Trace.toJson`; `null` otherwise), and the answer's status and
 headers when it was sent through the halves and an answer came (`null`
 otherwise).
 -}
@@ -177,7 +178,7 @@ sendWith envelope encodeResponse toMsg c =
     case envelope.sending of
         Traced ->
             uncancellable "sendTraced"
-                |> Result.map (Sent (Rpc.sendTraced envelope.config tracked (\trace -> report (encodeTrace trace))))
+                |> Result.map (Sent (Rpc.sendTraced envelope.config tracked (\trace -> report (Rpc.Trace.toJson trace))))
 
         Plain ->
             case envelope.config.retry of
@@ -223,7 +224,7 @@ sendHalves config c tracker toMsg =
         , headers = List.map (\( name, value ) -> Http.header name value) sent.headers
         , url = sent.url
         , body =
-            case sent.body of
+            case Rpc.Body.toText sent.body of
                 Just json ->
                     Http.stringBody "application/json" json
 
@@ -275,7 +276,7 @@ encodeResult encodeResponse result =
             Encode.object
                 [ ( "error"
                   , Encode.object
-                        [ ( "code", Encode.string (Rpc.ErrorCode.toString status.code) )
+                        [ ( "code", Encode.string (Rpc.Code.toString status.code) )
                         , ( "message", Encode.string status.message )
                         , ( "details", Encode.list Proto.Any.encodeJson status.details )
                         , ( "source", Encode.string (sourceToString status.source) )
@@ -288,7 +289,7 @@ encodeResult encodeResponse result =
             Encode.object
                 [ ( "error"
                   , Encode.object
-                        [ ( "code", Encode.string (Rpc.ErrorCode.toString (Rpc.code error)) )
+                        [ ( "code", Encode.string (Rpc.Code.toString (Rpc.code error)) )
                         , ( "message", Encode.string (Rpc.message error) )
                         , ( "details", Encode.list Proto.Any.encodeJson [] )
                         , ( "source", Encode.string "HttpStatus" )
@@ -346,36 +347,3 @@ httpErrorToString problem =
 
         Http.BadBody text ->
             "BadBody " ++ text
-
-
-encodeTrace : Rpc.Trace -> Value
-encodeTrace trace =
-    Encode.object
-        [ ( "service", Encode.string trace.service )
-        , ( "method", Encode.string trace.method )
-        , ( "binding", maybe Encode.int trace.binding )
-        , ( "httpStatus", maybe Encode.int trace.httpStatus )
-        , ( "headers", Encode.dict identity Encode.string trace.headers )
-        , ( "trailers", Encode.dict identity Encode.string trace.trailers )
-        , ( "code", Encode.string (Rpc.Code.toString trace.code) )
-        , ( "attempts", Encode.int trace.attempts )
-        , ( "duration", Encode.float trace.duration )
-        , ( "request", encodeRequest trace.request )
-        ]
-
-
-encodeRequest : Rpc.Request -> Value
-encodeRequest request =
-    Encode.object
-        [ ( "method", Encode.string request.method )
-        , ( "url", Encode.string request.url )
-        , ( "headers", Encode.list (\( k, v ) -> Encode.list Encode.string [ k, v ]) request.headers )
-        , ( "body", maybe Encode.string request.body )
-        , ( "timeout", maybe Encode.float request.timeout )
-        , ( "withCredentials", Encode.bool request.withCredentials )
-        ]
-
-
-maybe : (a -> Value) -> Maybe a -> Value
-maybe encode value =
-    Maybe.map encode value |> Maybe.withDefault Encode.null

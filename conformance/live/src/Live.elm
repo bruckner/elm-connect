@@ -16,7 +16,9 @@ import Live.Notes
 import Live.Routes
 import Process
 import Rpc
-import Rpc.ErrorCode
+import Rpc.Code
+import Rpc.Retry
+import Rpc.Transport
 import Set exposing (Set)
 import Task
 
@@ -253,10 +255,10 @@ config t =
             { transport =
                 case t of
                     Connect ->
-                        Rpc.Connect { useGet = useGet, maxGetUrl = maxGetUrl }
+                        connectTransport useGet maxGetUrl
 
                     Transcode ->
-                        Rpc.Transcode
+                        Rpc.Transport.transcode
             , baseUrl = baseUrl
             , headers = headers
             , timeout = timeout
@@ -280,21 +282,66 @@ pair =
         (Decode.index 1 Decode.string)
 
 
-retryPolicy : Decoder Rpc.Retry
+{-| The Connect transport an envelope's `useGet` and `maxGetUrl` describe.
+-}
+connectTransport : Bool -> Maybe Int -> Rpc.Transport.Transport
+connectTransport useGet maxGetUrl =
+    let
+        connectOrGet =
+            if useGet then
+                Rpc.Transport.connectGet
+
+            else
+                Rpc.Transport.connect
+    in
+    case maxGetUrl of
+        Just limit ->
+            Rpc.Transport.withMaxGetUrl limit connectOrGet
+
+        Nothing ->
+            connectOrGet
+
+
+{-| A retry policy as a case writes it: `codes` and `attempts`, `backoff`
+(default 0), `maxBackoff` (default the runtime's), `idempotentOnly` (default
+false) and `jitter` (default false), so a case's waits are the bounds it
+states unless it asks for jitter.
+-}
+retryPolicy : Decoder Rpc.Retry.Retry
 retryPolicy =
-    Decode.map4 Rpc.Retry
+    Decode.map6
+        (\codes attempts backoff maxBackoff idempotentOnly jitter ->
+            Rpc.Retry.on codes
+                |> Rpc.Retry.withAttempts attempts
+                |> Rpc.Retry.withBackoff backoff
+                |> (Maybe.map Rpc.Retry.withMaxBackoff maxBackoff |> Maybe.withDefault identity)
+                |> (if idempotentOnly then
+                        identity
+
+                    else
+                        Rpc.Retry.allowNonIdempotent
+                   )
+                |> (if jitter then
+                        identity
+
+                    else
+                        Rpc.Retry.withoutJitter
+                   )
+        )
+        (Decode.field "codes" (Decode.list errorCode))
         (Decode.field "attempts" Decode.int)
         (optional "backoff" Decode.float 0)
-        (Decode.field "codes" (Decode.list errorCode))
+        (optional "maxBackoff" (Decode.map Just Decode.float) Nothing)
         (optional "idempotentOnly" Decode.bool False)
+        (optional "jitter" Decode.bool False)
 
 
-errorCode : Decoder Rpc.ErrorCode.ErrorCode
+errorCode : Decoder Rpc.Code.Code
 errorCode =
     Decode.string
         |> Decode.andThen
             (\name ->
-                case Rpc.ErrorCode.fromString name of
+                case Rpc.Code.fromString name of
                     Just code ->
                         Decode.succeed code
 

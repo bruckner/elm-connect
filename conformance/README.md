@@ -271,7 +271,12 @@ An **envelope**, what the runner sends:
 `transcode`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.viaBinding`), `send` (`sendTraced`, the
 default, `send`, `task` or `halves`), `tracker` (`Rpc.withTracker`) and
-`cancelAfterMs`. `halves` sends through the pure halves, as an application
+`cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
+(`Rpc.Transport.connectGet`, `withMaxGetUrl`). `retry` builds an
+`Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
+`maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
+`jitter` (default false, so a case's waits are the bounds it states).
+`halves` sends through the pure halves, as an application
 that needs the answer's headers does: `Rpc.request`, `Http.request` with the
 answer kept whole, and `Rpc.response`.
 
@@ -291,7 +296,7 @@ A **result**, what comes back:
   "id": "a name for the call",
   "result": { "ok": { "name": "notes/welcome" } },
   "trace": {
-    "service": "notes.v1.NotesService", "method": "GetNote", "binding": null,
+    "service": "notes.v1.NotesService", "method": "GetNote", "transport": "connect", "binding": null,
     "httpStatus": 200, "headers": { "content-type": "application/json" }, "trailers": {},
     "code": "ok", "attempts": 1, "duration": 4,
     "request": { "method": "POST", "url": "…", "headers": [["Connect-Protocol-Version", "1"]],
@@ -314,9 +319,9 @@ error was read from: `statusCode`, `statusText` and `body`),
 `BadStatus <n>`, `BadBody <problem>`), `{"canceled": true}` for a call
 withdrawn with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
-method or a binding the method lacks. `trace` is the `Rpc.Trace` (its
-`headers` and `trailers` as objects), and `null` unless sent with
-`sendTraced`; `response` is the answer's
+method or a binding the method lacks. `trace` is the `Rpc.Trace` as `Rpc.Trace.toJson` writes it
+(`error` the code as Connect names it, `null` on success), and `null`
+unless sent with `sendTraced`; `response` is the answer's
 `{"status", "headers": [[name, value], …]}` as elm/http gives it, and
 `null` unless sent with `halves` and answered; `progress` counts a tracker's
 events and is present only with one. `wire` is added by `run.mjs`: each
