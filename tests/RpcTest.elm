@@ -638,40 +638,36 @@ retries =
         [ test "a listed code waits the backoff, doubled per attempt, until attempts run out" <|
             \_ ->
                 [ 1, 2, 3 ]
-                    |> List.map (\tried -> Retry.delay policy True tried (Just Unavailable))
+                    |> List.map (\tried -> Retry.delay policy True tried Unavailable)
                     |> Expect.equal [ Just 100, Just 200, Nothing ]
         , test "a code not listed stops" <|
             \_ ->
-                Retry.delay policy True 1 (Just NotFound)
-                    |> Expect.equal Nothing
-        , test "a failure without a code stops" <|
-            \_ ->
-                Retry.delay policy True 1 Nothing
+                Retry.delay policy True 1 NotFound
                     |> Expect.equal Nothing
         , test "idempotentOnly stops a call with side effects" <|
             \_ ->
-                ( Retry.delay policy False 1 (Just Unavailable)
-                , Retry.delay { policy | idempotentOnly = False } False 1 (Just Unavailable)
+                ( Retry.delay policy False 1 Unavailable
+                , Retry.delay { policy | idempotentOnly = False } False 1 Unavailable
                 )
                     |> Expect.equal ( Nothing, Just 100 )
         , test "one attempt never retries" <|
             \_ ->
-                Retry.delay { policy | attempts = 1 } True 1 (Just Unavailable)
+                Retry.delay { policy | attempts = 1 } True 1 Unavailable
                     |> Expect.equal Nothing
         , test "a timeout retries when DeadlineExceeded is listed, and not otherwise" <|
             \_ ->
-                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } True 1 (Just (Rpc.code (Transport Http.Timeout)))
-                , Retry.delay policy True 1 (Just (Rpc.code (Transport Http.Timeout)))
+                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } True 1 (Rpc.code (Transport Http.Timeout))
+                , Retry.delay policy True 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Just 100, Nothing )
         , test "a network failure retries when Unavailable is listed" <|
             \_ ->
-                Retry.delay policy True 1 (Just (Rpc.code (Transport Http.NetworkError)))
+                Retry.delay policy True 1 (Rpc.code (Transport Http.NetworkError))
                     |> Expect.equal (Just 100)
         , test "idempotentOnly stops a transport failure of a call with side effects" <|
             \_ ->
-                ( Retry.delay policy False 1 (Just (Rpc.code (Transport Http.NetworkError)))
-                , Retry.delay { policy | codes = [ DeadlineExceeded ] } False 1 (Just (Rpc.code (Transport Http.Timeout)))
+                ( Retry.delay policy False 1 (Rpc.code (Transport Http.NetworkError))
+                , Retry.delay { policy | codes = [ DeadlineExceeded ] } False 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Nothing, Nothing )
         ]

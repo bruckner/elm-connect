@@ -1263,7 +1263,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy fields.method.descriptor.idempotent tried (Just (code error))
+            Retry.delay policy fields.method.descriptor.idempotent tried (code error)
 
         _ ->
             Nothing

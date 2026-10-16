@@ -526,3 +526,5 @@ tag (design §8).
 - `Rpc.message` (and so `Rpc.errorToString`) quotes at most 300
   characters of a bad response body's problem, then `…`; the whole
   problem stays in `Transport (Http.BadBody problem)`.
+- `Proto.Enum.toName` and `toNumber` document what they give for a
+  value the encoder writes as other than a name (`""` and `0`).

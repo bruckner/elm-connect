@@ -20,23 +20,17 @@ type alias Policy =
 
 
 {-| How long to wait before trying again, after `tried` attempts of a call
-(`idempotent` or not) whose last one failed with `code` (`Nothing` for a
-failure with no code, which is never retried), or `Nothing` to stop.
+(`idempotent` or not) whose last one failed with `code`, or `Nothing` to stop.
 -}
-delay : Policy -> Bool -> Int -> Maybe ErrorCode -> Maybe Float
+delay : Policy -> Bool -> Int -> ErrorCode -> Maybe Float
 delay policy idempotent tried code =
-    case code of
-        Just c ->
-            if
-                tried
-                    < policy.attempts
-                    && List.member c policy.codes
-                    && (idempotent || not policy.idempotentOnly)
-            then
-                Just (policy.backoff * toFloat (2 ^ (tried - 1)))
+    if
+        tried
+            < policy.attempts
+            && List.member code policy.codes
+            && (idempotent || not policy.idempotentOnly)
+    then
+        Just (policy.backoff * toFloat (2 ^ (tried - 1)))
 
-            else
-                Nothing
-
-        Nothing ->
-            Nothing
+    else
+        Nothing

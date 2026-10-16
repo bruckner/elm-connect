@@ -994,7 +994,10 @@ registry =
   encoder writes a value's name, the decoder reads every declared name
   and number, aliases included, and the descriptor says which names
   and numbers are declared, so an undeclared one is `Nothing` rather
-  than the zero value the decoder would give. The record holds no
+  than the zero value the decoder would give. A value the encoder does
+  not write as a string has no name: `toName` gives `""` and `toNumber`
+  `0`. No generated value is one today, since every constructor is a
+  declared value. The record holds no
   typed value list of its own: that would be the descriptor again,
   and it is sound only while the descriptor is always written (§3.9
   has no option to leave it out).
