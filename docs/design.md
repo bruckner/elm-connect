@@ -2773,6 +2773,13 @@ Recorded 2026-10-16: a retry policy does not read `Retry-After` (a 429
 or 503's seconds) or a `google.rpc.RetryInfo` detail. Honouring either
 is additive, a modifier of the opaque `Rpc.Retry` (§5.1).
 
+Recorded 2026-10-16: a streaming design spike comes before 1.0. It is a
+spec-only pass that writes the streaming section against the runtime's
+API as reshaped on 2026-10-16 (opaque types, `Rpc.Error`, plain
+`cancel`) and lists every point where it would have wanted a 1.0
+surface to differ. Its outcome is open, and it may pull streaming into
+the pre-1.0 work.
+
 ## 10. Out of scope but recorded
 
 Streaming (both transports), binary protobuf, gRPC-web, proto2,
