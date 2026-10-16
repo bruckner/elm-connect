@@ -518,6 +518,17 @@ just the form encoders write. *(Proposed; built.)*
   Separate `optional` and `list` steps would read a little shorter but
   double the step functions (each needs a two-name form too) and hide
   the zero value the reader otherwise sees.
+- A step finds its field with `Json.Decode.field` (JavaScript's `in`),
+  in constant time, so a message decodes in time linear in its fields
+  rather than reading the whole object once per field. `in` also finds
+  inherited properties, so a field named after one of
+  `Object.prototype`'s (`constructor`, `toString`, `__proto__`, …) is
+  looked up among the object's own keys instead, in time linear in
+  them. A message with a field fails on any JSON that is not an object,
+  arrays included; when no field is present the check is constant-time
+  too, and never lists the keys, so an unknown `hasOwnProperty` key
+  cannot break it under elm/json 1.1.3, whose key listing calls the
+  object's own `hasOwnProperty`.
 
 **Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
 text exactly as received; nothing normalises it. `Proto.Json.bytes`

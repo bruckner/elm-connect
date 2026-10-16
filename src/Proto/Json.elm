@@ -160,17 +160,20 @@ object holds, decoded; `default` when it holds none of them or holds `null`.
 -}
 valueAt : List String -> a -> Decoder a -> Decoder a
 valueAt names default decoder =
-    Json.Decode.dict Json.Decode.value
+    Json.Decode.value
         |> Json.Decode.andThen
-            (\keys ->
-                case spelledAs names keys of
-                    Err problem ->
+            (\object_ ->
+                case spelledAs names object_ of
+                    NotAnObject ->
+                        notAnObject
+
+                    Spelled (Err problem) ->
                         Json.Decode.fail problem
 
-                    Ok Nothing ->
+                    Spelled (Ok Nothing) ->
                         Json.Decode.succeed default
 
-                    Ok (Just ( name, raw )) ->
+                    Spelled (Ok (Just ( name, raw ))) ->
                         if isNull raw then
                             Json.Decode.succeed default
 
@@ -191,20 +194,163 @@ spellings jsonName protoName =
         [ jsonName, protoName ]
 
 
-{-| Which of `names`, the spellings of one field, the object holds, with its
-value; an error naming them when it holds more than one.
+{-| What a JSON value holds of one field: nothing when it is not an object;
+otherwise which of the field's spellings it holds, with its value, or an error
+naming them when it holds more than one.
 -}
-spelledAs : List String -> Dict.Dict String Value -> Result String (Maybe ( String, Value ))
-spelledAs names keys =
-    case List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names of
+type Spelled
+    = NotAnObject
+    | Spelled (Result String (Maybe ( String, Value )))
+
+
+{-| Which of `names`, the spellings of one field, the value holds.
+
+`Json.Decode.field` finds a key with JavaScript's `in`, which takes constant
+time, so a message of F fields costs O(F) to decode rather than reading the
+whole object once per field. `in` also finds what an object inherits, which
+for a JSON object is only `Object.prototype`'s properties, so a spelling that
+names one of those is looked up among the object's own keys instead, as
+`Json.Decode.dict` lists them, which takes time in their number. And `in`
+finds an array's `length` and methods, so a key found is a field only when
+the JSON is not an array.
+
+-}
+spelledAs : List String -> Value -> Spelled
+spelledAs names json =
+    if List.any isInherited names then
+        case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
+            Ok keys ->
+                Spelled (oneSpelling names (List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names))
+
+            Err _ ->
+                NotAnObject
+
+    else
+        case List.filterMap (\name -> probe name json) names of
+            [] ->
+                if isObject json then
+                    Spelled (Ok Nothing)
+
+                else
+                    NotAnObject
+
+            found ->
+                if isArray json then
+                    NotAnObject
+
+                else
+                    Spelled (oneSpelling names found)
+
+
+oneSpelling : List String -> List ( String, Value ) -> Result String (Maybe ( String, Value ))
+oneSpelling names found =
+    case found of
         [] ->
             Ok Nothing
 
-        [ found ] ->
-            Ok (Just found)
+        [ one ] ->
+            Ok (Just one)
 
         _ ->
             Err ("Expecting " ++ String.join " or " (List.map quote names) ++ ", but got both")
+
+
+{-| The value under `name`, when JavaScript's `in` finds it in `json`.
+-}
+probe : String -> Value -> Maybe ( String, Value )
+probe name json =
+    case Json.Decode.decodeValue (Json.Decode.field name Json.Decode.value) json of
+        Ok raw ->
+            Just ( name, raw )
+
+        Err _ ->
+            Nothing
+
+
+{-| Whether `name` is a property every object inherits from `Object.prototype`.
+-}
+isInherited : String -> Bool
+isInherited name =
+    case name of
+        "__proto__" ->
+            True
+
+        "__defineGetter__" ->
+            True
+
+        "__defineSetter__" ->
+            True
+
+        "__lookupGetter__" ->
+            True
+
+        "__lookupSetter__" ->
+            True
+
+        "constructor" ->
+            True
+
+        "hasOwnProperty" ->
+            True
+
+        "isPrototypeOf" ->
+            True
+
+        "propertyIsEnumerable" ->
+            True
+
+        "toLocaleString" ->
+            True
+
+        "toString" ->
+            True
+
+        "valueOf" ->
+            True
+
+        _ ->
+            False
+
+
+{-| Whether a JSON value is an object, in constant time: JavaScript's `in`
+finds `hasOwnProperty` in every object and array, which inherit it, and in no
+other JSON value, and arrays are told apart. Listing the object's keys would
+take time in their number, and elm/json before 1.1.4 lists them by calling the
+object's own `hasOwnProperty`, which throws on an object holding a key of that
+name.
+-}
+isObject : Value -> Bool
+isObject json =
+    case Json.Decode.decodeValue (Json.Decode.field "hasOwnProperty" (Json.Decode.succeed ())) json of
+        Ok () ->
+            not (isArray json)
+
+        Err _ ->
+            False
+
+
+{-| Whether a JSON value is an array, in constant time: decoding its elements
+stops at the first, which `fail` rejects, and an empty array decodes.
+-}
+isArray : Value -> Bool
+isArray json =
+    case Json.Decode.decodeValue (Json.Decode.list (Json.Decode.fail "")) json of
+        Ok _ ->
+            True
+
+        Err (Json.Decode.Index _ _) ->
+            True
+
+        Err _ ->
+            False
+
+
+{-| The failure of a message decoder given JSON that is not an object, as
+elm/json words it.
+-}
+notAnObject : Decoder a
+notAnObject =
+    Json.Decode.fail "Expecting an OBJECT"
 
 
 quote : String -> String
@@ -214,7 +360,12 @@ quote text =
 
 isNull : Value -> Bool
 isNull raw =
-    Json.Decode.decodeValue (Json.Decode.null ()) raw == Ok ()
+    case Json.Decode.decodeValue (Json.Decode.null ()) raw of
+        Ok () ->
+            True
+
+        Err _ ->
+            False
 
 
 {-| A message's JSON object: each field that has a value, under its JSON name.
@@ -379,20 +530,23 @@ does in [`fieldEither`](#fieldEither).
 -}
 members : String -> a -> List (Member a) -> Decoder a
 members oneofName unset candidates =
-    Json.Decode.dict Json.Decode.value
+    Json.Decode.value
         |> Json.Decode.andThen
-            (\keys ->
-                case presentMembers keys candidates of
-                    Err problem ->
+            (\object_ ->
+                case presentMembers object_ candidates of
+                    Nothing ->
+                        notAnObject
+
+                    Just (Err problem) ->
                         Json.Decode.fail problem
 
-                    Ok [] ->
+                    Just (Ok []) ->
                         Json.Decode.succeed unset
 
-                    Ok [ ( name, decoder ) ] ->
+                    Just (Ok [ ( name, decoder ) ]) ->
                         Json.Decode.field name decoder
 
-                    Ok several ->
+                    Just (Ok several) ->
                         Json.Decode.fail
                             ("Expecting at most one member of oneof "
                                 ++ quote oneofName
@@ -402,34 +556,41 @@ members oneofName unset candidates =
             )
 
 
-{-| The members the object holds, each with the key it is written under.
+{-| The members the object holds, each with the key it is written under;
+`Nothing` when the JSON is not an object.
 -}
-presentMembers : Dict.Dict String Value -> List (Member a) -> Result String (List ( String, Decoder a ))
-presentMembers keys candidates =
+presentMembers : Value -> List (Member a) -> Maybe (Result String (List ( String, Decoder a )))
+presentMembers json candidates =
+    if isObject json then
+        Just (presentIn json candidates [])
+
+    else
+        Nothing
+
+
+presentIn : Value -> List (Member a) -> List ( String, Decoder a ) -> Result String (List ( String, Decoder a ))
+presentIn json candidates found =
     case candidates of
         [] ->
-            Ok []
+            Ok (List.reverse found)
 
         (Member candidate) :: rest ->
-            case spelledAs candidate.names keys of
-                Err problem ->
+            case spelledAs candidate.names json of
+                Spelled (Ok (Just ( name, raw ))) ->
+                    if isNull raw && not candidate.nullIsSet then
+                        presentIn json rest found
+
+                    else
+                        presentIn json rest (( name, candidate.decoder ) :: found)
+
+                Spelled (Ok Nothing) ->
+                    presentIn json rest found
+
+                Spelled (Err problem) ->
                     Err problem
 
-                Ok found ->
-                    let
-                        here =
-                            case found of
-                                Just ( name, raw ) ->
-                                    if isNull raw && not candidate.nullIsSet then
-                                        []
-
-                                    else
-                                        [ ( name, candidate.decoder ) ]
-
-                                Nothing ->
-                                    []
-                    in
-                    Result.map ((++) here) (presentMembers keys rest)
+                NotAnObject ->
+                    Ok (List.reverse found)
 
 
 {-| `"a" and "b"`, `"a", "b" and "c"`.
@@ -1318,8 +1479,15 @@ of it reads as `()` when absent or `null` too, so its presence is not kept.
 -}
 empty : Decoder ()
 empty =
-    Json.Decode.keyValuePairs Json.Decode.value
-        |> Json.Decode.map (\_ -> ())
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\json ->
+                if isObject json then
+                    Json.Decode.succeed ()
+
+                else
+                    notAnObject
+            )
 
 
 {-| Encode a `google.protobuf.Empty` as `{}`.

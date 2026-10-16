@@ -504,3 +504,9 @@ tag (design §8).
   the `Proto.Version` sentinel and what each surface promises within a
   major; the header line as provenance; the drift check. §10 records a
   proposal to emit the runtime's modules beside the generated code.
+- Decoding a message takes time linear in its fields: each field step
+  looks its key up directly instead of listing the whole object, which
+  made a 256-field message about 250 times slower per field than an
+  8-field one. Under elm/json 1.1.3 an unknown `hasOwnProperty` key no
+  longer fails the message holding it, a oneof, or a
+  `google.protobuf.Empty`.
