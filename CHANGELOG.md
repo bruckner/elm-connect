@@ -537,3 +537,18 @@ tag (design §8).
   `--help` its usage, before reading stdin; run from a terminal with no
   arguments it prints its usage and exits 2 rather than wait silently
   for a request, and an unknown argument exits 2.
+- `naming::reserved_name`: a message, enum, oneof or enum value whose Elm
+  type or constructor takes a name its module's code uses unqualified
+  (`Dict`, `Duration`, `String`, `Int`, `Float`, `Bool`, `List`,
+  `Maybe`, `Just`, `Nothing`, `False`), directly or by `rename`, is an
+  error naming the escape; the module did not compile, and `gen` exited
+  0. Only names the module actually uses count: a message `Dict` in a
+  package without maps still generates. `naming::reserved_module`: a
+  package or service whose module is one of the runtime's (`Rpc`,
+  `Proto.*`) or of elm/core, elm/json, elm/http or elm/time (`Time`,
+  `Json.Decode`), which made every import of it ambiguous, is an error
+  naming `rename` and `module_prefix`. The help of both writes the
+  option as the front end takes it (`--rename` from the CLI, `rename=`
+  from the plugin). Two generated modules whose names differ only in
+  case are `naming::module_collision`: their files overwrote each other
+  on macOS and Windows.

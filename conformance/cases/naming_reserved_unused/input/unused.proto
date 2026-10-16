@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package unused.v1;
+
+// Names of elm/core types and constructors that this module's code does
+// not use unqualified: no field is a map, so `Dict` is free, and `Result`,
+// `Order`, `Never`, `Cmd`, `True` and `Char` are never used. Each compiles.
+message Dict {
+  string name = 1;
+}
+
+message Result {
+  bool ok = 1;
+  Dict dict = 2;
+  repeated Char chars = 3;
+}
+
+message Order {}
+
+message Never {}
+
+message Cmd {}
+
+message True {}
+
+enum Char {
+  CHAR_UNSPECIFIED = 0;
+  CHAR_A = 1;
+}

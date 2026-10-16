@@ -3,7 +3,9 @@ use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::ir::ModuleName;
-use elm_connect_gen::{EnumUnknown, Generated, Int64, Options, Streaming, UnboundMethods};
+use elm_connect_gen::{
+    EnumUnknown, Generated, Int64, Options, Spelling, Streaming, UnboundMethods,
+};
 use miette::{Report, miette};
 
 /// Generate Elm clients for protobuf APIs.
@@ -88,6 +90,7 @@ impl GenArgs {
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
         options.module_prefix = self.module_prefix.clone();
+        options.spelling = Spelling::Flags;
         for entry in &self.rename {
             options
                 .add_rename(entry)
@@ -191,6 +194,7 @@ mod tests {
         assert_eq!(options.unbound_methods, UnboundMethods::Error);
         assert_eq!(options.streaming, Streaming::Skip);
         assert_eq!(options.enum_unknown, EnumUnknown::Zero);
+        assert_eq!(options.spelling, Spelling::Flags);
         assert!(args.include_imports);
         assert!(Cli::try_parse_from(["elm-connect", "check", "a.proto"]).is_err());
     }

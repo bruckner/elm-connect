@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// The runtime's calls live in `Rpc`.
+package rpc;
+
+message Call {
+  string name = 1;
+}

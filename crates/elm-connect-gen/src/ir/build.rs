@@ -17,7 +17,7 @@ use super::{
 };
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
-use crate::options::{Options, Streaming};
+use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
 /// The package whose types are well-known types, never generated.
@@ -67,6 +67,7 @@ pub fn build_with(
 ) -> Result<Built, Diagnostics> {
     let mut builder = Builder {
         streaming: options.streaming,
+        spelling: options.spelling,
         ..Builder::default()
     };
 
@@ -113,7 +114,7 @@ pub fn build_with(
             Ok(module) => {
                 let what = format!("package `{package}`");
                 let origin = builder.origin(&files[0], &[], tag::FILE_PACKAGE, what);
-                builder.claim_module(&module, origin);
+                builder.claim_module(&module, origin, package);
                 builder.modules.insert(package.clone(), module);
             }
             Err(NameError::InvalidSegment { segment }) => {
@@ -275,6 +276,11 @@ struct Builder {
     /// Every generated module name, a package's or a service's, so no two
     /// generated modules share one.
     module_names: Namespace,
+    /// The first generated module name of each lowercase spelling, with
+    /// the site that claimed it, so no two differ only in case.
+    module_cases: HashMap<String, (String, Site)>,
+    /// How the options are written, for the escapes a problem names.
+    spelling: Spelling,
     types: HashMap<String, TypeName>,
     references: Vec<Reference>,
     /// What a streaming method gets.
@@ -475,7 +481,7 @@ impl Builder {
                     Ok(service_module) => {
                         let what = format!("service `{full_name}`");
                         let origin = self.origin(file, service.path(), tag::SERVICE_NAME, what);
-                        self.claim_module(&service_module, origin);
+                        self.claim_module(&service_module, origin, full_name);
                         Some(service_module)
                     }
                     Err(_) => {
@@ -670,13 +676,60 @@ impl Builder {
         Some(built)
     }
 
-    fn claim_module(&mut self, module: &ModuleName, origin: Origin) {
-        if let Some((first, second)) = self.module_names.claim(&module.to_string(), origin) {
-            self.diagnostics.push(Problem::module_collision(
-                &module.to_string(),
-                first,
-                second,
+    /// Claims `module` for `origin`, the proto element `proto`: reported
+    /// when it is a module the runtime or a package it depends on already
+    /// has, when another generated module has it, or when another's name
+    /// differs from it only in case, since its file is then the same file
+    /// on a file system that ignores case.
+    fn claim_module(&mut self, module: &ModuleName, origin: Origin, proto: &str) {
+        let name = module.to_string();
+        let escapes = format!(
+            "{} or {}",
+            self.spelling.rename(proto),
+            self.spelling.module_prefix()
+        );
+        if let Some(owner) = naming::reserved_module(&name) {
+            let site = Site {
+                label: format!("{} becomes `{name}`", origin.what),
+                ..origin.site
+            };
+            self.diagnostics.push(Problem::reserved_module(
+                &origin.what,
+                &name,
+                owner,
+                &escapes,
+                site,
             ));
+            return;
+        }
+        let folded = name.to_lowercase();
+        let other = self
+            .module_cases
+            .get(&folded)
+            .filter(|(other, _)| *other != name)
+            .cloned();
+        if let Some((other, first)) = other {
+            let second = Site {
+                label: format!("and {} becomes `{name}`", origin.what),
+                ..origin.site.clone()
+            };
+            self.diagnostics.push(Problem::module_case_collision(
+                &other,
+                &name,
+                &self.spelling.rename(proto),
+                (first, second),
+            ));
+        }
+        let site = Site {
+            label: format!("{} becomes `{name}`", origin.what),
+            ..origin.site.clone()
+        };
+        self.module_cases
+            .entry(folded)
+            .or_insert((name.clone(), site));
+        if let Some((first, second)) = self.module_names.claim(&name, origin) {
+            self.diagnostics
+                .push(Problem::module_collision(&name, first, second));
         }
     }
 

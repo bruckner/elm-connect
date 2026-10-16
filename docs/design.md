@@ -930,7 +930,31 @@ case names it):
   (`naming::module_collision`, `services_module_collision` case); and a
   service whose name has no module form (`naming::invalid_service`,
   `services_invalid` case). Escape: rename the service or package with
-  `rename=` (§3.7).
+  `rename=` (§3.7). Two module names that differ only in case (`Shop.Api`
+  and `Shop.API`) collide too, since their files are one file on the
+  case-insensitive file systems macOS and Windows default to
+  (`naming::module_collision`, `naming_module_case` case).
+- **Names an application already has** *(built 2026-10-16)*: a generated
+  module named like a module of the runtime (`Rpc`, `Proto.Json`; the
+  `exposed-modules` of `elm.json`) or of a package it depends on (elm/core's
+  `Dict`, `Time`, `Json.Decode`, `Http`; `naming::reserved_module`,
+  `naming_reserved_module` case), since every import of it would be
+  ambiguous; and a type or constructor named like one its module's code
+  uses unqualified (`naming::reserved_name`, `naming_reserved` case). The
+  latter are the default imports of elm/core the emitter writes bare
+  (`Int`, `Float`, `Bool`, `String`, `List`, `Maybe`, `Just`, `Nothing`,
+  `False`) and the types it imports exposed (`Dict`, `Proto.Duration`'s
+  `Duration`), and the check is of what the module uses: a message
+  `Dict` in a package without a map field compiles and is left alone
+  (`naming_reserved_unused` case), and gains the diagnostic with its
+  first map field. Both are errors, not warnings, as the output would
+  not compile. A `rename` to such a name is the same problem. Escape:
+  `rename=`, and for a module `module_prefix=` (§3.7, §3.1); the help
+  writes them as the front end in use takes them (`--rename` and
+  `--module-prefix` from the CLI). Qualifying the library names in an
+  affected module would generate working code instead; it is left open,
+  since it makes a module's text depend on what its package declares,
+  and a `rename` already gets past the clash.
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4). The option is the user's own
@@ -1795,6 +1819,9 @@ both the plain names.
   `unbound_methods=error` (§4). A recursive
   message was listed as an informational diagnostic; it is dropped,
   since the wrapper type in the output says the same (§3.2).
+  The `naming::reserved_*` checks (§3.8) are errors: what they report
+  would not compile, and an error at generation names the proto element
+  and the escape where the Elm compiler's error would name neither.
   A diagnostic is an error, failing the run, or a warning, reporting
   what an escape left out (§3.8) beside a successful run: rendered the
   same way with miette's warning styling (`⚠`), printed to stderr by

@@ -20,6 +20,71 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
     "exposing", "as", "port",
 ];
 
+/// The runtime package's exposed modules, as its `elm.json` lists them.
+pub const RUNTIME_MODULES: [&str; 16] = [
+    "Rpc",
+    "Rpc.Code",
+    "Rpc.ErrorCode",
+    "Proto.Descriptor",
+    "Proto.Http",
+    "Proto.Message",
+    "Proto.Enum",
+    "Proto.Method",
+    "Proto.Registry",
+    "Proto.WellKnown",
+    "Proto.Any",
+    "Proto.Json",
+    "Proto.Int64",
+    "Proto.Duration",
+    "Proto.Timestamp",
+    "Proto.Version",
+];
+
+/// The packages the runtime depends on, each with its exposed modules (at
+/// elm/core 1.0.5, elm/json 1.1.3, elm/http 2.0.0 and elm/time 1.0.0). An
+/// application using generated code depends on them too, elm/http and
+/// elm/json directly for the runtime's API.
+pub const DEPENDENCY_MODULES: [(&str, &[&str]); 4] = [
+    (
+        "elm/core",
+        &[
+            "Array",
+            "Basics",
+            "Bitwise",
+            "Char",
+            "Debug",
+            "Dict",
+            "List",
+            "Maybe",
+            "Platform",
+            "Platform.Cmd",
+            "Platform.Sub",
+            "Process",
+            "Result",
+            "Set",
+            "String",
+            "Task",
+            "Tuple",
+        ],
+    ),
+    ("elm/json", &["Json.Decode", "Json.Encode"]),
+    ("elm/http", &["Http"]),
+    ("elm/time", &["Time"]),
+];
+
+/// The package that already has a module named `module`, the runtime or
+/// one it depends on: an application cannot define a module of that
+/// name, since every import of it would be ambiguous.
+pub fn reserved_module(module: &str) -> Option<&'static str> {
+    if RUNTIME_MODULES.contains(&module) {
+        return Some("the runtime package bruckner/elm-connect");
+    }
+    DEPENDENCY_MODULES
+        .iter()
+        .find(|(_, modules)| modules.contains(&module))
+        .map(|(package, _)| *package)
+}
+
 /// Why a proto name has no Elm spelling.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NameError {
@@ -327,6 +392,43 @@ fn strip_enum_prefix<'a>(enum_proto_name: &str, value_name: &'a str) -> &'a str 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn the_runtime_modules_are_the_packages_exposed_modules() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../elm.json");
+        let text = std::fs::read_to_string(path).expect("the runtime's elm.json");
+        let elm_json: serde_json::Value = serde_json::from_str(&text).expect("JSON");
+        let exposed: Vec<&str> = elm_json["exposed-modules"]
+            .as_array()
+            .expect("a list of exposed modules")
+            .iter()
+            .map(|module| module.as_str().expect("a module name"))
+            .collect();
+        assert_eq!(exposed, RUNTIME_MODULES);
+        let dependencies: BTreeSet<&str> = elm_json["dependencies"]
+            .as_object()
+            .expect("dependencies")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        let reserved: BTreeSet<&str> = DEPENDENCY_MODULES.iter().map(|(p, _)| *p).collect();
+        assert_eq!(dependencies, reserved);
+    }
+
+    #[test]
+    fn reserved_modules_name_their_package() {
+        assert_eq!(reserved_module("Time"), Some("elm/time"));
+        assert_eq!(reserved_module("Json.Decode"), Some("elm/json"));
+        assert_eq!(
+            reserved_module("Proto.Json"),
+            Some("the runtime package bruckner/elm-connect")
+        );
+        assert_eq!(reserved_module("Rpc"), reserved_module("Proto.Json"));
+        assert_eq!(reserved_module("Notes.V1"), None);
+        assert_eq!(reserved_module("Proto.Notes"), None);
+    }
 
     #[test]
     fn codec_names() {

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package shop.api;
+
+message Order {
+  string id = 1;
+}

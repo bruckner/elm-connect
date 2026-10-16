@@ -21,7 +21,8 @@ use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
 pub use crate::options::{
-    EnumUnknown, Int64, Options, Streaming, UnboundMethods, parse_module_prefix, parse_rename,
+    EnumUnknown, Int64, Options, Spelling, Streaming, UnboundMethods, parse_module_prefix,
+    parse_rename,
 };
 
 /// The version of the generator, stamped into everything it emits.

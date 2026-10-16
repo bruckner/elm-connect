@@ -154,19 +154,22 @@ impl Emitter {
     pub(super) fn field_type(&mut self, shape: FieldShape) -> Type {
         match shape {
             FieldShape::Plain(zeroed) => self.value_type(ValueShape::Zeroed(zeroed)),
-            FieldShape::Maybe(value) => ty("Maybe", [self.value_type(value)]),
-            FieldShape::List(value) => ty("List", [self.value_type(value)]),
+            FieldShape::Maybe(value) => ty(self.core("Maybe"), [self.value_type(value)]),
+            FieldShape::List(value) => ty(self.core("List"), [self.value_type(value)]),
             FieldShape::Dict(key, value) => {
                 let key = match key {
-                    KeyShape::String => ty("String", []),
-                    KeyShape::Int => ty("Int", []),
+                    KeyShape::String => ty(self.core("String"), []),
+                    KeyShape::Int => ty(self.core("Int"), []),
                 };
                 let value = self.value_type(value);
                 self.exposed_type(CORE_DICT, "Dict", [key, value])
             }
             FieldShape::BoolMap(value) => ty(
-                "List",
-                [Type::Tuple(vec![ty("Bool", []), self.value_type(value)])],
+                self.core("List"),
+                [Type::Tuple(vec![
+                    ty(self.core("Bool"), []),
+                    self.value_type(value),
+                ])],
             ),
         }
     }
@@ -184,7 +187,7 @@ impl Emitter {
         let (helper, args) = match shape {
             FieldShape::Plain(zeroed @ (Zeroed::Json | Zeroed::Empty)) => {
                 let encoded = self.encode_value(ValueShape::Zeroed(zeroed), value);
-                return apply(var("Just"), [encoded]);
+                return apply(var(self.core("Just")), [encoded]);
             }
             FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
                 return apply(self.reference((PROTO_JSON, "implicitFloat")), [value]);
@@ -229,7 +232,7 @@ impl Emitter {
             FieldShape::Maybe(value) => {
                 let value = self.value_decoder(value);
                 let map = self.reference((JSON_DECODE, "map"));
-                apply(map, [var("Just"), value])
+                apply(map, [var(self.core("Just")), value])
             }
             FieldShape::List(value) => {
                 let value = self.value_decoder(value);
@@ -255,13 +258,13 @@ impl Emitter {
     /// `null`, and holds in its message's default value.
     pub(super) fn field_default(&mut self, shape: FieldShape) -> Expr {
         match shape {
-            FieldShape::Plain(Zeroed::Scalar(repr)) => scalar::zero_value(repr),
+            FieldShape::Plain(Zeroed::Scalar(repr)) => self.scalar_zero(repr),
             FieldShape::Plain(Zeroed::Enum(name, zero_ctor)) => {
                 self.generated_value(&name.module, zero_ctor.to_owned())
             }
             FieldShape::Plain(Zeroed::Json) => self.reference((JSON_ENCODE, "null")),
             FieldShape::Plain(Zeroed::Empty) => Expr::Unit,
-            FieldShape::Maybe(_) => var("Nothing"),
+            FieldShape::Maybe(_) => var(self.core("Nothing")),
             FieldShape::List(_) | FieldShape::BoolMap(_) => list([]),
             FieldShape::Dict(..) => self.reference((CORE_DICT, "empty")),
         }
@@ -271,7 +274,7 @@ impl Emitter {
     pub(super) fn value_type(&mut self, value: ValueShape) -> Type {
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
-            | ValueShape::Present(Present::Wrapper(repr)) => scalar::elm_type(repr),
+            | ValueShape::Present(Present::Wrapper(repr)) => self.scalar_type(repr),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
             ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
@@ -279,13 +282,17 @@ impl Emitter {
             ValueShape::Present(Present::Duration) => {
                 self.exposed_type(PROTO_DURATION, "Duration", [])
             }
-            ValueShape::Present(Present::FieldMask) => ty("List", [ty("String", [])]),
+            ValueShape::Present(Present::FieldMask) => {
+                ty(self.core("List"), [ty(self.core("String"), [])])
+            }
             ValueShape::Present(Present::Struct) => {
                 let value = self.library_type(JSON_ENCODE, "Value", []);
-                self.exposed_type(CORE_DICT, "Dict", [ty("String", []), value])
+                let key = ty(self.core("String"), []);
+                self.exposed_type(CORE_DICT, "Dict", [key, value])
             }
             ValueShape::Present(Present::ListValue) => {
-                ty("List", [self.library_type(JSON_ENCODE, "Value", [])])
+                let value = self.library_type(JSON_ENCODE, "Value", []);
+                ty(self.core("List"), [value])
             }
             ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
             ValueShape::Zeroed(Zeroed::Empty) => Type::Unit,

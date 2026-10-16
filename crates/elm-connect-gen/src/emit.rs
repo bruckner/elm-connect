@@ -113,7 +113,7 @@ mod scalar;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use crate::diagnostics::Diagnostics;
+use crate::diagnostics::{Diagnostics, Problem};
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
@@ -158,6 +158,38 @@ const PROTO_ANY: &str = "Proto.Any";
 /// The runtime package's release names, which `elmConnectVersion_` uses.
 const PROTO_VERSION: &str = "Proto.Version";
 
+/// The names of elm/core's default imports that generated code uses
+/// unqualified, each with its module and its kind: a type or constructor
+/// of the same name and kind in a generated module would take its place.
+const DEFAULT_IMPORTS: [(&str, &str, Kind); 9] = [
+    ("Int", "Basics", Kind::Type),
+    ("Float", "Basics", Kind::Type),
+    ("Bool", "Basics", Kind::Type),
+    ("False", "Basics", Kind::Constructor),
+    ("String", "String", Kind::Type),
+    ("List", "List", Kind::Type),
+    ("Maybe", "Maybe", Kind::Type),
+    ("Just", "Maybe", Kind::Constructor),
+    ("Nothing", "Maybe", Kind::Constructor),
+];
+
+/// Elm's two namespaces of capitalized names, which do not meet: a type
+/// `Just` would not hide `Maybe.Just`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Kind {
+    Type,
+    Constructor,
+}
+
+impl Kind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Kind::Type => "type",
+            Kind::Constructor => "constructor",
+        }
+    }
+}
+
 /// The documentation of `elmConnectVersion_`, for a reader who meets the
 /// compile error without the runtime's source at hand.
 const VERSION_VALUE_DOC: &str = "The elm-connect release this module was generated for: a compile \
@@ -169,6 +201,10 @@ const VERSION_VALUE_DOC: &str = "The elm-connect release this module was generat
 pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics> {
     let mut emitter = Emitter::new(&package.module, options);
     let decls = emitter.package(package);
+    let reserved = emitter.reserved_names(package, options);
+    if !reserved.is_empty() {
+        return Err(reserved);
+    }
     Ok(emitter.module(package, decls))
 }
 
@@ -260,6 +296,9 @@ struct Emitter {
     module: IrModule,
     /// Each module imported, with the types its import exposes.
     imports: BTreeMap<String, BTreeSet<String>>,
+    /// Every name of a library the code refers to unqualified, a default
+    /// import's or an exposed type's, with the module it comes from.
+    unqualified: BTreeMap<(Kind, String), &'static str>,
     /// How 64-bit integers are held where a field does not say.
     int64: Int64,
     /// What an unknown enum value name reads as.
@@ -271,6 +310,7 @@ impl Emitter {
         Emitter {
             module: module.clone(),
             imports: BTreeMap::new(),
+            unqualified: BTreeMap::new(),
             int64: options.int64,
             enum_unknown: options.enum_unknown,
         }
@@ -417,7 +457,82 @@ impl Emitter {
             .entry(module.to_owned())
             .or_default()
             .insert(name.to_owned());
+        self.unqualified
+            .insert((Kind::Type, name.to_owned()), module);
         ty(name, args)
+    }
+
+    /// `name`, one of elm/core's [`DEFAULT_IMPORTS`], which the code then
+    /// refers to unqualified.
+    fn core(&mut self, name: &'static str) -> &'static str {
+        let (_, module, kind) = DEFAULT_IMPORTS
+            .iter()
+            .find(|(default, ..)| *default == name)
+            .expect("a default import");
+        self.unqualified.insert((*kind, name.to_owned()), module);
+        name
+    }
+
+    /// A `naming::reserved_name` problem for every type or constructor
+    /// `package` declares under a name its module's code also uses
+    /// unqualified for a library's.
+    fn reserved_names(&self, package: &Package, options: &Options) -> Diagnostics {
+        let mut declared: Vec<(&str, Kind, String, String)> = Vec::new();
+        for message in &package.messages {
+            let full = &message.proto_full_name;
+            let what = format!("message `{full}`");
+            declared.push((&message.elm_name, Kind::Type, what.clone(), full.clone()));
+            declared.push((
+                &message.elm_name,
+                Kind::Constructor,
+                what.clone(),
+                full.clone(),
+            ));
+            if let Some(wrapper) = &message.wrapper {
+                declared.push((&wrapper.elm_name, Kind::Type, what.clone(), full.clone()));
+                declared.push((&wrapper.elm_name, Kind::Constructor, what, full.clone()));
+            }
+            for oneof in &message.oneofs {
+                let what = format!("oneof `{}` of `{full}`", oneof.proto_name);
+                let proto = format!("{full}.{}", oneof.proto_name);
+                declared.push((
+                    &oneof.elm_type_name,
+                    Kind::Type,
+                    what.clone(),
+                    proto.clone(),
+                ));
+                declared.push((&oneof.unset_ctor, Kind::Constructor, what, proto));
+                for variant in &oneof.variants {
+                    let what = format!("oneof field `{}` of `{full}`", variant.proto_name);
+                    let proto = format!("{full}.{}", variant.proto_name);
+                    declared.push((&variant.elm_ctor, Kind::Constructor, what, proto));
+                }
+            }
+        }
+        for enumeration in &package.enums {
+            let full = &enumeration.proto_full_name;
+            let what = format!("enum `{full}`");
+            declared.push((&enumeration.elm_name, Kind::Type, what, full.clone()));
+            for value in enumeration.values() {
+                let what = format!("enum value `{}` of `{full}`", value.proto_name);
+                let proto = format!("{full}.{}", value.proto_name);
+                declared.push((&value.elm_ctor, Kind::Constructor, what, proto));
+            }
+        }
+        let mut problems = Diagnostics::new();
+        for (name, kind, what, proto) in declared {
+            if let Some(home) = self.unqualified.get(&(kind, name.to_owned())) {
+                let rename = options.spelling.rename(&proto);
+                problems.push(Problem::reserved_name(
+                    &what,
+                    kind.as_str(),
+                    name,
+                    home,
+                    &rename,
+                ));
+            }
+        }
+        problems
     }
 
     /// The library type `module.name args`, which the module then imports.

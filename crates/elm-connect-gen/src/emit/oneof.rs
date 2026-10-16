@@ -61,19 +61,22 @@ impl Emitter {
                     pattern,
                     list([Expr::Tuple(vec![
                         string(variant.json_name.clone()),
-                        apply(var("Just"), [encoded]),
+                        apply(var(self.core("Just")), [encoded]),
                     ])]),
                 )
             })
             .collect();
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let pair = Type::Tuple(vec![ty("String", []), ty("Maybe", [value_type])]);
+        let pair = Type::Tuple(vec![
+            ty(self.core("String"), []),
+            ty(self.core("Maybe"), [value_type]),
+        ]);
         Decl::Value {
             doc: None,
             name: shape.oneof.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(shape.oneof.elm_type_name.clone(), [])),
-                Box::new(ty("List", [pair])),
+                Box::new(ty(self.core("List"), [pair])),
             ),
             params: vec![pvar(ENCODER_ARGUMENT)],
             body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),

@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// elm/json's module is `Json.Decode`.
+package json.decode;
+
+message Value {
+  string text = 1;
+}
