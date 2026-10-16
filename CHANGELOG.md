@@ -510,3 +510,6 @@ tag (design §8).
   8-field one. Under elm/json 1.1.3 an unknown `hasOwnProperty` key no
   longer fails the message holding it, a oneof, or a
   `google.protobuf.Empty`.
+- `Proto.Json.intDict` accepts only canonical decimal keys within
+  32 bits: `"07"` (which collided with `"7"`), `"+5"`, `"-0"` and keys
+  past 2^32 − 1 or below −2^31 now fail.

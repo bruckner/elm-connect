@@ -775,7 +775,11 @@ enumWith unknownName zero values =
 
 
 {-| Decode a map with 32-bit integer keys. JSON object keys are strings, so
-proto3 JSON writes each key as its decimal string; a key that is not one fails.
+proto3 JSON writes each key as its decimal string. A key must be one in its
+canonical form, as `String.fromInt` writes it, within -2147483648 to 4294967295;
+any other key fails, such as `"abc"`, `"1.5"`, `"+5"`, `"-0"` or `"07"`, which
+would otherwise collide with `"7"`. The bounds span both the signed and the
+unsigned 32-bit types, since the decoder is not told which one it reads.
 
     Json.Decode.decodeString (intDict Json.Decode.string) """{"1":"a","-2":"b"}"""
     -- Ok (Dict.fromList [ ( -2, "b" ), ( 1, "a" ) ])
@@ -791,13 +795,49 @@ intDict decoder =
                 List.foldr
                     (\( key, value ) result ->
                         Result.map2 (\int entries -> Dict.insert int value entries)
-                            (String.toInt key |> Result.fromMaybe key)
+                            (intKey key |> Result.fromMaybe key)
                             result
                     )
                     (Ok Dict.empty)
                     pairs
                     |> fromKeyResult
             )
+
+
+{-| A map key in the canonical decimal form of a 32-bit integer.
+-}
+intKey : String -> Maybe Int
+intKey key =
+    let
+        digits =
+            if String.startsWith "-" key then
+                String.dropLeft 1 key
+
+            else
+                key
+
+        canonical =
+            (digits == "0" && key == "0")
+                || (String.length digits
+                        <= 10
+                        && String.all Char.isDigit digits
+                        && not (String.isEmpty digits)
+                        && not (String.startsWith "0" digits)
+                   )
+    in
+    if canonical then
+        String.toInt key
+            |> Maybe.andThen
+                (\int ->
+                    if int >= -2147483648 && int <= 4294967295 then
+                        Just int
+
+                    else
+                        Nothing
+                )
+
+    else
+        Nothing
 
 
 fromKeyResult : Result String (Dict.Dict Int a) -> Decoder (Dict.Dict Int a)

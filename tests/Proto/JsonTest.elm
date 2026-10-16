@@ -512,6 +512,26 @@ intDictTests =
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"a":"x"}"""
         , test "a fractional key fails" <|
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
+        , test "a key not in canonical decimal form fails" <|
+            \_ ->
+                [ "07", "+5", "-0", "00", " 7", "7 ", "1e2", "0x10", "", "-", "abc" ]
+                    |> List.map (\key -> Json.Encode.object [ ( key, Json.Encode.string "x" ) ])
+                    |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeValue (Proto.Json.intDict Json.Decode.string) json) /= Nothing)
+                    |> List.map (Json.Encode.encode 0)
+                    |> Expect.equal []
+        , test "a key with a leading zero fails, naming it" <|
+            \_ -> failsWith (Proto.Json.intDict Json.Decode.string) """{"7":"a","07":"b"}""" "Expecting an integer map key, but got \"07\""
+        , test "a key outside 32 bits fails" <|
+            \_ ->
+                ( Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"4294967296":"x"}""" |> Result.toMaybe
+                , Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"-2147483649":"x"}""" |> Result.toMaybe
+                )
+                    |> Expect.equal ( Nothing, Nothing )
+        , test "the 32-bit bounds are keys" <|
+            \_ ->
+                decodes (Proto.Json.intDict Json.Decode.string)
+                    """{"-2147483648":"a","4294967295":"b","7":"c"}"""
+                    (Dict.fromList [ ( -2147483648, "a" ), ( 4294967295, "b" ), ( 7, "c" ) ])
         , test "a value of the wrong type fails" <|
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1":2}"""
         , test "round-trips through Json.Encode.dict String.fromInt" <|
@@ -548,6 +568,13 @@ boolMapTests =
                     "Expecting a bool map key (\"true\" or \"false\"), but got \"True\""
         , test "a numeric key fails" <|
             \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"1":"x"}"""
+        , test "a key spelled otherwise fails" <|
+            \_ ->
+                [ "TRUE", "False", "true ", "0", "" ]
+                    |> List.map (\key -> Json.Encode.object [ ( key, Json.Encode.string "x" ) ])
+                    |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeValue (Proto.Json.boolMap Json.Decode.string) json) /= Nothing)
+                    |> List.map (Json.Encode.encode 0)
+                    |> Expect.equal []
         , test "a value of the wrong type fails" <|
             \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"true":2}"""
         , test "encodes keys as true and false" <|

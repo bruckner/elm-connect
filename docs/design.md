@@ -306,7 +306,11 @@ rpc shared call =
   Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
   keys are read from their decimal strings (`Proto.Json.intDict`, which
-  fails on any other key) and written with `String.fromInt`.
+  fails on any other key) and written with `String.fromInt`. A key
+  must be in canonical form, as `String.fromInt` writes it, so `"07"`
+  fails rather than colliding with `"7"`, and within -2^31 to 2^32 − 1,
+  the span of the signed and unsigned types together: `intDict` is not
+  told which of them it reads.
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
