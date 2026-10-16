@@ -507,9 +507,11 @@ tag (design §8).
 - Decoding a message takes time linear in its fields: each field step
   looks its key up directly instead of listing the whole object, which
   made a 256-field message about 250 times slower per field than an
-  8-field one. Under elm/json 1.1.3 an unknown `hasOwnProperty` key no
-  longer fails the message holding it, a oneof, or a
-  `google.protobuf.Empty`.
+  8-field one.
+- The package requires elm/json 1.1.4 or newer, which lists an object's
+  keys without calling the object's own `hasOwnProperty`, so a JSON key
+  of that name no longer fails the decode of the message, map, `Struct`
+  or `Any` holding it.
 - `Proto.Json.intDict` accepts only canonical decimal keys within
   32 bits: `"07"` (which collided with `"7"`), `"+5"`, `"-0"` and keys
   past 2^32 − 1 or below −2^31 now fail.

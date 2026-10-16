@@ -315,9 +315,7 @@ isInherited name =
 {-| Whether a JSON value is an object, in constant time: JavaScript's `in`
 finds `hasOwnProperty` in every object and array, which inherit it, and in no
 other JSON value, and arrays are told apart. Listing the object's keys would
-take time in their number, and elm/json before 1.1.4 lists them by calling the
-object's own `hasOwnProperty`, which throws on an object holding a key of that
-name.
+take time in their number.
 -}
 isObject : Value -> Bool
 isObject json =

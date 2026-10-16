@@ -111,7 +111,7 @@ and takes the runtime's dependencies directly:
 
 ```json examples/notes/elm/elm.json
 "elm/http": "2.0.0",
-"elm/json": "1.1.3",
+"elm/json": "1.1.4",
 "elm/time": "1.0.0"
 ```
 
