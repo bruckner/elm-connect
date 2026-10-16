@@ -13,6 +13,11 @@ service SettingsService {
   rpc GetSettings(Settings) returns (Settings);
   // `Get_Settings` is `getSettings` too.
   rpc Get_Settings(Settings) returns (Settings);
+  // `elmConnectVersion` is fine: the value every generated module
+  // defines is `elmConnectVersion_`, which no method name derives to.
+  rpc ElmConnectVersion(Settings) returns (Settings);
+  // But a rename can give a method that name (options.txt).
+  rpc Version(Settings) returns (Settings);
 }
 
 service AdminService {

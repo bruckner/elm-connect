@@ -64,7 +64,8 @@ pub enum Code {
     /// A method has no `google.api.http` rule, under
     /// `unbound_methods=error`.
     UnboundMethod,
-    /// Two methods of a service get the same Elm value name.
+    /// Two methods of a service get the same Elm value name, or a method
+    /// gets the name of the value every generated module defines.
     ValueCollision,
     /// A method has no valid Elm value name.
     InvalidMethod,
@@ -454,6 +455,23 @@ impl Problem {
              the methods in the proto, or rename one with \
              `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
+        )
+    }
+
+    /// A `rename` gives the method `method` the name `elm_name`, the value
+    /// every generated module defines to name the release it was generated
+    /// for. No proto name derives to it.
+    pub fn reserved_value(method: &str, elm_name: &str, site: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The method `{method}` is renamed to the Elm value `{elm_name}`, which every \
+                 generated module defines already."
+            ),
+            "Every generated module defines `elmConnectVersion_`, which names the release of \
+             the generator it came from, so a module cannot have a method of that name too. \
+             Give the method another name in its `rename=<proto full name>:<Elm name>`.",
+            vec![site],
         )
     }
 

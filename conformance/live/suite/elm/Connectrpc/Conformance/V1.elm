@@ -12,6 +12,14 @@ import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Version
+
+
+{-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
+-}
+elmConnectVersion_ : Proto.Version.Generated
+elmConnectVersion_ =
+    Proto.Version.v0_1
 
 
 

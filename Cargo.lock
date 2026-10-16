@@ -207,6 +207,7 @@ dependencies = [
  "elm-connect-gen",
  "miette",
  "protox",
+ "similar",
 ]
 
 [[package]]

@@ -11,3 +11,4 @@ clap.workspace = true
 elm-connect-gen.workspace = true
 miette.workspace = true
 protox.workspace = true
+similar.workspace = true

@@ -11,10 +11,26 @@ naming::value_collision
  15 │   rpc Get_Settings(Settings) returns (Settings);
     ·       ──────┬─────
     ·             ╰── and so does method `settings.v1.SettingsService.Get_Settings`
- 16 │ }
+ 16 │   // `elmConnectVersion` is fine: the value every generated module
     ╰────
   help: A service's module defines one value per method, its name with the
         first letter lowercased and underscores dropped, so names that differ
         only in those ways end up the same, and a module cannot define two
         values with one name. Rename one of the methods in the proto, or
         rename one with `rename=<proto full name>:<Elm name>`.
+
+naming::value_collision
+
+  × The method `settings.v1.SettingsService.Version` is renamed to the Elm
+  │ value `elmConnectVersion_`, which every generated module defines already.
+    ╭─[settings.proto:20:7]
+ 19 │   // But a rename can give a method that name (options.txt).
+ 20 │   rpc Version(Settings) returns (Settings);
+    ·       ───┬───
+    ·          ╰── method `settings.v1.SettingsService.Version` is renamed to `elmConnectVersion_`
+ 21 │ }
+    ╰────
+  help: Every generated module defines `elmConnectVersion_`, which names the
+        release of the generator it came from, so a module cannot have a
+        method of that name too. Give the method another name in its
+        `rename=<proto full name>:<Elm name>`.

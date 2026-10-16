@@ -16,7 +16,8 @@
 //! - **The runtime's request builder**, in Elm: this test writes the
 //!   modules generated from `routes.proto` under `tests/Routes/` and the
 //!   fixtures as Elm data to `tests/RouteFixtures.elm`, all pinned like
-//!   the conformance corpus (`ELM_CONNECT_BLESS=1` rewrites them), and
+//!   the conformance corpus, the modules' header version as its
+//!   placeholder (`ELM_CONNECT_BLESS=1` rewrites them), and
 //!   `tests/RouteFixturesTest.elm` replays them through `Rpc.request`
 //!   with the Transcode transport, choosing the binding with
 //!   `Rpc.viaBinding`; a fixture naming a binding the generated method
@@ -41,6 +42,9 @@ use prost_reflect::{
     DynamicMessage, Kind, MessageDescriptor, ReflectMessage, SerializeOptions, Value,
 };
 use serde_json::Value as Json;
+
+mod common;
+use common::placeholder_header;
 use similar::TextDiff;
 
 fn repo_root() -> PathBuf {
@@ -722,7 +726,12 @@ fn the_elm_replay_is_current() {
     let failures: Vec<String> = generated
         .files
         .iter()
-        .map(|module| pinned(&format!("tests/{}", module.path), &module.content))
+        .map(|module| {
+            pinned(
+                &format!("tests/{}", module.path),
+                &placeholder_header(&module.content),
+            )
+        })
         .chain([pinned("tests/RouteFixtures.elm", &fixtures)])
         .filter_map(Result::err)
         .collect();
