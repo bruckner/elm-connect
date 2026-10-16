@@ -560,3 +560,6 @@ tag (design §8).
   `custom` kind that is not an HTTP token, or is `CONNECT`, `TRACE` or
   `TRACK`, is `route::rule`; one with CRLF in it reached `xhr.open`.
   The `routes_unsafe` case pins them.
+- A proto file whose name holds a newline or another control character
+  is `input::file_name`: the name went into the generated header comment
+  as it was, and the text after the newline into the module.

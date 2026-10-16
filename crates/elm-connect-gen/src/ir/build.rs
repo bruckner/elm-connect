@@ -71,8 +71,8 @@ pub fn build_with(
         ..Builder::default()
     };
 
-    // Files are checked for proto3 in the order asked for, then the rest
-    // of their packages'.
+    // Files are checked in the order asked for, then the rest of their
+    // packages'.
     let mut asked = BTreeSet::new();
     let mut checked = BTreeSet::new();
     let mut requested = Vec::new();
@@ -86,7 +86,7 @@ pub fn build_with(
         };
         if file.package_name() != WELL_KNOWN_PACKAGE {
             checked.insert(name.to_owned());
-            builder.check_proto3(&file);
+            builder.check_file(&file);
             requested.push(file);
         }
     }
@@ -94,7 +94,7 @@ pub fn build_with(
     builder.generated = by_package.keys().cloned().collect();
     for file in by_package.values().flatten() {
         if checked.insert(file.name().to_owned()) {
-            builder.check_proto3(file);
+            builder.check_file(file);
         }
     }
     builder.check_renames(pool, &options.rename, &by_package);
@@ -340,8 +340,12 @@ impl Builder {
         }
     }
 
-    /// Reports `file` if it is not proto3.
-    fn check_proto3(&mut self, file: &FileDescriptor) {
+    /// Reports `file` if it is not proto3, or if its name holds a control
+    /// character, which the header of its package's module would carry.
+    fn check_file(&mut self, file: &FileDescriptor) {
+        if file.name().chars().any(char::is_control) {
+            self.diagnostics.push(Problem::file_name(file.name()));
+        }
         let syntax = file.file_descriptor_proto().syntax();
         if syntax != "proto3" {
             let syntax = if syntax.is_empty() { "proto2" } else { syntax };

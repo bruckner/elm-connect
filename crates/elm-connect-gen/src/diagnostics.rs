@@ -60,6 +60,8 @@ pub enum Code {
     /// A file declares an edition (`edition = "2023";`), which elm-connect
     /// does not support.
     Editions,
+    /// A file's name cannot be written into a generated module's header.
+    FileName,
     /// The protos use a construct the generator does not emit yet.
     Unimplemented,
     /// A method streams requests or responses.
@@ -116,6 +118,7 @@ impl Code {
             Code::UnknownRename => "options::unknown_rename",
             Code::NotProto3 => "generate::not_proto3",
             Code::Editions => "input::editions",
+            Code::FileName => "input::file_name",
             Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
             Code::UnboundMethod => "services::unbound_method",
@@ -786,6 +789,22 @@ impl Problem {
              explicit presence by default) have no Elm form here yet. Declare \
              `syntax = \"proto3\";` instead, if the file uses no feature beyond proto3's.",
             vec![site],
+        )
+    }
+
+    /// The name of `file` holds a control character, which would break
+    /// the generated header comment that names it.
+    pub fn file_name(file: &str) -> Self {
+        Problem::new(
+            Code::FileName,
+            format!(
+                "The file name `{}` holds a control character.",
+                file.escape_debug()
+            ),
+            "The first line of a generated module is a comment naming the files it was \
+             generated from, which a newline or another control character in a name would \
+             break. Rename the file.",
+            Vec::new(),
         )
     }
 

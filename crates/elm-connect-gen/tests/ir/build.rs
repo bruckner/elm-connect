@@ -793,6 +793,24 @@ fn unknown_and_proto2_files_are_errors() {
 }
 
 #[test]
+fn a_file_name_with_a_control_character_is_an_error() {
+    let files = [
+        (
+            "a\nevil = 1\n--.proto",
+            "syntax = \"proto3\"; package t; import \"b.proto\"; message M { B b = 1; }",
+        ),
+        ("b.proto", "syntax = \"proto3\"; package t; message B {}"),
+    ];
+    let diagnostics = problems(&files, &["b.proto"]);
+    assert_eq!(codes(&diagnostics), [Code::FileName]);
+    let problem = diagnostics.iter().next().unwrap();
+    assert_eq!(
+        problem.message(),
+        "The file name `a\\nevil = 1\\n--.proto` holds a control character."
+    );
+}
+
+#[test]
 fn services_are_ignored() {
     let package = package(
         r#"
