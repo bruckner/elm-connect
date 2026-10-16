@@ -573,3 +573,13 @@ tag (design §8).
   gives a `Google.Api` of `HttpBody` alone. An imported file of
   services alone is no longer generated. The README's sentence on
   `Google.Api` now says what each binary does.
+- `elm-connect check` counts a generated file as stale only when its
+  first line names one of the protos it was run on, so two `gen` runs
+  sharing an `--out` no longer fail each other's check; it exits 2, not
+  1, when it cannot tell (bad arguments, a proto that does not compile,
+  an unreadable directory), so 1 always means drift; and its diffs label
+  both sides with the real path, `(on disk)` and `(generated)`, where
+  the second said `generated/`. Its help says to give it `gen`'s `-I`.
+- `elm-connect gen` warns on stderr about each stale generated file it
+  leaves under `--out` (by `check`'s rule; it deletes nothing) and says
+  how many modules it wrote.

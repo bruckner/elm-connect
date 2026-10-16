@@ -2313,14 +2313,29 @@ Within a major version:
 - `elm-connect check` *(built)* takes exactly `gen`'s arguments and
   options, generates in memory, and compares with the tree under
   `--out`: a module whose file is missing, a file whose content differs
-  (printed as a unified diff), and a stale file, an `.elm` file under
-  `--out` whose first line is the generated-file notice above but which
-  generating no longer gives. Files without the notice are left alone,
-  since an application may keep its own modules in the same directory.
+  (printed as a unified diff, its sides labelled with the real path, `(on
+  disk)` and `(generated)`), and a stale file, an `.elm` file under
+  `--out` whose first line is the generated-file notice above naming a
+  proto file the run generated from, but which generating no longer
+  gives. Files without the notice are left alone, since an application
+  may keep its own modules in the same directory. *(Decided 2026-10-16.)*
+  A generated file whose notice names none of the run's protos is left
+  alone too: two `gen` runs may share an `--out` (two APIs, or one
+  package under other options), and each run's check would otherwise
+  call the other's modules stale. Matching the notice's `from` list is
+  smaller than a `--stale=report|ignore` flag and needs no choice from
+  the user; its cost is that a module whose protos were all removed
+  from the command line is no longer reported, which a regenerate into
+  an emptied directory catches. The notice names each proto by its path
+  under the include directory, so `check` must be given `gen`'s `-I`
+  too, or every module differs on its first line. `gen` deletes nothing;
+  after writing it warns on stderr about each stale file by the same
+  rule, and says how many modules it wrote.
   When every difference is in the header line or the `elmConnectVersion_`
   line, it prints one message naming the version that generated the
   tree and its own, and says to regenerate. It exits 0 when the tree is
-  current and 1 on drift; an error generating fails as `gen` fails.
+  current, 1 on drift, and 2 when it cannot tell: bad arguments, an
+  error generating, an unreadable directory (`gen` exits 1 on an error).
 - The plugin cannot check, since protoc writes its files. With protoc
   or buf, run `elm-connect check` on the same protos and options, or
   regenerate and `git diff --exit-code` the output.
