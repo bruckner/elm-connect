@@ -49,6 +49,13 @@ typeName enum =
 {-| The proto name of a value, such as `"VISIBILITY_PUBLIC"`: the one its
 encoder writes, which for an aliased number is the first name declared for
 it.
+
+A value has a name only when its encoder writes a JSON string. One it writes
+otherwise, such as a number for a value the proto does not declare, gives
+`""`. A generated enum holds declared values only (a value the server adds
+decodes as the zero value or fails, see
+[`Proto.Json.enum`](Proto-Json#enum)), so its every value has a name.
+
 -}
 toName : Enum a -> a -> String
 toName enum value =
@@ -72,7 +79,9 @@ fromName enum name =
 
 
 {-| The number of a value: the one declared for its name, or `0` for a name
-the descriptor does not declare.
+the descriptor does not declare, and so for a value with no name
+([`toName`](#toName) gives `""`), even one its encoder writes as another
+number.
 -}
 toNumber : Enum a -> a -> Int
 toNumber enum value =

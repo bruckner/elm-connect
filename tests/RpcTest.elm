@@ -175,6 +175,23 @@ percentEncoding =
             \_ -> encode "😀" |> Expect.equal "%F0%9F%98%80"
         , test "writes a lone surrogate as U+FFFD" <|
             \_ -> encode (String.left 1 "😀") |> Expect.equal "%EF%BF%BD"
+        , test "decodes 100,000 characters without exhausting the stack" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x")
+                    |> Expect.equal (Just (String.repeat 100000 "x"))
+        , test "decodes 100,000 escapes without exhausting the stack" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 25000 "%F0%9F%98%80")
+                    |> Expect.equal (Just (String.repeat 25000 "😀"))
+        , test "fails on a byte that is not UTF-8 at the end of a long text" <|
+            \_ ->
+                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x" ++ "%FF")
+                    |> Expect.equal Nothing
+        , test "a base URL with a query or a fragment is a bad URL" <|
+            \_ ->
+                [ "https://api.example.com", "/api/", "https://api.example.com/base?x=1", "https://api.example.com#top", "?" ]
+                    |> List.map Rpc.Internal.Http.badBaseUrl
+                    |> Expect.equal [ False, False, True, True, True ]
         ]
 
 
@@ -279,13 +296,24 @@ requests =
                         )
         , test "a timeout is at least one millisecond and at most ten digits" <|
             \_ ->
-                [ 0, 0.4, 1.0e12 ]
+                [ 0.4, 1.0e12 ]
                     |> List.map (\t -> (Rpc.request { base | timeout = Just t } (getNote { name = "x" })).headers)
                     |> Expect.equal
                         [ [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1" ) ]
-                        , [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1" ) ]
                         , [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "9999999999" ) ]
                         ]
+        , test "a timeout that is not a positive number is no timeout" <|
+            \_ ->
+                [ 0, -5, 0 / 0, 1 / 0, -(1 / 0) ]
+                    |> List.map (\t -> Rpc.request { base | timeout = Just t } (getNote { name = "x" }))
+                    |> List.map (\r -> ( r.headers, r.timeout ))
+                    |> Expect.equal (List.repeat 5 ( [ ( "Connect-Protocol-Version", "1" ) ], Nothing ))
+        , test "a call's timeout that is not a positive number leaves the config's" <|
+            \_ ->
+                [ 0, -5, 0 / 0 ]
+                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.withTimeout t (getNote { name = "x" })))
+                    |> List.map (\r -> ( r.headers, r.timeout ))
+                    |> Expect.equal (List.repeat 3 ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1000" ) ], Just 1000 ))
         , test "withCredentials is carried to the request" <|
             \_ ->
                 (Rpc.request { base | withCredentials = True } (getNote { name = "x" })).withCredentials
@@ -338,6 +366,32 @@ responses =
             \_ ->
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{\"title\":\"hi\"}")
                     |> Expect.equal (Ok "hi")
+        , test "a 100,000-character grpc-message is decoded without exhausting the stack" <|
+            \_ ->
+                let
+                    long =
+                        String.repeat 50000 "%C3%A9" ++ String.repeat 50000 "x"
+                in
+                Rpc.response base
+                    (getNote { name = "x" })
+                    (Http.BadStatus_ { url = "", statusCode = 503, statusText = "", headers = Dict.fromList [ ( "grpc-status", "14" ), ( "grpc-message", long ) ] } "")
+                    |> Result.mapError Rpc.message
+                    |> Expect.equal (Err (String.repeat 50000 "é" ++ String.repeat 50000 "x"))
+        , test "a bad body's message quotes 300 characters of the problem, the error all of it" <|
+            \_ ->
+                let
+                    body =
+                        "[\"" ++ String.repeat 10000 "x" ++ "\"]"
+                in
+                case Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body) of
+                    Err ((Transport (Http.BadBody problem)) as error) ->
+                        ( ( String.length (Rpc.message error), String.endsWith "…" (Rpc.message error) )
+                        , ( String.startsWith "bad response body: " (Rpc.message error), String.length problem > 10000 )
+                        )
+                            |> Expect.equal ( ( 320, True ), ( True, True ) )
+
+                    other ->
+                        Expect.fail (Debug.toString other)
         , test "200 with a body that does not decode is a transport error" <|
             \_ ->
                 case Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{}") of
@@ -584,40 +638,36 @@ retries =
         [ test "a listed code waits the backoff, doubled per attempt, until attempts run out" <|
             \_ ->
                 [ 1, 2, 3 ]
-                    |> List.map (\tried -> Retry.delay policy True tried (Just Unavailable))
+                    |> List.map (\tried -> Retry.delay policy True tried Unavailable)
                     |> Expect.equal [ Just 100, Just 200, Nothing ]
         , test "a code not listed stops" <|
             \_ ->
-                Retry.delay policy True 1 (Just NotFound)
-                    |> Expect.equal Nothing
-        , test "a failure without a code stops" <|
-            \_ ->
-                Retry.delay policy True 1 Nothing
+                Retry.delay policy True 1 NotFound
                     |> Expect.equal Nothing
         , test "idempotentOnly stops a call with side effects" <|
             \_ ->
-                ( Retry.delay policy False 1 (Just Unavailable)
-                , Retry.delay { policy | idempotentOnly = False } False 1 (Just Unavailable)
+                ( Retry.delay policy False 1 Unavailable
+                , Retry.delay { policy | idempotentOnly = False } False 1 Unavailable
                 )
                     |> Expect.equal ( Nothing, Just 100 )
         , test "one attempt never retries" <|
             \_ ->
-                Retry.delay { policy | attempts = 1 } True 1 (Just Unavailable)
+                Retry.delay { policy | attempts = 1 } True 1 Unavailable
                     |> Expect.equal Nothing
         , test "a timeout retries when DeadlineExceeded is listed, and not otherwise" <|
             \_ ->
-                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } True 1 (Just (Rpc.code (Transport Http.Timeout)))
-                , Retry.delay policy True 1 (Just (Rpc.code (Transport Http.Timeout)))
+                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } True 1 (Rpc.code (Transport Http.Timeout))
+                , Retry.delay policy True 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Just 100, Nothing )
         , test "a network failure retries when Unavailable is listed" <|
             \_ ->
-                Retry.delay policy True 1 (Just (Rpc.code (Transport Http.NetworkError)))
+                Retry.delay policy True 1 (Rpc.code (Transport Http.NetworkError))
                     |> Expect.equal (Just 100)
         , test "idempotentOnly stops a transport failure of a call with side effects" <|
             \_ ->
-                ( Retry.delay policy False 1 (Just (Rpc.code (Transport Http.NetworkError)))
-                , Retry.delay { policy | codes = [ DeadlineExceeded ] } False 1 (Just (Rpc.code (Transport Http.Timeout)))
+                ( Retry.delay policy False 1 (Rpc.code (Transport Http.NetworkError))
+                , Retry.delay { policy | codes = [ DeadlineExceeded ] } False 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Nothing, Nothing )
         ]

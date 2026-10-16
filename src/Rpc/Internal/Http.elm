@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
+module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
 {-| What the transports share: percent-encoding, sending a built request, and
 reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
@@ -83,32 +83,40 @@ decodeUtf8 bytes acc =
             Just (String.fromList (List.reverse acc))
 
         b :: rest ->
-            let
-                lead =
-                    if b < 0x80 then
-                        Just ( b, 0 )
+            case leadByte b of
+                Just ( high, width ) ->
+                    case continuations width rest of
+                        Just ( low, remaining ) ->
+                            -- A tail call, so a long header (a server's
+                            -- `grpc-message`) cannot overflow the stack.
+                            decodeUtf8 remaining (Char.fromCode (Bitwise.shiftLeftBy (6 * width) high + low) :: acc)
 
-                    else if b >= 0xC2 && b < 0xE0 then
-                        Just ( b - 0xC0, 1 )
+                        Nothing ->
+                            Nothing
 
-                    else if b >= 0xE0 && b < 0xF0 then
-                        Just ( b - 0xE0, 2 )
+                Nothing ->
+                    Nothing
 
-                    else if b >= 0xF0 && b < 0xF5 then
-                        Just ( b - 0xF0, 3 )
 
-                    else
-                        Nothing
-            in
-            lead
-                |> Maybe.andThen
-                    (\( high, width ) ->
-                        continuations width rest
-                            |> Maybe.andThen
-                                (\( low, remaining ) ->
-                                    decodeUtf8 remaining (Char.fromCode (Bitwise.shiftLeftBy (6 * width) high + low) :: acc)
-                                )
-                    )
+{-| The value bits of a UTF-8 lead byte and how many continuation bytes follow
+it; `Nothing` for a byte that cannot begin a character.
+-}
+leadByte : Int -> Maybe ( Int, Int )
+leadByte b =
+    if b < 0x80 then
+        Just ( b, 0 )
+
+    else if b >= 0xC2 && b < 0xE0 then
+        Just ( b - 0xC0, 1 )
+
+    else if b >= 0xE0 && b < 0xF0 then
+        Just ( b - 0xE0, 2 )
+
+    else if b >= 0xF0 && b < 0xF5 then
+        Just ( b - 0xF0, 3 )
+
+    else
+        Nothing
 
 
 {-| The value of `width` continuation bytes at the front of `bytes`, and the
@@ -185,6 +193,14 @@ hexByte byte =
 hexDigit : Int -> String
 hexDigit digit =
     String.slice digit (digit + 1) "0123456789ABCDEF"
+
+
+{-| Whether a base URL holds a query or a fragment, after which a call's path
+cannot go.
+-}
+badBaseUrl : String -> Bool
+badBaseUrl url =
+    String.contains "?" url || String.contains "#" url
 
 
 type alias Request r =

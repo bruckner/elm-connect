@@ -349,15 +349,23 @@ pad width number =
     String.padLeft width '0' (String.fromInt number)
 
 
+{-| The leading items `keep` accepts. It accumulates and reverses, so its
+stack depth stays constant however long the input.
+-}
 takeWhile : (a -> Bool) -> List a -> List a
 takeWhile keep items =
+    takeWhileHelp keep items []
+
+
+takeWhileHelp : (a -> Bool) -> List a -> List a -> List a
+takeWhileHelp keep items kept =
     case items of
         first :: rest ->
             if keep first then
-                first :: takeWhile keep rest
+                takeWhileHelp keep rest (first :: kept)
 
             else
-                []
+                List.reverse kept
 
         [] ->
-            []
+            List.reverse kept

@@ -15,6 +15,7 @@ suite =
     describe "Proto.Json"
         [ fieldTests
         , fieldEitherTests
+        , lookupTests
         , presenceTests
         , encodingTests
         , oneofTests
@@ -113,6 +114,112 @@ fieldEitherTests =
             \_ -> decodes decodeNamed """{"display_name":null}""" (Named "")
         , test "a wrong type under the proto name fails" <|
             \_ -> fails decodeNamed """{"display_name":1}"""
+        ]
+
+
+type alias Inherited =
+    { constructor : String, toString : String, proto : Int, hasOwnProperty : Int }
+
+
+{-| A message whose fields are named after `Object.prototype`'s properties,
+which every JavaScript object inherits.
+-}
+decodeInherited : Decoder Inherited
+decodeInherited =
+    Json.Decode.succeed Inherited
+        |> Proto.Json.field "constructor" "" Json.Decode.string
+        |> Proto.Json.fieldEither "toString" "to_string" "" Json.Decode.string
+        |> Proto.Json.field "__proto__" 0 Json.Decode.int
+        |> Proto.Json.field "hasOwnProperty" 0 Json.Decode.int
+
+
+type alias Sized =
+    { length : Int, name : String }
+
+
+{-| A message with a field an array has too.
+-}
+decodeSized : Decoder Sized
+decodeSized =
+    Json.Decode.succeed Sized
+        |> Proto.Json.field "length" 0 Json.Decode.int
+        |> Proto.Json.field "name" "" Json.Decode.string
+
+
+notObjects : List String
+notObjects =
+    [ "5", "\"text\"", "true", "null", "[]", "[1,2]" ]
+
+
+failsOnEach : Decoder a -> List String -> Expect.Expectation
+failsOnEach decoder inputs =
+    inputs
+        |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeString decoder json) /= Nothing)
+        |> Expect.equal []
+
+
+lookupTests : Test
+lookupTests =
+    describe "field lookup"
+        [ test "fields named after Object.prototype's properties read as absent when absent" <|
+            \_ -> decodes decodeInherited "{}" (Inherited "" "" 0 0)
+        , test "fields named after Object.prototype's properties read when present" <|
+            \_ ->
+                decodes decodeInherited
+                    """{"constructor":"c","to_string":"t","__proto__":1,"hasOwnProperty":2}"""
+                    (Inherited "c" "t" 1 2)
+        , test "fields named after Object.prototype's properties read null as absent" <|
+            \_ -> decodes decodeInherited """{"constructor":null,"toString":null,"__proto__":null}""" (Inherited "" "" 0 0)
+        , test "a field named after an Object.prototype property under both its names fails" <|
+            \_ -> failsWith decodeInherited """{"toString":"a","to_string":"b"}""" "Expecting \"toString\" or \"to_string\", but got both"
+        , test "an unknown hasOwnProperty key is ignored" <|
+            \_ -> decodes decodePair """{"hasOwnProperty":1,"name":"a"}""" (Pair "a" 0)
+        , test "an unknown hasOwnProperty key is ignored when no field is present" <|
+            \_ -> decodes decodePair """{"hasOwnProperty":"x"}""" (Pair "" 0)
+        , test "an unknown hasOwnProperty key is ignored by a oneof" <|
+            \_ -> decodes decodeEvent """{"hasOwnProperty":1,"text":"t"}""" (Event "" (EventKindText "t"))
+        , test "an unknown hasOwnProperty key is ignored by Empty" <|
+            \_ -> decodes Proto.Json.empty """{"hasOwnProperty":1}""" ()
+        , test "unknown keys named after Object.prototype's properties are ignored" <|
+            \_ -> decodes decodePair """{"constructor":"c","toString":1,"__proto__":{},"valueOf":null}""" (Pair "" 0)
+        , test "a field an array has reads from an object" <|
+            \_ -> decodes decodeSized """{"length":3}""" (Sized 3 "")
+        , test "a message fails on every JSON value that is not an object" <|
+            \_ -> failsOnEach decodePair notObjects
+        , test "a message whose field an array has fails on an array" <|
+            \_ -> failsOnEach decodeSized notObjects
+        , test "a message with fields named after Object.prototype's properties fails on a non-object" <|
+            \_ -> failsOnEach decodeInherited notObjects
+        , test "a oneof fails on every JSON value that is not an object" <|
+            \_ -> failsOnEach decodeEvent notObjects
+        , test "Empty fails on every JSON value that is not an object" <|
+            \_ -> failsOnEach Proto.Json.empty notObjects
+        , test "a non-object fails as elm/json words it" <|
+            \_ -> failsWith decodePair "42" "Expecting an OBJECT"
+        , test "an empty object gives every default" <|
+            \_ -> decodes decodeSized "{}" (Sized 0 "")
+        , test "a field present as null reads as absent, absent and null alike" <|
+            \_ ->
+                ( Json.Decode.decodeString decodePair """{"name":null}"""
+                , Json.Decode.decodeString decodePair "{}"
+                )
+                    |> Expect.equal ( Ok (Pair "" 0), Ok (Pair "" 0) )
+        , test "every field of a wide message decodes" <|
+            \_ ->
+                let
+                    names =
+                        List.map (\k -> "field" ++ String.fromInt k) (List.range 0 255)
+
+                    wide =
+                        List.foldl
+                            (\name acc -> Proto.Json.field name "" Json.Decode.string (Json.Decode.map (\xs x -> x :: xs) acc))
+                            (Json.Decode.succeed [])
+                            names
+                in
+                Json.Encode.object (List.map (\name -> ( name, Json.Encode.string name )) names)
+                    |> Json.Decode.decodeValue wide
+                    |> Result.map List.reverse
+                    |> Expect.equal (Ok names)
         ]
 
 
@@ -405,6 +512,26 @@ intDictTests =
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"a":"x"}"""
         , test "a fractional key fails" <|
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
+        , test "a key not in canonical decimal form fails" <|
+            \_ ->
+                [ "07", "+5", "-0", "00", " 7", "7 ", "1e2", "0x10", "", "-", "abc" ]
+                    |> List.map (\key -> Json.Encode.object [ ( key, Json.Encode.string "x" ) ])
+                    |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeValue (Proto.Json.intDict Json.Decode.string) json) /= Nothing)
+                    |> List.map (Json.Encode.encode 0)
+                    |> Expect.equal []
+        , test "a key with a leading zero fails, naming it" <|
+            \_ -> failsWith (Proto.Json.intDict Json.Decode.string) """{"7":"a","07":"b"}""" "Expecting an integer map key, but got \"07\""
+        , test "a key outside 32 bits fails" <|
+            \_ ->
+                ( Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"4294967296":"x"}""" |> Result.toMaybe
+                , Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"-2147483649":"x"}""" |> Result.toMaybe
+                )
+                    |> Expect.equal ( Nothing, Nothing )
+        , test "the 32-bit bounds are keys" <|
+            \_ ->
+                decodes (Proto.Json.intDict Json.Decode.string)
+                    """{"-2147483648":"a","4294967295":"b","7":"c"}"""
+                    (Dict.fromList [ ( -2147483648, "a" ), ( 4294967295, "b" ), ( 7, "c" ) ])
         , test "a value of the wrong type fails" <|
             \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1":2}"""
         , test "round-trips through Json.Encode.dict String.fromInt" <|
@@ -441,6 +568,13 @@ boolMapTests =
                     "Expecting a bool map key (\"true\" or \"false\"), but got \"True\""
         , test "a numeric key fails" <|
             \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"1":"x"}"""
+        , test "a key spelled otherwise fails" <|
+            \_ ->
+                [ "TRUE", "False", "true ", "0", "" ]
+                    |> List.map (\key -> Json.Encode.object [ ( key, Json.Encode.string "x" ) ])
+                    |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeValue (Proto.Json.boolMap Json.Decode.string) json) /= Nothing)
+                    |> List.map (Json.Encode.encode 0)
+                    |> Expect.equal []
         , test "a value of the wrong type fails" <|
             \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"true":2}"""
         , test "encodes keys as true and false" <|

@@ -306,7 +306,11 @@ rpc shared call =
   Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
   keys are read from their decimal strings (`Proto.Json.intDict`, which
-  fails on any other key) and written with `String.fromInt`.
+  fails on any other key) and written with `String.fromInt`. A key
+  must be in canonical form, as `String.fromInt` writes it, so `"07"`
+  fails rather than colliding with `"7"`, and within -2^31 to 2^32 − 1,
+  the span of the signed and unsigned types together: `intDict` is not
+  told which of them it reads.
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
@@ -518,6 +522,17 @@ just the form encoders write. *(Proposed; built.)*
   Separate `optional` and `list` steps would read a little shorter but
   double the step functions (each needs a two-name form too) and hide
   the zero value the reader otherwise sees.
+- A step finds its field with `Json.Decode.field` (JavaScript's `in`),
+  in constant time, so a message decodes in time linear in its fields
+  rather than reading the whole object once per field. `in` also finds
+  inherited properties, so a field named after one of
+  `Object.prototype`'s (`constructor`, `toString`, `__proto__`, …) is
+  looked up among the object's own keys instead, in time linear in
+  them. A message with a field fails on any JSON that is not an object,
+  arrays included; when no field is present the check is constant-time
+  too, and never lists the keys, so an unknown `hasOwnProperty` key
+  cannot break it under elm/json 1.1.3, whose key listing calls the
+  object's own `hasOwnProperty`.
 
 **Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
 text exactly as received; nothing normalises it. `Proto.Json.bytes`
@@ -979,7 +994,10 @@ registry =
   encoder writes a value's name, the decoder reads every declared name
   and number, aliases included, and the descriptor says which names
   and numbers are declared, so an undeclared one is `Nothing` rather
-  than the zero value the decoder would give. The record holds no
+  than the zero value the decoder would give. A value the encoder does
+  not write as a string has no name: `toName` gives `""` and `toNumber`
+  `0`. No generated value is one today, since every constructor is a
+  declared value. The record holds no
   typed value list of its own: that would be the descriptor again,
   and it is sound only while the descriptor is always written (§3.9
   has no option to leave it out).
@@ -1243,9 +1261,9 @@ the coming transports belong in it too.
 ```elm
 type alias Config =
     { transport : Transport
-    , baseUrl : String                    -- a trailing "/" is dropped
+    , baseUrl : String                    -- a trailing "/" is dropped; no "?" or "#"
     , headers : List ( String, String )   -- e.g. ( "Authorization", "Bearer …" )
-    , timeout : Maybe Float               -- ms; Connect also sends Connect-Timeout-Ms
+    , timeout : Maybe Float               -- ms, > 0; Connect also sends Connect-Timeout-Ms
     , withCredentials : Bool              -- Http.riskyRequest when True
     , retry : Maybe Retry
     }
@@ -1295,7 +1313,17 @@ it.
   call whose GET URL would be longer than that many characters, for
   servers and proxies that cap URL length.
 - A timeout is also the elm/http timeout, so the client gives up at the
-  same moment it asked the server to.
+  same moment it asked the server to. A timeout that is not a positive
+  number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
+  and a call's such timeout leaves the config's in force: elm/http
+  hands the value to XHR, whose unsigned conversion makes a negative
+  one weeks long and `0` or NaN none, while the header would claim
+  1 ms or the maximum.
+- A call's path is appended to `baseUrl`, so a `baseUrl` holding `?`
+  or `#` would put it in the query or fragment. Such a call is not
+  sent: every way of sending fails it with `Transport (Http.BadUrl
+  url)`, the URL it would have used. The pure `Rpc.request` still
+  builds that URL, since it has no error to give.
 - Retry waits `backoff` ms before the second attempt and doubles it
   before each one after, up to `attempts` tries in all. It applies to
   any error whose code (§5.4) is one of `codes`, and with
@@ -1460,7 +1488,8 @@ all 40 passing.
   protocol recommends; no protocol-version header, which GET carries in
   the query.
 - `Connect-Timeout-Ms` is the timeout rounded up to a whole
-  millisecond, between 1 and 9,999,999,999 (ten digits).
+  millisecond, between 1 and 9,999,999,999 (ten digits); a timeout that
+  is not a positive number sends none (§5.1).
 - Success is status 200 with a body the response decoder accepts; a 200
   whose body it rejects is `Transport (Http.BadBody _)`. Any other
   answer is read as an error (§5.4).
@@ -1671,7 +1700,10 @@ both the plain names.
   still says no answer came. `message` gives a `Transport` error's
   description (`timeout`, `network error`, `bad URL: <url>`,
   `bad response body: <problem>`), and `errorToString` is the code and
-  the message for all of them. *(Decided, 2026-10-15.)*
+  the message for all of them. *(Decided, 2026-10-15.)* elm/json's
+  problem quotes the JSON it rejected, which can be the whole response,
+  so the message keeps the first 300 characters of it and `…`; the
+  whole problem stays in the `Http.BadBody`.
 - `Canceled` is the outcome of a call the application withdrew with
   `Rpc.cancel` (§5.2): nothing the server said counts. It is not a
   `Transport` error, since elm/http has no `Http.Error` for it, and not

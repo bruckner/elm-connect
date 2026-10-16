@@ -504,3 +504,27 @@ tag (design §8).
   the `Proto.Version` sentinel and what each surface promises within a
   major; the header line as provenance; the drift check. §10 records a
   proposal to emit the runtime's modules beside the generated code.
+- Decoding a message takes time linear in its fields: each field step
+  looks its key up directly instead of listing the whole object, which
+  made a 256-field message about 250 times slower per field than an
+  8-field one. Under elm/json 1.1.3 an unknown `hasOwnProperty` key no
+  longer fails the message holding it, a oneof, or a
+  `google.protobuf.Empty`.
+- `Proto.Json.intDict` accepts only canonical decimal keys within
+  32 bits: `"07"` (which collided with `"7"`), `"+5"`, `"-0"` and keys
+  past 2^32 − 1 or below −2^31 now fail.
+- Percent-decoding a `grpc-message` header and parsing a timestamp's
+  fraction no longer recurse once per character, so a long header (from
+  about 5,000 characters) no longer overflows the stack inside elm/http's
+  load handler and leaves the call without a result.
+- A timeout that is not a positive number (`0`, negative, NaN,
+  infinite) is no timeout: no `Connect-Timeout-Ms` header and no
+  elm/http timeout, rather than a 1 ms or maximal header and an XHR
+  timeout of none or weeks. A call's such timeout leaves the config's.
+- A call whose config's `baseUrl` holds `?` or `#` is not sent and fails
+  with `Transport (Http.BadUrl url)`.
+- `Rpc.message` (and so `Rpc.errorToString`) quotes at most 300
+  characters of a bad response body's problem, then `…`; the whole
+  problem stays in `Transport (Http.BadBody problem)`.
+- `Proto.Enum.toName` and `toNumber` document what they give for a
+  value the encoder writes as other than a name (`""` and `0`).

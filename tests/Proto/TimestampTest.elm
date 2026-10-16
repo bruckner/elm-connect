@@ -37,7 +37,9 @@ prints millis text =
 parsing : Test
 parsing =
     describe "fromString"
-        [ test "the epoch" <|
+        [ test "a fraction of 100,000 digits is rejected without exhausting the stack" <|
+            \_ -> rejects ("1970-01-01T00:00:00." ++ String.repeat 100000 "1" ++ "Z")
+        , test "the epoch" <|
             \_ -> parses "1970-01-01T00:00:00Z" 0
         , test "a date and time" <|
             \_ -> parses "2026-10-10T17:19:45Z" 1791652785000
