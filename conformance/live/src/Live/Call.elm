@@ -19,6 +19,7 @@ import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Code
+import Rpc.Error
 import Rpc.Trace
 import Task
 
@@ -284,7 +285,7 @@ encodeResult encodeResponse result =
         Ok response ->
             Encode.object [ ( "ok", encodeResponse response ) ]
 
-        Err (Rpc.Status status answer) ->
+        Err (Rpc.Error.RpcStatus status answer) ->
             Encode.object
                 [ ( "error"
                   , Encode.object
@@ -297,12 +298,12 @@ encodeResult encodeResponse result =
                   )
                 ]
 
-        Err ((Rpc.Http answer) as error) ->
+        Err ((Rpc.Error.HttpStatus answer) as error) ->
             Encode.object
                 [ ( "error"
                   , Encode.object
-                        [ ( "code", Encode.string (Rpc.Code.toString (Rpc.code error)) )
-                        , ( "message", Encode.string (Rpc.message error) )
+                        [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
+                        , ( "message", Encode.string (Rpc.Error.message error) )
                         , ( "details", Encode.list Proto.Any.encodeJson [] )
                         , ( "source", Encode.string "HttpStatus" )
                         , ( "response", encodeResponse_ answer )
@@ -310,8 +311,18 @@ encodeResult encodeResponse result =
                   )
                 ]
 
-        Err (Rpc.Transport problem) ->
-            Encode.object [ ( "transport", Encode.string (httpErrorToString problem) ) ]
+        Err (Rpc.Error.BadResponse problem answer) ->
+            Encode.object
+                [ ( "badResponse"
+                  , Encode.object
+                        [ ( "problem", Encode.string problem )
+                        , ( "response", encodeResponse_ answer )
+                        ]
+                  )
+                ]
+
+        Err (Rpc.Error.NoAnswer reason) ->
+            Encode.object [ ( "noAnswer", Encode.string (reasonToString reason) ) ]
 
 
 {-| The answer an error was read from: its status and body. The headers are
@@ -326,33 +337,27 @@ encodeResponse_ answer =
         ]
 
 
-sourceToString : Rpc.Source -> String
+sourceToString : Rpc.Error.Source -> String
 sourceToString source =
     case source of
-        Rpc.ConnectBody ->
+        Rpc.Error.ConnectBody ->
             "ConnectBody"
 
-        Rpc.StatusBody ->
+        Rpc.Error.StatusBody ->
             "StatusBody"
 
-        Rpc.GrpcHeaders ->
+        Rpc.Error.GrpcHeaders ->
             "GrpcHeaders"
 
 
-httpErrorToString : Http.Error -> String
-httpErrorToString problem =
-    case problem of
-        Http.BadUrl url ->
-            "BadUrl " ++ url
-
-        Http.Timeout ->
+reasonToString : Rpc.Error.Reason -> String
+reasonToString reason =
+    case reason of
+        Rpc.Error.Timeout ->
             "Timeout"
 
-        Http.NetworkError ->
+        Rpc.Error.NetworkError ->
             "NetworkError"
 
-        Http.BadStatus status ->
-            "BadStatus " ++ String.fromInt status
-
-        Http.BadBody text ->
-            "BadBody " ++ text
+        Rpc.Error.BadUrl url ->
+            "BadUrl " ++ url

@@ -8,10 +8,11 @@ import Json.Encode exposing (Value)
 import Proto.Any
 import Proto.Http
 import Proto.Method exposing (Idempotency(..), Method)
-import Rpc exposing (Error(..), Source(..))
+import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code(..))
+import Rpc.Error exposing (Error(..), Reason(..), Source(..))
 import Rpc.Transport
 import Test exposing (Test, describe, test)
 
@@ -318,19 +319,20 @@ responses =
             \_ ->
                 respond { rule | responseBody = Just "title" } (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
                     |> Expect.equal (Ok "hi")
-        , test "an undecodable body is a transport error" <|
+        , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->
-                case respond rule (Http.GoodStatus_ (metadata 200 "OK" []) "[]") of
-                    Err (Transport (Http.BadBody _)) ->
-                        Expect.pass
+                case respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]") of
+                    Err (BadResponse _ answer) ->
+                        ( answer.statusCode, answer.body )
+                            |> Expect.equal ( 201, "[]" )
 
                     other ->
                         Expect.fail (Debug.toString other)
-        , test "no answer is a transport error" <|
+        , test "no answer is NoAnswer" <|
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_ ]
                     |> List.map (respond rule)
-                    |> Expect.equal [ Err (Transport Http.Timeout), Err (Transport Http.NetworkError) ]
+                    |> Expect.equal [ Err (NoAnswer Timeout), Err (NoAnswer NetworkError) ]
         ]
 
 
@@ -341,7 +343,7 @@ failed status text headers raw_ =
 
 
 {-| An error with its answer blanked, for tests about what was read from it;
-an `Http` error keeps its status and status text, which are what it says.
+an `HttpStatus` error keeps its status and status text, which are what it says.
 `RpcTest` checks the answer itself.
 -}
 withoutResponse : Result Error a -> Result Error a
@@ -349,11 +351,11 @@ withoutResponse =
     Result.mapError
         (\error ->
             case error of
-                Status r _ ->
-                    Status r blank
+                RpcStatus r _ ->
+                    RpcStatus r blank
 
-                Http answer ->
-                    Http { blank | statusCode = answer.statusCode, statusText = answer.statusText }
+                HttpStatus answer ->
+                    HttpStatus { blank | statusCode = answer.statusCode, statusText = answer.statusText }
 
                 _ ->
                     error
@@ -367,7 +369,7 @@ blank =
 
 stated : Code -> String -> Source -> Result Error a
 stated code message source =
-    Err (Status { code = code, message = message, details = [], source = source } blank)
+    Err (RpcStatus { code = code, message = message, details = [], source = source } blank)
 
 
 {-| The shared reader of failed answers, which both transports use.
@@ -381,7 +383,7 @@ errors =
                     |> Result.mapError
                         (\error ->
                             case error of
-                                Status r _ ->
+                                RpcStatus r _ ->
                                     Just ( ( r.code, r.source ), r.message, List.map (Proto.Any.encodeJson >> Json.Encode.encode 0) r.details )
 
                                 _ ->
@@ -405,14 +407,14 @@ errors =
             \_ ->
                 failed 503 "Service Unavailable" [ ( "grpc-status", "8" ) ] ""
                     |> Expect.equal (stated ResourceExhausted "Service Unavailable" GrpcHeaders)
-        , test "otherwise an Http error, its code inferred by Connect's table" <|
+        , test "otherwise an HttpStatus error, its code inferred by Connect's table" <|
             \_ ->
                 [ failed 404 "Not Found" [] "<html>", failed 400 "" [] "{\"error\":\"x\"}", failed 500 "" [ ( "grpc-status", "x" ) ] "" ]
-                    |> List.map (Result.mapError (\error -> ( Rpc.code error, Rpc.message error, error )))
+                    |> List.map (Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error, error )))
                     |> Expect.equal
-                        [ Err ( Unimplemented, "Not Found", Http { blank | statusCode = 404, statusText = "Not Found" } )
-                        , Err ( Internal, "HTTP 400", Http { blank | statusCode = 400 } )
-                        , Err ( Unknown, "HTTP 500", Http { blank | statusCode = 500 } )
+                        [ Err ( Unimplemented, "Not Found", HttpStatus { blank | statusCode = 404, statusText = "Not Found" } )
+                        , Err ( Internal, "HTTP 400", HttpStatus { blank | statusCode = 400 } )
+                        , Err ( Unknown, "HTTP 500", HttpStatus { blank | statusCode = 500 } )
                         ]
         , test "a Connect body comes before a status body and the headers" <|
             \_ ->
@@ -422,7 +424,7 @@ errors =
             \_ ->
                 failed 404 "" [ ( "grpc-status", "14" ) ] """{"code":5,"message":"status"}"""
                     |> Expect.equal (stated NotFound "status" StatusBody)
-        , test "the headers come before an Http error" <|
+        , test "the headers come before an HttpStatus error" <|
             \_ ->
                 failed 404 "Not Found" [ ( "grpc-status", "14" ) ] "<html>"
                     |> Expect.equal (stated Unavailable "Not Found" GrpcHeaders)
