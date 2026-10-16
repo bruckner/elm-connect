@@ -231,6 +231,10 @@ config =
 Notes.getNote { name = "notes/42" } |> Rpc.task config
     : Task Rpc.Error Note
 
+-- the same, as a command giving GotNote the result
+Notes.getNote { name = "notes/42" } |> Rpc.send config GotNote
+    : Cmd Msg
+
 -- GET https://api.example.com/v1/notes/42
 Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transport.transcode }
 
@@ -1660,9 +1664,9 @@ call : Proto.Method.Method req res -> req -> Call req res
 
 -- sending
 task : Config -> Call req res -> Task Error res
-send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
+send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
 taskTraced : Config -> Call req res -> Task Never ( Rpc.Trace.Trace, Result Error res )
-sendTraced : Config -> Call req res -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Cmd msg
+sendTraced : Config -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
 cancel : String -> Cmd msg                                              -- Http.cancel by tracker; reports nothing
 
 -- pure halves
@@ -1717,6 +1721,11 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
+- `send` and `sendTraced` take the message before the call, as
+  `Task.attempt` and `Http.expectJson` take theirs before the data, so
+  a call pipes into them as into `task`: `Notes.getNote req |> Rpc.send
+  config GotNote`. *(Decided, 2026-10-16.)* They took the call first
+  until then, which needed parentheses around every call.
 - `send` without a retry policy is one `Http.request`, carrying the
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and

@@ -13,9 +13,8 @@ connect-es, connect-python and Envoy's Connect filter serve it, or over HTTP
 transcoding, the REST mapping `google.api.http` rules describe, as
 grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it.
 
-    Rpc.send (Rpc.config "https://api.example.com")
-        (Notes.V1.NotesService.getNote { name = "notes/42" })
-        GotNote
+    Notes.V1.NotesService.getNote { name = "notes/42" }
+        |> Rpc.send (Rpc.config "https://api.example.com") GotNote
 
 A generated service module has one function per method, which applied to a
 request gives a [`Call`](#Call): data saying what to call with what. A
@@ -222,16 +221,26 @@ checkConfig cfg =
 
 
 {-| Send a call.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.task config
+
 -}
 task : Config -> Call req res -> Task Error res
 task cfg c =
     taskFromRequest cfg c (request cfg c)
 
 
-{-| Send a call, giving the result to `toMsg`.
+{-| Send a call, giving the result to `toMsg`. The message comes before the
+call, as in `Task.attempt` and `Http.expectJson`, so a call pipes into it as
+into [`task`](#task):
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.send config GotNote
+
 -}
-send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
-send cfg ((Rpc.Internal.Call.Call fields) as c) toMsg =
+send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
+send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
     if cfg.retry == Nothing && not (badBaseUrl cfg) then
         Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
 
@@ -336,9 +345,13 @@ taskTraced cfg c =
 
 
 {-| Send a call, giving what happened and the result to `toMsg`.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.sendTraced config GotNote
+
 -}
-sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
-sendTraced cfg c toMsg =
+sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
+sendTraced cfg toMsg c =
     Task.perform (\( trace, result ) -> toMsg trace result) (taskTraced cfg c)
 
 
