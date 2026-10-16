@@ -1900,6 +1900,15 @@ default, and is `Nothing` for a number the method has no binding of
   unreserved characters); a variable matching one segment (`{name}`,
   `{name=*}`) escapes `/` as `%2F`, any other keeps it. A wildcard
   outside a variable never reaches the runtime (`route::template`).
+- A binding's literal segments and custom verb are written as RFC 3986
+  `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they
+  are, a `%` followed by two hex digits kept as an escape (never
+  encoded twice), and every other byte percent-encoded. The generator
+  already refuses a literal or verb outside that set, so generated
+  bindings are written unchanged; this is a second line of defence for
+  a binding built by hand with `Proto.Http.literal`, which could
+  otherwise end the path with `#` or start a query with `?`.
+  *(Decided, 2026-10-16.)*
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
   field's proto3 default, which the generator writes into the binding

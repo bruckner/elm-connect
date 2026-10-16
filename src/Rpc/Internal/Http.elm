@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, encodeRouteText, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with the percent-encoding the transports share. Not
@@ -197,6 +197,44 @@ hexByte byte =
 hexDigit : Int -> String
 hexDigit digit =
     String.slice digit (digit + 1) "0123456789ABCDEF"
+
+
+{-| A route's literal text (a path segment or a custom verb) as a URL can hold
+it: RFC 3986's `pchar` (unreserved characters, sub-delimiters, `:` and `@`)
+kept, a `%` already followed by two hex digits kept as the escape it is, and
+every other byte percent-encoded.
+-}
+encodeRouteText : String -> String
+encodeRouteText text =
+    routeText (String.toList text) []
+        |> List.reverse
+        |> String.concat
+
+
+routeText : List Char -> List String -> List String
+routeText chars acc =
+    case chars of
+        [] ->
+            acc
+
+        '%' :: high :: low :: rest ->
+            if hexValue high /= Nothing && hexValue low /= Nothing then
+                routeText rest (String.fromList [ '%', high, low ] :: acc)
+
+            else
+                routeText (high :: low :: rest) ("%25" :: acc)
+
+        char :: rest ->
+            if pchar char then
+                routeText rest (String.fromChar char :: acc)
+
+            else
+                routeText rest (percentEncode (\_ -> False) (String.fromChar char) :: acc)
+
+
+pchar : Char -> Bool
+pchar char =
+    unreserved char || String.contains (String.fromChar char) "!$&'()*+,;=:@"
 
 
 {-| The name of the first header a browser would refuse: one whose name is not

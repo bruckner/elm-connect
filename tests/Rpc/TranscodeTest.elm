@@ -114,6 +114,25 @@ paths =
             \_ ->
                 url { rule | path = [ Proto.Http.variable [ "name" ] [ Proto.Http.wildcard ] "" ] } """{"name":"a/b"}"""
                     |> Expect.equal "https://api.example.com/a%2Fb"
+        , test "a hand-built literal or verb is percent-encoded where a path segment cannot hold it" <|
+            \_ ->
+                url
+                    { rule
+                        | path =
+                            [ Proto.Http.literal "x#y"
+                            , Proto.Http.literal "a b/c"
+                            , Proto.Http.literal "é"
+                            , Proto.Http.literal "50%"
+                            , Proto.Http.literal "%zz"
+                            ]
+                        , customVerb = Just "run?x"
+                    }
+                    "{}"
+                    |> Expect.equal "https://api.example.com/x%23y/a%20b%2Fc/%C3%A9/50%25/%25zz:run%3Fx"
+        , test "a literal's escapes and the characters a path segment holds are kept" <|
+            \_ ->
+                url { rule | path = [ Proto.Http.literal "%2e%2E", Proto.Http.literal "!$&'()*+,;=:@-._~" ], customVerb = Just "do:it" } "{}"
+                    |> Expect.equal "https://api.example.com/%2e%2E/!$&'()*+,;=:@-._~:do:it"
         , test "a nested field, numbers, booleans and a custom verb" <|
             \_ ->
                 url

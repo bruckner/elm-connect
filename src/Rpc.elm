@@ -435,7 +435,10 @@ as the binding says, with the config's headers, then the call's. Values are
 written as proto3 JSON writes them, unquoted: enums by name, 64-bit integers in
 decimal, timestamps in RFC 3339. Query names and values are percent-encoded, as
 are path values: every byte but RFC 3986's unreserved characters, and in a
-variable matching several segments, but `/` too. A call without bindings is
+variable matching several segments, but `/` too. A binding's literal segments
+and custom verb are written as they are, but for a character a path segment
+cannot hold, which is percent-encoded (a `%` followed by two hex digits is
+kept as an escape); generated bindings hold none. A call without bindings is
 the request Connect would POST.
 
 -}
@@ -543,7 +546,7 @@ transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
             List.map (pathSegment json) rule.path
 
         verb =
-            Maybe.map ((++) ":") rule.customVerb |> Maybe.withDefault ""
+            Maybe.map ((++) ":" << Internal.encodeRouteText) rule.customVerb |> Maybe.withDefault ""
 
         query =
             case List.concatMap (queryPairs json) rule.query of
@@ -566,7 +569,7 @@ pathSegment : Value -> Segment -> String
 pathSegment json segment =
     case segment of
         Literal written ->
-            written
+            Internal.encodeRouteText written
 
         Variable fieldPath template zero ->
             let
