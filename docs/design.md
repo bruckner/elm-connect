@@ -269,16 +269,17 @@ rpc shared call =
   case). It points at the reference, names the file to add, and names
   the ways to add it: `buf generate --include-imports`, the file on
   protoc's command line, or the CLI's `--include-imports` (§6), which
-  adds the transitive imports of the named files.
+  adds the imported files declaring what the named files' packages
+  refer to, transitively.
   `google.protobuf` is never generated as a package: its supported
   types map to the runtime (§3.5), and the rest are
   `types::unsupported_well_known`.
   Nor are the two googleapis files that declare `google.api.http`,
   `google/api/http.proto` and `google/api/annotations.proto`, the ones
-  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`
-  is the one test both binaries use). The plugin drops them from
-  `file_to_generate`, and the CLI's `--include-imports` never adds
-  them. Why: they are options plumbing, not API types, and `buf
+  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`).
+  The plugin drops them from `file_to_generate`, and the CLI's
+  `--include-imports` never adds them, as it adds no file nothing refers
+  to (§6). Why: they are options plumbing, not API types, and `buf
   generate --include-imports` asks for every import, so every API with
   HTTP rules would otherwise get a `Google.Api` module of `Http`,
   `HttpRule` and `CustomHttpPattern` that nothing refers to. The rule
@@ -1808,12 +1809,23 @@ both the plain names.
   as is a `rename` without its `:` or one renaming a proto name twice,
   or a `module_prefix` that is not dot-separated Elm module segments. A conformance case sets options with an
   `options.txt` holding that parameter.
-- The CLI's `--include-imports` flag *(Decided, 2026-10-15; built)*,
-  named after buf's: the CLI also requests every file the named ones
-  import, transitively, that declares a message, enum or service, bar
-  `google/protobuf/*` (the runtime's) and the googleapis files the CLI
-  embeds for `google.api.http`, which the plugin skips among its files
-  to generate too (§3.1). Off by default, so the CLI generates
+- The CLI's `--include-imports` flag *(Decided, 2026-10-15; built;
+  narrowed 2026-10-16)*, named after buf's: the CLI also generates every
+  imported file that declares a message or enum the requested packages
+  refer to, through fields and method types, transitively (a file
+  generated is generated whole, so its own references count too), bar
+  `google/protobuf/*` (the runtime's). A package such a file declares is
+  generated from those files alone, not whole as a requested package is
+  (§3.1): an import used only for its options, such as
+  `google/api/client.proto`, `field_behavior.proto` or the googleapis
+  files the CLI embeds for `google.api.http`, contributes nothing, and
+  before this rule it brought a `Google.Api` module of some thirty
+  unused types, `HttpRule` among them, into every API that imported
+  one. A service is never referred to, so an imported file of services
+  alone is not generated either (`crates/elm-connect/tests/generate.rs`).
+  The plugin cannot do the same under `buf generate --include-imports`,
+  which sends every import as a file to generate: there it skips only
+  the embedded googleapis files. Off by default, so the CLI generates
   what protoc and buf generate from the same files (§3.1). It is the
   CLI's driver choosing the generate set, not a generator option:
   protoc and buf choose it themselves, and the plugin cannot widen it.

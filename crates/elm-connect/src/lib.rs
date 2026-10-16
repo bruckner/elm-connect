@@ -6,9 +6,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{Columns, Diagnostics, LineColSpan, Problem, Site};
-use elm_connect_gen::{Generated, GeneratedFile, Options, googleapis};
+use elm_connect_gen::{Generated, GeneratedFile, Options};
 use miette::{IntoDiagnostic, Report, WrapErr};
-use protox::prost_reflect::DescriptorPool;
+use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
 
 /// What compiling the inputs gives the generator.
 #[derive(Debug)]
@@ -16,45 +16,76 @@ pub struct Compiled {
     /// Every resolved file, imports included.
     pub pool: DescriptorPool,
     /// The names, as `pool` knows them, of the files named on the command
-    /// line: the set to generate.
+    /// line: the set to generate, each of its packages whole.
     pub inputs: Vec<String>,
+    /// The names of the imported files to generate as well, each of its
+    /// package alone: empty unless [`Compiled::include_imports`] filled it.
+    pub imports: Vec<String>,
     /// The text of every resolved file read from disk, by name, for
     /// diagnostics.
     pub sources: HashMap<String, String>,
 }
 
 impl Compiled {
-    /// Adds to `inputs` every file they import, transitively, that declares
-    /// a message, enum or service: what `--include-imports` asks for, the
-    /// way `buf generate --include-imports` does. `google/protobuf` files
-    /// map to the runtime and the googleapis files elm-connect embeds only
-    /// carry `google.api.http`, so neither is added.
+    /// Sets `imports` to what `--include-imports` asks for: every imported
+    /// file that declares a message or enum the requested packages refer
+    /// to, through fields and methods, transitively, since such a file is
+    /// generated whole and its own references count too. A file imported
+    /// only for its options, such as `google/api/annotations.proto` or
+    /// `google/api/client.proto`, declares nothing referred to and is left
+    /// out, as are `google/protobuf` files, which map to the runtime, and
+    /// files of the requested packages, which are generated whole anyway.
     pub fn include_imports(&mut self) {
-        let mut seen: BTreeSet<String> = self.inputs.iter().cloned().collect();
-        let mut pending: Vec<String> = self.inputs.clone();
-        while let Some(name) = pending.pop() {
-            let Some(file) = self.pool.get_file_by_name(&name) else {
-                continue;
-            };
-            for import in file.dependencies() {
-                let name = import.name();
+        let requested: BTreeSet<String> = self
+            .inputs
+            .iter()
+            .filter_map(|name| self.pool.get_file_by_name(name))
+            .map(|file| file.package_name().to_owned())
+            .collect();
+        let mut pending: Vec<FileDescriptor> = self
+            .pool
+            .files()
+            .filter(|file| requested.contains(file.package_name()))
+            .collect();
+        let mut imports = BTreeSet::new();
+        while let Some(file) = pending.pop() {
+            for referenced in referenced_files(&file) {
+                let name = referenced.name();
                 if name.starts_with("google/protobuf/")
-                    || googleapis::is_embedded(name)
-                    || !seen.insert(name.to_owned())
+                    || requested.contains(referenced.package_name())
+                    || !imports.insert(name.to_owned())
                 {
                     continue;
                 }
-                pending.push(name.to_owned());
-                let declares = import.messages().next().is_some()
-                    || import.enums().next().is_some()
-                    || import.services().next().is_some();
-                if declares {
-                    self.inputs.push(name.to_owned());
-                }
+                pending.push(referenced);
             }
         }
-        self.inputs.sort();
+        self.imports = imports.into_iter().collect();
     }
+}
+
+/// The files declaring the messages and enums `file`'s messages and
+/// methods refer to, its own among them.
+fn referenced_files(file: &FileDescriptor) -> Vec<FileDescriptor> {
+    let mut messages: Vec<MessageDescriptor> = file.messages().collect();
+    let mut referenced = Vec::new();
+    while let Some(message) = messages.pop() {
+        messages.extend(message.child_messages());
+        for field in message.fields() {
+            match field.kind() {
+                Kind::Message(target) => referenced.push(target.parent_file()),
+                Kind::Enum(target) => referenced.push(target.parent_file()),
+                _ => {}
+            }
+        }
+    }
+    for service in file.services() {
+        for method in service.methods() {
+            referenced.push(method.input().parent_file());
+            referenced.push(method.output().parent_file());
+        }
+    }
+    referenced
 }
 
 /// Compiles `files` against the `includes` search path (`.` if empty),
@@ -92,6 +123,7 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     Ok(Compiled {
         pool: compiler.descriptor_pool(),
         inputs,
+        imports: Vec::new(),
         sources,
     })
 }
@@ -193,8 +225,9 @@ pub fn generate(
         compiled.include_imports();
     }
     let inputs: Vec<&str> = compiled.inputs.iter().map(String::as_str).collect();
+    let imports: Vec<&str> = compiled.imports.iter().map(String::as_str).collect();
     // protox records columns in bytes.
-    match elm_connect_gen::generate(&compiled.pool, &inputs, options) {
+    match elm_connect_gen::generate_with_imports(&compiled.pool, &inputs, &imports, options) {
         Ok(mut generated) => {
             generated
                 .warnings

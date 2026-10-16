@@ -12,9 +12,10 @@
 //! copy on the include path wins. The protoc plugin needs no copy: protoc
 //! resolves imports itself and sends every file in the request.
 //!
-//! Neither binary generates these files when they arrive as imports
-//! ([`is_embedded`]): the plugin skips them among its files to generate and
-//! the CLI's `--include-imports` never adds them. They only carry
+//! Neither binary generates these files when they arrive as imports: the
+//! plugin skips them among its files to generate ([`is_embedded`]), and the
+//! CLI's `--include-imports` adds no file whose types nothing refers to.
+//! They only carry
 //! `google.api.http`, and `buf generate --include-imports` would otherwise
 //! give every API with HTTP rules a `Google.Api` module of `http.proto`'s
 //! messages.

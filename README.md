@@ -55,11 +55,15 @@ generated whole, from every file declaring it; a package they only
 import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate
 --include-imports`, the file on protoc's command line, or the CLI's
-`--include-imports`). `google.protobuf` maps to the runtime instead, and
-`google/api/http.proto` and `google/api/annotations.proto`, which only
-carry `google.api.http`, are never generated, so `buf generate
---include-imports` gives no `Google.Api` module of their messages. Other
-`google/api` files, such as `httpbody.proto`, generate when asked for.
+`--include-imports`). `google.protobuf` maps to the runtime instead.
+The plugin never generates `google/api/http.proto` and
+`google/api/annotations.proto`, which only carry `google.api.http`, so
+`buf generate --include-imports` gives no `Google.Api` module of their
+messages; other files imported for their options alone, such as
+`google/api/client.proto`, it generates when buf asks for them. The
+CLI's `--include-imports` generates no file nothing refers to, so none
+of these. Other `google/api` files, such as `httpbody.proto`, generate
+when asked for or referred to.
 
 The runtime package has two roots, `Proto` for data and `Rpc` for
 calling:
@@ -127,9 +131,12 @@ elm-connect gen notes.proto --out generated --module-prefix Api
 ```
 
 The CLI alone also takes `--include-imports`, named after buf's: it
-generates the packages of every file the given ones import,
-transitively, as well (bar `google/protobuf` and files declaring
-nothing). Off by default, so the CLI generates what protoc and buf do
+also generates every imported file that declares a message or enum the
+given files' packages refer to, transitively, each imported package
+from those files alone (bar `google/protobuf`, which maps to the
+runtime). A file imported only for its options, such as
+`google/api/annotations.proto` or `google/api/client.proto`, is not
+generated. Off by default, so the CLI generates what protoc and buf do
 from the same files.
 
 `elm-connect check` takes exactly `gen`'s arguments and options, and

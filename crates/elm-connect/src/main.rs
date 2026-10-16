@@ -71,12 +71,13 @@ struct GenArgs {
     /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
     #[arg(long, value_name = "MODULE", value_parser = elm_connect_gen::parse_module_prefix)]
     module_prefix: Option<ModuleName>,
-    /// Also generate the packages of every file the given ones import,
-    /// transitively, as `buf generate --include-imports` does; without
-    /// it, a reference to a package none of the given files declares is
-    /// an error. `google/protobuf` files are never generated, nor are
-    /// `google/api/http.proto` and `google/api/annotations.proto`,
-    /// which only carry `google.api.http`.
+    /// Also generate every imported file that declares a message or enum
+    /// the given files' packages refer to, transitively, each imported
+    /// package from those files alone; without it, a reference to a
+    /// package none of the given files declares is an error. A file
+    /// imported only for its options (`google/api/annotations.proto`,
+    /// `google/api/client.proto`) is not generated, nor are
+    /// `google/protobuf` files, which map to the runtime.
     #[arg(long)]
     include_imports: bool,
 }

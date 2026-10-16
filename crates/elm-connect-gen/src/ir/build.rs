@@ -65,6 +65,23 @@ pub fn build_with(
     generate: &[&str],
     options: &Options,
 ) -> Result<Built, Diagnostics> {
+    build_with_imports(pool, generate, &[], options)
+}
+
+/// [`build_with`], and also the packages of the files in `imports`
+/// (names as `pool` knows them), each built from those files alone rather
+/// than from every file declaring it, unless a file in `generate` declares
+/// it too: the CLI's `--include-imports`, which asks for the imports that
+/// declare what the requested packages refer to, and not for the other
+/// files of their packages (design §6).
+///
+/// On any error, returns every error found instead.
+pub fn build_with_imports(
+    pool: &DescriptorPool,
+    generate: &[&str],
+    imports: &[&str],
+    options: &Options,
+) -> Result<Built, Diagnostics> {
     let mut builder = Builder {
         streaming: options.streaming,
         spelling: options.spelling,
@@ -90,7 +107,21 @@ pub fn build_with(
             requested.push(file);
         }
     }
-    let by_package = whole_packages(pool, requested);
+    let mut by_package = whole_packages(pool, requested);
+    let imported: Vec<FileDescriptor> = imports
+        .iter()
+        .filter_map(|&name| pool.get_file_by_name(name))
+        .filter(|file| !by_package.contains_key(file.package_name()))
+        .collect();
+    for file in imported {
+        let files = by_package
+            .entry(file.package_name().to_owned())
+            .or_default();
+        if !files.iter().any(|f| f.name() == file.name()) {
+            files.push(file);
+            files.sort_by(|a, b| a.name().cmp(b.name()));
+        }
+    }
     builder.generated = by_package.keys().cloned().collect();
     for file in by_package.values().flatten() {
         if checked.insert(file.name().to_owned()) {

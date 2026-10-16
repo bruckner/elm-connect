@@ -563,3 +563,13 @@ tag (design §8).
 - A proto file whose name holds a newline or another control character
   is `input::file_name`: the name went into the generated header comment
   as it was, and the text after the newline into the module.
+- The CLI's `--include-imports` generates only the imported files that
+  declare a message or enum the requested packages refer to,
+  transitively, and builds each imported package from those files
+  alone. A file imported for its options alone, such as
+  `google/api/client.proto` or `field_behavior.proto`, no longer brings
+  a `Google.Api` module of every type of the package (`HttpRule`
+  among them) into the output; a referred-to `google/api/httpbody.proto`
+  gives a `Google.Api` of `HttpBody` alone. An imported file of
+  services alone is no longer generated. The README's sentence on
+  `Google.Api` now says what each binary does.

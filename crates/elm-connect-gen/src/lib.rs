@@ -95,7 +95,21 @@ pub fn generate(
     generate: &[&str],
     options: &Options,
 ) -> Result<Generated, Diagnostics> {
-    let ir::Built { packages, warnings } = ir::build_with(pool, generate, options)?;
+    generate_with_imports(pool, generate, &[], options)
+}
+
+/// [`generate`], and also the packages of the files in `imports`, each
+/// from those files alone unless a file in `generate` declares it too
+/// ([`ir::build_with_imports`]): what the CLI's `--include-imports`
+/// generates.
+pub fn generate_with_imports(
+    pool: &DescriptorPool,
+    generate: &[&str],
+    imports: &[&str],
+    options: &Options,
+) -> Result<Generated, Diagnostics> {
+    let ir::Built { packages, warnings } =
+        ir::build_with_imports(pool, generate, imports, options)?;
     if options.unbound_methods == UnboundMethods::Error {
         let unbound = ir::unbound_methods(pool, &packages);
         if !unbound.is_empty() {

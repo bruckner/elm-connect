@@ -39,7 +39,7 @@ mod rename;
 
 use std::fmt;
 
-pub use build::{Built, build, build_with, unbound_methods};
+pub use build::{Built, build, build_with, build_with_imports, unbound_methods};
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.
