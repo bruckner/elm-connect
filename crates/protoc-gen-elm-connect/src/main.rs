@@ -156,6 +156,21 @@ mod tests {
         CodeGeneratorRequest::decode(request.encode_to_vec().as_slice()).expect("decode")
     }
 
+    /// The expected module at `path` in the corpus, with the generator's
+    /// version where the corpus has the placeholder `0.1.X`.
+    fn blessed(path: &std::path::Path) -> String {
+        std::fs::read_to_string(path)
+            .expect("the blessed output")
+            .replacen(
+                &format!(
+                    "elm-connect {} ",
+                    elm_connect_gen::HEADER_VERSION_PLACEHOLDER
+                ),
+                &format!("elm-connect {} ", elm_connect_gen::VERSION),
+                1,
+            )
+    }
+
     fn round_trip(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
         let bytes = run(&request.encode_to_vec()).0.encode_to_vec();
         CodeGeneratorResponse::decode(bytes.as_slice()).expect("decode the response")
@@ -174,8 +189,7 @@ mod tests {
             panic!("expected one file, got {:?}", response.file);
         };
         assert_eq!(file.name.as_deref(), Some("Scalars/V1.elm"));
-        let expected = std::fs::read_to_string(scalars_case().join("expected/Scalars/V1.elm"))
-            .expect("the blessed output");
+        let expected = blessed(&scalars_case().join("expected/Scalars/V1.elm"));
         assert!(
             file.content.as_deref() == Some(expected.as_str()),
             "the plugin's output differs from the blessed expected output; run the \
@@ -265,8 +279,7 @@ mod tests {
             .filter_map(|f| f.name.as_deref())
             .collect();
         assert_eq!(names, ["Notes/V1.elm"]);
-        let expected =
-            std::fs::read_to_string(case.join("expected/Notes/V1.elm")).expect("blessed");
+        let expected = blessed(&case.join("expected/Notes/V1.elm"));
         assert!(
             response.file[0].content.as_deref() == Some(expected.as_str()),
             "the plugin's Notes/V1.elm differs from the blessed expected output"
@@ -314,8 +327,7 @@ mod tests {
         assert_eq!(names, ["Notes/V1.elm", "Notes/V1/NotesService.elm"]);
         for file in &response.file {
             let name = file.name.as_deref().expect("a name");
-            let expected =
-                std::fs::read_to_string(case.join("expected").join(name)).expect("blessed");
+            let expected = blessed(&case.join("expected").join(name));
             assert!(
                 file.content.as_deref() == Some(expected.as_str()),
                 "the plugin's {name} differs from the blessed expected output; run the \

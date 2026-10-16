@@ -486,3 +486,9 @@ follows Elm's enforced semantic versioning; the crates follow Cargo's.
   derives to it, and a `rename` to it is `naming::value_collision`.
   `elm.json`'s version is now `0.1.0`, the crates' version, which it
   follows in lockstep (design §8).
+- The conformance corpus's expected modules and the route replay's
+  modules in `tests/Routes` carry `0.1.X` (the major and minor version,
+  `X` for the patch) on their header line, which their tests substitute
+  before comparing and `just bless` writes, so a patch release leaves
+  them alone; a minor release re-blesses the header's minor and the
+  `elmConnectVersion_` line in each.
