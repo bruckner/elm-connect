@@ -57,6 +57,9 @@ pub enum Code {
     UnknownRename,
     /// A file to generate is not proto3.
     NotProto3,
+    /// A file declares an edition (`edition = "2023";`), which elm-connect
+    /// does not support.
+    Editions,
     /// The protos use a construct the generator does not emit yet.
     Unimplemented,
     /// A method streams requests or responses.
@@ -106,6 +109,7 @@ impl Code {
             Code::InvalidRename => "options::invalid_rename",
             Code::UnknownRename => "options::unknown_rename",
             Code::NotProto3 => "generate::not_proto3",
+            Code::Editions => "input::editions",
             Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
             Code::UnboundMethod => "services::unbound_method",
@@ -679,6 +683,23 @@ impl Problem {
             format!("The file `{file}` uses {syntax} syntax, but elm-connect generates proto3."),
             "elm-connect implements the proto3 JSON mapping; proto2 features like `required` \
              and default values have no Elm mapping. Use `syntax = \"proto3\";`.",
+            vec![site],
+        )
+    }
+
+    /// `file` declares an edition, `edition` when it is known (`"2023"`).
+    pub fn editions(file: &str, edition: Option<&str>, site: Site) -> Self {
+        let declares = match edition {
+            Some(edition) => format!("declares `edition = \"{edition}\"`"),
+            None => "declares an edition".to_owned(),
+        };
+        Problem::new(
+            Code::Editions,
+            format!("The file `{file}` {declares}, but elm-connect generates proto3 only."),
+            "This release of elm-connect does not support editions: it implements the proto3 \
+             JSON mapping, and an edition's features (closed enums, required fields, \
+             explicit presence by default) have no Elm form here yet. Declare \
+             `syntax = \"proto3\";` instead, if the file uses no feature beyond proto3's.",
             vec![site],
         )
     }

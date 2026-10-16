@@ -60,8 +60,15 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack.
 - gRPC-web.
-- proto2 syntax. Editions are accepted where they reduce to proto3
-  semantics.
+- proto2 syntax, and editions. A file that declares an edition
+  (`edition = "2023";`) is `input::editions`, from either binary, before
+  anything is generated, even where its features would reduce to proto3
+  semantics: protox, under the CLI, does not parse editions, and the
+  plugin answers protoc before building its descriptor pool, which
+  cannot take an editions file. The plugin does not claim
+  `FEATURE_SUPPORTS_EDITIONS`, so protoc says the same in its own words.
+  Supporting the editions that reduce to proto3 is additive, an error
+  becoming output.
 - Server code generation.
 
 ## 2. The layering  *(Decided; reshaped 2026-10-13)*

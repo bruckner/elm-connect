@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use elm_connect_gen::diagnostics::Columns;
+use elm_connect_gen::diagnostics::{Columns, Diagnostics, LineColSpan, Problem, Site};
 use elm_connect_gen::{Generated, GeneratedFile, Options, googleapis};
 use miette::{IntoDiagnostic, Report, WrapErr};
 use protox::prost_reflect::DescriptorPool;
@@ -71,10 +71,13 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     } else {
         includes.to_vec()
     };
-    let mut compiler =
-        protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(includes));
+    let mut compiler = protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(
+        includes.iter().cloned(),
+    ));
     compiler.include_source_info(true).include_imports(true);
-    compiler.open_files(files)?;
+    if let Err(error) = compiler.open_files(files) {
+        return Err(editions_problem(&error, &includes).unwrap_or_else(|| error.into()));
+    }
     let mut inputs = Vec::new();
     let mut sources = HashMap::new();
     for file in compiler.files() {
@@ -91,6 +94,84 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
         inputs,
         sources,
     })
+}
+
+/// The `input::editions` problem for a parse `error` in a file that
+/// declares an edition, which protox cannot parse: the file is found
+/// again on `includes` and its first statement read. `None` for any other
+/// error.
+fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
+    if !error.is_parse() {
+        return None;
+    }
+    let name = error.file()?;
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
+    let (edition, span) = declared_edition(&source)?;
+    let site = Site {
+        file: name.to_owned(),
+        span: Some(span),
+        label: "the edition".into(),
+    };
+    let mut diagnostics = Diagnostics::new();
+    diagnostics.push(Problem::editions(name, Some(&edition), site));
+    let sources = HashMap::from([(name.to_owned(), source)]);
+    diagnostics.attach_sources(&sources, Columns::Bytes);
+    Some(Report::new(diagnostics))
+}
+
+/// The edition `source` declares, `2023` of `edition = "2023";`, and the
+/// span of that statement, when its first statement is one.
+fn declared_edition(source: &str) -> Option<(String, LineColSpan)> {
+    let bytes = source.as_bytes();
+    // Past whitespace and comments from `at`.
+    let skip = |mut at: usize| loop {
+        let rest = &source[at..];
+        let trimmed = rest.trim_start();
+        at += rest.len() - trimmed.len();
+        if trimmed.starts_with("//") {
+            at += trimmed.find('\n').unwrap_or(trimmed.len());
+        } else if let Some(comment) = trimmed.strip_prefix("/*") {
+            at += 2 + comment.find("*/").map_or(comment.len(), |end| end + 2);
+        } else {
+            return at;
+        }
+    };
+    let start = skip(0);
+    let after = start + "edition".len();
+    let keyword = source.get(start..after)? == "edition"
+        && !bytes
+            .get(after)
+            .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
+    if !keyword {
+        return None;
+    }
+    let at = skip(after);
+    let at = skip(at + source[at..].strip_prefix('=').map(|_| 1)?);
+    let quote = *bytes.get(at).filter(|b| matches!(b, b'"' | b'\''))?;
+    let len = source[at + 1..].find(char::from(quote))?;
+    let edition = source[at + 1..at + 1 + len].to_owned();
+    let mut end = at + len + 2;
+    let semicolon = skip(end);
+    if source[semicolon..].starts_with(';') {
+        end = semicolon + 1;
+    }
+    let position = |offset: usize| {
+        let before = &source[..offset];
+        let line = before.matches('\n').count();
+        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+        (u32::try_from(line).ok(), u32::try_from(col).ok())
+    };
+    let (start_line, start_col) = position(start);
+    let (end_line, end_col) = position(end);
+    let span = LineColSpan {
+        start_line: start_line?,
+        start_col: start_col?,
+        end_line: end_line?,
+        end_col: end_col?,
+    };
+    Some((edition, span))
 }
 
 /// Compiles `files` against `includes` and generates Elm from them as

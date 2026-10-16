@@ -528,3 +528,8 @@ tag (design §8).
   problem stays in `Transport (Http.BadBody problem)`.
 - `Proto.Enum.toName` and `toNumber` document what they give for a
   value the encoder writes as other than a name (`""` and `0`).
+- A file that declares an edition is `input::editions`, naming the file
+  and its edition and asking for `syntax = "proto3";`: the plugin
+  panicked in its descriptor pool (exit 101), and the CLI printed
+  protox's parse error. Design §1.3 said editions were accepted; it now
+  says they are not, in this release.
