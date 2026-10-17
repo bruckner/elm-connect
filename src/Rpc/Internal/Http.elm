@@ -1,13 +1,15 @@
 module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
-{-| What the transports share: percent-encoding, sending a built request, and
-reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
+{-| The elm/http adapter: sending a built `Rpc.Request` and reading an
+answer's metadata, with the percent-encoding the transports share. Not
+exposed. It is kept out of `Rpc` so that the public module reads as API;
+`Rpc` re-exports what users need.
 -}
 
 import Bitwise
 import Dict exposing (Dict)
 import Http
-import Rpc.Internal.Body as Body
+import Rpc.Body
 import Rpc.Request exposing (Request)
 import Task exposing (Task)
 
@@ -255,11 +257,11 @@ send read toMsg tracker request =
 
 body : Request -> Http.Body
 body request =
-    case request.body of
-        Body.Text json ->
+    case Rpc.Body.toText request.body of
+        Just json ->
             Http.stringBody "application/json" json
 
-        Body.Empty ->
+        Nothing ->
             Http.emptyBody
 
 

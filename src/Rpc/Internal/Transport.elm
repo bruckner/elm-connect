@@ -1,7 +1,8 @@
 module Rpc.Internal.Transport exposing (Transport(..))
 
-{-| The protocol calls are sent over. Not exposed; `Rpc.Transport.Transport`
-is this type, its constructors private so that a protocol or an option can be
+{-| The protocol calls are sent over. Not exposed. Two public modules need
+the constructors: `Rpc.Transport` builds a transport and aliases the type,
+and `Rpc` matches it to route and send a call. A protocol or an option can be
 added without breaking code that builds one.
 -}
 

@@ -165,10 +165,6 @@ application's state with record syntax:
   - `retry`: whether and when to try a failed call again
     ([`Rpc.Retry`](Rpc-Retry)).
 
-The record's fields are fixed: a new option for a protocol goes on
-`Transport`, one for retrying on `Retry`, and one for a single call on
-[`Call`](#Call), so a config written today keeps compiling.
-
 -}
 type alias Config =
     { transport : Transport

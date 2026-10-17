@@ -9,29 +9,27 @@ JSON as text, sent as `application/json`.
 
 -}
 
-import Rpc.Internal.Body as Internal
 
-
-{-| A request body. Its constructors are private (shown as
-`Rpc.Internal.Body.Body`, which this module names), so that a body of bytes
-can be added without breaking code that reads one.
+{-| A request body. It is opaque: make one with [`none`](#none) or
+[`text`](#text) and read it with [`toText`](#toText).
 -}
-type alias Body =
-    Internal.Body
+type Body
+    = None
+    | Text String
 
 
 {-| No body, as a GET has.
 -}
 none : Body
 none =
-    Internal.Empty
+    None
 
 
 {-| A body of text, sent as `application/json`.
 -}
 text : String -> Body
 text =
-    Internal.Text
+    Text
 
 
 {-| The body's text, or `Nothing` when there is none.
@@ -39,8 +37,8 @@ text =
 toText : Body -> Maybe String
 toText body =
     case body of
-        Internal.Empty ->
+        None ->
             Nothing
 
-        Internal.Text content ->
+        Text content ->
             Just content

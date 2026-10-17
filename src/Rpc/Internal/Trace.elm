@@ -1,8 +1,9 @@
 module Rpc.Internal.Trace exposing (Trace(..))
 
-{-| What happened when a call was sent. Not exposed; `Rpc.Trace.Trace` is this
-type, its constructor private so that `Rpc` alone makes one and a field can be
-added without breaking code that reads one.
+{-| What happened when a call was sent. Not exposed. Two public modules need
+the constructor: `Rpc` mints a trace, `Rpc.Trace` reads it and aliases the
+type, so users cannot make one and a field can be added without breaking
+code that reads one.
 -}
 
 import Dict exposing (Dict)

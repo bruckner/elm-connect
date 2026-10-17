@@ -37,9 +37,9 @@ per-call adjustments made to it. Generated code builds one per method with
 
     Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
 
-Its constructor is private (shown as `Rpc.Internal.Call.Call`, which this
-module names; [`Rpc.Call`](Rpc#Call) is the same type), so that a per-call
-adjustment can be added without breaking code that holds a call.
+It is opaque, and the same type as [`Rpc.Call`](Rpc#Call): adjust one with
+the functions below and send it with [`Rpc.send`](Rpc#send) or
+[`Rpc.task`](Rpc#task).
 
 -}
 type alias Call req res =

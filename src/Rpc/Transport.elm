@@ -28,9 +28,8 @@ It is data, like the rest of a config: transports built alike are `==`.
 import Rpc.Internal.Transport as Internal
 
 
-{-| A transport. Its constructors are private (shown as
-`Rpc.Internal.Transport.Transport`, which this module names), so that a
-protocol or an option can be added without breaking code that builds one.
+{-| A transport. It is opaque: pick one of the values below and give it to a
+[`Rpc.Config`](Rpc#Config).
 -}
 type alias Transport =
     Internal.Transport

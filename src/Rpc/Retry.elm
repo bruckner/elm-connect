@@ -30,9 +30,8 @@ import Rpc.Code exposing (Code)
 import Rpc.Internal.Retry as Internal
 
 
-{-| A retry policy. Its constructor is private (shown as
-`Rpc.Internal.Retry.Retry`, which this module names), so that what a policy
-can say may grow without breaking code that builds one.
+{-| A retry policy. It is opaque: start one with [`on`](#on), adjust it with
+the functions below, and give it to a [`Rpc.Config`](Rpc#Config).
 -}
 type alias Retry =
     Internal.Retry

@@ -1,8 +1,9 @@
 module Rpc.Internal.Retry exposing (Policy, Retry(..), delay, jitter, maxDelay)
 
-{-| When to try a call again. Not exposed; `Rpc.Retry.Retry` is this type, its
-constructor private so that a knob can be added without breaking code that
-builds a policy.
+{-| When to try a call again. Not exposed. Two public modules need the
+constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
+and `Rpc`'s retry loop reads it through `delay` and `jitter`, the policy math
+kept here. A knob can be added without breaking code that builds a policy.
 -}
 
 import Bitwise

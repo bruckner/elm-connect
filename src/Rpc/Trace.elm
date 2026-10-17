@@ -39,9 +39,8 @@ import Rpc.Internal.Trace as Internal
 import Rpc.Request exposing (Request)
 
 
-{-| A trace. Only the runtime makes one, and its constructor is private
-(shown as `Rpc.Internal.Trace.Trace`, which this module names), so that what
-a trace says may grow without breaking code that reads one.
+{-| A trace. It is opaque: a traced send gives you one, and the functions
+below read it.
 -}
 type alias Trace =
     Internal.Trace

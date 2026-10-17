@@ -251,32 +251,47 @@ rpc shared call =
 
 ### 3.1 Modules
 
-- **The runtime's proto modules** follow four rules. *(Decided,
-  2026-10-16.)* (1) A module per proto concept holds whatever that
-  concept has: its typed value if it has one, its descriptor, and the
-  unions its descriptor holds. Several types to a module is the normal
-  Elm shape (`Http`, `Html`). So `Proto.Message` holds `Message a` and
-  `Descriptor`, `Proto.Enum` holds `Enum a` and `Descriptor`,
-  `Proto.Method` holds `Method req res` and `Descriptor`, `Proto.Field`
-  holds `Descriptor` with `Cardinality`, `Kind` and `Scalar`, and
-  `Proto.EnumValue` holds `Descriptor`. (2) A builder is named for the
-  type it builds, in every module: `message` builds a `Message`,
-  `descriptor` a `Descriptor`. Readers are plain nouns (`name`,
-  `fields`); a typed value's reader for its descriptor is `toDescriptor`,
-  a conversion like `Url.toString`. `typeName` and `typeUrl` read the
-  descriptor, not the typed value, so no reader name is shared by two
-  types in one module. (3) A union's constructors carry the union's
-  name as a prefix, without exception (`CardinalitySingular`,
-  `KindMessage`, `ScalarString`), so any of them can be exposed with
-  `(..)` beside another union's and beside `Rpc.ErrorCode(..)` without
-  a clash. (4) A `Proto.Internal` module exists only when two public
-  modules must build or match one type: `Proto.Internal.Binding` (built
-  by `Proto.Http`, read by `Rpc`) and `Proto.Internal.Any`. The first
-  opaque layout defined each descriptor type three times, parameterised
-  in an internal module and aliased in a builder module and a reader
-  module; the second gave each descriptor type and each union a module
-  of its own under `Proto.Descriptor`, which put a concept's typed
-  value and its descriptor in different trees.
+- **The runtime's modules** follow five rules. *(Decided,
+  2026-10-16; rules 4 and 5 2026-10-17.)* (1) A module per proto concept
+  holds whatever that concept has: its typed value if it has one, its
+  descriptor, and the unions its descriptor holds. Several types to a
+  module is the normal Elm shape (`Http`, `Html`). So `Proto.Message`
+  holds `Message a` and `Descriptor`, `Proto.Enum` holds `Enum a` and
+  `Descriptor`, `Proto.Method` holds `Method req res` and `Descriptor`,
+  `Proto.Field` holds `Descriptor` with `Cardinality`, `Kind` and
+  `Scalar`, and `Proto.EnumValue` holds `Descriptor`. (2) A builder is
+  named for the type it builds, in every module: `message` builds a
+  `Message`, `descriptor` a `Descriptor`. Readers are plain nouns
+  (`name`, `fields`); a typed value's reader for its descriptor is
+  `toDescriptor`, a conversion like `Url.toString`. `typeName` and
+  `typeUrl` read the descriptor, not the typed value, so no reader name
+  is shared by two types in one module. (3) A union's constructors carry
+  the union's name as a prefix, without exception
+  (`CardinalitySingular`, `KindMessage`, `ScalarString`), so any of them
+  can be exposed with `(..)` beside another union's and beside
+  `Rpc.Code(..)` without a clash. (4) An `Internal` module holds what
+  the package needs but will not promise: a constructor two public
+  modules must build or match (`Rpc.Internal.Call`, built by `Rpc`,
+  read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, minted by
+  `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
+  `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
+  `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`), or
+  implementation kept out of the public modules so that they read as API
+  (`Rpc.Internal.Http`, the elm/http adapter). A type one module both
+  builds and reads is an ordinary opaque type in that module
+  (`Rpc.Body`). The internal modules are one per shared type rather than
+  one `Rpc.Internal`, because a single module would cycle: `Trace` holds
+  a `Request`, which holds a `Body`. (5) A record several modules depend
+  on lives in a leaf module that imports nothing above it, so that none
+  of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
+  functions that make them stay in `Rpc`, because they take a `Config`
+  and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
+  reads an answer into the errors that keep a `Response`.
+  The first opaque layout defined each descriptor type three times,
+  parameterised in an internal module and aliased in a builder module
+  and a reader module; the second gave each descriptor type and each
+  union a module of its own under `Proto.Descriptor`, which put a
+  concept's typed value and its descriptor in different trees.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
@@ -1596,13 +1611,15 @@ The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 module per type it takes or gives: `Rpc.Call` (below),
 `Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body`,
 `Rpc.Request`, `Rpc.Response` and `Rpc.Code` (§5.4). The first five
-are opaque, each with its constructors in `Rpc.Internal.*` (where the
-rest of the internals live) so that `Rpc` can build and read it and
-users cannot, and its public module names it by an alias. `Request`
-and `Response` are frozen records, each declared once in its module so
+are opaque. `Call`, `Transport`, `Retry` and `Trace` have their
+constructors in `Rpc.Internal.*` (where the rest of the internals live)
+so that `Rpc` can build or read them and users cannot, and each public
+module names its type by an alias; `Body`, which no other module builds
+or matches, is defined in `Rpc.Body` (§3.1, rule 4). `Request` and
+`Response` are frozen records, each declared once in its module so
 that `Rpc`, `Rpc.Trace` and the internals share it without an import
-cycle; `Rpc` aliases both, so `Rpc.Request` and `Rpc.Response` name
-them in annotations as before. The data modules, which generated code calls whatever
+cycle (§3.1, rule 5); `Rpc` aliases both, so `Rpc.Request` and
+`Rpc.Response` name them in annotations as before. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
 `Proto.Duration`, `Proto.Int64`), the typed values and descriptor
 trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and

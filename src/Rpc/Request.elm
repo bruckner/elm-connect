@@ -1,8 +1,14 @@
 module Rpc.Request exposing (Request)
 
-{-| An HTTP request as data: what [`Rpc.request`](Rpc#request) gives for a
-call, what [`Rpc.taskFromRequest`](Rpc#taskFromRequest) sends, and what an
-[`Rpc.Trace`](Rpc-Trace#request) says was sent.
+{-| An HTTP request as data. [`Rpc.request`](Rpc#request) builds the one a
+call stands for, without sending anything, so you can check what a call
+sends or change it; [`Rpc.taskFromRequest`](Rpc#taskFromRequest) sends one
+and reads the answer as the call's.
+[`Rpc.Trace.request`](Rpc-Trace#request) gives the request a traced send sent.
+
+    Rpc.request config call
+        |> (\req -> { req | headers = ( "x-debug", "1" ) :: req.headers })
+        |> Rpc.taskFromRequest config call
 
 @docs Request
 
