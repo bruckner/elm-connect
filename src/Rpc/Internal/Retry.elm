@@ -1,14 +1,19 @@
-module Rpc.Internal.Retry exposing (Policy, Retry(..), delay, jitter, maxDelay)
+module Rpc.Internal.Retry exposing (Outcome, Policy, Retry(..), delay, jitter, maxDelay, run)
 
 {-| When to try a call again. Not exposed. Two public modules need the
 constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
-and `Rpc`'s retry loop reads it through `delay` and `jitter`, the policy math
-kept here. A knob can be added without breaking code that builds a policy.
+and `Rpc` reads it through `run`, the attempt loop, which applies the policy
+math kept here (`delay`, `jitter`). A knob can be added without breaking
+code that builds a policy.
 -}
 
 import Bitwise
+import Http
+import Process
 import Proto.Method exposing (Idempotency(..))
 import Rpc.Code exposing (Code)
+import Task exposing (Task)
+import Time
 
 
 {-| A retry policy.
@@ -32,6 +37,56 @@ type alias Policy =
     , codes : List Code
     , idempotentOnly : Bool
     }
+
+
+{-| What sending a call came to: the attempts made, the last answer's status
+and headers (`Nothing` when there was none), and the result.
+-}
+type alias Outcome e a =
+    { attempts : Int
+    , metadata : Maybe Http.Metadata
+    , result : Result e a
+    }
+
+
+{-| Run `once` until it succeeds or the policy, if there is one, says to
+stop. `retryCode` gives the code a failure is retried by, or `Nothing` when
+trying again cannot help. Each wait is drawn by [`jitter`](#jitter), seeded
+from the time the attempt failed.
+-}
+run : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> Task Never ( Maybe Http.Metadata, Result e a ) -> Task Never (Outcome e a)
+run retry idempotency retryCode once =
+    let
+        loop tried =
+            once
+                |> Task.andThen
+                    (\( metadata, result ) ->
+                        case next retry idempotency retryCode tried result of
+                            Just ( policy, bound ) ->
+                                Time.now
+                                    |> Task.andThen (\now -> Process.sleep (jitter policy (Time.posixToMillis now) tried bound))
+                                    |> Task.andThen (\_ -> loop (tried + 1))
+
+                            Nothing ->
+                                Task.succeed { attempts = tried, metadata = metadata, result = result }
+                    )
+    in
+    loop 1
+
+
+{-| The policy and the bound on the wait before trying again, or `Nothing` to
+stop.
+-}
+next : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> Int -> Result e a -> Maybe ( Retry, Float )
+next retry idempotency retryCode tried result =
+    case ( retry, result ) of
+        ( Just policy, Err error ) ->
+            retryCode error
+                |> Maybe.andThen (delay policy idempotency tried)
+                |> Maybe.map (Tuple.pair policy)
+
+        _ ->
+            Nothing
 
 
 {-| The longest wait, in milliseconds: 2^31 − 1. `Process.sleep` hands its

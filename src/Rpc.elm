@@ -74,9 +74,9 @@ application can rewrite a request before sending it with
 import Dict exposing (Dict)
 import Http
 import Json.Encode
-import Process
 import Proto.Method exposing (Method)
 import Rpc.Call
+import Rpc.Code exposing (Code)
 import Rpc.Error
 import Rpc.Internal.Answer
 import Rpc.Internal.Call
@@ -513,41 +513,17 @@ taskFromRequest cfg c sent =
             )
 
 
-type alias Outcome res =
-    { attempts : Int
-    , metadata : Maybe Http.Metadata
-    , result : Result Error res
-    }
-
-
 {-| Send `sent` until it succeeds or the retry policy says to stop.
 -}
-attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
+attempt : Config -> Call req res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
 attempt cfg c sent =
-    let
-        once =
-            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
-
-        loop tried =
-            once
-                |> Task.andThen
-                    (\( metadata, result ) ->
-                        case retryDelay cfg c tried result of
-                            Just ( policy, bound ) ->
-                                Time.now
-                                    |> Task.andThen (\now -> Process.sleep (Rpc.Internal.Retry.jitter policy (Time.posixToMillis now) tried bound))
-                                    |> Task.andThen (\_ -> loop (tried + 1))
-
-                            Nothing ->
-                                Task.succeed { attempts = tried, metadata = metadata, result = result }
-                    )
-    in
     case unsendable cfg sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
         Nothing ->
-            loop 1
+            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
+                |> Rpc.Internal.Retry.run cfg.retry (Rpc.Call.idempotency c) retryCode
 
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
@@ -564,19 +540,15 @@ unsendable cfg sent =
             |> Maybe.map (Rpc.Error.NoAnswer << Rpc.Error.InvalidHeader)
 
 
-{-| The config's policy and the bound on the wait before trying again, or
-`Nothing` to stop.
+{-| The code a failed attempt is retried by, or `Nothing` when trying again
+cannot help.
 -}
-retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry, Float )
-retryDelay cfg c tried result =
-    case ( cfg.retry, result ) of
-        ( _, Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl _)) ) ->
+retryCode : Error -> Maybe Code
+retryCode error =
+    case error of
+        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
             -- Nothing was sent, and nothing would change.
             Nothing
 
-        ( Just policy, Err error ) ->
-            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (Rpc.Error.code error)
-                |> Maybe.map (Tuple.pair policy)
-
         _ ->
-            Nothing
+            Just (Rpc.Error.code error)
