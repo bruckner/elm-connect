@@ -6,7 +6,7 @@ module Notes.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -60,30 +60,29 @@ defaultNote =
 -- DESCRIPTORS
 
 
+descriptorNote : Proto.Message.Descriptor
+descriptorNote =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "readers" "readers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "users.v1.User")
+        , Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "user" "user" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+            |> Proto.Field.inOneof "owner"
+        , Proto.Field.descriptor "team" "team" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "owner"
+        ]
+
+
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "author", jsonName = "author", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
-            , { name = "required_role", jsonName = "requiredRole", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
-            , { name = "readers", jsonName = "readers", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
-            , { name = "roles", jsonName = "roles", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
-            , { name = "user", jsonName = "user", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Just "owner" }
-            , { name = "team", jsonName = "team", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "owner" }
-            ]
-        , oneofs = [ "owner" ]
-        }
-    }
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageNote.descriptor ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorNote ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 
 
 

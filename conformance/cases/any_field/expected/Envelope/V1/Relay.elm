@@ -5,6 +5,7 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
+import Proto.Method
 import Proto.Version
 import Rpc
 
@@ -16,33 +17,47 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorForward : Proto.Method.Descriptor
+descriptorForward =
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Forward"
+        False
+        "google.protobuf.Any"
+        "google.protobuf.Any"
+        []
+
+
+descriptorSend : Proto.Method.Descriptor
+descriptorSend =
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Send"
+        False
+        "envelope.v1.Envelope"
+        "envelope.v1.Envelope"
+        []
+
+
+
+-- CALLS
+
+
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        { encodeRequest = Proto.Any.encodeJson
-        , responseDecoder = Proto.Any.jsonDecoder
-        , descriptor =
-            { service = "envelope.v1.Relay"
-            , name = "Forward"
-            , idempotent = False
-            , input = "google.protobuf.Any"
-            , output = "google.protobuf.Any"
-            , bindings = []
-            }
-        }
+        (Proto.Method.method Proto.Any.encodeJson
+            Proto.Any.jsonDecoder
+            descriptorForward
+        )
 
 
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        { encodeRequest = Envelope.V1.encodeEnvelope
-        , responseDecoder = Envelope.V1.decodeEnvelope
-        , descriptor =
-            { service = "envelope.v1.Relay"
-            , name = "Send"
-            , idempotent = False
-            , input = "envelope.v1.Envelope"
-            , output = "envelope.v1.Envelope"
-            , bindings = []
-            }
-        }
+        (Proto.Method.method Envelope.V1.encodeEnvelope
+            Envelope.V1.decodeEnvelope
+            descriptorSend
+        )

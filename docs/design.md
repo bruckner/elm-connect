@@ -155,40 +155,63 @@ module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
 import Proto.Http
+import Proto.Method
 import Rpc
+
+
+
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Method.Descriptor
+descriptorGetNote =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "GetNote"
+        True
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorSummarize : Proto.Method.Descriptor
+descriptorSummarize =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "Summarize"
+        …
+        []   -- no rule: the implicit route
+
+
+
+-- CALLS
 
 
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeGetNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = True
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings =
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            }
-        }
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
 
 
 summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
 summarize =
-    Rpc.call { …, descriptor = { …, bindings = [] } }   -- no rule: the implicit route
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
 ```
 
 Application code applies a method to its request and sends the call
@@ -228,6 +251,32 @@ rpc shared call =
 
 ### 3.1 Modules
 
+- **The runtime's proto modules** follow four rules. *(Decided,
+  2026-10-16.)* (1) A module per proto concept holds whatever that
+  concept has: its typed value if it has one, its descriptor, and the
+  unions its descriptor holds. Several types to a module is the normal
+  Elm shape (`Http`, `Html`). So `Proto.Message` holds `Message a` and
+  `Descriptor`, `Proto.Enum` holds `Enum a` and `Descriptor`,
+  `Proto.Method` holds `Method req res` and `Descriptor`, `Proto.Field`
+  holds `Descriptor` with `Cardinality`, `Kind` and `Scalar`, and
+  `Proto.EnumValue` holds `Descriptor`. (2) A builder is named for the
+  type it builds, in every module: `message` builds a `Message`,
+  `descriptor` a `Descriptor`. Readers are plain nouns (`name`,
+  `fields`); a typed value's reader for its descriptor is `toDescriptor`,
+  a conversion like `Url.toString`. `typeName` and `typeUrl` read the
+  descriptor, not the typed value, so no reader name is shared by two
+  types in one module. (3) A union's constructors carry the union's
+  name as a prefix, without exception (`CardinalitySingular`,
+  `KindMessage`, `ScalarString`), so any of them can be exposed with
+  `(..)` beside another union's and beside `Rpc.ErrorCode(..)` without
+  a clash. (4) A `Proto.Internal` module exists only when two public
+  modules must build or match one type: `Proto.Internal.Binding` (built
+  by `Proto.Http`, read by `Rpc`) and `Proto.Internal.Any`. The first
+  opaque layout defined each descriptor type three times, parameterised
+  in an internal module and aliased in a builder module and a reader
+  module; the second gave each descriptor type and each union a module
+  of its own under `Proto.Descriptor`, which put a concept's typed
+  value and its descriptor in different trees.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
@@ -658,13 +707,13 @@ Built as proposed, with these details *(each Proposed)*:
   type URL and the packed message, either as its JSON or, when only
   its protobuf binary arrived, as that binary (base64) alone. `pack`
   (prefix `type.googleapis.com/`) and `packWith` (another prefix) take
-  the message's typed record (§3.9) and a value; `unpack` gives
+  the message's typed value (§3.9) and a value; `unpack` gives
   `Nothing` for another type (by full name, the type URL after its last
   `/`), else the decoded value or a `Problem`: `Json` for JSON that
   does not decode, `BinaryOnly` for a binary payload, which the
   runtime does not read. `is` tests the type, `typeUrl` and
   `typeName` read it, and `describe` looks its descriptor up in a
-  `Proto.Registry`. `Proto.WellKnown.any : Message Any` is its record,
+  `Proto.Registry`. `Proto.WellKnown.any : Message Any` is its typed value,
   and `Proto.Registry.wellKnown` holds its tree (`type_url`, `value`).
 - `Any` on the wire is proto3 JSON's: the packed message's own object
   plus `"@type"`, or, for a well-known type with a JSON form of its own
@@ -672,7 +721,7 @@ Built as proposed, with these details *(each Proposed)*:
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
   <that form>}`. That list lives in `Proto.Any`. `jsonDecoder` fails
   on an object without `"@type"`, except `{}`, which is the empty `Any`
-  (no type URL; the record's default), as protojson reads it. A
+  (no type URL; the typed value's default), as protojson reads it. A
   binary-only `Any` has no proto3 JSON form; `encodeJson` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
   `jsonDecoder` does not read back.
@@ -778,12 +827,13 @@ Built, as the `naming` and `naming_collision` cases show:
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.
 - Top-level values are a prefix and a type name: `encodeFoo`,
-  `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo` (§3.9). Type
+  `decodeFoo`, `defaultFoo`, `descriptorFoo`, `messageFoo` and
+  `enumFoo` (§3.9). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
   `registry`, is all lowercase, so it is none of them. A suffix scheme was
-  rejected for the typed records: `encodeFooMessage` would be both the
-  encoder of `FooMessage` and the record of `EncodeFoo`.
+  rejected for the typed values: `encodeFooMessage` would be both the
+  encoder of `FooMessage` and the typed value of `EncodeFoo`.
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof
@@ -818,8 +868,9 @@ what the proto name resolves to among the generated packages:
   though protobuf scopes it beside the enum): its constructor.
 
 Names derived from a renamed one follow it through the rules above: a
-type's codecs, default and typed record (`Memo` gives `encodeMemo`,
-`defaultMemo`, `messageMemo`), a recursive message's wrapper (`Memo_`),
+type's codecs, default, descriptor and typed value (`Memo` gives
+`encodeMemo`, `defaultMemo`, `descriptorMemo`, `messageMemo`), a
+recursive message's wrapper (`Memo_`),
 an enum's other constructors (`Audience` gives `AudienceUnspecified`),
 a oneof's type and constructors, and a nested type's name (renaming
 `Note` to `Memo` makes `Note.Revision` `MemoRevision`, unless it is
@@ -922,9 +973,11 @@ case names it):
   yet; a `route` skip, leaving such a method out as `streaming=skip`
   does, would be one.
 - **Method values that collide**: two methods of one service whose
-  values have one name (`GetSettings` and `Get_Settings`;
-  `naming::value_collision`, `services_value_collision` case). Escape:
-  rename one with `rename=` (§3.7).
+  values have one name (`GetSettings` and `Get_Settings`), or a method
+  named for another's descriptor (`DescriptorDefaultSettings` beside
+  `DefaultSettings`; `naming::value_collision`,
+  `services_value_collision` case). Escape: rename one with `rename=`
+  (§3.7).
 - **Modules that collide**: two services of one package whose module
   names coincide (`Archive` and `archive`), a service module that is
   also a package's (`NotesService` in `notes.v1` beside the package
@@ -963,63 +1016,103 @@ case names it):
   choice, and its escape is the default, `unbound_methods=implicit`,
   which the help names.
 
-### 3.9 Descriptors  *(Decided, 2026-10-13)*
+### 3.9 Descriptors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
 
-Every message and enum gets a typed record, a value holding its codecs
-with its descriptor, in a `-- DESCRIPTORS` section between the defaults
-and the encoders:
+Every message and enum gets a descriptor and a typed value, in a
+`-- DESCRIPTORS` section between the defaults and the encoders, each
+type's descriptor followed by its typed value, which holds its codecs
+and default with the descriptor:
 
 ```elm
-messageNote : Proto.Message.Message Note
-messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "visibility", jsonName = "visibility", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
-            , …
-            ]
-        , oneofs = []
-        }
-    }
+descriptorVisibility : Proto.Enum.Descriptor
+descriptorVisibility =
+    Proto.Enum.descriptor "notes.v1.Visibility"
+        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
+        , …
+        ]
 
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { encodeJson = encodeVisibility
-    , jsonDecoder = decodeVisibility
-    , default = VisibilityUnspecified
-    , descriptor =
-        { typeName = "notes.v1.Visibility"
-        , values = [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }, … ]
-        }
-    }
+    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
+
+
+descriptorNote : Proto.Message.Descriptor
+descriptorNote =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "kind"
+        , …
+        ]
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ messageNote.descriptor, … ] [ enumVisibility.descriptor ])
+        (Proto.Registry.fromDescriptors [ descriptorNote, … ] [ descriptorVisibility ])
         (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
 
-- The naming: "`Thing`Descriptor" is the data-only tree, "`Thing` a"
-  the typed record carrying it in its `descriptor` field, beside the
-  type's codecs and default: `MessageDescriptor` and `Message a`,
-  `EnumDescriptor` and `Enum a`, `MethodDescriptor` and `Method req res`
-  (§4, which holds the codecs of its types but not their records). The records have one shape, so nothing about a type is written
-  twice: an enum's names and numbers are its descriptor's, and
+- The naming: `Proto.Thing.Descriptor` is the data-only tree,
+  `Proto.Thing.Thing a` the typed value carrying it beside the type's
+  codecs and default, in one module (§3.1): `Proto.Message.Descriptor`
+  and `Proto.Message.Message a`, `Proto.Enum.Descriptor` and
+  `Proto.Enum.Enum a`, `Proto.Method.Descriptor` and
+  `Proto.Method.Method req res` (§4, which holds the codecs of its types
+  but not their typed values). *(Decided, 2026-10-16.)* Nothing about a type is
+  written twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
-- The trees (`Proto.Descriptor`) are faithful to the proto, not to the
+- **The typed values are opaque**, built by positional functions and
+  read by functions of the same module: `Proto.Message.message encode
+  decoder default descriptor` (read by `encode`, `decoder`, `default`,
+  `toDescriptor`), `Proto.Enum.enum encode decoder zero descriptor`
+  (likewise, with `toName`, `fromName`, `toNumber`, `fromNumber`) and
+  `Proto.Method.method encodeRequest responseDecoder descriptor` (§4). Why: an Elm record alias that generated code writes
+  as a literal can never gain a field. The field is a major by Elm's
+  package rules, and every module generated before it stops compiling
+  on the literal rather than on the sentinel (§8.2). Built by a
+  function, a type grows by a new modifier and a new reader, a minor,
+  and code generated before compiles against the newer runtime. A
+  builder takes its arguments positionally, never as one record
+  argument, which would freeze the shape the same way. The first shape
+  was record aliases written as literals. *(Decided, 2026-10-16.)*
+- **The trees are opaque too**, for the same reason, each built by a
+  `descriptor` function and read in the module of its concept (§3.1):
+  `Proto.Message` (`descriptor typeName fields`; `typeName`, `typeUrl`,
+  `fields`, `oneofs`), `Proto.Field` (`descriptor name jsonName number
+  cardinality kind`, `inOneof`; `name`, `jsonName`, `number`,
+  `cardinality`, `kind`, `oneof`), `Proto.Enum` (`descriptor typeName
+  values`; `typeName`, `values`), `Proto.EnumValue` (`descriptor name
+  number`; `name`, `number`) and `Proto.Method` (`descriptor service
+  name idempotent input output bindings`; the same six). The unions a
+  field holds are public, to match on, in `Proto.Field` beside it:
+  `Cardinality`, `Kind` and `Scalar`. A property a field has beyond the
+  five every field has is a modifier written only when set:
+  `|> Proto.Field.inOneof "kind"` for a oneof member. A message's oneofs
+  are the ones its fields name, in order of first appearance, derived by
+  the builder rather than written a second time. *(Decided, 2026-10-16.)*
+  The record form wrote every property of every field, its labels
+  included. *(Measured 2026-10-16.)* Against the record form, the
+  builders make the Connect conformance suite's generated Elm 5.9 %
+  smaller (126,211 to 118,711 bytes) and the notes example's 6.6 %
+  (98,345 to 91,863), though generated code refers to every module
+  qualified in full (`Proto.Field.CardinalitySingular`). An import
+  alias would save more; that is a separate question.
+- The trees are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
   names; an enum's full name and its value names in declaration order,
-  an alias an entry of its own. A singular message field is `Singular`
-  of `Message "…"` though Elm holds it as a `Maybe`; a proto3
-  `optional` field is `Optional`, its synthetic oneof not listed. Types
+  an alias an entry of its own. A singular message field is
+  `CardinalitySingular` of `KindMessage "…"` though Elm holds it as a
+  `Maybe`; a proto3 `optional` field is `CardinalityOptional`, its
+  synthetic oneof not listed. Types
   refer to each other by full name, never by value, since Elm forbids
   cyclic values; a `Proto.Registry` resolves the names.
 - `Proto.Enum` derives names and numbers (`toName`, `fromName`,
@@ -1030,26 +1123,35 @@ registry =
   than the zero value the decoder would give. A value the encoder does
   not write as a string has no name: `toName` gives `""` and `toNumber`
   `0`. No generated value is one today, since every constructor is a
-  declared value. The record holds no
-  typed value list of its own: that would be the descriptor again,
-  and it is sound only while the descriptor is always written (§3.9
-  has no option to leave it out).
-- The well-known types' records are the runtime's, in
+  declared value. The typed value holds no list of Elm values of its
+  own: that would be the descriptor again, and it is sound only while
+  the descriptor is always written (§3.9 has no option to leave it
+  out).
+- The well-known types' typed values are the runtime's, in
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
   `any`, `struct`, `value`, `listValue` and the wrappers, the 64-bit
-  ones in both `int64` forms), and `Proto.Registry.wellKnown` holds
-  their trees. They live apart from `Proto.Message` so that the record
-  for `google.protobuf.Any` (`Proto.Any`, §3.5), whose module needs
-  `Proto.Message` and `Proto.Registry`, can join them without an
-  import cycle.
-- The typed records serve `Any` (§3.5), error details (§5.4) and
+  ones in both `int64` forms), built with `Proto.Message.message`, and
+  `Proto.Registry.wellKnown` holds their trees. They live apart from
+  `Proto.Message` so that the value for `google.protobuf.Any`
+  (`Proto.Any`, §3.5), whose module needs `Proto.Message` and
+  `Proto.Registry`, can join them without an import cycle.
+- The typed values serve `Any` (§3.5), error details (§5.4) and
   reflection; calls carry codecs only (§4), because Elm's dead-code
-  elimination keeps a top-level value whole: a method holding a record
-  would bring the type's default and descriptor tree into every
-  program that calls it. *(Decided, 2026-10-15.)*
-- No service, file or package descriptor: nothing consumes one, and a
-  service module's namespace is its methods' names, so any fixed value
-  name could collide with a method.
+  elimination keeps a top-level value whole: a method holding a typed
+  value would bring the type's default and descriptor tree into every
+  program that calls it. *(Decided, 2026-10-15.)* For the same reason
+  each descriptor is a top-level value of its own and the registry is
+  built from those, never from the typed values: a registry of
+  `messageFoo.descriptor` kept every type's codecs and default in any
+  program that used it, which on a large API was most of the program.
+  *(Decided, 2026-10-16.)*
+- Each method's descriptor is a value of its own in its service's
+  module, `descriptorGetNote`, which its call refers to (§4). Its name
+  is derived from the method's, so it can collide only with a method
+  named for it (`DescriptorGetNote` beside `GetNote`), which is
+  diagnosed. There is no service, file or package descriptor: nothing
+  consumes one, and a service module's namespace is its methods' calls
+  and descriptors, so any fixed value name could collide with a method.
 - **The registry.** Each package module ends its descriptors section
   with `registry : Proto.Registry.Registry`, transitive: the package's
   own descriptors, then the registries of the generated packages its
@@ -1079,68 +1181,95 @@ registry =
   (46 KB gzipped) without descriptors, the same with them when the
   registry is unused, since dead-code elimination drops the trees, and
   1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
-  always written: the cost falls on applications that use them.
+  always written: the cost falls on applications that use them. (That
+  measurement predates the descriptors' split from the typed values:
+  the registry then kept every type's codecs too.)
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding one function per method from
-its request to an `Rpc.Call` (§5.2). The `services` conformance case
-pins the output:
+beside the package's `Notes.V1`, holding a descriptors section with
+each method's `Proto.Method.Descriptor` and then a calls
+section with one function per method from its request to an
+`Rpc.Call` (§5.2). The `services` conformance case pins the output:
 
 ```elm
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Method.Descriptor
+descriptorGetNote =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "GetNote"
+        True
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        , Proto.Http.binding { … }   -- the additional binding
+        ]
+
+
+
+-- CALLS
+
+
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeGetNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = True
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings =
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                , Proto.Http.binding { … }   -- the additional binding
-                ]
-            }
-        }
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
 ```
 
-- The service module imports `Rpc`, `Proto.Http` (for the
-  bindings), the package module and the modules of any other package
+Both applications put one argument per line however short their
+arguments, so a method without bindings (`[]`) reads like one with
+them; the emitter asks the printer for that layout, which elm-format
+keeps.
+*(Decided, 2026-10-16.)*
+
+- The service module imports `Rpc`, `Proto.Method` (for the method
+  and its descriptor), `Proto.Http` (for the bindings), the package module and the modules of any other package
   its request and response types come from (`Proto.Json`, `Proto.Any`,
   `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
   refers to every one of them qualified. Each method is written
-  point-free, `getNote = Rpc.call { … }`, binding no local name. So a
-  method's name can clash with nothing but another method of its
-  service, whatever it is: `value`, `identity` or `encodeNote` are all
-  fine method names (the namespace rule is in the IR bullets below).
-- `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9):
-  `encodeRequest` is its request type's encoder and `responseDecoder`
-  its response type's decoder (`Notes.V1.encodeGetNoteRequest`,
+  point-free, `getNote = Rpc.call (…)`, binding no local name. So a
+  method's name can clash with nothing but another method's call or
+  descriptor in its service, whatever it is: `value`, `identity` or
+  `encodeNote` are all fine method names (the namespace rule is in the
+  IR bullets below).
+- `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9),
+  built by `Proto.Method.method` from its request type's encoder and its
+  response type's decoder (`Notes.V1.encodeGetNoteRequest`,
   `Notes.V1.decodeNote`; for a well-known type the runtime's codecs a
   field of that type uses, `Proto.Json.encodeEmpty` and
   `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it), and
-  `descriptor` its `Proto.Descriptor.MethodDescriptor`: `service` is
-  the fully-qualified service name and `name` the method's as
-  declared, together its Connect path, and `input` and `output` the
-  full names of its types. No separate method value is generated;
-  `Rpc.method` and `Rpc.descriptor` read them back from any call of the
-  method. *(Decided, 2026-10-13.)* The first shape put the codecs
+  its descriptor value, `descriptorGetNote : Proto.Method.Descriptor`,
+  built by `Proto.Method.descriptor` from the fully-qualified service
+  name and the method's name as declared, together its Connect path,
+  whether it is idempotent, the full names of its types and its
+  bindings.
+  The descriptor's name is `descriptor` followed by the method's Elm
+  name with its first letter uppercased, so a `rename` renames both. No
+  `Proto.Method.Method` value is generated; `Rpc.method` and
+  `Rpc.descriptor` read the method and its descriptor back from any
+  call of it. Elm keeps a top-level value whole, and the call refers to
+  the descriptor value, so a program that calls the method keeps what
+  it kept when the descriptor was written inline, and one that does
+  not keeps neither. *(Decided, 2026-10-13; the descriptor became a
+  value of its own 2026-10-16.)* The first shape put the codecs
   themselves in a descriptor record of `Rpc`'s; the second gave the
   method its types' typed records (§3.9). A method now carries only
   what the wire needs: the records hold each type's default and
@@ -1210,11 +1339,14 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   `Settings` clashed, and two services could not both have a `Get`.
 - A method's value is its name with the first letter lowercased and
   underscores dropped as for a field (`GetNote` → `getNote`), a reserved
-  word escaped (`Type` → `type_`). It shares a namespace only with the
-  other methods of its service: two that coincide (`GetNote` and
-  `Get_Note`) are `naming::value_collision`, never a rename. A method
-  `DefaultSettings` beside a message `Settings`, or a `Get` in two
-  services, is fine.
+  word escaped (`Type` → `type_`), and its descriptor's is
+  `descriptor` followed by that with its first letter uppercased
+  (`descriptorGetNote`). They share a namespace only with the other
+  methods' values in its service: two methods that coincide (`GetNote`
+  and `Get_Note`), or a method named for another's descriptor
+  (`DescriptorGetNote` beside `GetNote`), are `naming::value_collision`,
+  never a rename. A method `DefaultSettings` beside a message
+  `Settings`, or a `Get` in two services, is fine.
 - Module names are unique across the build: a service module that is
   also a package's module (`NotesService` in `notes.v1` beside the
   package `notes.v1.notes_service`), two services whose module names
@@ -1225,7 +1357,7 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   with one name do not clash.
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`), through
-  the runtime's typed record of it (`services_types` case). Any other
+  the runtime's codecs for it (`services_types` case). Any other
   type outside the generate set is `generate::not_generated`, worded for
   the method ("The request of `notes.v1.Notes.Get` refers to ...").
 - A streaming method is `services::streaming`, pointing at its
@@ -1386,9 +1518,10 @@ The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 `Rpc.Code` and `Rpc.ErrorCode` (§5.4); its internals live under
 `Rpc.Internal.*`. The data modules, which generated code calls whatever
 the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
-`Proto.Duration`, `Proto.Int64`), the descriptor trees
-(`Proto.Descriptor`), the HTTP bindings (`Proto.Http`), the typed records (`Proto.Message`,
-`Proto.Enum`, `Proto.Method`), the well-known types' records
+`Proto.Duration`, `Proto.Int64`), the typed values and descriptor
+trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
+`Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
+HTTP bindings (`Proto.Http`), the well-known types' values
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any`
 (§3.5). They were `Connect.*` at first, a name that tied proto3
 JSON to one of the two transports; no public `Connect` module remains.
@@ -1405,7 +1538,7 @@ viaBinding : Int -> Call req res -> Maybe (Call req res)                -- trans
 
 -- reading
 method : Call req res -> Proto.Method.Method req res
-descriptor : Call req res -> Proto.Descriptor.MethodDescriptor
+descriptor : Call req res -> Proto.Method.Descriptor
 serviceName, methodName, idempotent, requestMessage, requestJson
 toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
 
@@ -1429,12 +1562,15 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - A call is data: a generated function per method applied to the
   request (§4). Per-call adjustments ride on it; `toJson` gives it a
   stable JSON form for logs, deduplication keys and queues.
-- The codecs are the method's `encodeRequest` and `responseDecoder`
-  (the typed records' `encodeJson` and `jsonDecoder` for `Any` and
-  error details), named for their encoding so that binary codecs can
-  sit beside them later without a rename. *(Decided, 2026-10-13;
-  method fields 2026-10-15.)*
-- The accessors are `method` (the `Method` record), `descriptor` (its
+- The codecs are the method's, read by `Proto.Method.encodeRequest`
+  and `responseDecoder` (the typed values' `Proto.Message.encode` and
+  `decoder` for `Any` and error details). Another encoding's codecs
+  would arrive as a modifier of the opaque `Method` and `Message`
+  (§3.9), not as a field beside these. *(Decided, 2026-10-13; method
+  fields 2026-10-15; opaque 2026-10-16.)* The record form claimed its
+  codec names left room for binary codecs beside them, which Elm's
+  rules for records never allowed.
+- The accessors are `method` (the `Method`), `descriptor` (its
   descriptor), `serviceName`, `methodName` and `idempotent`; the
   string accessors were `service` and `method` until `method` named
   the record. *(Decided, 2026-10-13.)*
@@ -2283,6 +2419,16 @@ Within a major version:
   Additive: options, values and codes are added, and none is removed or
   changes meaning. A diagnostic's text, help and rendering are not a
   contract.
+- **The runtime's types: opaque or frozen.** A type generated code
+  builds is opaque, built by functions and read by functions, so it can
+  grow within a major by new modifiers and readers and code generated
+  by an earlier minor keeps compiling: `Proto.Message.Message`,
+  `Proto.Enum.Enum` and `Proto.Method.Method` (§3.9), with `Rpc.Call`,
+  `Proto.Any.Any` and `Proto.Registry.Registry`, and the descriptor
+  trees, the `Descriptor` of `Proto.Message`, `Proto.Field`,
+  `Proto.Enum`, `Proto.EnumValue` and `Proto.Method` (§3.9). The
+  public unions are frozen within a major, since users match on them
+  exhaustively: `Proto.Field.Cardinality`, `Kind` and `Scalar`.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.
@@ -2355,7 +2501,7 @@ Within a major version:
 ## 9. Open questions, collected
 
 1. *(Closed 2026-10-13.)* `Any` (§3.5): `Proto.Any` packs and
-   unpacks through the typed records (§3.9), describes through a
+   unpacks through the typed values (§3.9), describes through a
    registry, and holds a payload that arrived only as binary rather
    than failing on it; `Rpc` error details are `Any`s (§5.4).
 

@@ -9,6 +9,7 @@ import Proto.Any
 import Proto.Duration
 import Proto.Http
 import Proto.Message exposing (Message)
+import Proto.Method
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
@@ -28,27 +29,19 @@ encodeGetNote r =
 
 title : Message String
 title =
-    { encodeJson = \t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ]
-    , jsonDecoder = Json.Decode.field "title" Json.Decode.string
-    , default = ""
-    , descriptor = { typeName = "notes.v1.Note", fields = [], oneofs = [] }
-    }
+    Proto.Message.message (\t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ])
+        (Json.Decode.field "title" Json.Decode.string)
+        ""
+        (Proto.Message.descriptor "notes.v1.Note" [])
 
 
 notes : String -> Bool -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
 notes name idempotent bindings =
     Rpc.call
-        { encodeRequest = encodeGetNote
-        , responseDecoder = title.jsonDecoder
-        , descriptor =
-            { service = "notes.v1.Notes"
-            , name = name
-            , idempotent = idempotent
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings = bindings
-            }
-        }
+        (Proto.Method.method encodeGetNote
+            (Proto.Message.decoder title)
+            (Proto.Method.descriptor "notes.v1.Notes" name idempotent "notes.v1.GetNoteRequest" "notes.v1.Note" bindings)
+        )
 
 
 getNote : GetNote -> Rpc.Call GetNote String
@@ -220,7 +213,7 @@ calls =
                     |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( True, { name = "notes/42" } ) )
         , test "the method and its descriptor are the ones the call was made from" <|
             \_ ->
-                ( ( (Rpc.method c).descriptor.input, Json.Encode.encode 0 ((Rpc.method c).encodeRequest { name = "x" }) ), (Rpc.descriptor c).name, (Rpc.descriptor c).output )
+                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.method c) { name = "x" }) ), Proto.Method.name (Rpc.descriptor c), Proto.Method.output (Rpc.descriptor c) )
                     |> Expect.equal ( ( "notes.v1.GetNoteRequest", "{\"name\":\"x\"}" ), "GetNote", "notes.v1.Note" )
         , test "requestJson is the request's JSON" <|
             \_ ->

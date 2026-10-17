@@ -10,8 +10,10 @@
 //!   precedence ([`BinOp::precedence`], [`BinOp::associativity`]) and from
 //!   the position an expression sits in, so a tree cannot be built with
 //!   redundant or missing parentheses.
-//! - There is no layout information. Whether a construct spans lines is
-//!   the printer's decision (see [`mod@super::print`]).
+//! - Layout is the printer's decision (see [`mod@super::print`]), but for
+//!   three hints by which the emitter asks for a layout elm-format would
+//!   keep: [`Expr::InlineRecord`], [`Expr::InlineList`] and
+//!   [`Expr::StackedApply`]. Each means what its plain form means.
 //! - Names are stored as written in Elm: the tree does not validate that a
 //!   value name is lowercase or that a constructor is uppercase. The
 //!   naming layer is responsible for producing legal identifiers.
@@ -201,6 +203,11 @@ pub enum Expr {
     },
     /// Function application: `f a b`.
     Apply(Box<Expr>, Vec<Expr>),
+    /// Function application printed with one argument per line, the
+    /// first on the function's line and the rest indented under it, even
+    /// when every argument fits on one line; elm-format keeps an
+    /// application written that way. Like [`Expr::Apply`] otherwise.
+    StackedApply(Box<Expr>, Vec<Expr>),
     /// `\a b -> body`.
     Lambda(Vec<Pattern>, Box<Expr>),
     /// `case subject of` with its branches, in order.

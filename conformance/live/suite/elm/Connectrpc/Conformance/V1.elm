@@ -7,8 +7,9 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -792,903 +793,781 @@ defaultTestCaseExpandedSize =
 -- DESCRIPTORS
 
 
+descriptorHTTPVersion : Proto.Enum.Descriptor
+descriptorHTTPVersion =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.HTTPVersion"
+        [ Proto.EnumValue.descriptor "HTTP_VERSION_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "HTTP_VERSION_1" 1
+        , Proto.EnumValue.descriptor "HTTP_VERSION_2" 2
+        , Proto.EnumValue.descriptor "HTTP_VERSION_3" 3
+        ]
+
+
 enumHTTPVersion : Proto.Enum.Enum HTTPVersion
 enumHTTPVersion =
-    { encodeJson = encodeHTTPVersion
-    , jsonDecoder = decodeHTTPVersion
-    , default = HTTPVersionUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.HTTPVersion"
-        , values =
-            [ { name = "HTTP_VERSION_UNSPECIFIED", number = 0 }
-            , { name = "HTTP_VERSION_1", number = 1 }
-            , { name = "HTTP_VERSION_2", number = 2 }
-            , { name = "HTTP_VERSION_3", number = 3 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeHTTPVersion decodeHTTPVersion HTTPVersionUnspecified descriptorHTTPVersion
+
+
+descriptorProtocol : Proto.Enum.Descriptor
+descriptorProtocol =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.Protocol"
+        [ Proto.EnumValue.descriptor "PROTOCOL_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "PROTOCOL_CONNECT" 1
+        , Proto.EnumValue.descriptor "PROTOCOL_GRPC" 2
+        , Proto.EnumValue.descriptor "PROTOCOL_GRPC_WEB" 3
+        ]
 
 
 enumProtocol : Proto.Enum.Enum Protocol
 enumProtocol =
-    { encodeJson = encodeProtocol
-    , jsonDecoder = decodeProtocol
-    , default = ProtocolUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Protocol"
-        , values =
-            [ { name = "PROTOCOL_UNSPECIFIED", number = 0 }
-            , { name = "PROTOCOL_CONNECT", number = 1 }
-            , { name = "PROTOCOL_GRPC", number = 2 }
-            , { name = "PROTOCOL_GRPC_WEB", number = 3 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeProtocol decodeProtocol ProtocolUnspecified descriptorProtocol
+
+
+descriptorCodec : Proto.Enum.Descriptor
+descriptorCodec =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.Codec"
+        [ Proto.EnumValue.descriptor "CODEC_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "CODEC_PROTO" 1
+        , Proto.EnumValue.descriptor "CODEC_JSON" 2
+        , Proto.EnumValue.descriptor "CODEC_TEXT" 3
+        ]
 
 
 enumCodec : Proto.Enum.Enum Codec
 enumCodec =
-    { encodeJson = encodeCodec
-    , jsonDecoder = decodeCodec
-    , default = CodecUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Codec"
-        , values =
-            [ { name = "CODEC_UNSPECIFIED", number = 0 }
-            , { name = "CODEC_PROTO", number = 1 }
-            , { name = "CODEC_JSON", number = 2 }
-            , { name = "CODEC_TEXT", number = 3 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeCodec decodeCodec CodecUnspecified descriptorCodec
+
+
+descriptorCompression : Proto.Enum.Descriptor
+descriptorCompression =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.Compression"
+        [ Proto.EnumValue.descriptor "COMPRESSION_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "COMPRESSION_IDENTITY" 1
+        , Proto.EnumValue.descriptor "COMPRESSION_GZIP" 2
+        , Proto.EnumValue.descriptor "COMPRESSION_BR" 3
+        , Proto.EnumValue.descriptor "COMPRESSION_ZSTD" 4
+        , Proto.EnumValue.descriptor "COMPRESSION_DEFLATE" 5
+        , Proto.EnumValue.descriptor "COMPRESSION_SNAPPY" 6
+        ]
 
 
 enumCompression : Proto.Enum.Enum Compression
 enumCompression =
-    { encodeJson = encodeCompression
-    , jsonDecoder = decodeCompression
-    , default = CompressionUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Compression"
-        , values =
-            [ { name = "COMPRESSION_UNSPECIFIED", number = 0 }
-            , { name = "COMPRESSION_IDENTITY", number = 1 }
-            , { name = "COMPRESSION_GZIP", number = 2 }
-            , { name = "COMPRESSION_BR", number = 3 }
-            , { name = "COMPRESSION_ZSTD", number = 4 }
-            , { name = "COMPRESSION_DEFLATE", number = 5 }
-            , { name = "COMPRESSION_SNAPPY", number = 6 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeCompression decodeCompression CompressionUnspecified descriptorCompression
+
+
+descriptorStreamType : Proto.Enum.Descriptor
+descriptorStreamType =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.StreamType"
+        [ Proto.EnumValue.descriptor "STREAM_TYPE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "STREAM_TYPE_UNARY" 1
+        , Proto.EnumValue.descriptor "STREAM_TYPE_CLIENT_STREAM" 2
+        , Proto.EnumValue.descriptor "STREAM_TYPE_SERVER_STREAM" 3
+        , Proto.EnumValue.descriptor "STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM" 4
+        , Proto.EnumValue.descriptor "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM" 5
+        ]
 
 
 enumStreamType : Proto.Enum.Enum StreamType
 enumStreamType =
-    { encodeJson = encodeStreamType
-    , jsonDecoder = decodeStreamType
-    , default = StreamTypeUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.StreamType"
-        , values =
-            [ { name = "STREAM_TYPE_UNSPECIFIED", number = 0 }
-            , { name = "STREAM_TYPE_UNARY", number = 1 }
-            , { name = "STREAM_TYPE_CLIENT_STREAM", number = 2 }
-            , { name = "STREAM_TYPE_SERVER_STREAM", number = 3 }
-            , { name = "STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM", number = 4 }
-            , { name = "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM", number = 5 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeStreamType decodeStreamType StreamTypeUnspecified descriptorStreamType
+
+
+descriptorCode : Proto.Enum.Descriptor
+descriptorCode =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.Code"
+        [ Proto.EnumValue.descriptor "CODE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "CODE_CANCELED" 1
+        , Proto.EnumValue.descriptor "CODE_UNKNOWN" 2
+        , Proto.EnumValue.descriptor "CODE_INVALID_ARGUMENT" 3
+        , Proto.EnumValue.descriptor "CODE_DEADLINE_EXCEEDED" 4
+        , Proto.EnumValue.descriptor "CODE_NOT_FOUND" 5
+        , Proto.EnumValue.descriptor "CODE_ALREADY_EXISTS" 6
+        , Proto.EnumValue.descriptor "CODE_PERMISSION_DENIED" 7
+        , Proto.EnumValue.descriptor "CODE_RESOURCE_EXHAUSTED" 8
+        , Proto.EnumValue.descriptor "CODE_FAILED_PRECONDITION" 9
+        , Proto.EnumValue.descriptor "CODE_ABORTED" 10
+        , Proto.EnumValue.descriptor "CODE_OUT_OF_RANGE" 11
+        , Proto.EnumValue.descriptor "CODE_UNIMPLEMENTED" 12
+        , Proto.EnumValue.descriptor "CODE_INTERNAL" 13
+        , Proto.EnumValue.descriptor "CODE_UNAVAILABLE" 14
+        , Proto.EnumValue.descriptor "CODE_DATA_LOSS" 15
+        , Proto.EnumValue.descriptor "CODE_UNAUTHENTICATED" 16
+        ]
 
 
 enumCode : Proto.Enum.Enum Code
 enumCode =
-    { encodeJson = encodeCode
-    , jsonDecoder = decodeCode
-    , default = CodeUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Code"
-        , values =
-            [ { name = "CODE_UNSPECIFIED", number = 0 }
-            , { name = "CODE_CANCELED", number = 1 }
-            , { name = "CODE_UNKNOWN", number = 2 }
-            , { name = "CODE_INVALID_ARGUMENT", number = 3 }
-            , { name = "CODE_DEADLINE_EXCEEDED", number = 4 }
-            , { name = "CODE_NOT_FOUND", number = 5 }
-            , { name = "CODE_ALREADY_EXISTS", number = 6 }
-            , { name = "CODE_PERMISSION_DENIED", number = 7 }
-            , { name = "CODE_RESOURCE_EXHAUSTED", number = 8 }
-            , { name = "CODE_FAILED_PRECONDITION", number = 9 }
-            , { name = "CODE_ABORTED", number = 10 }
-            , { name = "CODE_OUT_OF_RANGE", number = 11 }
-            , { name = "CODE_UNIMPLEMENTED", number = 12 }
-            , { name = "CODE_INTERNAL", number = 13 }
-            , { name = "CODE_UNAVAILABLE", number = 14 }
-            , { name = "CODE_DATA_LOSS", number = 15 }
-            , { name = "CODE_UNAUTHENTICATED", number = 16 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeCode decodeCode CodeUnspecified descriptorCode
+
+
+descriptorTestSuiteTestMode : Proto.Enum.Descriptor
+descriptorTestSuiteTestMode =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.TestSuite.TestMode"
+        [ Proto.EnumValue.descriptor "TEST_MODE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "TEST_MODE_CLIENT" 1
+        , Proto.EnumValue.descriptor "TEST_MODE_SERVER" 2
+        ]
 
 
 enumTestSuiteTestMode : Proto.Enum.Enum TestSuiteTestMode
 enumTestSuiteTestMode =
-    { encodeJson = encodeTestSuiteTestMode
-    , jsonDecoder = decodeTestSuiteTestMode
-    , default = TestSuiteTestModeUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TestSuite.TestMode"
-        , values =
-            [ { name = "TEST_MODE_UNSPECIFIED", number = 0 }
-            , { name = "TEST_MODE_CLIENT", number = 1 }
-            , { name = "TEST_MODE_SERVER", number = 2 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeTestSuiteTestMode decodeTestSuiteTestMode TestSuiteTestModeUnspecified descriptorTestSuiteTestMode
+
+
+descriptorTestSuiteConnectVersionMode : Proto.Enum.Descriptor
+descriptorTestSuiteConnectVersionMode =
+    Proto.Enum.descriptor "connectrpc.conformance.v1.TestSuite.ConnectVersionMode"
+        [ Proto.EnumValue.descriptor "CONNECT_VERSION_MODE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "CONNECT_VERSION_MODE_REQUIRE" 1
+        , Proto.EnumValue.descriptor "CONNECT_VERSION_MODE_IGNORE" 2
+        ]
 
 
 enumTestSuiteConnectVersionMode : Proto.Enum.Enum TestSuiteConnectVersionMode
 enumTestSuiteConnectVersionMode =
-    { encodeJson = encodeTestSuiteConnectVersionMode
-    , jsonDecoder = decodeTestSuiteConnectVersionMode
-    , default = TestSuiteConnectVersionModeUnspecified
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TestSuite.ConnectVersionMode"
-        , values =
-            [ { name = "CONNECT_VERSION_MODE_UNSPECIFIED", number = 0 }
-            , { name = "CONNECT_VERSION_MODE_REQUIRE", number = 1 }
-            , { name = "CONNECT_VERSION_MODE_IGNORE", number = 2 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeTestSuiteConnectVersionMode decodeTestSuiteConnectVersionMode TestSuiteConnectVersionModeUnspecified descriptorTestSuiteConnectVersionMode
+
+
+descriptorClientCompatRequest : Proto.Message.Descriptor
+descriptorClientCompatRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientCompatRequest"
+        [ Proto.Field.descriptor "test_name" "testName" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        , Proto.Field.descriptor "protocol" "protocol" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
+        , Proto.Field.descriptor "codec" "codec" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
+        , Proto.Field.descriptor "compression" "compression" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "host" "host" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "port" "port" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "server_tls_cert" "serverTlsCert" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "client_tls_creds" "clientTlsCreds" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.TLSCreds")
+        , Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "service" "service" 11 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "method" "method" 12 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "stream_type" "streamType" 13 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        , Proto.Field.descriptor "use_get_http_method" "useGetHttpMethod" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "request_headers" "requestHeaders" 15 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "request_messages" "requestMessages" 16 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "timeout_ms" "timeoutMs" 17 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "request_delay_ms" "requestDelayMs" 18 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "cancel" "cancel" 19 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest.Cancel")
+        , Proto.Field.descriptor "raw_request" "rawRequest" 20 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPRequest")
+        ]
 
 
 messageClientCompatRequest : Proto.Message.Message ClientCompatRequest
 messageClientCompatRequest =
-    { encodeJson = encodeClientCompatRequest
-    , jsonDecoder = decodeClientCompatRequest
-    , default = defaultClientCompatRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientCompatRequest"
-        , fields =
-            [ { name = "test_name", jsonName = "testName", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "http_version", jsonName = "httpVersion", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.HTTPVersion", oneof = Nothing }
-            , { name = "protocol", jsonName = "protocol", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Protocol", oneof = Nothing }
-            , { name = "codec", jsonName = "codec", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Codec", oneof = Nothing }
-            , { name = "compression", jsonName = "compression", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Compression", oneof = Nothing }
-            , { name = "host", jsonName = "host", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "port", jsonName = "port", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "server_tls_cert", jsonName = "serverTlsCert", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "client_tls_creds", jsonName = "clientTlsCreds", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.TLSCreds", oneof = Nothing }
-            , { name = "message_receive_limit", jsonName = "messageReceiveLimit", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "service", jsonName = "service", number = 11, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "method", jsonName = "method", number = 12, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "stream_type", jsonName = "streamType", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.StreamType", oneof = Nothing }
-            , { name = "use_get_http_method", jsonName = "useGetHttpMethod", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "request_headers", jsonName = "requestHeaders", number = 15, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "request_messages", jsonName = "requestMessages", number = 16, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            , { name = "timeout_ms", jsonName = "timeoutMs", number = 17, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "request_delay_ms", jsonName = "requestDelayMs", number = 18, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "cancel", jsonName = "cancel", number = 19, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ClientCompatRequest.Cancel", oneof = Nothing }
-            , { name = "raw_request", jsonName = "rawRequest", number = 20, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.RawHTTPRequest", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeClientCompatRequest decodeClientCompatRequest defaultClientCompatRequest descriptorClientCompatRequest
+
+
+descriptorClientCompatRequestCancel : Proto.Message.Descriptor
+descriptorClientCompatRequestCancel =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientCompatRequest.Cancel"
+        [ Proto.Field.descriptor "before_close_send" "beforeCloseSend" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
+            |> Proto.Field.inOneof "cancel_timing"
+        , Proto.Field.descriptor "after_close_send_ms" "afterCloseSendMs" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+            |> Proto.Field.inOneof "cancel_timing"
+        , Proto.Field.descriptor "after_num_responses" "afterNumResponses" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+            |> Proto.Field.inOneof "cancel_timing"
+        ]
 
 
 messageClientCompatRequestCancel : Proto.Message.Message ClientCompatRequestCancel
 messageClientCompatRequestCancel =
-    { encodeJson = encodeClientCompatRequestCancel
-    , jsonDecoder = decodeClientCompatRequestCancel
-    , default = defaultClientCompatRequestCancel
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientCompatRequest.Cancel"
-        , fields =
-            [ { name = "before_close_send", jsonName = "beforeCloseSend", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Just "cancel_timing" }
-            , { name = "after_close_send_ms", jsonName = "afterCloseSendMs", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Just "cancel_timing" }
-            , { name = "after_num_responses", jsonName = "afterNumResponses", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Just "cancel_timing" }
-            ]
-        , oneofs = [ "cancel_timing" ]
-        }
-    }
+    Proto.Message.message encodeClientCompatRequestCancel decodeClientCompatRequestCancel defaultClientCompatRequestCancel descriptorClientCompatRequestCancel
+
+
+descriptorClientCompatResponse : Proto.Message.Descriptor
+descriptorClientCompatResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientCompatResponse"
+        [ Proto.Field.descriptor "test_name" "testName" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "response" "response" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientResponseResult")
+            |> Proto.Field.inOneof "result"
+        , Proto.Field.descriptor "error" "error" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientErrorResult")
+            |> Proto.Field.inOneof "result"
+        ]
 
 
 messageClientCompatResponse : Proto.Message.Message ClientCompatResponse
 messageClientCompatResponse =
-    { encodeJson = encodeClientCompatResponse
-    , jsonDecoder = decodeClientCompatResponse
-    , default = defaultClientCompatResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientCompatResponse"
-        , fields =
-            [ { name = "test_name", jsonName = "testName", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "response", jsonName = "response", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ClientResponseResult", oneof = Just "result" }
-            , { name = "error", jsonName = "error", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ClientErrorResult", oneof = Just "result" }
-            ]
-        , oneofs = [ "result" ]
-        }
-    }
+    Proto.Message.message encodeClientCompatResponse decodeClientCompatResponse defaultClientCompatResponse descriptorClientCompatResponse
+
+
+descriptorClientResponseResult : Proto.Message.Descriptor
+descriptorClientResponseResult =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientResponseResult"
+        [ Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "payloads" "payloads" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        , Proto.Field.descriptor "error" "error" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
+        , Proto.Field.descriptor "response_trailers" "responseTrailers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "num_unsent_requests" "numUnsentRequests" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "http_status_code" "httpStatusCode" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "feedback" "feedback" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageClientResponseResult : Proto.Message.Message ClientResponseResult
 messageClientResponseResult =
-    { encodeJson = encodeClientResponseResult
-    , jsonDecoder = decodeClientResponseResult
-    , default = defaultClientResponseResult
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientResponseResult"
-        , fields =
-            [ { name = "response_headers", jsonName = "responseHeaders", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "payloads", jsonName = "payloads", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing }
-            , { name = "error", jsonName = "error", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Error", oneof = Nothing }
-            , { name = "response_trailers", jsonName = "responseTrailers", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "num_unsent_requests", jsonName = "numUnsentRequests", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "http_status_code", jsonName = "httpStatusCode", number = 6, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "feedback", jsonName = "feedback", number = 7, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeClientResponseResult decodeClientResponseResult defaultClientResponseResult descriptorClientResponseResult
+
+
+descriptorClientErrorResult : Proto.Message.Descriptor
+descriptorClientErrorResult =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientErrorResult" [ Proto.Field.descriptor "message" "message" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageClientErrorResult : Proto.Message.Message ClientErrorResult
 messageClientErrorResult =
-    { encodeJson = encodeClientErrorResult
-    , jsonDecoder = decodeClientErrorResult
-    , default = defaultClientErrorResult
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientErrorResult"
-        , fields = [ { name = "message", jsonName = "message", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeClientErrorResult decodeClientErrorResult defaultClientErrorResult descriptorClientErrorResult
+
+
+descriptorWireDetails : Proto.Message.Descriptor
+descriptorWireDetails =
+    Proto.Message.descriptor "connectrpc.conformance.v1.WireDetails"
+        [ Proto.Field.descriptor "actual_status_code" "actualStatusCode" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "connect_error_raw" "connectErrorRaw" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
+        , Proto.Field.descriptor "actual_http_trailers" "actualHttpTrailers" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "actual_grpcweb_trailers" "actualGrpcwebTrailers" 4 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageWireDetails : Proto.Message.Message WireDetails
 messageWireDetails =
-    { encodeJson = encodeWireDetails
-    , jsonDecoder = decodeWireDetails
-    , default = defaultWireDetails
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.WireDetails"
-        , fields =
-            [ { name = "actual_status_code", jsonName = "actualStatusCode", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "connect_error_raw", jsonName = "connectErrorRaw", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Struct", oneof = Nothing }
-            , { name = "actual_http_trailers", jsonName = "actualHttpTrailers", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "actual_grpcweb_trailers", jsonName = "actualGrpcwebTrailers", number = 4, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeWireDetails decodeWireDetails defaultWireDetails descriptorWireDetails
+
+
+descriptorConfig : Proto.Message.Descriptor
+descriptorConfig =
+    Proto.Message.descriptor "connectrpc.conformance.v1.Config"
+        [ Proto.Field.descriptor "features" "features" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Features")
+        , Proto.Field.descriptor "include_cases" "includeCases" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.ConfigCase")
+        , Proto.Field.descriptor "exclude_cases" "excludeCases" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.ConfigCase")
+        ]
 
 
 messageConfig : Proto.Message.Message Config
 messageConfig =
-    { encodeJson = encodeConfig
-    , jsonDecoder = decodeConfig
-    , default = defaultConfig
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Config"
-        , fields =
-            [ { name = "features", jsonName = "features", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Features", oneof = Nothing }
-            , { name = "include_cases", jsonName = "includeCases", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConfigCase", oneof = Nothing }
-            , { name = "exclude_cases", jsonName = "excludeCases", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConfigCase", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeConfig decodeConfig defaultConfig descriptorConfig
+
+
+descriptorFeatures : Proto.Message.Descriptor
+descriptorFeatures =
+    Proto.Message.descriptor "connectrpc.conformance.v1.Features"
+        [ Proto.Field.descriptor "versions" "versions" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        , Proto.Field.descriptor "protocols" "protocols" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
+        , Proto.Field.descriptor "codecs" "codecs" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
+        , Proto.Field.descriptor "compressions" "compressions" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "stream_types" "streamTypes" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        , Proto.Field.descriptor "supports_h2c" "supportsH2c" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_tls" "supportsTls" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_tls_client_certs" "supportsTlsClientCerts" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_trailers" "supportsTrailers" 9 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_half_duplex_bidi_over_http1" "supportsHalfDuplexBidiOverHttp1" 10 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_connect_get" "supportsConnectGet" 11 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "supports_message_receive_limit" "supportsMessageReceiveLimit" 12 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        ]
 
 
 messageFeatures : Proto.Message.Message Features
 messageFeatures =
-    { encodeJson = encodeFeatures
-    , jsonDecoder = decodeFeatures
-    , default = defaultFeatures
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Features"
-        , fields =
-            [ { name = "versions", jsonName = "versions", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.HTTPVersion", oneof = Nothing }
-            , { name = "protocols", jsonName = "protocols", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Protocol", oneof = Nothing }
-            , { name = "codecs", jsonName = "codecs", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Codec", oneof = Nothing }
-            , { name = "compressions", jsonName = "compressions", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Compression", oneof = Nothing }
-            , { name = "stream_types", jsonName = "streamTypes", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.StreamType", oneof = Nothing }
-            , { name = "supports_h2c", jsonName = "supportsH2c", number = 6, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_tls", jsonName = "supportsTls", number = 7, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_tls_client_certs", jsonName = "supportsTlsClientCerts", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_trailers", jsonName = "supportsTrailers", number = 9, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_half_duplex_bidi_over_http1", jsonName = "supportsHalfDuplexBidiOverHttp1", number = 10, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_connect_get", jsonName = "supportsConnectGet", number = 11, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "supports_message_receive_limit", jsonName = "supportsMessageReceiveLimit", number = 12, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeFeatures decodeFeatures defaultFeatures descriptorFeatures
+
+
+descriptorConfigCase : Proto.Message.Descriptor
+descriptorConfigCase =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ConfigCase"
+        [ Proto.Field.descriptor "version" "version" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        , Proto.Field.descriptor "protocol" "protocol" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
+        , Proto.Field.descriptor "codec" "codec" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
+        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "stream_type" "streamType" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        , Proto.Field.descriptor "use_tls" "useTls" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "use_tls_client_certs" "useTlsClientCerts" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "use_message_receive_limit" "useMessageReceiveLimit" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        ]
 
 
 messageConfigCase : Proto.Message.Message ConfigCase
 messageConfigCase =
-    { encodeJson = encodeConfigCase
-    , jsonDecoder = decodeConfigCase
-    , default = defaultConfigCase
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ConfigCase"
-        , fields =
-            [ { name = "version", jsonName = "version", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.HTTPVersion", oneof = Nothing }
-            , { name = "protocol", jsonName = "protocol", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Protocol", oneof = Nothing }
-            , { name = "codec", jsonName = "codec", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Codec", oneof = Nothing }
-            , { name = "compression", jsonName = "compression", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Compression", oneof = Nothing }
-            , { name = "stream_type", jsonName = "streamType", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.StreamType", oneof = Nothing }
-            , { name = "use_tls", jsonName = "useTls", number = 6, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "use_tls_client_certs", jsonName = "useTlsClientCerts", number = 7, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "use_message_receive_limit", jsonName = "useMessageReceiveLimit", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeConfigCase decodeConfigCase defaultConfigCase descriptorConfigCase
+
+
+descriptorTLSCreds : Proto.Message.Descriptor
+descriptorTLSCreds =
+    Proto.Message.descriptor "connectrpc.conformance.v1.TLSCreds"
+        [ Proto.Field.descriptor "cert" "cert" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "key" "key" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageTLSCreds : Proto.Message.Message TLSCreds
 messageTLSCreds =
-    { encodeJson = encodeTLSCreds
-    , jsonDecoder = decodeTLSCreds
-    , default = defaultTLSCreds
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TLSCreds"
-        , fields =
-            [ { name = "cert", jsonName = "cert", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "key", jsonName = "key", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTLSCreds decodeTLSCreds defaultTLSCreds descriptorTLSCreds
+
+
+descriptorServerCompatRequest : Proto.Message.Descriptor
+descriptorServerCompatRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ServerCompatRequest"
+        [ Proto.Field.descriptor "protocol" "protocol" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
+        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        , Proto.Field.descriptor "use_tls" "useTls" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "client_tls_cert" "clientTlsCert" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "server_creds" "serverCreds" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.TLSCreds")
+        ]
 
 
 messageServerCompatRequest : Proto.Message.Message ServerCompatRequest
 messageServerCompatRequest =
-    { encodeJson = encodeServerCompatRequest
-    , jsonDecoder = decodeServerCompatRequest
-    , default = defaultServerCompatRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ServerCompatRequest"
-        , fields =
-            [ { name = "protocol", jsonName = "protocol", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Protocol", oneof = Nothing }
-            , { name = "http_version", jsonName = "httpVersion", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.HTTPVersion", oneof = Nothing }
-            , { name = "use_tls", jsonName = "useTls", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "client_tls_cert", jsonName = "clientTlsCert", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "message_receive_limit", jsonName = "messageReceiveLimit", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "server_creds", jsonName = "serverCreds", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.TLSCreds", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeServerCompatRequest decodeServerCompatRequest defaultServerCompatRequest descriptorServerCompatRequest
+
+
+descriptorServerCompatResponse : Proto.Message.Descriptor
+descriptorServerCompatResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ServerCompatResponse"
+        [ Proto.Field.descriptor "host" "host" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "port" "port" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "pem_cert" "pemCert" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageServerCompatResponse : Proto.Message.Message ServerCompatResponse
 messageServerCompatResponse =
-    { encodeJson = encodeServerCompatResponse
-    , jsonDecoder = decodeServerCompatResponse
-    , default = defaultServerCompatResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ServerCompatResponse"
-        , fields =
-            [ { name = "host", jsonName = "host", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "port", jsonName = "port", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "pem_cert", jsonName = "pemCert", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeServerCompatResponse decodeServerCompatResponse defaultServerCompatResponse descriptorServerCompatResponse
+
+
+descriptorUnaryResponseDefinition : Proto.Message.Descriptor
+descriptorUnaryResponseDefinition =
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnaryResponseDefinition"
+        [ Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "response_data" "responseData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+            |> Proto.Field.inOneof "response"
+        , Proto.Field.descriptor "error" "error" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
+            |> Proto.Field.inOneof "response"
+        , Proto.Field.descriptor "response_trailers" "responseTrailers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "raw_response" "rawResponse" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPResponse")
+        , Proto.Field.descriptor "response_delay_ms" "responseDelayMs" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        ]
 
 
 messageUnaryResponseDefinition : Proto.Message.Message UnaryResponseDefinition
 messageUnaryResponseDefinition =
-    { encodeJson = encodeUnaryResponseDefinition
-    , jsonDecoder = decodeUnaryResponseDefinition
-    , default = defaultUnaryResponseDefinition
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.UnaryResponseDefinition"
-        , fields =
-            [ { name = "response_headers", jsonName = "responseHeaders", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "response_data", jsonName = "responseData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Just "response" }
-            , { name = "error", jsonName = "error", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Error", oneof = Just "response" }
-            , { name = "response_trailers", jsonName = "responseTrailers", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "raw_response", jsonName = "rawResponse", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.RawHTTPResponse", oneof = Nothing }
-            , { name = "response_delay_ms", jsonName = "responseDelayMs", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            ]
-        , oneofs = [ "response" ]
-        }
-    }
+    Proto.Message.message encodeUnaryResponseDefinition decodeUnaryResponseDefinition defaultUnaryResponseDefinition descriptorUnaryResponseDefinition
+
+
+descriptorStreamResponseDefinition : Proto.Message.Descriptor
+descriptorStreamResponseDefinition =
+    Proto.Message.descriptor "connectrpc.conformance.v1.StreamResponseDefinition"
+        [ Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "response_data" "responseData" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "response_delay_ms" "responseDelayMs" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "error" "error" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
+        , Proto.Field.descriptor "response_trailers" "responseTrailers" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "raw_response" "rawResponse" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPResponse")
+        ]
 
 
 messageStreamResponseDefinition : Proto.Message.Message StreamResponseDefinition
 messageStreamResponseDefinition =
-    { encodeJson = encodeStreamResponseDefinition
-    , jsonDecoder = decodeStreamResponseDefinition
-    , default = defaultStreamResponseDefinition
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.StreamResponseDefinition"
-        , fields =
-            [ { name = "response_headers", jsonName = "responseHeaders", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "response_data", jsonName = "responseData", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "response_delay_ms", jsonName = "responseDelayMs", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "error", jsonName = "error", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Error", oneof = Nothing }
-            , { name = "response_trailers", jsonName = "responseTrailers", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "raw_response", jsonName = "rawResponse", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.RawHTTPResponse", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeStreamResponseDefinition decodeStreamResponseDefinition defaultStreamResponseDefinition descriptorStreamResponseDefinition
+
+
+descriptorUnaryRequest : Proto.Message.Descriptor
+descriptorUnaryRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnaryRequest"
+        [ Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.UnaryResponseDefinition")
+        , Proto.Field.descriptor "request_data" "requestData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageUnaryRequest : Proto.Message.Message UnaryRequest
 messageUnaryRequest =
-    { encodeJson = encodeUnaryRequest
-    , jsonDecoder = decodeUnaryRequest
-    , default = defaultUnaryRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.UnaryRequest"
-        , fields =
-            [ { name = "response_definition", jsonName = "responseDefinition", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.UnaryResponseDefinition", oneof = Nothing }
-            , { name = "request_data", jsonName = "requestData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeUnaryRequest decodeUnaryRequest defaultUnaryRequest descriptorUnaryRequest
+
+
+descriptorUnaryResponse : Proto.Message.Descriptor
+descriptorUnaryResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnaryResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
 
 
 messageUnaryResponse : Proto.Message.Message UnaryResponse
 messageUnaryResponse =
-    { encodeJson = encodeUnaryResponse
-    , jsonDecoder = decodeUnaryResponse
-    , default = defaultUnaryResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.UnaryResponse"
-        , fields = [ { name = "payload", jsonName = "payload", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeUnaryResponse decodeUnaryResponse defaultUnaryResponse descriptorUnaryResponse
+
+
+descriptorIdempotentUnaryRequest : Proto.Message.Descriptor
+descriptorIdempotentUnaryRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.IdempotentUnaryRequest"
+        [ Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.UnaryResponseDefinition")
+        , Proto.Field.descriptor "request_data" "requestData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageIdempotentUnaryRequest : Proto.Message.Message IdempotentUnaryRequest
 messageIdempotentUnaryRequest =
-    { encodeJson = encodeIdempotentUnaryRequest
-    , jsonDecoder = decodeIdempotentUnaryRequest
-    , default = defaultIdempotentUnaryRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.IdempotentUnaryRequest"
-        , fields =
-            [ { name = "response_definition", jsonName = "responseDefinition", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.UnaryResponseDefinition", oneof = Nothing }
-            , { name = "request_data", jsonName = "requestData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeIdempotentUnaryRequest decodeIdempotentUnaryRequest defaultIdempotentUnaryRequest descriptorIdempotentUnaryRequest
+
+
+descriptorIdempotentUnaryResponse : Proto.Message.Descriptor
+descriptorIdempotentUnaryResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.IdempotentUnaryResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
 
 
 messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
 messageIdempotentUnaryResponse =
-    { encodeJson = encodeIdempotentUnaryResponse
-    , jsonDecoder = decodeIdempotentUnaryResponse
-    , default = defaultIdempotentUnaryResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.IdempotentUnaryResponse"
-        , fields = [ { name = "payload", jsonName = "payload", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeIdempotentUnaryResponse decodeIdempotentUnaryResponse defaultIdempotentUnaryResponse descriptorIdempotentUnaryResponse
+
+
+descriptorServerStreamRequest : Proto.Message.Descriptor
+descriptorServerStreamRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ServerStreamRequest"
+        [ Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamResponseDefinition")
+        , Proto.Field.descriptor "request_data" "requestData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageServerStreamRequest : Proto.Message.Message ServerStreamRequest
 messageServerStreamRequest =
-    { encodeJson = encodeServerStreamRequest
-    , jsonDecoder = decodeServerStreamRequest
-    , default = defaultServerStreamRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ServerStreamRequest"
-        , fields =
-            [ { name = "response_definition", jsonName = "responseDefinition", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.StreamResponseDefinition", oneof = Nothing }
-            , { name = "request_data", jsonName = "requestData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeServerStreamRequest decodeServerStreamRequest defaultServerStreamRequest descriptorServerStreamRequest
+
+
+descriptorServerStreamResponse : Proto.Message.Descriptor
+descriptorServerStreamResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ServerStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
 
 
 messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
 messageServerStreamResponse =
-    { encodeJson = encodeServerStreamResponse
-    , jsonDecoder = decodeServerStreamResponse
-    , default = defaultServerStreamResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ServerStreamResponse"
-        , fields = [ { name = "payload", jsonName = "payload", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeServerStreamResponse decodeServerStreamResponse defaultServerStreamResponse descriptorServerStreamResponse
+
+
+descriptorClientStreamRequest : Proto.Message.Descriptor
+descriptorClientStreamRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientStreamRequest"
+        [ Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.UnaryResponseDefinition")
+        , Proto.Field.descriptor "request_data" "requestData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageClientStreamRequest : Proto.Message.Message ClientStreamRequest
 messageClientStreamRequest =
-    { encodeJson = encodeClientStreamRequest
-    , jsonDecoder = decodeClientStreamRequest
-    , default = defaultClientStreamRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientStreamRequest"
-        , fields =
-            [ { name = "response_definition", jsonName = "responseDefinition", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.UnaryResponseDefinition", oneof = Nothing }
-            , { name = "request_data", jsonName = "requestData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeClientStreamRequest decodeClientStreamRequest defaultClientStreamRequest descriptorClientStreamRequest
+
+
+descriptorClientStreamResponse : Proto.Message.Descriptor
+descriptorClientStreamResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
 
 
 messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
 messageClientStreamResponse =
-    { encodeJson = encodeClientStreamResponse
-    , jsonDecoder = decodeClientStreamResponse
-    , default = defaultClientStreamResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ClientStreamResponse"
-        , fields = [ { name = "payload", jsonName = "payload", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeClientStreamResponse decodeClientStreamResponse defaultClientStreamResponse descriptorClientStreamResponse
+
+
+descriptorBidiStreamRequest : Proto.Message.Descriptor
+descriptorBidiStreamRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.BidiStreamRequest"
+        [ Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamResponseDefinition")
+        , Proto.Field.descriptor "full_duplex" "fullDuplex" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "request_data" "requestData" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        ]
 
 
 messageBidiStreamRequest : Proto.Message.Message BidiStreamRequest
 messageBidiStreamRequest =
-    { encodeJson = encodeBidiStreamRequest
-    , jsonDecoder = decodeBidiStreamRequest
-    , default = defaultBidiStreamRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.BidiStreamRequest"
-        , fields =
-            [ { name = "response_definition", jsonName = "responseDefinition", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.StreamResponseDefinition", oneof = Nothing }
-            , { name = "full_duplex", jsonName = "fullDuplex", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "request_data", jsonName = "requestData", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeBidiStreamRequest decodeBidiStreamRequest defaultBidiStreamRequest descriptorBidiStreamRequest
+
+
+descriptorBidiStreamResponse : Proto.Message.Descriptor
+descriptorBidiStreamResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.BidiStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
 
 
 messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
 messageBidiStreamResponse =
-    { encodeJson = encodeBidiStreamResponse
-    , jsonDecoder = decodeBidiStreamResponse
-    , default = defaultBidiStreamResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.BidiStreamResponse"
-        , fields = [ { name = "payload", jsonName = "payload", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeBidiStreamResponse decodeBidiStreamResponse defaultBidiStreamResponse descriptorBidiStreamResponse
+
+
+descriptorUnimplementedRequest : Proto.Message.Descriptor
+descriptorUnimplementedRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnimplementedRequest" []
 
 
 messageUnimplementedRequest : Proto.Message.Message UnimplementedRequest
 messageUnimplementedRequest =
-    { encodeJson = encodeUnimplementedRequest
-    , jsonDecoder = decodeUnimplementedRequest
-    , default = defaultUnimplementedRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.UnimplementedRequest"
-        , fields = []
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeUnimplementedRequest decodeUnimplementedRequest defaultUnimplementedRequest descriptorUnimplementedRequest
+
+
+descriptorUnimplementedResponse : Proto.Message.Descriptor
+descriptorUnimplementedResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnimplementedResponse" []
 
 
 messageUnimplementedResponse : Proto.Message.Message UnimplementedResponse
 messageUnimplementedResponse =
-    { encodeJson = encodeUnimplementedResponse
-    , jsonDecoder = decodeUnimplementedResponse
-    , default = defaultUnimplementedResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.UnimplementedResponse"
-        , fields = []
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeUnimplementedResponse decodeUnimplementedResponse defaultUnimplementedResponse descriptorUnimplementedResponse
+
+
+descriptorConformancePayload : Proto.Message.Descriptor
+descriptorConformancePayload =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ConformancePayload"
+        [ Proto.Field.descriptor "data" "data" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "request_info" "requestInfo" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload.RequestInfo")
+        ]
 
 
 messageConformancePayload : Proto.Message.Message ConformancePayload
 messageConformancePayload =
-    { encodeJson = encodeConformancePayload
-    , jsonDecoder = decodeConformancePayload
-    , default = defaultConformancePayload
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ConformancePayload"
-        , fields =
-            [ { name = "data", jsonName = "data", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-            , { name = "request_info", jsonName = "requestInfo", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload.RequestInfo", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeConformancePayload decodeConformancePayload defaultConformancePayload descriptorConformancePayload
+
+
+descriptorConformancePayloadRequestInfo : Proto.Message.Descriptor
+descriptorConformancePayloadRequestInfo =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ConformancePayload.RequestInfo"
+        [ Proto.Field.descriptor "request_headers" "requestHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "timeout_ms" "timeoutMs" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "requests" "requests" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "connect_get_info" "connectGetInfo" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo")
+        ]
 
 
 messageConformancePayloadRequestInfo : Proto.Message.Message ConformancePayloadRequestInfo
 messageConformancePayloadRequestInfo =
-    { encodeJson = encodeConformancePayloadRequestInfo
-    , jsonDecoder = decodeConformancePayloadRequestInfo
-    , default = defaultConformancePayloadRequestInfo
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ConformancePayload.RequestInfo"
-        , fields =
-            [ { name = "request_headers", jsonName = "requestHeaders", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "timeout_ms", jsonName = "timeoutMs", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "requests", jsonName = "requests", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            , { name = "connect_get_info", jsonName = "connectGetInfo", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeConformancePayloadRequestInfo decodeConformancePayloadRequestInfo defaultConformancePayloadRequestInfo descriptorConformancePayloadRequestInfo
+
+
+descriptorConformancePayloadConnectGetInfo : Proto.Message.Descriptor
+descriptorConformancePayloadConnectGetInfo =
+    Proto.Message.descriptor "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" [ Proto.Field.descriptor "query_params" "queryParams" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header") ]
 
 
 messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
 messageConformancePayloadConnectGetInfo =
-    { encodeJson = encodeConformancePayloadConnectGetInfo
-    , jsonDecoder = decodeConformancePayloadConnectGetInfo
-    , default = defaultConformancePayloadConnectGetInfo
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo"
-        , fields = [ { name = "query_params", jsonName = "queryParams", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo defaultConformancePayloadConnectGetInfo descriptorConformancePayloadConnectGetInfo
+
+
+descriptorError : Proto.Message.Descriptor
+descriptorError =
+    Proto.Message.descriptor "connectrpc.conformance.v1.Error"
+        [ Proto.Field.descriptor "code" "code" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Code")
+        , Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "details" "details" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
+        ]
 
 
 messageError : Proto.Message.Message Error
 messageError =
-    { encodeJson = encodeError
-    , jsonDecoder = decodeError
-    , default = defaultError
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Error"
-        , fields =
-            [ { name = "code", jsonName = "code", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Code", oneof = Nothing }
-            , { name = "message", jsonName = "message", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "details", jsonName = "details", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeError decodeError defaultError descriptorError
+
+
+descriptorHeader : Proto.Message.Descriptor
+descriptorHeader =
+    Proto.Message.descriptor "connectrpc.conformance.v1.Header"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "value" "value" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageHeader : Proto.Message.Message Header
 messageHeader =
-    { encodeJson = encodeHeader
-    , jsonDecoder = decodeHeader
-    , default = defaultHeader
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.Header"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "value", jsonName = "value", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeHeader decodeHeader defaultHeader descriptorHeader
+
+
+descriptorRawHTTPRequest : Proto.Message.Descriptor
+descriptorRawHTTPRequest =
+    Proto.Message.descriptor "connectrpc.conformance.v1.RawHTTPRequest"
+        [ Proto.Field.descriptor "verb" "verb" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "uri" "uri" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "headers" "headers" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "raw_query_params" "rawQueryParams" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "encoded_query_params" "encodedQueryParams" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam")
+        , Proto.Field.descriptor "unary" "unary" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.MessageContents")
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "stream" "stream" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamContents")
+            |> Proto.Field.inOneof "body"
+        ]
 
 
 messageRawHTTPRequest : Proto.Message.Message RawHTTPRequest
 messageRawHTTPRequest =
-    { encodeJson = encodeRawHTTPRequest
-    , jsonDecoder = decodeRawHTTPRequest
-    , default = defaultRawHTTPRequest
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.RawHTTPRequest"
-        , fields =
-            [ { name = "verb", jsonName = "verb", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "uri", jsonName = "uri", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "headers", jsonName = "headers", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "raw_query_params", jsonName = "rawQueryParams", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "encoded_query_params", jsonName = "encodedQueryParams", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam", oneof = Nothing }
-            , { name = "unary", jsonName = "unary", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.MessageContents", oneof = Just "body" }
-            , { name = "stream", jsonName = "stream", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.StreamContents", oneof = Just "body" }
-            ]
-        , oneofs = [ "body" ]
-        }
-    }
+    Proto.Message.message encodeRawHTTPRequest decodeRawHTTPRequest defaultRawHTTPRequest descriptorRawHTTPRequest
+
+
+descriptorRawHTTPRequestEncodedQueryParam : Proto.Message.Descriptor
+descriptorRawHTTPRequestEncodedQueryParam =
+    Proto.Message.descriptor "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "value" "value" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.MessageContents")
+        , Proto.Field.descriptor "base64_encode" "base64Encode" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        ]
 
 
 messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message RawHTTPRequestEncodedQueryParam
 messageRawHTTPRequestEncodedQueryParam =
-    { encodeJson = encodeRawHTTPRequestEncodedQueryParam
-    , jsonDecoder = decodeRawHTTPRequestEncodedQueryParam
-    , default = defaultRawHTTPRequestEncodedQueryParam
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "value", jsonName = "value", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.MessageContents", oneof = Nothing }
-            , { name = "base64_encode", jsonName = "base64Encode", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeRawHTTPRequestEncodedQueryParam decodeRawHTTPRequestEncodedQueryParam defaultRawHTTPRequestEncodedQueryParam descriptorRawHTTPRequestEncodedQueryParam
+
+
+descriptorMessageContents : Proto.Message.Descriptor
+descriptorMessageContents =
+    Proto.Message.descriptor "connectrpc.conformance.v1.MessageContents"
+        [ Proto.Field.descriptor "binary" "binary" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+            |> Proto.Field.inOneof "data"
+        , Proto.Field.descriptor "text" "text" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "data"
+        , Proto.Field.descriptor "binary_message" "binaryMessage" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+            |> Proto.Field.inOneof "data"
+        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        ]
 
 
 messageMessageContents : Proto.Message.Message MessageContents
 messageMessageContents =
-    { encodeJson = encodeMessageContents
-    , jsonDecoder = decodeMessageContents
-    , default = defaultMessageContents
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.MessageContents"
-        , fields =
-            [ { name = "binary", jsonName = "binary", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Just "data" }
-            , { name = "text", jsonName = "text", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "data" }
-            , { name = "binary_message", jsonName = "binaryMessage", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Just "data" }
-            , { name = "compression", jsonName = "compression", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Compression", oneof = Nothing }
-            ]
-        , oneofs = [ "data" ]
-        }
-    }
+    Proto.Message.message encodeMessageContents decodeMessageContents defaultMessageContents descriptorMessageContents
+
+
+descriptorStreamContents : Proto.Message.Descriptor
+descriptorStreamContents =
+    Proto.Message.descriptor "connectrpc.conformance.v1.StreamContents" [ Proto.Field.descriptor "items" "items" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamContents.StreamItem") ]
 
 
 messageStreamContents : Proto.Message.Message StreamContents
 messageStreamContents =
-    { encodeJson = encodeStreamContents
-    , jsonDecoder = decodeStreamContents
-    , default = defaultStreamContents
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.StreamContents"
-        , fields = [ { name = "items", jsonName = "items", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.StreamContents.StreamItem", oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeStreamContents decodeStreamContents defaultStreamContents descriptorStreamContents
+
+
+descriptorStreamContentsStreamItem : Proto.Message.Descriptor
+descriptorStreamContentsStreamItem =
+    Proto.Message.descriptor "connectrpc.conformance.v1.StreamContents.StreamItem"
+        [ Proto.Field.descriptor "flags" "flags" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "length" "length" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "payload" "payload" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.MessageContents")
+        ]
 
 
 messageStreamContentsStreamItem : Proto.Message.Message StreamContentsStreamItem
 messageStreamContentsStreamItem =
-    { encodeJson = encodeStreamContentsStreamItem
-    , jsonDecoder = decodeStreamContentsStreamItem
-    , default = defaultStreamContentsStreamItem
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.StreamContents.StreamItem"
-        , fields =
-            [ { name = "flags", jsonName = "flags", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "length", jsonName = "length", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "payload", jsonName = "payload", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.MessageContents", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeStreamContentsStreamItem decodeStreamContentsStreamItem defaultStreamContentsStreamItem descriptorStreamContentsStreamItem
+
+
+descriptorRawHTTPResponse : Proto.Message.Descriptor
+descriptorRawHTTPResponse =
+    Proto.Message.descriptor "connectrpc.conformance.v1.RawHTTPResponse"
+        [ Proto.Field.descriptor "status_code" "statusCode" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "headers" "headers" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        , Proto.Field.descriptor "unary" "unary" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.MessageContents")
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "stream" "stream" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamContents")
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "trailers" "trailers" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        ]
 
 
 messageRawHTTPResponse : Proto.Message.Message RawHTTPResponse
 messageRawHTTPResponse =
-    { encodeJson = encodeRawHTTPResponse
-    , jsonDecoder = decodeRawHTTPResponse
-    , default = defaultRawHTTPResponse
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.RawHTTPResponse"
-        , fields =
-            [ { name = "status_code", jsonName = "statusCode", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint32, oneof = Nothing }
-            , { name = "headers", jsonName = "headers", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            , { name = "unary", jsonName = "unary", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.MessageContents", oneof = Just "body" }
-            , { name = "stream", jsonName = "stream", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.StreamContents", oneof = Just "body" }
-            , { name = "trailers", jsonName = "trailers", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.Header", oneof = Nothing }
-            ]
-        , oneofs = [ "body" ]
-        }
-    }
+    Proto.Message.message encodeRawHTTPResponse decodeRawHTTPResponse defaultRawHTTPResponse descriptorRawHTTPResponse
+
+
+descriptorTestSuite : Proto.Message.Descriptor
+descriptorTestSuite =
+    Proto.Message.descriptor "connectrpc.conformance.v1.TestSuite"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "mode" "mode" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.TestSuite.TestMode")
+        , Proto.Field.descriptor "test_cases" "testCases" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase")
+        , Proto.Field.descriptor "relevant_protocols" "relevantProtocols" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
+        , Proto.Field.descriptor "relevant_http_versions" "relevantHttpVersions" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        , Proto.Field.descriptor "relevant_codecs" "relevantCodecs" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
+        , Proto.Field.descriptor "relevant_compressions" "relevantCompressions" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "connect_version_mode" "connectVersionMode" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.TestSuite.ConnectVersionMode")
+        , Proto.Field.descriptor "relies_on_tls" "reliesOnTls" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "relies_on_tls_client_certs" "reliesOnTlsClientCerts" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "relies_on_connect_get" "reliesOnConnectGet" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "relies_on_message_receive_limit" "reliesOnMessageReceiveLimit" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        ]
 
 
 messageTestSuite : Proto.Message.Message TestSuite
 messageTestSuite =
-    { encodeJson = encodeTestSuite
-    , jsonDecoder = decodeTestSuite
-    , default = defaultTestSuite
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TestSuite"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "mode", jsonName = "mode", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.TestSuite.TestMode", oneof = Nothing }
-            , { name = "test_cases", jsonName = "testCases", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.TestCase", oneof = Nothing }
-            , { name = "relevant_protocols", jsonName = "relevantProtocols", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Protocol", oneof = Nothing }
-            , { name = "relevant_http_versions", jsonName = "relevantHttpVersions", number = 5, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.HTTPVersion", oneof = Nothing }
-            , { name = "relevant_codecs", jsonName = "relevantCodecs", number = 6, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Codec", oneof = Nothing }
-            , { name = "relevant_compressions", jsonName = "relevantCompressions", number = 7, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Compression", oneof = Nothing }
-            , { name = "connect_version_mode", jsonName = "connectVersionMode", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.TestSuite.ConnectVersionMode", oneof = Nothing }
-            , { name = "relies_on_tls", jsonName = "reliesOnTls", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "relies_on_tls_client_certs", jsonName = "reliesOnTlsClientCerts", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "relies_on_connect_get", jsonName = "reliesOnConnectGet", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "relies_on_message_receive_limit", jsonName = "reliesOnMessageReceiveLimit", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTestSuite decodeTestSuite defaultTestSuite descriptorTestSuite
+
+
+descriptorTestCase : Proto.Message.Descriptor
+descriptorTestCase =
+    Proto.Message.descriptor "connectrpc.conformance.v1.TestCase"
+        [ Proto.Field.descriptor "request" "request" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest")
+        , Proto.Field.descriptor "expand_requests" "expandRequests" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase.ExpandedSize")
+        , Proto.Field.descriptor "expected_response" "expectedResponse" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientResponseResult")
+        , Proto.Field.descriptor "other_allowed_error_codes" "otherAllowedErrorCodes" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Code")
+        ]
 
 
 messageTestCase : Proto.Message.Message TestCase
 messageTestCase =
-    { encodeJson = encodeTestCase
-    , jsonDecoder = decodeTestCase
-    , default = defaultTestCase
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TestCase"
-        , fields =
-            [ { name = "request", jsonName = "request", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ClientCompatRequest", oneof = Nothing }
-            , { name = "expand_requests", jsonName = "expandRequests", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.TestCase.ExpandedSize", oneof = Nothing }
-            , { name = "expected_response", jsonName = "expectedResponse", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "connectrpc.conformance.v1.ClientResponseResult", oneof = Nothing }
-            , { name = "other_allowed_error_codes", jsonName = "otherAllowedErrorCodes", number = 4, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "connectrpc.conformance.v1.Code", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTestCase decodeTestCase defaultTestCase descriptorTestCase
+
+
+descriptorTestCaseExpandedSize : Proto.Message.Descriptor
+descriptorTestCaseExpandedSize =
+    Proto.Message.descriptor "connectrpc.conformance.v1.TestCase.ExpandedSize" [ Proto.Field.descriptor "size_relative_to_limit" "sizeRelativeToLimit" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32) ]
 
 
 messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
 messageTestCaseExpandedSize =
-    { encodeJson = encodeTestCaseExpandedSize
-    , jsonDecoder = decodeTestCaseExpandedSize
-    , default = defaultTestCaseExpandedSize
-    , descriptor =
-        { typeName = "connectrpc.conformance.v1.TestCase.ExpandedSize"
-        , fields = [ { name = "size_relative_to_limit", jsonName = "sizeRelativeToLimit", number = 1, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTestCaseExpandedSize decodeTestCaseExpandedSize defaultTestCaseExpandedSize descriptorTestCaseExpandedSize
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageClientCompatRequest.descriptor
-            , messageClientCompatRequestCancel.descriptor
-            , messageClientCompatResponse.descriptor
-            , messageClientResponseResult.descriptor
-            , messageClientErrorResult.descriptor
-            , messageWireDetails.descriptor
-            , messageConfig.descriptor
-            , messageFeatures.descriptor
-            , messageConfigCase.descriptor
-            , messageTLSCreds.descriptor
-            , messageServerCompatRequest.descriptor
-            , messageServerCompatResponse.descriptor
-            , messageUnaryResponseDefinition.descriptor
-            , messageStreamResponseDefinition.descriptor
-            , messageUnaryRequest.descriptor
-            , messageUnaryResponse.descriptor
-            , messageIdempotentUnaryRequest.descriptor
-            , messageIdempotentUnaryResponse.descriptor
-            , messageServerStreamRequest.descriptor
-            , messageServerStreamResponse.descriptor
-            , messageClientStreamRequest.descriptor
-            , messageClientStreamResponse.descriptor
-            , messageBidiStreamRequest.descriptor
-            , messageBidiStreamResponse.descriptor
-            , messageUnimplementedRequest.descriptor
-            , messageUnimplementedResponse.descriptor
-            , messageConformancePayload.descriptor
-            , messageConformancePayloadRequestInfo.descriptor
-            , messageConformancePayloadConnectGetInfo.descriptor
-            , messageError.descriptor
-            , messageHeader.descriptor
-            , messageRawHTTPRequest.descriptor
-            , messageRawHTTPRequestEncodedQueryParam.descriptor
-            , messageMessageContents.descriptor
-            , messageStreamContents.descriptor
-            , messageStreamContentsStreamItem.descriptor
-            , messageRawHTTPResponse.descriptor
-            , messageTestSuite.descriptor
-            , messageTestCase.descriptor
-            , messageTestCaseExpandedSize.descriptor
+            [ descriptorClientCompatRequest
+            , descriptorClientCompatRequestCancel
+            , descriptorClientCompatResponse
+            , descriptorClientResponseResult
+            , descriptorClientErrorResult
+            , descriptorWireDetails
+            , descriptorConfig
+            , descriptorFeatures
+            , descriptorConfigCase
+            , descriptorTLSCreds
+            , descriptorServerCompatRequest
+            , descriptorServerCompatResponse
+            , descriptorUnaryResponseDefinition
+            , descriptorStreamResponseDefinition
+            , descriptorUnaryRequest
+            , descriptorUnaryResponse
+            , descriptorIdempotentUnaryRequest
+            , descriptorIdempotentUnaryResponse
+            , descriptorServerStreamRequest
+            , descriptorServerStreamResponse
+            , descriptorClientStreamRequest
+            , descriptorClientStreamResponse
+            , descriptorBidiStreamRequest
+            , descriptorBidiStreamResponse
+            , descriptorUnimplementedRequest
+            , descriptorUnimplementedResponse
+            , descriptorConformancePayload
+            , descriptorConformancePayloadRequestInfo
+            , descriptorConformancePayloadConnectGetInfo
+            , descriptorError
+            , descriptorHeader
+            , descriptorRawHTTPRequest
+            , descriptorRawHTTPRequestEncodedQueryParam
+            , descriptorMessageContents
+            , descriptorStreamContents
+            , descriptorStreamContentsStreamItem
+            , descriptorRawHTTPResponse
+            , descriptorTestSuite
+            , descriptorTestCase
+            , descriptorTestCaseExpandedSize
             ]
-            [ enumHTTPVersion.descriptor
-            , enumProtocol.descriptor
-            , enumCodec.descriptor
-            , enumCompression.descriptor
-            , enumStreamType.descriptor
-            , enumCode.descriptor
-            , enumTestSuiteTestMode.descriptor
-            , enumTestSuiteConnectVersionMode.descriptor
+            [ descriptorHTTPVersion
+            , descriptorProtocol
+            , descriptorCodec
+            , descriptorCompression
+            , descriptorStreamType
+            , descriptorCode
+            , descriptorTestSuiteTestMode
+            , descriptorTestSuiteConnectVersionMode
             ]
         )
         Proto.Registry.wellKnown

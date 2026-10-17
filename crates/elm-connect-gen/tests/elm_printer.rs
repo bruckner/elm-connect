@@ -597,6 +597,18 @@ fn exprs_module() -> Module {
             ),
         ),
         value(
+            "stackedApplication",
+            ty("List", [int_t()]),
+            vec![],
+            apply(
+                var("List.reverse"),
+                [stacked_apply(
+                    var("List.map2"),
+                    [var("max"), inline_list([int(1)]), list([])],
+                )],
+            ),
+        ),
+        value(
             "lastArgumentIsALambda",
             ty_fn([ty("List", [int_t()])], ty("List", [int_t()])),
             vec![],

@@ -5,7 +5,7 @@ module Chat.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -42,22 +42,19 @@ defaultLine =
 -- DESCRIPTORS
 
 
+descriptorLine : Proto.Message.Descriptor
+descriptorLine =
+    Proto.Message.descriptor "chat.v1.Line" [ Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+
+
 messageLine : Proto.Message.Message Line
 messageLine =
-    { encodeJson = encodeLine
-    , jsonDecoder = decodeLine
-    , default = defaultLine
-    , descriptor =
-        { typeName = "chat.v1.Line"
-        , fields = [ { name = "text", jsonName = "text", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeLine decodeLine defaultLine descriptorLine
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageLine.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorLine ] []) Proto.Registry.wellKnown
 
 
 

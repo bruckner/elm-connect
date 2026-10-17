@@ -18,6 +18,8 @@ service SettingsService {
   rpc ElmConnectVersion(Settings) returns (Settings);
   // But a rename can give a method that name (options.txt).
   rpc Version(Settings) returns (Settings);
+  // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
+  rpc DescriptorDefaultSettings(Settings) returns (Settings);
 }
 
 service AdminService {

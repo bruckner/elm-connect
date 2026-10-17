@@ -6,7 +6,7 @@ module Int64Option.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -73,37 +73,36 @@ defaultCounters =
 -- DESCRIPTORS
 
 
+descriptorCounters : Proto.Message.Descriptor
+descriptorCounters =
+    Proto.Message.descriptor "int64_option.v1.Counters"
+        [ Proto.Field.descriptor "int64_value" "int64Value" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "uint64_value" "uint64Value" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        , Proto.Field.descriptor "sint64_value" "sint64Value" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint64)
+        , Proto.Field.descriptor "fixed64_value" "fixed64Value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
+        , Proto.Field.descriptor "sfixed64_value" "sfixed64Value" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
+        , Proto.Field.descriptor "exact_id" "exactId" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "normal" "normal" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "maybe_count" "maybeCount" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "samples" "samples" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "exact_samples" "exactSamples" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        , Proto.Field.descriptor "by_id" "byId" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "wrapped" "wrapped" 12 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int64Value")
+        , Proto.Field.descriptor "at_most" "atMost" 13 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+            |> Proto.Field.inOneof "limit"
+        , Proto.Field.descriptor "exactly" "exactly" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+            |> Proto.Field.inOneof "limit"
+        ]
+
+
 messageCounters : Proto.Message.Message Counters
 messageCounters =
-    { encodeJson = encodeCounters
-    , jsonDecoder = decodeCounters
-    , default = defaultCounters
-    , descriptor =
-        { typeName = "int64_option.v1.Counters"
-        , fields =
-            [ { name = "int64_value", jsonName = "int64Value", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "uint64_value", jsonName = "uint64Value", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            , { name = "sint64_value", jsonName = "sint64Value", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint64, oneof = Nothing }
-            , { name = "fixed64_value", jsonName = "fixed64Value", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed64, oneof = Nothing }
-            , { name = "sfixed64_value", jsonName = "sfixed64Value", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64, oneof = Nothing }
-            , { name = "exact_id", jsonName = "exactId", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "normal", jsonName = "normal", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "maybe_count", jsonName = "maybeCount", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "samples", jsonName = "samples", number = 9, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "exact_samples", jsonName = "exactSamples", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            , { name = "by_id", jsonName = "byId", number = 11, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "wrapped", jsonName = "wrapped", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int64Value", oneof = Nothing }
-            , { name = "at_most", jsonName = "atMost", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
-            , { name = "exactly", jsonName = "exactly", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
-            ]
-        , oneofs = [ "limit" ]
-        }
-    }
+    Proto.Message.message encodeCounters decodeCounters defaultCounters descriptorCounters
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageCounters.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorCounters ] []) Proto.Registry.wellKnown
 
 
 

@@ -7,7 +7,7 @@ module Proto.Http exposing
 
 {-| A method's `google.api.http` rule as data: its bindings, each a verb, a
 path template, a body and query parameters. The generator parses the rule
-and writes these into the method's [descriptor](Proto-Descriptor#MethodDescriptor);
+and writes these into the method's [descriptor](Proto-Method#Descriptor);
 application code only passes them along, and `Rpc` builds the request from
 them under the Transcode transport.
 

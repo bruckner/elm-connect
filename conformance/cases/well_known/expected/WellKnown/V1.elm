@@ -6,8 +6,8 @@ module WellKnown.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Duration exposing (Duration)
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -104,53 +104,55 @@ defaultEvent =
 -- DESCRIPTORS
 
 
+descriptorEvent : Proto.Message.Descriptor
+descriptorEvent =
+    Proto.Message.descriptor "well_known.v1.Event"
+        [ Proto.Field.descriptor "created_at" "createdAt" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        , Proto.Field.descriptor "timeout" "timeout" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
+        , Proto.Field.descriptor "update_mask" "updateMask" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
+        , Proto.Field.descriptor "marker" "marker" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "metadata" "metadata" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
+        , Proto.Field.descriptor "payload" "payload" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
+        , Proto.Field.descriptor "items" "items" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
+        , Proto.Field.descriptor "ratio" "ratio" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.DoubleValue")
+        , Proto.Field.descriptor "weight" "weight" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FloatValue")
+        , Proto.Field.descriptor "big_count" "bigCount" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int64Value")
+        , Proto.Field.descriptor "big_total" "bigTotal" 11 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt64Value")
+        , Proto.Field.descriptor "count" "count" 12 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
+        , Proto.Field.descriptor "total" "total" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt32Value")
+        , Proto.Field.descriptor "enabled" "enabled" 14 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BoolValue")
+        , Proto.Field.descriptor "nickname" "nickname" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
+        , Proto.Field.descriptor "avatar" "avatar" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BytesValue")
+        , Proto.Field.descriptor "history" "history" 17 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        , Proto.Field.descriptor "limits" "limits" 18 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Duration")
+        , Proto.Field.descriptor "values" "values" 19 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Value")
+        , Proto.Field.descriptor "counts" "counts" 20 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Int32Value")
+        , Proto.Field.descriptor "at" "at" 21 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+            |> Proto.Field.inOneof "when"
+        , Proto.Field.descriptor "after" "after" 22 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
+            |> Proto.Field.inOneof "when"
+        , Proto.Field.descriptor "whenever" "whenever" 23 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
+            |> Proto.Field.inOneof "when"
+        , Proto.Field.descriptor "schedule" "schedule" 29 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
+            |> Proto.Field.inOneof "when"
+        , Proto.Field.descriptor "dates" "dates" 30 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
+            |> Proto.Field.inOneof "when"
+        , Proto.Field.descriptor "acked" "acked" 24 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "pings" "pings" 25 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
+        , Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
+        ]
+
+
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    { encodeJson = encodeEvent
-    , jsonDecoder = decodeEvent
-    , default = defaultEvent
-    , descriptor =
-        { typeName = "well_known.v1.Event"
-        , fields =
-            [ { name = "created_at", jsonName = "createdAt", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
-            , { name = "timeout", jsonName = "timeout", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing }
-            , { name = "update_mask", jsonName = "updateMask", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
-            , { name = "marker", jsonName = "marker", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Nothing }
-            , { name = "metadata", jsonName = "metadata", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Struct", oneof = Nothing }
-            , { name = "payload", jsonName = "payload", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Value", oneof = Nothing }
-            , { name = "items", jsonName = "items", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.ListValue", oneof = Nothing }
-            , { name = "ratio", jsonName = "ratio", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.DoubleValue", oneof = Nothing }
-            , { name = "weight", jsonName = "weight", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FloatValue", oneof = Nothing }
-            , { name = "big_count", jsonName = "bigCount", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int64Value", oneof = Nothing }
-            , { name = "big_total", jsonName = "bigTotal", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.UInt64Value", oneof = Nothing }
-            , { name = "count", jsonName = "count", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int32Value", oneof = Nothing }
-            , { name = "total", jsonName = "total", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.UInt32Value", oneof = Nothing }
-            , { name = "enabled", jsonName = "enabled", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.BoolValue", oneof = Nothing }
-            , { name = "nickname", jsonName = "nickname", number = 15, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.StringValue", oneof = Nothing }
-            , { name = "avatar", jsonName = "avatar", number = 16, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.BytesValue", oneof = Nothing }
-            , { name = "history", jsonName = "history", number = 17, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
-            , { name = "limits", jsonName = "limits", number = 18, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing }
-            , { name = "values", jsonName = "values", number = 19, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Value", oneof = Nothing }
-            , { name = "counts", jsonName = "counts", number = 20, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Int32Value", oneof = Nothing }
-            , { name = "at", jsonName = "at", number = 21, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Just "when" }
-            , { name = "after", jsonName = "after", number = 22, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Just "when" }
-            , { name = "whenever", jsonName = "whenever", number = 23, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Value", oneof = Just "when" }
-            , { name = "schedule", jsonName = "schedule", number = 29, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Struct", oneof = Just "when" }
-            , { name = "dates", jsonName = "dates", number = 30, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.ListValue", oneof = Just "when" }
-            , { name = "acked", jsonName = "acked", number = 24, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Nothing }
-            , { name = "pings", jsonName = "pings", number = 25, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Nothing }
-            , { name = "seen", jsonName = "seen", number = 26, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "google.protobuf.Empty", oneof = Nothing }
-            , { name = "records", jsonName = "records", number = 27, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Struct", oneof = Nothing }
-            , { name = "columns", jsonName = "columns", number = 28, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "google.protobuf.ListValue", oneof = Nothing }
-            ]
-        , oneofs = [ "when" ]
-        }
-    }
+    Proto.Message.message encodeEvent decodeEvent defaultEvent descriptorEvent
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageEvent.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorEvent ] []) Proto.Registry.wellKnown
 
 
 

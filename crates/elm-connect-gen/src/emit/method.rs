@@ -1,53 +1,78 @@
-//! A method's declaration in its service's module (design §4): a function
-//! from the request to an `Rpc.Call`, built point-free with `Rpc.call` from
-//! the codecs of its request and response and its descriptor, its HTTP
-//! bindings written out as data.
+//! A method's declarations in its service's module (design §4): its
+//! descriptor, `descriptorGetNote`, built by `Proto.Method.descriptor`
+//! with its HTTP bindings written out as data, and its call, a function
+//! from the request to an `Rpc.Call`, built point-free with `Rpc.call`
+//! from the codecs of its request and response and that descriptor. Both
+//! applications are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_HTTP, RPC};
+use super::{Emitter, Int64, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
-use crate::elm::build::{apply, inline_list, list, qualified, record, string, ty_fn, var};
+use crate::elm::build::{
+    apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
+};
 use crate::ir::{Method, TypeRef};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
-    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
-    /// `Rpc.call` of the method's `Proto.Method.Method`: the encoder of its
-    /// request, the decoder of its response, and its descriptor (service,
-    /// name, idempotency, type names and bindings). A method without an
-    /// HTTP rule has no bindings; the runtime calls it over the implicit
-    /// route.
+    /// `descriptorGetNote : Proto.Method.Descriptor`, built by
+    /// `Proto.Method.descriptor` from the method's service, name,
+    /// idempotency, type names and bindings. A method without an HTTP rule
+    /// has no bindings; the runtime calls it over the implicit route.
     ///
-    /// The value binds no locals and every name in it is qualified, so it
-    /// cannot clash with the package module's names or the runtime's,
-    /// whatever the method is called.
-    pub(super) fn method(&mut self, service: &str, method: &Method) -> Decl {
-        let request = self.method_type(&method.input);
-        let response = self.method_type(&method.output);
-        let encode_request = self.request_encoder(&method.input);
-        let response_decoder = self.response_decoder(&method.output);
+    /// Every name in it is qualified, so it cannot clash with the package
+    /// module's names or the runtime's, whatever the method is called.
+    pub(super) fn method_descriptor(&mut self, service: &str, method: &Method) -> Decl {
         let idempotent = if method.idempotent { "True" } else { "False" };
         let bindings: Vec<Expr> = method
             .routes
             .iter()
             .map(|route| self.binding(route))
             .collect();
-        let descriptor = record([
-            ("service", string(service)),
-            ("name", string(method.proto_name.clone())),
-            ("idempotent", var(idempotent)),
-            ("input", string(proto_full_name(&method.input))),
-            ("output", string(proto_full_name(&method.output))),
-            ("bindings", list(bindings)),
-        ]);
-        let body = apply(
-            self.reference((RPC, "call")),
-            [record([
-                ("encodeRequest", encode_request),
-                ("responseDecoder", response_decoder),
-                ("descriptor", descriptor),
-            ])],
+        let body = stacked_apply(
+            self.reference((PROTO_METHOD, "descriptor")),
+            [
+                string(service),
+                string(method.proto_name.clone()),
+                var(idempotent),
+                string(proto_full_name(&method.input)),
+                string(proto_full_name(&method.output)),
+                list(bindings),
+            ],
         );
+        Decl::Value {
+            doc: None,
+            name: method.descriptor_name(),
+            annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
+    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
+    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
+    /// `Proto.Method.method` from the encoder of its request, the decoder
+    /// of its response, and its descriptor value
+    /// ([`Self::method_descriptor`]).
+    ///
+    /// The value binds no locals and every library name in it is
+    /// qualified, so it cannot clash with the package module's names or
+    /// the runtime's, whatever the method is called; the descriptor it
+    /// refers to is the module's own.
+    pub(super) fn method(&mut self, method: &Method) -> Decl {
+        let request = self.method_type(&method.input);
+        let response = self.method_type(&method.output);
+        let encode_request = self.request_encoder(&method.input);
+        let response_decoder = self.response_decoder(&method.output);
+        let built = stacked_apply(
+            self.reference((PROTO_METHOD, "method")),
+            [
+                encode_request,
+                response_decoder,
+                var(method.descriptor_name()),
+            ],
+        );
+        let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {
             doc: None,
@@ -63,8 +88,8 @@ impl Emitter {
     /// of that type uses, in the Elm form the `int64` option gives the
     /// 64-bit wrappers.
     ///
-    /// A method carries codecs, not the types' typed records: Elm's
-    /// dead-code elimination keeps a top-level value whole, so a record
+    /// A method carries codecs, not the types' typed values: Elm's
+    /// dead-code elimination keeps a top-level value whole, so a typed value
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
     fn request_encoder(&mut self, ty: &TypeRef) -> Expr {

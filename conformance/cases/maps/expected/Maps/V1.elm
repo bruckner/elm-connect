@@ -6,8 +6,9 @@ module Maps.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -78,66 +79,58 @@ defaultTeam =
 -- DESCRIPTORS
 
 
+descriptorRole : Proto.Enum.Descriptor
+descriptorRole =
+    Proto.Enum.descriptor "maps.v1.Role"
+        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "ROLE_OWNER" 1
+        ]
+
+
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { encodeJson = encodeRole
-    , jsonDecoder = decodeRole
-    , default = RoleUnspecified
-    , descriptor =
-        { typeName = "maps.v1.Role"
-        , values =
-            [ { name = "ROLE_UNSPECIFIED", number = 0 }
-            , { name = "ROLE_OWNER", number = 1 }
-            ]
-        }
-    }
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorMember : Proto.Message.Descriptor
+descriptorMember =
+    Proto.Message.descriptor "maps.v1.Member" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageMember : Proto.Message.Message Member
 messageMember =
-    { encodeJson = encodeMember
-    , jsonDecoder = decodeMember
-    , default = defaultMember
-    , descriptor =
-        { typeName = "maps.v1.Member"
-        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeMember decodeMember defaultMember descriptorMember
+
+
+descriptorTeam : Proto.Message.Descriptor
+descriptorTeam =
+    Proto.Message.descriptor "maps.v1.Team"
+        [ Proto.Field.descriptor "labels" "labels" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "by_seat" "bySeat" 2 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "scores" "scores" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarUint32) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        , Proto.Field.descriptor "flags" "flags" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarSint32) (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "totals" "totals" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed32) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
+        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum "maps.v1.Role")
+        , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    { encodeJson = encodeTeam
-    , jsonDecoder = decodeTeam
-    , default = defaultTeam
-    , descriptor =
-        { typeName = "maps.v1.Team"
-        , fields =
-            [ { name = "labels", jsonName = "labels", number = 1, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "by_seat", jsonName = "bySeat", number = 2, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "scores", jsonName = "scores", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
-            , { name = "flags", jsonName = "flags", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Sint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "totals", jsonName = "totals", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Fixed32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "by_id", jsonName = "byId", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "counts", jsonName = "counts", number = 7, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "members", jsonName = "members", number = 8, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "maps.v1.Member", oneof = Nothing }
-            , { name = "roles", jsonName = "roles", number = 9, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Enum "maps.v1.Role", oneof = Nothing }
-            , { name = "by_flag", jsonName = "byFlag", number = 10, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeTeam decodeTeam defaultTeam descriptorTeam
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageMember.descriptor
-            , messageTeam.descriptor
+            [ descriptorMember
+            , descriptorTeam
             ]
-            [ enumRole.descriptor ]
+            [ descriptorRole ]
         )
         Proto.Registry.wellKnown
 

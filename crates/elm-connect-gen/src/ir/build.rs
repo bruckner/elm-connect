@@ -1,7 +1,7 @@
 //! Building the IR from a descriptor pool: naming every type, resolving
 //! every field's type, and reporting what has no Elm form.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use prost_reflect::{
     DescriptorPool, DynamicMessage, EnumDescriptor, EnumValueDescriptor, FieldDescriptor,
@@ -289,6 +289,15 @@ impl Namespace {
     }
 }
 
+/// The value namespace of a service's module: every method's call and
+/// descriptor, and which of the names are descriptors, so a clash names
+/// what clashed.
+#[derive(Default)]
+struct ServiceValues {
+    names: Namespace,
+    descriptors: HashSet<String>,
+}
+
 /// A reference from a field to a generated type, for the
 /// import-cycle graph.
 struct Reference {
@@ -527,7 +536,7 @@ impl Builder {
                         None
                     }
                 };
-                let mut values = Namespace::default();
+                let mut values = ServiceValues::default();
                 let mut methods = Vec::new();
                 for method in service.methods() {
                     if let Some(built) = self.method(file, &method, &mut values) {
@@ -614,13 +623,14 @@ impl Builder {
     }
 
     /// A unary method, named and with its types resolved; `None` after
-    /// reporting why it has no Elm form. Its Elm value is claimed in
-    /// `values`, the namespace of its service's methods.
+    /// reporting why it has no Elm form. Its call's and its descriptor's
+    /// Elm values are claimed in `values`, the namespace of its service's
+    /// module.
     fn method(
         &mut self,
         file: &FileDescriptor,
         method: &MethodDescriptor,
-        values: &mut Namespace,
+        values: &mut ServiceValues,
     ) -> Option<Method> {
         let full_name = method.full_name();
         let path = method.path();
@@ -697,16 +707,32 @@ impl Builder {
             self.diagnostics
                 .push(Problem::reserved_value(full_name, &built.elm_name, site));
         }
+        let service = method.parent_service();
         let what = format!("method `{full_name}`");
         let origin = self.origin(file, path, tag::METHOD_NAME, what);
-        if let Some((first, second)) = values.claim(&built.elm_name, origin) {
-            let service = method.parent_service();
-            self.diagnostics.push(Problem::value_collision(
-                service.full_name(),
-                &built.elm_name,
-                first,
-                second,
-            ));
+        if let Some((first, second)) = values.names.claim(&built.elm_name, origin) {
+            let problem = if values.descriptors.contains(&built.elm_name) {
+                Problem::descriptor_collision
+            } else {
+                Problem::value_collision
+            };
+            self.diagnostics
+                .push(problem(service.full_name(), &built.elm_name, first, second));
+        } else {
+            // A call that clashes with another call has a descriptor that
+            // clashes with the other's too; that is one problem, reported.
+            let descriptor = built.descriptor_name();
+            let what = format!("the descriptor of method `{full_name}`");
+            let origin = self.origin(file, path, tag::METHOD_NAME, what);
+            if let Some((first, second)) = values.names.claim(&descriptor, origin) {
+                self.diagnostics.push(Problem::descriptor_collision(
+                    service.full_name(),
+                    &descriptor,
+                    first,
+                    second,
+                ));
+            }
+            values.descriptors.insert(descriptor);
         }
         Some(built)
     }

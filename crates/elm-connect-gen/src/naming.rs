@@ -21,14 +21,15 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
 ];
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 16] = [
+pub const RUNTIME_MODULES: [&str; 17] = [
     "Rpc",
     "Rpc.Code",
     "Rpc.ErrorCode",
-    "Proto.Descriptor",
     "Proto.Http",
     "Proto.Message",
+    "Proto.Field",
     "Proto.Enum",
+    "Proto.EnumValue",
     "Proto.Method",
     "Proto.Registry",
     "Proto.WellKnown",
@@ -243,8 +244,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
-/// followed by a type name. Type names are unique within a module and
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
+/// `descriptor`) followed by a type name. Type names are unique within a module and
 /// start with an uppercase letter, and no prefix is another's, so two such
 /// names never collide: neither within one prefix nor across two. (A
 /// suffix would not do: `encodeFooMessage` would be both the encoder of
@@ -256,7 +257,7 @@ pub fn default_name(type_elm_name: &str) -> String {
 /// The prefix of [`default_name`].
 const DEFAULT_PREFIX: &str = "default";
 
-/// The typed record of a message (`Proto.Message.Message`): `message`
+/// The typed value of a message (`Proto.Message.Message`): `message`
 /// followed by the message's Elm name (`Note` becomes `messageNote`).
 /// Like [`default_name`], a prefix and a type name.
 pub fn message_value_name(type_elm_name: &str) -> String {
@@ -266,7 +267,7 @@ pub fn message_value_name(type_elm_name: &str) -> String {
 /// The prefix of [`message_value_name`].
 const MESSAGE_PREFIX: &str = "message";
 
-/// The typed record of an enum (`Proto.Enum.Enum`): `enum` followed by the
+/// The typed value of an enum (`Proto.Enum.Enum`): `enum` followed by the
 /// enum's Elm name (`Status` becomes `enumStatus`). Like
 /// [`default_name`], a prefix and a type name.
 pub fn enum_value_name(type_elm_name: &str) -> String {
@@ -275,6 +276,37 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
+
+/// The descriptor of a message or an enum (`Proto.Message.Descriptor`
+/// or `Proto.Enum.Descriptor`): `descriptor` followed by the
+/// type's Elm name (`Note` becomes `descriptorNote`). Like
+/// [`default_name`], a prefix and a type name; one prefix serves both,
+/// since a message and an enum never share a name in one module.
+pub fn descriptor_name(type_elm_name: &str) -> String {
+    format!("{DESCRIPTOR_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`descriptor_name`].
+const DESCRIPTOR_PREFIX: &str = "descriptor";
+
+/// The descriptor of a method (`Proto.Method.Descriptor`), in
+/// its service's module: `descriptor` followed by the method's Elm name
+/// with its first letter uppercased, as [`pascal_case`] does (`getNote`
+/// becomes `descriptorGetNote`). It follows the Elm name, so a renamed
+/// method's descriptor is renamed with it. A service's module holds only
+/// its methods' calls and descriptors, so it collides only with the call of
+/// a method named for it (`DescriptorGetNote`), which is
+/// `naming::value_collision`.
+pub fn method_descriptor_name(method_elm_name: &str) -> String {
+    let mut chars = method_elm_name.chars();
+    let upper: String = chars
+        .next()
+        .map(|first| first.to_ascii_uppercase())
+        .into_iter()
+        .chain(chars)
+        .collect();
+    format!("{DESCRIPTOR_PREFIX}{upper}")
+}
 
 /// The value holding a package's descriptors and those of every package
 /// it imports (`Proto.Registry.Registry`). Every other top-level value of a
@@ -426,6 +458,15 @@ mod tests {
             Some("the runtime package bruckner/elm-connect")
         );
         assert_eq!(reserved_module("Rpc"), reserved_module("Proto.Json"));
+        assert_eq!(
+            reserved_module("Proto.Field"),
+            reserved_module("Proto.Json")
+        );
+        assert_eq!(
+            reserved_module("Proto.EnumValue"),
+            reserved_module("Proto.Json")
+        );
+        assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
     }
@@ -437,12 +478,18 @@ mod tests {
         assert_eq!(default_name("OuterInner"), "defaultOuterInner");
         assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
         assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
+        assert_eq!(descriptor_name("OuterInner"), "descriptorOuterInner");
+        assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
+        assert_eq!(method_descriptor_name("type_"), "descriptorType_");
+        assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");
+        assert!(method_descriptor_name("getNote").starts_with(DESCRIPTOR_PREFIX));
         let prefixes = [
             "encode",
             "decode",
             DEFAULT_PREFIX,
             MESSAGE_PREFIX,
             ENUM_PREFIX,
+            DESCRIPTOR_PREFIX,
         ];
         for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
             assert!(prefixes.iter().all(|prefix| !local.starts_with(prefix)));

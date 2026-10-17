@@ -585,3 +585,42 @@ tag (design §8).
 - `elm-connect gen` warns on stderr about each stale generated file it
   leaves under `--out` (by `check`'s rule; it deletes nothing) and says
   how many modules it wrote.
+- `Proto.Message.Message`, `Proto.Enum.Enum` and `Proto.Method.Method`
+  are opaque, so they can gain what a later release needs as a
+  modifier without breaking generated code. They are built by
+  `Proto.Message.message`, `Proto.Enum.enum` and `Proto.Method.method`,
+  each taking its codecs, default (not for a method) and descriptor in
+  order, and read by `encode`, `decoder`, `default` and `toDescriptor`
+  (`encodeRequest`, `responseDecoder` and `toDescriptor` for a method).
+  The record fields `encodeJson`, `jsonDecoder` and `descriptor` are
+  gone; `messageNote.descriptor` is `Proto.Message.toDescriptor
+  messageNote`.
+- Generated modules give each message and enum a top-level descriptor,
+  `descriptorNote` and `descriptorVisibility`, which `messageNote` and
+  `enumVisibility` hold, and the package `registry` is built from them,
+  so a program using the registry no longer keeps every type's codecs.
+- A service module gives each method a top-level descriptor,
+  `descriptorGetNote : Proto.Method.Descriptor`, in a
+  `DESCRIPTORS` section before the `CALLS`, and the call refers to it
+  instead of building it inline. Its name follows the method's Elm name,
+  renamed or not; a method named for another's descriptor
+  (`DescriptorGetNote` beside `GetNote`) is `naming::value_collision`.
+- A generated method's `Proto.Method.method` application puts one
+  argument per line however short, so a method's call reads the same
+  with or without an HTTP rule. The printer gains `Expr::StackedApply`
+  for that layout.
+- The descriptor trees are opaque, each named `Descriptor` in the
+  module of its concept beside the typed value, built by a positional
+  `descriptor` function and read by plain nouns:
+  `Proto.Message.Descriptor`, `Proto.Enum.Descriptor` and
+  `Proto.Method.Descriptor`, and the new modules `Proto.Field` (a
+  field's descriptor, with `inOneof`) and `Proto.EnumValue` (in place of
+  the `{ name, number }` record). A field's unions are in `Proto.Field`,
+  every constructor prefixed with its union's name:
+  `CardinalitySingular`, `KindMessage`, `ScalarString`. The
+  `Proto.Descriptor` module is gone. `typeName` and `typeUrl` read a
+  message's descriptor, not its typed value
+  (`Proto.Message.typeUrl Notes.V1.descriptorNote`), and a typed value's
+  descriptor is `toDescriptor`. A message's oneofs are derived from its
+  fields' `inOneof`, which generated code writes only for a oneof
+  member.

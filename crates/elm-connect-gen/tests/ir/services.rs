@@ -228,6 +228,80 @@ service Notes {
 }
 
 #[test]
+fn each_method_has_a_descriptor_named_for_its_call() {
+    // `DescriptorSettings` is free: the message's descriptor lives in the
+    // package's module, the method's call in the service's.
+    let source = r#"syntax = "proto3";
+package t.v1;
+message Settings {}
+service A {
+  rpc GetSettings(Settings) returns (Settings);
+  rpc Type(Settings) returns (Settings);
+  rpc DescriptorSettings(Settings) returns (Settings);
+  rpc Descriptor(Settings) returns (Settings);
+}
+"#;
+    let package = package(source);
+    let names: Vec<(String, String)> = package.services[0]
+        .methods
+        .iter()
+        .map(|method| (method.elm_name.clone(), method.descriptor_name()))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("getSettings".into(), "descriptorGetSettings".into()),
+            ("type_".into(), "descriptorType_".into()),
+            (
+                "descriptorSettings".into(),
+                "descriptorDescriptorSettings".into()
+            ),
+            ("descriptor".into(), "descriptorDescriptor".into()),
+        ]
+    );
+}
+
+#[test]
+fn a_method_named_for_another_methods_descriptor_collides() {
+    let message = "The service `t.v1.Notes` has a method that becomes the Elm value \
+                   `descriptorGetNote`, which is another method's descriptor.";
+    // In either order, and once: the call that clashes is not also
+    // reported through its own descriptor.
+    for (methods, labels) in [
+        (
+            "rpc GetNote(Note) returns (Note);\n  rpc DescriptorGetNote(Note) returns (Note);",
+            [
+                "the descriptor of method `t.v1.Notes.GetNote` becomes `descriptorGetNote`",
+                "and so does method `t.v1.Notes.DescriptorGetNote`",
+            ],
+        ),
+        (
+            "rpc DescriptorGetNote(Note) returns (Note);\n  rpc GetNote(Note) returns (Note);",
+            [
+                "method `t.v1.Notes.DescriptorGetNote` becomes `descriptorGetNote`",
+                "and so does the descriptor of method `t.v1.Notes.GetNote`",
+            ],
+        ),
+    ] {
+        let source = format!(
+            "syntax = \"proto3\";\npackage t.v1;\nmessage Note {{}}\nservice Notes {{\n  \
+             {methods}\n}}\n"
+        );
+        let files = [("t.proto", source.as_str())];
+        let diagnostics = problems(&files, &["t.proto"]);
+        assert_eq!(codes(&diagnostics), [Code::ValueCollision], "{methods}");
+        assert_eq!(
+            diagnostics.iter().next().map(|problem| problem.message()),
+            Some(message)
+        );
+        let rendered = render(&diagnostics, &files);
+        for expected in labels {
+            assert!(rendered.contains(expected), "{expected}\n{rendered}");
+        }
+    }
+}
+
+#[test]
 fn a_service_may_share_a_type_name() {
     // Proto forbids a message and a service of one name in a package, but
     // not two whose Elm names coincide; a module and a type do not clash.

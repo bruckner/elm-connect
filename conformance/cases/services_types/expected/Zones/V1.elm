@@ -5,7 +5,7 @@ module Zones.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -55,41 +55,35 @@ defaultZone =
 -- DESCRIPTORS
 
 
+descriptorZoneRequest : Proto.Message.Descriptor
+descriptorZoneRequest =
+    Proto.Message.descriptor "zones.v1.ZoneRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+
+
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    { encodeJson = encodeZoneRequest
-    , jsonDecoder = decodeZoneRequest
-    , default = defaultZoneRequest
-    , descriptor =
-        { typeName = "zones.v1.ZoneRequest"
-        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest descriptorZoneRequest
+
+
+descriptorZone : Proto.Message.Descriptor
+descriptorZone =
+    Proto.Message.descriptor "zones.v1.Zone"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "offset_seconds" "offsetSeconds" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        ]
 
 
 messageZone : Proto.Message.Message Zone
 messageZone =
-    { encodeJson = encodeZone
-    , jsonDecoder = decodeZone
-    , default = defaultZone
-    , descriptor =
-        { typeName = "zones.v1.Zone"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "offset_seconds", jsonName = "offsetSeconds", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
-    }
+    Proto.Message.message encodeZone decodeZone defaultZone descriptorZone
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageZoneRequest.descriptor
-            , messageZone.descriptor
+            [ descriptorZoneRequest
+            , descriptorZone
             ]
             []
         )

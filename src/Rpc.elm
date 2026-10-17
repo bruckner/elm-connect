@@ -86,11 +86,10 @@ import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
 import Proto.Any exposing (Any)
-import Proto.Descriptor exposing (MethodDescriptor)
 import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
 import Proto.Message exposing (Message)
-import Proto.Method exposing (Method)
+import Proto.Method as Method exposing (Method)
 import Rpc.Code as Code exposing (Code)
 import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 import Rpc.Internal.Http as Internal
@@ -121,14 +120,14 @@ type Call req res
 
 
 {-| A call of a method with a request, without any adjustment. Generated code
-applies it to each method's [`Method`](Proto-Method#Method) record:
+applies it to each method's [`Method`](Proto-Method#Method):
 
     getNote =
         Rpc.call
-            { encodeRequest = Notes.V1.encodeGetNoteRequest
-            , responseDecoder = Notes.V1.decodeNote
-            , descriptor = { service = "notes.v1.NotesService", name = "GetNote", … }
-            }
+            (Proto.Method.method Notes.V1.encodeGetNoteRequest
+                Notes.V1.decodeNote
+                descriptorGetNote
+            )
 
 -}
 call : Method req res -> req -> Call req res
@@ -180,7 +179,7 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Call c) =
-    if index >= 0 && index < List.length c.method.descriptor.bindings then
+    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
         Just (Call { c | binding = index })
 
     else
@@ -200,30 +199,30 @@ method (Call c) =
 
 {-| What the proto says about the method the call is of.
 -}
-descriptor : Call req res -> MethodDescriptor
+descriptor : Call req res -> Method.Descriptor
 descriptor (Call c) =
-    c.method.descriptor
+    Method.toDescriptor c.method
 
 
 {-| The fully-qualified service name, such as `notes.v1.Notes`.
 -}
 serviceName : Call req res -> String
 serviceName (Call c) =
-    c.method.descriptor.service
+    Method.service (Method.toDescriptor c.method)
 
 
 {-| The method name as declared, such as `GetNote`.
 -}
 methodName : Call req res -> String
 methodName (Call c) =
-    c.method.descriptor.name
+    Method.name (Method.toDescriptor c.method)
 
 
 {-| Whether the method has no side effects.
 -}
 idempotent : Call req res -> Bool
 idempotent (Call c) =
-    c.method.descriptor.idempotent
+    Method.idempotent (Method.toDescriptor c.method)
 
 
 {-| The request the call sends.
@@ -237,7 +236,7 @@ requestMessage (Call c) =
 -}
 requestJson : Call req res -> Value
 requestJson (Call c) =
-    c.method.encodeRequest c.message
+    Method.encodeRequest c.method c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
@@ -247,9 +246,9 @@ not included.
 toJson : Call req res -> Value
 toJson (Call c) =
     Json.Encode.object
-        [ ( "service", Json.Encode.string c.method.descriptor.service )
-        , ( "method", Json.Encode.string c.method.descriptor.name )
-        , ( "request", c.method.encodeRequest c.message )
+        [ ( "service", Json.Encode.string (Method.service (Method.toDescriptor c.method)) )
+        , ( "method", Json.Encode.string (Method.name (Method.toDescriptor c.method)) )
+        , ( "request", Method.encodeRequest c.method c.message )
         ]
 
 
@@ -458,8 +457,8 @@ taskTraced cfg ((Call fields) as c) =
                                                     |> Maybe.map (.headers >> splitTrailers)
                                                     |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
                                         in
-                                        ( { service = fields.method.descriptor.service
-                                          , method = fields.method.descriptor.name
+                                        ( { service = Method.service (Method.toDescriptor fields.method)
+                                          , method = Method.name (Method.toDescriptor fields.method)
                                           , binding =
                                                 case route cfg c of
                                                     Bound index _ ->
@@ -786,7 +785,7 @@ route cfg (Call fields) =
         Transcode ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding fields.method.descriptor.bindings) of
+            case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of
                 Just (Binding rule) ->
                     Bound fields.binding rule
 
@@ -798,7 +797,7 @@ connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req 
 connectRequest options cfg ((Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ fields.method.descriptor.service ++ "/" ++ fields.method.descriptor.name
+            trimSlash cfg.baseUrl ++ "/" ++ Method.service (Method.toDescriptor fields.method) ++ "/" ++ Method.name (Method.toDescriptor fields.method)
 
         json =
             Json.Encode.encode 0 (requestJson c)
@@ -827,7 +826,7 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && fields.method.descriptor.idempotent && fits then
+    if options.useGet && Method.idempotent (Method.toDescriptor fields.method) && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
@@ -1112,16 +1111,16 @@ response cfg ((Call fields) as c) answer =
             case ( cfg.transport, route cfg c ) of
                 ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody fields.method.responseDecoder raw
+                        decodeBody (Method.responseDecoder fields.method) raw
 
                     else
                         Err (failure metadata raw)
 
                 ( Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody fields.method.responseDecoder) (orEmptyObject raw)
+                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) (orEmptyObject raw)
 
                 ( Transcode, Implicit ) ->
-                    decodeBody fields.method.responseDecoder (orEmptyObject raw)
+                    decodeBody (Method.responseDecoder fields.method) (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -1263,7 +1262,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy fields.method.descriptor.idempotent tried (code error)
+            Retry.delay policy (Method.idempotent (Method.toDescriptor fields.method)) tried (code error)
 
         _ ->
             Nothing
