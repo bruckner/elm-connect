@@ -746,3 +746,10 @@ tag (design §8).
 - Problems share one copy of each proto file's text for their snippets
   where each held its own: with a problem per rule, a large file's
   copies took gigabytes before the report could be rendered.
+- A message held deeper than 100 messages below the request, protobuf's
+  nesting limit for parsing, is refused where it is held
+  (`route::query_field` for a query parameter, `route::path_field` for a
+  path variable) and not expanded: no server reads it, and the limit
+  bounds the walk of a long chain of messages, which was every leaf
+  below each rule. The `routes_query_depth` case pins the limit from
+  both sides.
