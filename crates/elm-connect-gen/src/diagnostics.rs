@@ -18,6 +18,7 @@ mod spans;
 
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 
 use miette::{
     Diagnostic, GraphicalReportHandler, GraphicalTheme, LabeledSpan, NamedSource, Severity,
@@ -197,7 +198,7 @@ pub struct Problem {
 /// The source snippets of a problem, once its source text is known.
 #[derive(Clone, Debug)]
 struct Attached {
-    source: NamedSource<String>,
+    source: NamedSource<Arc<str>>,
     labels: Vec<LabeledSpan>,
     elsewhere: Vec<Elsewhere>,
 }
@@ -207,7 +208,7 @@ struct Attached {
 #[derive(Clone, Debug)]
 struct Elsewhere {
     message: String,
-    source: NamedSource<String>,
+    source: NamedSource<Arc<str>>,
     labels: Vec<LabeledSpan>,
 }
 
@@ -822,11 +823,11 @@ impl Problem {
         )
     }
 
-    fn attach(&mut self, sources: &HashMap<String, String>, columns: Columns) {
+    fn attach(&mut self, sources: &HashMap<&str, Arc<str>>, columns: Columns) {
         let Some(primary) = self.sites.first().map(|site| site.file.clone()) else {
             return;
         };
-        let Some(text) = sources.get(&primary) else {
+        let Some(text) = sources.get(primary.as_str()) else {
             return;
         };
         let labels = self.labels_in(&primary, text, columns);
@@ -1001,8 +1002,14 @@ impl Diagnostics {
     /// `sources`, or a span that does not fit its text, renders without a
     /// snippet.
     pub fn attach_sources(&mut self, sources: &HashMap<String, String>, columns: Columns) {
+        // Problems share each file's text: with one per rule, copies of
+        // a large file took gigabytes.
+        let shared: HashMap<&str, Arc<str>> = sources
+            .iter()
+            .map(|(file, text)| (file.as_str(), Arc::from(text.as_str())))
+            .collect();
         for problem in &mut self.problems {
-            problem.attach(sources, columns);
+            problem.attach(&shared, columns);
         }
     }
 }

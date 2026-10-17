@@ -592,3 +592,6 @@ tag (design §8).
   a cycle of thousands of messages with a GET rule on each, `elm-connect
   gen` allocated gigabytes before it could report `route::query_field`.
   The `routes_query_cycle` case pins where the problem is reported.
+- Problems share one copy of each proto file's text for their snippets
+  where each held its own: with a problem per rule, a large file's
+  copies took gigabytes before the report could be rendered.
