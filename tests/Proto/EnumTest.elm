@@ -2,6 +2,7 @@ module Proto.EnumTest exposing (suite)
 
 import Expect
 import Json.Encode
+import Proto.Descriptor exposing (EnumDescriptor)
 import Proto.Enum as Enum exposing (Enum)
 import Proto.Json
 import Test exposing (Test, describe, test)
@@ -17,8 +18,23 @@ type Priority
 -}
 enumPriority : Enum Priority
 enumPriority =
-    { encodeJson =
-        \priority ->
+    priorityAs
+        { typeName = "t.v1.Priority"
+        , values =
+            [ { name = "NONE", number = 0 }
+            , { name = "HIGH", number = 2 }
+            , { name = "LOW", number = 1 }
+            , { name = "URGENT", number = 2 }
+            ]
+        }
+
+
+{-| Priority's codecs under another descriptor.
+-}
+priorityAs : EnumDescriptor -> Enum Priority
+priorityAs =
+    Enum.enum
+        (\priority ->
             case priority of
                 PriorityNone ->
                     Json.Encode.string "NONE"
@@ -28,25 +44,16 @@ enumPriority =
 
                 PriorityLow ->
                     Json.Encode.string "LOW"
-    , jsonDecoder =
-        Proto.Json.enum "Priority"
+        )
+        (Proto.Json.enum "Priority"
             PriorityNone
             [ ( "NONE", 0, PriorityNone )
             , ( "HIGH", 2, PriorityHigh )
             , ( "URGENT", 2, PriorityHigh )
             , ( "LOW", 1, PriorityLow )
             ]
-    , default = PriorityNone
-    , descriptor =
-        { typeName = "t.v1.Priority"
-        , values =
-            [ { name = "NONE", number = 0 }
-            , { name = "HIGH", number = 2 }
-            , { name = "LOW", number = 1 }
-            , { name = "URGENT", number = 2 }
-            ]
-        }
-    }
+        )
+        PriorityNone
 
 
 suite : Test
@@ -70,6 +77,6 @@ suite =
                     |> Expect.equal [ Just PriorityNone, Just PriorityLow, Just PriorityHigh, Nothing, Nothing ]
         , test "a name the descriptor does not declare reads as nothing, though the decoder would take it" <|
             \_ ->
-                Enum.fromName { enumPriority | descriptor = { typeName = "t.v1.Priority", values = [] } } "HIGH"
+                Enum.fromName (priorityAs { typeName = "t.v1.Priority", values = [] }) "HIGH"
                     |> Expect.equal Nothing
         ]

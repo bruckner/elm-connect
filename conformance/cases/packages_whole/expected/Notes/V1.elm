@@ -57,10 +57,9 @@ defaultTag =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
+    Proto.Message.message encodeNote
+        decodeNote
+        defaultNote
         { typeName = "notes.v1.Note"
         , fields =
             [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -68,28 +67,25 @@ messageNote =
             ]
         , oneofs = []
         }
-    }
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    { encodeJson = encodeTag
-    , jsonDecoder = decodeTag
-    , default = defaultTag
-    , descriptor =
+    Proto.Message.message encodeTag
+        decodeTag
+        defaultTag
         { typeName = "notes.v1.Tag"
         , fields = [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageNote.descriptor
-            , messageTag.descriptor
+            [ Proto.Message.descriptor messageNote
+            , Proto.Message.descriptor messageTag
             ]
             []
         )

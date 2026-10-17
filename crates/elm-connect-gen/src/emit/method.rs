@@ -4,7 +4,7 @@
 //! bindings written out as data.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_HTTP, RPC};
+use super::{Emitter, Int64, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{apply, inline_list, list, qualified, record, string, ty_fn, var};
 use crate::ir::{Method, TypeRef};
@@ -12,9 +12,10 @@ use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
     /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
-    /// `Rpc.call` of the method's `Proto.Method.Method`: the encoder of its
-    /// request, the decoder of its response, and its descriptor (service,
-    /// name, idempotency, type names and bindings). A method without an
+    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
+    /// `Proto.Method.method` from the encoder of its request, the decoder
+    /// of its response, and its descriptor (service, name, idempotency,
+    /// type names and bindings). A method without an
     /// HTTP rule has no bindings; the runtime calls it over the implicit
     /// route.
     ///
@@ -40,14 +41,11 @@ impl Emitter {
             ("output", string(proto_full_name(&method.output))),
             ("bindings", list(bindings)),
         ]);
-        let body = apply(
-            self.reference((RPC, "call")),
-            [record([
-                ("encodeRequest", encode_request),
-                ("responseDecoder", response_decoder),
-                ("descriptor", descriptor),
-            ])],
+        let built = apply(
+            self.reference((PROTO_METHOD, "method")),
+            [encode_request, response_decoder, descriptor],
         );
+        let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {
             doc: None,
@@ -63,8 +61,8 @@ impl Emitter {
     /// of that type uses, in the Elm form the `int64` option gives the
     /// 64-bit wrappers.
     ///
-    /// A method carries codecs, not the types' typed records: Elm's
-    /// dead-code elimination keeps a top-level value whole, so a record
+    /// A method carries codecs, not the types' typed values: Elm's
+    /// dead-code elimination keeps a top-level value whole, so a typed value
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
     fn request_encoder(&mut self, ty: &TypeRef) -> Expr {

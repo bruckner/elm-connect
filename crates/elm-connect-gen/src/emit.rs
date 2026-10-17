@@ -23,21 +23,23 @@
 //!   each followed by its recursion wrapper and its oneofs; the defaults
 //!   section has the messages alone, and is left out when there are none,
 //!   and the descriptors section has each enum's and message's typed
-//!   record.
+//!   value.
 //! - A service's module, `Notes.V1.NotesService`, holds one function per
 //!   method from its request to an `Rpc.Call`, written point-free as
-//!   `Rpc.call` of the method's `Proto.Method.Method` record: the typed
-//!   records of its request and response (`Notes.V1.messageNote`, or the
-//!   runtime's for a well-known type) and its descriptor, holding its
+//!   `Rpc.call` of the method's `Proto.Method.Method`, built by
+//!   `Proto.Method.method` from the encoder of its request and the decoder
+//!   of its response (`Notes.V1.encodeGetNoteRequest`, or the runtime's
+//!   for a well-known type) and its descriptor, holding its
 //!   service, name, idempotency, type names and bindings, the bindings
 //!   its HTTP rule's own and then its additional ones, as data
 //!   (`Proto.Http.binding`). A method without a rule has no
 //!   bindings, and the runtime calls it over the implicit route. Every
 //!   name the module refers to is qualified, so a method's name cannot
 //!   shadow or clash with one.
-//! - A message's typed record, `messageFoo : Proto.Message.Message Foo`,
-//!   holds its encoder, decoder and default and its descriptor; an enum's,
-//!   `enumBar : Proto.Enum.Enum Bar`, its encoder, decoder and zero value
+//! - A message's typed value, `messageFoo : Proto.Message.Message Foo`,
+//!   is built by `Proto.Message.message` from its encoder, decoder and
+//!   default and its descriptor; an enum's, `enumBar : Proto.Enum.Enum
+//!   Bar`, by `Proto.Enum.enum` from its encoder, decoder and zero value
 //!   and its descriptor, every declared name with its number. The
 //!   message descriptors are written inline, faithful to the proto: each
 //!   field's names, number, cardinality, kind (other types by full name)
@@ -147,9 +149,11 @@ const RPC: &str = "Rpc";
 const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
 const PROTO_HTTP: &str = "Proto.Http";
-/// The runtime package's typed message records.
+/// The runtime package's typed message values.
 const PROTO_MESSAGE: &str = "Proto.Message";
-/// The runtime package's typed enum records.
+/// The runtime package's typed method values.
+const PROTO_METHOD: &str = "Proto.Method";
+/// The runtime package's typed enum values.
 const PROTO_ENUM: &str = "Proto.Enum";
 /// The runtime package's registry of descriptors.
 const PROTO_REGISTRY: &str = "Proto.Registry";
@@ -702,7 +706,7 @@ mod tests {
         assert!(
             on.contains(
                 "registry =\n    Proto.Registry.union (Proto.Registry.fromDescriptors \
-                 [ messageA.descriptor ] []) Proto.Registry.wellKnown"
+                 [ Proto.Message.descriptor messageA ] []) Proto.Registry.wellKnown"
             ),
             "{on}"
         );
@@ -894,6 +898,7 @@ mod tests {
                 "Json.Encode",
                 "Proto.Any",
                 "Proto.Json",
+                "Proto.Method",
                 "Proto.Version",
                 "Rpc",
                 "T.V1"
@@ -901,10 +906,10 @@ mod tests {
         );
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "{ encodeRequest = T.V1.encodeA\n        , responseDecoder = T.V1.decodeA",
+            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n",
             // Qualified, or `identity` would be the method itself.
-            "{ encodeRequest = Basics.identity\n        , responseDecoder = Proto.Json.empty",
-            "{ encodeRequest = Proto.Json.encodeInt64AsInt\n        , responseDecoder = Proto.Any.jsonDecoder",
+            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n",
+            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            Proto.Any.jsonDecoder\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

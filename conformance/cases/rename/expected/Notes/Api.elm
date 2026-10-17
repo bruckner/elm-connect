@@ -84,25 +84,22 @@ defaultGetNoteRequest =
 
 enumAudience : Proto.Enum.Enum Audience
 enumAudience =
-    { encodeJson = encodeAudience
-    , jsonDecoder = decodeAudience
-    , default = AudienceUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeAudience
+        decodeAudience
+        AudienceUnspecified
         { typeName = "notes.v1.Visibility"
         , values =
             [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }
             , { name = "VISIBILITY_PUBLIC", number = 1 }
             ]
         }
-    }
 
 
 messageMemo : Proto.Message.Message Memo
 messageMemo =
-    { encodeJson = encodeMemo
-    , jsonDecoder = decodeMemo
-    , default = defaultMemo
-    , descriptor =
+    Proto.Message.message encodeMemo
+        decodeMemo
+        defaultMemo
         { typeName = "notes.v1.Note"
         , fields =
             [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -113,44 +110,39 @@ messageMemo =
             ]
         , oneofs = [ "kind" ]
         }
-    }
 
 
 messageEdit : Proto.Message.Message Edit
 messageEdit =
-    { encodeJson = encodeEdit
-    , jsonDecoder = decodeEdit
-    , default = defaultEdit
-    , descriptor =
+    Proto.Message.message encodeEdit
+        decodeEdit
+        defaultEdit
         { typeName = "notes.v1.Note.Revision"
         , fields = [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    { encodeJson = encodeGetNoteRequest
-    , jsonDecoder = decodeGetNoteRequest
-    , default = defaultGetNoteRequest
-    , descriptor =
+    Proto.Message.message encodeGetNoteRequest
+        decodeGetNoteRequest
+        defaultGetNoteRequest
         { typeName = "notes.v1.GetNoteRequest"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageMemo.descriptor
-            , messageEdit.descriptor
-            , messageGetNoteRequest.descriptor
+            [ Proto.Message.descriptor messageMemo
+            , Proto.Message.descriptor messageEdit
+            , Proto.Message.descriptor messageGetNoteRequest
             ]
-            [ enumAudience.descriptor ]
+            [ Proto.Enum.descriptor enumAudience ]
         )
         Proto.Registry.wellKnown
 

@@ -39,9 +39,8 @@ bound by `bindings`.
 -}
 raw : List Rule -> Method Value String
 raw bindings =
-    { encodeRequest = identity
-    , responseDecoder = Json.Decode.field "title" Json.Decode.string
-    , descriptor =
+    Proto.Method.method identity
+        (Json.Decode.field "title" Json.Decode.string)
         { service = "t.v1.T"
         , name = "M"
         , idempotent = False
@@ -49,7 +48,6 @@ raw bindings =
         , output = "t.v1.Response"
         , bindings = List.map Proto.Http.binding bindings
         }
-    }
 
 
 {-| A call of the method bound by `r` alone.
@@ -311,9 +309,8 @@ responses =
             \_ ->
                 Rpc.response config
                     (Rpc.call
-                        { encodeRequest = identity
-                        , responseDecoder = Json.Decode.succeed ()
-                        , descriptor =
+                        (Proto.Method.method identity
+                            (Json.Decode.succeed ())
                             { service = "t"
                             , name = "m"
                             , idempotent = False
@@ -321,7 +318,7 @@ responses =
                             , output = "t.Response"
                             , bindings = [ Proto.Http.binding rule ]
                             }
-                        }
+                        )
                         Json.Encode.null
                     )
                     (Http.GoodStatus_ (metadata 204 "No Content" []) "")

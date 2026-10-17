@@ -4,6 +4,7 @@
 module Ping.V1.Ping exposing (..)
 
 import Proto.Json
+import Proto.Method
 import Proto.Version
 import Rpc
 import Time
@@ -19,9 +20,8 @@ elmConnectVersion_ =
 ping : () -> Rpc.Call () Time.Posix
 ping =
     Rpc.call
-        { encodeRequest = Proto.Json.encodeEmpty
-        , responseDecoder = Proto.Json.timestamp
-        , descriptor =
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.timestamp
             { service = "ping.v1.Ping"
             , name = "Ping"
             , idempotent = False
@@ -29,4 +29,4 @@ ping =
             , output = "google.protobuf.Timestamp"
             , bindings = []
             }
-        }
+        )

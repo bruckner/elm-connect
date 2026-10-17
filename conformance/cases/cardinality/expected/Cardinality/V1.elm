@@ -79,23 +79,20 @@ defaultNote =
 
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
-    { encodeJson = encodeAuthor
-    , jsonDecoder = decodeAuthor
-    , default = defaultAuthor
-    , descriptor =
+    Proto.Message.message encodeAuthor
+        decodeAuthor
+        defaultAuthor
         { typeName = "cardinality.v1.Author"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
+    Proto.Message.message encodeNote
+        decodeNote
+        defaultNote
         { typeName = "cardinality.v1.Note"
         , fields =
             [ { name = "subtitle", jsonName = "subtitle", number = 1, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -114,15 +111,14 @@ messageNote =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageAuthor.descriptor
-            , messageNote.descriptor
+            [ Proto.Message.descriptor messageAuthor
+            , Proto.Message.descriptor messageNote
             ]
             []
         )

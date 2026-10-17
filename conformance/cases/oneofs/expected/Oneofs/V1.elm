@@ -100,38 +100,33 @@ defaultChoice =
 
 enumColor : Proto.Enum.Enum Color
 enumColor =
-    { encodeJson = encodeColor
-    , jsonDecoder = decodeColor
-    , default = ColorUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeColor
+        decodeColor
+        ColorUnspecified
         { typeName = "oneofs.v1.Color"
         , values =
             [ { name = "COLOR_UNSPECIFIED", number = 0 }
             , { name = "COLOR_RED", number = 1 }
             ]
         }
-    }
 
 
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    { encodeJson = encodeCreated
-    , jsonDecoder = decodeCreated
-    , default = defaultCreated
-    , descriptor =
+    Proto.Message.message encodeCreated
+        decodeCreated
+        defaultCreated
         { typeName = "oneofs.v1.Created"
         , fields = [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    { encodeJson = encodeNoteEvent
-    , jsonDecoder = decodeNoteEvent
-    , default = defaultNoteEvent
-    , descriptor =
+    Proto.Message.message encodeNoteEvent
+        decodeNoteEvent
+        defaultNoteEvent
         { typeName = "oneofs.v1.NoteEvent"
         , fields =
             [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -150,15 +145,13 @@ messageNoteEvent =
             , "source"
             ]
         }
-    }
 
 
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    { encodeJson = encodeChoice
-    , jsonDecoder = decodeChoice
-    , default = defaultChoice
-    , descriptor =
+    Proto.Message.message encodeChoice
+        decodeChoice
+        defaultChoice
         { typeName = "oneofs.v1.Choice"
         , fields =
             [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Just "value" }
@@ -166,18 +159,17 @@ messageChoice =
             ]
         , oneofs = [ "value" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageCreated.descriptor
-            , messageNoteEvent.descriptor
-            , messageChoice.descriptor
+            [ Proto.Message.descriptor messageCreated
+            , Proto.Message.descriptor messageNoteEvent
+            , Proto.Message.descriptor messageChoice
             ]
-            [ enumColor.descriptor ]
+            [ Proto.Enum.descriptor enumColor ]
         )
         Proto.Registry.wellKnown
 

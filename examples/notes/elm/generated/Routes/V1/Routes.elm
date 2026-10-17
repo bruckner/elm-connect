@@ -4,6 +4,7 @@
 module Routes.V1.Routes exposing (..)
 
 import Proto.Http
+import Proto.Method
 import Proto.Version
 import Routes.V1
 import Rpc
@@ -19,9 +20,8 @@ elmConnectVersion_ =
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeGetMessageRequest
-        , responseDecoder = Routes.V1.decodeMessage
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
             { service = "routes.v1.Routes"
             , name = "GetMessage"
             , idempotent = False
@@ -98,15 +98,14 @@ getMessage =
                     }
                 ]
             }
-        }
+        )
 
 
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeUpdateMessageRequest
-        , responseDecoder = Routes.V1.decodeMessage
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
+            Routes.V1.decodeMessage
             { service = "routes.v1.Routes"
             , name = "UpdateMessage"
             , idempotent = False
@@ -127,15 +126,14 @@ updateMessage =
                     }
                 ]
             }
-        }
+        )
 
 
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeMessage
-        , responseDecoder = Routes.V1.decodeMessage
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeMessage
+            Routes.V1.decodeMessage
             { service = "routes.v1.Routes"
             , name = "UpdateMessageWhole"
             , idempotent = False
@@ -156,15 +154,14 @@ updateMessageWhole =
                     }
                 ]
             }
-        }
+        )
 
 
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeGetMessageRequest
-        , responseDecoder = Routes.V1.decodeMessage
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
             { service = "routes.v1.Routes"
             , name = "PostSub"
             , idempotent = False
@@ -185,15 +182,14 @@ postSub =
                     }
                 ]
             }
-        }
+        )
 
 
 query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeEverything
-        , responseDecoder = Routes.V1.decodeEverything
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             { service = "routes.v1.Routes"
             , name = "Query"
             , idempotent = False
@@ -238,15 +234,14 @@ query =
                     }
                 ]
             }
-        }
+        )
 
 
 single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeEverything
-        , responseDecoder = Routes.V1.decodeEverything
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             { service = "routes.v1.Routes"
             , name = "Single"
             , idempotent = False
@@ -291,15 +286,14 @@ single =
                     }
                 ]
             }
-        }
+        )
 
 
 multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeEverything
-        , responseDecoder = Routes.V1.decodeEverything
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             { service = "routes.v1.Routes"
             , name = "Multi"
             , idempotent = False
@@ -343,15 +337,14 @@ multi =
                     }
                 ]
             }
-        }
+        )
 
 
 typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeEverything
-        , responseDecoder = Routes.V1.decodeEverything
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             { service = "routes.v1.Routes"
             , name = "Typed"
             , idempotent = False
@@ -396,15 +389,14 @@ typed =
                     }
                 ]
             }
-        }
+        )
 
 
 files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeFileRequest
-        , responseDecoder = Routes.V1.decodeFileRequest
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
             { service = "routes.v1.Routes"
             , name = "Files"
             , idempotent = False
@@ -424,15 +416,14 @@ files =
                     }
                 ]
             }
-        }
+        )
 
 
 cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeResource
-        , responseDecoder = Routes.V1.decodeResource
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeResource
+            Routes.V1.decodeResource
             { service = "routes.v1.Routes"
             , name = "Cancel"
             , idempotent = False
@@ -452,15 +443,14 @@ cancel =
                     }
                 ]
             }
-        }
+        )
 
 
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeUpdateResourceRequest
-        , responseDecoder = Routes.V1.decodeResource
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
+            Routes.V1.decodeResource
             { service = "routes.v1.Routes"
             , name = "UpdateResource"
             , idempotent = False
@@ -480,15 +470,14 @@ updateResource =
                     }
                 ]
             }
-        }
+        )
 
 
 head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeFileRequest
-        , responseDecoder = Routes.V1.decodeFileRequest
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
             { service = "routes.v1.Routes"
             , name = "Head"
             , idempotent = False
@@ -508,15 +497,14 @@ head =
                     }
                 ]
             }
-        }
+        )
 
 
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        { encodeRequest = Routes.V1.encodeGetMessageRequest
-        , responseDecoder = Routes.V1.decodeMessage
-        , descriptor =
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
             { service = "routes.v1.Routes"
             , name = "Unbound"
             , idempotent = False
@@ -524,4 +512,4 @@ unbound =
             , output = "routes.v1.Message"
             , bindings = []
             }
-        }
+        )

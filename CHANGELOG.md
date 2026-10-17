@@ -585,3 +585,13 @@ tag (design §8).
 - `elm-connect gen` warns on stderr about each stale generated file it
   leaves under `--out` (by `check`'s rule; it deletes nothing) and says
   how many modules it wrote.
+- `Proto.Message.Message`, `Proto.Enum.Enum` and `Proto.Method.Method`
+  are opaque, so they can gain what a later release needs as a
+  modifier without breaking generated code. They are built by
+  `Proto.Message.message`, `Proto.Enum.enum` and `Proto.Method.method`,
+  each taking its codecs, default (not for a method) and descriptor in
+  order, and read by `encode`, `decoder`, `default` and `descriptor`
+  (`encodeRequest`, `responseDecoder` and `descriptor` for a method).
+  The record fields `encodeJson`, `jsonDecoder` and `descriptor` are
+  gone; `messageNote.descriptor` is `Proto.Message.descriptor
+  messageNote`.

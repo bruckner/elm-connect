@@ -225,10 +225,9 @@ defaultUpdateResourceRequest =
 
 enumKind : Proto.Enum.Enum Kind
 enumKind =
-    { encodeJson = encodeKind
-    , jsonDecoder = decodeKind
-    , default = KindUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeKind
+        decodeKind
+        KindUnspecified
         { typeName = "routes.v1.Kind"
         , values =
             [ { name = "KIND_UNSPECIFIED", number = 0 }
@@ -236,15 +235,13 @@ enumKind =
             , { name = "KIND_IMAGE", number = 2 }
             ]
         }
-    }
 
 
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
-    { encodeJson = encodeGetMessageRequest
-    , jsonDecoder = decodeGetMessageRequest
-    , default = defaultGetMessageRequest
-    , descriptor =
+    Proto.Message.message encodeGetMessageRequest
+        decodeGetMessageRequest
+        defaultGetMessageRequest
         { typeName = "routes.v1.GetMessageRequest"
         , fields =
             [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -255,28 +252,24 @@ messageGetMessageRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    { encodeJson = encodeGetMessageRequestSubMessage
-    , jsonDecoder = decodeGetMessageRequestSubMessage
-    , default = defaultGetMessageRequestSubMessage
-    , descriptor =
+    Proto.Message.message encodeGetMessageRequestSubMessage
+        decodeGetMessageRequestSubMessage
+        defaultGetMessageRequestSubMessage
         { typeName = "routes.v1.GetMessageRequest.SubMessage"
         , fields = [ { name = "subfield", jsonName = "subfield", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    { encodeJson = encodeMessage
-    , jsonDecoder = decodeMessage
-    , default = defaultMessage
-    , descriptor =
+    Proto.Message.message encodeMessage
+        decodeMessage
+        defaultMessage
         { typeName = "routes.v1.Message"
         , fields =
             [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -284,15 +277,13 @@ messageMessage =
             ]
         , oneofs = []
         }
-    }
 
 
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
-    { encodeJson = encodeUpdateMessageRequest
-    , jsonDecoder = decodeUpdateMessageRequest
-    , default = defaultUpdateMessageRequest
-    , descriptor =
+    Proto.Message.message encodeUpdateMessageRequest
+        decodeUpdateMessageRequest
+        defaultUpdateMessageRequest
         { typeName = "routes.v1.UpdateMessageRequest"
         , fields =
             [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -300,15 +291,13 @@ messageUpdateMessageRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    { encodeJson = encodeEverything
-    , jsonDecoder = decodeEverything
-    , default = defaultEverything
-    , descriptor =
+    Proto.Message.message encodeEverything
+        decodeEverything
+        defaultEverything
         { typeName = "routes.v1.Everything"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -336,15 +325,13 @@ messageEverything =
             ]
         , oneofs = [ "choice" ]
         }
-    }
 
 
 messageInner : Proto.Message.Message Inner
 messageInner =
-    { encodeJson = encodeInner
-    , jsonDecoder = decodeInner
-    , default = defaultInner
-    , descriptor =
+    Proto.Message.message encodeInner
+        decodeInner
+        defaultInner
         { typeName = "routes.v1.Inner"
         , fields =
             [ { name = "a", jsonName = "a", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -352,15 +339,13 @@ messageInner =
             ]
         , oneofs = []
         }
-    }
 
 
 messageDeep : Proto.Message.Message Deep
 messageDeep =
-    { encodeJson = encodeDeep
-    , jsonDecoder = decodeDeep
-    , default = defaultDeep
-    , descriptor =
+    Proto.Message.message encodeDeep
+        decodeDeep
+        defaultDeep
         { typeName = "routes.v1.Deep"
         , fields =
             [ { name = "b", jsonName = "b", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
@@ -368,28 +353,24 @@ messageDeep =
             ]
         , oneofs = []
         }
-    }
 
 
 messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
-    { encodeJson = encodeFileRequest
-    , jsonDecoder = decodeFileRequest
-    , default = defaultFileRequest
-    , descriptor =
+    Proto.Message.message encodeFileRequest
+        decodeFileRequest
+        defaultFileRequest
         { typeName = "routes.v1.FileRequest"
         , fields = [ { name = "path", jsonName = "path", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageResource : Proto.Message.Message Resource
 messageResource =
-    { encodeJson = encodeResource
-    , jsonDecoder = decodeResource
-    , default = defaultResource
-    , descriptor =
+    Proto.Message.message encodeResource
+        decodeResource
+        defaultResource
         { typeName = "routes.v1.Resource"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -400,15 +381,13 @@ messageResource =
             ]
         , oneofs = []
         }
-    }
 
 
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
-    { encodeJson = encodeUpdateResourceRequest
-    , jsonDecoder = decodeUpdateResourceRequest
-    , default = defaultUpdateResourceRequest
-    , descriptor =
+    Proto.Message.message encodeUpdateResourceRequest
+        decodeUpdateResourceRequest
+        defaultUpdateResourceRequest
         { typeName = "routes.v1.UpdateResourceRequest"
         , fields =
             [ { name = "resource", jsonName = "resource", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Resource", oneof = Nothing }
@@ -416,25 +395,24 @@ messageUpdateResourceRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageGetMessageRequest.descriptor
-            , messageGetMessageRequestSubMessage.descriptor
-            , messageMessage.descriptor
-            , messageUpdateMessageRequest.descriptor
-            , messageEverything.descriptor
-            , messageInner.descriptor
-            , messageDeep.descriptor
-            , messageFileRequest.descriptor
-            , messageResource.descriptor
-            , messageUpdateResourceRequest.descriptor
+            [ Proto.Message.descriptor messageGetMessageRequest
+            , Proto.Message.descriptor messageGetMessageRequestSubMessage
+            , Proto.Message.descriptor messageMessage
+            , Proto.Message.descriptor messageUpdateMessageRequest
+            , Proto.Message.descriptor messageEverything
+            , Proto.Message.descriptor messageInner
+            , Proto.Message.descriptor messageDeep
+            , Proto.Message.descriptor messageFileRequest
+            , Proto.Message.descriptor messageResource
+            , Proto.Message.descriptor messageUpdateResourceRequest
             ]
-            [ enumKind.descriptor ]
+            [ Proto.Enum.descriptor enumKind ]
         )
         Proto.Registry.wellKnown
 

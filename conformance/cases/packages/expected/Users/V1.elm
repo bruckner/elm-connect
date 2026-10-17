@@ -52,25 +52,22 @@ defaultUser =
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { encodeJson = encodeRole
-    , jsonDecoder = decodeRole
-    , default = RoleUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeRole
+        decodeRole
+        RoleUnspecified
         { typeName = "users.v1.Role"
         , values =
             [ { name = "ROLE_UNSPECIFIED", number = 0 }
             , { name = "ROLE_EDITOR", number = 1 }
             ]
         }
-    }
 
 
 messageUser : Proto.Message.Message User
 messageUser =
-    { encodeJson = encodeUser
-    , jsonDecoder = decodeUser
-    , default = defaultUser
-    , descriptor =
+    Proto.Message.message encodeUser
+        decodeUser
+        defaultUser
         { typeName = "users.v1.User"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -78,12 +75,11 @@ messageUser =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageUser.descriptor ] [ enumRole.descriptor ]) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageUser ] [ Proto.Enum.descriptor enumRole ]) Proto.Registry.wellKnown
 
 
 

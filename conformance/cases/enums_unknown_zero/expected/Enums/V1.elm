@@ -64,10 +64,9 @@ defaultTask =
 
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
-    { encodeJson = encodeStatus
-    , jsonDecoder = decodeStatus
-    , default = StatusUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeStatus
+        decodeStatus
+        StatusUnspecified
         { typeName = "enums.v1.Status"
         , values =
             [ { name = "STATUS_UNSPECIFIED", number = 0 }
@@ -75,15 +74,13 @@ enumStatus =
             , { name = "STATUS_ARCHIVED", number = 2 }
             ]
         }
-    }
 
 
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
-    { encodeJson = encodePriority
-    , jsonDecoder = decodePriority
-    , default = PriorityNone
-    , descriptor =
+    Proto.Enum.enum encodePriority
+        decodePriority
+        PriorityNone
         { typeName = "enums.v1.Priority"
         , values =
             [ { name = "NONE", number = 0 }
@@ -95,15 +92,13 @@ enumPriority =
             , { name = "UNSET", number = 0 }
             ]
         }
-    }
 
 
 messageTask : Proto.Message.Message Task
 messageTask =
-    { encodeJson = encodeTask
-    , jsonDecoder = decodeTask
-    , default = defaultTask
-    , descriptor =
+    Proto.Message.message encodeTask
+        decodeTask
+        defaultTask
         { typeName = "enums.v1.Task"
         , fields =
             [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
@@ -113,15 +108,14 @@ messageTask =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ messageTask.descriptor ]
-            [ enumStatus.descriptor
-            , enumPriority.descriptor
+        (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageTask ]
+            [ Proto.Enum.descriptor enumStatus
+            , Proto.Enum.descriptor enumPriority
             ]
         )
         Proto.Registry.wellKnown

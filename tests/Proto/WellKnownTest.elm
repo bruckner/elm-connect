@@ -18,8 +18,13 @@ round trip through its JSON.
 check : Message a -> ( String, Bool )
 check message =
     ( Message.typeName message
-    , Json.Decode.decodeValue message.jsonDecoder (message.encodeJson message.default) == Ok message.default
+    , Json.Decode.decodeValue (Message.decoder message) (Message.encode message (Message.default message)) == Ok (Message.default message)
     )
+
+
+fieldsOf : Message a -> List Proto.Descriptor.Field
+fieldsOf =
+    Message.descriptor >> .fields
 
 
 suite : Test
@@ -68,29 +73,29 @@ suite =
                         ]
         , test "Value's default is null" <|
             \_ ->
-                ( Message.typeName WellKnown.value, Json.Encode.encode 0 WellKnown.value.default )
+                ( Message.typeName WellKnown.value, Json.Encode.encode 0 (Message.default WellKnown.value) )
                     |> Expect.equal ( "google.protobuf.Value", "null" )
         , test "the defaults are the zero values" <|
             \_ ->
-                ( ( Time.posixToMillis WellKnown.timestamp.default, Duration.milliseconds WellKnown.duration.default )
-                , ( WellKnown.int64Value.default, Dict.isEmpty WellKnown.struct.default )
+                ( ( Time.posixToMillis (Message.default WellKnown.timestamp), Duration.milliseconds (Message.default WellKnown.duration) )
+                , ( Message.default WellKnown.int64Value, Dict.isEmpty (Message.default WellKnown.struct) )
                 )
                     |> Expect.equal ( ( 0, 0 ), ( "0", True ) )
         , test "the wire forms are the well-known types' own" <|
             \_ ->
-                [ WellKnown.empty.encodeJson ()
-                , WellKnown.timestamp.encodeJson (Time.millisToPosix 1500)
-                , WellKnown.duration.encodeJson (Duration.fromMilliseconds 1500)
-                , WellKnown.fieldMask.encodeJson [ "display_name", "author.email" ]
-                , WellKnown.int64ValueAsInt.encodeJson 7
+                [ Message.encode WellKnown.empty ()
+                , Message.encode WellKnown.timestamp (Time.millisToPosix 1500)
+                , Message.encode WellKnown.duration (Duration.fromMilliseconds 1500)
+                , Message.encode WellKnown.fieldMask [ "display_name", "author.email" ]
+                , Message.encode WellKnown.int64ValueAsInt 7
                 ]
                     |> List.map (Json.Encode.encode 0)
                     |> Expect.equal [ "{}", "\"1970-01-01T00:00:01.500Z\"", "\"1.500s\"", "\"displayName,author.email\"", "\"7\"" ]
         , test "the descriptors are protobuf's" <|
             \_ ->
-                ( WellKnown.timestamp.descriptor.fields |> List.map (\field -> ( field.name, field.number, field.kind ))
-                , WellKnown.fieldMask.descriptor.fields |> List.map (\field -> ( field.name, field.cardinality ))
-                , WellKnown.uint64ValueAsInt.descriptor.fields |> List.map .kind
+                ( fieldsOf WellKnown.timestamp |> List.map (\field -> ( field.name, field.number, field.kind ))
+                , fieldsOf WellKnown.fieldMask |> List.map (\field -> ( field.name, field.cardinality ))
+                , fieldsOf WellKnown.uint64ValueAsInt |> List.map .kind
                 )
                     |> Expect.equal
                         ( [ ( "seconds", 1, Scalar Int64 ), ( "nanos", 2, Scalar Int32 ) ]

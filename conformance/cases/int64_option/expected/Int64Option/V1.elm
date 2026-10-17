@@ -75,10 +75,9 @@ defaultCounters =
 
 messageCounters : Proto.Message.Message Counters
 messageCounters =
-    { encodeJson = encodeCounters
-    , jsonDecoder = decodeCounters
-    , default = defaultCounters
-    , descriptor =
+    Proto.Message.message encodeCounters
+        decodeCounters
+        defaultCounters
         { typeName = "int64_option.v1.Counters"
         , fields =
             [ { name = "int64_value", jsonName = "int64Value", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
@@ -98,12 +97,11 @@ messageCounters =
             ]
         , oneofs = [ "limit" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageCounters.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageCounters ] []) Proto.Registry.wellKnown
 
 
 

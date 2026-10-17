@@ -6,6 +6,7 @@ module Notes.V1.NotesService exposing (..)
 import Notes.V1
 import Proto.Http
 import Proto.Json
+import Proto.Method
 import Proto.Version
 import Rpc
 
@@ -20,9 +21,8 @@ elmConnectVersion_ =
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeGetNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
             { service = "notes.v1.NotesService"
             , name = "GetNote"
             , idempotent = True
@@ -53,15 +53,14 @@ getNote =
                     }
                 ]
             }
-        }
+        )
 
 
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeListNotesRequest
-        , responseDecoder = Notes.V1.decodeListNotesResponse
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
             { service = "notes.v1.NotesService"
             , name = "ListNotes"
             , idempotent = True
@@ -90,15 +89,14 @@ listNotes =
                     }
                 ]
             }
-        }
+        )
 
 
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeCreateNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
             { service = "notes.v1.NotesService"
             , name = "CreateNote"
             , idempotent = False
@@ -119,15 +117,14 @@ createNote =
                     }
                 ]
             }
-        }
+        )
 
 
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeUpdateNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
             { service = "notes.v1.NotesService"
             , name = "UpdateNote"
             , idempotent = False
@@ -147,15 +144,14 @@ updateNote =
                     }
                 ]
             }
-        }
+        )
 
 
 replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeNote
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeNote
+            Notes.V1.decodeNote
             { service = "notes.v1.NotesService"
             , name = "ReplaceNote"
             , idempotent = False
@@ -175,15 +171,14 @@ replaceNote =
                     }
                 ]
             }
-        }
+        )
 
 
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeDeleteNoteRequest
-        , responseDecoder = Proto.Json.empty
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
             { service = "notes.v1.NotesService"
             , name = "DeleteNote"
             , idempotent = False
@@ -203,15 +198,14 @@ deleteNote =
                     }
                 ]
             }
-        }
+        )
 
 
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeArchiveNoteRequest
-        , responseDecoder = Notes.V1.decodeNote
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
             { service = "notes.v1.NotesService"
             , name = "ArchiveNote"
             , idempotent = False
@@ -231,15 +225,14 @@ archiveNote =
                     }
                 ]
             }
-        }
+        )
 
 
 readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
 readFile =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeReadFileRequest
-        , responseDecoder = Notes.V1.decodeSummary
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeReadFileRequest
+            Notes.V1.decodeSummary
             { service = "notes.v1.NotesService"
             , name = "ReadFile"
             , idempotent = False
@@ -259,15 +252,14 @@ readFile =
                     }
                 ]
             }
-        }
+        )
 
 
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        { encodeRequest = Proto.Json.encodeEmpty
-        , responseDecoder = Proto.Json.empty
-        , descriptor =
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
             { service = "notes.v1.NotesService"
             , name = "Ping"
             , idempotent = False
@@ -287,15 +279,14 @@ ping =
                     }
                 ]
             }
-        }
+        )
 
 
 summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        { encodeRequest = Notes.V1.encodeGetNoteRequest
-        , responseDecoder = Notes.V1.decodeSummary
-        , descriptor =
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
             { service = "notes.v1.NotesService"
             , name = "Summarize"
             , idempotent = False
@@ -303,4 +294,4 @@ summarize =
             , output = "notes.v1.Summary"
             , bindings = []
             }
-        }
+        )

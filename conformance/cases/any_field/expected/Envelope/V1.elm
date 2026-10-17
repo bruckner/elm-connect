@@ -60,10 +60,9 @@ defaultEnvelope =
 
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    { encodeJson = encodeEnvelope
-    , jsonDecoder = decodeEnvelope
-    , default = defaultEnvelope
-    , descriptor =
+    Proto.Message.message encodeEnvelope
+        decodeEnvelope
+        defaultEnvelope
         { typeName = "envelope.v1.Envelope"
         , fields =
             [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -75,12 +74,11 @@ messageEnvelope =
             ]
         , oneofs = [ "body" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageEnvelope.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageEnvelope ] []) Proto.Registry.wellKnown
 
 
 

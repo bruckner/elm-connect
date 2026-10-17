@@ -1,6 +1,6 @@
-//! The typed records of a package's messages and enums and the package's
+//! The typed values of a package's messages and enums and the package's
 //! registry (design §3.9): `messageFoo : Proto.Message.Message Foo` and
-//! `enumBar : Proto.Enum.Enum Bar`, each holding its type's codecs,
+//! `enumBar : Proto.Enum.Enum Bar`, each built from its type's codecs,
 //! default and descriptor, and `registry : Proto.Registry.Registry`.
 
 use std::collections::BTreeSet;
@@ -9,13 +9,14 @@ use super::{
     Emitter, MessageShape, PROTO_DESCRIPTOR, PROTO_ENUM, PROTO_MESSAGE, PROTO_REGISTRY, RecordField,
 };
 use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{access, apply, inline_record, int, list, record, string, ty, var};
+use crate::elm::build::{apply, inline_record, int, list, record, string, ty, var};
 use crate::ir::{Cardinality, Enum, MapKey, ModuleName, Package, ScalarKind, TypeRef};
 use crate::naming::REGISTRY;
 
 impl Emitter {
-    /// `messageFoo : Proto.Message.Message Foo`: the message's encoder,
-    /// decoder and default, and its descriptor.
+    /// `messageFoo : Proto.Message.Message Foo`, built by
+    /// `Proto.Message.message` from the message's encoder, decoder and
+    /// default, and its descriptor.
     pub(super) fn message_record(&mut self, shape: &MessageShape) -> Decl {
         let message = shape.message;
         let descriptor = record([
@@ -25,23 +26,28 @@ impl Emitter {
         ]);
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
+        let builder = self.reference((PROTO_MESSAGE, "message"));
         Decl::Value {
             doc: None,
             name: message.value_name(),
             annotation,
             params: Vec::new(),
-            body: record([
-                ("encodeJson", var(message.encoder_name())),
-                ("jsonDecoder", var(message.decoder_name())),
-                ("default", var(message.default_name())),
-                ("descriptor", descriptor),
-            ]),
+            body: apply(
+                builder,
+                [
+                    var(message.encoder_name()),
+                    var(message.decoder_name()),
+                    var(message.default_name()),
+                    descriptor,
+                ],
+            ),
         }
     }
 
-    /// `enumBar : Proto.Enum.Enum Bar`: the enum's encoder, decoder and
-    /// zero value, and its descriptor, whose values are every declared
-    /// name in order with its number (an alias with its number).
+    /// `enumBar : Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from
+    /// the enum's encoder, decoder and zero value, and its descriptor,
+    /// whose values are every declared name in order with its number (an
+    /// alias with its number).
     pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
@@ -55,17 +61,21 @@ impl Emitter {
         ]);
         let annotation =
             self.library_type(PROTO_ENUM, "Enum", [ty(enumeration.elm_name.clone(), [])]);
+        let builder = self.reference((PROTO_ENUM, "enum"));
         Decl::Value {
             doc: None,
             name: enumeration.value_name(),
             annotation,
             params: Vec::new(),
-            body: record([
-                ("encodeJson", var(enumeration.encoder_name())),
-                ("jsonDecoder", var(enumeration.decoder_name())),
-                ("default", var(enumeration.zero().elm_ctor.clone())),
-                ("descriptor", descriptor),
-            ]),
+            body: apply(
+                builder,
+                [
+                    var(enumeration.encoder_name()),
+                    var(enumeration.decoder_name()),
+                    var(enumeration.zero().elm_ctor.clone()),
+                    descriptor,
+                ],
+            ),
         }
     }
 
@@ -78,12 +88,18 @@ impl Emitter {
         let messages: Vec<Expr> = package
             .messages
             .iter()
-            .map(|message| access(var(message.value_name()), "descriptor"))
+            .map(|message| {
+                let descriptor = self.reference((PROTO_MESSAGE, "descriptor"));
+                apply(descriptor, [var(message.value_name())])
+            })
             .collect();
         let enums: Vec<Expr> = package
             .enums
             .iter()
-            .map(|enumeration| access(var(enumeration.value_name()), "descriptor"))
+            .map(|enumeration| {
+                let descriptor = self.reference((PROTO_ENUM, "descriptor"));
+                apply(descriptor, [var(enumeration.value_name())])
+            })
             .collect();
         let union = self.reference((PROTO_REGISTRY, "union"));
         let mut parts: Vec<Expr> = Vec::new();

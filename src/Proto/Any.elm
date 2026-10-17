@@ -92,7 +92,7 @@ protobuf's own libraries write it.
 -}
 pack : Message a -> a -> Any
 pack message value =
-    Internal.Any (Message.typeUrl message) (InJson (message.encodeJson value))
+    Internal.Any (Message.typeUrl message) (InJson (Message.encode message value))
 
 
 {-| A message as an `Any` whose type URL has another prefix:
@@ -109,7 +109,7 @@ packWith prefix message value =
             else
                 prefix ++ "/"
     in
-    Internal.Any (slashed ++ Message.typeName message) (InJson (message.encodeJson value))
+    Internal.Any (slashed ++ Message.typeName message) (InJson (Message.encode message value))
 
 
 {-| The packed message, if it is of this type: `Nothing` for another type,
@@ -120,7 +120,7 @@ unpack message ((Internal.Any _ payload) as any) =
     if is message any then
         case payload of
             InJson json ->
-                Just (Json.Decode.decodeValue message.jsonDecoder json |> Result.mapError Json)
+                Just (Json.Decode.decodeValue (Message.decoder message) json |> Result.mapError Json)
 
             InBinary _ ->
                 Just (Err BinaryOnly)
@@ -191,7 +191,7 @@ added, or `{"@type": …, "value": …}` for a well-known type with a JSON form 
 its own. An `Any` holding only binary is written as Connect writes an error
 detail, `{"type": "notes.v1.Note", "value": "<base64>"}`, which
 [`jsonDecoder`](#jsonDecoder) does not read. The empty `Any` (no type URL,
-as `Proto.WellKnown.any.default`) is `{}`.
+as `Proto.Message.default Proto.WellKnown.any`) is `{}`.
 -}
 encodeJson : Any -> Json.Encode.Value
 encodeJson ((Internal.Any url payload) as any) =

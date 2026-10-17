@@ -85,10 +85,9 @@ defaultEmpty =
 
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
-    { encodeJson = encodeScalars
-    , jsonDecoder = decodeScalars
-    , default = defaultScalars
-    , descriptor =
+    Proto.Message.message encodeScalars
+        decodeScalars
+        defaultScalars
         { typeName = "scalars.v1.Scalars"
         , fields =
             [ { name = "double_value", jsonName = "doubleValue", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
@@ -111,28 +110,25 @@ messageScalars =
             ]
         , oneofs = []
         }
-    }
 
 
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
-    { encodeJson = encodeEmpty
-    , jsonDecoder = decodeEmpty
-    , default = defaultEmpty
-    , descriptor =
+    Proto.Message.message encodeEmpty
+        decodeEmpty
+        defaultEmpty
         { typeName = "scalars.v1.Empty"
         , fields = []
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageScalars.descriptor
-            , messageEmpty.descriptor
+            [ Proto.Message.descriptor messageScalars
+            , Proto.Message.descriptor messageEmpty
             ]
             []
         )

@@ -80,38 +80,33 @@ defaultTeam =
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    { encodeJson = encodeRole
-    , jsonDecoder = decodeRole
-    , default = RoleUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeRole
+        decodeRole
+        RoleUnspecified
         { typeName = "maps.v1.Role"
         , values =
             [ { name = "ROLE_UNSPECIFIED", number = 0 }
             , { name = "ROLE_OWNER", number = 1 }
             ]
         }
-    }
 
 
 messageMember : Proto.Message.Message Member
 messageMember =
-    { encodeJson = encodeMember
-    , jsonDecoder = decodeMember
-    , default = defaultMember
-    , descriptor =
+    Proto.Message.message encodeMember
+        decodeMember
+        defaultMember
         { typeName = "maps.v1.Member"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    { encodeJson = encodeTeam
-    , jsonDecoder = decodeTeam
-    , default = defaultTeam
-    , descriptor =
+    Proto.Message.message encodeTeam
+        decodeTeam
+        defaultTeam
         { typeName = "maps.v1.Team"
         , fields =
             [ { name = "labels", jsonName = "labels", number = 1, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -127,17 +122,16 @@ messageTeam =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageMember.descriptor
-            , messageTeam.descriptor
+            [ Proto.Message.descriptor messageMember
+            , Proto.Message.descriptor messageTeam
             ]
-            [ enumRole.descriptor ]
+            [ Proto.Enum.descriptor enumRole ]
         )
         Proto.Registry.wellKnown
 

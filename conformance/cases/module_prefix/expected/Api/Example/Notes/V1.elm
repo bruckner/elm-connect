@@ -60,10 +60,9 @@ defaultGetNoteRequest =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
+    Proto.Message.message encodeNote
+        decodeNote
+        defaultNote
         { typeName = "notes.v1.Note"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -72,28 +71,25 @@ messageNote =
             ]
         , oneofs = []
         }
-    }
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    { encodeJson = encodeGetNoteRequest
-    , jsonDecoder = decodeGetNoteRequest
-    , default = defaultGetNoteRequest
-    , descriptor =
+    Proto.Message.message encodeGetNoteRequest
+        decodeGetNoteRequest
+        defaultGetNoteRequest
         { typeName = "notes.v1.GetNoteRequest"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageNote.descriptor
-            , messageGetNoteRequest.descriptor
+            [ Proto.Message.descriptor messageNote
+            , Proto.Message.descriptor messageGetNoteRequest
             ]
             []
         )

@@ -82,10 +82,9 @@ defaultTag =
 
 enumShape : Proto.Enum.Enum Shape
 enumShape =
-    { encodeJson = encodeShape
-    , jsonDecoder = decodeShape
-    , default = ShapeUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeShape
+        decodeShape
+        ShapeUnspecified
         { typeName = "naming.v1.Shape"
         , values =
             [ { name = "SHAPE_UNSPECIFIED", number = 0 }
@@ -94,15 +93,13 @@ enumShape =
             , { name = "SHAPE_V3_MESH", number = 3 }
             ]
         }
-    }
 
 
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
-    { encodeJson = encodeHttpMethod
-    , jsonDecoder = decodeHttpMethod
-    , default = HttpMethodUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeHttpMethod
+        decodeHttpMethod
+        HttpMethodUnspecified
         { typeName = "naming.v1.HttpMethod"
         , values =
             [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0 }
@@ -110,15 +107,13 @@ enumHttpMethod =
             , { name = "POST", number = 2 }
             ]
         }
-    }
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    { encodeJson = encodeTag
-    , jsonDecoder = decodeTag
-    , default = defaultTag
-    , descriptor =
+    Proto.Message.message encodeTag
+        decodeTag
+        defaultTag
         { typeName = "naming.v1.Tag"
         , fields =
             [ { name = "type", jsonName = "type", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -135,15 +130,14 @@ messageTag =
             ]
         , oneofs = [ "case" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ messageTag.descriptor ]
-            [ enumShape.descriptor
-            , enumHttpMethod.descriptor
+        (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageTag ]
+            [ Proto.Enum.descriptor enumShape
+            , Proto.Enum.descriptor enumHttpMethod
             ]
         )
         Proto.Registry.wellKnown

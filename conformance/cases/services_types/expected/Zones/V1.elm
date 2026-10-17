@@ -57,23 +57,20 @@ defaultZone =
 
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    { encodeJson = encodeZoneRequest
-    , jsonDecoder = decodeZoneRequest
-    , default = defaultZoneRequest
-    , descriptor =
+    Proto.Message.message encodeZoneRequest
+        decodeZoneRequest
+        defaultZoneRequest
         { typeName = "zones.v1.ZoneRequest"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageZone : Proto.Message.Message Zone
 messageZone =
-    { encodeJson = encodeZone
-    , jsonDecoder = decodeZone
-    , default = defaultZone
-    , descriptor =
+    Proto.Message.message encodeZone
+        decodeZone
+        defaultZone
         { typeName = "zones.v1.Zone"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -81,15 +78,14 @@ messageZone =
             ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageZoneRequest.descriptor
-            , messageZone.descriptor
+            [ Proto.Message.descriptor messageZoneRequest
+            , Proto.Message.descriptor messageZone
             ]
             []
         )

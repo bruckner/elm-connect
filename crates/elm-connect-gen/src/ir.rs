@@ -226,7 +226,7 @@ impl TypeName {
         crate::naming::decoder_name(&self.name)
     }
 
-    /// The Elm name of the typed record of the message this names, such
+    /// The Elm name of the typed value of the message this names, such
     /// as `messageNote`.
     pub fn message_value_name(&self) -> String {
         crate::naming::message_value_name(&self.name)
@@ -295,7 +295,7 @@ impl Message {
         crate::naming::default_name(&self.elm_name)
     }
 
-    /// The Elm name of the message's typed record, such as
+    /// The Elm name of the message's typed value, such as
     /// `messageNote`.
     pub fn value_name(&self) -> String {
         crate::naming::message_value_name(&self.elm_name)
@@ -692,7 +692,7 @@ impl Enum {
         crate::naming::decoder_name(&self.elm_name)
     }
 
-    /// The Elm name of the enum's typed record, such as `enumStatus`.
+    /// The Elm name of the enum's typed value, such as `enumStatus`.
     pub fn value_name(&self) -> String {
         crate::naming::enum_value_name(&self.elm_name)
     }

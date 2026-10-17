@@ -192,10 +192,9 @@ defaultSummary =
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    { encodeJson = encodeVisibility
-    , jsonDecoder = decodeVisibility
-    , default = VisibilityUnspecified
-    , descriptor =
+    Proto.Enum.enum encodeVisibility
+        decodeVisibility
+        VisibilityUnspecified
         { typeName = "notes.v1.Visibility"
         , values =
             [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }
@@ -203,15 +202,13 @@ enumVisibility =
             , { name = "VISIBILITY_PUBLIC", number = 2 }
             ]
         }
-    }
 
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
+    Proto.Message.message encodeNote
+        decodeNote
+        defaultNote
         { typeName = "notes.v1.Note"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -221,28 +218,24 @@ messageNote =
             ]
         , oneofs = []
         }
-    }
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    { encodeJson = encodeGetNoteRequest
-    , jsonDecoder = decodeGetNoteRequest
-    , default = defaultGetNoteRequest
-    , descriptor =
+    Proto.Message.message encodeGetNoteRequest
+        decodeGetNoteRequest
+        defaultGetNoteRequest
         { typeName = "notes.v1.GetNoteRequest"
         , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
-    { encodeJson = encodeListNotesRequest
-    , jsonDecoder = decodeListNotesRequest
-    , default = defaultListNotesRequest
-    , descriptor =
+    Proto.Message.message encodeListNotesRequest
+        decodeListNotesRequest
+        defaultListNotesRequest
         { typeName = "notes.v1.ListNotesRequest"
         , fields =
             [ { name = "parent", jsonName = "parent", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -255,15 +248,13 @@ messageListNotesRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageListNotesRequestFilter : Proto.Message.Message ListNotesRequestFilter
 messageListNotesRequestFilter =
-    { encodeJson = encodeListNotesRequestFilter
-    , jsonDecoder = decodeListNotesRequestFilter
-    , default = defaultListNotesRequestFilter
-    , descriptor =
+    Proto.Message.message encodeListNotesRequestFilter
+        decodeListNotesRequestFilter
+        defaultListNotesRequestFilter
         { typeName = "notes.v1.ListNotesRequest.Filter"
         , fields =
             [ { name = "visibility", jsonName = "visibility", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
@@ -271,15 +262,13 @@ messageListNotesRequestFilter =
             ]
         , oneofs = []
         }
-    }
 
 
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
-    { encodeJson = encodeListNotesResponse
-    , jsonDecoder = decodeListNotesResponse
-    , default = defaultListNotesResponse
-    , descriptor =
+    Proto.Message.message encodeListNotesResponse
+        decodeListNotesResponse
+        defaultListNotesResponse
         { typeName = "notes.v1.ListNotesResponse"
         , fields =
             [ { name = "notes", jsonName = "notes", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Note", oneof = Nothing }
@@ -287,15 +276,13 @@ messageListNotesResponse =
             ]
         , oneofs = []
         }
-    }
 
 
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
-    { encodeJson = encodeCreateNoteRequest
-    , jsonDecoder = decodeCreateNoteRequest
-    , default = defaultCreateNoteRequest
-    , descriptor =
+    Proto.Message.message encodeCreateNoteRequest
+        decodeCreateNoteRequest
+        defaultCreateNoteRequest
         { typeName = "notes.v1.CreateNoteRequest"
         , fields =
             [ { name = "parent", jsonName = "parent", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -303,15 +290,13 @@ messageCreateNoteRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
 messageUpdateNoteRequest =
-    { encodeJson = encodeUpdateNoteRequest
-    , jsonDecoder = decodeUpdateNoteRequest
-    , default = defaultUpdateNoteRequest
-    , descriptor =
+    Proto.Message.message encodeUpdateNoteRequest
+        decodeUpdateNoteRequest
+        defaultUpdateNoteRequest
         { typeName = "notes.v1.UpdateNoteRequest"
         , fields =
             [ { name = "note", jsonName = "note", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "notes.v1.Note", oneof = Nothing }
@@ -319,15 +304,13 @@ messageUpdateNoteRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
 messageDeleteNoteRequest =
-    { encodeJson = encodeDeleteNoteRequest
-    , jsonDecoder = decodeDeleteNoteRequest
-    , default = defaultDeleteNoteRequest
-    , descriptor =
+    Proto.Message.message encodeDeleteNoteRequest
+        decodeDeleteNoteRequest
+        defaultDeleteNoteRequest
         { typeName = "notes.v1.DeleteNoteRequest"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -335,15 +318,13 @@ messageDeleteNoteRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
 messageArchiveNoteRequest =
-    { encodeJson = encodeArchiveNoteRequest
-    , jsonDecoder = decodeArchiveNoteRequest
-    , default = defaultArchiveNoteRequest
-    , descriptor =
+    Proto.Message.message encodeArchiveNoteRequest
+        decodeArchiveNoteRequest
+        defaultArchiveNoteRequest
         { typeName = "notes.v1.ArchiveNoteRequest"
         , fields =
             [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -351,52 +332,47 @@ messageArchiveNoteRequest =
             ]
         , oneofs = []
         }
-    }
 
 
 messageReadFileRequest : Proto.Message.Message ReadFileRequest
 messageReadFileRequest =
-    { encodeJson = encodeReadFileRequest
-    , jsonDecoder = decodeReadFileRequest
-    , default = defaultReadFileRequest
-    , descriptor =
+    Proto.Message.message encodeReadFileRequest
+        decodeReadFileRequest
+        defaultReadFileRequest
         { typeName = "notes.v1.ReadFileRequest"
         , fields = [ { name = "path", jsonName = "path", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 messageSummary : Proto.Message.Message Summary
 messageSummary =
-    { encodeJson = encodeSummary
-    , jsonDecoder = decodeSummary
-    , default = defaultSummary
-    , descriptor =
+    Proto.Message.message encodeSummary
+        decodeSummary
+        defaultSummary
         { typeName = "notes.v1.Summary"
         , fields = [ { name = "text", jsonName = "text", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
         , oneofs = []
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ messageNote.descriptor
-            , messageGetNoteRequest.descriptor
-            , messageListNotesRequest.descriptor
-            , messageListNotesRequestFilter.descriptor
-            , messageListNotesResponse.descriptor
-            , messageCreateNoteRequest.descriptor
-            , messageUpdateNoteRequest.descriptor
-            , messageDeleteNoteRequest.descriptor
-            , messageArchiveNoteRequest.descriptor
-            , messageReadFileRequest.descriptor
-            , messageSummary.descriptor
+            [ Proto.Message.descriptor messageNote
+            , Proto.Message.descriptor messageGetNoteRequest
+            , Proto.Message.descriptor messageListNotesRequest
+            , Proto.Message.descriptor messageListNotesRequestFilter
+            , Proto.Message.descriptor messageListNotesResponse
+            , Proto.Message.descriptor messageCreateNoteRequest
+            , Proto.Message.descriptor messageUpdateNoteRequest
+            , Proto.Message.descriptor messageDeleteNoteRequest
+            , Proto.Message.descriptor messageArchiveNoteRequest
+            , Proto.Message.descriptor messageReadFileRequest
+            , Proto.Message.descriptor messageSummary
             ]
-            [ enumVisibility.descriptor ]
+            [ Proto.Enum.descriptor enumVisibility ]
         )
         Proto.Registry.wellKnown
 

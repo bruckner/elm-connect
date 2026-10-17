@@ -48,7 +48,7 @@ Justfile            task recipes; `just` lists them
 Both binaries generate record types, their default values and JSON
 codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
-maps, and custom types for enums and oneofs, a typed record per message
+maps, and custom types for enums and oneofs, a typed value per message
 and enum holding its codecs and descriptor, and a module per service
 with a call for every unary method. Each package of the given files is
 generated whole, from every file declaring it; a package they only
@@ -74,9 +74,9 @@ calling:
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
 | `Proto.Descriptor` | descriptors as data: messages, enums and methods |
 | `Proto.Http` | a method's `google.api.http` rule as data |
-| `Proto.Message`, `Proto.Enum` | typed records: a type's codecs with its descriptor |
+| `Proto.Message`, `Proto.Enum` | typed values: a type's codecs with its default and descriptor |
 | `Proto.Method` | a method's request encoder, response decoder and descriptor |
-| `Proto.WellKnown` | the well-known types' typed records |
+| `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Rpc` | calls, config, sending over Connect or HTTP transcoding, errors |
@@ -238,9 +238,11 @@ does not read.
 
 ### Descriptors
 
-Each message and enum also has a typed record, `Notes.V1.messageNote`
-and `Notes.V1.enumVisibility`, holding its codecs and its descriptor:
-its full name and its fields (or values) as data. `Notes.V1.registry`
+Each message and enum also has a typed value, `Notes.V1.messageNote`
+and `Notes.V1.enumVisibility`, holding its codecs, its default and its
+descriptor: its full name and its fields (or values) as data. The typed
+value is opaque, read by `Proto.Message` and `Proto.Enum`
+(`Proto.Message.descriptor Notes.V1.messageNote`). `Notes.V1.registry`
 holds the descriptors of the package, of every package it imports and
 of the well-known types, by full name:
 
@@ -267,7 +269,7 @@ noteFields =
 ### Any
 
 `Proto.Any` packs a message into a `google.protobuf.Any` with its typed
-record, and unpacks one the same way: `Nothing` when it holds another
+value, and unpacks one the same way: `Nothing` when it holds another
 type, `Just (Err problem)` when it holds this type but cannot be read.
 
 ```elm examples/notes/elm/src/Snippets/Any.elm#any

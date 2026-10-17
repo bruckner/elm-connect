@@ -256,7 +256,7 @@ pub fn default_name(type_elm_name: &str) -> String {
 /// The prefix of [`default_name`].
 const DEFAULT_PREFIX: &str = "default";
 
-/// The typed record of a message (`Proto.Message.Message`): `message`
+/// The typed value of a message (`Proto.Message.Message`): `message`
 /// followed by the message's Elm name (`Note` becomes `messageNote`).
 /// Like [`default_name`], a prefix and a type name.
 pub fn message_value_name(type_elm_name: &str) -> String {
@@ -266,7 +266,7 @@ pub fn message_value_name(type_elm_name: &str) -> String {
 /// The prefix of [`message_value_name`].
 const MESSAGE_PREFIX: &str = "message";
 
-/// The typed record of an enum (`Proto.Enum.Enum`): `enum` followed by the
+/// The typed value of an enum (`Proto.Enum.Enum`): `enum` followed by the
 /// enum's Elm name (`Status` becomes `enumStatus`). Like
 /// [`default_name`], a prefix and a type name.
 pub fn enum_value_name(type_elm_name: &str) -> String {

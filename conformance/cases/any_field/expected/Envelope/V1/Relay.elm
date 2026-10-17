@@ -5,6 +5,7 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
+import Proto.Method
 import Proto.Version
 import Rpc
 
@@ -19,9 +20,8 @@ elmConnectVersion_ =
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        { encodeRequest = Proto.Any.encodeJson
-        , responseDecoder = Proto.Any.jsonDecoder
-        , descriptor =
+        (Proto.Method.method Proto.Any.encodeJson
+            Proto.Any.jsonDecoder
             { service = "envelope.v1.Relay"
             , name = "Forward"
             , idempotent = False
@@ -29,15 +29,14 @@ forward =
             , output = "google.protobuf.Any"
             , bindings = []
             }
-        }
+        )
 
 
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        { encodeRequest = Envelope.V1.encodeEnvelope
-        , responseDecoder = Envelope.V1.decodeEnvelope
-        , descriptor =
+        (Proto.Method.method Envelope.V1.encodeEnvelope
+            Envelope.V1.decodeEnvelope
             { service = "envelope.v1.Relay"
             , name = "Send"
             , idempotent = False
@@ -45,4 +44,4 @@ send =
             , output = "envelope.v1.Envelope"
             , bindings = []
             }
-        }
+        )

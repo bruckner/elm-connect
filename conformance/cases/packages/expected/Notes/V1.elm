@@ -62,10 +62,9 @@ defaultNote =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    { encodeJson = encodeNote
-    , jsonDecoder = decodeNote
-    , default = defaultNote
-    , descriptor =
+    Proto.Message.message encodeNote
+        decodeNote
+        defaultNote
         { typeName = "notes.v1.Note"
         , fields =
             [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
@@ -78,12 +77,11 @@ messageNote =
             ]
         , oneofs = [ "owner" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageNote.descriptor ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageNote ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 
 
 

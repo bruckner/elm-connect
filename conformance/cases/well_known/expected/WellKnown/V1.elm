@@ -106,10 +106,9 @@ defaultEvent =
 
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    { encodeJson = encodeEvent
-    , jsonDecoder = decodeEvent
-    , default = defaultEvent
-    , descriptor =
+    Proto.Message.message encodeEvent
+        decodeEvent
+        defaultEvent
         { typeName = "well_known.v1.Event"
         , fields =
             [ { name = "created_at", jsonName = "createdAt", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
@@ -145,12 +144,11 @@ messageEvent =
             ]
         , oneofs = [ "when" ]
         }
-    }
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ messageEvent.descriptor ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageEvent ] []) Proto.Registry.wellKnown
 
 
 
