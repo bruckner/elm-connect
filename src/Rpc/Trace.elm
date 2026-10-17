@@ -116,7 +116,7 @@ trailers (Internal.Trace t) =
     t.trailers
 
 
-{-| The code of the error the call ended with, [`Rpc.code`](Rpc#code) of
+{-| The code of the error the call ended with, [`Rpc.Error.code`](Rpc-Error#code) of
 it, so a timeout is `Just DeadlineExceeded`; `Nothing` when it succeeded.
 -}
 code : Trace -> Maybe Code
@@ -132,7 +132,8 @@ duration (Internal.Trace t) =
     t.duration
 
 
-{-| How many times the call was sent, retries included.
+{-| How many times the call was sent, retries included: `0` when it was not
+sent at all, for a bad `baseUrl` or a header a request cannot carry.
 -}
 attempts : Trace -> Int
 attempts (Internal.Trace t) =

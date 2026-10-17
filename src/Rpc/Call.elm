@@ -50,7 +50,10 @@ type alias Call req res =
 -- ADJUSTING A CALL
 
 
-{-| Headers to send with this call, after the config's.
+{-| Headers to send with this call, after the config's. They are held to the
+rule for the config's headers ([`Rpc.Config`](Rpc#Config)): a call with a name
+that is not an HTTP token, or a value holding NUL, CR, LF or a character above
+U+00FF, is not sent, and fails with `NoAnswer (InvalidHeader name)`.
 -}
 withHeaders : List ( String, String ) -> Call req res -> Call req res
 withHeaders extra (Internal.Call c) =

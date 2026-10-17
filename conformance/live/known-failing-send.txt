@@ -6,6 +6,6 @@
 
 # With `Rpc.sendTraced` and `Rpc.task`: these ignore the tracker, so
 # `Rpc.cancel` cannot abort the call, and the runner refuses to cancel one
-# rather than report `Canceled` while it runs on. `Rpc.send` without a retry
-# policy cancels it, as the halves do.
+# rather than report it cancelled while it runs on. `Rpc.send` without a
+# retry policy cancels it, as the halves do.
 Client Cancellation/**/unary/cancel-after-close-send

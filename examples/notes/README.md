@@ -174,14 +174,15 @@ Creating a note without a title fails with `INVALID_ARGUMENT` and a
 `google.rpc.BadRequest` detail; "Get notes/missing" fails with
 `NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code, the
 message, where the error was read from, the details it knows by type,
-and every detail as JSON; an answer that stated no status shows the
-code inferred from it and the body as it came:
+and every detail as JSON; an answer that stated no status, or a
+successful one whose body is not the response, shows its code and the
+body as it came:
 
 ```elm examples/notes/elm/src/Main.elm#error
 viewError : Rpc.Error -> Html msg
 viewError error =
     case error of
-        Rpc.Status status answer ->
+        Rpc.Error.RpcStatus status answer ->
             section [ class "error" ]
                 [ h2 [] [ text (Rpc.Code.toString status.code) ]
                 , p [] [ text status.message ]
@@ -189,29 +190,34 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.details Google.Rpc.messageErrorInfo error)
+                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
 
-        Rpc.Http answer ->
+        Rpc.Error.HttpStatus answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.code error)) ]
-                , p [] [ text (Rpc.message error) ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                , p [] [ text (Rpc.Error.message error) ]
                 , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
                 , pre [] [ text answer.body ]
                 ]
 
-        Rpc.Transport _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.errorToString error) ] ]
+        Rpc.Error.BadResponse _ answer ->
+            section [ class "error" ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                , p [] [ text (Rpc.Error.message error) ]
+                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with a body that is not the response:") ]
+                , pre [] [ text answer.body ]
+                ]
 
-        Rpc.Canceled ->
-            section [ class "error" ] [ p [] [ text "Cancelled before an answer came." ] ]
+        Rpc.Error.NoAnswer _ ->
+            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
 viewDetail : Proto.Any.Any -> Html msg
@@ -219,16 +225,16 @@ viewDetail detail =
     pre [] [ text (Json.Encode.encode 2 (Proto.Any.encodeJson detail)) ]
 
 
-sourceToString : Rpc.Source -> String
+sourceToString : Rpc.Error.Source -> String
 sourceToString source =
     case source of
-        Rpc.ConnectBody ->
+        Rpc.Error.ConnectBody ->
             "a Connect error body"
 
-        Rpc.StatusBody ->
+        Rpc.Error.StatusBody ->
             "a google.rpc.Status body"
 
-        Rpc.GrpcHeaders ->
+        Rpc.Error.GrpcHeaders ->
             "the grpc-status header"
 ```
 
@@ -238,9 +244,8 @@ Over Connect the error arrives as a Connect error body
 (`{"code": 3, …}`). The error is the same `Rpc.Error` either way, and
 `source` says which body it was. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
-runtime does not read can still be shown, as the `Rpc.Http` branch does.
-The page never cancels a call, but a branch for `Rpc.Canceled` is what
-an application that does would add.
+runtime does not read, or one that drifted from the schema, can still be
+shown, as the `HttpStatus` and `BadResponse` branches do.
 
 ## The transport toggle
 

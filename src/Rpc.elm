@@ -3,7 +3,7 @@ module Rpc exposing
     , Config, config, checkConfig
     , task, send, cancel
     , taskTraced, sendTraced
-    , Error(..), Source(..), Response, code, message, errorToString, details
+    , Error, Response
     , Request, request, response, taskFromRequest, splitTrailers
     )
 
@@ -13,9 +13,8 @@ connect-es, connect-python and Envoy's Connect filter serve it, or over HTTP
 transcoding, the REST mapping `google.api.http` rules describe, as
 grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it.
 
-    Rpc.send (Rpc.config "https://api.example.com")
-        (Notes.V1.NotesService.getNote { name = "notes/42" })
-        GotNote
+    Notes.V1.NotesService.getNote { name = "notes/42" }
+        |> Rpc.send (Rpc.config "https://api.example.com") GotNote
 
 A generated service module has one function per method, which applied to a
 request gives a [`Call`](#Call): data saying what to call with what. A
@@ -57,7 +56,7 @@ A traced send gives an [`Rpc.Trace`](Rpc-Trace) beside the result.
 
 # Errors
 
-@docs Error, Source, Response, code, message, errorToString, details
+@docs Error, Response
 
 
 # Requests and responses
@@ -80,11 +79,11 @@ import Process
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
-import Proto.Message exposing (Message)
 import Proto.Method as Method exposing (Idempotency(..), Method)
 import Rpc.Body as Body exposing (Body)
 import Rpc.Call
 import Rpc.Code as Code exposing (Code)
+import Rpc.Error
 import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
@@ -154,9 +153,14 @@ application's state with record syntax:
   - `baseUrl`: the server, with any routing prefix (`https://api.example.com`,
     `/api`). A trailing `/` is dropped. A call's path is appended to it, so it
     can hold no query or fragment: a call sent with a `baseUrl` holding `?` or
-    `#` is not sent, and fails with `Transport (Http.BadUrl url)`.
+    `#` is not sent, and fails with `NoAnswer (BadUrl url)`.
     [`checkConfig`](#checkConfig) finds that where the config is built.
   - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
+    A name must be an HTTP token (letters, digits and `` !#$%&'*+-.^_`|~ ``),
+    and a value, but for spaces and tabs at either end, can hold no NUL, CR
+    or LF and no character above U+00FF, which a browser refuses. A call
+    with such a header is not sent, and fails with
+    `NoAnswer (InvalidHeader name)`; the header is never altered to fit.
   - `timeout`: milliseconds. Connect also tells the server, in
     `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
     negative number, NaN or infinity) means no timeout, as `Nothing` does.
@@ -202,19 +206,39 @@ report what it finds there:
         problems ->
             Err (String.join "; " problems)
 
-Today it finds a `baseUrl` holding a query or a fragment. A call sent with
-such a config still fails with `Transport (Http.BadUrl url)`; this finds it
-before any call is made. Later releases may find more, so the result is
-read as a list rather than matched.
+Today it finds a `baseUrl` holding a query or a fragment, and headers a
+request cannot carry, each by its name (a value is left out, since it may be
+a credential). A call sent with such a config still fails with
+`NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
+before any call is made. Later releases may find more, so the result is read
+as a list rather than matched.
 
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    if badBaseUrl cfg then
+    (if badBaseUrl cfg then
         [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
 
-    else
+     else
         []
+    )
+        ++ List.filterMap
+            (\( name, value ) ->
+                if not (Internal.validHeaderName name) then
+                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
+
+                else if not (Internal.validHeaderValue value) then
+                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
+
+                else
+                    Nothing
+            )
+            cfg.headers
+
+
+quote : String -> String
+quote text =
+    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 
@@ -222,53 +246,75 @@ checkConfig cfg =
 
 
 {-| Send a call.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.task config
+
+A call whose URL or headers cannot be sent (see [`Config`](#Config)) is not:
+it fails with `NoAnswer`, and nothing reaches elm/http.
+
 -}
 task : Config -> Call req res -> Task Error res
 task cfg c =
     taskFromRequest cfg c (request cfg c)
 
 
-{-| Send a call, giving the result to `toMsg`.
+{-| Send a call, giving the result to `toMsg`. The message comes before the
+call, as in `Task.attempt` and `Http.expectJson`, so a call pipes into it as
+into [`task`](#task):
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.send config GotNote
+
 -}
-send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
-send cfg ((Rpc.Internal.Call.Call fields) as c) toMsg =
-    if cfg.retry == Nothing && not (badBaseUrl cfg) then
-        Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
+send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
+send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
+    let
+        sent =
+            request cfg c
+    in
+    if cfg.retry == Nothing && unsendable cfg sent == Nothing then
+        Internal.send (response cfg c) toMsg fields.tracker sent
 
     else
-        Task.attempt toMsg (task cfg c)
+        Task.attempt toMsg (taskFromRequest cfg c sent)
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
-([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), and report it as
-[`Canceled`](#Error) to the same `toMsg` the call was sent with.
+([`Rpc.Call.withTracker`](Rpc-Call#withTracker)): `Http.cancel`, which aborts
+the request.
 
-    Rpc.cancel "note-42" GotNote
+A cancelled call reports nothing, as elm/http's requests do. The application
+knows it withdrew the call, and records that where it cancels:
 
-elm/http cancels a request by stopping the process that runs it, which aborts
-the request and delivers nothing, so the outcome is reported here instead.
-Once the request is aborted no result can follow, so the application sees the
-call end exactly once, except in one race: when the answer arrived and its
-message was queued before this command ran, the application sees the result
-and then the cancellation, and a cancellation that follows a result is to be
-ignored.
+    ( { model | note = Withdrawn }, Rpc.cancel "note-42" )
 
-Cancellation with an outcome is for `send` alone, and for a request an
-application sends itself from [`request`](#request) with the tracker on its
-`Http.request`. A call sent with a [`Retry`](Rpc-Retry#Retry) policy has no tracker,
-so it is not aborted: it runs on, and its result follows the cancellation.
-The tasks, [`task`](#task) and [`taskTraced`](#taskTraced) under
-[`sendTraced`](#sendTraced), ignore the tracker; one run under
-`Process.spawn` and stopped with `Process.kill` reports nothing, and has no
-trace, since its attempts and duration end with the process.
+One that wants a message for it batches its own:
+
+    Cmd.batch
+        [ Rpc.cancel "note-42"
+        , Task.perform identity (Task.succeed (Withdrew "note-42"))
+        ]
+
+One race remains: an answer that arrived, its message queued, before the
+cancel ran is still delivered, so an application that cancels keeps track of
+the calls it withdrew (by the tracker, or a request id of its own) and ignores
+a result that comes after.
+
+Only `send` without a [`Retry`](Rpc-Retry#Retry) policy puts the tracker on
+its request, as does an application sending a request from
+[`request`](#request) itself with the tracker on its `Http.request`. A call
+sent with a retry policy has no tracker and cannot be cancelled: it runs on
+and reports its result. The tasks, [`task`](#task) and
+[`taskTraced`](#taskTraced) under [`sendTraced`](#sendTraced), ignore the
+tracker too; one run under `Process.spawn` and stopped with `Process.kill`
+reports nothing, and has no trace, since its attempts and duration end with
+the process.
 
 -}
-cancel : String -> (Result Error res -> msg) -> Cmd msg
-cancel tracker toMsg =
-    Cmd.batch
-        [ Http.cancel tracker
-        , Task.perform toMsg (Task.succeed (Err Canceled))
-        ]
+cancel : String -> Cmd msg
+cancel =
+    Http.cancel
 
 
 
@@ -319,7 +365,7 @@ taskTraced cfg c =
                                                         Nothing
 
                                                     Err error ->
-                                                        Just (code error)
+                                                        Just (Rpc.Error.code error)
                                             , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
                                             , attempts = outcome.attempts
                                             }
@@ -331,9 +377,13 @@ taskTraced cfg c =
 
 
 {-| Send a call, giving what happened and the result to `toMsg`.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.sendTraced config GotNote
+
 -}
-sendTraced : Config -> Call req res -> (Trace -> Result Error res -> msg) -> Cmd msg
-sendTraced cfg c toMsg =
+sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
+sendTraced cfg toMsg c =
     Task.perform (\( trace, result ) -> toMsg trace result) (taskTraced cfg c)
 
 
@@ -341,68 +391,11 @@ sendTraced cfg c toMsg =
 -- ERRORS
 
 
-{-| Why a call failed.
-
-  - `Status`: the server answered with a status, in a Connect error body, a
-    `google.rpc.Status` body or the `grpc-status` headers: its code, its
-    message, its details, and where it was found ([`Source`](#Source)), with
-    the answer itself. Each detail is a message packed in an
-    [`Any`](Proto-Any#Any), read with [`details`](#details) or
-    [`Proto.Any.unpack`](Proto-Any#unpack). The code is a
-    [`Code`](Rpc-Code#Code), which has no `ok`: an answer claiming `ok` while
-    failing reads as `Unknown`.
-  - `Http`: the server answered, but stated no status; [`code`](#code) infers
-    one from the HTTP status.
-  - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
-    a successful answer whose body does not decode (`Http.BadBody`).
-  - `Canceled`: the application withdrew the call with [`cancel`](#cancel);
-    nothing the server said counts.
-
-Most code asks for the [`code`](#code) and [`message`](#message), which every
-error has:
-
-    case Rpc.code error of
-        Unauthenticated ->
-            signInAgain
-
-        _ ->
-            showMessage (Rpc.message error)
-
-The [`Response`](#Response) is kept whichever way the server answered, so an
-error in a shape the runtime does not read can still be:
-
-    case error of
-        Http response ->
-            myDecoder response.body
-
-        _ ->
-            Err (Rpc.errorToString error)
-
+{-| Why a call failed: [`Rpc.Error.Error`](Rpc-Error#Error), where its kinds
+are matched and its code, message and details read.
 -}
-type Error
-    = Status { code : Code, message : String, details : List Any, source : Source } Response
-    | Http Response
-    | Transport Http.Error
-    | Canceled
-
-
-{-| Where a `Status` error was read from, tried in this order:
-
-  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
-  - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
-    and Envoy send; a number outside `1` to `16` is the code `Unknown`, and the
-    number as sent is in the response's body.
-  - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, when the
-    browser exposes them; the message is percent-decoded, and the status text
-    stands in when there is none.
-
-An answer with none of these is an `Http` error.
-
--}
-type Source
-    = ConnectBody
-    | StatusBody
-    | GrpcHeaders
+type alias Error =
+    Rpc.Error.Error
 
 
 {-| An answer as it arrived, its URL, status, status text, headers and body:
@@ -410,137 +403,6 @@ type Source
 -}
 type alias Response =
     Rpc.Response.Response
-
-
-{-| An error's code. A `Status` error has the server's; an `Http` error's is
-inferred from its HTTP status by
-[`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus); a `Transport`
-error's is the one the Connect clients give it: a timeout is
-`DeadlineExceeded`, a network failure `Unavailable`, a bad URL or an
-undecodable body `Internal`; `Canceled` is `Canceled`.
--}
-code : Error -> Code
-code error =
-    case error of
-        Status status _ ->
-            status.code
-
-        Http answer ->
-            Code.fromHttpStatus answer.statusCode
-
-        Transport Http.Timeout ->
-            Code.DeadlineExceeded
-
-        Transport Http.NetworkError ->
-            Code.Unavailable
-
-        Transport (Http.BadUrl _) ->
-            Code.Internal
-
-        Transport (Http.BadBody _) ->
-            Code.Internal
-
-        Transport (Http.BadStatus status) ->
-            Code.fromHttpStatus status
-
-        Canceled ->
-            Code.Canceled
-
-
-{-| An error's message: a `Status` error's as the server sent it, which may be
-empty; an `Http` error's status text, or `HTTP <status>` when there is none;
-a `Transport` error's description (`timeout`, `network error`,
-`bad URL: <url>`, `bad response body: <problem>`); `Canceled`'s is empty, so
-[`errorToString`](#errorToString) gives `canceled`.
-
-A body that does not decode is quoted in its problem, so the problem can be as
-long as the response and hold data the application never shows; the message
-keeps its first 300 characters, then `…`. The whole problem stays in the
-error, `Transport (Http.BadBody problem)`.
-
--}
-message : Error -> String
-message error =
-    case error of
-        Status status _ ->
-            status.message
-
-        Http answer ->
-            if String.isEmpty answer.statusText then
-                "HTTP " ++ String.fromInt answer.statusCode
-
-            else
-                answer.statusText
-
-        Transport Http.Timeout ->
-            "timeout"
-
-        Transport Http.NetworkError ->
-            "network error"
-
-        Transport (Http.BadUrl url) ->
-            "bad URL: " ++ url
-
-        Transport (Http.BadStatus status) ->
-            "HTTP " ++ String.fromInt status
-
-        Transport (Http.BadBody problem) ->
-            "bad response body: " ++ excerpt problem
-
-        Canceled ->
-            ""
-
-
-{-| The first 300 characters of a text, and `…` when there were more.
--}
-excerpt : String -> String
-excerpt text =
-    if String.length text > 300 then
-        String.left 300 text ++ "…"
-
-    else
-        text
-
-
-{-| A one-line description of an error, for logs: its [`code`](#code) and
-[`message`](#message), `not_found: no such note`, or the code alone when the
-message is empty.
--}
-errorToString : Error -> String
-errorToString error =
-    let
-        text =
-            message error
-    in
-    Code.toString (code error)
-        ++ (if String.isEmpty text then
-                ""
-
-            else
-                ": " ++ text
-           )
-
-
-{-| The details of an error that are of this message type, in the order the
-server sent them, leaving out any that do not decode. Only a `Status` error
-has any.
-
-    case Rpc.details Google.Rpc.messageBadRequest error of
-        badRequest :: _ ->
-            showViolations badRequest.fieldViolations
-
-        [] ->
-            showMessage (Rpc.message error)
-
--}
-details : Message a -> Error -> List a
-details proto error =
-    case error of
-        Status status _ ->
-            List.filterMap (Proto.Any.unpack proto >> Maybe.andThen Result.toMaybe) status.details
-
-        _ ->
-            []
 
 
 
@@ -554,7 +416,9 @@ type alias Request =
     Rpc.Request.Request
 
 
-{-| The request a call sends.
+{-| The request a call sends. It is built whatever the config holds, a `baseUrl`
+with a query or a header a request cannot carry included; sending it is what
+refuses those.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
 as its body and `Connect-Protocol-Version: 1`. With
@@ -571,7 +435,10 @@ as the binding says, with the config's headers, then the call's. Values are
 written as proto3 JSON writes them, unquoted: enums by name, 64-bit integers in
 decimal, timestamps in RFC 3339. Query names and values are percent-encoded, as
 are path values: every byte but RFC 3986's unreserved characters, and in a
-variable matching several segments, but `/` too. A call without bindings is
+variable matching several segments, but `/` too. A binding's literal segments
+and custom verb are written as they are, but for a character a path segment
+cannot hold, which is percent-encoded (a `%` followed by two hex digits is
+kept as an escape); generated bindings hold none. A call without bindings is
 the request Connect would POST.
 
 -}
@@ -679,7 +546,7 @@ transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
             List.map (pathSegment json) rule.path
 
         verb =
-            Maybe.map ((++) ":") rule.customVerb |> Maybe.withDefault ""
+            Maybe.map ((++) ":" << Internal.encodeRouteText) rule.customVerb |> Maybe.withDefault ""
 
         query =
             case List.concatMap (queryPairs json) rule.query of
@@ -702,7 +569,7 @@ pathSegment : Value -> Segment -> String
 pathSegment json segment =
     case segment of
         Literal written ->
-            written
+            Internal.encodeRouteText written
 
         Variable fieldPath template zero ->
             let
@@ -923,7 +790,7 @@ timeoutMs ms =
 Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
 body reading as `{}`, and the response decoded from the field the binding's
 `responseBody` names when it names one. Any other answer is an error, read as
-[`Source`](#Source) describes, whatever the transport.
+[`Source`](Rpc-Error#Source) describes, whatever the transport.
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
@@ -933,28 +800,28 @@ response cfg ((Rpc.Internal.Call.Call fields) as c) answer =
             case ( cfg.transport, route cfg c ) of
                 ( Rpc.Internal.Transport.Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody (Method.responseDecoder fields.method) raw
+                        decodeBody (Method.responseDecoder fields.method) metadata raw raw
 
                     else
                         Err (failure metadata raw)
 
                 ( Rpc.Internal.Transport.Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) (orEmptyObject raw)
+                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw)
 
                 ( Rpc.Internal.Transport.Transcode, Implicit ) ->
-                    decodeBody (Method.responseDecoder fields.method) (orEmptyObject raw)
+                    decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
 
         Http.BadUrl_ url ->
-            Err (Transport (Http.BadUrl url))
+            Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl url))
 
         Http.Timeout_ ->
-            Err (Transport Http.Timeout)
+            Err (Rpc.Error.NoAnswer Rpc.Error.Timeout)
 
         Http.NetworkError_ ->
-            Err (Transport Http.NetworkError)
+            Err (Rpc.Error.NoAnswer Rpc.Error.NetworkError)
 
 
 orEmptyObject : String -> String
@@ -988,10 +855,13 @@ responseDecoder responseBody decoder =
                     )
 
 
-decodeBody : Decoder res -> String -> Result Error res
-decodeBody decoder raw =
-    Json.Decode.decodeString decoder raw
-        |> Result.mapError (Json.Decode.errorToString >> Http.BadBody >> Transport)
+{-| The response `read` from a successful answer's body, or a `BadResponse`
+keeping the answer as it came, `raw`.
+-}
+decodeBody : Decoder res -> Http.Metadata -> String -> String -> Result Error res
+decodeBody decoder metadata raw read =
+    Json.Decode.decodeString decoder read
+        |> Result.mapError (\problem -> Rpc.Error.BadResponse (Json.Decode.errorToString problem) (answerOf metadata raw))
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -1028,7 +898,8 @@ splitTrailers =
 
 
 {-| Send a request in place of the one a call would send, and read the answer as
-the call's. The config's retry policy applies.
+the call's. The config's retry policy applies. A request whose URL or headers
+cannot be sent is not, as with [`task`](#task).
 -}
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 taskFromRequest cfg c sent =
@@ -1058,11 +929,7 @@ attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
 attempt cfg c sent =
     let
         once =
-            if badBaseUrl cfg then
-                Task.succeed ( Nothing, Err (Transport (Http.BadUrl sent.url)) )
-
-            else
-                Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
+            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
 
         loop tried =
             once
@@ -1078,7 +945,26 @@ attempt cfg c sent =
                                 Task.succeed { attempts = tried, metadata = metadata, result = result }
                     )
     in
-    loop 1
+    case unsendable cfg sent of
+        Just error ->
+            Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
+
+        Nothing ->
+            loop 1
+
+
+{-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
+fragment, or a header a browser refuses, on which XHR's `setRequestHeader`
+throws outside elm/http's handler and stops the program for good.
+-}
+unsendable : Config -> Request -> Maybe Error
+unsendable cfg sent =
+    if badBaseUrl cfg then
+        Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
+
+    else
+        Internal.invalidHeader sent.headers
+            |> Maybe.map (Rpc.Error.NoAnswer << Rpc.Error.InvalidHeader)
 
 
 {-| The config's policy and the bound on the wait before trying again, or
@@ -1087,50 +973,61 @@ attempt cfg c sent =
 retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry, Float )
 retryDelay cfg c tried result =
     case ( cfg.retry, result ) of
+        ( _, Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl _)) ) ->
+            -- Nothing was sent, and nothing would change.
+            Nothing
+
         ( Just policy, Err error ) ->
-            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (code error)
+            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (Rpc.Error.code error)
                 |> Maybe.map (Tuple.pair policy)
 
         _ ->
             Nothing
 
 
+{-| An answer as an error keeps it.
+-}
+answerOf : Http.Metadata -> String -> Response
+answerOf metadata raw =
+    { url = metadata.url
+    , statusCode = metadata.statusCode
+    , statusText = metadata.statusText
+    , headers = metadata.headers
+    , body = raw
+    }
+
+
 {-| The error a failed answer stands for, whatever the transport: its Connect
 error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, an `Http` error. The answer is
-kept whichever it is.
+`grpc-message` headers, or failing all of those, an `HttpStatus` error. The
+answer is kept whichever it is.
 -}
 failure : Http.Metadata -> String -> Error
 failure metadata raw =
     let
         answer =
-            { url = metadata.url
-            , statusCode = metadata.statusCode
-            , statusText = metadata.statusText
-            , headers = metadata.headers
-            , body = raw
-            }
+            answerOf metadata raw
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
         Ok read ->
-            Status read answer
+            Rpc.Error.RpcStatus read answer
 
         Err _ ->
             case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
-                    Status
+                    Rpc.Error.RpcStatus
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
                                 |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault (message (Http answer))
+                                |> Maybe.withDefault (Rpc.Error.message (Rpc.Error.HttpStatus answer))
                         , details = []
-                        , source = GrpcHeaders
+                        , source = Rpc.Error.GrpcHeaders
                         }
                         answer
 
                 Nothing ->
-                    Http answer
+                    Rpc.Error.HttpStatus answer
 
 
 {-| A response header by name, whatever its case.
@@ -1144,12 +1041,6 @@ header key metadata =
         |> Maybe.map Tuple.second
 
 
-{-| A `Status` error as read, before the answer is attached.
--}
-type alias Read =
-    { code : Code, message : String, details : List Any, source : Source }
-
-
 fromGrpc : Int -> Code
 fromGrpc number =
     Code.fromInt number |> Maybe.withDefault Code.Unknown
@@ -1158,9 +1049,9 @@ fromGrpc number =
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
 optional `details`.
 -}
-statusBody : Decoder Read
+statusBody : Decoder Rpc.Error.StatusError
 statusBody =
-    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = StatusBody })
+    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = Rpc.Error.StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
         (optional "message" Json.Decode.string "")
         (optional "details" detailList [])
@@ -1169,9 +1060,9 @@ statusBody =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder Read
+connectBody : Decoder Rpc.Error.StatusError
 connectBody =
-    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = ConnectBody })
+    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Rpc.Error.ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
             |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
         )

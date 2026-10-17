@@ -700,3 +700,39 @@ tag (design §8).
   frozen records; `Rpc` aliases both, so annotations naming
   `Rpc.Request` and `Rpc.Response` compile unchanged, and
   `Rpc.Trace.request` gives an `Rpc.Request.Request`.
+- `Rpc.cancel : String -> Cmd msg` is plain `Http.cancel` again: a
+  cancelled call reports nothing, and the `Canceled` error is removed.
+  The synthetic outcome was reported when nothing was in flight, and
+  beside a retry policy the call reported `Canceled` and then its
+  result. An application that wants a message batches its own, and
+  ignores, by request id, a result that arrives after it cancelled.
+- `Rpc.Error` is reshaped, in a module of its own with its readers:
+  `RpcStatus StatusError Response` (was `Status`), `HttpStatus
+  Response` (was `Http`), `BadResponse String Response` (a 2xx whose
+  body did not decode, which was `Transport (Http.BadBody _)` and lost
+  the answer) and `NoAnswer Reason`, `Reason` being `Timeout`,
+  `NetworkError` or `BadUrl String` (was `Transport Http.Error`, so
+  elm/http's type is no longer in the API). `Rpc.code`, `Rpc.message`,
+  `Rpc.details` and `Rpc.errorToString` move to `Rpc.Error.code`,
+  `message`, `details` and `toString`, and `Source` to `Rpc.Error`;
+  `Rpc.Error` stays as an alias of the type. A bad URL's message
+  leaves out the URL's user, password and query, and a bad URL is
+  never retried.
+- `Rpc.send` and `Rpc.sendTraced` take the message before the call
+  (`send : Config -> (Result Error res -> msg) -> Call req res -> Cmd
+  msg`), so a call pipes into them as into `Rpc.task`:
+  `Notes.getNote req |> Rpc.send config GotNote`.
+- A header a browser refuses (a name that is not an HTTP token, a value
+  holding NUL, CR, LF or a character above U+00FF once spaces and tabs
+  at either end are trimmed) no longer reaches elm/http, where
+  `setRequestHeader` threw and stopped the whole program: every way of
+  sending fails such a call with `NoAnswer (InvalidHeader name)`,
+  nothing sent and never retried. `Rpc.checkConfig` reports such
+  config headers by name; `Rpc.request` still builds the request. A
+  trace of a call that was not sent has `attempts` 0.
+- Over transcoding, a binding's literal segments and custom verb are
+  percent-encoded where a path segment cannot hold a character (RFC
+  3986 `pchar`; a valid `%XX` escape is kept), so a hand-built
+  `Proto.Http.literal` holding `#`, `?`, `/` or a space cannot change
+  the URL's shape. Generated bindings, which the generator already
+  checks, are unchanged.
