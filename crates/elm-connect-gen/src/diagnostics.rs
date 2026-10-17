@@ -69,8 +69,9 @@ pub enum Code {
     /// A method has no `google.api.http` rule, under
     /// `unbound_methods=error`.
     UnboundMethod,
-    /// Two methods of a service get the same Elm value name, or a method
-    /// gets the name of the value every generated module defines.
+    /// Two methods of a service get the same Elm value name, a method gets
+    /// another method's descriptor's name, or a method gets the name of the
+    /// value every generated module defines.
     ValueCollision,
     /// A method has no valid Elm value name.
     InvalidMethod,
@@ -468,6 +469,26 @@ impl Problem {
              lowercased and underscores dropped, so names that differ only in those ways end \
              up the same, and a module cannot define two values with one name. Rename one of \
              the methods in the proto, or rename one with \
+             `rename=<proto full name>:<Elm name>`.",
+            vec![first, second],
+        )
+    }
+
+    /// A method of `service` and another method's descriptor become the
+    /// same Elm value `elm_name`.
+    pub fn descriptor_collision(service: &str, elm_name: &str, first: Site, second: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The service `{service}` has a method that becomes the Elm value \
+                 `{elm_name}`, which is another method's descriptor."
+            ),
+            "A service's module defines two values per method: its call, its name with the \
+             first letter lowercased and underscores dropped, and its descriptor, \
+             `descriptor` followed by the call's name with the first letter uppercased. So a \
+             method named for another's descriptor (`DescriptorGetNote` beside `GetNote`) \
+             takes that descriptor's name, and a module cannot define two values with one \
+             name. Rename one of the methods in the proto, or rename one with \
              `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )

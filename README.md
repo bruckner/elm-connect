@@ -186,7 +186,8 @@ service NotesService {
 ```
 
 the generator writes two modules: `Notes.V1`, the types and their
-codecs, and `Notes.V1.NotesService`, one function per method:
+codecs, and `Notes.V1.NotesService`, one function per method, each
+calling through its method's descriptor, `descriptorGetNote`:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note

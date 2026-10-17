@@ -86,7 +86,7 @@ pub struct Method {
     /// Connect path.
     pub proto_name: String,
     /// The Elm value of its call, such as `getNote`, unique among the
-    /// methods of its service.
+    /// calls and descriptors of its service's methods.
     pub elm_name: String,
     /// The request type: a [`TypeRef::Message`] or a
     /// [`TypeRef::WellKnown`] message type, never a scalar or an enum.
@@ -101,6 +101,14 @@ pub struct Method {
     /// One route per HTTP binding: the rule's own first, then each
     /// additional binding's. Empty without a rule.
     pub routes: Vec<crate::route::Route>,
+}
+
+impl Method {
+    /// The Elm name of the method's descriptor in its service's module,
+    /// such as `descriptorGetNote`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::method_descriptor_name(&self.elm_name)
+    }
 }
 
 /// A `google.api.http` rule as written: the verb and path template, the
@@ -299,6 +307,12 @@ impl Message {
     /// `messageNote`.
     pub fn value_name(&self) -> String {
         crate::naming::message_value_name(&self.elm_name)
+    }
+
+    /// The Elm name of the message's descriptor, such as
+    /// `descriptorNote`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::descriptor_name(&self.elm_name)
     }
 }
 
@@ -695,6 +709,12 @@ impl Enum {
     /// The Elm name of the enum's typed value, such as `enumStatus`.
     pub fn value_name(&self) -> String {
         crate::naming::enum_value_name(&self.elm_name)
+    }
+
+    /// The Elm name of the enum's descriptor, such as
+    /// `descriptorStatus`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::descriptor_name(&self.elm_name)
     }
 }
 

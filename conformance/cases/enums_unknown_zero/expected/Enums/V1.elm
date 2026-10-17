@@ -62,60 +62,66 @@ defaultTask =
 -- DESCRIPTORS
 
 
+descriptorStatus : Proto.Descriptor.EnumDescriptor
+descriptorStatus =
+    { typeName = "enums.v1.Status"
+    , values =
+        [ { name = "STATUS_UNSPECIFIED", number = 0 }
+        , { name = "STATUS_ACTIVE", number = 1 }
+        , { name = "STATUS_ARCHIVED", number = 2 }
+        ]
+    }
+
+
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
-    Proto.Enum.enum encodeStatus
-        decodeStatus
-        StatusUnspecified
-        { typeName = "enums.v1.Status"
-        , values =
-            [ { name = "STATUS_UNSPECIFIED", number = 0 }
-            , { name = "STATUS_ACTIVE", number = 1 }
-            , { name = "STATUS_ARCHIVED", number = 2 }
-            ]
-        }
+    Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified descriptorStatus
+
+
+descriptorPriority : Proto.Descriptor.EnumDescriptor
+descriptorPriority =
+    { typeName = "enums.v1.Priority"
+    , values =
+        [ { name = "NONE", number = 0 }
+        , { name = "LOW", number = 1 }
+        , { name = "HIGH", number = 2 }
+        , { name = "URGENT", number = 2 }
+        , { name = "BELOW_ZERO", number = -1 }
+        , { name = "PRIORITY_LOW", number = 1 }
+        , { name = "UNSET", number = 0 }
+        ]
+    }
 
 
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
-    Proto.Enum.enum encodePriority
-        decodePriority
-        PriorityNone
-        { typeName = "enums.v1.Priority"
-        , values =
-            [ { name = "NONE", number = 0 }
-            , { name = "LOW", number = 1 }
-            , { name = "HIGH", number = 2 }
-            , { name = "URGENT", number = 2 }
-            , { name = "BELOW_ZERO", number = -1 }
-            , { name = "PRIORITY_LOW", number = 1 }
-            , { name = "UNSET", number = 0 }
-            ]
-        }
+    Proto.Enum.enum encodePriority decodePriority PriorityNone descriptorPriority
+
+
+descriptorTask : Proto.Descriptor.MessageDescriptor
+descriptorTask =
+    { typeName = "enums.v1.Task"
+    , fields =
+        [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+        , { name = "priority", jsonName = "priority", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Enum "enums.v1.Priority", oneof = Nothing }
+        , { name = "history", jsonName = "history", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+        , { name = "previous_status", jsonName = "previousStatus", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.message encodeTask
-        decodeTask
-        defaultTask
-        { typeName = "enums.v1.Task"
-        , fields =
-            [ { name = "status", jsonName = "status", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            , { name = "priority", jsonName = "priority", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Enum "enums.v1.Priority", oneof = Nothing }
-            , { name = "history", jsonName = "history", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            , { name = "previous_status", jsonName = "previousStatus", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "enums.v1.Status", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeTask decodeTask defaultTask descriptorTask
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageTask ]
-            [ Proto.Enum.descriptor enumStatus
-            , Proto.Enum.descriptor enumPriority
+        (Proto.Registry.fromDescriptors [ descriptorTask ]
+            [ descriptorStatus
+            , descriptorPriority
             ]
         )
         Proto.Registry.wellKnown

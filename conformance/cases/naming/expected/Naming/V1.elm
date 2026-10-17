@@ -80,64 +80,70 @@ defaultTag =
 -- DESCRIPTORS
 
 
+descriptorShape : Proto.Descriptor.EnumDescriptor
+descriptorShape =
+    { typeName = "naming.v1.Shape"
+    , values =
+        [ { name = "SHAPE_UNSPECIFIED", number = 0 }
+        , { name = "SHAPE_2D", number = 1 }
+        , { name = "CUBE", number = 2 }
+        , { name = "SHAPE_V3_MESH", number = 3 }
+        ]
+    }
+
+
 enumShape : Proto.Enum.Enum Shape
 enumShape =
-    Proto.Enum.enum encodeShape
-        decodeShape
-        ShapeUnspecified
-        { typeName = "naming.v1.Shape"
-        , values =
-            [ { name = "SHAPE_UNSPECIFIED", number = 0 }
-            , { name = "SHAPE_2D", number = 1 }
-            , { name = "CUBE", number = 2 }
-            , { name = "SHAPE_V3_MESH", number = 3 }
-            ]
-        }
+    Proto.Enum.enum encodeShape decodeShape ShapeUnspecified descriptorShape
+
+
+descriptorHttpMethod : Proto.Descriptor.EnumDescriptor
+descriptorHttpMethod =
+    { typeName = "naming.v1.HttpMethod"
+    , values =
+        [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0 }
+        , { name = "HTTP_METHOD_GET", number = 1 }
+        , { name = "POST", number = 2 }
+        ]
+    }
 
 
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
-    Proto.Enum.enum encodeHttpMethod
-        decodeHttpMethod
-        HttpMethodUnspecified
-        { typeName = "naming.v1.HttpMethod"
-        , values =
-            [ { name = "HTTP_METHOD_UNSPECIFIED", number = 0 }
-            , { name = "HTTP_METHOD_GET", number = 1 }
-            , { name = "POST", number = 2 }
-            ]
-        }
+    Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified descriptorHttpMethod
+
+
+descriptorTag : Proto.Descriptor.MessageDescriptor
+descriptorTag =
+    { typeName = "naming.v1.Tag"
+    , fields =
+        [ { name = "type", jsonName = "type", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "if", jsonName = "if", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+        , { name = "port", jsonName = "port", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+        , { name = "alias", jsonName = "alias", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "display_name", jsonName = "screenName", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "http_url", jsonName = "httpUrl", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "v2_count", jsonName = "v2Count", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+        , { name = "shape", jsonName = "shape", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "naming.v1.Shape", oneof = Nothing }
+        , { name = "method", jsonName = "method", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "naming.v1.HttpMethod", oneof = Nothing }
+        , { name = "then", jsonName = "then", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "case" }
+        , { name = "of", jsonName = "of", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Just "case" }
+        ]
+    , oneofs = [ "case" ]
+    }
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag
-        decodeTag
-        defaultTag
-        { typeName = "naming.v1.Tag"
-        , fields =
-            [ { name = "type", jsonName = "type", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "if", jsonName = "if", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "port", jsonName = "port", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "alias", jsonName = "alias", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "display_name", jsonName = "screenName", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "http_url", jsonName = "httpUrl", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "v2_count", jsonName = "v2Count", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "shape", jsonName = "shape", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "naming.v1.Shape", oneof = Nothing }
-            , { name = "method", jsonName = "method", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "naming.v1.HttpMethod", oneof = Nothing }
-            , { name = "then", jsonName = "then", number = 10, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "case" }
-            , { name = "of", jsonName = "of", number = 11, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Just "case" }
-            ]
-        , oneofs = [ "case" ]
-        }
+    Proto.Message.message encodeTag decodeTag defaultTag descriptorTag
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageTag ]
-            [ Proto.Enum.descriptor enumShape
-            , Proto.Enum.descriptor enumHttpMethod
+        (Proto.Registry.fromDescriptors [ descriptorTag ]
+            [ descriptorShape
+            , descriptorHttpMethod
             ]
         )
         Proto.Registry.wellKnown

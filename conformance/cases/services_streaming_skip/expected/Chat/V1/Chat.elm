@@ -4,6 +4,7 @@
 module Chat.V1.Chat exposing (..)
 
 import Chat.V1
+import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -16,16 +17,29 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorSend : Proto.Descriptor.MethodDescriptor
+descriptorSend =
+    { service = "chat.v1.Chat"
+    , name = "Send"
+    , idempotent = False
+    , input = "chat.v1.Line"
+    , output = "chat.v1.Line"
+    , bindings = []
+    }
+
+
+
+-- CALLS
+
+
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call
         (Proto.Method.method Chat.V1.encodeLine
             Chat.V1.decodeLine
-            { service = "chat.v1.Chat"
-            , name = "Send"
-            , idempotent = False
-            , input = "chat.v1.Line"
-            , output = "chat.v1.Line"
-            , bindings = []
-            }
+            descriptorSend
         )

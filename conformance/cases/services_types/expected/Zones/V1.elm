@@ -55,37 +55,41 @@ defaultZone =
 -- DESCRIPTORS
 
 
+descriptorZoneRequest : Proto.Descriptor.MessageDescriptor
+descriptorZoneRequest =
+    { typeName = "zones.v1.ZoneRequest"
+    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
+    , oneofs = []
+    }
+
+
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    Proto.Message.message encodeZoneRequest
-        decodeZoneRequest
-        defaultZoneRequest
-        { typeName = "zones.v1.ZoneRequest"
-        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest descriptorZoneRequest
+
+
+descriptorZone : Proto.Descriptor.MessageDescriptor
+descriptorZone =
+    { typeName = "zones.v1.Zone"
+    , fields =
+        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "offset_seconds", jsonName = "offsetSeconds", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageZone : Proto.Message.Message Zone
 messageZone =
-    Proto.Message.message encodeZone
-        decodeZone
-        defaultZone
-        { typeName = "zones.v1.Zone"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "offset_seconds", jsonName = "offsetSeconds", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeZone decodeZone defaultZone descriptorZone
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ Proto.Message.descriptor messageZoneRequest
-            , Proto.Message.descriptor messageZone
+            [ descriptorZoneRequest
+            , descriptorZone
             ]
             []
         )

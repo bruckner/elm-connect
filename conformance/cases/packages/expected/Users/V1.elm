@@ -50,36 +50,40 @@ defaultUser =
 -- DESCRIPTORS
 
 
+descriptorRole : Proto.Descriptor.EnumDescriptor
+descriptorRole =
+    { typeName = "users.v1.Role"
+    , values =
+        [ { name = "ROLE_UNSPECIFIED", number = 0 }
+        , { name = "ROLE_EDITOR", number = 1 }
+        ]
+    }
+
+
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    Proto.Enum.enum encodeRole
-        decodeRole
-        RoleUnspecified
-        { typeName = "users.v1.Role"
-        , values =
-            [ { name = "ROLE_UNSPECIFIED", number = 0 }
-            , { name = "ROLE_EDITOR", number = 1 }
-            ]
-        }
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorUser : Proto.Descriptor.MessageDescriptor
+descriptorUser =
+    { typeName = "users.v1.User"
+    , fields =
+        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "role", jsonName = "role", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageUser : Proto.Message.Message User
 messageUser =
-    Proto.Message.message encodeUser
-        decodeUser
-        defaultUser
-        { typeName = "users.v1.User"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "role", jsonName = "role", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeUser decodeUser defaultUser descriptorUser
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageUser ] [ Proto.Enum.descriptor enumRole ]) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorUser ] [ descriptorRole ]) Proto.Registry.wellKnown
 
 
 

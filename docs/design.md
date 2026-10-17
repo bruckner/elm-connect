@@ -154,9 +154,46 @@ codecs, and the service gets a module of its own (§4):
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
+import Proto.Descriptor
 import Proto.Http
 import Proto.Method
 import Rpc
+
+
+
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Descriptor.MethodDescriptor
+descriptorGetNote =
+    { service = "notes.v1.NotesService"
+    , name = "GetNote"
+    , idempotent = True
+    , input = "notes.v1.GetNoteRequest"
+    , output = "notes.v1.Note"
+    , bindings =
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+    }
+
+
+descriptorSummarize : Proto.Descriptor.MethodDescriptor
+descriptorSummarize =
+    { service = "notes.v1.NotesService", name = "Summarize", …, bindings = [] }   -- no rule: the implicit route
+
+
+
+-- CALLS
 
 
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
@@ -164,31 +201,17 @@ getNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = True
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings =
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            }
+            descriptorGetNote
         )
 
 
 summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
 summarize =
-    Rpc.call (Proto.Method.method … { …, bindings = [] })   -- no rule: the implicit route
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
 ```
 
 Application code applies a method to its request and sends the call
@@ -778,7 +801,8 @@ Built, as the `naming` and `naming_collision` cases show:
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.
 - Top-level values are a prefix and a type name: `encodeFoo`,
-  `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo` (§3.9). Type
+  `decodeFoo`, `defaultFoo`, `descriptorFoo`, `messageFoo` and
+  `enumFoo` (§3.9). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
   `registry`, is all lowercase, so it is none of them. A suffix scheme was
@@ -818,8 +842,9 @@ what the proto name resolves to among the generated packages:
   though protobuf scopes it beside the enum): its constructor.
 
 Names derived from a renamed one follow it through the rules above: a
-type's codecs, default and typed value (`Memo` gives `encodeMemo`,
-`defaultMemo`, `messageMemo`), a recursive message's wrapper (`Memo_`),
+type's codecs, default, descriptor and typed value (`Memo` gives
+`encodeMemo`, `defaultMemo`, `descriptorMemo`, `messageMemo`), a
+recursive message's wrapper (`Memo_`),
 an enum's other constructors (`Audience` gives `AudienceUnspecified`),
 a oneof's type and constructors, and a nested type's name (renaming
 `Note` to `Memo` makes `Note.Revision` `MemoRevision`, unless it is
@@ -922,9 +947,11 @@ case names it):
   yet; a `route` skip, leaving such a method out as `streaming=skip`
   does, would be one.
 - **Method values that collide**: two methods of one service whose
-  values have one name (`GetSettings` and `Get_Settings`;
-  `naming::value_collision`, `services_value_collision` case). Escape:
-  rename one with `rename=` (§3.7).
+  values have one name (`GetSettings` and `Get_Settings`), or a method
+  named for another's descriptor (`DescriptorDefaultSettings` beside
+  `DefaultSettings`; `naming::value_collision`,
+  `services_value_collision` case). Escape: rename one with `rename=`
+  (§3.7).
 - **Modules that collide**: two services of one package whose module
   names coincide (`Archive` and `archive`), a service module that is
   also a package's (`NotesService` in `notes.v1` beside the package
@@ -965,40 +992,45 @@ case names it):
 
 ### 3.9 Descriptors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
 
-Every message and enum gets a typed value, holding its codecs and
-default with its descriptor, in a `-- DESCRIPTORS` section between the
-defaults and the encoders:
+Every message and enum gets a descriptor and a typed value, in a
+`-- DESCRIPTORS` section between the defaults and the encoders, each
+type's descriptor followed by its typed value, which holds its codecs
+and default with the descriptor:
 
 ```elm
-messageNote : Proto.Message.Message Note
-messageNote =
-    Proto.Message.message encodeNote
-        decodeNote
-        defaultNote
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "visibility", jsonName = "visibility", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
-            , …
-            ]
-        , oneofs = []
-        }
+descriptorVisibility : Proto.Descriptor.EnumDescriptor
+descriptorVisibility =
+    { typeName = "notes.v1.Visibility"
+    , values = [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }, … ]
+    }
 
 
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
-    Proto.Enum.enum encodeVisibility
-        decodeVisibility
-        VisibilityUnspecified
-        { typeName = "notes.v1.Visibility"
-        , values = [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }, … ]
-        }
+    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
+
+
+descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote =
+    { typeName = "notes.v1.Note"
+    , fields =
+        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "visibility", jsonName = "visibility", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
+        , …
+        ]
+    , oneofs = []
+    }
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageNote, … ] [ Proto.Enum.descriptor enumVisibility ])
+        (Proto.Registry.fromDescriptors [ descriptorNote, … ] [ descriptorVisibility ])
         (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
 
@@ -1057,10 +1089,19 @@ registry =
   reflection; calls carry codecs only (§4), because Elm's dead-code
   elimination keeps a top-level value whole: a method holding a typed
   value would bring the type's default and descriptor tree into every
-  program that calls it. *(Decided, 2026-10-15.)*
-- No service, file or package descriptor: nothing consumes one, and a
-  service module's namespace is its methods' names, so any fixed value
-  name could collide with a method.
+  program that calls it. *(Decided, 2026-10-15.)* For the same reason
+  each descriptor is a top-level value of its own and the registry is
+  built from those, never from the typed values: a registry of
+  `messageFoo.descriptor` kept every type's codecs and default in any
+  program that used it, which on a large API was most of the program.
+  *(Decided, 2026-10-16.)*
+- Each method's descriptor is a value of its own in its service's
+  module, `descriptorGetNote`, which its call refers to (§4). Its name
+  is derived from the method's, so it can collide only with a method
+  named for it (`DescriptorGetNote` beside `GetNote`), which is
+  diagnosed. There is no service, file or package descriptor: nothing
+  consumes one, and a service module's namespace is its methods' calls
+  and descriptors, so any fixed value name could collide with a method.
 - **The registry.** Each package module ends its descriptors section
   with `registry : Proto.Registry.Registry`, transitive: the package's
   own descriptors, then the registries of the generated packages its
@@ -1090,54 +1131,75 @@ registry =
   (46 KB gzipped) without descriptors, the same with them when the
   registry is unused, since dead-code elimination drops the trees, and
   1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
-  always written: the cost falls on applications that use them.
+  always written: the cost falls on applications that use them. (That
+  measurement predates the descriptors' split from the typed values:
+  the registry then kept every type's codecs too.)
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding one function per method from
-its request to an `Rpc.Call` (§5.2). The `services` conformance case
-pins the output:
+beside the package's `Notes.V1`, holding a descriptors section with
+each method's `Proto.Descriptor.MethodDescriptor` and then a calls
+section with one function per method from its request to an
+`Rpc.Call` (§5.2). The `services` conformance case pins the output:
 
 ```elm
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Descriptor.MethodDescriptor
+descriptorGetNote =
+    { service = "notes.v1.NotesService"
+    , name = "GetNote"
+    , idempotent = True
+    , input = "notes.v1.GetNoteRequest"
+    , output = "notes.v1.Note"
+    , bindings =
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        , Proto.Http.binding { … }   -- the additional binding
+        ]
+    }
+
+
+
+-- CALLS
+
+
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = True
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings =
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                , Proto.Http.binding { … }   -- the additional binding
-                ]
-            }
+            descriptorGetNote
         )
 ```
 
-- The service module imports `Rpc`, `Proto.Method` (for the method),
-  `Proto.Http` (for the bindings), the package module and the modules
-  of any other package
+The call's `Proto.Method.method` application puts one argument per
+line however short its arguments, so every method's call reads alike;
+the emitter asks the printer for that layout, which elm-format keeps.
+*(Decided, 2026-10-16.)*
+
+- The service module imports `Rpc`, `Proto.Method` and
+  `Proto.Descriptor` (for the method and its descriptor), `Proto.Http`
+  (for the bindings), the package module and the modules of any other package
   its request and response types come from (`Proto.Json`, `Proto.Any`,
   `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
   refers to every one of them qualified. Each method is written
   point-free, `getNote = Rpc.call (…)`, binding no local name. So a
-  method's name can clash with nothing but another method of its
-  service, whatever it is: `value`, `identity` or `encodeNote` are all
-  fine method names (the namespace rule is in the IR bullets below).
+  method's name can clash with nothing but another method's call or
+  descriptor in its service, whatever it is: `value`, `identity` or
+  `encodeNote` are all fine method names (the namespace rule is in the
+  IR bullets below).
 - `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9),
   built by `Proto.Method.method` from its request type's encoder and its
   response type's decoder (`Notes.V1.encodeGetNoteRequest`,
@@ -1146,12 +1208,19 @@ getNote =
   `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it), and
-  its `Proto.Descriptor.MethodDescriptor`: `service` is
-  the fully-qualified service name and `name` the method's as
-  declared, together its Connect path, and `input` and `output` the
-  full names of its types. No `Proto.Method.Method` value is generated;
-  `Rpc.method` and `Rpc.descriptor` read the method and its descriptor
-  back from any call of it. *(Decided, 2026-10-13.)* The first shape put the codecs
+  its descriptor value, `descriptorGetNote :
+  Proto.Descriptor.MethodDescriptor`: `service` is the fully-qualified
+  service name and `name` the method's as declared, together its
+  Connect path, and `input` and `output` the full names of its types.
+  The descriptor's name is `descriptor` followed by the method's Elm
+  name with its first letter uppercased, so a `rename` renames both. No
+  `Proto.Method.Method` value is generated; `Rpc.method` and
+  `Rpc.descriptor` read the method and its descriptor back from any
+  call of it. Elm keeps a top-level value whole, and the call refers to
+  the descriptor value, so a program that calls the method keeps what
+  it kept when the descriptor was written inline, and one that does
+  not keeps neither. *(Decided, 2026-10-13; the descriptor became a
+  value of its own 2026-10-16.)* The first shape put the codecs
   themselves in a descriptor record of `Rpc`'s; the second gave the
   method its types' typed records (§3.9). A method now carries only
   what the wire needs: the records hold each type's default and
@@ -1221,11 +1290,14 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   `Settings` clashed, and two services could not both have a `Get`.
 - A method's value is its name with the first letter lowercased and
   underscores dropped as for a field (`GetNote` → `getNote`), a reserved
-  word escaped (`Type` → `type_`). It shares a namespace only with the
-  other methods of its service: two that coincide (`GetNote` and
-  `Get_Note`) are `naming::value_collision`, never a rename. A method
-  `DefaultSettings` beside a message `Settings`, or a `Get` in two
-  services, is fine.
+  word escaped (`Type` → `type_`), and its descriptor's is
+  `descriptor` followed by that with its first letter uppercased
+  (`descriptorGetNote`). They share a namespace only with the other
+  methods' values in its service: two methods that coincide (`GetNote`
+  and `Get_Note`), or a method named for another's descriptor
+  (`DescriptorGetNote` beside `GetNote`), are `naming::value_collision`,
+  never a rename. A method `DefaultSettings` beside a message
+  `Settings`, or a `Get` in two services, is fine.
 - Module names are unique across the build: a service module that is
   also a package's module (`NotesService` in `notes.v1` beside the
   package `notes.v1.notes_service`), two services whose module names

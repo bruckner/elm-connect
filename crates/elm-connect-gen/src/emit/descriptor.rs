@@ -1,7 +1,10 @@
-//! The typed values of a package's messages and enums and the package's
-//! registry (design §3.9): `messageFoo : Proto.Message.Message Foo` and
-//! `enumBar : Proto.Enum.Enum Bar`, each built from its type's codecs,
-//! default and descriptor, and `registry : Proto.Registry.Registry`.
+//! The descriptors of a package's messages and enums, their typed values
+//! and the package's registry (design §3.9): `descriptorFoo :
+//! Proto.Descriptor.MessageDescriptor` and `descriptorBar :
+//! Proto.Descriptor.EnumDescriptor`; `messageFoo : Proto.Message.Message
+//! Foo` and `enumBar : Proto.Enum.Enum Bar`, each built from its type's
+//! codecs, default and descriptor; and `registry :
+//! Proto.Registry.Registry`, built from the descriptors alone.
 
 use std::collections::BTreeSet;
 
@@ -14,16 +17,29 @@ use crate::ir::{Cardinality, Enum, MapKey, ModuleName, Package, ScalarKind, Type
 use crate::naming::REGISTRY;
 
 impl Emitter {
+    /// `descriptorFoo : Proto.Descriptor.MessageDescriptor`: the
+    /// message's full name, its fields and its oneofs' names.
+    pub(super) fn message_descriptor(&mut self, shape: &MessageShape) -> Decl {
+        let message = shape.message;
+        let body = record([
+            ("typeName", string(message.proto_full_name.clone())),
+            ("fields", list(self.field_descriptors(shape))),
+            ("oneofs", list(oneof_names(shape))),
+        ]);
+        Decl::Value {
+            doc: None,
+            name: message.descriptor_name(),
+            annotation: self.library_type(PROTO_DESCRIPTOR, "MessageDescriptor", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
     /// `messageFoo : Proto.Message.Message Foo`, built by
     /// `Proto.Message.message` from the message's encoder, decoder and
     /// default, and its descriptor.
     pub(super) fn message_record(&mut self, shape: &MessageShape) -> Decl {
         let message = shape.message;
-        let descriptor = record([
-            ("typeName", string(message.proto_full_name.clone())),
-            ("fields", list(self.field_descriptors(shape))),
-            ("oneofs", list(oneof_names(shape))),
-        ]);
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_MESSAGE, "message"));
@@ -38,27 +54,38 @@ impl Emitter {
                     var(message.encoder_name()),
                     var(message.decoder_name()),
                     var(message.default_name()),
-                    descriptor,
+                    var(message.descriptor_name()),
                 ],
             ),
         }
     }
 
-    /// `enumBar : Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from
-    /// the enum's encoder, decoder and zero value, and its descriptor,
-    /// whose values are every declared name in order with its number (an
-    /// alias with its number).
-    pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
+    /// `descriptorBar : Proto.Descriptor.EnumDescriptor`: the enum's full
+    /// name and every declared name in order with its number (an alias
+    /// with its number).
+    pub(super) fn enum_descriptor(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
                 inline_record([("name", string(name)), ("number", int(value.number.into()))])
             })
             .collect();
-        let descriptor = record([
+        let body = record([
             ("typeName", string(enumeration.proto_full_name.clone())),
             ("values", list(values)),
         ]);
+        Decl::Value {
+            doc: None,
+            name: enumeration.descriptor_name(),
+            annotation: self.library_type(PROTO_DESCRIPTOR, "EnumDescriptor", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
+    /// `enumBar : Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from
+    /// the enum's encoder, decoder and zero value, and its descriptor.
+    pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
         let annotation =
             self.library_type(PROTO_ENUM, "Enum", [ty(enumeration.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_ENUM, "enum"));
@@ -73,7 +100,7 @@ impl Emitter {
                     var(enumeration.encoder_name()),
                     var(enumeration.decoder_name()),
                     var(enumeration.zero().elm_ctor.clone()),
-                    descriptor,
+                    var(enumeration.descriptor_name()),
                 ],
             ),
         }
@@ -84,22 +111,21 @@ impl Emitter {
     /// each of which holds those of its own imports, then the well-known
     /// types'. Of two descriptors with one full name the first is kept,
     /// though a full name is never in two packages.
+    ///
+    /// It lists the `descriptorFoo` values, not the typed values: Elm's
+    /// dead-code elimination keeps a top-level value whole, so a registry
+    /// built from `messageFoo` would keep every type's codecs and default
+    /// in a program that uses it.
     pub(super) fn registry(&mut self, package: &Package) -> Decl {
         let messages: Vec<Expr> = package
             .messages
             .iter()
-            .map(|message| {
-                let descriptor = self.reference((PROTO_MESSAGE, "descriptor"));
-                apply(descriptor, [var(message.value_name())])
-            })
+            .map(|message| var(message.descriptor_name()))
             .collect();
         let enums: Vec<Expr> = package
             .enums
             .iter()
-            .map(|enumeration| {
-                let descriptor = self.reference((PROTO_ENUM, "descriptor"));
-                apply(descriptor, [var(enumeration.value_name())])
-            })
+            .map(|enumeration| var(enumeration.descriptor_name()))
             .collect();
         let union = self.reference((PROTO_REGISTRY, "union"));
         let mut parts: Vec<Expr> = Vec::new();

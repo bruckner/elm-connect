@@ -99,6 +99,22 @@ fn application_with_a_multiline_argument_before_the_last_puts_each_argument_on_a
 }
 
 #[test]
+fn stacked_application_puts_each_argument_on_a_line() {
+    let e = stacked_apply(var("f"), [var("a"), string("b"), list([])]);
+    assert_eq!(print_expr(&e), "f a\n    \"b\"\n    []");
+    // As an argument it is parenthesized like any application.
+    let outer = apply(var("g"), [e]);
+    assert_eq!(
+        print_expr(&outer),
+        "g\n    (f a\n        \"b\"\n        []\n    )"
+    );
+    // With a multi-line last argument it prints as a plain application.
+    let plain = apply(var("f"), [var("a"), list([int(1), int(2)])]);
+    let stacked = stacked_apply(var("f"), [var("a"), list([int(1), int(2)])]);
+    assert_eq!(print_expr(&stacked), print_expr(&plain));
+}
+
+#[test]
 fn negation() {
     assert_eq!(print_expr(&neg(var("x"))), "-x");
     assert_eq!(print_expr(&neg(apply(var("f"), [var("x")]))), "-(f x)");

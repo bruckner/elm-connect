@@ -46,6 +46,17 @@ pub fn apply(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
     }
 }
 
+/// `f a b` with one argument per line, the first beside `f`. With no
+/// arguments this is `f` itself.
+pub fn stacked_apply(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
+    let args: Vec<Expr> = args.into_iter().collect();
+    if args.is_empty() {
+        f
+    } else {
+        Expr::StackedApply(Box::new(f), args)
+    }
+}
+
 /// `left op right`.
 pub fn binop(op: BinOp, left: Expr, right: Expr) -> Expr {
     Expr::BinOp {

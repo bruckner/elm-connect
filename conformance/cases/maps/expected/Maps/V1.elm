@@ -78,60 +78,66 @@ defaultTeam =
 -- DESCRIPTORS
 
 
+descriptorRole : Proto.Descriptor.EnumDescriptor
+descriptorRole =
+    { typeName = "maps.v1.Role"
+    , values =
+        [ { name = "ROLE_UNSPECIFIED", number = 0 }
+        , { name = "ROLE_OWNER", number = 1 }
+        ]
+    }
+
+
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    Proto.Enum.enum encodeRole
-        decodeRole
-        RoleUnspecified
-        { typeName = "maps.v1.Role"
-        , values =
-            [ { name = "ROLE_UNSPECIFIED", number = 0 }
-            , { name = "ROLE_OWNER", number = 1 }
-            ]
-        }
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorMember : Proto.Descriptor.MessageDescriptor
+descriptorMember =
+    { typeName = "maps.v1.Member"
+    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageMember : Proto.Message.Message Member
 messageMember =
-    Proto.Message.message encodeMember
-        decodeMember
-        defaultMember
-        { typeName = "maps.v1.Member"
-        , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeMember decodeMember defaultMember descriptorMember
+
+
+descriptorTeam : Proto.Descriptor.MessageDescriptor
+descriptorTeam =
+    { typeName = "maps.v1.Team"
+    , fields =
+        [ { name = "labels", jsonName = "labels", number = 1, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "by_seat", jsonName = "bySeat", number = 2, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "scores", jsonName = "scores", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+        , { name = "flags", jsonName = "flags", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Sint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
+        , { name = "totals", jsonName = "totals", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Fixed32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "by_id", jsonName = "byId", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "counts", jsonName = "counts", number = 7, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
+        , { name = "members", jsonName = "members", number = 8, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "maps.v1.Member", oneof = Nothing }
+        , { name = "roles", jsonName = "roles", number = 9, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Enum "maps.v1.Role", oneof = Nothing }
+        , { name = "by_flag", jsonName = "byFlag", number = 10, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    Proto.Message.message encodeTeam
-        decodeTeam
-        defaultTeam
-        { typeName = "maps.v1.Team"
-        , fields =
-            [ { name = "labels", jsonName = "labels", number = 1, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "by_seat", jsonName = "bySeat", number = 2, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "scores", jsonName = "scores", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
-            , { name = "flags", jsonName = "flags", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Sint32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-            , { name = "totals", jsonName = "totals", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Fixed32, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "by_id", jsonName = "byId", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "counts", jsonName = "counts", number = 7, cardinality = Proto.Descriptor.Map Proto.Descriptor.Uint64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-            , { name = "members", jsonName = "members", number = 8, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "maps.v1.Member", oneof = Nothing }
-            , { name = "roles", jsonName = "roles", number = 9, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int32, kind = Proto.Descriptor.Enum "maps.v1.Role", oneof = Nothing }
-            , { name = "by_flag", jsonName = "byFlag", number = 10, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeTeam decodeTeam defaultTeam descriptorTeam
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ Proto.Message.descriptor messageMember
-            , Proto.Message.descriptor messageTeam
+            [ descriptorMember
+            , descriptorTeam
             ]
-            [ Proto.Enum.descriptor enumRole ]
+            [ descriptorRole ]
         )
         Proto.Registry.wellKnown
 

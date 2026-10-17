@@ -1,39 +1,35 @@
-//! A method's declaration in its service's module (design §4): a function
-//! from the request to an `Rpc.Call`, built point-free with `Rpc.call` from
-//! the codecs of its request and response and its descriptor, its HTTP
-//! bindings written out as data.
+//! A method's declarations in its service's module (design §4): its
+//! descriptor, `descriptorGetNote`, with its HTTP bindings written out as
+//! data, and its call, a function from the request to an `Rpc.Call`,
+//! built point-free with `Rpc.call` from the codecs of its request and
+//! response and that descriptor. The call's `Proto.Method.method`
+//! application is stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_HTTP, PROTO_METHOD, RPC};
+use super::{Emitter, Int64, PROTO_DESCRIPTOR, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
-use crate::elm::build::{apply, inline_list, list, qualified, record, string, ty_fn, var};
+use crate::elm::build::{
+    apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
+};
 use crate::ir::{Method, TypeRef};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
-    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
-    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
-    /// `Proto.Method.method` from the encoder of its request, the decoder
-    /// of its response, and its descriptor (service, name, idempotency,
-    /// type names and bindings). A method without an
-    /// HTTP rule has no bindings; the runtime calls it over the implicit
-    /// route.
+    /// `descriptorGetNote : Proto.Descriptor.MethodDescriptor`: the
+    /// method's service, name, idempotency, type names and bindings. A
+    /// method without an HTTP rule has no bindings; the runtime calls it
+    /// over the implicit route.
     ///
-    /// The value binds no locals and every name in it is qualified, so it
-    /// cannot clash with the package module's names or the runtime's,
-    /// whatever the method is called.
-    pub(super) fn method(&mut self, service: &str, method: &Method) -> Decl {
-        let request = self.method_type(&method.input);
-        let response = self.method_type(&method.output);
-        let encode_request = self.request_encoder(&method.input);
-        let response_decoder = self.response_decoder(&method.output);
+    /// Every name in it is qualified, so it cannot clash with the package
+    /// module's names or the runtime's, whatever the method is called.
+    pub(super) fn method_descriptor(&mut self, service: &str, method: &Method) -> Decl {
         let idempotent = if method.idempotent { "True" } else { "False" };
         let bindings: Vec<Expr> = method
             .routes
             .iter()
             .map(|route| self.binding(route))
             .collect();
-        let descriptor = record([
+        let body = record([
             ("service", string(service)),
             ("name", string(method.proto_name.clone())),
             ("idempotent", var(idempotent)),
@@ -41,9 +37,37 @@ impl Emitter {
             ("output", string(proto_full_name(&method.output))),
             ("bindings", list(bindings)),
         ]);
-        let built = apply(
+        Decl::Value {
+            doc: None,
+            name: method.descriptor_name(),
+            annotation: self.library_type(PROTO_DESCRIPTOR, "MethodDescriptor", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
+    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
+    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
+    /// `Proto.Method.method` from the encoder of its request, the decoder
+    /// of its response, and its descriptor value
+    /// ([`Self::method_descriptor`]).
+    ///
+    /// The value binds no locals and every library name in it is
+    /// qualified, so it cannot clash with the package module's names or
+    /// the runtime's, whatever the method is called; the descriptor it
+    /// refers to is the module's own.
+    pub(super) fn method(&mut self, method: &Method) -> Decl {
+        let request = self.method_type(&method.input);
+        let response = self.method_type(&method.output);
+        let encode_request = self.request_encoder(&method.input);
+        let response_decoder = self.response_decoder(&method.output);
+        let built = stacked_apply(
             self.reference((PROTO_METHOD, "method")),
-            [encode_request, response_decoder, descriptor],
+            [
+                encode_request,
+                response_decoder,
+                var(method.descriptor_name()),
+            ],
         );
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);

@@ -49,10 +49,7 @@ type Enum a
 
     enumVisibility : Proto.Enum.Enum Visibility
     enumVisibility =
-        Proto.Enum.enum encodeVisibility
-            decodeVisibility
-            VisibilityUnspecified
-            { typeName = "notes.v1.Visibility", … }
+        Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
 
 -}
 enum : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> EnumDescriptor -> Enum a

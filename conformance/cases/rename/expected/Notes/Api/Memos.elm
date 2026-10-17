@@ -4,6 +4,7 @@
 module Notes.Api.Memos exposing (..)
 
 import Notes.Api
+import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -16,16 +17,29 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorFetchMemo : Proto.Descriptor.MethodDescriptor
+descriptorFetchMemo =
+    { service = "notes.v1.NotesService"
+    , name = "GetNote"
+    , idempotent = False
+    , input = "notes.v1.GetNoteRequest"
+    , output = "notes.v1.Note"
+    , bindings = []
+    }
+
+
+
+-- CALLS
+
+
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call
         (Proto.Method.method Notes.Api.encodeGetNoteRequest
             Notes.Api.decodeMemo
-            { service = "notes.v1.NotesService"
-            , name = "GetNote"
-            , idempotent = False
-            , input = "notes.v1.GetNoteRequest"
-            , output = "notes.v1.Note"
-            , bindings = []
-            }
+            descriptorFetchMemo
         )

@@ -73,35 +73,37 @@ defaultCounters =
 -- DESCRIPTORS
 
 
+descriptorCounters : Proto.Descriptor.MessageDescriptor
+descriptorCounters =
+    { typeName = "int64_option.v1.Counters"
+    , fields =
+        [ { name = "int64_value", jsonName = "int64Value", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "uint64_value", jsonName = "uint64Value", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
+        , { name = "sint64_value", jsonName = "sint64Value", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint64, oneof = Nothing }
+        , { name = "fixed64_value", jsonName = "fixed64Value", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed64, oneof = Nothing }
+        , { name = "sfixed64_value", jsonName = "sfixed64Value", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64, oneof = Nothing }
+        , { name = "exact_id", jsonName = "exactId", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "normal", jsonName = "normal", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "maybe_count", jsonName = "maybeCount", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "samples", jsonName = "samples", number = 9, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "exact_samples", jsonName = "exactSamples", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
+        , { name = "by_id", jsonName = "byId", number = 11, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "wrapped", jsonName = "wrapped", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int64Value", oneof = Nothing }
+        , { name = "at_most", jsonName = "atMost", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
+        , { name = "exactly", jsonName = "exactly", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
+        ]
+    , oneofs = [ "limit" ]
+    }
+
+
 messageCounters : Proto.Message.Message Counters
 messageCounters =
-    Proto.Message.message encodeCounters
-        decodeCounters
-        defaultCounters
-        { typeName = "int64_option.v1.Counters"
-        , fields =
-            [ { name = "int64_value", jsonName = "int64Value", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "uint64_value", jsonName = "uint64Value", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            , { name = "sint64_value", jsonName = "sint64Value", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sint64, oneof = Nothing }
-            , { name = "fixed64_value", jsonName = "fixed64Value", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Fixed64, oneof = Nothing }
-            , { name = "sfixed64_value", jsonName = "sfixed64Value", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Sfixed64, oneof = Nothing }
-            , { name = "exact_id", jsonName = "exactId", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "normal", jsonName = "normal", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "maybe_count", jsonName = "maybeCount", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "samples", jsonName = "samples", number = 9, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "exact_samples", jsonName = "exactSamples", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-            , { name = "by_id", jsonName = "byId", number = 11, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "wrapped", jsonName = "wrapped", number = 12, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int64Value", oneof = Nothing }
-            , { name = "at_most", jsonName = "atMost", number = 13, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
-            , { name = "exactly", jsonName = "exactly", number = 14, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "limit" }
-            ]
-        , oneofs = [ "limit" ]
-        }
+    Proto.Message.message encodeCounters decodeCounters defaultCounters descriptorCounters
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageCounters ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorCounters ] []) Proto.Registry.wellKnown
 
 
 

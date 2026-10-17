@@ -41,11 +41,14 @@ type Method req res
 {-| A method from its request's proto3 JSON encoder, its response's proto3
 JSON decoder and its descriptor. Generated code writes:
 
+    descriptorGetNote =
+        { service = "notes.v1.NotesService", name = "GetNote", … }
+
     getNote =
         Rpc.call
             (Proto.Method.method Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
-                { service = "notes.v1.NotesService", name = "GetNote", … }
+                descriptorGetNote
             )
 
 -}

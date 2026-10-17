@@ -595,3 +595,17 @@ tag (design §8).
   The record fields `encodeJson`, `jsonDecoder` and `descriptor` are
   gone; `messageNote.descriptor` is `Proto.Message.descriptor
   messageNote`.
+- Generated modules give each message and enum a top-level descriptor,
+  `descriptorNote` and `descriptorVisibility`, which `messageNote` and
+  `enumVisibility` hold, and the package `registry` is built from them,
+  so a program using the registry no longer keeps every type's codecs.
+- A service module gives each method a top-level descriptor,
+  `descriptorGetNote : Proto.Descriptor.MethodDescriptor`, in a
+  `DESCRIPTORS` section before the `CALLS`, and the call refers to it
+  instead of building it inline. Its name follows the method's Elm name,
+  renamed or not; a method named for another's descriptor
+  (`DescriptorGetNote` beside `GetNote`) is `naming::value_collision`.
+- A generated method's `Proto.Method.method` application puts one
+  argument per line however short, so a method's call reads the same
+  with or without an HTTP rule. The printer gains `Expr::StackedApply`
+  for that layout.

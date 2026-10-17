@@ -243,8 +243,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
-/// followed by a type name. Type names are unique within a module and
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
+/// `descriptor`) followed by a type name. Type names are unique within a module and
 /// start with an uppercase letter, and no prefix is another's, so two such
 /// names never collide: neither within one prefix nor across two. (A
 /// suffix would not do: `encodeFooMessage` would be both the encoder of
@@ -275,6 +275,37 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
+
+/// The descriptor of a message or an enum (`Proto.Descriptor`'s
+/// `MessageDescriptor` or `EnumDescriptor`): `descriptor` followed by the
+/// type's Elm name (`Note` becomes `descriptorNote`). Like
+/// [`default_name`], a prefix and a type name; one prefix serves both,
+/// since a message and an enum never share a name in one module.
+pub fn descriptor_name(type_elm_name: &str) -> String {
+    format!("{DESCRIPTOR_PREFIX}{type_elm_name}")
+}
+
+/// The prefix of [`descriptor_name`].
+const DESCRIPTOR_PREFIX: &str = "descriptor";
+
+/// The descriptor of a method (`Proto.Descriptor.MethodDescriptor`), in
+/// its service's module: `descriptor` followed by the method's Elm name
+/// with its first letter uppercased, as [`pascal_case`] does (`getNote`
+/// becomes `descriptorGetNote`). It follows the Elm name, so a renamed
+/// method's descriptor is renamed with it. A service's module holds only
+/// its methods' calls and descriptors, so it collides only with the call of
+/// a method named for it (`DescriptorGetNote`), which is
+/// `naming::value_collision`.
+pub fn method_descriptor_name(method_elm_name: &str) -> String {
+    let mut chars = method_elm_name.chars();
+    let upper: String = chars
+        .next()
+        .map(|first| first.to_ascii_uppercase())
+        .into_iter()
+        .chain(chars)
+        .collect();
+    format!("{DESCRIPTOR_PREFIX}{upper}")
+}
 
 /// The value holding a package's descriptors and those of every package
 /// it imports (`Proto.Registry.Registry`). Every other top-level value of a
@@ -437,12 +468,18 @@ mod tests {
         assert_eq!(default_name("OuterInner"), "defaultOuterInner");
         assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
         assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
+        assert_eq!(descriptor_name("OuterInner"), "descriptorOuterInner");
+        assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
+        assert_eq!(method_descriptor_name("type_"), "descriptorType_");
+        assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");
+        assert!(method_descriptor_name("getNote").starts_with(DESCRIPTOR_PREFIX));
         let prefixes = [
             "encode",
             "decode",
             DEFAULT_PREFIX,
             MESSAGE_PREFIX,
             ENUM_PREFIX,
+            DESCRIPTOR_PREFIX,
         ];
         for local in [ENCODER_ARGUMENT, ONEOF_MEMBER] {
             assert!(prefixes.iter().all(|prefix| !local.starts_with(prefix)));

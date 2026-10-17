@@ -4,6 +4,7 @@
 module Connectrpc.Conformance.V1.ConformanceService exposing (..)
 
 import Connectrpc.Conformance.V1
+import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -16,18 +17,53 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorUnary : Proto.Descriptor.MethodDescriptor
+descriptorUnary =
+    { service = "connectrpc.conformance.v1.ConformanceService"
+    , name = "Unary"
+    , idempotent = False
+    , input = "connectrpc.conformance.v1.UnaryRequest"
+    , output = "connectrpc.conformance.v1.UnaryResponse"
+    , bindings = []
+    }
+
+
+descriptorUnimplemented : Proto.Descriptor.MethodDescriptor
+descriptorUnimplemented =
+    { service = "connectrpc.conformance.v1.ConformanceService"
+    , name = "Unimplemented"
+    , idempotent = False
+    , input = "connectrpc.conformance.v1.UnimplementedRequest"
+    , output = "connectrpc.conformance.v1.UnimplementedResponse"
+    , bindings = []
+    }
+
+
+descriptorIdempotentUnary : Proto.Descriptor.MethodDescriptor
+descriptorIdempotentUnary =
+    { service = "connectrpc.conformance.v1.ConformanceService"
+    , name = "IdempotentUnary"
+    , idempotent = True
+    , input = "connectrpc.conformance.v1.IdempotentUnaryRequest"
+    , output = "connectrpc.conformance.v1.IdempotentUnaryResponse"
+    , bindings = []
+    }
+
+
+
+-- CALLS
+
+
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
 unary =
     Rpc.call
         (Proto.Method.method Connectrpc.Conformance.V1.encodeUnaryRequest
             Connectrpc.Conformance.V1.decodeUnaryResponse
-            { service = "connectrpc.conformance.v1.ConformanceService"
-            , name = "Unary"
-            , idempotent = False
-            , input = "connectrpc.conformance.v1.UnaryRequest"
-            , output = "connectrpc.conformance.v1.UnaryResponse"
-            , bindings = []
-            }
+            descriptorUnary
         )
 
 
@@ -36,13 +72,7 @@ unimplemented =
     Rpc.call
         (Proto.Method.method Connectrpc.Conformance.V1.encodeUnimplementedRequest
             Connectrpc.Conformance.V1.decodeUnimplementedResponse
-            { service = "connectrpc.conformance.v1.ConformanceService"
-            , name = "Unimplemented"
-            , idempotent = False
-            , input = "connectrpc.conformance.v1.UnimplementedRequest"
-            , output = "connectrpc.conformance.v1.UnimplementedResponse"
-            , bindings = []
-            }
+            descriptorUnimplemented
         )
 
 
@@ -51,11 +81,5 @@ idempotentUnary =
     Rpc.call
         (Proto.Method.method Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
             Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
-            { service = "connectrpc.conformance.v1.ConformanceService"
-            , name = "IdempotentUnary"
-            , idempotent = True
-            , input = "connectrpc.conformance.v1.IdempotentUnaryRequest"
-            , output = "connectrpc.conformance.v1.IdempotentUnaryResponse"
-            , bindings = []
-            }
+            descriptorIdempotentUnary
         )

@@ -42,20 +42,22 @@ defaultLine =
 -- DESCRIPTORS
 
 
+descriptorLine : Proto.Descriptor.MessageDescriptor
+descriptorLine =
+    { typeName = "chat.v1.Line"
+    , fields = [ { name = "text", jsonName = "text", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
+    , oneofs = []
+    }
+
+
 messageLine : Proto.Message.Message Line
 messageLine =
-    Proto.Message.message encodeLine
-        decodeLine
-        defaultLine
-        { typeName = "chat.v1.Line"
-        , fields = [ { name = "text", jsonName = "text", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeLine decodeLine defaultLine descriptorLine
 
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ Proto.Message.descriptor messageLine ] []) Proto.Registry.wellKnown
+    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorLine ] []) Proto.Registry.wellKnown
 
 
 

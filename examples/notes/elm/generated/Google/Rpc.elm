@@ -229,217 +229,245 @@ defaultLocalizedMessage =
 -- DESCRIPTORS
 
 
+descriptorErrorInfo : Proto.Descriptor.MessageDescriptor
+descriptorErrorInfo =
+    { typeName = "google.rpc.ErrorInfo"
+    , fields =
+        [ { name = "reason", jsonName = "reason", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "domain", jsonName = "domain", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "metadata", jsonName = "metadata", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
+
+
 messageErrorInfo : Proto.Message.Message ErrorInfo
 messageErrorInfo =
-    Proto.Message.message encodeErrorInfo
-        decodeErrorInfo
-        defaultErrorInfo
-        { typeName = "google.rpc.ErrorInfo"
-        , fields =
-            [ { name = "reason", jsonName = "reason", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "domain", jsonName = "domain", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "metadata", jsonName = "metadata", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeErrorInfo decodeErrorInfo defaultErrorInfo descriptorErrorInfo
+
+
+descriptorRetryInfo : Proto.Descriptor.MessageDescriptor
+descriptorRetryInfo =
+    { typeName = "google.rpc.RetryInfo"
+    , fields = [ { name = "retry_delay", jsonName = "retryDelay", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageRetryInfo : Proto.Message.Message RetryInfo
 messageRetryInfo =
-    Proto.Message.message encodeRetryInfo
-        decodeRetryInfo
-        defaultRetryInfo
-        { typeName = "google.rpc.RetryInfo"
-        , fields = [ { name = "retry_delay", jsonName = "retryDelay", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeRetryInfo decodeRetryInfo defaultRetryInfo descriptorRetryInfo
+
+
+descriptorDebugInfo : Proto.Descriptor.MessageDescriptor
+descriptorDebugInfo =
+    { typeName = "google.rpc.DebugInfo"
+    , fields =
+        [ { name = "stack_entries", jsonName = "stackEntries", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "detail", jsonName = "detail", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageDebugInfo : Proto.Message.Message DebugInfo
 messageDebugInfo =
-    Proto.Message.message encodeDebugInfo
-        decodeDebugInfo
-        defaultDebugInfo
-        { typeName = "google.rpc.DebugInfo"
-        , fields =
-            [ { name = "stack_entries", jsonName = "stackEntries", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "detail", jsonName = "detail", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeDebugInfo decodeDebugInfo defaultDebugInfo descriptorDebugInfo
+
+
+descriptorQuotaFailure : Proto.Descriptor.MessageDescriptor
+descriptorQuotaFailure =
+    { typeName = "google.rpc.QuotaFailure"
+    , fields = [ { name = "violations", jsonName = "violations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.QuotaFailure.Violation", oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageQuotaFailure : Proto.Message.Message QuotaFailure
 messageQuotaFailure =
-    Proto.Message.message encodeQuotaFailure
-        decodeQuotaFailure
-        defaultQuotaFailure
-        { typeName = "google.rpc.QuotaFailure"
-        , fields = [ { name = "violations", jsonName = "violations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.QuotaFailure.Violation", oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeQuotaFailure decodeQuotaFailure defaultQuotaFailure descriptorQuotaFailure
+
+
+descriptorQuotaFailureViolation : Proto.Descriptor.MessageDescriptor
+descriptorQuotaFailureViolation =
+    { typeName = "google.rpc.QuotaFailure.Violation"
+    , fields =
+        [ { name = "subject", jsonName = "subject", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "description", jsonName = "description", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "api_service", jsonName = "apiService", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "quota_metric", jsonName = "quotaMetric", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "quota_id", jsonName = "quotaId", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "quota_dimensions", jsonName = "quotaDimensions", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "quota_value", jsonName = "quotaValue", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        , { name = "future_quota_value", jsonName = "futureQuotaValue", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageQuotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 messageQuotaFailureViolation =
-    Proto.Message.message encodeQuotaFailureViolation
-        decodeQuotaFailureViolation
-        defaultQuotaFailureViolation
-        { typeName = "google.rpc.QuotaFailure.Violation"
-        , fields =
-            [ { name = "subject", jsonName = "subject", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "description", jsonName = "description", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "api_service", jsonName = "apiService", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "quota_metric", jsonName = "quotaMetric", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "quota_id", jsonName = "quotaId", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "quota_dimensions", jsonName = "quotaDimensions", number = 6, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "quota_value", jsonName = "quotaValue", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            , { name = "future_quota_value", jsonName = "futureQuotaValue", number = 8, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeQuotaFailureViolation decodeQuotaFailureViolation defaultQuotaFailureViolation descriptorQuotaFailureViolation
+
+
+descriptorPreconditionFailure : Proto.Descriptor.MessageDescriptor
+descriptorPreconditionFailure =
+    { typeName = "google.rpc.PreconditionFailure"
+    , fields = [ { name = "violations", jsonName = "violations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.PreconditionFailure.Violation", oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messagePreconditionFailure : Proto.Message.Message PreconditionFailure
 messagePreconditionFailure =
-    Proto.Message.message encodePreconditionFailure
-        decodePreconditionFailure
-        defaultPreconditionFailure
-        { typeName = "google.rpc.PreconditionFailure"
-        , fields = [ { name = "violations", jsonName = "violations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.PreconditionFailure.Violation", oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodePreconditionFailure decodePreconditionFailure defaultPreconditionFailure descriptorPreconditionFailure
+
+
+descriptorPreconditionFailureViolation : Proto.Descriptor.MessageDescriptor
+descriptorPreconditionFailureViolation =
+    { typeName = "google.rpc.PreconditionFailure.Violation"
+    , fields =
+        [ { name = "type", jsonName = "type", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "subject", jsonName = "subject", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "description", jsonName = "description", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messagePreconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 messagePreconditionFailureViolation =
-    Proto.Message.message encodePreconditionFailureViolation
-        decodePreconditionFailureViolation
-        defaultPreconditionFailureViolation
-        { typeName = "google.rpc.PreconditionFailure.Violation"
-        , fields =
-            [ { name = "type", jsonName = "type", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "subject", jsonName = "subject", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "description", jsonName = "description", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodePreconditionFailureViolation decodePreconditionFailureViolation defaultPreconditionFailureViolation descriptorPreconditionFailureViolation
+
+
+descriptorBadRequest : Proto.Descriptor.MessageDescriptor
+descriptorBadRequest =
+    { typeName = "google.rpc.BadRequest"
+    , fields = [ { name = "field_violations", jsonName = "fieldViolations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.BadRequest.FieldViolation", oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageBadRequest : Proto.Message.Message BadRequest
 messageBadRequest =
-    Proto.Message.message encodeBadRequest
-        decodeBadRequest
-        defaultBadRequest
-        { typeName = "google.rpc.BadRequest"
-        , fields = [ { name = "field_violations", jsonName = "fieldViolations", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.BadRequest.FieldViolation", oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeBadRequest decodeBadRequest defaultBadRequest descriptorBadRequest
+
+
+descriptorBadRequestFieldViolation : Proto.Descriptor.MessageDescriptor
+descriptorBadRequestFieldViolation =
+    { typeName = "google.rpc.BadRequest.FieldViolation"
+    , fields =
+        [ { name = "field", jsonName = "field", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "description", jsonName = "description", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "reason", jsonName = "reason", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "localized_message", jsonName = "localizedMessage", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.rpc.LocalizedMessage", oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageBadRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 messageBadRequestFieldViolation =
-    Proto.Message.message encodeBadRequestFieldViolation
-        decodeBadRequestFieldViolation
-        defaultBadRequestFieldViolation
-        { typeName = "google.rpc.BadRequest.FieldViolation"
-        , fields =
-            [ { name = "field", jsonName = "field", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "description", jsonName = "description", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "reason", jsonName = "reason", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "localized_message", jsonName = "localizedMessage", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.rpc.LocalizedMessage", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeBadRequestFieldViolation decodeBadRequestFieldViolation defaultBadRequestFieldViolation descriptorBadRequestFieldViolation
+
+
+descriptorRequestInfo : Proto.Descriptor.MessageDescriptor
+descriptorRequestInfo =
+    { typeName = "google.rpc.RequestInfo"
+    , fields =
+        [ { name = "request_id", jsonName = "requestId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "serving_data", jsonName = "servingData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageRequestInfo : Proto.Message.Message RequestInfo
 messageRequestInfo =
-    Proto.Message.message encodeRequestInfo
-        decodeRequestInfo
-        defaultRequestInfo
-        { typeName = "google.rpc.RequestInfo"
-        , fields =
-            [ { name = "request_id", jsonName = "requestId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "serving_data", jsonName = "servingData", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeRequestInfo decodeRequestInfo defaultRequestInfo descriptorRequestInfo
+
+
+descriptorResourceInfo : Proto.Descriptor.MessageDescriptor
+descriptorResourceInfo =
+    { typeName = "google.rpc.ResourceInfo"
+    , fields =
+        [ { name = "resource_type", jsonName = "resourceType", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "resource_name", jsonName = "resourceName", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "owner", jsonName = "owner", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "description", jsonName = "description", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageResourceInfo : Proto.Message.Message ResourceInfo
 messageResourceInfo =
-    Proto.Message.message encodeResourceInfo
-        decodeResourceInfo
-        defaultResourceInfo
-        { typeName = "google.rpc.ResourceInfo"
-        , fields =
-            [ { name = "resource_type", jsonName = "resourceType", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "resource_name", jsonName = "resourceName", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "owner", jsonName = "owner", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "description", jsonName = "description", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeResourceInfo decodeResourceInfo defaultResourceInfo descriptorResourceInfo
+
+
+descriptorHelp : Proto.Descriptor.MessageDescriptor
+descriptorHelp =
+    { typeName = "google.rpc.Help"
+    , fields = [ { name = "links", jsonName = "links", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.Help.Link", oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageHelp : Proto.Message.Message Help
 messageHelp =
-    Proto.Message.message encodeHelp
-        decodeHelp
-        defaultHelp
-        { typeName = "google.rpc.Help"
-        , fields = [ { name = "links", jsonName = "links", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.rpc.Help.Link", oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeHelp decodeHelp defaultHelp descriptorHelp
+
+
+descriptorHelpLink : Proto.Descriptor.MessageDescriptor
+descriptorHelpLink =
+    { typeName = "google.rpc.Help.Link"
+    , fields =
+        [ { name = "description", jsonName = "description", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "url", jsonName = "url", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageHelpLink : Proto.Message.Message HelpLink
 messageHelpLink =
-    Proto.Message.message encodeHelpLink
-        decodeHelpLink
-        defaultHelpLink
-        { typeName = "google.rpc.Help.Link"
-        , fields =
-            [ { name = "description", jsonName = "description", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "url", jsonName = "url", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeHelpLink decodeHelpLink defaultHelpLink descriptorHelpLink
+
+
+descriptorLocalizedMessage : Proto.Descriptor.MessageDescriptor
+descriptorLocalizedMessage =
+    { typeName = "google.rpc.LocalizedMessage"
+    , fields =
+        [ { name = "locale", jsonName = "locale", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "message", jsonName = "message", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        ]
+    , oneofs = []
+    }
 
 
 messageLocalizedMessage : Proto.Message.Message LocalizedMessage
 messageLocalizedMessage =
-    Proto.Message.message encodeLocalizedMessage
-        decodeLocalizedMessage
-        defaultLocalizedMessage
-        { typeName = "google.rpc.LocalizedMessage"
-        , fields =
-            [ { name = "locale", jsonName = "locale", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "message", jsonName = "message", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeLocalizedMessage decodeLocalizedMessage defaultLocalizedMessage descriptorLocalizedMessage
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ Proto.Message.descriptor messageErrorInfo
-            , Proto.Message.descriptor messageRetryInfo
-            , Proto.Message.descriptor messageDebugInfo
-            , Proto.Message.descriptor messageQuotaFailure
-            , Proto.Message.descriptor messageQuotaFailureViolation
-            , Proto.Message.descriptor messagePreconditionFailure
-            , Proto.Message.descriptor messagePreconditionFailureViolation
-            , Proto.Message.descriptor messageBadRequest
-            , Proto.Message.descriptor messageBadRequestFieldViolation
-            , Proto.Message.descriptor messageRequestInfo
-            , Proto.Message.descriptor messageResourceInfo
-            , Proto.Message.descriptor messageHelp
-            , Proto.Message.descriptor messageHelpLink
-            , Proto.Message.descriptor messageLocalizedMessage
+            [ descriptorErrorInfo
+            , descriptorRetryInfo
+            , descriptorDebugInfo
+            , descriptorQuotaFailure
+            , descriptorQuotaFailureViolation
+            , descriptorPreconditionFailure
+            , descriptorPreconditionFailureViolation
+            , descriptorBadRequest
+            , descriptorBadRequestFieldViolation
+            , descriptorRequestInfo
+            , descriptorResourceInfo
+            , descriptorHelp
+            , descriptorHelpLink
+            , descriptorLocalizedMessage
             ]
             []
         )

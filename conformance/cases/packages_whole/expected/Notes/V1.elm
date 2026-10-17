@@ -55,37 +55,41 @@ defaultTag =
 -- DESCRIPTORS
 
 
+descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote =
+    { typeName = "notes.v1.Note"
+    , fields =
+        [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+        , { name = "tags", jsonName = "tags", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Tag", oneof = Nothing }
+        ]
+    , oneofs = []
+    }
+
+
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote
-        decodeNote
-        defaultNote
-        { typeName = "notes.v1.Note"
-        , fields =
-            [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-            , { name = "tags", jsonName = "tags", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Tag", oneof = Nothing }
-            ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+descriptorTag : Proto.Descriptor.MessageDescriptor
+descriptorTag =
+    { typeName = "notes.v1.Tag"
+    , fields = [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
+    , oneofs = []
+    }
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag
-        decodeTag
-        defaultTag
-        { typeName = "notes.v1.Tag"
-        , fields = [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-        , oneofs = []
-        }
+    Proto.Message.message encodeTag decodeTag defaultTag descriptorTag
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ Proto.Message.descriptor messageNote
-            , Proto.Message.descriptor messageTag
+            [ descriptorNote
+            , descriptorTag
             ]
             []
         )

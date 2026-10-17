@@ -28,9 +28,42 @@ naming::value_collision
  20 │   rpc Version(Settings) returns (Settings);
     ·       ───┬───
     ·          ╰── method `settings.v1.SettingsService.Version` is renamed to `elmConnectVersion_`
- 21 │ }
+ 21 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
     ╰────
   help: Every generated module defines `elmConnectVersion_`, which names the
         release of the generator it came from, so a module cannot have a
         method of that name too. Give the method another name in its
         `rename=<proto full name>:<Elm name>`.
+
+naming::value_collision
+
+  × The service `settings.v1.SettingsService` has a method that becomes the
+  │ Elm value `descriptorDefaultSettings`, which is another method's
+  │ descriptor.
+    ╭─[settings.proto:12:7]
+ 11 │   // default lives in the package's module, the method in the service's.
+ 12 │   rpc DefaultSettings(Settings) returns (Settings);
+    ·       ───────┬───────
+    ·              ╰── the descriptor of method `settings.v1.SettingsService.DefaultSettings` becomes `descriptorDefaultSettings`
+ 13 │   rpc GetSettings(Settings) returns (Settings);
+ 14 │   // `Get_Settings` is `getSettings` too.
+ 15 │   rpc Get_Settings(Settings) returns (Settings);
+ 16 │   // `elmConnectVersion` is fine: the value every generated module
+ 17 │   // defines is `elmConnectVersion_`, which no method name derives to.
+ 18 │   rpc ElmConnectVersion(Settings) returns (Settings);
+ 19 │   // But a rename can give a method that name (options.txt).
+ 20 │   rpc Version(Settings) returns (Settings);
+ 21 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
+ 22 │   rpc DescriptorDefaultSettings(Settings) returns (Settings);
+    ·       ────────────┬────────────
+    ·                   ╰── and so does method `settings.v1.SettingsService.DescriptorDefaultSettings`
+ 23 │ }
+    ╰────
+  help: A service's module defines two values per method: its call, its name
+        with the first letter lowercased and underscores dropped, and its
+        descriptor, `descriptor` followed by the call's name with the first
+        letter uppercased. So a method named for another's descriptor
+        (`DescriptorGetNote` beside `GetNote`) takes that descriptor's name,
+        and a module cannot define two values with one name. Rename one of the
+        methods in the proto, or rename one with `rename=<proto full
+        name>:<Elm name>`.

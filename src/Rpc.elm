@@ -127,7 +127,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
         Rpc.call
             (Proto.Method.method Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
-                { service = "notes.v1.NotesService", name = "GetNote", … }
+                descriptorGetNote
             )
 
 -}

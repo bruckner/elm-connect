@@ -44,10 +44,7 @@ decodes to) and its descriptor. Generated code writes:
 
     messageNote : Proto.Message.Message Note
     messageNote =
-        Proto.Message.message encodeNote
-            decodeNote
-            defaultNote
-            { typeName = "notes.v1.Note", … }
+        Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 -}
 message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> MessageDescriptor -> Message a
