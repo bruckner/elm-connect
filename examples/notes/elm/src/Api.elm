@@ -6,6 +6,7 @@ sending once" and this example's walkthrough quote it.
 -}
 
 import Rpc
+import Rpc.Transport
 import Task exposing (Task)
 
 
@@ -15,7 +16,7 @@ carries, and the transport the page's toggle chose.
 type alias Shared =
     { apiUrl : String
     , token : String
-    , transport : Rpc.Transport
+    , transport : Rpc.Transport.Transport
     }
 
 

@@ -1,12 +1,16 @@
 module Rpc.Internal.Http exposing (badBaseUrl, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved)
 
-{-| What the transports share: percent-encoding, sending a built request, and
-reading an answer's metadata. Not exposed; `Rpc` re-exports what users need.
+{-| The elm/http adapter: sending a built `Rpc.Request` and reading an
+answer's metadata, with the percent-encoding the transports share. Not
+exposed. It is kept out of `Rpc` so that the public module reads as API;
+`Rpc` re-exports what users need.
 -}
 
 import Bitwise
 import Dict exposing (Dict)
 import Http
+import Rpc.Body
+import Rpc.Request exposing (Request)
 import Task exposing (Task)
 
 
@@ -203,22 +207,11 @@ badBaseUrl url =
     String.contains "?" url || String.contains "#" url
 
 
-type alias Request r =
-    { r
-        | method : String
-        , url : String
-        , headers : List ( String, String )
-        , body : Maybe String
-        , timeout : Maybe Float
-        , withCredentials : Bool
-    }
-
-
 {-| The request as a task, its response read by `read`. A body is sent as
 `application/json`; `withCredentials` sends cookies cross-origin
 (`Http.riskyTask`).
 -}
-task : (Http.Response String -> Result e a) -> Request r -> Task e a
+task : (Http.Response String -> Result e a) -> Request -> Task e a
 task read request =
     let
         perform =
@@ -241,7 +234,7 @@ task read request =
 {-| The request as a command, its response read by `read`, cancellable through
 `tracker` (`Http.cancel`).
 -}
-send : (Http.Response String -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request r -> Cmd msg
+send : (Http.Response String -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request -> Cmd msg
 send read toMsg tracker request =
     let
         perform =
@@ -262,9 +255,9 @@ send read toMsg tracker request =
         }
 
 
-body : Request r -> Http.Body
+body : Request -> Http.Body
 body request =
-    case request.body of
+    case Rpc.Body.toText request.body of
         Just json ->
             Http.stringBody "application/json" json
 

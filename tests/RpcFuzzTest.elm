@@ -16,6 +16,9 @@ import Json.Encode
 import Routes.V1
 import Routes.V1.Routes
 import Rpc
+import Rpc.Body
+import Rpc.Call
+import Rpc.Transport
 import Test exposing (Test, describe, fuzz)
 
 
@@ -38,7 +41,7 @@ transcode =
         base =
             Rpc.config ""
     in
-    { base | transport = Rpc.Transcode }
+    { base | transport = Rpc.Transport.transcode }
 
 
 send : (req -> Rpc.Call req res) -> req -> Rpc.Request
@@ -51,7 +54,7 @@ has no such binding, which the tests below never ask for.
 -}
 sendVia : Int -> (req -> Rpc.Call req res) -> req -> Rpc.Request
 sendVia index method message =
-    Rpc.viaBinding index (method message)
+    Rpc.Call.viaBinding index (method message)
         |> Maybe.withDefault (method message)
         |> Rpc.request transcode
 
@@ -241,11 +244,11 @@ bodies =
                 in
                 Expect.all
                     [ \_ ->
-                        request.body
+                        Rpc.Body.toText request.body
                             |> Maybe.map (Json.Decode.decodeString Routes.V1.decodeGetMessageRequest)
                             |> Expect.equal (Just (Ok { x | sub = Maybe.map (\_ -> { subfield = "" }) x.sub }))
                     , \_ ->
-                        request.body
+                        Rpc.Body.toText request.body
                             |> Maybe.map (Json.Decode.decodeString (Json.Decode.at [ "sub", "subfield" ] Json.Decode.value) >> Result.toMaybe >> Maybe.map (Json.Encode.encode 0))
                             |> Expect.equal (Just Nothing)
                     , \_ -> (url request).query |> Expect.equal []
@@ -259,7 +262,7 @@ bodies =
                 in
                 Expect.all
                     [ \_ ->
-                        request.body
+                        Rpc.Body.toText request.body
                             |> Maybe.map (Json.Decode.decodeString Routes.V1.decodeResource)
                             |> Expect.equal (Just (Ok (Maybe.withDefault Routes.V1.defaultResource resource)))
                     , \_ ->
@@ -278,6 +281,7 @@ bodies =
             \x ->
                 send Routes.V1.Routes.cancel x
                     |> .body
+                    |> Rpc.Body.toText
                     |> Maybe.map (Json.Decode.decodeString Routes.V1.decodeResource)
                     |> Expect.equal (Just (Ok { x | name = "" }))
         , fuzz (Fuzz.pair Fuzzers.awkwardString (Fuzz.maybe (Fuzz.map2 Routes.V1.Message Fuzzers.awkwardString Fuzzers.awkwardString))) "a body field holding the path's field leaves the query empty" <|
@@ -289,7 +293,7 @@ bodies =
                 Expect.all
                     [ \_ -> (url request).query |> Expect.equal []
                     , \_ ->
-                        request.body
+                        Rpc.Body.toText request.body
                             |> Maybe.map (Json.Decode.decodeString Routes.V1.decodeMessage)
                             |> Expect.equal (Just (Ok (Maybe.withDefault Routes.V1.defaultMessage message)))
                     ]

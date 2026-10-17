@@ -17,7 +17,9 @@ import Notes.V1 exposing (Note)
 import Notes.V1.NotesService as Notes
 import Proto.Any
 import Rpc
-import Rpc.ErrorCode
+import Rpc.Body
+import Rpc.Code
+import Rpc.Transport
 import Task
 
 
@@ -68,7 +70,7 @@ init origin =
     list
         { origin = origin
         , wire = ViaConnect
-        , shared = { apiUrl = origin, token = "example-token", transport = Rpc.connect }
+        , shared = { apiUrl = origin, token = "example-token", transport = Rpc.Transport.connect }
         , notes = []
         , newTitle = ""
         , editing = Nothing
@@ -106,13 +108,13 @@ update msg model =
                 ( transport, path ) =
                     case wire of
                         ViaConnect ->
-                            ( Rpc.connect, "" )
+                            ( Rpc.Transport.connect, "" )
 
                         ViaVanguard ->
-                            ( Rpc.Transcode, "" )
+                            ( Rpc.Transport.transcode, "" )
 
                         ViaGateway ->
-                            ( Rpc.Transcode, "/gateway" )
+                            ( Rpc.Transport.transcode, "/gateway" )
             in
             list
                 { model
@@ -330,7 +332,7 @@ viewDraft draft =
 
 viewRequest : Rpc.Request -> Html msg
 viewRequest request =
-    pre [] [ text (request.method ++ " " ++ request.url ++ "\n" ++ Maybe.withDefault "" request.body) ]
+    pre [] [ text (request.method ++ " " ++ request.url ++ "\n" ++ Maybe.withDefault "" (Rpc.Body.toText request.body)) ]
 
 
 
@@ -342,7 +344,7 @@ viewError error =
     case error of
         Rpc.Status status answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString status.code) ]
+                [ h2 [] [ text (Rpc.Code.toString status.code) ]
                 , p [] [ text status.message ]
                 , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
                 , ul []
@@ -360,7 +362,7 @@ viewError error =
 
         Rpc.Http answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString (Rpc.code error)) ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.code error)) ]
                 , p [] [ text (Rpc.message error) ]
                 , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
                 , pre [] [ text answer.body ]

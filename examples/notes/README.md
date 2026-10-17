@@ -183,7 +183,7 @@ viewError error =
     case error of
         Rpc.Status status answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString status.code) ]
+                [ h2 [] [ text (Rpc.Code.toString status.code) ]
                 , p [] [ text status.message ]
                 , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
                 , ul []
@@ -201,7 +201,7 @@ viewError error =
 
         Rpc.Http answer ->
             section [ class "error" ]
-                [ h2 [] [ text (Rpc.ErrorCode.toString (Rpc.code error)) ]
+                [ h2 [] [ text (Rpc.Code.toString (Rpc.code error)) ]
                 , p [] [ text (Rpc.message error) ]
                 , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
                 , pre [] [ text answer.body ]
@@ -258,13 +258,13 @@ SetWire wire ->
         ( transport, path ) =
             case wire of
                 ViaConnect ->
-                    ( Rpc.connect, "" )
+                    ( Rpc.Transport.connect, "" )
 
                 ViaVanguard ->
-                    ( Rpc.Transcode, "" )
+                    ( Rpc.Transport.transcode, "" )
 
                 ViaGateway ->
-                    ( Rpc.Transcode, "/gateway" )
+                    ( Rpc.Transport.transcode, "/gateway" )
     in
     list
         { model
