@@ -4,8 +4,8 @@ import Expect
 import Json.Decode
 import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
-import Proto.Descriptor exposing (Cardinality(..), Kind(..), MessageDescriptor, Scalar(..))
 import Proto.Duration as Duration exposing (Duration)
+import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
@@ -23,20 +23,17 @@ messageNote =
     noteAs descriptorNote
 
 
-descriptorNote : MessageDescriptor
+descriptorNote : Message.Descriptor
 descriptorNote =
-    { typeName = "notes.v1.Note"
-    , fields =
-        [ { name = "title", jsonName = "title", number = 1, cardinality = Singular, kind = Scalar String, oneof = Nothing }
-        , { name = "pinned", jsonName = "pinned", number = 2, cardinality = Singular, kind = Scalar Bool, oneof = Nothing }
+    Message.descriptor "notes.v1.Note"
+        [ Field.descriptor "title" "title" 1 CardinalitySingular (KindScalar ScalarString)
+        , Field.descriptor "pinned" "pinned" 2 CardinalitySingular (KindScalar ScalarBool)
         ]
-    , oneofs = []
-    }
 
 
 {-| Note's codecs under another descriptor.
 -}
-noteAs : MessageDescriptor -> Message Note
+noteAs : Message.Descriptor -> Message Note
 noteAs =
     Message.message
         (\value ->
@@ -165,9 +162,9 @@ suite =
                 in
                 [ Any.pack messageNote note
                 , Any.pack WellKnown.timestamp (Message.default WellKnown.timestamp)
-                , Any.packWith "example.com" (noteAs { typeName = "other.v1.Thing", fields = [], oneofs = [] }) note
+                , Any.packWith "example.com" (noteAs (Message.descriptor "other.v1.Thing" [])) note
                 ]
-                    |> List.map (Any.describe registry >> Maybe.map (\found -> ( found.typeName, List.map .jsonName found.fields )))
+                    |> List.map (Any.describe registry >> Maybe.map (\found -> ( Message.typeName found, List.map Field.jsonName (Message.fields found) )))
                     |> Expect.equal
                         [ Just ( "notes.v1.Note", [ "title", "pinned" ] )
                         , Just ( "google.protobuf.Timestamp", [ "seconds", "nanos" ] )

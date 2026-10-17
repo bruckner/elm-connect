@@ -5,7 +5,7 @@ module Zones.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -55,12 +55,9 @@ defaultZone =
 -- DESCRIPTORS
 
 
-descriptorZoneRequest : Proto.Descriptor.MessageDescriptor
+descriptorZoneRequest : Proto.Message.Descriptor
 descriptorZoneRequest =
-    { typeName = "zones.v1.ZoneRequest"
-    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "zones.v1.ZoneRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageZoneRequest : Proto.Message.Message ZoneRequest
@@ -68,15 +65,12 @@ messageZoneRequest =
     Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest descriptorZoneRequest
 
 
-descriptorZone : Proto.Descriptor.MessageDescriptor
+descriptorZone : Proto.Message.Descriptor
 descriptorZone =
-    { typeName = "zones.v1.Zone"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "offset_seconds", jsonName = "offsetSeconds", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
+    Proto.Message.descriptor "zones.v1.Zone"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "offset_seconds" "offsetSeconds" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
         ]
-    , oneofs = []
-    }
 
 
 messageZone : Proto.Message.Message Zone

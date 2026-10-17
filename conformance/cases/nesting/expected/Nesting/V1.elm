@@ -6,8 +6,9 @@ module Nesting.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -167,14 +168,12 @@ defaultSum =
 -- DESCRIPTORS
 
 
-descriptorOuterInnerKind : Proto.Descriptor.EnumDescriptor
+descriptorOuterInnerKind : Proto.Enum.Descriptor
 descriptorOuterInnerKind =
-    { typeName = "nesting.v1.Outer.Inner.Kind"
-    , values =
-        [ { name = "KIND_UNSPECIFIED", number = 0 }
-        , { name = "KIND_DRAFT", number = 1 }
+    Proto.Enum.descriptor "nesting.v1.Outer.Inner.Kind"
+        [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "KIND_DRAFT" 1
         ]
-    }
 
 
 enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
@@ -182,16 +181,13 @@ enumOuterInnerKind =
     Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified descriptorOuterInnerKind
 
 
-descriptorOuter : Proto.Descriptor.MessageDescriptor
+descriptorOuter : Proto.Message.Descriptor
 descriptorOuter =
-    { typeName = "nesting.v1.Outer"
-    , fields =
-        [ { name = "inner", jsonName = "inner", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "nesting.v1.Outer.Inner", oneof = Nothing }
-        , { name = "kind", jsonName = "kind", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "nesting.v1.Outer.Inner.Kind", oneof = Nothing }
-        , { name = "all", jsonName = "all", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "nesting.v1.Outer.Inner.Deepest", oneof = Nothing }
+    Proto.Message.descriptor "nesting.v1.Outer"
+        [ Proto.Field.descriptor "inner" "inner" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner")
+        , Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        , Proto.Field.descriptor "all" "all" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
         ]
-    , oneofs = []
-    }
 
 
 messageOuter : Proto.Message.Message Outer
@@ -199,12 +195,9 @@ messageOuter =
     Proto.Message.message encodeOuter decodeOuter defaultOuter descriptorOuter
 
 
-descriptorOuterInner : Proto.Descriptor.MessageDescriptor
+descriptorOuterInner : Proto.Message.Descriptor
 descriptorOuterInner =
-    { typeName = "nesting.v1.Outer.Inner"
-    , fields = [ { name = "deepest", jsonName = "deepest", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "nesting.v1.Outer.Inner.Deepest", oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "nesting.v1.Outer.Inner" [ Proto.Field.descriptor "deepest" "deepest" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest") ]
 
 
 messageOuterInner : Proto.Message.Message OuterInner
@@ -212,12 +205,9 @@ messageOuterInner =
     Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner descriptorOuterInner
 
 
-descriptorOuterInnerDeepest : Proto.Descriptor.MessageDescriptor
+descriptorOuterInnerDeepest : Proto.Message.Descriptor
 descriptorOuterInnerDeepest =
-    { typeName = "nesting.v1.Outer.Inner.Deepest"
-    , fields = [ { name = "kind", jsonName = "kind", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "nesting.v1.Outer.Inner.Kind", oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest" [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind") ]
 
 
 messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
@@ -225,16 +215,13 @@ messageOuterInnerDeepest =
     Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest descriptorOuterInnerDeepest
 
 
-descriptorNode : Proto.Descriptor.MessageDescriptor
+descriptorNode : Proto.Message.Descriptor
 descriptorNode =
-    { typeName = "nesting.v1.Node"
-    , fields =
-        [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "children", jsonName = "children", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "nesting.v1.Node", oneof = Nothing }
-        , { name = "by_name", jsonName = "byName", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "nesting.v1.Node", oneof = Nothing }
+    Proto.Message.descriptor "nesting.v1.Node"
+        [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "children" "children" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
+        , Proto.Field.descriptor "by_name" "byName" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "nesting.v1.Node")
         ]
-    , oneofs = []
-    }
 
 
 messageNode : Proto.Message.Message Node
@@ -242,15 +229,12 @@ messageNode =
     Proto.Message.message encodeNode decodeNode defaultNode descriptorNode
 
 
-descriptorPerson : Proto.Descriptor.MessageDescriptor
+descriptorPerson : Proto.Message.Descriptor
 descriptorPerson =
-    { typeName = "nesting.v1.Person"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "employer", jsonName = "employer", number = 2, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Message "nesting.v1.Company", oneof = Nothing }
+    Proto.Message.descriptor "nesting.v1.Person"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "employer" "employer" 2 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "nesting.v1.Company")
         ]
-    , oneofs = []
-    }
 
 
 messagePerson : Proto.Message.Message Person
@@ -258,15 +242,12 @@ messagePerson =
     Proto.Message.message encodePerson decodePerson defaultPerson descriptorPerson
 
 
-descriptorCompany : Proto.Descriptor.MessageDescriptor
+descriptorCompany : Proto.Message.Descriptor
 descriptorCompany =
-    { typeName = "nesting.v1.Company"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "staff", jsonName = "staff", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "nesting.v1.Person", oneof = Nothing }
+    Proto.Message.descriptor "nesting.v1.Company"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "staff" "staff" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Person")
         ]
-    , oneofs = []
-    }
 
 
 messageCompany : Proto.Message.Message Company
@@ -274,12 +255,9 @@ messageCompany =
     Proto.Message.message encodeCompany decodeCompany defaultCompany descriptorCompany
 
 
-descriptorForest : Proto.Descriptor.MessageDescriptor
+descriptorForest : Proto.Message.Descriptor
 descriptorForest =
-    { typeName = "nesting.v1.Forest"
-    , fields = [ { name = "trees", jsonName = "trees", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "nesting.v1.Node", oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "nesting.v1.Forest" [ Proto.Field.descriptor "trees" "trees" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node") ]
 
 
 messageForest : Proto.Message.Message Forest
@@ -287,15 +265,14 @@ messageForest =
     Proto.Message.message encodeForest decodeForest defaultForest descriptorForest
 
 
-descriptorExpr : Proto.Descriptor.MessageDescriptor
+descriptorExpr : Proto.Message.Descriptor
 descriptorExpr =
-    { typeName = "nesting.v1.Expr"
-    , fields =
-        [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Just "value" }
-        , { name = "sum", jsonName = "sum", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "nesting.v1.Sum", oneof = Just "value" }
+    Proto.Message.descriptor "nesting.v1.Expr"
+        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+            |> Proto.Field.inOneof "value"
+        , Proto.Field.descriptor "sum" "sum" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Sum")
+            |> Proto.Field.inOneof "value"
         ]
-    , oneofs = [ "value" ]
-    }
 
 
 messageExpr : Proto.Message.Message Expr
@@ -303,12 +280,9 @@ messageExpr =
     Proto.Message.message encodeExpr decodeExpr defaultExpr descriptorExpr
 
 
-descriptorSum : Proto.Descriptor.MessageDescriptor
+descriptorSum : Proto.Message.Descriptor
 descriptorSum =
-    { typeName = "nesting.v1.Sum"
-    , fields = [ { name = "terms", jsonName = "terms", number = 1, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "nesting.v1.Expr", oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "nesting.v1.Sum" [ Proto.Field.descriptor "terms" "terms" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Expr") ]
 
 
 messageSum : Proto.Message.Message Sum

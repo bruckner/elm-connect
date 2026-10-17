@@ -6,9 +6,10 @@ module Routes.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Duration exposing (Duration)
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -223,15 +224,13 @@ defaultUpdateResourceRequest =
 -- DESCRIPTORS
 
 
-descriptorKind : Proto.Descriptor.EnumDescriptor
+descriptorKind : Proto.Enum.Descriptor
 descriptorKind =
-    { typeName = "routes.v1.Kind"
-    , values =
-        [ { name = "KIND_UNSPECIFIED", number = 0 }
-        , { name = "KIND_TEXT", number = 1 }
-        , { name = "KIND_IMAGE", number = 2 }
+    Proto.Enum.descriptor "routes.v1.Kind"
+        [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "KIND_TEXT" 1
+        , Proto.EnumValue.descriptor "KIND_IMAGE" 2
         ]
-    }
 
 
 enumKind : Proto.Enum.Enum Kind
@@ -239,18 +238,15 @@ enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified descriptorKind
 
 
-descriptorGetMessageRequest : Proto.Descriptor.MessageDescriptor
+descriptorGetMessageRequest : Proto.Message.Descriptor
 descriptorGetMessageRequest =
-    { typeName = "routes.v1.GetMessageRequest"
-    , fields =
-        [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "revision", jsonName = "revision", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-        , { name = "sub", jsonName = "sub", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.GetMessageRequest.SubMessage", oneof = Nothing }
-        , { name = "user_id", jsonName = "userId", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "name", jsonName = "name", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.GetMessageRequest"
+        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "revision" "revision" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "sub" "sub" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.GetMessageRequest.SubMessage")
+        , Proto.Field.descriptor "user_id" "userId" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "name" "name" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
-    , oneofs = []
-    }
 
 
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
@@ -258,12 +254,9 @@ messageGetMessageRequest =
     Proto.Message.message encodeGetMessageRequest decodeGetMessageRequest defaultGetMessageRequest descriptorGetMessageRequest
 
 
-descriptorGetMessageRequestSubMessage : Proto.Descriptor.MessageDescriptor
+descriptorGetMessageRequestSubMessage : Proto.Message.Descriptor
 descriptorGetMessageRequestSubMessage =
-    { typeName = "routes.v1.GetMessageRequest.SubMessage"
-    , fields = [ { name = "subfield", jsonName = "subfield", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "routes.v1.GetMessageRequest.SubMessage" [ Proto.Field.descriptor "subfield" "subfield" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
@@ -271,15 +264,12 @@ messageGetMessageRequestSubMessage =
     Proto.Message.message encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage defaultGetMessageRequestSubMessage descriptorGetMessageRequestSubMessage
 
 
-descriptorMessage : Proto.Descriptor.MessageDescriptor
+descriptorMessage : Proto.Message.Descriptor
 descriptorMessage =
-    { typeName = "routes.v1.Message"
-    , fields =
-        [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "text", jsonName = "text", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.Message"
+        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "text" "text" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
-    , oneofs = []
-    }
 
 
 messageMessage : Proto.Message.Message Message
@@ -287,15 +277,12 @@ messageMessage =
     Proto.Message.message encodeMessage decodeMessage defaultMessage descriptorMessage
 
 
-descriptorUpdateMessageRequest : Proto.Descriptor.MessageDescriptor
+descriptorUpdateMessageRequest : Proto.Message.Descriptor
 descriptorUpdateMessageRequest =
-    { typeName = "routes.v1.UpdateMessageRequest"
-    , fields =
-        [ { name = "message_id", jsonName = "messageId", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "message", jsonName = "message", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Message", oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.UpdateMessageRequest"
+        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Message")
         ]
-    , oneofs = []
-    }
 
 
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
@@ -303,35 +290,34 @@ messageUpdateMessageRequest =
     Proto.Message.message encodeUpdateMessageRequest decodeUpdateMessageRequest defaultUpdateMessageRequest descriptorUpdateMessageRequest
 
 
-descriptorEverything : Proto.Descriptor.MessageDescriptor
+descriptorEverything : Proto.Message.Descriptor
 descriptorEverything =
-    { typeName = "routes.v1.Everything"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "count", jsonName = "count", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-        , { name = "big", jsonName = "big", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int64, oneof = Nothing }
-        , { name = "ubig", jsonName = "ubig", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Uint64, oneof = Nothing }
-        , { name = "flag", jsonName = "flag", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-        , { name = "ratio", jsonName = "ratio", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
-        , { name = "scale", jsonName = "scale", number = 7, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Float, oneof = Nothing }
-        , { name = "data", jsonName = "data", number = 8, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bytes, oneof = Nothing }
-        , { name = "kind", jsonName = "kind", number = 9, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
-        , { name = "tags", jsonName = "tags", number = 10, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "kinds", jsonName = "kinds", number = 11, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
-        , { name = "numbers", jsonName = "numbers", number = 12, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-        , { name = "maybe_count", jsonName = "maybeCount", number = 13, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-        , { name = "maybe_name", jsonName = "maybeName", number = 14, cardinality = Proto.Descriptor.Optional, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "at", jsonName = "at", number = 15, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Timestamp", oneof = Nothing }
-        , { name = "wait", jsonName = "wait", number = 16, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Duration", oneof = Nothing }
-        , { name = "mask", jsonName = "mask", number = 17, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
-        , { name = "limit", jsonName = "limit", number = 18, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Int32Value", oneof = Nothing }
-        , { name = "label", jsonName = "label", number = 19, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.StringValue", oneof = Nothing }
-        , { name = "inner", jsonName = "inner", number = 20, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Inner", oneof = Nothing }
-        , { name = "text", jsonName = "text", number = 21, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "choice" }
-        , { name = "number", jsonName = "number", number = 22, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Just "choice" }
+    Proto.Message.descriptor "routes.v1.Everything"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "count" "count" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "big" "big" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "ubig" "ubig" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        , Proto.Field.descriptor "flag" "flag" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "ratio" "ratio" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        , Proto.Field.descriptor "scale" "scale" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
+        , Proto.Field.descriptor "data" "data" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "kind" "kind" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "tags" "tags" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "kinds" "kinds" 11 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "numbers" "numbers" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "maybe_count" "maybeCount" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "maybe_name" "maybeName" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "at" "at" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        , Proto.Field.descriptor "wait" "wait" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
+        , Proto.Field.descriptor "mask" "mask" 17 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
+        , Proto.Field.descriptor "limit" "limit" 18 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
+        , Proto.Field.descriptor "label" "label" 19 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
+        , Proto.Field.descriptor "inner" "inner" 20 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Inner")
+        , Proto.Field.descriptor "text" "text" 21 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "choice"
+        , Proto.Field.descriptor "number" "number" 22 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+            |> Proto.Field.inOneof "choice"
         ]
-    , oneofs = [ "choice" ]
-    }
 
 
 messageEverything : Proto.Message.Message Everything
@@ -339,15 +325,12 @@ messageEverything =
     Proto.Message.message encodeEverything decodeEverything defaultEverything descriptorEverything
 
 
-descriptorInner : Proto.Descriptor.MessageDescriptor
+descriptorInner : Proto.Message.Descriptor
 descriptorInner =
-    { typeName = "routes.v1.Inner"
-    , fields =
-        [ { name = "a", jsonName = "a", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "deep", jsonName = "deep", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Deep", oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.Inner"
+        [ Proto.Field.descriptor "a" "a" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "deep" "deep" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Deep")
         ]
-    , oneofs = []
-    }
 
 
 messageInner : Proto.Message.Message Inner
@@ -355,15 +338,12 @@ messageInner =
     Proto.Message.message encodeInner decodeInner defaultInner descriptorInner
 
 
-descriptorDeep : Proto.Descriptor.MessageDescriptor
+descriptorDeep : Proto.Message.Descriptor
 descriptorDeep =
-    { typeName = "routes.v1.Deep"
-    , fields =
-        [ { name = "b", jsonName = "b", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing }
-        , { name = "c", jsonName = "c", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.Deep"
+        [ Proto.Field.descriptor "b" "b" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "c" "c" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
-    , oneofs = []
-    }
 
 
 messageDeep : Proto.Message.Message Deep
@@ -371,12 +351,9 @@ messageDeep =
     Proto.Message.message encodeDeep decodeDeep defaultDeep descriptorDeep
 
 
-descriptorFileRequest : Proto.Descriptor.MessageDescriptor
+descriptorFileRequest : Proto.Message.Descriptor
 descriptorFileRequest =
-    { typeName = "routes.v1.FileRequest"
-    , fields = [ { name = "path", jsonName = "path", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "routes.v1.FileRequest" [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageFileRequest : Proto.Message.Message FileRequest
@@ -384,18 +361,15 @@ messageFileRequest =
     Proto.Message.message encodeFileRequest decodeFileRequest defaultFileRequest descriptorFileRequest
 
 
-descriptorResource : Proto.Descriptor.MessageDescriptor
+descriptorResource : Proto.Message.Descriptor
 descriptorResource =
-    { typeName = "routes.v1.Resource"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "display_name", jsonName = "displayName", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "labels", jsonName = "labels", number = 3, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "kinds", jsonName = "kinds", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.Int64, kind = Proto.Descriptor.Enum "routes.v1.Kind", oneof = Nothing }
-        , { name = "weights", jsonName = "weights", number = 5, cardinality = Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar Proto.Descriptor.Double, oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.Resource"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "display_name" "displayName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "labels" "labels" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "kinds" "kinds" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "weights" "weights" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
         ]
-    , oneofs = []
-    }
 
 
 messageResource : Proto.Message.Message Resource
@@ -403,15 +377,12 @@ messageResource =
     Proto.Message.message encodeResource decodeResource defaultResource descriptorResource
 
 
-descriptorUpdateResourceRequest : Proto.Descriptor.MessageDescriptor
+descriptorUpdateResourceRequest : Proto.Message.Descriptor
 descriptorUpdateResourceRequest =
-    { typeName = "routes.v1.UpdateResourceRequest"
-    , fields =
-        [ { name = "resource", jsonName = "resource", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "routes.v1.Resource", oneof = Nothing }
-        , { name = "update_mask", jsonName = "updateMask", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.FieldMask", oneof = Nothing }
+    Proto.Message.descriptor "routes.v1.UpdateResourceRequest"
+        [ Proto.Field.descriptor "resource" "resource" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Resource")
+        , Proto.Field.descriptor "update_mask" "updateMask" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
         ]
-    , oneofs = []
-    }
 
 
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest

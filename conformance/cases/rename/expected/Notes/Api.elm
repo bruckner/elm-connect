@@ -5,8 +5,9 @@ module Notes.Api exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -82,14 +83,12 @@ defaultGetNoteRequest =
 -- DESCRIPTORS
 
 
-descriptorAudience : Proto.Descriptor.EnumDescriptor
+descriptorAudience : Proto.Enum.Descriptor
 descriptorAudience =
-    { typeName = "notes.v1.Visibility"
-    , values =
-        [ { name = "VISIBILITY_UNSPECIFIED", number = 0 }
-        , { name = "VISIBILITY_PUBLIC", number = 1 }
+    Proto.Enum.descriptor "notes.v1.Visibility"
+        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "VISIBILITY_PUBLIC" 1
         ]
-    }
 
 
 enumAudience : Proto.Enum.Enum Audience
@@ -97,18 +96,17 @@ enumAudience =
     Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified descriptorAudience
 
 
-descriptorMemo : Proto.Descriptor.MessageDescriptor
+descriptorMemo : Proto.Message.Descriptor
 descriptorMemo =
-    { typeName = "notes.v1.Note"
-    , fields =
-        [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "visibility", jsonName = "visibility", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "notes.v1.Visibility", oneof = Nothing }
-        , { name = "revisions", jsonName = "revisions", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Note.Revision", oneof = Nothing }
-        , { name = "text", jsonName = "text", number = 4, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "kind" }
-        , { name = "link", jsonName = "link", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "kind" }
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "visibility" "visibility" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "revisions" "revisions" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note.Revision")
+        , Proto.Field.descriptor "text" "text" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "kind"
+        , Proto.Field.descriptor "link" "link" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "kind"
         ]
-    , oneofs = [ "kind" ]
-    }
 
 
 messageMemo : Proto.Message.Message Memo
@@ -116,12 +114,9 @@ messageMemo =
     Proto.Message.message encodeMemo decodeMemo defaultMemo descriptorMemo
 
 
-descriptorEdit : Proto.Descriptor.MessageDescriptor
+descriptorEdit : Proto.Message.Descriptor
 descriptorEdit =
-    { typeName = "notes.v1.Note.Revision"
-    , fields = [ { name = "number", jsonName = "number", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Int32, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "notes.v1.Note.Revision" [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32) ]
 
 
 messageEdit : Proto.Message.Message Edit
@@ -129,12 +124,9 @@ messageEdit =
     Proto.Message.message encodeEdit decodeEdit defaultEdit descriptorEdit
 
 
-descriptorGetNoteRequest : Proto.Descriptor.MessageDescriptor
+descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    { typeName = "notes.v1.GetNoteRequest"
-    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest

@@ -1,30 +1,44 @@
 module Proto.Enum exposing
     ( Enum, enum
-    , encode, decoder, default, descriptor, typeName
+    , encode, decoder, default, toDescriptor
     , toName, fromName, toNumber, fromNumber
+    , Descriptor, descriptor
+    , typeName, values
     )
 
-{-| An enum type as a value: its proto3 JSON codecs, its zero value and its
-descriptor, together. Generated code gives one per enum
-(`Notes.V1.enumVisibility : Enum Visibility`).
+{-| An enum type: its typed value, which holds its proto3 JSON codecs, its
+zero value and its descriptor together, and its descriptor, what the proto
+says about it as data. Generated code gives one of each per enum
+(`Notes.V1.enumVisibility : Enum Visibility`,
+`Notes.V1.descriptorVisibility : Descriptor`).
 
 @docs Enum, enum
 
 
-# Reading
+# Reading a typed value
 
-@docs encode, decoder, default, descriptor, typeName
+@docs encode, decoder, default, toDescriptor
 
 
 # Names and numbers
 
 @docs toName, fromName, toNumber, fromNumber
 
+
+# Descriptors
+
+@docs Descriptor, descriptor
+
+
+# Reading a descriptor
+
+@docs typeName, values
+
 -}
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor exposing (EnumDescriptor)
+import Proto.EnumValue as EnumValue
 
 
 {-| An enum type whose Elm values are `a`. It is opaque: built by
@@ -40,7 +54,7 @@ type Enum a
         { encode : a -> Json.Encode.Value
         , decoder : Json.Decode.Decoder a
         , default : a
-        , descriptor : EnumDescriptor
+        , descriptor : Descriptor
         }
 
 
@@ -52,7 +66,7 @@ type Enum a
         Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
 
 -}
-enum : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> EnumDescriptor -> Enum a
+enum : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Enum a
 enum encodeJson jsonDecoder zero enumDescriptor =
     Enum
         { encode = encodeJson
@@ -83,23 +97,16 @@ default (Enum e) =
     e.default
 
 
-{-| What the proto says about the enum.
+{-| What the proto says about the enum, read by the functions below.
 -}
-descriptor : Enum a -> EnumDescriptor
-descriptor (Enum e) =
+toDescriptor : Enum a -> Descriptor
+toDescriptor (Enum e) =
     e.descriptor
-
-
-{-| The enum's full name, such as `notes.v1.Visibility`.
--}
-typeName : Enum a -> String
-typeName (Enum e) =
-    e.descriptor.typeName
 
 
 declared : Enum a -> List ( String, Int )
 declared (Enum e) =
-    List.map (\v -> ( v.name, v.number )) e.descriptor.values
+    List.map (\v -> ( EnumValue.name v, EnumValue.number v )) (values e.descriptor)
 
 
 {-| The proto name of a value, such as `"VISIBILITY_PUBLIC"`: the one its
@@ -176,3 +183,41 @@ find matches list =
 
             else
                 find matches rest
+
+
+{-| An enum type's descriptor: its full name and its values. It is opaque,
+built by [`descriptor`](#descriptor) and read by the functions below, so that
+a later release can say more about an enum without breaking code that builds
+or reads one.
+-}
+type Descriptor
+    = Descriptor
+        { typeName : String
+        , values : List EnumValue.Descriptor
+        }
+
+
+{-| An enum of this full name, such as `notes.v1.Visibility`, with these values
+in declaration order
+([`Proto.EnumValue.descriptor`](Proto-EnumValue#descriptor)). An alias
+(`allow_alias`) is a value of its own, with the number of the value it
+aliases.
+-}
+descriptor : String -> List EnumValue.Descriptor -> Descriptor
+descriptor fullName enumValues =
+    Descriptor { typeName = fullName, values = enumValues }
+
+
+{-| The enum's full name, such as `notes.v1.Visibility`.
+-}
+typeName : Descriptor -> String
+typeName (Descriptor e) =
+    e.typeName
+
+
+{-| Every value in declaration order. An alias (`allow_alias`) is a value of
+its own, with the number of the value it aliases.
+-}
+values : Descriptor -> List EnumValue.Descriptor
+values (Descriptor e) =
+    e.values

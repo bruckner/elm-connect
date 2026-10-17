@@ -2,8 +2,8 @@ module Proto.EnumTest exposing (suite)
 
 import Expect
 import Json.Encode
-import Proto.Descriptor exposing (EnumDescriptor)
 import Proto.Enum as Enum exposing (Enum)
+import Proto.EnumValue as EnumValue
 import Proto.Json
 import Test exposing (Test, describe, test)
 
@@ -19,19 +19,18 @@ type Priority
 enumPriority : Enum Priority
 enumPriority =
     priorityAs
-        { typeName = "t.v1.Priority"
-        , values =
-            [ { name = "NONE", number = 0 }
-            , { name = "HIGH", number = 2 }
-            , { name = "LOW", number = 1 }
-            , { name = "URGENT", number = 2 }
+        (Enum.descriptor "t.v1.Priority"
+            [ EnumValue.descriptor "NONE" 0
+            , EnumValue.descriptor "HIGH" 2
+            , EnumValue.descriptor "LOW" 1
+            , EnumValue.descriptor "URGENT" 2
             ]
-        }
+        )
 
 
 {-| Priority's codecs under another descriptor.
 -}
-priorityAs : EnumDescriptor -> Enum Priority
+priorityAs : Enum.Descriptor -> Enum Priority
 priorityAs =
     Enum.enum
         (\priority ->
@@ -61,7 +60,7 @@ suite =
     describe "Proto.Enum"
         [ test "the type name is the descriptor's" <|
             \_ ->
-                Enum.typeName enumPriority
+                Enum.typeName (Enum.toDescriptor enumPriority)
                     |> Expect.equal "t.v1.Priority"
         , test "a value's name is the one its encoder writes, its number the one declared for it" <|
             \_ ->
@@ -77,6 +76,6 @@ suite =
                     |> Expect.equal [ Just PriorityNone, Just PriorityLow, Just PriorityHigh, Nothing, Nothing ]
         , test "a name the descriptor does not declare reads as nothing, though the decoder would take it" <|
             \_ ->
-                Enum.fromName (priorityAs { typeName = "t.v1.Priority", values = [] }) "HIGH"
+                Enum.fromName (priorityAs (Enum.descriptor "t.v1.Priority" [])) "HIGH"
                     |> Expect.equal Nothing
         ]

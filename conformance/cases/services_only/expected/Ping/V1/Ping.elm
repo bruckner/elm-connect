@@ -3,7 +3,6 @@
 
 module Ping.V1.Ping exposing (..)
 
-import Proto.Descriptor
 import Proto.Json
 import Proto.Method
 import Proto.Version
@@ -22,15 +21,14 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorPing : Proto.Descriptor.MethodDescriptor
+descriptorPing : Proto.Method.Descriptor
 descriptorPing =
-    { service = "ping.v1.Ping"
-    , name = "Ping"
-    , idempotent = False
-    , input = "google.protobuf.Empty"
-    , output = "google.protobuf.Timestamp"
-    , bindings = []
-    }
+    Proto.Method.descriptor "ping.v1.Ping"
+        "Ping"
+        False
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []
 
 
 

@@ -5,8 +5,9 @@ module Api.Example.People exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -50,14 +51,12 @@ defaultUser =
 -- DESCRIPTORS
 
 
-descriptorRole : Proto.Descriptor.EnumDescriptor
+descriptorRole : Proto.Enum.Descriptor
 descriptorRole =
-    { typeName = "users.v1.Role"
-    , values =
-        [ { name = "ROLE_UNSPECIFIED", number = 0 }
-        , { name = "ROLE_EDITOR", number = 1 }
+    Proto.Enum.descriptor "users.v1.Role"
+        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "ROLE_EDITOR" 1
         ]
-    }
 
 
 enumRole : Proto.Enum.Enum Role
@@ -65,15 +64,12 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
 
 
-descriptorUser : Proto.Descriptor.MessageDescriptor
+descriptorUser : Proto.Message.Descriptor
 descriptorUser =
-    { typeName = "users.v1.User"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "role", jsonName = "role", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+    Proto.Message.descriptor "users.v1.User"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
         ]
-    , oneofs = []
-    }
 
 
 messageUser : Proto.Message.Message User

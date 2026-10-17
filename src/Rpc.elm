@@ -86,7 +86,6 @@ import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Process
 import Proto.Any exposing (Any)
-import Proto.Descriptor exposing (MethodDescriptor)
 import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
 import Proto.Message exposing (Message)
@@ -180,7 +179,7 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Call c) =
-    if index >= 0 && index < List.length (Method.descriptor c.method).bindings then
+    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
         Just (Call { c | binding = index })
 
     else
@@ -200,30 +199,30 @@ method (Call c) =
 
 {-| What the proto says about the method the call is of.
 -}
-descriptor : Call req res -> MethodDescriptor
+descriptor : Call req res -> Method.Descriptor
 descriptor (Call c) =
-    Method.descriptor c.method
+    Method.toDescriptor c.method
 
 
 {-| The fully-qualified service name, such as `notes.v1.Notes`.
 -}
 serviceName : Call req res -> String
 serviceName (Call c) =
-    (Method.descriptor c.method).service
+    Method.service (Method.toDescriptor c.method)
 
 
 {-| The method name as declared, such as `GetNote`.
 -}
 methodName : Call req res -> String
 methodName (Call c) =
-    (Method.descriptor c.method).name
+    Method.name (Method.toDescriptor c.method)
 
 
 {-| Whether the method has no side effects.
 -}
 idempotent : Call req res -> Bool
 idempotent (Call c) =
-    (Method.descriptor c.method).idempotent
+    Method.idempotent (Method.toDescriptor c.method)
 
 
 {-| The request the call sends.
@@ -247,8 +246,8 @@ not included.
 toJson : Call req res -> Value
 toJson (Call c) =
     Json.Encode.object
-        [ ( "service", Json.Encode.string (Method.descriptor c.method).service )
-        , ( "method", Json.Encode.string (Method.descriptor c.method).name )
+        [ ( "service", Json.Encode.string (Method.service (Method.toDescriptor c.method)) )
+        , ( "method", Json.Encode.string (Method.name (Method.toDescriptor c.method)) )
         , ( "request", Method.encodeRequest c.method c.message )
         ]
 
@@ -458,8 +457,8 @@ taskTraced cfg ((Call fields) as c) =
                                                     |> Maybe.map (.headers >> splitTrailers)
                                                     |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
                                         in
-                                        ( { service = (Method.descriptor fields.method).service
-                                          , method = (Method.descriptor fields.method).name
+                                        ( { service = Method.service (Method.toDescriptor fields.method)
+                                          , method = Method.name (Method.toDescriptor fields.method)
                                           , binding =
                                                 case route cfg c of
                                                     Bound index _ ->
@@ -786,7 +785,7 @@ route cfg (Call fields) =
         Transcode ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding (Method.descriptor fields.method).bindings) of
+            case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of
                 Just (Binding rule) ->
                     Bound fields.binding rule
 
@@ -798,7 +797,7 @@ connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req 
 connectRequest options cfg ((Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ (Method.descriptor fields.method).service ++ "/" ++ (Method.descriptor fields.method).name
+            trimSlash cfg.baseUrl ++ "/" ++ Method.service (Method.toDescriptor fields.method) ++ "/" ++ Method.name (Method.toDescriptor fields.method)
 
         json =
             Json.Encode.encode 0 (requestJson c)
@@ -827,7 +826,7 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && (Method.descriptor fields.method).idempotent && fits then
+    if options.useGet && Method.idempotent (Method.toDescriptor fields.method) && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
@@ -1263,7 +1262,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy (Method.descriptor fields.method).idempotent tried (code error)
+            Retry.delay policy (Method.idempotent (Method.toDescriptor fields.method)) tried (code error)
 
         _ ->
             Nothing

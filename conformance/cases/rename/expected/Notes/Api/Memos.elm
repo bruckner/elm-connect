@@ -4,7 +4,6 @@
 module Notes.Api.Memos exposing (..)
 
 import Notes.Api
-import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -21,15 +20,14 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorFetchMemo : Proto.Descriptor.MethodDescriptor
+descriptorFetchMemo : Proto.Method.Descriptor
 descriptorFetchMemo =
-    { service = "notes.v1.NotesService"
-    , name = "GetNote"
-    , idempotent = False
-    , input = "notes.v1.GetNoteRequest"
-    , output = "notes.v1.Note"
-    , bindings = []
-    }
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "GetNote"
+        False
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        []
 
 
 

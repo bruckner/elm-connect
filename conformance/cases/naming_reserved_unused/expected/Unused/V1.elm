@@ -5,8 +5,9 @@ module Unused.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Enum
+import Proto.EnumValue
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -99,14 +100,12 @@ defaultTrue =
 -- DESCRIPTORS
 
 
-descriptorChar : Proto.Descriptor.EnumDescriptor
+descriptorChar : Proto.Enum.Descriptor
 descriptorChar =
-    { typeName = "unused.v1.Char"
-    , values =
-        [ { name = "CHAR_UNSPECIFIED", number = 0 }
-        , { name = "CHAR_A", number = 1 }
+    Proto.Enum.descriptor "unused.v1.Char"
+        [ Proto.EnumValue.descriptor "CHAR_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "CHAR_A" 1
         ]
-    }
 
 
 enumChar : Proto.Enum.Enum Char
@@ -114,12 +113,9 @@ enumChar =
     Proto.Enum.enum encodeChar decodeChar CharUnspecified descriptorChar
 
 
-descriptorDict : Proto.Descriptor.MessageDescriptor
+descriptorDict : Proto.Message.Descriptor
 descriptorDict =
-    { typeName = "unused.v1.Dict"
-    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "unused.v1.Dict" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageDict : Proto.Message.Message Dict
@@ -127,16 +123,13 @@ messageDict =
     Proto.Message.message encodeDict decodeDict defaultDict descriptorDict
 
 
-descriptorResult : Proto.Descriptor.MessageDescriptor
+descriptorResult : Proto.Message.Descriptor
 descriptorResult =
-    { typeName = "unused.v1.Result"
-    , fields =
-        [ { name = "ok", jsonName = "ok", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.Bool, oneof = Nothing }
-        , { name = "dict", jsonName = "dict", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "unused.v1.Dict", oneof = Nothing }
-        , { name = "chars", jsonName = "chars", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Enum "unused.v1.Char", oneof = Nothing }
+    Proto.Message.descriptor "unused.v1.Result"
+        [ Proto.Field.descriptor "ok" "ok" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "dict" "dict" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "unused.v1.Dict")
+        , Proto.Field.descriptor "chars" "chars" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "unused.v1.Char")
         ]
-    , oneofs = []
-    }
 
 
 messageResult : Proto.Message.Message Result
@@ -144,12 +137,9 @@ messageResult =
     Proto.Message.message encodeResult decodeResult defaultResult descriptorResult
 
 
-descriptorOrder : Proto.Descriptor.MessageDescriptor
+descriptorOrder : Proto.Message.Descriptor
 descriptorOrder =
-    { typeName = "unused.v1.Order"
-    , fields = []
-    , oneofs = []
-    }
+    Proto.Message.descriptor "unused.v1.Order" []
 
 
 messageOrder : Proto.Message.Message Order
@@ -157,12 +147,9 @@ messageOrder =
     Proto.Message.message encodeOrder decodeOrder defaultOrder descriptorOrder
 
 
-descriptorNever : Proto.Descriptor.MessageDescriptor
+descriptorNever : Proto.Message.Descriptor
 descriptorNever =
-    { typeName = "unused.v1.Never"
-    , fields = []
-    , oneofs = []
-    }
+    Proto.Message.descriptor "unused.v1.Never" []
 
 
 messageNever : Proto.Message.Message Never
@@ -170,12 +157,9 @@ messageNever =
     Proto.Message.message encodeNever decodeNever defaultNever descriptorNever
 
 
-descriptorCmd : Proto.Descriptor.MessageDescriptor
+descriptorCmd : Proto.Message.Descriptor
 descriptorCmd =
-    { typeName = "unused.v1.Cmd"
-    , fields = []
-    , oneofs = []
-    }
+    Proto.Message.descriptor "unused.v1.Cmd" []
 
 
 messageCmd : Proto.Message.Message Cmd
@@ -183,12 +167,9 @@ messageCmd =
     Proto.Message.message encodeCmd decodeCmd defaultCmd descriptorCmd
 
 
-descriptorTrue : Proto.Descriptor.MessageDescriptor
+descriptorTrue : Proto.Message.Descriptor
 descriptorTrue =
-    { typeName = "unused.v1.True"
-    , fields = []
-    , oneofs = []
-    }
+    Proto.Message.descriptor "unused.v1.True" []
 
 
 messageTrue : Proto.Message.Message True

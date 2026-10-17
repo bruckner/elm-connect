@@ -26,10 +26,13 @@ in `Proto.WellKnown` so that `Proto.Registry` can hold them without depending
 on the codecs.
 -}
 
-import Proto.Descriptor exposing (Cardinality(..), EnumDescriptor, Field, Kind(..), MessageDescriptor, Scalar(..))
+import Proto.Enum as Enum
+import Proto.EnumValue as EnumValue
+import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
+import Proto.Message as Message
 
 
-messages : List MessageDescriptor
+messages : List Message.Descriptor
 messages =
     [ any
     , timestamp
@@ -51,163 +54,119 @@ messages =
     ]
 
 
-enums : List EnumDescriptor
+enums : List Enum.Descriptor
 enums =
-    [ { typeName = "google.protobuf.NullValue"
-      , values = [ { name = "NULL_VALUE", number = 0 } ]
-      }
-    ]
+    [ Enum.descriptor "google.protobuf.NullValue" [ EnumValue.descriptor "NULL_VALUE" 0 ] ]
 
 
-field : String -> String -> Int -> Cardinality -> Kind -> Field
-field name jsonName number cardinality kind =
-    { name = name
-    , jsonName = jsonName
-    , number = number
-    , cardinality = cardinality
-    , kind = kind
-    , oneof = Nothing
-    }
-
-
-member : String -> String -> Int -> Kind -> Field
+member : String -> String -> Int -> Kind -> Field.Descriptor
 member name jsonName number kind =
-    { name = name
-    , jsonName = jsonName
-    , number = number
-    , cardinality = Singular
-    , kind = kind
-    , oneof = Just "kind"
-    }
+    Field.descriptor name jsonName number CardinalitySingular kind |> Field.inOneof "kind"
 
 
-secondsAndNanos : String -> MessageDescriptor
+secondsAndNanos : String -> Message.Descriptor
 secondsAndNanos typeName =
-    { typeName = typeName
-    , fields =
-        [ field "seconds" "seconds" 1 Singular (Scalar Int64)
-        , field "nanos" "nanos" 2 Singular (Scalar Int32)
+    Message.descriptor typeName
+        [ Field.descriptor "seconds" "seconds" 1 CardinalitySingular (KindScalar ScalarInt64)
+        , Field.descriptor "nanos" "nanos" 2 CardinalitySingular (KindScalar ScalarInt32)
         ]
-    , oneofs = []
-    }
 
 
-timestamp : MessageDescriptor
+timestamp : Message.Descriptor
 timestamp =
     secondsAndNanos "google.protobuf.Timestamp"
 
 
-duration : MessageDescriptor
+duration : Message.Descriptor
 duration =
     secondsAndNanos "google.protobuf.Duration"
 
 
-any : MessageDescriptor
+any : Message.Descriptor
 any =
-    { typeName = "google.protobuf.Any"
-    , fields =
-        [ field "type_url" "typeUrl" 1 Singular (Scalar String)
-        , field "value" "value" 2 Singular (Scalar Bytes)
+    Message.descriptor "google.protobuf.Any"
+        [ Field.descriptor "type_url" "typeUrl" 1 CardinalitySingular (KindScalar ScalarString)
+        , Field.descriptor "value" "value" 2 CardinalitySingular (KindScalar ScalarBytes)
         ]
-    , oneofs = []
-    }
 
 
-fieldMask : MessageDescriptor
+fieldMask : Message.Descriptor
 fieldMask =
-    { typeName = "google.protobuf.FieldMask"
-    , fields = [ field "paths" "paths" 1 Repeated (Scalar String) ]
-    , oneofs = []
-    }
+    Message.descriptor "google.protobuf.FieldMask" [ Field.descriptor "paths" "paths" 1 CardinalityRepeated (KindScalar ScalarString) ]
 
 
-empty : MessageDescriptor
+empty : Message.Descriptor
 empty =
-    { typeName = "google.protobuf.Empty"
-    , fields = []
-    , oneofs = []
-    }
+    Message.descriptor "google.protobuf.Empty" []
 
 
-struct : MessageDescriptor
+struct : Message.Descriptor
 struct =
-    { typeName = "google.protobuf.Struct"
-    , fields = [ field "fields" "fields" 1 (Map String) (Message "google.protobuf.Value") ]
-    , oneofs = []
-    }
+    Message.descriptor "google.protobuf.Struct" [ Field.descriptor "fields" "fields" 1 (CardinalityMap ScalarString) (KindMessage "google.protobuf.Value") ]
 
 
-value : MessageDescriptor
+value : Message.Descriptor
 value =
-    { typeName = "google.protobuf.Value"
-    , fields =
-        [ member "null_value" "nullValue" 1 (Enum "google.protobuf.NullValue")
-        , member "number_value" "numberValue" 2 (Scalar Double)
-        , member "string_value" "stringValue" 3 (Scalar String)
-        , member "bool_value" "boolValue" 4 (Scalar Bool)
-        , member "struct_value" "structValue" 5 (Message "google.protobuf.Struct")
-        , member "list_value" "listValue" 6 (Message "google.protobuf.ListValue")
+    Message.descriptor "google.protobuf.Value"
+        [ member "null_value" "nullValue" 1 (KindEnum "google.protobuf.NullValue")
+        , member "number_value" "numberValue" 2 (KindScalar ScalarDouble)
+        , member "string_value" "stringValue" 3 (KindScalar ScalarString)
+        , member "bool_value" "boolValue" 4 (KindScalar ScalarBool)
+        , member "struct_value" "structValue" 5 (KindMessage "google.protobuf.Struct")
+        , member "list_value" "listValue" 6 (KindMessage "google.protobuf.ListValue")
         ]
-    , oneofs = [ "kind" ]
-    }
 
 
-listValue : MessageDescriptor
+listValue : Message.Descriptor
 listValue =
-    { typeName = "google.protobuf.ListValue"
-    , fields = [ field "values" "values" 1 Repeated (Message "google.protobuf.Value") ]
-    , oneofs = []
-    }
+    Message.descriptor "google.protobuf.ListValue" [ Field.descriptor "values" "values" 1 CardinalityRepeated (KindMessage "google.protobuf.Value") ]
 
 
-wrapper : String -> Scalar -> MessageDescriptor
+wrapper : String -> Scalar -> Message.Descriptor
 wrapper name scalar =
-    { typeName = "google.protobuf." ++ name
-    , fields = [ field "value" "value" 1 Singular (Scalar scalar) ]
-    , oneofs = []
-    }
+    Message.descriptor ("google.protobuf." ++ name) [ Field.descriptor "value" "value" 1 CardinalitySingular (KindScalar scalar) ]
 
 
-doubleValue : MessageDescriptor
+doubleValue : Message.Descriptor
 doubleValue =
-    wrapper "DoubleValue" Double
+    wrapper "DoubleValue" ScalarDouble
 
 
-floatValue : MessageDescriptor
+floatValue : Message.Descriptor
 floatValue =
-    wrapper "FloatValue" Float
+    wrapper "FloatValue" ScalarFloat
 
 
-int64Value : MessageDescriptor
+int64Value : Message.Descriptor
 int64Value =
-    wrapper "Int64Value" Int64
+    wrapper "Int64Value" ScalarInt64
 
 
-uint64Value : MessageDescriptor
+uint64Value : Message.Descriptor
 uint64Value =
-    wrapper "UInt64Value" Uint64
+    wrapper "UInt64Value" ScalarUint64
 
 
-int32Value : MessageDescriptor
+int32Value : Message.Descriptor
 int32Value =
-    wrapper "Int32Value" Int32
+    wrapper "Int32Value" ScalarInt32
 
 
-uint32Value : MessageDescriptor
+uint32Value : Message.Descriptor
 uint32Value =
-    wrapper "UInt32Value" Uint32
+    wrapper "UInt32Value" ScalarUint32
 
 
-boolValue : MessageDescriptor
+boolValue : Message.Descriptor
 boolValue =
-    wrapper "BoolValue" Bool
+    wrapper "BoolValue" ScalarBool
 
 
-stringValue : MessageDescriptor
+stringValue : Message.Descriptor
 stringValue =
-    wrapper "StringValue" String
+    wrapper "StringValue" ScalarString
 
 
-bytesValue : MessageDescriptor
+bytesValue : Message.Descriptor
 bytesValue =
-    wrapper "BytesValue" Bytes
+    wrapper "BytesValue" ScalarBytes

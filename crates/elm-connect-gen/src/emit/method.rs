@@ -1,12 +1,12 @@
 //! A method's declarations in its service's module (design §4): its
-//! descriptor, `descriptorGetNote`, with its HTTP bindings written out as
-//! data, and its call, a function from the request to an `Rpc.Call`,
-//! built point-free with `Rpc.call` from the codecs of its request and
-//! response and that descriptor. The call's `Proto.Method.method`
-//! application is stacked, one argument per line, however short.
+//! descriptor, `descriptorGetNote`, built by `Proto.Method.descriptor`
+//! with its HTTP bindings written out as data, and its call, a function
+//! from the request to an `Rpc.Call`, built point-free with `Rpc.call`
+//! from the codecs of its request and response and that descriptor. Both
+//! applications are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_DESCRIPTOR, PROTO_HTTP, PROTO_METHOD, RPC};
+use super::{Emitter, Int64, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
@@ -15,10 +15,10 @@ use crate::ir::{Method, TypeRef};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
-    /// `descriptorGetNote : Proto.Descriptor.MethodDescriptor`: the
-    /// method's service, name, idempotency, type names and bindings. A
-    /// method without an HTTP rule has no bindings; the runtime calls it
-    /// over the implicit route.
+    /// `descriptorGetNote : Proto.Method.Descriptor`, built by
+    /// `Proto.Method.descriptor` from the method's service, name,
+    /// idempotency, type names and bindings. A method without an HTTP rule
+    /// has no bindings; the runtime calls it over the implicit route.
     ///
     /// Every name in it is qualified, so it cannot clash with the package
     /// module's names or the runtime's, whatever the method is called.
@@ -29,18 +29,21 @@ impl Emitter {
             .iter()
             .map(|route| self.binding(route))
             .collect();
-        let body = record([
-            ("service", string(service)),
-            ("name", string(method.proto_name.clone())),
-            ("idempotent", var(idempotent)),
-            ("input", string(proto_full_name(&method.input))),
-            ("output", string(proto_full_name(&method.output))),
-            ("bindings", list(bindings)),
-        ]);
+        let body = stacked_apply(
+            self.reference((PROTO_METHOD, "descriptor")),
+            [
+                string(service),
+                string(method.proto_name.clone()),
+                var(idempotent),
+                string(proto_full_name(&method.input)),
+                string(proto_full_name(&method.output)),
+                list(bindings),
+            ],
+        );
         Decl::Value {
             doc: None,
             name: method.descriptor_name(),
-            annotation: self.library_type(PROTO_DESCRIPTOR, "MethodDescriptor", []),
+            annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
             params: Vec::new(),
             body,
         }

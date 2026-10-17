@@ -1,7 +1,7 @@
 //! The descriptors of a package's messages and enums, their typed values
 //! and the package's registry (design §3.9): `descriptorFoo :
-//! Proto.Descriptor.MessageDescriptor` and `descriptorBar :
-//! Proto.Descriptor.EnumDescriptor`; `messageFoo : Proto.Message.Message
+//! Proto.Message.Descriptor` and `descriptorBar : Proto.Enum.Descriptor`,
+//! built with the positional `descriptor` builders; `messageFoo : Proto.Message.Message
 //! Foo` and `enumBar : Proto.Enum.Enum Bar`, each built from its type's
 //! codecs, default and descriptor; and `registry :
 //! Proto.Registry.Registry`, built from the descriptors alone.
@@ -9,27 +9,30 @@
 use std::collections::BTreeSet;
 
 use super::{
-    Emitter, MessageShape, PROTO_DESCRIPTOR, PROTO_ENUM, PROTO_MESSAGE, PROTO_REGISTRY, RecordField,
+    Emitter, MessageShape, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD, PROTO_MESSAGE,
+    PROTO_REGISTRY, RecordField,
 };
 use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{apply, inline_record, int, list, record, string, ty, var};
+use crate::elm::build::{apply, int, list, pipe, string, ty, var};
 use crate::ir::{Cardinality, Enum, MapKey, ModuleName, Package, ScalarKind, TypeRef};
 use crate::naming::REGISTRY;
 
 impl Emitter {
-    /// `descriptorFoo : Proto.Descriptor.MessageDescriptor`: the
-    /// message's full name, its fields and its oneofs' names.
+    /// `descriptorFoo : Proto.Message.Descriptor`: the
+    /// message's full name and its fields; the builder derives its oneofs
+    /// from the fields.
     pub(super) fn message_descriptor(&mut self, shape: &MessageShape) -> Decl {
         let message = shape.message;
-        let body = record([
-            ("typeName", string(message.proto_full_name.clone())),
-            ("fields", list(self.field_descriptors(shape))),
-            ("oneofs", list(oneof_names(shape))),
-        ]);
+        let fields = self.field_descriptors(shape);
+        let builder = self.reference((PROTO_MESSAGE, "descriptor"));
+        let body = apply(
+            builder,
+            [string(message.proto_full_name.clone()), list(fields)],
+        );
         Decl::Value {
             doc: None,
             name: message.descriptor_name(),
-            annotation: self.library_type(PROTO_DESCRIPTOR, "MessageDescriptor", []),
+            annotation: self.library_type(PROTO_MESSAGE, "Descriptor", []),
             params: Vec::new(),
             body,
         }
@@ -60,24 +63,26 @@ impl Emitter {
         }
     }
 
-    /// `descriptorBar : Proto.Descriptor.EnumDescriptor`: the enum's full
+    /// `descriptorBar : Proto.Enum.Descriptor`: the enum's full
     /// name and every declared name in order with its number (an alias
     /// with its number).
     pub(super) fn enum_descriptor(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
-                inline_record([("name", string(name)), ("number", int(value.number.into()))])
+                let builder = self.reference((PROTO_ENUM_VALUE, "descriptor"));
+                apply(builder, [string(name), int(value.number.into())])
             })
             .collect();
-        let body = record([
-            ("typeName", string(enumeration.proto_full_name.clone())),
-            ("values", list(values)),
-        ]);
+        let builder = self.reference((PROTO_ENUM, "descriptor"));
+        let body = apply(
+            builder,
+            [string(enumeration.proto_full_name.clone()), list(values)],
+        );
         Decl::Value {
             doc: None,
             name: enumeration.descriptor_name(),
-            annotation: self.library_type(PROTO_DESCRIPTOR, "EnumDescriptor", []),
+            annotation: self.library_type(PROTO_ENUM, "Descriptor", []),
             params: Vec::new(),
             body,
         }
@@ -151,7 +156,7 @@ impl Emitter {
         }
     }
 
-    /// One `Proto.Descriptor.Field` per field of the message, in
+    /// One `Proto.Field.Descriptor` per field of the message, in
     /// declaration order: each oneof's members where the oneof is.
     fn field_descriptors(&mut self, shape: &MessageShape) -> Vec<Expr> {
         let mut fields = Vec::new();
@@ -170,7 +175,7 @@ impl Emitter {
                 }
                 RecordField::Oneof(oneof) => {
                     for (variant, _) in &oneof.variants {
-                        let cardinality = self.descriptor_value("Singular");
+                        let cardinality = self.reference((PROTO_FIELD, "CardinalitySingular"));
                         fields.push(self.field_descriptor(
                             &variant.proto_name,
                             &variant.json_name,
@@ -186,8 +191,10 @@ impl Emitter {
         fields
     }
 
-    /// `{ name = …, jsonName = …, number = …, cardinality = …, kind = …,
-    /// oneof = … }`, on one line.
+    /// `Proto.Field.descriptor name jsonName number cardinality kind`,
+    /// then `|> Proto.Field.inOneof "…"` for a oneof
+    /// member. A field in no oneof is the builder alone, so the common
+    /// field stays one line.
     fn field_descriptor(
         &mut self,
         name: &str,
@@ -198,60 +205,51 @@ impl Emitter {
         oneof: Option<&str>,
     ) -> Expr {
         let kind = self.kind(ty);
-        let oneof = match oneof {
-            Some(name) => apply(var(self.core("Just")), [string(name)]),
-            None => var(self.core("Nothing")),
-        };
-        inline_record([
-            ("name", string(name)),
-            ("jsonName", string(json_name)),
-            ("number", int(number.into())),
-            ("cardinality", cardinality),
-            ("kind", kind),
-            ("oneof", oneof),
-        ])
+        let built = apply(
+            self.reference((PROTO_FIELD, "descriptor")),
+            [
+                string(name),
+                string(json_name),
+                int(number.into()),
+                cardinality,
+                kind,
+            ],
+        );
+        match oneof {
+            Some(oneof) => {
+                let modifier = apply(self.reference((PROTO_FIELD, "inOneof")), [string(oneof)]);
+                pipe(built, modifier)
+            }
+            None => built,
+        }
     }
 
-    /// `Proto.Descriptor.Singular`, `Optional`, `Repeated`, or `Map` of the
-    /// key's scalar.
+    /// `Proto.Field.CardinalitySingular`, `CardinalityOptional`,
+    /// `CardinalityRepeated`, or `CardinalityMap` of the key's scalar.
     fn cardinality(&mut self, cardinality: Cardinality) -> Expr {
         match cardinality {
-            Cardinality::Singular => self.descriptor_value("Singular"),
-            Cardinality::Optional => self.descriptor_value("Optional"),
-            Cardinality::Repeated => self.descriptor_value("Repeated"),
+            Cardinality::Singular => self.reference((PROTO_FIELD, "CardinalitySingular")),
+            Cardinality::Optional => self.reference((PROTO_FIELD, "CardinalityOptional")),
+            Cardinality::Repeated => self.reference((PROTO_FIELD, "CardinalityRepeated")),
             Cardinality::Map(key) => {
-                let map = self.descriptor_value("Map");
-                let key = self.descriptor_value(map_key_scalar(key));
+                let map = self.reference((PROTO_FIELD, "CardinalityMap"));
+                let key = self.reference((PROTO_FIELD, map_key_scalar(key)));
                 apply(map, [key])
             }
         }
     }
 
-    /// `Proto.Descriptor.Scalar` of the scalar, or `Enum` or `Message` of
-    /// the type's full name.
+    /// `Proto.Field.KindScalar` of the scalar, or `KindEnum` or
+    /// `KindMessage` of the type's full name.
     fn kind(&mut self, ty: &TypeRef) -> Expr {
         let (constructor, argument) = match ty {
-            TypeRef::Scalar(kind) => ("Scalar", self.descriptor_value(scalar(*kind))),
-            TypeRef::Enum { name, .. } => ("Enum", string(name.proto_full_name.clone())),
-            TypeRef::Message(name) => ("Message", string(name.proto_full_name.clone())),
-            TypeRef::WellKnown(known) => ("Message", string(known.proto_full_name())),
+            TypeRef::Scalar(kind) => ("KindScalar", self.reference((PROTO_FIELD, scalar(*kind)))),
+            TypeRef::Enum { name, .. } => ("KindEnum", string(name.proto_full_name.clone())),
+            TypeRef::Message(name) => ("KindMessage", string(name.proto_full_name.clone())),
+            TypeRef::WellKnown(known) => ("KindMessage", string(known.proto_full_name())),
         };
-        apply(self.descriptor_value(constructor), [argument])
+        apply(self.reference((PROTO_FIELD, constructor)), [argument])
     }
-
-    /// A constructor of `Proto.Descriptor`.
-    fn descriptor_value(&mut self, name: &str) -> Expr {
-        self.reference((PROTO_DESCRIPTOR, name))
-    }
-}
-
-/// The names of the message's oneofs, as strings, in declaration order.
-fn oneof_names(shape: &MessageShape) -> Vec<Expr> {
-    shape
-        .oneofs
-        .iter()
-        .map(|oneof| string(oneof.oneof.proto_name.clone()))
-        .collect()
 }
 
 /// The other generated packages `package`'s module imports: those its
@@ -278,41 +276,41 @@ fn imported_packages(package: &Package) -> BTreeSet<ModuleName> {
         .collect()
 }
 
-/// The `Proto.Descriptor.Scalar` constructor of a proto scalar.
+/// The `Proto.Field.Scalar` constructor of a proto scalar.
 fn scalar(kind: ScalarKind) -> &'static str {
     match kind {
-        ScalarKind::Double => "Double",
-        ScalarKind::Float => "Float",
-        ScalarKind::Int32 => "Int32",
-        ScalarKind::Int64 => "Int64",
-        ScalarKind::UInt32 => "Uint32",
-        ScalarKind::UInt64 => "Uint64",
-        ScalarKind::SInt32 => "Sint32",
-        ScalarKind::SInt64 => "Sint64",
-        ScalarKind::Fixed32 => "Fixed32",
-        ScalarKind::Fixed64 => "Fixed64",
-        ScalarKind::SFixed32 => "Sfixed32",
-        ScalarKind::SFixed64 => "Sfixed64",
-        ScalarKind::Bool => "Bool",
-        ScalarKind::String => "String",
-        ScalarKind::Bytes => "Bytes",
+        ScalarKind::Double => "ScalarDouble",
+        ScalarKind::Float => "ScalarFloat",
+        ScalarKind::Int32 => "ScalarInt32",
+        ScalarKind::Int64 => "ScalarInt64",
+        ScalarKind::UInt32 => "ScalarUint32",
+        ScalarKind::UInt64 => "ScalarUint64",
+        ScalarKind::SInt32 => "ScalarSint32",
+        ScalarKind::SInt64 => "ScalarSint64",
+        ScalarKind::Fixed32 => "ScalarFixed32",
+        ScalarKind::Fixed64 => "ScalarFixed64",
+        ScalarKind::SFixed32 => "ScalarSfixed32",
+        ScalarKind::SFixed64 => "ScalarSfixed64",
+        ScalarKind::Bool => "ScalarBool",
+        ScalarKind::String => "ScalarString",
+        ScalarKind::Bytes => "ScalarBytes",
     }
 }
 
-/// The `Proto.Descriptor.Scalar` constructor of a map key.
+/// The `Proto.Field.Scalar` constructor of a map key.
 fn map_key_scalar(key: MapKey) -> &'static str {
     match key {
-        MapKey::Int32 => "Int32",
-        MapKey::Int64 => "Int64",
-        MapKey::UInt32 => "Uint32",
-        MapKey::UInt64 => "Uint64",
-        MapKey::SInt32 => "Sint32",
-        MapKey::SInt64 => "Sint64",
-        MapKey::Fixed32 => "Fixed32",
-        MapKey::Fixed64 => "Fixed64",
-        MapKey::SFixed32 => "Sfixed32",
-        MapKey::SFixed64 => "Sfixed64",
-        MapKey::String => "String",
-        MapKey::Bool => "Bool",
+        MapKey::Int32 => "ScalarInt32",
+        MapKey::Int64 => "ScalarInt64",
+        MapKey::UInt32 => "ScalarUint32",
+        MapKey::UInt64 => "ScalarUint64",
+        MapKey::SInt32 => "ScalarSint32",
+        MapKey::SInt64 => "ScalarSint64",
+        MapKey::Fixed32 => "ScalarFixed32",
+        MapKey::Fixed64 => "ScalarFixed64",
+        MapKey::SFixed32 => "ScalarSfixed32",
+        MapKey::SFixed64 => "ScalarSfixed64",
+        MapKey::String => "ScalarString",
+        MapKey::Bool => "ScalarBool",
     }
 }

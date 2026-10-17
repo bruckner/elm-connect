@@ -3,7 +3,6 @@
 
 module Routes.V1.Routes exposing (..)
 
-import Proto.Descriptor
 import Proto.Http
 import Proto.Method
 import Proto.Version
@@ -22,14 +21,13 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorGetMessage : Proto.Descriptor.MethodDescriptor
+descriptorGetMessage : Proto.Method.Descriptor
 descriptorGetMessage =
-    { service = "routes.v1.Routes"
-    , name = "GetMessage"
-    , idempotent = False
-    , input = "routes.v1.GetMessageRequest"
-    , output = "routes.v1.Message"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "GetMessage"
+        False
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -99,17 +97,15 @@ descriptorGetMessage =
                 ]
             }
         ]
-    }
 
 
-descriptorUpdateMessage : Proto.Descriptor.MethodDescriptor
+descriptorUpdateMessage : Proto.Method.Descriptor
 descriptorUpdateMessage =
-    { service = "routes.v1.Routes"
-    , name = "UpdateMessage"
-    , idempotent = False
-    , input = "routes.v1.UpdateMessageRequest"
-    , output = "routes.v1.Message"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "UpdateMessage"
+        False
+        "routes.v1.UpdateMessageRequest"
+        "routes.v1.Message"
         [ Proto.Http.binding
             { method = "PATCH"
             , path =
@@ -123,17 +119,15 @@ descriptorUpdateMessage =
             , query = []
             }
         ]
-    }
 
 
-descriptorUpdateMessageWhole : Proto.Descriptor.MethodDescriptor
+descriptorUpdateMessageWhole : Proto.Method.Descriptor
 descriptorUpdateMessageWhole =
-    { service = "routes.v1.Routes"
-    , name = "UpdateMessageWhole"
-    , idempotent = False
-    , input = "routes.v1.Message"
-    , output = "routes.v1.Message"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "UpdateMessageWhole"
+        False
+        "routes.v1.Message"
+        "routes.v1.Message"
         [ Proto.Http.binding
             { method = "PATCH"
             , path =
@@ -147,17 +141,15 @@ descriptorUpdateMessageWhole =
             , query = []
             }
         ]
-    }
 
 
-descriptorPostSub : Proto.Descriptor.MethodDescriptor
+descriptorPostSub : Proto.Method.Descriptor
 descriptorPostSub =
-    { service = "routes.v1.Routes"
-    , name = "PostSub"
-    , idempotent = False
-    , input = "routes.v1.GetMessageRequest"
-    , output = "routes.v1.Message"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "PostSub"
+        False
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
         [ Proto.Http.binding
             { method = "POST"
             , path =
@@ -171,17 +163,15 @@ descriptorPostSub =
             , query = []
             }
         ]
-    }
 
 
-descriptorQuery : Proto.Descriptor.MethodDescriptor
+descriptorQuery : Proto.Method.Descriptor
 descriptorQuery =
-    { service = "routes.v1.Routes"
-    , name = "Query"
-    , idempotent = False
-    , input = "routes.v1.Everything"
-    , output = "routes.v1.Everything"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Query"
+        False
+        "routes.v1.Everything"
+        "routes.v1.Everything"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -219,17 +209,15 @@ descriptorQuery =
                 ]
             }
         ]
-    }
 
 
-descriptorSingle : Proto.Descriptor.MethodDescriptor
+descriptorSingle : Proto.Method.Descriptor
 descriptorSingle =
-    { service = "routes.v1.Routes"
-    , name = "Single"
-    , idempotent = False
-    , input = "routes.v1.Everything"
-    , output = "routes.v1.Everything"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Single"
+        False
+        "routes.v1.Everything"
+        "routes.v1.Everything"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -267,17 +255,15 @@ descriptorSingle =
                 ]
             }
         ]
-    }
 
 
-descriptorMulti : Proto.Descriptor.MethodDescriptor
+descriptorMulti : Proto.Method.Descriptor
 descriptorMulti =
-    { service = "routes.v1.Routes"
-    , name = "Multi"
-    , idempotent = False
-    , input = "routes.v1.Everything"
-    , output = "routes.v1.Everything"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Multi"
+        False
+        "routes.v1.Everything"
+        "routes.v1.Everything"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -314,17 +300,15 @@ descriptorMulti =
                 ]
             }
         ]
-    }
 
 
-descriptorTyped : Proto.Descriptor.MethodDescriptor
+descriptorTyped : Proto.Method.Descriptor
 descriptorTyped =
-    { service = "routes.v1.Routes"
-    , name = "Typed"
-    , idempotent = False
-    , input = "routes.v1.Everything"
-    , output = "routes.v1.Everything"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Typed"
+        False
+        "routes.v1.Everything"
+        "routes.v1.Everything"
         [ Proto.Http.binding
             { method = "DELETE"
             , path =
@@ -362,17 +346,15 @@ descriptorTyped =
                 ]
             }
         ]
-    }
 
 
-descriptorFiles : Proto.Descriptor.MethodDescriptor
+descriptorFiles : Proto.Method.Descriptor
 descriptorFiles =
-    { service = "routes.v1.Routes"
-    , name = "Files"
-    , idempotent = False
-    , input = "routes.v1.FileRequest"
-    , output = "routes.v1.FileRequest"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Files"
+        False
+        "routes.v1.FileRequest"
+        "routes.v1.FileRequest"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -385,17 +367,15 @@ descriptorFiles =
             , query = []
             }
         ]
-    }
 
 
-descriptorCancel : Proto.Descriptor.MethodDescriptor
+descriptorCancel : Proto.Method.Descriptor
 descriptorCancel =
-    { service = "routes.v1.Routes"
-    , name = "Cancel"
-    , idempotent = False
-    , input = "routes.v1.Resource"
-    , output = "routes.v1.Resource"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Cancel"
+        False
+        "routes.v1.Resource"
+        "routes.v1.Resource"
         [ Proto.Http.binding
             { method = "POST"
             , path =
@@ -408,17 +388,15 @@ descriptorCancel =
             , query = []
             }
         ]
-    }
 
 
-descriptorUpdateResource : Proto.Descriptor.MethodDescriptor
+descriptorUpdateResource : Proto.Method.Descriptor
 descriptorUpdateResource =
-    { service = "routes.v1.Routes"
-    , name = "UpdateResource"
-    , idempotent = False
-    , input = "routes.v1.UpdateResourceRequest"
-    , output = "routes.v1.Resource"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "UpdateResource"
+        False
+        "routes.v1.UpdateResourceRequest"
+        "routes.v1.Resource"
         [ Proto.Http.binding
             { method = "PATCH"
             , path =
@@ -431,17 +409,15 @@ descriptorUpdateResource =
             , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
             }
         ]
-    }
 
 
-descriptorHead : Proto.Descriptor.MethodDescriptor
+descriptorHead : Proto.Method.Descriptor
 descriptorHead =
-    { service = "routes.v1.Routes"
-    , name = "Head"
-    , idempotent = False
-    , input = "routes.v1.FileRequest"
-    , output = "routes.v1.FileRequest"
-    , bindings =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Head"
+        False
+        "routes.v1.FileRequest"
+        "routes.v1.FileRequest"
         [ Proto.Http.binding
             { method = "HEAD"
             , path =
@@ -454,18 +430,16 @@ descriptorHead =
             , query = []
             }
         ]
-    }
 
 
-descriptorUnbound : Proto.Descriptor.MethodDescriptor
+descriptorUnbound : Proto.Method.Descriptor
 descriptorUnbound =
-    { service = "routes.v1.Routes"
-    , name = "Unbound"
-    , idempotent = False
-    , input = "routes.v1.GetMessageRequest"
-    , output = "routes.v1.Message"
-    , bindings = []
-    }
+    Proto.Method.descriptor "routes.v1.Routes"
+        "Unbound"
+        False
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
+        []
 
 
 

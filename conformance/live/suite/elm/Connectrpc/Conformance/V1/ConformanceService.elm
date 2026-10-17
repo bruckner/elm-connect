@@ -4,7 +4,6 @@
 module Connectrpc.Conformance.V1.ConformanceService exposing (..)
 
 import Connectrpc.Conformance.V1
-import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -21,37 +20,34 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorUnary : Proto.Descriptor.MethodDescriptor
+descriptorUnary : Proto.Method.Descriptor
 descriptorUnary =
-    { service = "connectrpc.conformance.v1.ConformanceService"
-    , name = "Unary"
-    , idempotent = False
-    , input = "connectrpc.conformance.v1.UnaryRequest"
-    , output = "connectrpc.conformance.v1.UnaryResponse"
-    , bindings = []
-    }
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "Unary"
+        False
+        "connectrpc.conformance.v1.UnaryRequest"
+        "connectrpc.conformance.v1.UnaryResponse"
+        []
 
 
-descriptorUnimplemented : Proto.Descriptor.MethodDescriptor
+descriptorUnimplemented : Proto.Method.Descriptor
 descriptorUnimplemented =
-    { service = "connectrpc.conformance.v1.ConformanceService"
-    , name = "Unimplemented"
-    , idempotent = False
-    , input = "connectrpc.conformance.v1.UnimplementedRequest"
-    , output = "connectrpc.conformance.v1.UnimplementedResponse"
-    , bindings = []
-    }
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "Unimplemented"
+        False
+        "connectrpc.conformance.v1.UnimplementedRequest"
+        "connectrpc.conformance.v1.UnimplementedResponse"
+        []
 
 
-descriptorIdempotentUnary : Proto.Descriptor.MethodDescriptor
+descriptorIdempotentUnary : Proto.Method.Descriptor
 descriptorIdempotentUnary =
-    { service = "connectrpc.conformance.v1.ConformanceService"
-    , name = "IdempotentUnary"
-    , idempotent = True
-    , input = "connectrpc.conformance.v1.IdempotentUnaryRequest"
-    , output = "connectrpc.conformance.v1.IdempotentUnaryResponse"
-    , bindings = []
-    }
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "IdempotentUnary"
+        True
+        "connectrpc.conformance.v1.IdempotentUnaryRequest"
+        "connectrpc.conformance.v1.IdempotentUnaryResponse"
+        []
 
 
 

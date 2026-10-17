@@ -6,7 +6,7 @@ module Api.Example.Notes.V1 exposing (..)
 import Api.Example.People
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -58,16 +58,13 @@ defaultGetNoteRequest =
 -- DESCRIPTORS
 
 
-descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote : Proto.Message.Descriptor
 descriptorNote =
-    { typeName = "notes.v1.Note"
-    , fields =
-        [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "author", jsonName = "author", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "users.v1.User", oneof = Nothing }
-        , { name = "required_role", jsonName = "requiredRole", number = 3, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Enum "users.v1.Role", oneof = Nothing }
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
         ]
-    , oneofs = []
-    }
 
 
 messageNote : Proto.Message.Message Note
@@ -75,12 +72,9 @@ messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 
-descriptorGetNoteRequest : Proto.Descriptor.MessageDescriptor
+descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    { typeName = "notes.v1.GetNoteRequest"
-    , fields = [ { name = "name", jsonName = "name", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest

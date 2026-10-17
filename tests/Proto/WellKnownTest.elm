@@ -4,8 +4,8 @@ import Dict
 import Expect
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Duration as Duration
+import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Message as Message exposing (Message)
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
@@ -17,14 +17,14 @@ round trip through its JSON.
 -}
 check : Message a -> ( String, Bool )
 check message =
-    ( Message.typeName message
+    ( Message.typeName (Message.toDescriptor message)
     , Json.Decode.decodeValue (Message.decoder message) (Message.encode message (Message.default message)) == Ok (Message.default message)
     )
 
 
-fieldsOf : Message a -> List Proto.Descriptor.Field
+fieldsOf : Message a -> List Field.Descriptor
 fieldsOf =
-    Message.descriptor >> .fields
+    Message.toDescriptor >> Message.fields
 
 
 suite : Test
@@ -73,7 +73,7 @@ suite =
                         ]
         , test "Value's default is null" <|
             \_ ->
-                ( Message.typeName WellKnown.value, Json.Encode.encode 0 (Message.default WellKnown.value) )
+                ( Message.typeName (Message.toDescriptor WellKnown.value), Json.Encode.encode 0 (Message.default WellKnown.value) )
                     |> Expect.equal ( "google.protobuf.Value", "null" )
         , test "the defaults are the zero values" <|
             \_ ->
@@ -93,17 +93,17 @@ suite =
                     |> Expect.equal [ "{}", "\"1970-01-01T00:00:01.500Z\"", "\"1.500s\"", "\"displayName,author.email\"", "\"7\"" ]
         , test "the descriptors are protobuf's" <|
             \_ ->
-                ( fieldsOf WellKnown.timestamp |> List.map (\field -> ( field.name, field.number, field.kind ))
-                , fieldsOf WellKnown.fieldMask |> List.map (\field -> ( field.name, field.cardinality ))
-                , fieldsOf WellKnown.uint64ValueAsInt |> List.map .kind
+                ( fieldsOf WellKnown.timestamp |> List.map (\field -> ( Field.name field, Field.number field, Field.kind field ))
+                , fieldsOf WellKnown.fieldMask |> List.map (\field -> ( Field.name field, Field.cardinality field ))
+                , fieldsOf WellKnown.uint64ValueAsInt |> List.map Field.kind
                 )
                     |> Expect.equal
-                        ( [ ( "seconds", 1, Scalar Int64 ), ( "nanos", 2, Scalar Int32 ) ]
-                        , [ ( "paths", Repeated ) ]
-                        , [ Scalar Uint64 ]
+                        ( [ ( "seconds", 1, KindScalar ScalarInt64 ), ( "nanos", 2, KindScalar ScalarInt32 ) ]
+                        , [ ( "paths", CardinalityRepeated ) ]
+                        , [ KindScalar ScalarUint64 ]
                         )
         , test "a type URL names the type" <|
             \_ ->
-                Message.typeUrl WellKnown.duration
+                Message.typeUrl (Message.toDescriptor WellKnown.duration)
                     |> Expect.equal "type.googleapis.com/google.protobuf.Duration"
         ]

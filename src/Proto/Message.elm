@@ -1,27 +1,39 @@
 module Proto.Message exposing
     ( Message, message
-    , encode, decoder, default, descriptor
-    , typeName, typeUrl
+    , encode, decoder, default, toDescriptor
+    , Descriptor, descriptor
+    , typeName, typeUrl, fields, oneofs
     )
 
-{-| A message type as a value: its proto3 JSON codecs, its default and its
-descriptor, together. Generated code gives one per message
-(`Notes.V1.messageNote : Message Note`), and
-[`Proto.WellKnown`](Proto-WellKnown) one per well-known type.
+{-| A message type: its typed value, which holds its proto3 JSON codecs, its
+default and its descriptor together, and its descriptor, what the proto says
+about it as data. Generated code gives one of each per message
+(`Notes.V1.messageNote : Message Note`, `Notes.V1.descriptorNote :
+Descriptor`), and [`Proto.WellKnown`](Proto-WellKnown) one per well-known
+type.
 
 @docs Message, message
 
 
-# Reading
+# Reading a typed value
 
-@docs encode, decoder, default, descriptor
-@docs typeName, typeUrl
+@docs encode, decoder, default, toDescriptor
+
+
+# Descriptors
+
+@docs Descriptor, descriptor
+
+
+# Reading a descriptor
+
+@docs typeName, typeUrl, fields, oneofs
 
 -}
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor exposing (MessageDescriptor)
+import Proto.Field as Field
 
 
 {-| A message type whose Elm values are `a`. It is opaque: built by
@@ -34,7 +46,7 @@ type Message a
         { encode : a -> Json.Encode.Value
         , decoder : Json.Decode.Decoder a
         , default : a
-        , descriptor : MessageDescriptor
+        , descriptor : Descriptor
         }
 
 
@@ -47,7 +59,7 @@ decodes to) and its descriptor. Generated code writes:
         Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 -}
-message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> MessageDescriptor -> Message a
+message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Message a
 message encodeJson jsonDecoder defaultValue messageDescriptor =
     Message
         { encode = encodeJson
@@ -78,23 +90,112 @@ default (Message m) =
     m.default
 
 
-{-| What the proto says about the message.
+{-| What the proto says about the message, read by the functions below.
 -}
-descriptor : Message a -> MessageDescriptor
-descriptor (Message m) =
+toDescriptor : Message a -> Descriptor
+toDescriptor (Message m) =
     m.descriptor
 
 
-{-| The message's full name, such as `notes.v1.Note`.
+{-| A message type's descriptor: its full name, its fields, and the names of
+its oneofs. It is opaque, built by [`descriptor`](#descriptor) and read by the
+functions below, so that a later release can say more about a message without
+breaking code that builds or reads one.
+
+A descriptor is faithful to the proto, not to the Elm the generator makes of
+it: a singular message field is
+[`CardinalitySingular`](Proto-Field#Cardinality) of a
+[`KindMessage`](Proto-Field#Kind), though Elm holds it as a `Maybe`. Types
+refer to each other by full name, never by value, so a message can contain
+itself; a [`Registry`](Proto-Registry) resolves the names.
+
+    import Proto.Field
+    import Proto.Message
+
+    Proto.Message.fields Notes.V1.descriptorNote
+        |> List.map Proto.Field.name
+    --> [ "name", "title", … ]
+
 -}
-typeName : Message a -> String
-typeName (Message m) =
-    m.descriptor.typeName
+type Descriptor
+    = Descriptor
+        { typeName : String
+        , fields : List Field.Descriptor
+        , oneofs : List String
+        }
+
+
+{-| A message of this full name, such as `notes.v1.Note` (or
+`notes.v1.Note.Revision` for a nested message), with these fields in
+declaration order, the members of its oneofs among them:
+
+    Proto.Message.descriptor "t.Pair"
+        [ Proto.Field.descriptor "left" "left" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "right" "right" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "t.Pair")
+        ]
+
+Its oneofs are the ones its fields name
+([`Proto.Field.inOneof`](Proto-Field#inOneof)), in the order they first
+appear, so they are not written twice. A proto3 `optional` field's synthetic
+oneof is not one of them: such a field is
+[`CardinalityOptional`](Proto-Field#Cardinality).
+
+-}
+descriptor : String -> List Field.Descriptor -> Descriptor
+descriptor fullName messageFields =
+    Descriptor
+        { typeName = fullName
+        , fields = messageFields
+        , oneofs = oneofsOf messageFields
+        }
+
+
+oneofsOf : List Field.Descriptor -> List String
+oneofsOf messageFields =
+    List.foldl
+        (\f seen ->
+            case Field.oneof f of
+                Just oneofName ->
+                    if List.member oneofName seen then
+                        seen
+
+                    else
+                        oneofName :: seen
+
+                Nothing ->
+                    seen
+        )
+        []
+        messageFields
+        |> List.reverse
+
+
+{-| The message's full name, such as `notes.v1.Note`, or
+`notes.v1.Note.Revision` for a nested message.
+-}
+typeName : Descriptor -> String
+typeName (Descriptor m) =
+    m.typeName
 
 
 {-| The type URL `google.protobuf.Any` names the message by:
 `type.googleapis.com/notes.v1.Note`.
 -}
-typeUrl : Message a -> String
-typeUrl message_ =
-    "type.googleapis.com/" ++ typeName message_
+typeUrl : Descriptor -> String
+typeUrl messageDescriptor =
+    "type.googleapis.com/" ++ typeName messageDescriptor
+
+
+{-| Every field in declaration order, the members of its oneofs among them.
+-}
+fields : Descriptor -> List Field.Descriptor
+fields (Descriptor m) =
+    m.fields
+
+
+{-| The names of its oneofs, in the order their first members are declared. A
+proto3 `optional` field's synthetic oneof is not one of them.
+-}
+oneofs : Descriptor -> List String
+oneofs (Descriptor m) =
+    m.oneofs

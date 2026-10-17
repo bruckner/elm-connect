@@ -25,16 +25,17 @@ imports, and the well-known types.
 -}
 
 import Dict exposing (Dict)
-import Proto.Descriptor exposing (EnumDescriptor, MessageDescriptor)
+import Proto.Enum as Enum
 import Proto.Internal.WellKnown as WellKnown
+import Proto.Message as Message
 
 
 {-| Message and enum descriptors, each by its full name.
 -}
 type Registry
     = Registry
-        { messages : Dict String MessageDescriptor
-        , enums : Dict String EnumDescriptor
+        { messages : Dict String Message.Descriptor
+        , enums : Dict String Enum.Descriptor
         }
 
 
@@ -48,23 +49,27 @@ empty =
 {-| The registry of these messages and enums. Of two descriptors with one name,
 the first is kept.
 -}
-fromDescriptors : List MessageDescriptor -> List EnumDescriptor -> Registry
+fromDescriptors : List Message.Descriptor -> List Enum.Descriptor -> Registry
 fromDescriptors messageDescriptors enumDescriptors =
     Registry
-        { messages = keyed messageDescriptors
-        , enums = keyed enumDescriptors
+        { messages = keyed Message.typeName messageDescriptors
+        , enums = keyed Enum.typeName enumDescriptors
         }
 
 
-keyed : List { a | typeName : String } -> Dict String { a | typeName : String }
-keyed =
+keyed : (d -> String) -> List d -> Dict String d
+keyed nameOf =
     List.foldl
         (\descriptor dict ->
-            if Dict.member descriptor.typeName dict then
+            let
+                name =
+                    nameOf descriptor
+            in
+            if Dict.member name dict then
                 dict
 
             else
-                Dict.insert descriptor.typeName descriptor dict
+                Dict.insert name descriptor dict
         )
         Dict.empty
 
@@ -90,27 +95,27 @@ wellKnown =
 
 {-| The message of this full name, such as `notes.v1.Note`.
 -}
-message : String -> Registry -> Maybe MessageDescriptor
+message : String -> Registry -> Maybe Message.Descriptor
 message typeName (Registry registry) =
     Dict.get typeName registry.messages
 
 
 {-| The enum of this full name, such as `notes.v1.Visibility`.
 -}
-enum : String -> Registry -> Maybe EnumDescriptor
+enum : String -> Registry -> Maybe Enum.Descriptor
 enum typeName (Registry registry) =
     Dict.get typeName registry.enums
 
 
 {-| Every message, by full name.
 -}
-messages : Registry -> List MessageDescriptor
+messages : Registry -> List Message.Descriptor
 messages (Registry registry) =
     Dict.values registry.messages
 
 
 {-| Every enum, by full name.
 -}
-enums : Registry -> List EnumDescriptor
+enums : Registry -> List Enum.Descriptor
 enums (Registry registry) =
     Dict.values registry.enums

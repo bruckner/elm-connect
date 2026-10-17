@@ -21,14 +21,15 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
 ];
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 16] = [
+pub const RUNTIME_MODULES: [&str; 17] = [
     "Rpc",
     "Rpc.Code",
     "Rpc.ErrorCode",
-    "Proto.Descriptor",
     "Proto.Http",
     "Proto.Message",
+    "Proto.Field",
     "Proto.Enum",
+    "Proto.EnumValue",
     "Proto.Method",
     "Proto.Registry",
     "Proto.WellKnown",
@@ -276,8 +277,8 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
 
-/// The descriptor of a message or an enum (`Proto.Descriptor`'s
-/// `MessageDescriptor` or `EnumDescriptor`): `descriptor` followed by the
+/// The descriptor of a message or an enum (`Proto.Message.Descriptor`
+/// or `Proto.Enum.Descriptor`): `descriptor` followed by the
 /// type's Elm name (`Note` becomes `descriptorNote`). Like
 /// [`default_name`], a prefix and a type name; one prefix serves both,
 /// since a message and an enum never share a name in one module.
@@ -288,7 +289,7 @@ pub fn descriptor_name(type_elm_name: &str) -> String {
 /// The prefix of [`descriptor_name`].
 const DESCRIPTOR_PREFIX: &str = "descriptor";
 
-/// The descriptor of a method (`Proto.Descriptor.MethodDescriptor`), in
+/// The descriptor of a method (`Proto.Method.Descriptor`), in
 /// its service's module: `descriptor` followed by the method's Elm name
 /// with its first letter uppercased, as [`pascal_case`] does (`getNote`
 /// becomes `descriptorGetNote`). It follows the Elm name, so a renamed
@@ -457,6 +458,15 @@ mod tests {
             Some("the runtime package bruckner/elm-connect")
         );
         assert_eq!(reserved_module("Rpc"), reserved_module("Proto.Json"));
+        assert_eq!(
+            reserved_module("Proto.Field"),
+            reserved_module("Proto.Json")
+        );
+        assert_eq!(
+            reserved_module("Proto.EnumValue"),
+            reserved_module("Proto.Json")
+        );
+        assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
     }

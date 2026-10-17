@@ -16,6 +16,23 @@ naming::reserved_module
 
 naming::reserved_module
 
+  × The package `proto.enum_value` becomes the Elm module `Proto.EnumValue`,
+  │ which is a module of the runtime package bruckner/elm-connect.
+   ╭─[proto/enum_value.proto:4:1]
+ 3 │ // The runtime's enum value descriptors live in `Proto.EnumValue`.
+ 4 │ package proto.enum_value;
+   · ────────────┬────────────
+   ·             ╰── package `proto.enum_value` becomes `Proto.EnumValue`
+ 5 │
+   ╰────
+  help: An application that depends on the runtime package bruckner/elm-
+        connect cannot define a module of the same name: every `import
+        Proto.EnumValue`, in the generated code or the application's, becomes
+        ambiguous. Move the module with `rename=proto.enum_value:<Elm name>`
+        or `module_prefix=<Elm module>`.
+
+naming::reserved_module
+
   × The package `rpc` becomes the Elm module `Rpc`, which is a module of the
   │ runtime package bruckner/elm-connect.
    ╭─[rpc.proto:4:1]

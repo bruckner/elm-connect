@@ -7,7 +7,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -58,19 +58,18 @@ defaultEnvelope =
 -- DESCRIPTORS
 
 
-descriptorEnvelope : Proto.Descriptor.MessageDescriptor
+descriptorEnvelope : Proto.Message.Descriptor
 descriptorEnvelope =
-    { typeName = "envelope.v1.Envelope"
-    , fields =
-        [ { name = "id", jsonName = "id", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "payload", jsonName = "payload", number = 2, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-        , { name = "attachments", jsonName = "attachments", number = 3, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-        , { name = "headers", jsonName = "headers", number = 4, cardinality = Proto.Descriptor.Map Proto.Descriptor.String, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Nothing }
-        , { name = "packed", jsonName = "packed", number = 5, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Message "google.protobuf.Any", oneof = Just "body" }
-        , { name = "text", jsonName = "text", number = 6, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Just "body" }
+    Proto.Message.descriptor "envelope.v1.Envelope"
+        [ Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "payload" "payload" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "attachments" "attachments" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "headers" "headers" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "packed" "packed" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "text" "text" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "body"
         ]
-    , oneofs = [ "body" ]
-    }
 
 
 messageEnvelope : Proto.Message.Message Envelope

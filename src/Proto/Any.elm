@@ -40,7 +40,6 @@ but [`unpack`](#unpack) gives [`BinaryOnly`](#Problem).
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor exposing (MessageDescriptor)
 import Proto.Internal.Any as Internal exposing (Payload(..))
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -80,7 +79,7 @@ nameOf url =
 -}
 is : Message a -> Any -> Bool
 is message any =
-    typeName any == Message.typeName message
+    typeName any == Message.typeName (Message.toDescriptor message)
 
 
 
@@ -92,7 +91,7 @@ protobuf's own libraries write it.
 -}
 pack : Message a -> a -> Any
 pack message value =
-    Internal.Any (Message.typeUrl message) (InJson (Message.encode message value))
+    Internal.Any (Message.typeUrl (Message.toDescriptor message)) (InJson (Message.encode message value))
 
 
 {-| A message as an `Any` whose type URL has another prefix:
@@ -109,7 +108,7 @@ packWith prefix message value =
             else
                 prefix ++ "/"
     in
-    Internal.Any (slashed ++ Message.typeName message) (InJson (Message.encode message value))
+    Internal.Any (slashed ++ Message.typeName (Message.toDescriptor message)) (InJson (Message.encode message value))
 
 
 {-| The packed message, if it is of this type: `Nothing` for another type,
@@ -147,7 +146,7 @@ type Problem
 
 {-| The descriptor of the packed message's type, if the registry has it.
 -}
-describe : Registry -> Any -> Maybe MessageDescriptor
+describe : Registry -> Any -> Maybe Message.Descriptor
 describe registry any =
     Registry.message (typeName any) registry
 

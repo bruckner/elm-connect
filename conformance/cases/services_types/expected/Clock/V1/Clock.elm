@@ -7,7 +7,6 @@ import Clock.V1
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Method
@@ -28,125 +27,114 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorNow : Proto.Descriptor.MethodDescriptor
+descriptorNow : Proto.Method.Descriptor
 descriptorNow =
-    { service = "clock.v1.Clock"
-    , name = "Now"
-    , idempotent = False
-    , input = "google.protobuf.Empty"
-    , output = "google.protobuf.Timestamp"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Now"
+        False
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []
 
 
-descriptorSleep : Proto.Descriptor.MethodDescriptor
+descriptorSleep : Proto.Method.Descriptor
 descriptorSleep =
-    { service = "clock.v1.Clock"
-    , name = "Sleep"
-    , idempotent = False
-    , input = "google.protobuf.Duration"
-    , output = "google.protobuf.Empty"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Sleep"
+        False
+        "google.protobuf.Duration"
+        "google.protobuf.Empty"
+        []
 
 
-descriptorMask : Proto.Descriptor.MethodDescriptor
+descriptorMask : Proto.Method.Descriptor
 descriptorMask =
-    { service = "clock.v1.Clock"
-    , name = "Mask"
-    , idempotent = False
-    , input = "google.protobuf.FieldMask"
-    , output = "google.protobuf.Struct"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Mask"
+        False
+        "google.protobuf.FieldMask"
+        "google.protobuf.Struct"
+        []
 
 
-descriptorEcho : Proto.Descriptor.MethodDescriptor
+descriptorEcho : Proto.Method.Descriptor
 descriptorEcho =
-    { service = "clock.v1.Clock"
-    , name = "Echo"
-    , idempotent = False
-    , input = "google.protobuf.Value"
-    , output = "google.protobuf.ListValue"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Echo"
+        False
+        "google.protobuf.Value"
+        "google.protobuf.ListValue"
+        []
 
 
-descriptorTicks : Proto.Descriptor.MethodDescriptor
+descriptorTicks : Proto.Method.Descriptor
 descriptorTicks =
-    { service = "clock.v1.Clock"
-    , name = "Ticks"
-    , idempotent = False
-    , input = "google.protobuf.Int64Value"
-    , output = "google.protobuf.UInt64Value"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Ticks"
+        False
+        "google.protobuf.Int64Value"
+        "google.protobuf.UInt64Value"
+        []
 
 
-descriptorCount : Proto.Descriptor.MethodDescriptor
+descriptorCount : Proto.Method.Descriptor
 descriptorCount =
-    { service = "clock.v1.Clock"
-    , name = "Count"
-    , idempotent = False
-    , input = "google.protobuf.Int32Value"
-    , output = "google.protobuf.UInt32Value"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Count"
+        False
+        "google.protobuf.Int32Value"
+        "google.protobuf.UInt32Value"
+        []
 
 
-descriptorRatio : Proto.Descriptor.MethodDescriptor
+descriptorRatio : Proto.Method.Descriptor
 descriptorRatio =
-    { service = "clock.v1.Clock"
-    , name = "Ratio"
-    , idempotent = False
-    , input = "google.protobuf.DoubleValue"
-    , output = "google.protobuf.FloatValue"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Ratio"
+        False
+        "google.protobuf.DoubleValue"
+        "google.protobuf.FloatValue"
+        []
 
 
-descriptorName : Proto.Descriptor.MethodDescriptor
+descriptorName : Proto.Method.Descriptor
 descriptorName =
-    { service = "clock.v1.Clock"
-    , name = "Name"
-    , idempotent = False
-    , input = "google.protobuf.StringValue"
-    , output = "google.protobuf.BoolValue"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Name"
+        False
+        "google.protobuf.StringValue"
+        "google.protobuf.BoolValue"
+        []
 
 
-descriptorRaw : Proto.Descriptor.MethodDescriptor
+descriptorRaw : Proto.Method.Descriptor
 descriptorRaw =
-    { service = "clock.v1.Clock"
-    , name = "Raw"
-    , idempotent = False
-    , input = "google.protobuf.BytesValue"
-    , output = "google.protobuf.BytesValue"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Raw"
+        False
+        "google.protobuf.BytesValue"
+        "google.protobuf.BytesValue"
+        []
 
 
-descriptorZone : Proto.Descriptor.MethodDescriptor
+descriptorZone : Proto.Method.Descriptor
 descriptorZone =
-    { service = "clock.v1.Clock"
-    , name = "Zone"
-    , idempotent = False
-    , input = "zones.v1.ZoneRequest"
-    , output = "zones.v1.Zone"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Zone"
+        False
+        "zones.v1.ZoneRequest"
+        "zones.v1.Zone"
+        []
 
 
-descriptorSet : Proto.Descriptor.MethodDescriptor
+descriptorSet : Proto.Method.Descriptor
 descriptorSet =
-    { service = "clock.v1.Clock"
-    , name = "Set"
-    , idempotent = False
-    , input = "clock.v1.Alarm"
-    , output = "clock.v1.Alarm"
-    , bindings = []
-    }
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Set"
+        False
+        "clock.v1.Alarm"
+        "clock.v1.Alarm"
+        []
 
 
 

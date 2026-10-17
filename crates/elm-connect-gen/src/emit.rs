@@ -26,8 +26,8 @@
 //!   followed by its typed value.
 //! - A service's module, `Notes.V1.NotesService`, holds two sections:
 //!   descriptors, then calls. Each method's descriptor,
-//!   `descriptorGetNote : Proto.Descriptor.MethodDescriptor`, is built by
-//!   `Proto.Descriptor.method` from its service, name, idempotency, type
+//!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
+//!   `Proto.Method.descriptor` from its service, name, idempotency, type
 //!   names and bindings, the bindings its HTTP rule's own and then its
 //!   additional ones, as data (`Proto.Http.binding`). A method without a
 //!   rule has no bindings, and the runtime calls it over the implicit
@@ -36,19 +36,21 @@
 //!   `Proto.Method.Method`, built by `Proto.Method.method` from the
 //!   encoder of its request and the decoder of its response
 //!   (`Notes.V1.encodeGetNoteRequest`, or the runtime's for a well-known
-//!   type) and its descriptor value. The application puts one argument
+//!   type) and its descriptor value. Both applications put one argument
 //!   per line however short, so every method reads alike. Elm's dead-code
 //!   elimination keeps a top-level value whole and the call refers to the
 //!   descriptor, so a program that calls a method keeps what it would
 //!   with the descriptor inline, and one that does not keeps neither.
 //!   Every library name the module refers to is qualified, so a method's
 //!   name cannot shadow or clash with one.
-//! - A message's descriptor, `descriptorFoo :
-//!   Proto.Descriptor.MessageDescriptor`, is its full name, its fields
-//!   and its oneofs' names, faithful to the proto: each field's names,
-//!   number, cardinality, kind (other types by full name) and oneof. An
-//!   enum's, `descriptorBar : Proto.Descriptor.EnumDescriptor`, holds
-//!   every declared name with its number. Each type's typed value follows
+//! - A message's descriptor, `descriptorFoo : Proto.Message.Descriptor`,
+//!   is built with `Proto.Message.descriptor` from its full name and one
+//!   `Proto.Field.descriptor` per field, faithful to the proto: its
+//!   names, number, cardinality and kind (other types by full name), then
+//!   `Proto.Field.inOneof` for a oneof member; the builder derives the
+//!   oneofs. An enum's, `descriptorBar : Proto.Enum.Descriptor`, holds
+//!   every declared name with its number (`Proto.EnumValue.descriptor`).
+//!   Each type's typed value follows
 //!   its descriptor:
 //!   `messageFoo : Proto.Message.Message Foo`, built by
 //!   `Proto.Message.message` from its encoder, decoder, default and
@@ -156,16 +158,18 @@ const TIME: &str = "Time";
 const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
-/// The runtime package's descriptors, whose constructors the trees use.
-const PROTO_DESCRIPTOR: &str = "Proto.Descriptor";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
 const PROTO_HTTP: &str = "Proto.Http";
-/// The runtime package's typed message values.
+/// The runtime package's messages: typed values and descriptors.
 const PROTO_MESSAGE: &str = "Proto.Message";
-/// The runtime package's typed method values.
+/// The runtime package's fields: descriptors and the unions they hold.
+const PROTO_FIELD: &str = "Proto.Field";
+/// The runtime package's methods: typed values and descriptors.
 const PROTO_METHOD: &str = "Proto.Method";
-/// The runtime package's typed enum values.
+/// The runtime package's enums: typed values and descriptors.
 const PROTO_ENUM: &str = "Proto.Enum";
+/// The runtime package's enum values' descriptors.
+const PROTO_ENUM_VALUE: &str = "Proto.EnumValue";
 /// The runtime package's registry of descriptors.
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
@@ -678,7 +682,7 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
-                "Proto.Descriptor",
+                "Proto.Field",
                 "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
@@ -694,7 +698,6 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
-                "Proto.Descriptor",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version"
@@ -718,9 +721,10 @@ mod tests {
         let on = printed(&Options::default());
         assert!(
             on.contains(
-                "fields = [ { name = \"n\", jsonName = \"n\", number = 1, cardinality = \
-                 Proto.Descriptor.Map Proto.Descriptor.Bool, kind = Proto.Descriptor.Scalar \
-                 Proto.Descriptor.Sfixed64, oneof = Nothing } ]"
+                "descriptorA =\n    Proto.Message.descriptor \"t.v1.A\" [ \
+                 Proto.Field.descriptor \"n\" \"n\" 1 \
+                 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) \
+                 (Proto.Field.KindScalar Proto.Field.ScalarSfixed64) ]"
             ),
             "{on}"
         );
@@ -813,7 +817,7 @@ mod tests {
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
-                "Proto.Descriptor",
+                "Proto.Field",
                 "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
@@ -823,7 +827,7 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
-            printed.contains("kind = Proto.Descriptor.Message \"other.v1.B\""),
+            printed.contains("(Proto.Field.KindMessage \"other.v1.B\")"),
             "{printed}"
         );
         assert!(
@@ -918,7 +922,6 @@ mod tests {
             [
                 "Json.Encode",
                 "Proto.Any",
-                "Proto.Descriptor",
                 "Proto.Json",
                 "Proto.Method",
                 "Proto.Version",
@@ -943,8 +946,9 @@ mod tests {
              descriptorIdentity\n",
             "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
              Proto.Any.jsonDecoder\n            descriptorTicks\n",
-            "descriptorGet : Proto.Descriptor.MethodDescriptor\ndescriptorGet =\n    \
-             { service = \"t.v1.S\"\n    , name = \"Get\"\n    , idempotent = False\n",
+            "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
+             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        False\n        \
+             \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

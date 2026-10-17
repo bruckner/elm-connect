@@ -72,10 +72,10 @@ calling:
 |---|---|
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
-| `Proto.Descriptor` | descriptors as data: messages, enums and methods |
+| `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
+| `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions, an enum value |
+| `Proto.Method` | a method's typed value (request encoder, response decoder and descriptor) and its descriptor as data |
 | `Proto.Http` | a method's `google.api.http` rule as data |
-| `Proto.Message`, `Proto.Enum` | typed values: a type's codecs with its default and descriptor |
-| `Proto.Method` | a method's request encoder, response decoder and descriptor |
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
@@ -241,14 +241,16 @@ does not read.
 
 Each message and enum also has a typed value, `Notes.V1.messageNote`
 and `Notes.V1.enumVisibility`, holding its codecs, its default and its
-descriptor: its full name and its fields (or values) as data. The typed
-value is opaque, read by `Proto.Message` and `Proto.Enum`
-(`Proto.Message.descriptor Notes.V1.messageNote`). `Notes.V1.registry`
+descriptor: its full name and its fields (or values) as data. The
+descriptor is a value of its own too, `Notes.V1.descriptorNote`. Both
+are opaque, read through the module of their concept (`Proto.Message`,
+with `Proto.Field` for a descriptor's fields). `Notes.V1.registry`
 holds the descriptors of the package, of every package it imports and
 of the well-known types, by full name:
 
 ```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
 import Notes.V1
+import Proto.Field
 import Proto.Message
 import Proto.Registry
 
@@ -256,14 +258,14 @@ import Proto.Registry
 noteUrl : String
 noteUrl =
     -- "type.googleapis.com/notes.v1.Note"
-    Proto.Message.typeUrl Notes.V1.messageNote
+    Proto.Message.typeUrl Notes.V1.descriptorNote
 
 
 noteFields : List String
 noteFields =
     -- the proto names of Note's fields, in declaration order
     Proto.Registry.message "notes.v1.Note" Notes.V1.registry
-        |> Maybe.map (.fields >> List.map .name)
+        |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
         |> Maybe.withDefault []
 ```
 

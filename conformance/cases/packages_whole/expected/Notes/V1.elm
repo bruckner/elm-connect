@@ -5,7 +5,7 @@ module Notes.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Descriptor
+import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -55,15 +55,12 @@ defaultTag =
 -- DESCRIPTORS
 
 
-descriptorNote : Proto.Descriptor.MessageDescriptor
+descriptorNote : Proto.Message.Descriptor
 descriptorNote =
-    { typeName = "notes.v1.Note"
-    , fields =
-        [ { name = "title", jsonName = "title", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing }
-        , { name = "tags", jsonName = "tags", number = 2, cardinality = Proto.Descriptor.Repeated, kind = Proto.Descriptor.Message "notes.v1.Tag", oneof = Nothing }
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "tags" "tags" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Tag")
         ]
-    , oneofs = []
-    }
 
 
 messageNote : Proto.Message.Message Note
@@ -71,12 +68,9 @@ messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
 
 
-descriptorTag : Proto.Descriptor.MessageDescriptor
+descriptorTag : Proto.Message.Descriptor
 descriptorTag =
-    { typeName = "notes.v1.Tag"
-    , fields = [ { name = "label", jsonName = "label", number = 1, cardinality = Proto.Descriptor.Singular, kind = Proto.Descriptor.Scalar Proto.Descriptor.String, oneof = Nothing } ]
-    , oneofs = []
-    }
+    Proto.Message.descriptor "notes.v1.Tag" [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
 
 
 messageTag : Proto.Message.Message Tag

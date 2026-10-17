@@ -5,7 +5,6 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
-import Proto.Descriptor
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -22,26 +21,24 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorForward : Proto.Descriptor.MethodDescriptor
+descriptorForward : Proto.Method.Descriptor
 descriptorForward =
-    { service = "envelope.v1.Relay"
-    , name = "Forward"
-    , idempotent = False
-    , input = "google.protobuf.Any"
-    , output = "google.protobuf.Any"
-    , bindings = []
-    }
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Forward"
+        False
+        "google.protobuf.Any"
+        "google.protobuf.Any"
+        []
 
 
-descriptorSend : Proto.Descriptor.MethodDescriptor
+descriptorSend : Proto.Method.Descriptor
 descriptorSend =
-    { service = "envelope.v1.Relay"
-    , name = "Send"
-    , idempotent = False
-    , input = "envelope.v1.Envelope"
-    , output = "envelope.v1.Envelope"
-    , bindings = []
-    }
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Send"
+        False
+        "envelope.v1.Envelope"
+        "envelope.v1.Envelope"
+        []
 
 
 

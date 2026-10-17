@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// The runtime's enum value descriptors live in `Proto.EnumValue`.
+package proto.enum_value;
+
+message Entry {
+  string text = 1;
+}

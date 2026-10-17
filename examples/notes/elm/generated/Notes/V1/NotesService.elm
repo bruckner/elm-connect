@@ -4,7 +4,6 @@
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
-import Proto.Descriptor
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -23,14 +22,13 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-descriptorGetNote : Proto.Descriptor.MethodDescriptor
+descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
-    { service = "notes.v1.NotesService"
-    , name = "GetNote"
-    , idempotent = True
-    , input = "notes.v1.GetNoteRequest"
-    , output = "notes.v1.Note"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "GetNote"
+        True
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -43,17 +41,15 @@ descriptorGetNote =
             , query = []
             }
         ]
-    }
 
 
-descriptorListNotes : Proto.Descriptor.MethodDescriptor
+descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
-    { service = "notes.v1.NotesService"
-    , name = "ListNotes"
-    , idempotent = True
-    , input = "notes.v1.ListNotesRequest"
-    , output = "notes.v1.ListNotesResponse"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "ListNotes"
+        True
+        "notes.v1.ListNotesRequest"
+        "notes.v1.ListNotesResponse"
         [ Proto.Http.binding
             { method = "GET"
             , path =
@@ -71,17 +67,15 @@ descriptorListNotes =
                 ]
             }
         ]
-    }
 
 
-descriptorCreateNote : Proto.Descriptor.MethodDescriptor
+descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
-    { service = "notes.v1.NotesService"
-    , name = "CreateNote"
-    , idempotent = False
-    , input = "notes.v1.CreateNoteRequest"
-    , output = "notes.v1.Note"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "CreateNote"
+        False
+        "notes.v1.CreateNoteRequest"
+        "notes.v1.Note"
         [ Proto.Http.binding
             { method = "POST"
             , path =
@@ -94,17 +88,15 @@ descriptorCreateNote =
             , query = []
             }
         ]
-    }
 
 
-descriptorUpdateNote : Proto.Descriptor.MethodDescriptor
+descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
-    { service = "notes.v1.NotesService"
-    , name = "UpdateNote"
-    , idempotent = False
-    , input = "notes.v1.UpdateNoteRequest"
-    , output = "notes.v1.Note"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "UpdateNote"
+        False
+        "notes.v1.UpdateNoteRequest"
+        "notes.v1.Note"
         [ Proto.Http.binding
             { method = "PATCH"
             , path =
@@ -117,17 +109,15 @@ descriptorUpdateNote =
             , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
             }
         ]
-    }
 
 
-descriptorDeleteNote : Proto.Descriptor.MethodDescriptor
+descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
-    { service = "notes.v1.NotesService"
-    , name = "DeleteNote"
-    , idempotent = False
-    , input = "notes.v1.DeleteNoteRequest"
-    , output = "google.protobuf.Empty"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "DeleteNote"
+        False
+        "notes.v1.DeleteNoteRequest"
+        "google.protobuf.Empty"
         [ Proto.Http.binding
             { method = "DELETE"
             , path =
@@ -140,17 +130,15 @@ descriptorDeleteNote =
             , query = []
             }
         ]
-    }
 
 
-descriptorArchiveNote : Proto.Descriptor.MethodDescriptor
+descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
-    { service = "notes.v1.NotesService"
-    , name = "ArchiveNote"
-    , idempotent = False
-    , input = "notes.v1.ArchiveNoteRequest"
-    , output = "notes.v1.Note"
-    , bindings =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "ArchiveNote"
+        False
+        "notes.v1.ArchiveNoteRequest"
+        "notes.v1.Note"
         [ Proto.Http.binding
             { method = "POST"
             , path =
@@ -163,18 +151,16 @@ descriptorArchiveNote =
             , query = []
             }
         ]
-    }
 
 
-descriptorPing : Proto.Descriptor.MethodDescriptor
+descriptorPing : Proto.Method.Descriptor
 descriptorPing =
-    { service = "notes.v1.NotesService"
-    , name = "Ping"
-    , idempotent = True
-    , input = "google.protobuf.Empty"
-    , output = "google.protobuf.Empty"
-    , bindings = []
-    }
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "Ping"
+        True
+        "google.protobuf.Empty"
+        "google.protobuf.Empty"
+        []
 
 
 
