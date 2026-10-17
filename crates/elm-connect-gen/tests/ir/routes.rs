@@ -360,6 +360,138 @@ fn a_cycle_is_refused_where_it_is_held() {
 }
 
 #[test]
+fn a_cycle_through_a_side_branch_is_found() {
+    // `A` holds `B`, which holds `A`, closing a cycle before `A`'s second
+    // field `c` is looked at; `C` holds `B`, so it lies on a cycle too, one
+    // a walk that only looks for a message on its own path would miss once
+    // `B` is finished. Every field holding a message on a cycle is refused.
+    let source = r#"syntax = "proto3";
+package t.v1;
+import "google/api/annotations.proto";
+message A { B b = 1; C c = 2; string name = 3; }
+message B { A a = 1; }
+message C { B b = 1; string name = 2; }
+message Side { C c = 1; }
+service S {
+  rpc GetA(A) returns (A) { option (google.api.http) = { get: "/v1/a" }; }
+  rpc GetSide(Side) returns (Side) { option (google.api.http) = { get: "/v1/side" }; }
+}
+"#;
+    let files = [("t.proto", source)];
+    let diagnostics = problems(&files, &["t.proto"]);
+    let messages: Vec<String> = diagnostics
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect();
+    assert_eq!(
+        messages,
+        [
+            "route::query_field: The HTTP rule of `t.v1.S.GetA` sends `b` as a query parameter, \
+             but `t.v1.B` contains itself, which has no query form.",
+            "route::query_field: The HTTP rule of `t.v1.S.GetA` sends `c` as a query parameter, \
+             but `t.v1.C` contains itself, which has no query form.",
+            "route::query_field: The HTTP rule of `t.v1.S.GetSide` sends `c` as a query \
+             parameter, but `t.v1.C` contains itself, which has no query form.",
+        ]
+    );
+}
+
+/// A chain of `n` messages, each holding the next in `next`, the last a
+/// leaf, and the service `S` with a GET rule for each request in `gets`.
+fn chain(n: usize, gets: &[(usize, &str)]) -> String {
+    let mut source = String::from(
+        "syntax = \"proto3\";\npackage t.v1;\nimport \"google/api/annotations.proto\";\n",
+    );
+    for i in 0..n {
+        source += &format!("message M{i} {{ string v = 1;");
+        if i + 1 < n {
+            source += &format!(" M{} next = 2;", i + 1);
+        }
+        source += " }\n";
+    }
+    source += "service S {\n";
+    for (i, template) in gets {
+        source += &format!(
+            "  rpc Get{i}(M{i}) returns (M{i}) {{ option (google.api.http) = {{ get: \"{template}\" }}; }}\n"
+        );
+    }
+    source + "}\n"
+}
+
+#[test]
+fn a_query_reaches_the_nesting_limit() {
+    // M0 holds M1 through M100: 100 messages below the request, which a
+    // protobuf parser reads, so every leaf is a parameter.
+    let built = package(&chain(101, &[(0, "/v1/m")]));
+    let route = &method(&built, "Get0").routes[0];
+    assert_eq!(route.query.len(), 101);
+    assert_eq!(params(route)[0].0, "v");
+    assert_eq!(params(route)[100].0, format!("{}v", "next.".repeat(100)));
+}
+
+#[test]
+fn a_query_stops_at_the_nesting_limit() {
+    // M0 holds M1 through M149; the field holding M101 is 101 messages
+    // deep, past protobuf's limit, and is refused rather than expanded.
+    // The same from M1 (M102 is its 101st); M49 holds exactly 100 and is
+    // fine. Expanding without a limit made each rule's parameters every
+    // leaf below it, quadratic in the chain.
+    let source = chain(150, &[(0, "/v1/m0"), (1, "/v1/m1"), (49, "/v1/m49")]);
+    let files = [("t.proto", source.as_str())];
+    let diagnostics = problems(&files, &["t.proto"]);
+    let messages: Vec<String> = diagnostics
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect();
+    assert_eq!(messages.len(), 2, "{}", messages.join("\n"));
+    let deep = vec!["next"; 101].join(".");
+    assert_eq!(
+        messages[0],
+        format!(
+            "route::query_field: The HTTP rule of `t.v1.S.Get0` sends `{deep}` as a query \
+             parameter, but it is nested 101 messages deep, past protobuf's limit of 100, \
+             which has no query form."
+        )
+    );
+    assert!(messages[1].contains("`t.v1.S.Get1`"), "{}", messages[1]);
+}
+
+#[test]
+fn a_path_variable_stops_at_the_nesting_limit() {
+    // The same limit on a path variable: through 100 messages is read,
+    // through 101 is not. The query is refused through the same field.
+    let within = format!("/v1/{{{}v}}", "next.".repeat(100));
+    let built = package(&chain(101, &[(0, within.as_str())]));
+    let route = &method(&built, "Get0").routes[0];
+    assert_eq!(route.segments.len(), 2);
+    assert_eq!(route.query.len(), 100);
+    assert_eq!(params(route)[99].0, format!("{}v", "next.".repeat(99)));
+
+    let past = format!("/v1/{{{}v}}", "next.".repeat(101));
+    let source = chain(102, &[(0, past.as_str())]);
+    let files = [("t.proto", source.as_str())];
+    let diagnostics = problems(&files, &["t.proto"]);
+    let messages: Vec<String> = diagnostics
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect();
+    assert_eq!(messages.len(), 2, "{}", messages.join("\n"));
+    let deep = vec!["next"; 101].join(".");
+    assert!(
+        messages[1].starts_with("route::query_field:"),
+        "{}",
+        messages[1]
+    );
+    assert_eq!(
+        messages[0],
+        format!(
+            "route::path_field: The HTTP rule of `t.v1.S.Get0` binds `{{{deep}.v}}` in its \
+             path, but `{deep}` is nested 101 messages deep, past protobuf's limit of 100."
+        )
+    );
+}
+
+#[test]
 fn a_well_known_request_leaves_nothing_to_the_query() {
     let header = r#"syntax = "proto3";
 package t.v1;

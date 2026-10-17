@@ -27,6 +27,9 @@
 //!   through singular fields of generated messages (`{sub.subfield}`). A
 //!   bare `*` or `**` outside a variable cannot be filled by a client and
 //!   is refused. `**` may only be the last segment of the template.
+//! - A message held deeper than [`NESTING_LIMIT`] messages below the
+//!   request is past what a protobuf parser reads, and a path variable or
+//!   query parameter through it is refused.
 //! - `body` is empty (no body), `*` (every field not in the path), or the
 //!   name of a top-level singular message field of the request.
 //! - `response_body` is empty or the name of a top-level field of the
@@ -37,17 +40,25 @@
 //!   A parameter holds a scalar, an enum, or a well-known type with a
 //!   string or scalar JSON form (timestamps, durations, field masks,
 //!   wrappers); a repeated one is repeated in the query. Maps, repeated
-//!   messages, `Struct`, `Value` and `ListValue`, and a message that
-//!   recurses into itself have no query form and are refused. `Empty`
-//!   carries nothing and has no parameter.
+//!   messages, `Struct`, `Value` and `ListValue`, a message that
+//!   recurses into itself, and a message past the nesting limit have no
+//!   query form and are refused. `Empty` carries nothing and has no
+//!   parameter.
 //! - Additional bindings take the same rules, and may not nest.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt;
 
 use prost_reflect::{FieldDescriptor, Kind, MessageDescriptor};
 
 use crate::ir::{HttpRule, HttpVerb, WellKnown};
+
+/// How deep a message may hold other messages: protobuf's nesting limit
+/// for parsing, counted in messages below the top-level one
+/// (<https://protobuf.dev/programming-guides/proto-limits/>). A message
+/// held deeper is one a parser refuses, so a field through it has no
+/// form a server reads, and refusing it bounds the walk of a deep chain.
+pub const NESTING_LIMIT: usize = 100;
 
 /// A path template as written, parsed but not yet checked against a
 /// request.
@@ -708,6 +719,13 @@ fn path_field(
                         inner.full_name()
                     ));
                 }
+                if path.proto.len() > NESTING_LIMIT {
+                    return Err(format!(
+                        "`{}` is nested {} messages deep, past protobuf's limit of {NESTING_LIMIT}",
+                        path.dotted(),
+                        path.proto.len()
+                    ));
+                }
                 message = inner;
             }
             kind if last => return Ok((path, default_text(&kind))),
@@ -810,6 +828,13 @@ impl QueryWalk<'_> {
             zero,
         };
         match field.kind() {
+            Kind::Message(_) if path.proto.len() > NESTING_LIMIT => self.refuse(
+                &path,
+                format!(
+                    "it is nested {} messages deep, past protobuf's limit of {NESTING_LIMIT}",
+                    path.proto.len()
+                ),
+            ),
             Kind::Message(inner) => match well_known(&inner) {
                 Some(Some(WellKnown::Empty)) => {}
                 Some(Some(WellKnown::Struct | WellKnown::Value | WellKnown::ListValue)) => {
@@ -839,46 +864,92 @@ impl QueryWalk<'_> {
     /// expanded. Expanding it and refusing the field that closes the
     /// cycle walks the whole cycle first and reports every field along
     /// it at every depth, which on a cycle of thousands of messages
-    /// exhausted memory. The search follows each message once, and a hit
-    /// settles every message on the path to it, since each lies on the
-    /// cycle found.
+    /// exhausted memory.
     fn recursive(&mut self, message: &MessageDescriptor) -> bool {
-        let target = message.full_name().to_owned();
-        if let Some(&known) = self.recursion.get(&target) {
+        if let Some(&known) = self.recursion.get(message.full_name()) {
             return known;
         }
-        let mut seen: HashSet<String> = HashSet::new();
-        let mut path: Vec<(Vec<FieldDescriptor>, usize)> = vec![(message.fields().collect(), 0)];
-        let found = loop {
-            let Some((fields, next)) = path.last_mut() else {
-                break false;
-            };
-            let Some(field) = fields.get(*next) else {
+        self.settle(message);
+        self.recursion[message.full_name()]
+    }
+
+    /// Settles [`QueryWalk::recursion`] for `root` and every message it
+    /// reaches that is not settled yet: Tarjan's strongly connected
+    /// components, a message recursive when its component has another
+    /// message or it holds itself directly. One pass from the first
+    /// message asked settles a whole chain, where a search per message
+    /// asked walked the chain below it again for each.
+    ///
+    /// A settled message is left out of the graph: its component is
+    /// complete, since anything that reaches it and that it reaches was
+    /// visited by the pass that settled it.
+    fn settle(&mut self, root: &MessageDescriptor) {
+        struct Node {
+            message: MessageDescriptor,
+            fields: Vec<FieldDescriptor>,
+            next: usize,
+            low: usize,
+            holds_itself: bool,
+            on_stack: bool,
+        }
+        let node = |message: &MessageDescriptor, index: usize| Node {
+            message: message.clone(),
+            fields: message.fields().collect(),
+            next: 0,
+            low: index,
+            holds_itself: false,
+            on_stack: true,
+        };
+        // A node's index is its position in `nodes`, assigned when visited.
+        let mut nodes: Vec<Node> = vec![node(root, 0)];
+        let mut visited: HashMap<String, usize> = HashMap::from([(root.full_name().to_owned(), 0)]);
+        let mut stack: Vec<usize> = vec![0];
+        let mut path: Vec<usize> = vec![0];
+        while let Some(&v) = path.last() {
+            let current = &mut nodes[v];
+            let Some(field) = current.fields.get(current.next) else {
                 path.pop();
+                let low = nodes[v].low;
+                if let Some(&parent) = path.last() {
+                    nodes[parent].low = nodes[parent].low.min(low);
+                }
+                if low == v {
+                    let mut component = vec![];
+                    loop {
+                        let w = stack.pop().expect("a finished node is on the stack");
+                        nodes[w].on_stack = false;
+                        component.push(w);
+                        if w == v {
+                            break;
+                        }
+                    }
+                    let recursive = component.len() > 1 || nodes[v].holds_itself;
+                    for w in component {
+                        self.recursion
+                            .insert(nodes[w].message.full_name().to_owned(), recursive);
+                    }
+                }
                 continue;
             };
-            *next += 1;
+            current.next += 1;
             let Some(inner) = expanded(field) else {
                 continue;
             };
-            if inner.full_name() == target {
-                break true;
-            }
-            if seen.insert(inner.full_name().to_owned()) {
-                path.push((inner.fields().collect(), 0));
-            }
-        };
-        if found {
-            // Every message on the path holds `message`, which holds it.
-            for (fields, next) in &path {
-                let held = fields[next - 1].kind();
-                if let Kind::Message(on_cycle) = held {
-                    self.recursion.insert(on_cycle.full_name().to_owned(), true);
+            let name = inner.full_name();
+            if name == current.message.full_name() {
+                current.holds_itself = true;
+            } else if let Some(&w) = visited.get(name) {
+                if nodes[w].on_stack {
+                    nodes[v].low = nodes[v].low.min(w);
                 }
+            } else if !self.recursion.contains_key(name) {
+                let w = nodes.len();
+                nodes.push(node(&inner, w));
+                visited.insert(name.to_owned(), w);
+                stack.push(w);
+                path.push(w);
             }
         }
-        self.recursion.insert(target, found);
-        found
     }
 }
 

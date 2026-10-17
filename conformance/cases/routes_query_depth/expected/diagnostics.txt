@@ -1,0 +1,24 @@
+route::query_field
+
+  × The HTTP rule of `depth.v1.Depth.GetTop` sends
+  │ `next.next.next.next.next.next.next.next.next.next.next.next.next.next.nex
+  │ t.next.next.next.next.next.next.next.next.next.next.next.next.next.next.ne
+  │ xt.next.next.next.next.next.next.next.next.next.next.next.next.next.next.n
+  │ ext.next.next.next.next.next.next.next.next.next.next.next.next.next.next.
+  │ next.next.next.next.next.next.next.next.next.next.next.next.next.next.next
+  │ .next.next.next.next.next.next.next.next.next.next.next.next.next.next.nex
+  │ t.next.next.next.next.next.next.next.next.next.next.next.next` as a query
+  │ parameter, but it is nested 101 messages deep, past protobuf's limit of
+  │ 100, which has no query form.
+     ╭─[depth.proto:522:5]
+ 521 │       rpc GetTop(Level0) returns (Level0) {
+ 522 │ ╭─▶     option (google.api.http) = {
+ 523 │ │         get: "/v1/top"
+ 524 │ ├─▶     };
+     · ╰──── in this rule
+ 525 │       }
+     ╰────
+  help: Every request field outside the path and the body is a query
+        parameter, and a parameter holds scalars, enums and well-known types
+        with a string form. Send the field in the body (`body: "*"`, or a body
+        field holding it), or move it out of the request.

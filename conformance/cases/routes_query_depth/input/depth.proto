@@ -1,0 +1,533 @@
+syntax = "proto3";
+
+package depth.v1;
+
+import "google/api/annotations.proto";
+
+// A chain of 102 messages, each holding the next. Level0 holds Level101
+// 101 messages down, one past the nesting limit a protobuf parser reads;
+// Level1 holds it 100 down, within it.
+message Level0 {
+  string name = 1;
+  Level1 next = 2;
+}
+
+message Level1 {
+  string name = 1;
+  Level2 next = 2;
+}
+
+message Level2 {
+  string name = 1;
+  Level3 next = 2;
+}
+
+message Level3 {
+  string name = 1;
+  Level4 next = 2;
+}
+
+message Level4 {
+  string name = 1;
+  Level5 next = 2;
+}
+
+message Level5 {
+  string name = 1;
+  Level6 next = 2;
+}
+
+message Level6 {
+  string name = 1;
+  Level7 next = 2;
+}
+
+message Level7 {
+  string name = 1;
+  Level8 next = 2;
+}
+
+message Level8 {
+  string name = 1;
+  Level9 next = 2;
+}
+
+message Level9 {
+  string name = 1;
+  Level10 next = 2;
+}
+
+message Level10 {
+  string name = 1;
+  Level11 next = 2;
+}
+
+message Level11 {
+  string name = 1;
+  Level12 next = 2;
+}
+
+message Level12 {
+  string name = 1;
+  Level13 next = 2;
+}
+
+message Level13 {
+  string name = 1;
+  Level14 next = 2;
+}
+
+message Level14 {
+  string name = 1;
+  Level15 next = 2;
+}
+
+message Level15 {
+  string name = 1;
+  Level16 next = 2;
+}
+
+message Level16 {
+  string name = 1;
+  Level17 next = 2;
+}
+
+message Level17 {
+  string name = 1;
+  Level18 next = 2;
+}
+
+message Level18 {
+  string name = 1;
+  Level19 next = 2;
+}
+
+message Level19 {
+  string name = 1;
+  Level20 next = 2;
+}
+
+message Level20 {
+  string name = 1;
+  Level21 next = 2;
+}
+
+message Level21 {
+  string name = 1;
+  Level22 next = 2;
+}
+
+message Level22 {
+  string name = 1;
+  Level23 next = 2;
+}
+
+message Level23 {
+  string name = 1;
+  Level24 next = 2;
+}
+
+message Level24 {
+  string name = 1;
+  Level25 next = 2;
+}
+
+message Level25 {
+  string name = 1;
+  Level26 next = 2;
+}
+
+message Level26 {
+  string name = 1;
+  Level27 next = 2;
+}
+
+message Level27 {
+  string name = 1;
+  Level28 next = 2;
+}
+
+message Level28 {
+  string name = 1;
+  Level29 next = 2;
+}
+
+message Level29 {
+  string name = 1;
+  Level30 next = 2;
+}
+
+message Level30 {
+  string name = 1;
+  Level31 next = 2;
+}
+
+message Level31 {
+  string name = 1;
+  Level32 next = 2;
+}
+
+message Level32 {
+  string name = 1;
+  Level33 next = 2;
+}
+
+message Level33 {
+  string name = 1;
+  Level34 next = 2;
+}
+
+message Level34 {
+  string name = 1;
+  Level35 next = 2;
+}
+
+message Level35 {
+  string name = 1;
+  Level36 next = 2;
+}
+
+message Level36 {
+  string name = 1;
+  Level37 next = 2;
+}
+
+message Level37 {
+  string name = 1;
+  Level38 next = 2;
+}
+
+message Level38 {
+  string name = 1;
+  Level39 next = 2;
+}
+
+message Level39 {
+  string name = 1;
+  Level40 next = 2;
+}
+
+message Level40 {
+  string name = 1;
+  Level41 next = 2;
+}
+
+message Level41 {
+  string name = 1;
+  Level42 next = 2;
+}
+
+message Level42 {
+  string name = 1;
+  Level43 next = 2;
+}
+
+message Level43 {
+  string name = 1;
+  Level44 next = 2;
+}
+
+message Level44 {
+  string name = 1;
+  Level45 next = 2;
+}
+
+message Level45 {
+  string name = 1;
+  Level46 next = 2;
+}
+
+message Level46 {
+  string name = 1;
+  Level47 next = 2;
+}
+
+message Level47 {
+  string name = 1;
+  Level48 next = 2;
+}
+
+message Level48 {
+  string name = 1;
+  Level49 next = 2;
+}
+
+message Level49 {
+  string name = 1;
+  Level50 next = 2;
+}
+
+message Level50 {
+  string name = 1;
+  Level51 next = 2;
+}
+
+message Level51 {
+  string name = 1;
+  Level52 next = 2;
+}
+
+message Level52 {
+  string name = 1;
+  Level53 next = 2;
+}
+
+message Level53 {
+  string name = 1;
+  Level54 next = 2;
+}
+
+message Level54 {
+  string name = 1;
+  Level55 next = 2;
+}
+
+message Level55 {
+  string name = 1;
+  Level56 next = 2;
+}
+
+message Level56 {
+  string name = 1;
+  Level57 next = 2;
+}
+
+message Level57 {
+  string name = 1;
+  Level58 next = 2;
+}
+
+message Level58 {
+  string name = 1;
+  Level59 next = 2;
+}
+
+message Level59 {
+  string name = 1;
+  Level60 next = 2;
+}
+
+message Level60 {
+  string name = 1;
+  Level61 next = 2;
+}
+
+message Level61 {
+  string name = 1;
+  Level62 next = 2;
+}
+
+message Level62 {
+  string name = 1;
+  Level63 next = 2;
+}
+
+message Level63 {
+  string name = 1;
+  Level64 next = 2;
+}
+
+message Level64 {
+  string name = 1;
+  Level65 next = 2;
+}
+
+message Level65 {
+  string name = 1;
+  Level66 next = 2;
+}
+
+message Level66 {
+  string name = 1;
+  Level67 next = 2;
+}
+
+message Level67 {
+  string name = 1;
+  Level68 next = 2;
+}
+
+message Level68 {
+  string name = 1;
+  Level69 next = 2;
+}
+
+message Level69 {
+  string name = 1;
+  Level70 next = 2;
+}
+
+message Level70 {
+  string name = 1;
+  Level71 next = 2;
+}
+
+message Level71 {
+  string name = 1;
+  Level72 next = 2;
+}
+
+message Level72 {
+  string name = 1;
+  Level73 next = 2;
+}
+
+message Level73 {
+  string name = 1;
+  Level74 next = 2;
+}
+
+message Level74 {
+  string name = 1;
+  Level75 next = 2;
+}
+
+message Level75 {
+  string name = 1;
+  Level76 next = 2;
+}
+
+message Level76 {
+  string name = 1;
+  Level77 next = 2;
+}
+
+message Level77 {
+  string name = 1;
+  Level78 next = 2;
+}
+
+message Level78 {
+  string name = 1;
+  Level79 next = 2;
+}
+
+message Level79 {
+  string name = 1;
+  Level80 next = 2;
+}
+
+message Level80 {
+  string name = 1;
+  Level81 next = 2;
+}
+
+message Level81 {
+  string name = 1;
+  Level82 next = 2;
+}
+
+message Level82 {
+  string name = 1;
+  Level83 next = 2;
+}
+
+message Level83 {
+  string name = 1;
+  Level84 next = 2;
+}
+
+message Level84 {
+  string name = 1;
+  Level85 next = 2;
+}
+
+message Level85 {
+  string name = 1;
+  Level86 next = 2;
+}
+
+message Level86 {
+  string name = 1;
+  Level87 next = 2;
+}
+
+message Level87 {
+  string name = 1;
+  Level88 next = 2;
+}
+
+message Level88 {
+  string name = 1;
+  Level89 next = 2;
+}
+
+message Level89 {
+  string name = 1;
+  Level90 next = 2;
+}
+
+message Level90 {
+  string name = 1;
+  Level91 next = 2;
+}
+
+message Level91 {
+  string name = 1;
+  Level92 next = 2;
+}
+
+message Level92 {
+  string name = 1;
+  Level93 next = 2;
+}
+
+message Level93 {
+  string name = 1;
+  Level94 next = 2;
+}
+
+message Level94 {
+  string name = 1;
+  Level95 next = 2;
+}
+
+message Level95 {
+  string name = 1;
+  Level96 next = 2;
+}
+
+message Level96 {
+  string name = 1;
+  Level97 next = 2;
+}
+
+message Level97 {
+  string name = 1;
+  Level98 next = 2;
+}
+
+message Level98 {
+  string name = 1;
+  Level99 next = 2;
+}
+
+message Level99 {
+  string name = 1;
+  Level100 next = 2;
+}
+
+message Level100 {
+  string name = 1;
+  Level101 next = 2;
+}
+
+message Level101 {
+  string name = 1;
+}
+
+service Depth {
+  // Refused: the query would reach `next` 101 messages deep.
+  rpc GetTop(Level0) returns (Level0) {
+    option (google.api.http) = {
+      get: "/v1/top"
+    };
+  }
+
+  // Fine: the deepest message is 100 down.
+  rpc GetNext(Level1) returns (Level1) {
+    option (google.api.http) = {
+      get: "/v1/next"
+    };
+  }
+}
