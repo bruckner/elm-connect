@@ -25,7 +25,7 @@ descriptorForward : Proto.Method.Descriptor
 descriptorForward =
     Proto.Method.descriptor "envelope.v1.Relay"
         "Forward"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Any"
         "google.protobuf.Any"
         []
@@ -35,7 +35,7 @@ descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "envelope.v1.Relay"
         "Send"
-        False
+        Proto.Method.IdempotencyUnknown
         "envelope.v1.Envelope"
         "envelope.v1.Envelope"
         []

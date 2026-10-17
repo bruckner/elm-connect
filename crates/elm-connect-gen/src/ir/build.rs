@@ -11,9 +11,9 @@ use prost_reflect::{
 use super::graph::strongly_connected;
 use super::rename;
 use super::{
-    Cardinality, Enum, EnumValue, Field, HttpRule, HttpVerb, JsType, MapKey, Message, Method,
-    ModuleName, Oneof, OneofVariant, Package, ScalarKind, Service, TypeName, TypeRef, WellKnown,
-    Wrapper,
+    Cardinality, Enum, EnumValue, Field, HttpRule, HttpVerb, Idempotency, JsType, MapKey, Message,
+    Method, ModuleName, Oneof, OneofVariant, Package, ScalarKind, Service, TypeName, TypeRef,
+    WellKnown, Wrapper,
 };
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
 use crate::naming::{self, NameError};
@@ -693,7 +693,7 @@ impl Builder {
             elm_name,
             input: input?,
             output: output?,
-            idempotent: idempotent(method),
+            idempotency: idempotency(method),
             http,
             routes,
         };
@@ -1360,14 +1360,19 @@ pub(super) fn declared_values(enumeration: &EnumDescriptor) -> Vec<EnumValueDesc
         .collect()
 }
 
-/// Whether `method` declares `idempotency_level = NO_SIDE_EFFECTS`.
-fn idempotent(method: &MethodDescriptor) -> bool {
+/// The `idempotency_level` `method` declares.
+fn idempotency(method: &MethodDescriptor) -> Idempotency {
     use prost_types::method_options::IdempotencyLevel;
-    method
+    let level = method
         .method_descriptor_proto()
         .options
         .as_ref()
-        .is_some_and(|options| options.idempotency_level() == IdempotencyLevel::NoSideEffects)
+        .map(|options| options.idempotency_level());
+    match level {
+        Some(IdempotencyLevel::NoSideEffects) => Idempotency::NoSideEffects,
+        Some(IdempotencyLevel::Idempotent) => Idempotency::Idempotent,
+        Some(IdempotencyLevel::IdempotencyUnknown) | None => Idempotency::Unknown,
+    }
 }
 
 /// The full name of the `google.api.http` extension of `MethodOptions`.

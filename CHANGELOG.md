@@ -624,3 +624,15 @@ tag (design §8).
   descriptor is `toDescriptor`. A message's oneofs are derived from its
   fields' `inOneof`, which generated code writes only for a oneof
   member.
+- A method descriptor carries the proto's three-level
+  `idempotency_level` as `Proto.Method.Idempotency`
+  (`IdempotencyUnknown`, `IdempotencyNoSideEffects`,
+  `IdempotencyIdempotent`), built and read by
+  `Proto.Method.descriptor` and `Proto.Method.idempotency`, in place of
+  `idempotent : Bool`, which was true for `NO_SIDE_EFFECTS` alone. A
+  retry policy with `idempotentOnly` now retries an `IDEMPOTENT` method
+  too; Connect still sends only an `IdempotencyNoSideEffects` method as
+  a GET. `Rpc.idempotent` keeps its meaning, the method has no side
+  effects. `annotations` conformance case.
+- `Proto.Field.Cardinality` gains `CardinalityRequired`, for proto2's
+  `required`, which the generator does not give yet.

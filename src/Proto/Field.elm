@@ -48,6 +48,8 @@ type Descriptor
   - `CardinalitySingular`: one, without presence unless it is a message or a
     oneof member.
   - `CardinalityOptional`: one, with presence: a proto3 `optional` field.
+  - `CardinalityRequired`: one, which must be present: proto2's `required`.
+    The generator reads proto3 alone, so it never gives this today.
   - `CardinalityRepeated`: a list.
   - `CardinalityMap`: a map, keyed by this scalar.
 
@@ -55,6 +57,7 @@ type Descriptor
 type Cardinality
     = CardinalitySingular
     | CardinalityOptional
+    | CardinalityRequired
     | CardinalityRepeated
     | CardinalityMap Scalar
 

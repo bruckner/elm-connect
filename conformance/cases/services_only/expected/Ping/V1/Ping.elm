@@ -25,7 +25,7 @@ descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "ping.v1.Ping"
         "Ping"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Timestamp"
         []

@@ -886,7 +886,7 @@ mod tests {
             elm_name: name.to_lowercase(),
             input,
             output,
-            idempotent: false,
+            idempotency: crate::ir::Idempotency::Unknown,
             http: None,
             routes: Vec::new(),
         };
@@ -947,7 +947,8 @@ mod tests {
             "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
              Proto.Any.jsonDecoder\n            descriptorTicks\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
-             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        False\n        \
+             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Method.IdempotencyUnknown\n        \
              \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");

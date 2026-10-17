@@ -26,7 +26,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -47,7 +47,7 @@ descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ListNotes"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.ListNotesRequest"
         "notes.v1.ListNotesResponse"
         [ Proto.Http.binding
@@ -73,7 +73,7 @@ descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "CreateNote"
-        False
+        Proto.Method.IdempotencyUnknown
         "notes.v1.CreateNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -94,7 +94,7 @@ descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "UpdateNote"
-        False
+        Proto.Method.IdempotencyUnknown
         "notes.v1.UpdateNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -115,7 +115,7 @@ descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "DeleteNote"
-        False
+        Proto.Method.IdempotencyUnknown
         "notes.v1.DeleteNoteRequest"
         "google.protobuf.Empty"
         [ Proto.Http.binding
@@ -136,7 +136,7 @@ descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ArchiveNote"
-        False
+        Proto.Method.IdempotencyUnknown
         "notes.v1.ArchiveNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -157,7 +157,7 @@ descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "notes.v1.NotesService"
         "Ping"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "google.protobuf.Empty"
         "google.protobuf.Empty"
         []

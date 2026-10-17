@@ -24,7 +24,7 @@ descriptorUnary : Proto.Method.Descriptor
 descriptorUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "Unary"
-        False
+        Proto.Method.IdempotencyUnknown
         "connectrpc.conformance.v1.UnaryRequest"
         "connectrpc.conformance.v1.UnaryResponse"
         []
@@ -34,7 +34,7 @@ descriptorUnimplemented : Proto.Method.Descriptor
 descriptorUnimplemented =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "Unimplemented"
-        False
+        Proto.Method.IdempotencyUnknown
         "connectrpc.conformance.v1.UnimplementedRequest"
         "connectrpc.conformance.v1.UnimplementedResponse"
         []
@@ -44,7 +44,7 @@ descriptorIdempotentUnary : Proto.Method.Descriptor
 descriptorIdempotentUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "IdempotentUnary"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "connectrpc.conformance.v1.IdempotentUnaryRequest"
         "connectrpc.conformance.v1.IdempotentUnaryResponse"
         []

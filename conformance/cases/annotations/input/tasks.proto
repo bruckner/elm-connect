@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// What a descriptor carries beyond a field's type: a method's idempotency
+// level is carried whole.
+package tasks.v1;
+
+enum State {
+  STATE_UNSPECIFIED = 0;
+  STATE_OPEN = 1;
+  STATE_STALE = 2;
+}
+
+message Task {
+  string name = 1;
+  string title = 2;
+  State state = 3;
+  repeated string labels = 4;
+  string owner = 5;
+  string notes = 6;
+  oneof due {
+    string date = 7;
+    string never = 8;
+  }
+}
+
+message GetTaskRequest {
+  string name = 1;
+}
+
+service Tasks {
+  rpc GetTask(GetTaskRequest) returns (Task) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PutTask(Task) returns (Task) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc CloseTask(GetTaskRequest) returns (Task);
+}

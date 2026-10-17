@@ -24,7 +24,7 @@ descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "chat.v1.Chat"
         "Send"
-        False
+        Proto.Method.IdempotencyUnknown
         "chat.v1.Line"
         "chat.v1.Line"
         []

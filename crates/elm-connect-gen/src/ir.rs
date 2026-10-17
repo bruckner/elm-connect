@@ -93,9 +93,8 @@ pub struct Method {
     pub input: TypeRef,
     /// The response type, under the same rule as [`Method::input`].
     pub output: TypeRef,
-    /// Whether the method declares `idempotency_level = NO_SIDE_EFFECTS`,
-    /// which lets Connect call it with GET.
-    pub idempotent: bool,
+    /// The method's declared `idempotency_level`.
+    pub idempotency: Idempotency,
     /// The method's `google.api.http` rule, if it has one.
     pub http: Option<HttpRule>,
     /// One route per HTTP binding: the rule's own first, then each
@@ -109,6 +108,21 @@ impl Method {
     pub fn descriptor_name(&self) -> String {
         crate::naming::method_descriptor_name(&self.elm_name)
     }
+}
+
+/// A method's `idempotency_level` option, as `descriptor.proto` declares
+/// it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Idempotency {
+    /// `IDEMPOTENCY_UNKNOWN`, or no option: the method may have side
+    /// effects.
+    #[default]
+    Unknown,
+    /// `NO_SIDE_EFFECTS`: Connect may call it with GET, and an
+    /// idempotent-only retry policy may retry it.
+    NoSideEffects,
+    /// `IDEMPOTENT`: an idempotent-only retry policy may retry it.
+    Idempotent,
 }
 
 /// A `google.api.http` rule as written: the verb and path template, the

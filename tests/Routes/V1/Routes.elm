@@ -25,7 +25,7 @@ descriptorGetMessage : Proto.Method.Descriptor
 descriptorGetMessage =
     Proto.Method.descriptor "routes.v1.Routes"
         "GetMessage"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
         [ Proto.Http.binding
@@ -103,7 +103,7 @@ descriptorUpdateMessage : Proto.Method.Descriptor
 descriptorUpdateMessage =
     Proto.Method.descriptor "routes.v1.Routes"
         "UpdateMessage"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.UpdateMessageRequest"
         "routes.v1.Message"
         [ Proto.Http.binding
@@ -125,7 +125,7 @@ descriptorUpdateMessageWhole : Proto.Method.Descriptor
 descriptorUpdateMessageWhole =
     Proto.Method.descriptor "routes.v1.Routes"
         "UpdateMessageWhole"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Message"
         "routes.v1.Message"
         [ Proto.Http.binding
@@ -147,7 +147,7 @@ descriptorPostSub : Proto.Method.Descriptor
 descriptorPostSub =
     Proto.Method.descriptor "routes.v1.Routes"
         "PostSub"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
         [ Proto.Http.binding
@@ -169,7 +169,7 @@ descriptorQuery : Proto.Method.Descriptor
 descriptorQuery =
     Proto.Method.descriptor "routes.v1.Routes"
         "Query"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
         [ Proto.Http.binding
@@ -215,7 +215,7 @@ descriptorSingle : Proto.Method.Descriptor
 descriptorSingle =
     Proto.Method.descriptor "routes.v1.Routes"
         "Single"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
         [ Proto.Http.binding
@@ -261,7 +261,7 @@ descriptorMulti : Proto.Method.Descriptor
 descriptorMulti =
     Proto.Method.descriptor "routes.v1.Routes"
         "Multi"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
         [ Proto.Http.binding
@@ -306,7 +306,7 @@ descriptorTyped : Proto.Method.Descriptor
 descriptorTyped =
     Proto.Method.descriptor "routes.v1.Routes"
         "Typed"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
         [ Proto.Http.binding
@@ -352,7 +352,7 @@ descriptorFiles : Proto.Method.Descriptor
 descriptorFiles =
     Proto.Method.descriptor "routes.v1.Routes"
         "Files"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.FileRequest"
         "routes.v1.FileRequest"
         [ Proto.Http.binding
@@ -373,7 +373,7 @@ descriptorCancel : Proto.Method.Descriptor
 descriptorCancel =
     Proto.Method.descriptor "routes.v1.Routes"
         "Cancel"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.Resource"
         "routes.v1.Resource"
         [ Proto.Http.binding
@@ -394,7 +394,7 @@ descriptorUpdateResource : Proto.Method.Descriptor
 descriptorUpdateResource =
     Proto.Method.descriptor "routes.v1.Routes"
         "UpdateResource"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.UpdateResourceRequest"
         "routes.v1.Resource"
         [ Proto.Http.binding
@@ -415,7 +415,7 @@ descriptorHead : Proto.Method.Descriptor
 descriptorHead =
     Proto.Method.descriptor "routes.v1.Routes"
         "Head"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.FileRequest"
         "routes.v1.FileRequest"
         [ Proto.Http.binding
@@ -436,7 +436,7 @@ descriptorUnbound : Proto.Method.Descriptor
 descriptorUnbound =
     Proto.Method.descriptor "routes.v1.Routes"
         "Unbound"
-        False
+        Proto.Method.IdempotencyUnknown
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
         []

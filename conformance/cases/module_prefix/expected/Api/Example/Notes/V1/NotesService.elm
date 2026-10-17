@@ -25,7 +25,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        False
+        Proto.Method.IdempotencyUnknown
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding

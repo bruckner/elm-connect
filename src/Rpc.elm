@@ -89,7 +89,7 @@ import Proto.Any exposing (Any)
 import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
 import Proto.Message exposing (Message)
-import Proto.Method as Method exposing (Method)
+import Proto.Method as Method exposing (Idempotency(..), Method)
 import Rpc.Code as Code exposing (Code)
 import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 import Rpc.Internal.Http as Internal
@@ -218,11 +218,12 @@ methodName (Call c) =
     Method.name (Method.toDescriptor c.method)
 
 
-{-| Whether the method has no side effects.
+{-| Whether the method has no side effects: its idempotency is
+[`IdempotencyNoSideEffects`](Proto-Method#Idempotency).
 -}
 idempotent : Call req res -> Bool
 idempotent (Call c) =
-    Method.idempotent (Method.toDescriptor c.method)
+    Method.idempotency (Method.toDescriptor c.method) == IdempotencyNoSideEffects
 
 
 {-| The request the call sends.
@@ -300,9 +301,9 @@ config baseUrl =
 
 {-| The protocol calls are sent over.
 
-  - `Connect`: the Connect protocol. With `useGet`, an idempotent call is a GET
-    with the request in the query, which caches can serve; with `maxGetUrl`, a
-    GET whose URL would be longer than that many characters is POSTed instead.
+  - `Connect`: the Connect protocol. With `useGet`, a call of a method without
+    side effects (`IdempotencyNoSideEffects`) is a GET with the request in the
+    query, which caches can serve; with `maxGetUrl`, a GET whose URL would be longer than that many characters is POSTed instead.
   - `Transcode`: HTTP transcoding, by the method's `google.api.http` rule. A
     method without one is called over the implicit route
     `POST /<service>/<method>`, which grpc-gateway (`generate_unbound_methods`),
@@ -324,7 +325,8 @@ connect =
 {-| When to try a call again: when an attempt fails with an error whose
 [`code`](#code) is one of `codes`, up to `attempts` tries in all, waiting
 `backoff` milliseconds before the second and twice as long before each one
-after. With `idempotentOnly`, only idempotent calls are retried.
+after. With `idempotentOnly`, only calls of a method declared
+`IdempotencyNoSideEffects` or `IdempotencyIdempotent` are retried.
 
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
@@ -736,8 +738,8 @@ type alias Request =
 {-| The request a call sends.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
-as its body and `Connect-Protocol-Version: 1`. With `useGet`, an idempotent
-call is a GET of the same URL with the query
+as its body and `Connect-Protocol-Version: 1`. With `useGet`, a call of an
+`IdempotencyNoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
 would be longer than `maxGetUrl`. A timeout is sent as `Connect-Timeout-Ms`,
 rounded up to a whole millisecond. The config's headers come first, then the
@@ -826,7 +828,7 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && Method.idempotent (Method.toDescriptor fields.method) && fits then
+    if options.useGet && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
@@ -1262,7 +1264,7 @@ retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
 retryDelay cfg (Call fields) tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy (Method.idempotent (Method.toDescriptor fields.method)) tried (code error)
+            Retry.delay policy (Method.idempotency (Method.toDescriptor fields.method)) tried (code error)
 
         _ ->
             Nothing

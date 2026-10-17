@@ -167,7 +167,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -1091,9 +1091,10 @@ registry =
   `cardinality`, `kind`, `oneof`), `Proto.Enum` (`descriptor typeName
   values`; `typeName`, `values`), `Proto.EnumValue` (`descriptor name
   number`; `name`, `number`) and `Proto.Method` (`descriptor service
-  name idempotent input output bindings`; the same six). The unions a
-  field holds are public, to match on, in `Proto.Field` beside it:
-  `Cardinality`, `Kind` and `Scalar`. A property a field has beyond the
+  name idempotency input output bindings`; the same six). The unions a
+  descriptor holds are public, to match on, in the module beside it:
+  `Cardinality`, `Kind` and `Scalar` in `Proto.Field`, `Idempotency`
+  in `Proto.Method`. A property a field has beyond the
   five every field has is a modifier written only when set:
   `|> Proto.Field.inOneof "kind"` for a oneof member. A message's oneofs
   are the ones its fields name, in order of first appearance, derived by
@@ -1112,7 +1113,9 @@ registry =
   an alias an entry of its own. A singular message field is
   `CardinalitySingular` of `KindMessage "…"` though Elm holds it as a
   `Maybe`; a proto3 `optional` field is `CardinalityOptional`, its
-  synthetic oneof not listed. Types
+  synthetic oneof not listed. `Cardinality` has `CardinalityRequired`
+  for proto2's `required`, which the generator, reading proto3 alone,
+  never gives. Types
   refer to each other by full name, never by value, since Elm forbids
   cyclic values; a `Proto.Registry` resolves the names.
 - `Proto.Enum` derives names and numbers (`toName`, `fromName`,
@@ -1201,7 +1204,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -1259,8 +1262,7 @@ keeps.
   its descriptor value, `descriptorGetNote : Proto.Method.Descriptor`,
   built by `Proto.Method.descriptor` from the fully-qualified service
   name and the method's name as declared, together its Connect path,
-  whether it is idempotent, the full names of its types and its
-  bindings.
+  its idempotency, the full names of its types and its bindings.
   The descriptor's name is `descriptor` followed by the method's Elm
   name with its first letter uppercased, so a `rename` renames both. No
   `Proto.Method.Method` value is generated; `Rpc.method` and
@@ -1276,10 +1278,16 @@ keeps.
   descriptor tree, and Elm keeps a top-level value whole, so a call
   through records cost about 16 KB gzipped over a client referencing
   only the codecs in an application's bundle. *(Decided, 2026-10-15.)*
-- `idempotent` is true when the proto declares
-  `option idempotency_level = NO_SIDE_EFFECTS`. Connect uses it to allow
-  GET, and a retry policy with `idempotentOnly` to allow a retry.
-  Transcoding takes its verb from the rule.
+- `idempotency` is the proto's `idempotency_level`, whole:
+  `Proto.Method.IdempotencyUnknown` when unset,
+  `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
+  only an `IdempotencyNoSideEffects` method as a GET; a retry policy
+  with `idempotentOnly` retries either level, since an `IDEMPOTENT`
+  method (a typical `Delete` or `Put`) is safe to repeat but not to
+  cache. Transcoding takes its verb from the
+  rule. *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
+  `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
+  under `idempotentOnly`.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
@@ -1503,8 +1511,8 @@ it.
 - Retry waits `backoff` ms before the second attempt and doubles it
   before each one after, up to `attempts` tries in all. It applies to
   any error whose code (§5.4) is one of `codes`, and with
-  `idempotentOnly` only to idempotent calls, so a network failure
-  retries when `Unavailable` is listed and a timeout when
+  `idempotentOnly` only to calls of an `IdempotencyNoSideEffects` or
+  `IdempotencyIdempotent` method (§4), so a network failure retries when `Unavailable` is listed and a timeout when
   `DeadlineExceeded` is. Clients in the wild treat a network failure as
   the same event as a 503 and gate safety on idempotency; a timeout is
   the ambiguous case, since the request may have reached the server,
@@ -1571,7 +1579,8 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   codec names left room for binary codecs beside them, which Elm's
   rules for records never allowed.
 - The accessors are `method` (the `Method`), `descriptor` (its
-  descriptor), `serviceName`, `methodName` and `idempotent`; the
+  descriptor), `serviceName`, `methodName` and `idempotent` (whether
+  the method is `IdempotencyNoSideEffects`); the
   string accessors were `service` and `method` until `method` named
   the record. *(Decided, 2026-10-13.)*
 - `viaBinding n` is `Just` the call over binding `n` when the
@@ -1662,7 +1671,7 @@ all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
-  With `useGet`, an idempotent call is a GET of the same URL with
+  With `useGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
   `?connect=v1&encoding=json&message=<JSON>`, the JSON percent-encoded
   (every byte but RFC 3986's unreserved characters), in the order the
   protocol recommends; no protocol-version header, which GET carries in
@@ -2428,7 +2437,9 @@ Within a major version:
   trees, the `Descriptor` of `Proto.Message`, `Proto.Field`,
   `Proto.Enum`, `Proto.EnumValue` and `Proto.Method` (§3.9). The
   public unions are frozen within a major, since users match on them
-  exhaustively: `Proto.Field.Cardinality`, `Kind` and `Scalar`.
+  exhaustively: `Proto.Field.Cardinality` (with `CardinalityRequired`
+  reserved for proto2), `Kind` and `Scalar`, and
+  `Proto.Method.Idempotency`.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.
