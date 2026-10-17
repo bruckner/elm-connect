@@ -644,3 +644,7 @@ tag (design §8).
   modifiers only where set. The CLI embeds
   `google/api/field_behavior.proto`, which neither binary generates;
   the `annotations` conformance case pins the modifiers.
+- The notes example has an update-mask snippet
+  (`Snippets.UpdateMask`: a `google.protobuf.FieldMask` from two values
+  of a message, and a check of a mask's paths), with tests that
+  `just check` runs.

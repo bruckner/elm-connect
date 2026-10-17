@@ -271,6 +271,23 @@ noteFields =
         |> Maybe.withDefault []
 ```
 
+The descriptors are enough to walk a message. The example's
+`Snippets.UpdateMask` builds an update request's
+`google.protobuf.FieldMask` from the value before and after an edit,
+naming a nested message's changed fields through the registry:
+
+```elm examples/notes/elm/src/Snippets/UpdateMask.elm#update-mask-use
+{-| The `google.protobuf.FieldMask` of what changed from `before` to
+`after`, for an update request such as `UpdateNoteRequest`.
+-}
+updateMask : Registry -> Message a -> a -> a -> List String
+updateMask registry message before after =
+    changedPaths registry
+        (Message.toDescriptor message)
+        (Message.encode message before)
+        (Message.encode message after)
+```
+
 ### Any
 
 `Proto.Any` packs a message into a `google.protobuf.Any` with its typed

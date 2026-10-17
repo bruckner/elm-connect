@@ -2270,7 +2270,9 @@ fence (a `region` comment pair, consecutive lines, or `excerpt` for lines
 in order from a generated file), `examples/check-snippets.sh` checks
 every one in `just check`, and `just live` compiles the application and
 `src/Snippets/`, the README's examples the application does not
-contain. The service-module snippets of §2.1 and §4 stay illustrations:
+contain. A snippet that computes something, the update mask's, has
+tests in the example's `tests/`, which `just check` runs against the
+generated notes modules. The service-module snippets of §2.1 and §4 stay illustrations:
 they elide (`…`) what the generated module spells out, and §4's is
 pinned by the `services` case's expected output. Not verified: the
 application is driven by hand in a browser, not by the live suite; the
