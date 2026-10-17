@@ -73,7 +73,6 @@ application can rewrite a request before sending it with
 
 import Dict exposing (Dict)
 import Http
-import Json.Encode
 import Proto.Method exposing (Method)
 import Rpc.Call
 import Rpc.Code exposing (Code)
@@ -211,29 +210,7 @@ as a list rather than matched.
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    (if badBaseUrl cfg then
-        [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
-
-     else
-        []
-    )
-        ++ List.filterMap
-            (\( name, value ) ->
-                if not (Internal.validHeaderName name) then
-                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
-
-                else if not (Internal.validHeaderValue value) then
-                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
-
-                else
-                    Nothing
-            )
-            cfg.headers
-
-
-quote : String -> String
-quote text =
-    Json.Encode.encode 0 (Json.Encode.string text)
+    Internal.configProblems cfg.baseUrl cfg.headers
 
 
 
@@ -412,11 +389,6 @@ request =
     Rpc.Internal.Wire.request
 
 
-badBaseUrl : Config -> Bool
-badBaseUrl cfg =
-    Internal.badBaseUrl cfg.baseUrl
-
-
 {-| What an answer to a call means: the decoded response, or the error.
 
 Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
@@ -501,7 +473,7 @@ throws outside elm/http's handler and stops the program for good.
 -}
 unsendable : Config -> Request -> Maybe Error
 unsendable cfg sent =
-    if badBaseUrl cfg then
+    if Internal.badBaseUrl cfg.baseUrl then
         Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
 
     else

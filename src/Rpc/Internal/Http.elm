@@ -1,14 +1,16 @@
-module Rpc.Internal.Http exposing (badBaseUrl, encodeRouteText, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
-answer's metadata, with the percent-encoding the transports share. Not
-exposed. It is kept out of `Rpc` so that the public module reads as API;
+answer's metadata, with what decides whether a request can be sent at all
+(header names and values a browser accepts, a base URL without a query) and
+the percent-encoding the transports share. Not exposed. It is kept out of `Rpc` so that the public module reads as API;
 `Rpc` re-exports what users need.
 -}
 
 import Bitwise
 import Dict exposing (Dict)
 import Http
+import Json.Encode
 import Rpc.Body
 import Rpc.Request exposing (Request)
 import Task exposing (Task)
@@ -315,6 +317,37 @@ cannot go.
 badBaseUrl : String -> Bool
 badBaseUrl url =
     String.contains "?" url || String.contains "#" url
+
+
+{-| What `Rpc.checkConfig` reports of a config's base URL and headers, one
+sentence each. A header is named but its value left out, since it may be a
+credential.
+-}
+configProblems : String -> List ( String, String ) -> List String
+configProblems baseUrl headers =
+    (if badBaseUrl baseUrl then
+        [ "baseUrl " ++ baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
+
+     else
+        []
+    )
+        ++ List.filterMap
+            (\( name, value ) ->
+                if not (validHeaderName name) then
+                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
+
+                else if not (validHeaderValue value) then
+                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
+
+                else
+                    Nothing
+            )
+            headers
+
+
+quote : String -> String
+quote text =
+    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 {-| The request as a task, its response read by `read`. A body is sent as
