@@ -78,9 +78,7 @@ import Json.Encode
 import Process
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
-import Proto.Internal.Binding exposing (Rule)
-import Proto.Method as Method exposing (Idempotency(..), Method)
-import Rpc.Body as Body exposing (Body)
+import Proto.Method as Method exposing (Method)
 import Rpc.Call
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error
@@ -90,6 +88,7 @@ import Rpc.Internal.Retry
 import Rpc.Internal.Route as Route
 import Rpc.Internal.Trace
 import Rpc.Internal.Transport
+import Rpc.Internal.Wire
 import Rpc.Request
 import Rpc.Response
 import Rpc.Retry exposing (Retry)
@@ -444,129 +443,13 @@ the request Connect would POST.
 
 -}
 request : Config -> Call req res -> Request
-request cfg c =
-    case cfg.transport of
-        Rpc.Internal.Transport.Connect options ->
-            connectRequest options cfg c
-
-        Rpc.Internal.Transport.Transcode ->
-            case Route.route cfg.transport c of
-                Route.Bound _ rule ->
-                    transcodeRequest rule cfg c
-
-                Route.Implicit ->
-                    connectRequest { get = False, maxGetUrl = Nothing } cfg c
-
-
-connectRequest : { get : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
-connectRequest options cfg ((Rpc.Internal.Call.Call fields) as c) =
-    let
-        url =
-            Route.connectUrl cfg.baseUrl c
-
-        json =
-            Json.Encode.encode 0 (Rpc.Call.requestJson c)
-
-        timeout =
-            callTimeout cfg c
-
-        timeoutHeader =
-            case timeout of
-                Just ms ->
-                    [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
-
-                Nothing ->
-                    []
-
-        getUrl =
-            url
-                ++ "?connect=v1&encoding=json&message="
-                ++ Internal.percentEncode Internal.unreserved json
-
-        fits =
-            case options.maxGetUrl of
-                Just limit ->
-                    String.length getUrl <= limit
-
-                Nothing ->
-                    True
-    in
-    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
-        { method = "GET"
-        , url = getUrl
-        , headers = cfg.headers ++ fields.headers ++ timeoutHeader
-        , body = Body.none
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
-
-    else
-        { method = "POST"
-        , url = url
-        , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-        , body = Body.text json
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
-
-
-{-| The request over one binding of a method's rule.
--}
-transcodeRequest : Rule -> Config -> Call req res -> Request
-transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
-    let
-        json =
-            Rpc.Call.requestJson c
-    in
-    { method = rule.method
-    , url = Route.transcodeUrl cfg.baseUrl rule json
-    , headers = cfg.headers ++ fields.headers
-    , body = Route.bindingBody rule json
-    , timeout = callTimeout cfg c
-    , withCredentials = cfg.withCredentials
-    }
-
-
-callTimeout : Config -> Call req res -> Maybe Float
-callTimeout cfg (Rpc.Internal.Call.Call fields) =
-    case usableTimeout fields.timeout of
-        Just ms ->
-            Just ms
-
-        Nothing ->
-            usableTimeout cfg.timeout
-
-
-{-| A timeout only when it is a positive number of milliseconds. elm/http hands
-the value to XHR, whose unsigned conversion turns a negative one into weeks and
-NaN or `0` into none, while the header would claim 1 ms or the maximum; read as
-no timeout instead, the header and the client agree.
--}
-usableTimeout : Maybe Float -> Maybe Float
-usableTimeout timeout =
-    case timeout of
-        Just ms ->
-            if ms > 0 && not (isInfinite ms) then
-                Just ms
-
-            else
-                Nothing
-
-        Nothing ->
-            Nothing
+request =
+    Rpc.Internal.Wire.request
 
 
 badBaseUrl : Config -> Bool
 badBaseUrl cfg =
     Internal.badBaseUrl cfg.baseUrl
-
-
-{-| A positive whole number of milliseconds, at most ten digits, as the
-protocol requires.
--}
-timeoutMs : Float -> String
-timeoutMs ms =
-    String.fromInt (clamp 1 9999999999 (ceiling ms))
 
 
 {-| What an answer to a call means: the decoded response, or the error.
