@@ -313,6 +313,53 @@ fn query_fields_without_a_query_form_are_named() {
 }
 
 #[test]
+fn a_cycle_is_refused_where_it_is_held() {
+    // A ring of messages, each holding the next and a map, with a GET
+    // rule on every fourth. Each rule is refused twice: its own map, and
+    // `next`, whose message holds itself. Expanding `next` instead walked
+    // the ring and refused every map along it at every depth, once per
+    // rule, which on a long ring exhausted memory.
+    let n = 400;
+    let mut source = String::from(
+        "syntax = \"proto3\";\npackage t.v1;\nimport \"google/api/annotations.proto\";\n",
+    );
+    for i in 0..n {
+        let next = (i + 1) % n;
+        source += &format!(
+            "message M{i} {{ string name = 1; map<string, int32> m = 2; M{next} next = 3; }}\n"
+        );
+    }
+    source += "service S {\n";
+    for i in (0..n).step_by(4) {
+        source += &format!(
+            "  rpc Get{i}(M{i}) returns (M{i}) {{ option (google.api.http) = {{ get: \"/v1/m{i}\" }}; }}\n"
+        );
+    }
+    source += "}\n";
+    let files = [("t.proto", source.as_str())];
+    let diagnostics = problems(&files, &["t.proto"]);
+    let messages: Vec<String> = diagnostics
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect();
+    assert_eq!(messages.len(), n / 2, "{}", messages.join("\n"));
+    assert!(
+        messages.contains(
+            &"route::query_field: The HTTP rule of `t.v1.S.Get0` sends `next` as a query \
+              parameter, but `t.v1.M1` contains itself, which has no query form."
+                .to_owned()
+        ),
+        "{}",
+        messages.join("\n")
+    );
+    assert!(
+        messages.iter().all(|message| !message.contains("next.")),
+        "{}",
+        messages.join("\n")
+    );
+}
+
+#[test]
 fn a_well_known_request_leaves_nothing_to_the_query() {
     let header = r#"syntax = "proto3";
 package t.v1;

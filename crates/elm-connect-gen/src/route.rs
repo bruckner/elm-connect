@@ -42,6 +42,7 @@
 //!   carries nothing and has no parameter.
 //! - Additional bindings take the same rules, and may not nest.
 
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use prost_reflect::{FieldDescriptor, Kind, MessageDescriptor};
@@ -635,7 +636,7 @@ pub fn resolve(
             bound: &bound,
             params: &mut query,
             errors: &mut errors,
-            stack: vec![request.full_name().to_owned()],
+            recursion: HashMap::new(),
         };
         walk.message(request, &FieldPath::default(), skip.as_deref());
     }
@@ -753,13 +754,27 @@ fn body_field(request: &MessageDescriptor, name: &str) -> Result<FieldPath, Stri
     }
 }
 
+/// The message a query walk would expand `field` into: a singular,
+/// non-map field of a generated (not well-known) message. The arms of
+/// [`QueryWalk::field`] that expand mirror this.
+fn expanded(field: &FieldDescriptor) -> Option<MessageDescriptor> {
+    if field.is_map() || field.is_list() {
+        return None;
+    }
+    match field.kind() {
+        Kind::Message(inner) if well_known(&inner).is_none() => Some(inner),
+        _ => None,
+    }
+}
+
 /// The query parameters of a message, collected depth first.
 struct QueryWalk<'a> {
     bound: &'a [FieldPath],
     params: &'a mut Vec<QueryParam>,
     errors: &'a mut Vec<RouteError>,
-    /// The messages being expanded, outermost first, to refuse recursion.
-    stack: Vec<String>,
+    /// Whether a message holds itself, by full name, once asked
+    /// ([`QueryWalk::recursive`]).
+    recursion: HashMap<String, bool>,
 }
 
 impl QueryWalk<'_> {
@@ -808,17 +823,62 @@ impl QueryWalk<'_> {
                 // Unsupported well-known types are reported by the IR.
                 Some(None) => {}
                 None if repeated => self.refuse(&path, "it is a repeated message"),
-                None if self.stack.iter().any(|name| name == inner.full_name()) => {
+                None if self.recursive(&inner) => {
                     self.refuse(&path, format!("`{}` contains itself", inner.full_name()))
                 }
-                None => {
-                    self.stack.push(inner.full_name().to_owned());
-                    self.message(&inner, &path, None);
-                    self.stack.pop();
-                }
+                None => self.message(&inner, &path, None),
             },
             kind => self.params.push(param(zero(default_text(&kind)))),
         }
+    }
+
+    /// Whether `message` holds itself through fields the walk would
+    /// expand ([`expanded`]), directly or through other messages.
+    ///
+    /// Such a message is refused where it is first held and never
+    /// expanded. Expanding it and refusing the field that closes the
+    /// cycle walks the whole cycle first and reports every field along
+    /// it at every depth, which on a cycle of thousands of messages
+    /// exhausted memory. The search follows each message once, and a hit
+    /// settles every message on the path to it, since each lies on the
+    /// cycle found.
+    fn recursive(&mut self, message: &MessageDescriptor) -> bool {
+        let target = message.full_name().to_owned();
+        if let Some(&known) = self.recursion.get(&target) {
+            return known;
+        }
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut path: Vec<(Vec<FieldDescriptor>, usize)> = vec![(message.fields().collect(), 0)];
+        let found = loop {
+            let Some((fields, next)) = path.last_mut() else {
+                break false;
+            };
+            let Some(field) = fields.get(*next) else {
+                path.pop();
+                continue;
+            };
+            *next += 1;
+            let Some(inner) = expanded(field) else {
+                continue;
+            };
+            if inner.full_name() == target {
+                break true;
+            }
+            if seen.insert(inner.full_name().to_owned()) {
+                path.push((inner.fields().collect(), 0));
+            }
+        };
+        if found {
+            // Every message on the path holds `message`, which holds it.
+            for (fields, next) in &path {
+                let held = fields[next - 1].kind();
+                if let Kind::Message(on_cycle) = held {
+                    self.recursion.insert(on_cycle.full_name().to_owned(), true);
+                }
+            }
+        }
+        self.recursion.insert(target, found);
+        found
     }
 }
 
