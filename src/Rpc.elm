@@ -73,22 +73,16 @@ application can rewrite a request before sending it with
 
 import Dict exposing (Dict)
 import Http
-import Json.Decode exposing (Decoder)
-import Json.Encode exposing (Value)
-import Process
-import Proto.Any exposing (Any)
-import Proto.Internal.Any
-import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
-import Proto.Method as Method exposing (Idempotency(..), Method)
-import Rpc.Body as Body exposing (Body)
+import Proto.Method exposing (Method)
 import Rpc.Call
-import Rpc.Code as Code exposing (Code)
+import Rpc.Code exposing (Code)
 import Rpc.Error
+import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Trace
-import Rpc.Internal.Transport
+import Rpc.Internal.Wire
 import Rpc.Request
 import Rpc.Response
 import Rpc.Retry exposing (Retry)
@@ -216,29 +210,7 @@ as a list rather than matched.
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    (if badBaseUrl cfg then
-        [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
-
-     else
-        []
-    )
-        ++ List.filterMap
-            (\( name, value ) ->
-                if not (Internal.validHeaderName name) then
-                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
-
-                else if not (Internal.validHeaderValue value) then
-                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
-
-                else
-                    Nothing
-            )
-            cfg.headers
-
-
-quote : String -> String
-quote text =
-    Json.Encode.encode 0 (Json.Encode.string text)
+    Internal.configProblems cfg.baseUrl cfg.headers
 
 
 
@@ -338,37 +310,7 @@ taskTraced cfg c =
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        let
-                                            metadata =
-                                                outcome.metadata
-                                                    |> Maybe.map (.headers >> splitTrailers)
-                                                    |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
-                                        in
-                                        ( Rpc.Internal.Trace.Trace
-                                            { serviceName = Rpc.Call.serviceName c
-                                            , methodName = Rpc.Call.methodName c
-                                            , transport = Rpc.Transport.name cfg.transport
-                                            , binding =
-                                                case route cfg c of
-                                                    Bound index _ ->
-                                                        Just index
-
-                                                    _ ->
-                                                        Nothing
-                                            , request = sent
-                                            , httpStatus = Maybe.map .statusCode outcome.metadata
-                                            , headers = metadata.headers
-                                            , trailers = metadata.trailers
-                                            , code =
-                                                case outcome.result of
-                                                    Ok _ ->
-                                                        Nothing
-
-                                                    Err error ->
-                                                        Just (Rpc.Error.code error)
-                                            , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
-                                            , attempts = outcome.attempts
-                                            }
+                                        ( Rpc.Internal.Trace.mint cfg.transport c sent outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
@@ -443,346 +385,8 @@ the request Connect would POST.
 
 -}
 request : Config -> Call req res -> Request
-request cfg c =
-    case cfg.transport of
-        Rpc.Internal.Transport.Connect options ->
-            connectRequest options cfg c
-
-        Rpc.Internal.Transport.Transcode ->
-            case route cfg c of
-                Bound _ rule ->
-                    transcodeRequest rule cfg c
-
-                Implicit ->
-                    connectRequest { get = False, maxGetUrl = Nothing } cfg c
-
-
-{-| How a call is sent: over a binding of its rule (by number), or over the
-implicit route of a method without a rule.
--}
-type Route
-    = Bound Int Rule
-    | Implicit
-
-
-route : Config -> Call req res -> Route
-route cfg (Rpc.Internal.Call.Call fields) =
-    case cfg.transport of
-        Rpc.Internal.Transport.Connect _ ->
-            Implicit
-
-        Rpc.Internal.Transport.Transcode ->
-            -- A call's binding number is one its descriptor has (`viaBinding`
-            -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of
-                Just (Binding rule) ->
-                    Bound fields.binding rule
-
-                Nothing ->
-                    Implicit
-
-
-connectRequest : { get : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
-connectRequest options cfg ((Rpc.Internal.Call.Call fields) as c) =
-    let
-        url =
-            trimSlash cfg.baseUrl ++ "/" ++ Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c
-
-        json =
-            Json.Encode.encode 0 (Rpc.Call.requestJson c)
-
-        timeout =
-            callTimeout cfg c
-
-        timeoutHeader =
-            case timeout of
-                Just ms ->
-                    [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
-
-                Nothing ->
-                    []
-
-        getUrl =
-            url
-                ++ "?connect=v1&encoding=json&message="
-                ++ Internal.percentEncode Internal.unreserved json
-
-        fits =
-            case options.maxGetUrl of
-                Just limit ->
-                    String.length getUrl <= limit
-
-                Nothing ->
-                    True
-    in
-    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
-        { method = "GET"
-        , url = getUrl
-        , headers = cfg.headers ++ fields.headers ++ timeoutHeader
-        , body = Body.none
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
-
-    else
-        { method = "POST"
-        , url = url
-        , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-        , body = Body.text json
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
-
-
-{-| The request over one binding of a method's rule.
--}
-transcodeRequest : Rule -> Config -> Call req res -> Request
-transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
-    let
-        json =
-            Rpc.Call.requestJson c
-
-        path =
-            List.map (pathSegment json) rule.path
-
-        verb =
-            Maybe.map ((++) ":" << Internal.encodeRouteText) rule.customVerb |> Maybe.withDefault ""
-
-        query =
-            case List.concatMap (queryPairs json) rule.query of
-                [] ->
-                    ""
-
-                pairs ->
-                    "?" ++ String.join "&" pairs
-    in
-    { method = rule.method
-    , url = trimSlash cfg.baseUrl ++ "/" ++ String.join "/" path ++ verb ++ query
-    , headers = cfg.headers ++ fields.headers
-    , body = bindingBody rule json
-    , timeout = callTimeout cfg c
-    , withCredentials = cfg.withCredentials
-    }
-
-
-pathSegment : Value -> Segment -> String
-pathSegment json segment =
-    case segment of
-        Literal written ->
-            Internal.encodeRouteText written
-
-        Variable fieldPath template zero ->
-            let
-                keep =
-                    if single template then
-                        Internal.unreserved
-
-                    else
-                        \char -> Internal.unreserved char || char == '/'
-            in
-            lookup fieldPath json
-                |> Maybe.andThen scalarText
-                |> Maybe.withDefault zero
-                |> Internal.percentEncode keep
-
-        -- Generated bindings never hold a wildcard outside a variable: no
-        -- field fills it.
-        Wildcard ->
-            ""
-
-        DoubleWildcard ->
-            ""
-
-
-single : List Segment -> Bool
-single template =
-    case template of
-        [] ->
-            True
-
-        [ Literal _ ] ->
-            True
-
-        [ Wildcard ] ->
-            True
-
-        _ ->
-            False
-
-
-queryPairs : Value -> Param -> List String
-queryPairs json (Param p) =
-    let
-        values =
-            case lookup p.path json of
-                Nothing ->
-                    []
-
-                Just value ->
-                    case Json.Decode.decodeValue (Json.Decode.list Json.Decode.value) value of
-                        Ok elements ->
-                            List.filterMap scalarText elements
-
-                        Err _ ->
-                            -- Generated encoders leave a default out; JSON
-                            -- from another encoder may spell it.
-                            case scalarText value of
-                                Just text ->
-                                    if Just text == p.zero then
-                                        []
-
-                                    else
-                                        [ text ]
-
-                                Nothing ->
-                                    []
-    in
-    List.map
-        (\v -> Internal.percentEncode Internal.unreserved p.name ++ "=" ++ Internal.percentEncode Internal.unreserved v)
-        values
-
-
-{-| The value at a JSON path, unless absent or `null`.
--}
-lookup : List String -> Value -> Maybe Value
-lookup fieldPath json =
-    Json.Decode.decodeValue (Json.Decode.at fieldPath (Json.Decode.nullable Json.Decode.value)) json
-        |> Result.toMaybe
-        |> Maybe.andThen identity
-
-
-{-| A scalar JSON value as query or path text: a string as it is, a number or
-a boolean as JSON writes it. `null`, objects and arrays have none.
--}
-scalarText : Value -> Maybe String
-scalarText value =
-    Json.Decode.decodeValue
-        (Json.Decode.oneOf
-            [ Json.Decode.map Just Json.Decode.string
-            , Json.Decode.map
-                (\b ->
-                    if b then
-                        Just "true"
-
-                    else
-                        Just "false"
-                )
-                Json.Decode.bool
-            , Json.Decode.map (\_ -> Just (Json.Encode.encode 0 value)) Json.Decode.float
-            , Json.Decode.succeed Nothing
-            ]
-        )
-        value
-        |> Result.withDefault Nothing
-
-
-bindingBody : Rule -> Value -> Body
-bindingBody rule json =
-    case rule.body of
-        NoBody ->
-            Body.none
-
-        WholeBody ->
-            Body.text (Json.Encode.encode 0 (List.foldl remove json (variables rule.path)))
-
-        BodyField key ->
-            lookup [ key ] json
-                |> Maybe.withDefault (Json.Encode.object [])
-                |> Json.Encode.encode 0
-                |> Body.text
-
-
-variables : List Segment -> List (List String)
-variables =
-    List.filterMap
-        (\segment ->
-            case segment of
-                Variable fieldPath _ _ ->
-                    Just fieldPath
-
-                _ ->
-                    Nothing
-        )
-
-
-{-| The JSON without the value at `fieldPath`; unchanged when there is none.
--}
-remove : List String -> Value -> Value
-remove fieldPath json =
-    case fieldPath of
-        [] ->
-            json
-
-        key :: rest ->
-            case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
-                Ok pairs ->
-                    pairs
-                        |> List.filterMap
-                            (\( k, v ) ->
-                                if k /= key then
-                                    Just ( k, v )
-
-                                else if List.isEmpty rest then
-                                    Nothing
-
-                                else
-                                    Just ( k, remove rest v )
-                            )
-                        |> Json.Encode.object
-
-                Err _ ->
-                    json
-
-
-callTimeout : Config -> Call req res -> Maybe Float
-callTimeout cfg (Rpc.Internal.Call.Call fields) =
-    case usableTimeout fields.timeout of
-        Just ms ->
-            Just ms
-
-        Nothing ->
-            usableTimeout cfg.timeout
-
-
-{-| A timeout only when it is a positive number of milliseconds. elm/http hands
-the value to XHR, whose unsigned conversion turns a negative one into weeks and
-NaN or `0` into none, while the header would claim 1 ms or the maximum; read as
-no timeout instead, the header and the client agree.
--}
-usableTimeout : Maybe Float -> Maybe Float
-usableTimeout timeout =
-    case timeout of
-        Just ms ->
-            if ms > 0 && not (isInfinite ms) then
-                Just ms
-
-            else
-                Nothing
-
-        Nothing ->
-            Nothing
-
-
-badBaseUrl : Config -> Bool
-badBaseUrl cfg =
-    Internal.badBaseUrl cfg.baseUrl
-
-
-trimSlash : String -> String
-trimSlash url =
-    if String.endsWith "/" url then
-        String.dropRight 1 url
-
-    else
-        url
-
-
-{-| A positive whole number of milliseconds, at most ten digits, as the
-protocol requires.
--}
-timeoutMs : Float -> String
-timeoutMs ms =
-    String.fromInt (clamp 1 9999999999 (ceiling ms))
+request =
+    Rpc.Internal.Wire.request
 
 
 {-| What an answer to a call means: the decoded response, or the error.
@@ -794,74 +398,8 @@ body reading as `{}`, and the response decoded from the field the binding's
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg ((Rpc.Internal.Call.Call fields) as c) answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            case ( cfg.transport, route cfg c ) of
-                ( Rpc.Internal.Transport.Connect _, _ ) ->
-                    if metadata.statusCode == 200 then
-                        decodeBody (Method.responseDecoder fields.method) metadata raw raw
-
-                    else
-                        Err (failure metadata raw)
-
-                ( Rpc.Internal.Transport.Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw)
-
-                ( Rpc.Internal.Transport.Transcode, Implicit ) ->
-                    decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw)
-
-        Http.BadStatus_ metadata raw ->
-            Err (failure metadata raw)
-
-        Http.BadUrl_ url ->
-            Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl url))
-
-        Http.Timeout_ ->
-            Err (Rpc.Error.NoAnswer Rpc.Error.Timeout)
-
-        Http.NetworkError_ ->
-            Err (Rpc.Error.NoAnswer Rpc.Error.NetworkError)
-
-
-orEmptyObject : String -> String
-orEmptyObject raw =
-    if String.isEmpty (String.trim raw) then
-        "{}"
-
-    else
-        raw
-
-
-{-| The response decoder reading the answer as the field `responseBody` names,
-when it names one.
--}
-responseDecoder : Maybe String -> Decoder res -> Decoder res
-responseDecoder responseBody decoder =
-    case responseBody of
-        Nothing ->
-            decoder
-
-        Just key ->
-            Json.Decode.value
-                |> Json.Decode.andThen
-                    (\value ->
-                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
-                            Ok decoded ->
-                                Json.Decode.succeed decoded
-
-                            Err error ->
-                                Json.Decode.fail (Json.Decode.errorToString error)
-                    )
-
-
-{-| The response `read` from a successful answer's body, or a `BadResponse`
-keeping the answer as it came, `raw`.
--}
-decodeBody : Decoder res -> Http.Metadata -> String -> String -> Result Error res
-decodeBody decoder metadata raw read =
-    Json.Decode.decodeString decoder read
-        |> Result.mapError (\problem -> Rpc.Error.BadResponse (Json.Decode.errorToString problem) (answerOf metadata raw))
+response cfg =
+    Rpc.Internal.Answer.toResult cfg.transport
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -916,41 +454,17 @@ taskFromRequest cfg c sent =
             )
 
 
-type alias Outcome res =
-    { attempts : Int
-    , metadata : Maybe Http.Metadata
-    , result : Result Error res
-    }
-
-
 {-| Send `sent` until it succeeds or the retry policy says to stop.
 -}
-attempt : Config -> Call req res -> Request -> Task Never (Outcome res)
+attempt : Config -> Call req res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
 attempt cfg c sent =
-    let
-        once =
-            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
-
-        loop tried =
-            once
-                |> Task.andThen
-                    (\( metadata, result ) ->
-                        case retryDelay cfg c tried result of
-                            Just ( policy, bound ) ->
-                                Time.now
-                                    |> Task.andThen (\now -> Process.sleep (Rpc.Internal.Retry.jitter policy (Time.posixToMillis now) tried bound))
-                                    |> Task.andThen (\_ -> loop (tried + 1))
-
-                            Nothing ->
-                                Task.succeed { attempts = tried, metadata = metadata, result = result }
-                    )
-    in
     case unsendable cfg sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
         Nothing ->
-            loop 1
+            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
+                |> Rpc.Internal.Retry.run cfg.retry (Rpc.Call.idempotency c) retryCode
 
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
@@ -959,7 +473,7 @@ throws outside elm/http's handler and stops the program for good.
 -}
 unsendable : Config -> Request -> Maybe Error
 unsendable cfg sent =
-    if badBaseUrl cfg then
+    if Internal.badBaseUrl cfg.baseUrl then
         Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
 
     else
@@ -967,152 +481,15 @@ unsendable cfg sent =
             |> Maybe.map (Rpc.Error.NoAnswer << Rpc.Error.InvalidHeader)
 
 
-{-| The config's policy and the bound on the wait before trying again, or
-`Nothing` to stop.
+{-| The code a failed attempt is retried by, or `Nothing` when trying again
+cannot help.
 -}
-retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry, Float )
-retryDelay cfg c tried result =
-    case ( cfg.retry, result ) of
-        ( _, Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl _)) ) ->
+retryCode : Error -> Maybe Code
+retryCode error =
+    case error of
+        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
             -- Nothing was sent, and nothing would change.
             Nothing
 
-        ( Just policy, Err error ) ->
-            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (Rpc.Error.code error)
-                |> Maybe.map (Tuple.pair policy)
-
         _ ->
-            Nothing
-
-
-{-| An answer as an error keeps it.
--}
-answerOf : Http.Metadata -> String -> Response
-answerOf metadata raw =
-    { url = metadata.url
-    , statusCode = metadata.statusCode
-    , statusText = metadata.statusText
-    , headers = metadata.headers
-    , body = raw
-    }
-
-
-{-| The error a failed answer stands for, whatever the transport: its Connect
-error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, an `HttpStatus` error. The
-answer is kept whichever it is.
--}
-failure : Http.Metadata -> String -> Error
-failure metadata raw =
-    let
-        answer =
-            answerOf metadata raw
-    in
-    case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
-        Ok read ->
-            Rpc.Error.RpcStatus read answer
-
-        Err _ ->
-            case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
-                Just number ->
-                    Rpc.Error.RpcStatus
-                        { code = fromGrpc number
-                        , message =
-                            header "grpc-message" metadata
-                                |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault (Rpc.Error.message (Rpc.Error.HttpStatus answer))
-                        , details = []
-                        , source = Rpc.Error.GrpcHeaders
-                        }
-                        answer
-
-                Nothing ->
-                    Rpc.Error.HttpStatus answer
-
-
-{-| A response header by name, whatever its case.
--}
-header : String -> Http.Metadata -> Maybe String
-header key metadata =
-    metadata.headers
-        |> Dict.toList
-        |> List.filter (\( k, _ ) -> String.toLower k == key)
-        |> List.head
-        |> Maybe.map Tuple.second
-
-
-fromGrpc : Int -> Code
-fromGrpc number =
-    Code.fromInt number |> Maybe.withDefault Code.Unknown
-
-
-{-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
-optional `details`.
--}
-statusBody : Decoder Rpc.Error.StatusError
-statusBody =
-    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = Rpc.Error.StatusBody })
-        (Json.Decode.field "code" Json.Decode.int)
-        (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
-
-
-{-| A Connect error body: a `code` the protocol names (an unknown name reads as
-`unknown`), an optional `message` and optional `details`.
--}
-connectBody : Decoder Rpc.Error.StatusError
-connectBody =
-    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Rpc.Error.ConnectBody })
-        (Json.Decode.field "code" Json.Decode.string
-            |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
-        )
-        (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
-
-
-{-| An error's details, each in either form whichever body it came in: a
-`google.rpc.Status` body holds proto3 JSON `Any` objects, a Connect body
-`{"type", "value", "debug"}` objects. A detail in neither form is left out
-rather than losing the error's code and message with it.
--}
-detailList : Decoder (List Any)
-detailList =
-    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Any.jsonDecoder, connectDetail ]))
-        |> Json.Decode.map (List.filterMap identity)
-
-
-{-| A Connect error detail: the message's full name as `type`, its protobuf
-binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
-holds when present. Without it the `Any` holds the binary alone.
--}
-connectDetail : Decoder Any
-connectDetail =
-    Json.Decode.map3
-        (\name binary debug ->
-            Proto.Internal.Any.Any
-                (if String.contains "/" name then
-                    name
-
-                 else
-                    "type.googleapis.com/" ++ name
-                )
-                (case debug of
-                    Just json ->
-                        Proto.Internal.Any.InJson json
-
-                    Nothing ->
-                        Proto.Internal.Any.InBinary binary
-                )
-        )
-        (Json.Decode.field "type" Json.Decode.string)
-        (optional "value" Json.Decode.string "")
-        (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing)
-
-
-optional : String -> Decoder a -> a -> Decoder a
-optional key decoder default =
-    Json.Decode.oneOf
-        [ Json.Decode.field key (Json.Decode.nullable decoder)
-            |> Json.Decode.map (Maybe.withDefault default)
-        , Json.Decode.succeed default
-        ]
+            Just (Rpc.Error.code error)

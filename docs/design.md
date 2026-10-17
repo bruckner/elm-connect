@@ -281,8 +281,9 @@ rpc shared call =
   `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`), or
   implementation kept out of the public modules so that they read as API
-  (`Rpc.Internal.Http`, the elm/http adapter). A type one module both
-  builds and reads is an ordinary opaque type in that module
+  (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
+  `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2). A type one
+  module both builds and reads is an ordinary opaque type in that module
   (`Rpc.Body`). The internal modules are one per shared type rather than
   one `Rpc.Internal`, because a single module would cycle: `Trace` holds
   a `Request`, which holds a `Body`. (5) A record several modules depend
@@ -1639,15 +1640,23 @@ builds or matches, is defined in `Rpc.Body` (§3.1, rule 4). `Request` and
 `Response` are frozen records, each declared once in its module so
 that `Rpc`, `Rpc.Trace` and the internals share it without an import
 cycle (§3.1, rule 5); `Rpc` aliases both, so `Rpc.Request` and
-`Rpc.Response` name them in annotations as before. The data modules, which generated code calls whatever
-the transport, are the codecs (`Proto.Json`, `Proto.Timestamp`,
-`Proto.Duration`, `Proto.Int64`), the typed values and descriptor
-trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
+`Rpc.Response` name them in annotations as before. `Rpc` itself holds
+the public API and the running of a call (sending, retrying, timing a
+trace); the work it runs is internal, a module per responsibility:
+`Rpc.Internal.Route` maps a call onto a binding's URL and body,
+`Rpc.Internal.Wire` builds the request each transport sends,
+`Rpc.Internal.Answer` reads an answer into a result or an `Error`,
+`Rpc.Internal.Retry` holds the policy math and the attempt loop, and
+`Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
+whether a request can be sent. The data modules, which generated code
+calls whatever the transport, are the codecs (`Proto.Json`,
+`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`), the typed values
+and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
-(`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any`
-(§3.5). They were `Connect.*` at first, a name that tied proto3
-JSON to one of the two transports; no public `Connect` module remains.
+(`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
+They were `Connect.*` at first, a name that tied proto3 JSON to one of
+the two transports; no public `Connect` module remains.
 
 ```elm
 -- Rpc.Request, Rpc.Response: frozen (§8.3)
