@@ -736,3 +736,10 @@ tag (design §8).
   `Proto.Http.literal` holding `#`, `?`, `/` or a space cannot change
   the URL's shape. Generated bindings, which the generator already
   checks, are unchanged.
+- A query parameter's message that contains itself, directly or through
+  other messages, is refused at the field that holds it and not expanded.
+  The walk used to expand it and refuse the field that closed the cycle,
+  reporting every field along the way at every depth, once per rule: on
+  a cycle of thousands of messages with a GET rule on each, `elm-connect
+  gen` allocated gigabytes before it could report `route::query_field`.
+  The `routes_query_cycle` case pins where the problem is reported.

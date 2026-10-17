@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package graph.v1;
+
+import "google/api/annotations.proto";
+
+// A ring: each message holds the next, and the last holds the first.
+message Ring1 {
+  string name = 1;
+  Ring2 next = 2;
+}
+
+message Ring2 {
+  string name = 1;
+  Ring3 next = 2;
+}
+
+message Ring3 {
+  string name = 1;
+  Ring1 next = 2;
+  map<string, string> labels = 3;
+}
+
+// Holds a message of the ring without being on it.
+message Entry {
+  string name = 1;
+  Ring2 ring = 2;
+}
+
+// Holds itself through a repeated field alone, which is refused for
+// being repeated; nothing is expanded.
+message Tree {
+  string name = 1;
+  repeated Tree children = 2;
+}
+
+service Graph {
+  // Refused at `next`, whose message holds itself; the ring is not
+  // walked, so its map is never reached.
+  rpc GetRing(Ring1) returns (Ring1) {
+    option (google.api.http) = {
+      get: "/v1/ring"
+    };
+  }
+  // Refused at `ring`: `Ring2` holds itself, though `Entry` does not.
+  rpc GetEntry(Entry) returns (Entry) {
+    option (google.api.http) = {
+      get: "/v1/entry"
+    };
+  }
+  // Refused at `children` for being repeated, and nothing more.
+  rpc GetTree(Tree) returns (Tree) {
+    option (google.api.http) = {
+      get: "/v1/tree"
+    };
+  }
+}
