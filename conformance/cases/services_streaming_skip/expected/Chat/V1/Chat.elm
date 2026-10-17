@@ -17,6 +17,28 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorSend : Proto.Descriptor.MethodDescriptor
+descriptorSend =
+    Proto.Descriptor.method "chat.v1.Chat"
+        "Send"
+        Proto.Descriptor.Unknown
+        "chat.v1.Line"
+        "chat.v1.Line"
+        []
+
+
+
+-- CALLS
+
+
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =
-    Rpc.call (Proto.Method.method Chat.V1.encodeLine Chat.V1.decodeLine (Proto.Descriptor.method "chat.v1.Chat" "Send" Proto.Descriptor.Unknown "chat.v1.Line" "chat.v1.Line" []))
+    Rpc.call
+        (Proto.Method.method Chat.V1.encodeLine
+            Chat.V1.decodeLine
+            descriptorSend
+        )

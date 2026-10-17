@@ -624,3 +624,13 @@ tag (design §8).
   (`Snippets.UpdateMask`: a `google.protobuf.FieldMask` from two values
   of a message, and a check of a mask's paths), with tests that
   `just check` runs.
+- A service module gives each method a top-level descriptor,
+  `descriptorGetNote : Proto.Descriptor.MethodDescriptor`, in a
+  `DESCRIPTORS` section before the `CALLS`, and the call refers to it
+  instead of building it inline. Its name follows the method's Elm name,
+  renamed or not; a method named for another's descriptor
+  (`DescriptorGetNote` beside `GetNote`) is `naming::value_collision`.
+- A generated method's `Proto.Descriptor.method` and
+  `Proto.Method.method` applications put one argument per line however
+  short, so a method without an HTTP rule no longer prints on one long
+  line. The printer gains `Expr::StackedApply` for that layout.

@@ -19,40 +19,240 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Descriptor.MethodDescriptor
+descriptorGetNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "GetNote"
+        Proto.Descriptor.NoSideEffects
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorListNotes : Proto.Descriptor.MethodDescriptor
+descriptorListNotes =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "ListNotes"
+        Proto.Descriptor.NoSideEffects
+        "notes.v1.ListNotesRequest"
+        "notes.v1.ListNotesResponse"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
+                , Proto.Http.literal "notes"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Just "notes"
+            , query =
+                [ Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
+                , Proto.Http.param "page_token" [ "pageToken" ] (Just "")
+                , Proto.Http.param "filter.visibility" [ "filter", "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
+                , Proto.Http.param "filter.since" [ "filter", "since" ] Nothing
+                , Proto.Http.param "tags" [ "tags" ] Nothing
+                , Proto.Http.param "archived" [ "archived" ] Nothing
+                , Proto.Http.param "revision" [ "revision" ] (Just "0")
+                ]
+            }
+        ]
+
+
+descriptorCreateNote : Proto.Descriptor.MethodDescriptor
+descriptorCreateNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "CreateNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.CreateNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
+                , Proto.Http.literal "notes"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField "note"
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorUpdateNote : Proto.Descriptor.MethodDescriptor
+descriptorUpdateNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "UpdateNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.UpdateNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField "note"
+            , responseBody = Nothing
+            , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
+            }
+        ]
+
+
+descriptorReplaceNote : Proto.Descriptor.MethodDescriptor
+descriptorReplaceNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "ReplaceNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.Note"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "PUT"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorDeleteNote : Proto.Descriptor.MethodDescriptor
+descriptorDeleteNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "DeleteNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.DeleteNoteRequest"
+        "google.protobuf.Empty"
+        [ Proto.Http.binding
+            { method = "DELETE"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = [ Proto.Http.param "force" [ "force" ] (Just "false") ]
+            }
+        ]
+
+
+descriptorArchiveNote : Proto.Descriptor.MethodDescriptor
+descriptorArchiveNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "ArchiveNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.ArchiveNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Just "archive"
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorReadFile : Proto.Descriptor.MethodDescriptor
+descriptorReadFile =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "ReadFile"
+        Proto.Descriptor.Unknown
+        "notes.v1.ReadFileRequest"
+        "notes.v1.Summary"
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorPing : Proto.Descriptor.MethodDescriptor
+descriptorPing =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "Ping"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Empty"
+        "google.protobuf.Empty"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "ping"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorSummarize : Proto.Descriptor.MethodDescriptor
+descriptorSummarize =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "Summarize"
+        Proto.Descriptor.Unknown
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Summary"
+        []
+
+
+
+-- CALLS
+
+
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "GetNote"
-                Proto.Descriptor.NoSideEffects
-                "notes.v1.GetNoteRequest"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                , Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorGetNote
         )
 
 
@@ -61,33 +261,7 @@ listNotes =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeListNotesRequest
             Notes.V1.decodeListNotesResponse
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "ListNotes"
-                Proto.Descriptor.NoSideEffects
-                "notes.v1.ListNotesRequest"
-                "notes.v1.ListNotesResponse"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
-                        , Proto.Http.literal "notes"
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Just "notes"
-                    , query =
-                        [ Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
-                        , Proto.Http.param "page_token" [ "pageToken" ] (Just "")
-                        , Proto.Http.param "filter.visibility" [ "filter", "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
-                        , Proto.Http.param "filter.since" [ "filter", "since" ] Nothing
-                        , Proto.Http.param "tags" [ "tags" ] Nothing
-                        , Proto.Http.param "archived" [ "archived" ] Nothing
-                        , Proto.Http.param "revision" [ "revision" ] (Just "0")
-                        ]
-                    }
-                ]
-            )
+            descriptorListNotes
         )
 
 
@@ -96,25 +270,7 @@ createNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeCreateNoteRequest
             Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "CreateNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.CreateNoteRequest"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "POST"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
-                        , Proto.Http.literal "notes"
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.bodyField "note"
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorCreateNote
         )
 
 
@@ -123,24 +279,7 @@ updateNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
             Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "UpdateNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.UpdateNoteRequest"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "PATCH"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.bodyField "note"
-                    , responseBody = Nothing
-                    , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
-                    }
-                ]
-            )
+            descriptorUpdateNote
         )
 
 
@@ -149,24 +288,7 @@ replaceNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeNote
             Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "ReplaceNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.Note"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "PUT"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.wholeBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorReplaceNote
         )
 
 
@@ -175,24 +297,7 @@ deleteNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
             Proto.Json.empty
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "DeleteNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.DeleteNoteRequest"
-                "google.protobuf.Empty"
-                [ Proto.Http.binding
-                    { method = "DELETE"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = [ Proto.Http.param "force" [ "force" ] (Just "false") ]
-                    }
-                ]
-            )
+            descriptorDeleteNote
         )
 
 
@@ -201,24 +306,7 @@ archiveNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
             Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "ArchiveNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.ArchiveNoteRequest"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "POST"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Just "archive"
-                    , body = Proto.Http.wholeBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorArchiveNote
         )
 
 
@@ -227,24 +315,7 @@ readFile =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeReadFileRequest
             Notes.V1.decodeSummary
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "ReadFile"
-                Proto.Descriptor.Unknown
-                "notes.v1.ReadFileRequest"
-                "notes.v1.Summary"
-                [ Proto.Http.binding
-                    { method = "HEAD"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorReadFile
         )
 
 
@@ -253,27 +324,14 @@ ping =
     Rpc.call
         (Proto.Method.method Proto.Json.encodeEmpty
             Proto.Json.empty
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "Ping"
-                Proto.Descriptor.Unknown
-                "google.protobuf.Empty"
-                "google.protobuf.Empty"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "ping"
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorPing
         )
 
 
 summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
 summarize =
-    Rpc.call (Proto.Method.method Notes.V1.encodeGetNoteRequest Notes.V1.decodeSummary (Proto.Descriptor.method "notes.v1.NotesService" "Summarize" Proto.Descriptor.Unknown "notes.v1.GetNoteRequest" "notes.v1.Summary" []))
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )

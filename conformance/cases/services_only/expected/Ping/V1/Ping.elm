@@ -18,6 +18,28 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorPing : Proto.Descriptor.MethodDescriptor
+descriptorPing =
+    Proto.Descriptor.method "ping.v1.Ping"
+        "Ping"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []
+
+
+
+-- CALLS
+
+
 ping : () -> Rpc.Call () Time.Posix
 ping =
-    Rpc.call (Proto.Method.method Proto.Json.encodeEmpty Proto.Json.timestamp (Proto.Descriptor.method "ping.v1.Ping" "Ping" Proto.Descriptor.Unknown "google.protobuf.Empty" "google.protobuf.Timestamp" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.timestamp
+            descriptorPing
+        )

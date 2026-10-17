@@ -11,6 +11,9 @@
 //! - Non-empty records and record updates put one field per line, except
 //!   an [`Expr::InlineRecord`] whose fields all fit on one line.
 //! - Lists of more than one element put one element per line.
+//! - An [`Expr::StackedApply`] puts one argument per line, the first on
+//!   the function's line, as an application whose last argument alone
+//!   spans lines does.
 //! - A chain containing `|>` puts each operator at the start of its own
 //!   line, indented one step.
 //! - Anything else stays on one line unless a part of it spans lines; then
@@ -396,7 +399,7 @@ fn needs_parens(expr: &Expr, position: Position) -> bool {
     );
     // An application, including a negation that prints as `negate e`.
     let applied = match expr {
-        Expr::Apply(..) => true,
+        Expr::Apply(..) | Expr::StackedApply(..) => true,
         Expr::Negate(inner) => starts_negative(inner),
         _ => false,
     };
@@ -473,7 +476,8 @@ fn expression(expr: &Expr) -> Block {
             vec![inner.as_ref().clone()],
         )),
         Expr::Negate(inner) => expression_at(inner, Position::Negated).prefix("-"),
-        Expr::Apply(f, args) => {
+        Expr::Apply(f, args) | Expr::StackedApply(f, args) => {
+            let stacked = matches!(expr, Expr::StackedApply(..));
             let f = expression_at(f, Position::Func);
             let args: Vec<Block> = args
                 .iter()
@@ -482,13 +486,14 @@ fn expression(expr: &Expr) -> Block {
             let leading_single = args
                 .split_last()
                 .is_some_and(|(_, leading)| leading.iter().all(Block::is_single));
-            if f.is_single() && args.iter().all(Block::is_single) {
+            if !stacked && f.is_single() && args.iter().all(Block::is_single) {
                 Block::row(std::iter::once(f).chain(args), " ")
             } else if f.is_single() && leading_single && args.len() > 1 {
-                // Only the last argument spans lines: the first stays on
-                // the first line with the function, as in `Html.div [ a ]`
-                // followed by its children, and elm-format 0.8.8 puts each
-                // of the others on a line of its own.
+                // Only the last argument spans lines, or the application
+                // is stacked: the first stays on the first line with the
+                // function, as in `Html.div [ a ]` followed by its
+                // children, and elm-format 0.8.8 puts each of the others
+                // on a line of its own.
                 let mut args = args.into_iter();
                 let first = args.next().expect("an application has arguments");
                 Block::stack(

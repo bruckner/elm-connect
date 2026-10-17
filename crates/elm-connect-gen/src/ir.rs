@@ -86,7 +86,7 @@ pub struct Method {
     /// Connect path.
     pub proto_name: String,
     /// The Elm value of its call, such as `getNote`, unique among the
-    /// methods of its service.
+    /// calls and descriptors of its service's methods.
     pub elm_name: String,
     /// The request type: a [`TypeRef::Message`] or a
     /// [`TypeRef::WellKnown`] message type, never a scalar or an enum.
@@ -100,6 +100,14 @@ pub struct Method {
     /// One route per HTTP binding: the rule's own first, then each
     /// additional binding's. Empty without a rule.
     pub routes: Vec<crate::route::Route>,
+}
+
+impl Method {
+    /// The Elm name of the method's descriptor in its service's module,
+    /// such as `descriptorGetNote`.
+    pub fn descriptor_name(&self) -> String {
+        crate::naming::method_descriptor_name(&self.elm_name)
+    }
 }
 
 /// A method's `idempotency_level` option, as `descriptor.proto` declares

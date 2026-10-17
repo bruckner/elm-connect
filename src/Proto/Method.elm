@@ -41,17 +41,19 @@ type Method req res
 {-| A method from its request's proto3 JSON encoder, its response's proto3
 JSON decoder and its descriptor. Generated code writes:
 
+    descriptorGetNote =
+        Proto.Descriptor.method "notes.v1.NotesService"
+            "GetNote"
+            Proto.Descriptor.NoSideEffects
+            "notes.v1.GetNoteRequest"
+            "notes.v1.Note"
+            [ Proto.Http.binding { … } ]
+
     getNote =
         Rpc.call
             (Proto.Method.method Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
-                (Proto.Descriptor.method "notes.v1.NotesService"
-                    "GetNote"
-                    Proto.Descriptor.NoSideEffects
-                    "notes.v1.GetNoteRequest"
-                    "notes.v1.Note"
-                    [ Proto.Http.binding { … } ]
-                )
+                descriptorGetNote
             )
 
 -}

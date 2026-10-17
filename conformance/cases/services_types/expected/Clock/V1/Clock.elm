@@ -24,56 +24,218 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorNow : Proto.Descriptor.MethodDescriptor
+descriptorNow =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Now"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []
+
+
+descriptorSleep : Proto.Descriptor.MethodDescriptor
+descriptorSleep =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Sleep"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Duration"
+        "google.protobuf.Empty"
+        []
+
+
+descriptorMask : Proto.Descriptor.MethodDescriptor
+descriptorMask =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Mask"
+        Proto.Descriptor.Unknown
+        "google.protobuf.FieldMask"
+        "google.protobuf.Struct"
+        []
+
+
+descriptorEcho : Proto.Descriptor.MethodDescriptor
+descriptorEcho =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Echo"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Value"
+        "google.protobuf.ListValue"
+        []
+
+
+descriptorTicks : Proto.Descriptor.MethodDescriptor
+descriptorTicks =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Ticks"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Int64Value"
+        "google.protobuf.UInt64Value"
+        []
+
+
+descriptorCount : Proto.Descriptor.MethodDescriptor
+descriptorCount =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Count"
+        Proto.Descriptor.Unknown
+        "google.protobuf.Int32Value"
+        "google.protobuf.UInt32Value"
+        []
+
+
+descriptorRatio : Proto.Descriptor.MethodDescriptor
+descriptorRatio =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Ratio"
+        Proto.Descriptor.Unknown
+        "google.protobuf.DoubleValue"
+        "google.protobuf.FloatValue"
+        []
+
+
+descriptorName : Proto.Descriptor.MethodDescriptor
+descriptorName =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Name"
+        Proto.Descriptor.Unknown
+        "google.protobuf.StringValue"
+        "google.protobuf.BoolValue"
+        []
+
+
+descriptorRaw : Proto.Descriptor.MethodDescriptor
+descriptorRaw =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Raw"
+        Proto.Descriptor.Unknown
+        "google.protobuf.BytesValue"
+        "google.protobuf.BytesValue"
+        []
+
+
+descriptorZone : Proto.Descriptor.MethodDescriptor
+descriptorZone =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Zone"
+        Proto.Descriptor.Unknown
+        "zones.v1.ZoneRequest"
+        "zones.v1.Zone"
+        []
+
+
+descriptorSet : Proto.Descriptor.MethodDescriptor
+descriptorSet =
+    Proto.Descriptor.method "clock.v1.Clock"
+        "Set"
+        Proto.Descriptor.Unknown
+        "clock.v1.Alarm"
+        "clock.v1.Alarm"
+        []
+
+
+
+-- CALLS
+
+
 now : () -> Rpc.Call () Time.Posix
 now =
-    Rpc.call (Proto.Method.method Proto.Json.encodeEmpty Proto.Json.timestamp (Proto.Descriptor.method "clock.v1.Clock" "Now" Proto.Descriptor.Unknown "google.protobuf.Empty" "google.protobuf.Timestamp" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.timestamp
+            descriptorNow
+        )
 
 
 sleep : Duration -> Rpc.Call Duration ()
 sleep =
-    Rpc.call (Proto.Method.method Proto.Json.encodeDuration Proto.Json.empty (Proto.Descriptor.method "clock.v1.Clock" "Sleep" Proto.Descriptor.Unknown "google.protobuf.Duration" "google.protobuf.Empty" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeDuration
+            Proto.Json.empty
+            descriptorSleep
+        )
 
 
 mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
 mask =
-    Rpc.call (Proto.Method.method Proto.Json.encodeFieldMask Proto.Json.struct (Proto.Descriptor.method "clock.v1.Clock" "Mask" Proto.Descriptor.Unknown "google.protobuf.FieldMask" "google.protobuf.Struct" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeFieldMask
+            Proto.Json.struct
+            descriptorMask
+        )
 
 
 echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
 echo =
-    Rpc.call (Proto.Method.method Basics.identity Proto.Json.listValue (Proto.Descriptor.method "clock.v1.Clock" "Echo" Proto.Descriptor.Unknown "google.protobuf.Value" "google.protobuf.ListValue" []))
+    Rpc.call
+        (Proto.Method.method Basics.identity
+            Proto.Json.listValue
+            descriptorEcho
+        )
 
 
 ticks : Int -> Rpc.Call Int Int
 ticks =
-    Rpc.call (Proto.Method.method Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt (Proto.Descriptor.method "clock.v1.Clock" "Ticks" Proto.Descriptor.Unknown "google.protobuf.Int64Value" "google.protobuf.UInt64Value" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeInt64AsInt
+            Proto.Json.uint64AsInt
+            descriptorTicks
+        )
 
 
 count : Int -> Rpc.Call Int Int
 count =
-    Rpc.call (Proto.Method.method Json.Encode.int Proto.Json.uint32 (Proto.Descriptor.method "clock.v1.Clock" "Count" Proto.Descriptor.Unknown "google.protobuf.Int32Value" "google.protobuf.UInt32Value" []))
+    Rpc.call
+        (Proto.Method.method Json.Encode.int
+            Proto.Json.uint32
+            descriptorCount
+        )
 
 
 ratio : Float -> Rpc.Call Float Float
 ratio =
-    Rpc.call (Proto.Method.method Proto.Json.encodeFloat Proto.Json.float (Proto.Descriptor.method "clock.v1.Clock" "Ratio" Proto.Descriptor.Unknown "google.protobuf.DoubleValue" "google.protobuf.FloatValue" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeFloat
+            Proto.Json.float
+            descriptorRatio
+        )
 
 
 name : String -> Rpc.Call String Bool
 name =
-    Rpc.call (Proto.Method.method Json.Encode.string Json.Decode.bool (Proto.Descriptor.method "clock.v1.Clock" "Name" Proto.Descriptor.Unknown "google.protobuf.StringValue" "google.protobuf.BoolValue" []))
+    Rpc.call
+        (Proto.Method.method Json.Encode.string
+            Json.Decode.bool
+            descriptorName
+        )
 
 
 raw : String -> Rpc.Call String String
 raw =
-    Rpc.call (Proto.Method.method Proto.Json.encodeBytes Proto.Json.bytes (Proto.Descriptor.method "clock.v1.Clock" "Raw" Proto.Descriptor.Unknown "google.protobuf.BytesValue" "google.protobuf.BytesValue" []))
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeBytes
+            Proto.Json.bytes
+            descriptorRaw
+        )
 
 
 zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
-    Rpc.call (Proto.Method.method Zones.V1.encodeZoneRequest Zones.V1.decodeZone (Proto.Descriptor.method "clock.v1.Clock" "Zone" Proto.Descriptor.Unknown "zones.v1.ZoneRequest" "zones.v1.Zone" []))
+    Rpc.call
+        (Proto.Method.method Zones.V1.encodeZoneRequest
+            Zones.V1.decodeZone
+            descriptorZone
+        )
 
 
 set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
 set =
-    Rpc.call (Proto.Method.method Clock.V1.encodeAlarm Clock.V1.decodeAlarm (Proto.Descriptor.method "clock.v1.Clock" "Set" Proto.Descriptor.Unknown "clock.v1.Alarm" "clock.v1.Alarm" []))
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeAlarm
+            Clock.V1.decodeAlarm
+            descriptorSet
+        )

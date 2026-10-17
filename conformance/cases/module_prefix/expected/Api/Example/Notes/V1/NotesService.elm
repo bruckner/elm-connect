@@ -18,27 +18,39 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorGetNote : Proto.Descriptor.MethodDescriptor
+descriptorGetNote =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "GetNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+
+-- CALLS
+
+
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
         (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
             Api.Example.Notes.V1.decodeNote
-            (Proto.Descriptor.method "notes.v1.NotesService"
-                "GetNote"
-                Proto.Descriptor.Unknown
-                "notes.v1.GetNoteRequest"
-                "notes.v1.Note"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorGetNote
         )

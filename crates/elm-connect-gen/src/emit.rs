@@ -24,18 +24,25 @@
 //!   section has the messages alone, and is left out when there are none,
 //!   and the descriptors section has each enum's and message's descriptor
 //!   followed by its typed value.
-//! - A service's module, `Notes.V1.NotesService`, holds one function per
-//!   method from its request to an `Rpc.Call`, written point-free as
-//!   `Rpc.call` of the method's `Proto.Method.Method`, built by
-//!   `Proto.Method.method` from the encoder of its request and the decoder
-//!   of its response (`Notes.V1.encodeGetNoteRequest`, or the runtime's
-//!   for a well-known type) and its descriptor, built by
+//! - A service's module, `Notes.V1.NotesService`, holds two sections:
+//!   descriptors, then calls. Each method's descriptor,
+//!   `descriptorGetNote : Proto.Descriptor.MethodDescriptor`, is built by
 //!   `Proto.Descriptor.method` from its service, name, idempotency, type
 //!   names and bindings, the bindings its HTTP rule's own and then its
-//!   additional ones, as data (`Proto.Http.binding`). A method without a rule has no
-//!   bindings, and the runtime calls it over the implicit route. Every
-//!   name the module refers to is qualified, so a method's name cannot
-//!   shadow or clash with one.
+//!   additional ones, as data (`Proto.Http.binding`). A method without a
+//!   rule has no bindings, and the runtime calls it over the implicit
+//!   route. Its call is a function from its request to an `Rpc.Call`,
+//!   written point-free as `Rpc.call` of the method's
+//!   `Proto.Method.Method`, built by `Proto.Method.method` from the
+//!   encoder of its request and the decoder of its response
+//!   (`Notes.V1.encodeGetNoteRequest`, or the runtime's for a well-known
+//!   type) and its descriptor value. Both applications put one argument
+//!   per line however short, so every method reads alike. Elm's dead-code
+//!   elimination keeps a top-level value whole and the call refers to the
+//!   descriptor, so a program that calls a method keeps what it would
+//!   with the descriptor inline, and one that does not keeps neither.
+//!   Every library name the module refers to is qualified, so a method's
+//!   name cannot shadow or clash with one.
 //! - A message's descriptor, `descriptorFoo :
 //!   Proto.Descriptor.MessageDescriptor`, is built with
 //!   `Proto.Descriptor.message` from its full name and one
@@ -218,14 +225,21 @@ pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics>
     Ok(emitter.module(package, decls))
 }
 
-/// The Elm module of `service`, one of `package`'s: one call per method.
+/// The Elm module of `service`, one of `package`'s: a descriptor and a
+/// call per method, in two sections.
 pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
     let mut emitter = Emitter::new(&service.module, options);
-    let decls = service
-        .methods
-        .iter()
-        .map(|method| emitter.method(&service.proto_full_name, method))
-        .collect();
+    let mut decls = Vec::new();
+    if !service.methods.is_empty() {
+        decls.push(Decl::Comment("DESCRIPTORS".into()));
+        for method in &service.methods {
+            decls.push(emitter.method_descriptor(&service.proto_full_name, method));
+        }
+        decls.push(Decl::Comment("CALLS".into()));
+        for method in &service.methods {
+            decls.push(emitter.method(method));
+        }
+    }
     emitter.module(package, decls)
 }
 
@@ -921,12 +935,26 @@ mod tests {
                 "T.V1"
             ]
         );
+        let sections: Vec<&str> = module
+            .decls
+            .iter()
+            .filter_map(|decl| match decl {
+                Decl::Comment(section) => Some(section.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(sections, ["DESCRIPTORS", "CALLS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "(Proto.Method.method T.V1.encodeA T.V1.decodeA ",
+            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",
             // Qualified, or `identity` would be the method itself.
-            "(Proto.Method.method Basics.identity Proto.Json.empty ",
-            "(Proto.Method.method Proto.Json.encodeInt64AsInt Proto.Any.jsonDecoder ",
+            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n            \
+             descriptorIdentity\n",
+            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
+             Proto.Any.jsonDecoder\n            descriptorTicks\n",
+            "descriptorGet : Proto.Descriptor.MethodDescriptor\ndescriptorGet =\n    \
+             Proto.Descriptor.method \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Descriptor.Unknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

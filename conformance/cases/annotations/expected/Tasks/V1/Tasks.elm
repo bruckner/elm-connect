@@ -17,16 +17,66 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorGetTask : Proto.Descriptor.MethodDescriptor
+descriptorGetTask =
+    Proto.Descriptor.method "tasks.v1.Tasks"
+        "GetTask"
+        Proto.Descriptor.NoSideEffects
+        "tasks.v1.GetTaskRequest"
+        "tasks.v1.Task"
+        []
+
+
+descriptorPutTask : Proto.Descriptor.MethodDescriptor
+descriptorPutTask =
+    Proto.Descriptor.method "tasks.v1.Tasks"
+        "PutTask"
+        Proto.Descriptor.Idempotent
+        "tasks.v1.Task"
+        "tasks.v1.Task"
+        []
+
+
+descriptorCloseTask : Proto.Descriptor.MethodDescriptor
+descriptorCloseTask =
+    Proto.Descriptor.method "tasks.v1.Tasks"
+        "CloseTask"
+        Proto.Descriptor.Unknown
+        "tasks.v1.GetTaskRequest"
+        "tasks.v1.Task"
+        []
+
+
+
+-- CALLS
+
+
 getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 getTask =
-    Rpc.call (Proto.Method.method Tasks.V1.encodeGetTaskRequest Tasks.V1.decodeTask (Proto.Descriptor.method "tasks.v1.Tasks" "GetTask" Proto.Descriptor.NoSideEffects "tasks.v1.GetTaskRequest" "tasks.v1.Task" []))
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorGetTask
+        )
 
 
 putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
 putTask =
-    Rpc.call (Proto.Method.method Tasks.V1.encodeTask Tasks.V1.decodeTask (Proto.Descriptor.method "tasks.v1.Tasks" "PutTask" Proto.Descriptor.Idempotent "tasks.v1.Task" "tasks.v1.Task" []))
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeTask
+            Tasks.V1.decodeTask
+            descriptorPutTask
+        )
 
 
 closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 closeTask =
-    Rpc.call (Proto.Method.method Tasks.V1.encodeGetTaskRequest Tasks.V1.decodeTask (Proto.Descriptor.method "tasks.v1.Tasks" "CloseTask" Proto.Descriptor.Unknown "tasks.v1.GetTaskRequest" "tasks.v1.Task" []))
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorCloseTask
+        )

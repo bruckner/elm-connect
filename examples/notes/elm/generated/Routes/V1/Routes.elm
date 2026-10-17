@@ -18,86 +18,441 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorGetMessage : Proto.Descriptor.MethodDescriptor
+descriptorGetMessage =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "GetMessage"
+        Proto.Descriptor.Unknown
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "message_id" [ "messageId" ] (Just "")
+                , Proto.Http.param "revision" [ "revision" ] (Just "0")
+                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                , Proto.Http.param "user_id" [ "userId" ] (Just "")
+                ]
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable [ "messageId" ] [] ""
+                , Proto.Http.variable [ "sub", "subfield" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
+                , Proto.Http.param "user_id" [ "userId" ] (Just "")
+                , Proto.Http.param "name" [ "name" ] (Just "")
+                ]
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable [ "messageId" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
+                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                , Proto.Http.param "user_id" [ "userId" ] (Just "")
+                , Proto.Http.param "name" [ "name" ] (Just "")
+                ]
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "users"
+                , Proto.Http.variable [ "userId" ] [] ""
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable [ "messageId" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
+                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
+                , Proto.Http.param "name" [ "name" ] (Just "")
+                ]
+            }
+        ]
+
+
+descriptorUpdateMessage : Proto.Descriptor.MethodDescriptor
+descriptorUpdateMessage =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "UpdateMessage"
+        Proto.Descriptor.Unknown
+        "routes.v1.UpdateMessageRequest"
+        "routes.v1.Message"
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable [ "messageId" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField "message"
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorUpdateMessageWhole : Proto.Descriptor.MethodDescriptor
+descriptorUpdateMessageWhole =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "UpdateMessageWhole"
+        Proto.Descriptor.Unknown
+        "routes.v1.Message"
+        "routes.v1.Message"
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable [ "messageId" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorPostSub : Proto.Descriptor.MethodDescriptor
+descriptorPostSub =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "PostSub"
+        Proto.Descriptor.Unknown
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "subs"
+                , Proto.Http.variable [ "sub", "subfield" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorQuery : Proto.Descriptor.MethodDescriptor
+descriptorQuery =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Query"
+        Proto.Descriptor.Unknown
+        "routes.v1.Everything"
+        "routes.v1.Everything"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "query"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "name" [ "name" ] (Just "")
+                , Proto.Http.param "count" [ "count" ] (Just "0")
+                , Proto.Http.param "big" [ "big" ] (Just "0")
+                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
+                , Proto.Http.param "flag" [ "flag" ] (Just "false")
+                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
+                , Proto.Http.param "scale" [ "scale" ] (Just "0")
+                , Proto.Http.param "data" [ "data" ] (Just "")
+                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                , Proto.Http.param "tags" [ "tags" ] Nothing
+                , Proto.Http.param "kinds" [ "kinds" ] Nothing
+                , Proto.Http.param "numbers" [ "numbers" ] Nothing
+                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
+                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
+                , Proto.Http.param "at" [ "at" ] Nothing
+                , Proto.Http.param "wait" [ "wait" ] Nothing
+                , Proto.Http.param "mask" [ "mask" ] Nothing
+                , Proto.Http.param "limit" [ "limit" ] Nothing
+                , Proto.Http.param "label" [ "label" ] Nothing
+                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
+                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                , Proto.Http.param "text" [ "text" ] Nothing
+                , Proto.Http.param "number" [ "number" ] Nothing
+                ]
+            }
+        ]
+
+
+descriptorSingle : Proto.Descriptor.MethodDescriptor
+descriptorSingle =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Single"
+        Proto.Descriptor.Unknown
+        "routes.v1.Everything"
+        "routes.v1.Everything"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "single"
+                , Proto.Http.variable [ "name" ] [] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "count" [ "count" ] (Just "0")
+                , Proto.Http.param "big" [ "big" ] (Just "0")
+                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
+                , Proto.Http.param "flag" [ "flag" ] (Just "false")
+                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
+                , Proto.Http.param "scale" [ "scale" ] (Just "0")
+                , Proto.Http.param "data" [ "data" ] (Just "")
+                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                , Proto.Http.param "tags" [ "tags" ] Nothing
+                , Proto.Http.param "kinds" [ "kinds" ] Nothing
+                , Proto.Http.param "numbers" [ "numbers" ] Nothing
+                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
+                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
+                , Proto.Http.param "at" [ "at" ] Nothing
+                , Proto.Http.param "wait" [ "wait" ] Nothing
+                , Proto.Http.param "mask" [ "mask" ] Nothing
+                , Proto.Http.param "limit" [ "limit" ] Nothing
+                , Proto.Http.param "label" [ "label" ] Nothing
+                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
+                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                , Proto.Http.param "text" [ "text" ] Nothing
+                , Proto.Http.param "number" [ "number" ] Nothing
+                ]
+            }
+        ]
+
+
+descriptorMulti : Proto.Descriptor.MethodDescriptor
+descriptorMulti =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Multi"
+        Proto.Descriptor.Unknown
+        "routes.v1.Everything"
+        "routes.v1.Everything"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "things", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "count" [ "count" ] (Just "0")
+                , Proto.Http.param "big" [ "big" ] (Just "0")
+                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
+                , Proto.Http.param "flag" [ "flag" ] (Just "false")
+                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
+                , Proto.Http.param "scale" [ "scale" ] (Just "0")
+                , Proto.Http.param "data" [ "data" ] (Just "")
+                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
+                , Proto.Http.param "tags" [ "tags" ] Nothing
+                , Proto.Http.param "kinds" [ "kinds" ] Nothing
+                , Proto.Http.param "numbers" [ "numbers" ] Nothing
+                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
+                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
+                , Proto.Http.param "at" [ "at" ] Nothing
+                , Proto.Http.param "wait" [ "wait" ] Nothing
+                , Proto.Http.param "mask" [ "mask" ] Nothing
+                , Proto.Http.param "limit" [ "limit" ] Nothing
+                , Proto.Http.param "label" [ "label" ] Nothing
+                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
+                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
+                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                , Proto.Http.param "text" [ "text" ] Nothing
+                , Proto.Http.param "number" [ "number" ] Nothing
+                ]
+            }
+        ]
+
+
+descriptorTyped : Proto.Descriptor.MethodDescriptor
+descriptorTyped =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Typed"
+        Proto.Descriptor.Unknown
+        "routes.v1.Everything"
+        "routes.v1.Everything"
+        [ Proto.Http.binding
+            { method = "DELETE"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "typed"
+                , Proto.Http.variable [ "count" ] [] "0"
+                , Proto.Http.variable [ "flag" ] [] "false"
+                , Proto.Http.variable [ "kind" ] [] "KIND_UNSPECIFIED"
+                , Proto.Http.variable [ "big" ] [] "0"
+                , Proto.Http.variable [ "inner", "deep", "b" ] [] "0"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param "name" [ "name" ] (Just "")
+                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
+                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
+                , Proto.Http.param "scale" [ "scale" ] (Just "0")
+                , Proto.Http.param "data" [ "data" ] (Just "")
+                , Proto.Http.param "tags" [ "tags" ] Nothing
+                , Proto.Http.param "kinds" [ "kinds" ] Nothing
+                , Proto.Http.param "numbers" [ "numbers" ] Nothing
+                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
+                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
+                , Proto.Http.param "at" [ "at" ] Nothing
+                , Proto.Http.param "wait" [ "wait" ] Nothing
+                , Proto.Http.param "mask" [ "mask" ] Nothing
+                , Proto.Http.param "limit" [ "limit" ] Nothing
+                , Proto.Http.param "label" [ "label" ] Nothing
+                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
+                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
+                , Proto.Http.param "text" [ "text" ] Nothing
+                , Proto.Http.param "number" [ "number" ] Nothing
+                ]
+            }
+        ]
+
+
+descriptorFiles : Proto.Descriptor.MethodDescriptor
+descriptorFiles =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Files"
+        Proto.Descriptor.Unknown
+        "routes.v1.FileRequest"
+        "routes.v1.FileRequest"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorCancel : Proto.Descriptor.MethodDescriptor
+descriptorCancel =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Cancel"
+        Proto.Descriptor.Unknown
+        "routes.v1.Resource"
+        "routes.v1.Resource"
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "operations", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Just "cancel"
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorUpdateResource : Proto.Descriptor.MethodDescriptor
+descriptorUpdateResource =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "UpdateResource"
+        Proto.Descriptor.Unknown
+        "routes.v1.UpdateResourceRequest"
+        "routes.v1.Resource"
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "resource", "name" ] [ Proto.Http.literal "resources", Proto.Http.wildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField "resource"
+            , responseBody = Nothing
+            , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
+            }
+        ]
+
+
+descriptorHead : Proto.Descriptor.MethodDescriptor
+descriptorHead =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Head"
+        Proto.Descriptor.Unknown
+        "routes.v1.FileRequest"
+        "routes.v1.FileRequest"
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+descriptorUnbound : Proto.Descriptor.MethodDescriptor
+descriptorUnbound =
+    Proto.Descriptor.method "routes.v1.Routes"
+        "Unbound"
+        Proto.Descriptor.Unknown
+        "routes.v1.GetMessageRequest"
+        "routes.v1.Message"
+        []
+
+
+
+-- CALLS
+
+
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeGetMessageRequest
             Routes.V1.decodeMessage
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "GetMessage"
-                Proto.Descriptor.Unknown
-                "routes.v1.GetMessageRequest"
-                "routes.v1.Message"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "message_id" [ "messageId" ] (Just "")
-                        , Proto.Http.param "revision" [ "revision" ] (Just "0")
-                        , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                        , Proto.Http.param "user_id" [ "userId" ] (Just "")
-                        ]
-                    }
-                , Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] [] ""
-                        , Proto.Http.variable [ "sub", "subfield" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                        , Proto.Http.param "user_id" [ "userId" ] (Just "")
-                        , Proto.Http.param "name" [ "name" ] (Just "")
-                        ]
-                    }
-                , Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                        , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                        , Proto.Http.param "user_id" [ "userId" ] (Just "")
-                        , Proto.Http.param "name" [ "name" ] (Just "")
-                        ]
-                    }
-                , Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "users"
-                        , Proto.Http.variable [ "userId" ] [] ""
-                        , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                        , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                        , Proto.Http.param "name" [ "name" ] (Just "")
-                        ]
-                    }
-                ]
-            )
+            descriptorGetMessage
         )
 
 
@@ -106,25 +461,7 @@ updateMessage =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
             Routes.V1.decodeMessage
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "UpdateMessage"
-                Proto.Descriptor.Unknown
-                "routes.v1.UpdateMessageRequest"
-                "routes.v1.Message"
-                [ Proto.Http.binding
-                    { method = "PATCH"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.bodyField "message"
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorUpdateMessage
         )
 
 
@@ -133,25 +470,7 @@ updateMessageWhole =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeMessage
             Routes.V1.decodeMessage
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "UpdateMessageWhole"
-                Proto.Descriptor.Unknown
-                "routes.v1.Message"
-                "routes.v1.Message"
-                [ Proto.Http.binding
-                    { method = "PATCH"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "messages"
-                        , Proto.Http.variable [ "messageId" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.wholeBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorUpdateMessageWhole
         )
 
 
@@ -160,25 +479,7 @@ postSub =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeGetMessageRequest
             Routes.V1.decodeMessage
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "PostSub"
-                Proto.Descriptor.Unknown
-                "routes.v1.GetMessageRequest"
-                "routes.v1.Message"
-                [ Proto.Http.binding
-                    { method = "POST"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "subs"
-                        , Proto.Http.variable [ "sub", "subfield" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.wholeBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorPostSub
         )
 
 
@@ -187,49 +488,7 @@ query =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeEverything
             Routes.V1.decodeEverything
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Query"
-                Proto.Descriptor.Unknown
-                "routes.v1.Everything"
-                "routes.v1.Everything"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "query"
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "name" [ "name" ] (Just "")
-                        , Proto.Http.param "count" [ "count" ] (Just "0")
-                        , Proto.Http.param "big" [ "big" ] (Just "0")
-                        , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                        , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                        , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                        , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                        , Proto.Http.param "data" [ "data" ] (Just "")
-                        , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                        , Proto.Http.param "tags" [ "tags" ] Nothing
-                        , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                        , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                        , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                        , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                        , Proto.Http.param "at" [ "at" ] Nothing
-                        , Proto.Http.param "wait" [ "wait" ] Nothing
-                        , Proto.Http.param "mask" [ "mask" ] Nothing
-                        , Proto.Http.param "limit" [ "limit" ] Nothing
-                        , Proto.Http.param "label" [ "label" ] Nothing
-                        , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                        , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                        , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                        , Proto.Http.param "text" [ "text" ] Nothing
-                        , Proto.Http.param "number" [ "number" ] Nothing
-                        ]
-                    }
-                ]
-            )
+            descriptorQuery
         )
 
 
@@ -238,49 +497,7 @@ single =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeEverything
             Routes.V1.decodeEverything
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Single"
-                Proto.Descriptor.Unknown
-                "routes.v1.Everything"
-                "routes.v1.Everything"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "single"
-                        , Proto.Http.variable [ "name" ] [] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "count" [ "count" ] (Just "0")
-                        , Proto.Http.param "big" [ "big" ] (Just "0")
-                        , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                        , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                        , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                        , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                        , Proto.Http.param "data" [ "data" ] (Just "")
-                        , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                        , Proto.Http.param "tags" [ "tags" ] Nothing
-                        , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                        , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                        , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                        , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                        , Proto.Http.param "at" [ "at" ] Nothing
-                        , Proto.Http.param "wait" [ "wait" ] Nothing
-                        , Proto.Http.param "mask" [ "mask" ] Nothing
-                        , Proto.Http.param "limit" [ "limit" ] Nothing
-                        , Proto.Http.param "label" [ "label" ] Nothing
-                        , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                        , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                        , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                        , Proto.Http.param "text" [ "text" ] Nothing
-                        , Proto.Http.param "number" [ "number" ] Nothing
-                        ]
-                    }
-                ]
-            )
+            descriptorSingle
         )
 
 
@@ -289,48 +506,7 @@ multi =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeEverything
             Routes.V1.decodeEverything
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Multi"
-                Proto.Descriptor.Unknown
-                "routes.v1.Everything"
-                "routes.v1.Everything"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "things", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "count" [ "count" ] (Just "0")
-                        , Proto.Http.param "big" [ "big" ] (Just "0")
-                        , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                        , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                        , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                        , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                        , Proto.Http.param "data" [ "data" ] (Just "")
-                        , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                        , Proto.Http.param "tags" [ "tags" ] Nothing
-                        , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                        , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                        , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                        , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                        , Proto.Http.param "at" [ "at" ] Nothing
-                        , Proto.Http.param "wait" [ "wait" ] Nothing
-                        , Proto.Http.param "mask" [ "mask" ] Nothing
-                        , Proto.Http.param "limit" [ "limit" ] Nothing
-                        , Proto.Http.param "label" [ "label" ] Nothing
-                        , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                        , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                        , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                        , Proto.Http.param "text" [ "text" ] Nothing
-                        , Proto.Http.param "number" [ "number" ] Nothing
-                        ]
-                    }
-                ]
-            )
+            descriptorMulti
         )
 
 
@@ -339,49 +515,7 @@ typed =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeEverything
             Routes.V1.decodeEverything
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Typed"
-                Proto.Descriptor.Unknown
-                "routes.v1.Everything"
-                "routes.v1.Everything"
-                [ Proto.Http.binding
-                    { method = "DELETE"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.literal "typed"
-                        , Proto.Http.variable [ "count" ] [] "0"
-                        , Proto.Http.variable [ "flag" ] [] "false"
-                        , Proto.Http.variable [ "kind" ] [] "KIND_UNSPECIFIED"
-                        , Proto.Http.variable [ "big" ] [] "0"
-                        , Proto.Http.variable [ "inner", "deep", "b" ] [] "0"
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query =
-                        [ Proto.Http.param "name" [ "name" ] (Just "")
-                        , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                        , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                        , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                        , Proto.Http.param "data" [ "data" ] (Just "")
-                        , Proto.Http.param "tags" [ "tags" ] Nothing
-                        , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                        , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                        , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                        , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                        , Proto.Http.param "at" [ "at" ] Nothing
-                        , Proto.Http.param "wait" [ "wait" ] Nothing
-                        , Proto.Http.param "mask" [ "mask" ] Nothing
-                        , Proto.Http.param "limit" [ "limit" ] Nothing
-                        , Proto.Http.param "label" [ "label" ] Nothing
-                        , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                        , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                        , Proto.Http.param "text" [ "text" ] Nothing
-                        , Proto.Http.param "number" [ "number" ] Nothing
-                        ]
-                    }
-                ]
-            )
+            descriptorTyped
         )
 
 
@@ -390,24 +524,7 @@ files =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeFileRequest
             Routes.V1.decodeFileRequest
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Files"
-                Proto.Descriptor.Unknown
-                "routes.v1.FileRequest"
-                "routes.v1.FileRequest"
-                [ Proto.Http.binding
-                    { method = "GET"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorFiles
         )
 
 
@@ -416,24 +533,7 @@ cancel =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeResource
             Routes.V1.decodeResource
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Cancel"
-                Proto.Descriptor.Unknown
-                "routes.v1.Resource"
-                "routes.v1.Resource"
-                [ Proto.Http.binding
-                    { method = "POST"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "name" ] [ Proto.Http.literal "operations", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Just "cancel"
-                    , body = Proto.Http.wholeBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorCancel
         )
 
 
@@ -442,24 +542,7 @@ updateResource =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
             Routes.V1.decodeResource
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "UpdateResource"
-                Proto.Descriptor.Unknown
-                "routes.v1.UpdateResourceRequest"
-                "routes.v1.Resource"
-                [ Proto.Http.binding
-                    { method = "PATCH"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "resource", "name" ] [ Proto.Http.literal "resources", Proto.Http.wildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.bodyField "resource"
-                    , responseBody = Nothing
-                    , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
-                    }
-                ]
-            )
+            descriptorUpdateResource
         )
 
 
@@ -468,27 +551,14 @@ head =
     Rpc.call
         (Proto.Method.method Routes.V1.encodeFileRequest
             Routes.V1.decodeFileRequest
-            (Proto.Descriptor.method "routes.v1.Routes"
-                "Head"
-                Proto.Descriptor.Unknown
-                "routes.v1.FileRequest"
-                "routes.v1.FileRequest"
-                [ Proto.Http.binding
-                    { method = "HEAD"
-                    , path =
-                        [ Proto.Http.literal "v1"
-                        , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
-                        ]
-                    , customVerb = Nothing
-                    , body = Proto.Http.noBody
-                    , responseBody = Nothing
-                    , query = []
-                    }
-                ]
-            )
+            descriptorHead
         )
 
 
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
-    Rpc.call (Proto.Method.method Routes.V1.encodeGetMessageRequest Routes.V1.decodeMessage (Proto.Descriptor.method "routes.v1.Routes" "Unbound" Proto.Descriptor.Unknown "routes.v1.GetMessageRequest" "routes.v1.Message" []))
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUnbound
+        )

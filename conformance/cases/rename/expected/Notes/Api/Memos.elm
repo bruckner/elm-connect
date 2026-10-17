@@ -17,6 +17,28 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
+
+-- DESCRIPTORS
+
+
+descriptorFetchMemo : Proto.Descriptor.MethodDescriptor
+descriptorFetchMemo =
+    Proto.Descriptor.method "notes.v1.NotesService"
+        "GetNote"
+        Proto.Descriptor.Unknown
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        []
+
+
+
+-- CALLS
+
+
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
-    Rpc.call (Proto.Method.method Notes.Api.encodeGetNoteRequest Notes.Api.decodeMemo (Proto.Descriptor.method "notes.v1.NotesService" "GetNote" Proto.Descriptor.Unknown "notes.v1.GetNoteRequest" "notes.v1.Note" []))
+    Rpc.call
+        (Proto.Method.method Notes.Api.encodeGetNoteRequest
+            Notes.Api.decodeMemo
+            descriptorFetchMemo
+        )

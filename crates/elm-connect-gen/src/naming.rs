@@ -294,6 +294,25 @@ pub fn descriptor_name(type_elm_name: &str) -> String {
 /// The prefix of [`descriptor_name`].
 const DESCRIPTOR_PREFIX: &str = "descriptor";
 
+/// The descriptor of a method (`Proto.Descriptor.MethodDescriptor`), in
+/// its service's module: `descriptor` followed by the method's Elm name
+/// with its first letter uppercased, as [`pascal_case`] does (`getNote`
+/// becomes `descriptorGetNote`). It follows the Elm name, so a renamed
+/// method's descriptor is renamed with it. A service's module holds only
+/// its methods' calls and descriptors, so it collides only with the call of
+/// a method named for it (`DescriptorGetNote`), which is
+/// `naming::value_collision`.
+pub fn method_descriptor_name(method_elm_name: &str) -> String {
+    let mut chars = method_elm_name.chars();
+    let upper: String = chars
+        .next()
+        .map(|first| first.to_ascii_uppercase())
+        .into_iter()
+        .chain(chars)
+        .collect();
+    format!("{DESCRIPTOR_PREFIX}{upper}")
+}
+
 /// The value holding a package's descriptors and those of every package
 /// it imports (`Proto.Registry.Registry`). Every other top-level value of a
 /// package module is a prefix and a type name, whose first letter is
@@ -456,6 +475,10 @@ mod tests {
         assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
         assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
         assert_eq!(descriptor_name("OuterInner"), "descriptorOuterInner");
+        assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
+        assert_eq!(method_descriptor_name("type_"), "descriptorType_");
+        assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");
+        assert!(method_descriptor_name("getNote").starts_with(DESCRIPTOR_PREFIX));
         let prefixes = [
             "encode",
             "decode",
