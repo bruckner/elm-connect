@@ -56,10 +56,11 @@ import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate
 --include-imports`, the file on protoc's command line, or the CLI's
 `--include-imports`). `google.protobuf` maps to the runtime instead.
-The plugin never generates `google/api/http.proto` and
-`google/api/annotations.proto`, which only carry `google.api.http`, so
-`buf generate --include-imports` gives no `Google.Api` module of their
-messages; other files imported for their options alone, such as
+The plugin never generates `google/api/http.proto`,
+`google/api/annotations.proto` and `google/api/field_behavior.proto`,
+which only carry the options the generator reads (`google.api.http` and
+`google.api.field_behavior`), so `buf generate --include-imports` gives
+no `Google.Api` module of their types; other files imported for their options alone, such as
 `google/api/client.proto`, it generates when buf asks for them. The
 CLI's `--include-imports` generates no file nothing refers to, so none
 of these. Other `google/api` files, such as `httpbody.proto`, generate
@@ -73,7 +74,7 @@ calling:
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64` | the well-known types' Elm forms and conversions |
 | `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
-| `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions, an enum value |
+| `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
 | `Proto.Method` | a method's typed value (request encoder, response decoder and descriptor) and its descriptor as data, with its idempotency |
 | `Proto.Http` | a method's `google.api.http` rule as data |
 | `Proto.WellKnown` | the well-known types' typed values |
@@ -241,8 +242,9 @@ does not read.
 
 Each message and enum also has a typed value, `Notes.V1.messageNote`
 and `Notes.V1.enumVisibility`, holding its codecs, its default and its
-descriptor: its full name and its fields (or values) as data. The
-descriptor is a value of its own too, `Notes.V1.descriptorNote`. Both
+descriptor: its full name and its fields (or values) as data, each
+field with its `google.api.field_behavior` and whether it is deprecated.
+The descriptor is a value of its own too, `Notes.V1.descriptorNote`. Both
 are opaque, read through the module of their concept (`Proto.Message`,
 with `Proto.Field` for a descriptor's fields). `Notes.V1.registry`
 holds the descriptors of the package, of every package it imports and

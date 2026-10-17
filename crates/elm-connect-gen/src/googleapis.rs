@@ -1,9 +1,11 @@
-//! The two googleapis files that declare `google.api.http`, embedded so a
-//! proto that imports `google/api/annotations.proto` compiles without the
-//! googleapis repository on the include path.
+//! The googleapis files that declare the options the generator reads,
+//! `google.api.http` and `google.api.field_behavior`, embedded so a proto
+//! that imports `google/api/annotations.proto` or
+//! `google/api/field_behavior.proto` compiles without the googleapis
+//! repository on the include path.
 //!
-//! The files are `google/api/http.proto` and `google/api/annotations.proto`
-//! from googleapis at commit `525d4c82dc1dd2fa3884198a8006a7bf5b48ac9d`,
+//! The files are `google/api/http.proto`, `google/api/annotations.proto`
+//! and `google/api/field_behavior.proto` from googleapis at commit `525d4c82dc1dd2fa3884198a8006a7bf5b48ac9d`,
 //! unmodified, under the Apache License 2.0 (`THIRD_PARTY.md` at the
 //! repository root). Their one other import, `google/protobuf/descriptor.proto`,
 //! protox bundles.
@@ -16,16 +18,16 @@
 //! plugin skips them among its files to generate ([`is_embedded`]), and the
 //! CLI's `--include-imports` adds no file whose types nothing refers to.
 //! They only carry
-//! `google.api.http`, and `buf generate --include-imports` would otherwise
-//! give every API with HTTP rules a `Google.Api` module of `http.proto`'s
-//! messages.
+//! options, and `buf generate --include-imports` would otherwise give every
+//! API with HTTP rules a `Google.Api` module of `http.proto`'s messages
+//! (and `field_behavior.proto`'s enum).
 
 use protox::Error;
 use protox::file::{ChainFileResolver, File, FileResolver, GoogleFileResolver};
 use std::path::PathBuf;
 
 /// The embedded files, by import name.
-pub const FILES: [(&str, &str); 2] = [
+pub const FILES: [(&str, &str); 3] = [
     (
         "google/api/http.proto",
         include_str!("../googleapis/google/api/http.proto"),
@@ -33,6 +35,10 @@ pub const FILES: [(&str, &str); 2] = [
     (
         "google/api/annotations.proto",
         include_str!("../googleapis/google/api/annotations.proto"),
+    ),
+    (
+        "google/api/field_behavior.proto",
+        include_str!("../googleapis/google/api/field_behavior.proto"),
     ),
 ];
 
@@ -85,6 +91,15 @@ mod tests {
             .get_extension_by_name("google.api.http")
             .expect("declared");
         assert_eq!(extension.number(), 72_295_728);
+
+        compiler
+            .open_file("google/api/field_behavior.proto")
+            .expect("compiles");
+        let pool = compiler.descriptor_pool();
+        let extension = pool
+            .get_extension_by_name("google.api.field_behavior")
+            .expect("declared");
+        assert_eq!(extension.number(), 1052);
     }
 
     #[test]

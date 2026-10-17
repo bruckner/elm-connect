@@ -85,6 +85,7 @@ descriptorState =
         [ Proto.EnumValue.descriptor "STATE_UNSPECIFIED" 0
         , Proto.EnumValue.descriptor "STATE_OPEN" 1
         , Proto.EnumValue.descriptor "STATE_STALE" 2
+            |> Proto.EnumValue.withDeprecated
         ]
 
 
@@ -97,15 +98,23 @@ descriptorTask : Proto.Message.Descriptor
 descriptorTask =
     Proto.Message.descriptor "tasks.v1.Task"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
         , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
         , Proto.Field.descriptor "state" "state" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "tasks.v1.State")
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
         , Proto.Field.descriptor "labels" "labels" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
         , Proto.Field.descriptor "owner" "owner" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOptional, Proto.Field.BehaviorImmutable ]
+            |> Proto.Field.withDeprecated
         , Proto.Field.descriptor "notes" "notes" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "date" "date" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "due"
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorInputOnly ]
         , Proto.Field.descriptor "never" "never" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "due"
+            |> Proto.Field.withDeprecated
         ]
 
 
@@ -116,7 +125,10 @@ messageTask =
 
 descriptorGetTaskRequest : Proto.Message.Descriptor
 descriptorGetTaskRequest =
-    Proto.Message.descriptor "tasks.v1.GetTaskRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "tasks.v1.GetTaskRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
+        ]
 
 
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest

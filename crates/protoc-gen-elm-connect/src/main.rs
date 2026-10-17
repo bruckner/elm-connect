@@ -561,6 +561,44 @@ service Notes {
     }
 
     #[test]
+    fn field_behavior_survives_the_request_and_is_not_generated() {
+        let tasks = r#"syntax = "proto3";
+package tasks.v1;
+import "google/api/field_behavior.proto";
+message Task {
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER, deprecated = true];
+}
+"#;
+        let request = request_for(
+            "field-behavior",
+            &[("tasks.proto", tasks)],
+            &["google/api/field_behavior.proto", "tasks.proto"],
+        );
+        let raw = RawProtoFiles::decode(request.as_slice()).expect("the files");
+        let pool = pool(&raw).expect("a pool");
+        let packages = elm_connect_gen::ir::build(&pool, &["tasks.proto"]).expect("the IR builds");
+        let annotations = &packages[0].messages[0].fields[0].annotations;
+        assert_eq!(
+            annotations.behavior,
+            [elm_connect_gen::ir::FieldBehavior::Identifier]
+        );
+        assert!(annotations.deprecated);
+
+        let (response, warnings) = run(&request);
+        assert_eq!(response.error, None);
+        assert_eq!(warnings, "");
+        assert_eq!(names(&response), ["Tasks/V1.elm"], "no Google/Api.elm");
+        let module = response.file[0].content.as_deref().expect("content");
+        assert!(
+            module.contains(
+                "|> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]\n            \
+                 |> Proto.Field.withDeprecated"
+            ),
+            "{module}"
+        );
+    }
+
+    #[test]
     fn other_google_api_files_are_generated() {
         let httpbody = r#"syntax = "proto3";
 package google.api;

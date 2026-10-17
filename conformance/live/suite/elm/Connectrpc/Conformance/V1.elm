@@ -830,6 +830,7 @@ descriptorCodec =
         , Proto.EnumValue.descriptor "CODEC_PROTO" 1
         , Proto.EnumValue.descriptor "CODEC_JSON" 2
         , Proto.EnumValue.descriptor "CODEC_TEXT" 3
+            |> Proto.EnumValue.withDeprecated
         ]
 
 

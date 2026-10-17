@@ -636,3 +636,11 @@ tag (design §8).
   effects. `annotations` conformance case.
 - `Proto.Field.Cardinality` gains `CardinalityRequired`, for proto2's
   `required`, which the generator does not give yet.
+- Descriptors carry each field's `google.api.field_behavior`
+  (`Proto.Field.behavior`, a list of the new `Proto.Field.Behavior`:
+  `BehaviorRequired`, `BehaviorOutputOnly`, …) and `deprecated` option,
+  and each enum value's `deprecated` (`Proto.EnumValue.deprecated`),
+  written by generated code as `withBehavior` and `withDeprecated`
+  modifiers only where set. The CLI embeds
+  `google/api/field_behavior.proto`, which neither binary generates;
+  the `annotations` conformance case pins the modifiers.

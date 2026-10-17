@@ -1,7 +1,8 @@
 module Proto.Field exposing
-    ( Descriptor, descriptor, inOneof
+    ( Descriptor, descriptor, inOneof, withBehavior, withDeprecated
     , name, jsonName, number, cardinality, kind, oneof
-    , Cardinality(..), Kind(..), Scalar(..)
+    , behavior, deprecated
+    , Cardinality(..), Kind(..), Scalar(..), Behavior(..)
     )
 
 {-| A field of a message, as its message's descriptor
@@ -9,10 +10,12 @@ module Proto.Field exposing
 descriptor type, its builder and its readers, and the unions it holds.
 
 Each union's constructors carry the union's name as a prefix
-(`CardinalitySingular`, `KindMessage`, `ScalarString`), so all three can be
-exposed with `(..)` beside each other and beside the other modules' unions.
+(`CardinalitySingular`, `KindMessage`, `ScalarString`, `BehaviorRequired`), so
+all four can be exposed with `(..)` beside each other and beside the other
+modules' unions: `CardinalityRequired` and `BehaviorRequired` mean different
+things.
 
-@docs Descriptor, descriptor, inOneof
+@docs Descriptor, descriptor, inOneof, withBehavior, withDeprecated
 
 
 # Reading
@@ -20,9 +23,14 @@ exposed with `(..)` beside each other and beside the other modules' unions.
 @docs name, jsonName, number, cardinality, kind, oneof
 
 
+# Annotations
+
+@docs behavior, deprecated
+
+
 # Unions
 
-@docs Cardinality, Kind, Scalar
+@docs Cardinality, Kind, Scalar, Behavior
 
 -}
 
@@ -40,6 +48,8 @@ type Descriptor
         , cardinality : Cardinality
         , kind : Kind
         , oneof : Maybe String
+        , behavior : List Behavior
+        , deprecated : Bool
         }
 
 
@@ -91,10 +101,40 @@ type Scalar
     | ScalarBytes
 
 
+{-| One value of `google.api.FieldBehavior` but its unspecified zero, what an
+API says about a field's contract (not its presence on the wire):
+
+  - `BehaviorOptional`: the field may be left out, said for emphasis.
+  - `BehaviorRequired`: a request must set it.
+  - `BehaviorOutputOnly`: the server sets it; a request's value is ignored.
+  - `BehaviorInputOnly`: a request sets it; responses leave it out.
+  - `BehaviorImmutable`: it may be set once, when the resource is created.
+  - `BehaviorUnorderedList`: a repeated field whose order the server may
+    change.
+  - `BehaviorNonEmptyDefault`: the server gives a value of its own when it is
+    unset.
+  - `BehaviorIdentifier`: the field is the resource's name.
+
+A value `google.api.FieldBehavior` gains after this release is dropped by the
+generator until a release adds it here.
+
+-}
+type Behavior
+    = BehaviorOptional
+    | BehaviorRequired
+    | BehaviorOutputOnly
+    | BehaviorInputOnly
+    | BehaviorImmutable
+    | BehaviorUnorderedList
+    | BehaviorNonEmptyDefault
+    | BehaviorIdentifier
+
+
 {-| A field: its proto name (`page_size`), its name in proto3 JSON
 (`pageSize`, or the proto's explicit `json_name`), its number, how many values
 it holds, and the type of each value (for a map, of each map value). It is in
-no oneof until [`inOneof`](#inOneof) says otherwise.
+no oneof, has no [`Behavior`](#Behavior) and is not deprecated until the
+modifiers below say otherwise.
 
     Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
@@ -108,6 +148,8 @@ descriptor protoName json fieldNumber howMany valueKind =
         , cardinality = howMany
         , kind = valueKind
         , oneof = Nothing
+        , behavior = []
+        , deprecated = False
         }
 
 
@@ -116,6 +158,21 @@ descriptor protoName json fieldNumber howMany valueKind =
 inOneof : String -> Descriptor -> Descriptor
 inOneof oneofName (Descriptor f) =
     Descriptor { f | oneof = Just oneofName }
+
+
+{-| The field with these `google.api.field_behavior` annotations after any it
+has, in the order the proto gives them.
+-}
+withBehavior : List Behavior -> Descriptor -> Descriptor
+withBehavior annotations (Descriptor f) =
+    Descriptor { f | behavior = f.behavior ++ annotations }
+
+
+{-| The field as `[deprecated = true]`.
+-}
+withDeprecated : Descriptor -> Descriptor
+withDeprecated (Descriptor f) =
+    Descriptor { f | deprecated = True }
 
 
 {-| Its proto name, such as `page_size`: the name a field mask's paths use.
@@ -159,3 +216,18 @@ kind (Descriptor f) =
 oneof : Descriptor -> Maybe String
 oneof (Descriptor f) =
     f.oneof
+
+
+{-| Its `google.api.field_behavior` annotations, in the order the proto gives
+them; `[]` for a field without any.
+-}
+behavior : Descriptor -> List Behavior
+behavior (Descriptor f) =
+    f.behavior
+
+
+{-| Whether the proto marks it `[deprecated = true]`.
+-}
+deprecated : Descriptor -> Bool
+deprecated (Descriptor f) =
+    f.deprecated
