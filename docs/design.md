@@ -276,7 +276,7 @@ rpc shared call =
   `Rpc.Code(..)` without a clash. (4) An `Internal` module holds what
   the package needs but will not promise: a constructor two public
   modules must build or match (`Rpc.Internal.Call`, built by `Rpc`,
-  read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, minted by
+  read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, built by
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
   `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`), or
