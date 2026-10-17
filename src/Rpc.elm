@@ -73,21 +73,17 @@ application can rewrite a request before sending it with
 
 import Dict exposing (Dict)
 import Http
-import Json.Decode exposing (Decoder)
 import Json.Encode
 import Process
-import Proto.Any exposing (Any)
-import Proto.Internal.Any
-import Proto.Method as Method exposing (Method)
+import Proto.Method exposing (Method)
 import Rpc.Call
-import Rpc.Code as Code exposing (Code)
 import Rpc.Error
+import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Route as Route
 import Rpc.Internal.Trace
-import Rpc.Internal.Transport
 import Rpc.Internal.Wire
 import Rpc.Request
 import Rpc.Response
@@ -461,74 +457,8 @@ body reading as `{}`, and the response decoded from the field the binding's
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg ((Rpc.Internal.Call.Call fields) as c) answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            case ( cfg.transport, Route.route cfg.transport c ) of
-                ( Rpc.Internal.Transport.Connect _, _ ) ->
-                    if metadata.statusCode == 200 then
-                        decodeBody (Method.responseDecoder fields.method) metadata raw raw
-
-                    else
-                        Err (failure metadata raw)
-
-                ( Rpc.Internal.Transport.Transcode, Route.Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw)
-
-                ( Rpc.Internal.Transport.Transcode, Route.Implicit ) ->
-                    decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw)
-
-        Http.BadStatus_ metadata raw ->
-            Err (failure metadata raw)
-
-        Http.BadUrl_ url ->
-            Err (Rpc.Error.NoAnswer (Rpc.Error.BadUrl url))
-
-        Http.Timeout_ ->
-            Err (Rpc.Error.NoAnswer Rpc.Error.Timeout)
-
-        Http.NetworkError_ ->
-            Err (Rpc.Error.NoAnswer Rpc.Error.NetworkError)
-
-
-orEmptyObject : String -> String
-orEmptyObject raw =
-    if String.isEmpty (String.trim raw) then
-        "{}"
-
-    else
-        raw
-
-
-{-| The response decoder reading the answer as the field `responseBody` names,
-when it names one.
--}
-responseDecoder : Maybe String -> Decoder res -> Decoder res
-responseDecoder responseBody decoder =
-    case responseBody of
-        Nothing ->
-            decoder
-
-        Just key ->
-            Json.Decode.value
-                |> Json.Decode.andThen
-                    (\value ->
-                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
-                            Ok decoded ->
-                                Json.Decode.succeed decoded
-
-                            Err error ->
-                                Json.Decode.fail (Json.Decode.errorToString error)
-                    )
-
-
-{-| The response `read` from a successful answer's body, or a `BadResponse`
-keeping the answer as it came, `raw`.
--}
-decodeBody : Decoder res -> Http.Metadata -> String -> String -> Result Error res
-decodeBody decoder metadata raw read =
-    Json.Decode.decodeString decoder read
-        |> Result.mapError (\problem -> Rpc.Error.BadResponse (Json.Decode.errorToString problem) (answerOf metadata raw))
+response cfg =
+    Rpc.Internal.Answer.toResult cfg.transport
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -650,136 +580,3 @@ retryDelay cfg c tried result =
 
         _ ->
             Nothing
-
-
-{-| An answer as an error keeps it.
--}
-answerOf : Http.Metadata -> String -> Response
-answerOf metadata raw =
-    { url = metadata.url
-    , statusCode = metadata.statusCode
-    , statusText = metadata.statusText
-    , headers = metadata.headers
-    , body = raw
-    }
-
-
-{-| The error a failed answer stands for, whatever the transport: its Connect
-error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, an `HttpStatus` error. The
-answer is kept whichever it is.
--}
-failure : Http.Metadata -> String -> Error
-failure metadata raw =
-    let
-        answer =
-            answerOf metadata raw
-    in
-    case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
-        Ok read ->
-            Rpc.Error.RpcStatus read answer
-
-        Err _ ->
-            case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
-                Just number ->
-                    Rpc.Error.RpcStatus
-                        { code = fromGrpc number
-                        , message =
-                            header "grpc-message" metadata
-                                |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault (Rpc.Error.message (Rpc.Error.HttpStatus answer))
-                        , details = []
-                        , source = Rpc.Error.GrpcHeaders
-                        }
-                        answer
-
-                Nothing ->
-                    Rpc.Error.HttpStatus answer
-
-
-{-| A response header by name, whatever its case.
--}
-header : String -> Http.Metadata -> Maybe String
-header key metadata =
-    metadata.headers
-        |> Dict.toList
-        |> List.filter (\( k, _ ) -> String.toLower k == key)
-        |> List.head
-        |> Maybe.map Tuple.second
-
-
-fromGrpc : Int -> Code
-fromGrpc number =
-    Code.fromInt number |> Maybe.withDefault Code.Unknown
-
-
-{-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
-optional `details`.
--}
-statusBody : Decoder Rpc.Error.StatusError
-statusBody =
-    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = Rpc.Error.StatusBody })
-        (Json.Decode.field "code" Json.Decode.int)
-        (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
-
-
-{-| A Connect error body: a `code` the protocol names (an unknown name reads as
-`unknown`), an optional `message` and optional `details`.
--}
-connectBody : Decoder Rpc.Error.StatusError
-connectBody =
-    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Rpc.Error.ConnectBody })
-        (Json.Decode.field "code" Json.Decode.string
-            |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
-        )
-        (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
-
-
-{-| An error's details, each in either form whichever body it came in: a
-`google.rpc.Status` body holds proto3 JSON `Any` objects, a Connect body
-`{"type", "value", "debug"}` objects. A detail in neither form is left out
-rather than losing the error's code and message with it.
--}
-detailList : Decoder (List Any)
-detailList =
-    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Any.jsonDecoder, connectDetail ]))
-        |> Json.Decode.map (List.filterMap identity)
-
-
-{-| A Connect error detail: the message's full name as `type`, its protobuf
-binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
-holds when present. Without it the `Any` holds the binary alone.
--}
-connectDetail : Decoder Any
-connectDetail =
-    Json.Decode.map3
-        (\name binary debug ->
-            Proto.Internal.Any.Any
-                (if String.contains "/" name then
-                    name
-
-                 else
-                    "type.googleapis.com/" ++ name
-                )
-                (case debug of
-                    Just json ->
-                        Proto.Internal.Any.InJson json
-
-                    Nothing ->
-                        Proto.Internal.Any.InBinary binary
-                )
-        )
-        (Json.Decode.field "type" Json.Decode.string)
-        (optional "value" Json.Decode.string "")
-        (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing)
-
-
-optional : String -> Decoder a -> a -> Decoder a
-optional key decoder default =
-    Json.Decode.oneOf
-        [ Json.Decode.field key (Json.Decode.nullable decoder)
-            |> Json.Decode.map (Maybe.withDefault default)
-        , Json.Decode.succeed default
-        ]
