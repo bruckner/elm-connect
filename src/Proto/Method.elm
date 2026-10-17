@@ -2,7 +2,8 @@ module Proto.Method exposing
     ( Method, method
     , encodeRequest, responseDecoder, toDescriptor
     , Descriptor, descriptor
-    , service, name, idempotent, input, output, bindings
+    , service, name, idempotency, input, output, bindings
+    , Idempotency(..)
     )
 
 {-| A method: its typed value, which holds the codecs of its request and
@@ -10,6 +11,10 @@ response and its descriptor, and its descriptor, what the proto says about it
 as data. Generated code builds the descriptor once per method in its
 service's module (`Notes.V1.NotesService.descriptorGetNote : Descriptor`) and
 gives the typed value to [`Rpc.call`](Rpc#call).
+
+The descriptor's idempotency is a union whose constructors carry its name as a
+prefix (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside
+any other union.
 
 @docs Method, method
 
@@ -26,7 +31,12 @@ gives the typed value to [`Rpc.call`](Rpc#call).
 
 # Reading a descriptor
 
-@docs service, name, idempotent, input, output, bindings
+@docs service, name, idempotency, input, output, bindings
+
+
+# Unions
+
+@docs Idempotency
 
 -}
 
@@ -59,7 +69,7 @@ JSON decoder and its descriptor. Generated code writes:
     descriptorGetNote =
         Proto.Method.descriptor "notes.v1.NotesService"
             "GetNote"
-            True
+            Proto.Method.IdempotencyNoSideEffects
             "notes.v1.GetNoteRequest"
             "notes.v1.Note"
             [ Proto.Http.binding { … } ]
@@ -113,25 +123,41 @@ type Descriptor
     = Descriptor
         { service : String
         , name : String
-        , idempotent : Bool
+        , idempotency : Idempotency
         , input : String
         , output : String
         , bindings : List Binding
         }
 
 
+{-| A method's `idempotency_level`, as `google.protobuf.MethodOptions` declares
+it:
+
+  - `IdempotencyUnknown`: not declared, so the method may have side effects.
+  - `IdempotencyNoSideEffects`: it changes nothing, so Connect may send it as
+    a GET, and a retry policy for idempotent calls may retry it.
+  - `IdempotencyIdempotent`: calling it again has no further effect, so a
+    retry policy for idempotent calls may retry it, but it is never a GET.
+
+-}
+type Idempotency
+    = IdempotencyUnknown
+    | IdempotencyNoSideEffects
+    | IdempotencyIdempotent
+
+
 {-| A method: the full name of its service (`notes.v1.NotesService`), its name
-as declared (`GetNote`), whether it is idempotent (below), the full names of
-its request and response types, and its `google.api.http` rule as
+as declared (`GetNote`), its idempotency, the full names of its request and
+response types, and its `google.api.http` rule as
 [`Proto.Http`](Proto-Http) data, the rule's own binding first and then its
 `additional_bindings` in order (`[]` for a method without one).
 -}
-descriptor : String -> String -> Bool -> String -> String -> List Binding -> Descriptor
-descriptor serviceName methodName noSideEffects inputType outputType methodBindings =
+descriptor : String -> String -> Idempotency -> String -> String -> List Binding -> Descriptor
+descriptor serviceName methodName level inputType outputType methodBindings =
     Descriptor
         { service = serviceName
         , name = methodName
-        , idempotent = noSideEffects
+        , idempotency = level
         , input = inputType
         , output = outputType
         , bindings = methodBindings
@@ -153,12 +179,11 @@ name (Descriptor m) =
     m.name
 
 
-{-| Whether the proto declares `idempotency_level = NO_SIDE_EFFECTS`, which
-lets Connect send it as a GET and a retry policy retry it.
+{-| Its declared `idempotency_level`.
 -}
-idempotent : Descriptor -> Bool
-idempotent (Descriptor m) =
-    m.idempotent
+idempotency : Descriptor -> Idempotency
+idempotency (Descriptor m) =
+    m.idempotency
 
 
 {-| The full name of its request type, such as `notes.v1.GetNoteRequest`.

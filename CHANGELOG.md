@@ -624,3 +624,27 @@ tag (design §8).
   descriptor is `toDescriptor`. A message's oneofs are derived from its
   fields' `inOneof`, which generated code writes only for a oneof
   member.
+- A method descriptor carries the proto's three-level
+  `idempotency_level` as `Proto.Method.Idempotency`
+  (`IdempotencyUnknown`, `IdempotencyNoSideEffects`,
+  `IdempotencyIdempotent`), built and read by
+  `Proto.Method.descriptor` and `Proto.Method.idempotency`, in place of
+  `idempotent : Bool`, which was true for `NO_SIDE_EFFECTS` alone. A
+  retry policy with `idempotentOnly` now retries an `IDEMPOTENT` method
+  too; Connect still sends only an `IdempotencyNoSideEffects` method as
+  a GET. `Rpc.idempotent` keeps its meaning, the method has no side
+  effects. `annotations` conformance case.
+- `Proto.Field.Cardinality` gains `CardinalityRequired`, for proto2's
+  `required`, which the generator does not give yet.
+- Descriptors carry each field's `google.api.field_behavior`
+  (`Proto.Field.behavior`, a list of the new `Proto.Field.Behavior`:
+  `BehaviorRequired`, `BehaviorOutputOnly`, …) and `deprecated` option,
+  and each enum value's `deprecated` (`Proto.EnumValue.deprecated`),
+  written by generated code as `withBehavior` and `withDeprecated`
+  modifiers only where set. The CLI embeds
+  `google/api/field_behavior.proto`, which neither binary generates;
+  the `annotations` conformance case pins the modifiers.
+- The notes example has an update-mask snippet
+  (`Snippets.UpdateMask`: a `google.protobuf.FieldMask` from two values
+  of a message, and a check of a mask's paths), with tests that
+  `just check` runs.

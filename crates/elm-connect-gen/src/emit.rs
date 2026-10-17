@@ -47,10 +47,12 @@
 //!   is built with `Proto.Message.descriptor` from its full name and one
 //!   `Proto.Field.descriptor` per field, faithful to the proto: its
 //!   names, number, cardinality and kind (other types by full name), then
-//!   `Proto.Field.inOneof` for a oneof member; the builder derives the
-//!   oneofs. An enum's, `descriptorBar : Proto.Enum.Descriptor`, holds
-//!   every declared name with its number (`Proto.EnumValue.descriptor`).
-//!   Each type's typed value follows
+//!   a modifier only for what it has beyond those (`inOneof`,
+//!   `withBehavior`, `withDeprecated`); the builder derives the oneofs.
+//!   An enum's, `descriptorBar : Proto.Enum.Descriptor`, holds every
+//!   declared name with its number (`Proto.EnumValue.descriptor`), each
+//!   deprecated one marked (`withDeprecated`). Each type's typed value
+//!   follows
 //!   its descriptor:
 //!   `messageFoo : Proto.Message.Message Foo`, built by
 //!   `Proto.Message.message` from its encoder, decoder, default and
@@ -624,6 +626,7 @@ mod tests {
             ty,
             cyclic: false,
             jstype: crate::ir::JsType::Normal,
+            annotations: crate::ir::Annotations::default(),
         }
     }
 
@@ -886,7 +889,7 @@ mod tests {
             elm_name: name.to_lowercase(),
             input,
             output,
-            idempotent: false,
+            idempotency: crate::ir::Idempotency::Unknown,
             http: None,
             routes: Vec::new(),
         };
@@ -947,7 +950,8 @@ mod tests {
             "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
              Proto.Any.jsonDecoder\n            descriptorTicks\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
-             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        False\n        \
+             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Method.IdempotencyUnknown\n        \
              \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");

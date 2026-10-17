@@ -2,7 +2,9 @@
 //! `google.api.http` rule as written, and the problems reported instead.
 
 use elm_connect_gen::diagnostics::{Code, Diagnostics};
-use elm_connect_gen::ir::{HttpRule, HttpVerb, Method, Package, TypeName, TypeRef, WellKnown};
+use elm_connect_gen::ir::{
+    HttpRule, HttpVerb, Idempotency, Method, Package, TypeName, TypeRef, WellKnown,
+};
 
 use crate::common::{package, problems, render};
 
@@ -41,6 +43,7 @@ service Notes {
     };
   }
   rpc UpdateNote(Note) returns (Note) {
+    option idempotency_level = IDEMPOTENT;
     option (google.api.http) = { patch: "/v1/{name=notes/*}" body: "*" };
   }
   rpc Purge(google.protobuf.Empty) returns (google.protobuf.Empty);
@@ -77,13 +80,17 @@ fn methods_are_named_and_typed() {
     };
     assert_eq!(get.input, note("GetNoteRequest"));
     assert_eq!(get.output, note("Note"));
-    assert!(get.idempotent);
-    assert!(!method(&package, "UpdateNote").idempotent);
+    assert_eq!(get.idempotency, Idempotency::NoSideEffects);
+    assert_eq!(
+        method(&package, "UpdateNote").idempotency,
+        Idempotency::Idempotent
+    );
 
     let purge = method(&package, "Purge");
     assert_eq!(purge.input, TypeRef::WellKnown(WellKnown::Empty));
     assert_eq!(purge.output, TypeRef::WellKnown(WellKnown::Empty));
     assert_eq!(purge.http, None);
+    assert_eq!(purge.idempotency, Idempotency::Unknown);
 }
 
 #[test]

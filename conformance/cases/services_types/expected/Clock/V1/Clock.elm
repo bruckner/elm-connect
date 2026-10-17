@@ -31,7 +31,7 @@ descriptorNow : Proto.Method.Descriptor
 descriptorNow =
     Proto.Method.descriptor "clock.v1.Clock"
         "Now"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Timestamp"
         []
@@ -41,7 +41,7 @@ descriptorSleep : Proto.Method.Descriptor
 descriptorSleep =
     Proto.Method.descriptor "clock.v1.Clock"
         "Sleep"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Duration"
         "google.protobuf.Empty"
         []
@@ -51,7 +51,7 @@ descriptorMask : Proto.Method.Descriptor
 descriptorMask =
     Proto.Method.descriptor "clock.v1.Clock"
         "Mask"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.FieldMask"
         "google.protobuf.Struct"
         []
@@ -61,7 +61,7 @@ descriptorEcho : Proto.Method.Descriptor
 descriptorEcho =
     Proto.Method.descriptor "clock.v1.Clock"
         "Echo"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Value"
         "google.protobuf.ListValue"
         []
@@ -71,7 +71,7 @@ descriptorTicks : Proto.Method.Descriptor
 descriptorTicks =
     Proto.Method.descriptor "clock.v1.Clock"
         "Ticks"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Int64Value"
         "google.protobuf.UInt64Value"
         []
@@ -81,7 +81,7 @@ descriptorCount : Proto.Method.Descriptor
 descriptorCount =
     Proto.Method.descriptor "clock.v1.Clock"
         "Count"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.Int32Value"
         "google.protobuf.UInt32Value"
         []
@@ -91,7 +91,7 @@ descriptorRatio : Proto.Method.Descriptor
 descriptorRatio =
     Proto.Method.descriptor "clock.v1.Clock"
         "Ratio"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.DoubleValue"
         "google.protobuf.FloatValue"
         []
@@ -101,7 +101,7 @@ descriptorName : Proto.Method.Descriptor
 descriptorName =
     Proto.Method.descriptor "clock.v1.Clock"
         "Name"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.StringValue"
         "google.protobuf.BoolValue"
         []
@@ -111,7 +111,7 @@ descriptorRaw : Proto.Method.Descriptor
 descriptorRaw =
     Proto.Method.descriptor "clock.v1.Clock"
         "Raw"
-        False
+        Proto.Method.IdempotencyUnknown
         "google.protobuf.BytesValue"
         "google.protobuf.BytesValue"
         []
@@ -121,7 +121,7 @@ descriptorZone : Proto.Method.Descriptor
 descriptorZone =
     Proto.Method.descriptor "clock.v1.Clock"
         "Zone"
-        False
+        Proto.Method.IdempotencyUnknown
         "zones.v1.ZoneRequest"
         "zones.v1.Zone"
         []
@@ -131,7 +131,7 @@ descriptorSet : Proto.Method.Descriptor
 descriptorSet =
     Proto.Method.descriptor "clock.v1.Clock"
         "Set"
-        False
+        Proto.Method.IdempotencyUnknown
         "clock.v1.Alarm"
         "clock.v1.Alarm"
         []

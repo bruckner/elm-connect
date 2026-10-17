@@ -7,7 +7,7 @@ import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Any
 import Proto.Http
-import Proto.Method exposing (Method)
+import Proto.Method exposing (Idempotency(..), Method)
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
 import Test exposing (Test, describe, test)
@@ -41,7 +41,7 @@ raw : List Rule -> Method Value String
 raw bindings =
     Proto.Method.method identity
         (Json.Decode.field "title" Json.Decode.string)
-        (Proto.Method.descriptor "t.v1.T" "M" False "t.v1.Request" "t.v1.Response" (List.map Proto.Http.binding bindings))
+        (Proto.Method.descriptor "t.v1.T" "M" IdempotencyUnknown "t.v1.Request" "t.v1.Response" (List.map Proto.Http.binding bindings))
 
 
 {-| A call of the method bound by `r` alone.
@@ -305,7 +305,7 @@ responses =
                     (Rpc.call
                         (Proto.Method.method identity
                             (Json.Decode.succeed ())
-                            (Proto.Method.descriptor "t" "m" False "t.Request" "t.Response" [ Proto.Http.binding rule ])
+                            (Proto.Method.descriptor "t" "m" IdempotencyUnknown "t.Request" "t.Response" [ Proto.Http.binding rule ])
                         )
                         Json.Encode.null
                     )

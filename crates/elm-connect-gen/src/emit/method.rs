@@ -11,7 +11,7 @@ use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
 };
-use crate::ir::{Method, TypeRef};
+use crate::ir::{Idempotency, Method, TypeRef};
 use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
@@ -23,7 +23,14 @@ impl Emitter {
     /// Every name in it is qualified, so it cannot clash with the package
     /// module's names or the runtime's, whatever the method is called.
     pub(super) fn method_descriptor(&mut self, service: &str, method: &Method) -> Decl {
-        let idempotent = if method.idempotent { "True" } else { "False" };
+        let idempotency = self.reference((
+            PROTO_METHOD,
+            match method.idempotency {
+                Idempotency::Unknown => "IdempotencyUnknown",
+                Idempotency::NoSideEffects => "IdempotencyNoSideEffects",
+                Idempotency::Idempotent => "IdempotencyIdempotent",
+            },
+        ));
         let bindings: Vec<Expr> = method
             .routes
             .iter()
@@ -34,7 +41,7 @@ impl Emitter {
             [
                 string(service),
                 string(method.proto_name.clone()),
-                var(idempotent),
+                idempotency,
                 string(proto_full_name(&method.input)),
                 string(proto_full_name(&method.output)),
                 list(bindings),

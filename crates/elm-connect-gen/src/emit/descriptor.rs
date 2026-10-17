@@ -13,8 +13,10 @@ use super::{
     PROTO_REGISTRY, RecordField,
 };
 use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{apply, int, list, pipe, string, ty, var};
-use crate::ir::{Cardinality, Enum, MapKey, ModuleName, Package, ScalarKind, TypeRef};
+use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
+use crate::ir::{
+    Annotations, Cardinality, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind, TypeRef,
+};
 use crate::naming::REGISTRY;
 
 impl Emitter {
@@ -65,13 +67,18 @@ impl Emitter {
 
     /// `descriptorBar : Proto.Enum.Descriptor`: the enum's full
     /// name and every declared name in order with its number (an alias
-    /// with its number).
+    /// with its number), each deprecated one marked.
     pub(super) fn enum_descriptor(&mut self, enumeration: &Enum) -> Decl {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
                 let builder = self.reference((PROTO_ENUM_VALUE, "descriptor"));
-                apply(builder, [string(name), int(value.number.into())])
+                let built = apply(builder, [string(name), int(value.number.into())]);
+                if enumeration.is_deprecated(name) {
+                    pipe(built, self.reference((PROTO_ENUM_VALUE, "withDeprecated")))
+                } else {
+                    built
+                }
             })
             .collect();
         let builder = self.reference((PROTO_ENUM, "descriptor"));
@@ -171,6 +178,7 @@ impl Emitter {
                         cardinality,
                         &field.ty,
                         None,
+                        &field.annotations,
                     ));
                 }
                 RecordField::Oneof(oneof) => {
@@ -183,6 +191,7 @@ impl Emitter {
                             cardinality,
                             &variant.ty,
                             Some(&oneof.oneof.proto_name),
+                            &variant.annotations,
                         ));
                     }
                 }
@@ -192,9 +201,10 @@ impl Emitter {
     }
 
     /// `Proto.Field.descriptor name jsonName number cardinality kind`,
-    /// then `|> Proto.Field.inOneof "…"` for a oneof
-    /// member. A field in no oneof is the builder alone, so the common
-    /// field stays one line.
+    /// then a modifier for each property the field has beyond those: its
+    /// oneof, its behavior, its deprecation. A field without any is the
+    /// builder alone, so the common field stays one line.
+    #[allow(clippy::too_many_arguments)]
     fn field_descriptor(
         &mut self,
         name: &str,
@@ -203,9 +213,10 @@ impl Emitter {
         cardinality: Expr,
         ty: &TypeRef,
         oneof: Option<&str>,
+        annotations: &Annotations,
     ) -> Expr {
         let kind = self.kind(ty);
-        let built = apply(
+        let mut built = apply(
             self.reference((PROTO_FIELD, "descriptor")),
             [
                 string(name),
@@ -215,13 +226,26 @@ impl Emitter {
                 kind,
             ],
         );
-        match oneof {
-            Some(oneof) => {
-                let modifier = apply(self.reference((PROTO_FIELD, "inOneof")), [string(oneof)]);
-                pipe(built, modifier)
-            }
-            None => built,
+        if let Some(oneof) = oneof {
+            let modifier = apply(self.reference((PROTO_FIELD, "inOneof")), [string(oneof)]);
+            built = pipe(built, modifier);
         }
+        if !annotations.behavior.is_empty() {
+            let behavior: Vec<Expr> = annotations
+                .behavior
+                .iter()
+                .map(|behavior| self.reference((PROTO_FIELD, behavior_constructor(*behavior))))
+                .collect();
+            let modifier = apply(
+                self.reference((PROTO_FIELD, "withBehavior")),
+                [inline_list(behavior)],
+            );
+            built = pipe(built, modifier);
+        }
+        if annotations.deprecated {
+            built = pipe(built, self.reference((PROTO_FIELD, "withDeprecated")));
+        }
+        built
     }
 
     /// `Proto.Field.CardinalitySingular`, `CardinalityOptional`,
@@ -274,6 +298,20 @@ fn imported_packages(package: &Package) -> BTreeSet<ModuleName> {
         .filter(|module| **module != package.module)
         .cloned()
         .collect()
+}
+
+/// The `Proto.Field.Behavior` constructor of a field behavior.
+fn behavior_constructor(behavior: FieldBehavior) -> &'static str {
+    match behavior {
+        FieldBehavior::Optional => "BehaviorOptional",
+        FieldBehavior::Required => "BehaviorRequired",
+        FieldBehavior::OutputOnly => "BehaviorOutputOnly",
+        FieldBehavior::InputOnly => "BehaviorInputOnly",
+        FieldBehavior::Immutable => "BehaviorImmutable",
+        FieldBehavior::UnorderedList => "BehaviorUnorderedList",
+        FieldBehavior::NonEmptyDefault => "BehaviorNonEmptyDefault",
+        FieldBehavior::Identifier => "BehaviorIdentifier",
+    }
 }
 
 /// The `Proto.Field.Scalar` constructor of a proto scalar.

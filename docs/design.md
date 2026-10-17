@@ -167,7 +167,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -323,15 +323,17 @@ rpc shared call =
   `google.protobuf` is never generated as a package: its supported
   types map to the runtime (§3.5), and the rest are
   `types::unsupported_well_known`.
-  Nor are the two googleapis files that declare `google.api.http`,
-  `google/api/http.proto` and `google/api/annotations.proto`, the ones
-  the CLI embeds (`googleapis::FILES`, §4; `googleapis::is_embedded`).
+  Nor are the googleapis files that declare the options the generator
+  reads, `google/api/http.proto`, `google/api/annotations.proto` and
+  `google/api/field_behavior.proto`, the ones the CLI embeds
+  (`googleapis::FILES`, §4; `googleapis::is_embedded`).
   The plugin drops them from `file_to_generate`, and the CLI's
   `--include-imports` never adds them, as it adds no file nothing refers
   to (§6). Why: they are options plumbing, not API types, and `buf
   generate --include-imports` asks for every import, so every API with
   HTTP rules would otherwise get a `Google.Api` module of `Http`,
-  `HttpRule` and `CustomHttpPattern` that nothing refers to. The rule
+  `HttpRule` and `CustomHttpPattern` that nothing refers to (and every
+  API with field behaviors one of `FieldBehavior`). The rule
   is by file name and no wider: other `google/api` files, such as
   `httpbody.proto`, declare types APIs take and return, and generate
   when asked for. `just live-gen` runs the notes example under `buf
@@ -1087,16 +1089,22 @@ registry =
   `descriptor` function and read in the module of its concept (§3.1):
   `Proto.Message` (`descriptor typeName fields`; `typeName`, `typeUrl`,
   `fields`, `oneofs`), `Proto.Field` (`descriptor name jsonName number
-  cardinality kind`, `inOneof`; `name`, `jsonName`, `number`,
-  `cardinality`, `kind`, `oneof`), `Proto.Enum` (`descriptor typeName
+  cardinality kind`, `inOneof`, `withBehavior`, `withDeprecated`;
+  `name`, `jsonName`, `number`, `cardinality`, `kind`, `oneof`,
+  `behavior`, `deprecated`), `Proto.Enum` (`descriptor typeName
   values`; `typeName`, `values`), `Proto.EnumValue` (`descriptor name
-  number`; `name`, `number`) and `Proto.Method` (`descriptor service
-  name idempotent input output bindings`; the same six). The unions a
-  field holds are public, to match on, in `Proto.Field` beside it:
-  `Cardinality`, `Kind` and `Scalar`. A property a field has beyond the
-  five every field has is a modifier written only when set:
-  `|> Proto.Field.inOneof "kind"` for a oneof member. A message's oneofs
-  are the ones its fields name, in order of first appearance, derived by
+  number`, `withDeprecated`; `name`, `number`, `deprecated`) and
+  `Proto.Method` (`descriptor service name idempotency input output
+  bindings`; the same six). The unions a descriptor holds are public, to
+  match on, in the module beside it: `Cardinality`, `Kind`, `Scalar` and
+  `Behavior` in `Proto.Field`, `Idempotency` in `Proto.Method`. A
+  property a field has beyond the five every field has is a modifier
+  written only when set: `|> Proto.Field.inOneof "kind"` for a oneof
+  member, `|> Proto.Field.withBehavior [ … ]` for its
+  `google.api.field_behavior` values, `|> Proto.Field.withDeprecated`
+  for `[deprecated = true]`; an enum value likewise takes
+  `|> Proto.EnumValue.withDeprecated`. A message's oneofs are the ones
+  its fields name, in order of first appearance, derived by
   the builder rather than written a second time. *(Decided, 2026-10-16.)*
   The record form wrote every property of every field, its labels
   included. *(Measured 2026-10-16.)* Against the record form, the
@@ -1107,14 +1115,35 @@ registry =
   alias would save more; that is a separate question.
 - The trees are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
-  (name, JSON name, number, cardinality, kind, oneof) and its oneofs'
-  names; an enum's full name and its value names in declaration order,
-  an alias an entry of its own. A singular message field is
+  (name, JSON name, number, cardinality, kind, oneof, behavior,
+  deprecation) and its oneofs' names; an enum's full name and its value
+  names in declaration order, an alias an entry of its own, each with
+  its deprecation. A singular message field is
   `CardinalitySingular` of `KindMessage "…"` though Elm holds it as a
   `Maybe`; a proto3 `optional` field is `CardinalityOptional`, its
-  synthetic oneof not listed. Types
+  synthetic oneof not listed. `Cardinality` has `CardinalityRequired`
+  for proto2's `required`, which the generator, reading proto3 alone,
+  never gives. Types
   refer to each other by full name, never by value, since Elm forbids
   cyclic values; a `Proto.Registry` resolves the names.
+- `Proto.Field.Behavior` mirrors `google.api.FieldBehavior` but its
+  unspecified zero: `BehaviorOptional`, `BehaviorRequired`,
+  `BehaviorOutputOnly`, `BehaviorInputOnly`, `BehaviorImmutable`,
+  `BehaviorUnorderedList`, `BehaviorNonEmptyDefault`,
+  `BehaviorIdentifier`. The prefix keeps them apart from
+  `CardinalityOptional` and `CardinalityRequired`, which mean something
+  else (§3.1). The CLI embeds `google/api/field_behavior.proto` (§4,
+  with the `google.api.http` files), so a proto importing it compiles
+  without a googleapis checkout; both binaries read the extension when
+  the descriptor pool has it, which it does exactly when a proto
+  imports it, and a number this release does not know is dropped.
+  *(Decided, 2026-10-16.)*
+- **Descriptor data is added sparingly.** A program that uses the
+  registry keeps every tree in it, and every program pays for the
+  trees' source size, so a property joins the trees only when a use
+  needs it: behavior for update masks and forms, deprecation for
+  tooling. Comments, proto2 default values, extensions in general and
+  a method's streaming kind are not in them.
 - `Proto.Enum` derives names and numbers (`toName`, `fromName`,
   `toNumber`, `fromNumber`) from the descriptor and the codecs: the
   encoder writes a value's name, the decoder reads every declared name
@@ -1201,7 +1230,7 @@ descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
-        True
+        Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -1259,8 +1288,7 @@ keeps.
   its descriptor value, `descriptorGetNote : Proto.Method.Descriptor`,
   built by `Proto.Method.descriptor` from the fully-qualified service
   name and the method's name as declared, together its Connect path,
-  whether it is idempotent, the full names of its types and its
-  bindings.
+  its idempotency, the full names of its types and its bindings.
   The descriptor's name is `descriptor` followed by the method's Elm
   name with its first letter uppercased, so a `rename` renames both. No
   `Proto.Method.Method` value is generated; `Rpc.method` and
@@ -1276,10 +1304,16 @@ keeps.
   descriptor tree, and Elm keeps a top-level value whole, so a call
   through records cost about 16 KB gzipped over a client referencing
   only the codecs in an application's bundle. *(Decided, 2026-10-15.)*
-- `idempotent` is true when the proto declares
-  `option idempotency_level = NO_SIDE_EFFECTS`. Connect uses it to allow
-  GET, and a retry policy with `idempotentOnly` to allow a retry.
-  Transcoding takes its verb from the rule.
+- `idempotency` is the proto's `idempotency_level`, whole:
+  `Proto.Method.IdempotencyUnknown` when unset,
+  `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
+  only an `IdempotencyNoSideEffects` method as a GET; a retry policy
+  with `idempotentOnly` retries either level, since an `IDEMPOTENT`
+  method (a typical `Delete` or `Put`) is safe to repeat but not to
+  cache. Transcoding takes its verb from the
+  rule. *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
+  `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
+  under `idempotentOnly`.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
@@ -1363,8 +1397,9 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
 - A streaming method is `services::streaming`, pointing at its
   `stream` keyword, rather than being skipped; `streaming=skip` skips it
   instead, with the same code as a warning (§3.8).
-- `google/api/http.proto` and `google/api/annotations.proto` are
-  embedded in `elm-connect-gen` (`googleapis` module; Apache-2.0,
+- `google/api/http.proto`, `google/api/annotations.proto` and
+  `google/api/field_behavior.proto` (§3.9) are embedded in
+  `elm-connect-gen` (`googleapis` module; Apache-2.0,
   `THIRD_PARTY.md`). The CLI resolves imports from its include paths
   first, then protox's `google/protobuf` files, then these, so a proto
   importing `google/api/annotations.proto` compiles without a googleapis
@@ -1503,8 +1538,8 @@ it.
 - Retry waits `backoff` ms before the second attempt and doubles it
   before each one after, up to `attempts` tries in all. It applies to
   any error whose code (§5.4) is one of `codes`, and with
-  `idempotentOnly` only to idempotent calls, so a network failure
-  retries when `Unavailable` is listed and a timeout when
+  `idempotentOnly` only to calls of an `IdempotencyNoSideEffects` or
+  `IdempotencyIdempotent` method (§4), so a network failure retries when `Unavailable` is listed and a timeout when
   `DeadlineExceeded` is. Clients in the wild treat a network failure as
   the same event as a 503 and gate safety on idempotency; a timeout is
   the ambiguous case, since the request may have reached the server,
@@ -1571,7 +1606,8 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   codec names left room for binary codecs beside them, which Elm's
   rules for records never allowed.
 - The accessors are `method` (the `Method`), `descriptor` (its
-  descriptor), `serviceName`, `methodName` and `idempotent`; the
+  descriptor), `serviceName`, `methodName` and `idempotent` (whether
+  the method is `IdempotencyNoSideEffects`); the
   string accessors were `service` and `method` until `method` named
   the record. *(Decided, 2026-10-13.)*
 - `viaBinding n` is `Just` the call over binding `n` when the
@@ -1662,7 +1698,7 @@ all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
-  With `useGet`, an idempotent call is a GET of the same URL with
+  With `useGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
   `?connect=v1&encoding=json&message=<JSON>`, the JSON percent-encoded
   (every byte but RFC 3986's unreserved characters), in the order the
   protocol recommends; no protocol-version header, which GET carries in
@@ -2234,7 +2270,9 @@ fence (a `region` comment pair, consecutive lines, or `excerpt` for lines
 in order from a generated file), `examples/check-snippets.sh` checks
 every one in `just check`, and `just live` compiles the application and
 `src/Snippets/`, the README's examples the application does not
-contain. The service-module snippets of §2.1 and §4 stay illustrations:
+contain. A snippet that computes something, the update mask's, has
+tests in the example's `tests/`, which `just check` runs against the
+generated notes modules. The service-module snippets of §2.1 and §4 stay illustrations:
 they elide (`…`) what the generated module spells out, and §4's is
 pinned by the `services` case's expected output. Not verified: the
 application is driven by hand in a browser, not by the live suite; the
@@ -2428,7 +2466,10 @@ Within a major version:
   trees, the `Descriptor` of `Proto.Message`, `Proto.Field`,
   `Proto.Enum`, `Proto.EnumValue` and `Proto.Method` (§3.9). The
   public unions are frozen within a major, since users match on them
-  exhaustively: `Proto.Field.Cardinality`, `Kind` and `Scalar`.
+  exhaustively: `Proto.Field.Cardinality` (with `CardinalityRequired`
+  reserved for proto2), `Kind`, `Scalar` and `Behavior`, and
+  `Proto.Method.Idempotency`; a value `google.api.FieldBehavior` gains
+  waits for a major, and until then the generator drops it.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.

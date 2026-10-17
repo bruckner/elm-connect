@@ -9,7 +9,7 @@ import Proto.Any
 import Proto.Duration
 import Proto.Http
 import Proto.Message exposing (Message)
-import Proto.Method
+import Proto.Method exposing (Idempotency(..))
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
 import Rpc.ErrorCode exposing (ErrorCode(..))
@@ -35,23 +35,30 @@ title =
         (Proto.Message.descriptor "notes.v1.Note" [])
 
 
-notes : String -> Bool -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
-notes name idempotent bindings =
+notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
+notes name idempotency bindings =
     Rpc.call
         (Proto.Method.method encodeGetNote
             (Proto.Message.decoder title)
-            (Proto.Method.descriptor "notes.v1.Notes" name idempotent "notes.v1.GetNoteRequest" "notes.v1.Note" bindings)
+            (Proto.Method.descriptor "notes.v1.Notes" name idempotency "notes.v1.GetNoteRequest" "notes.v1.Note" bindings)
         )
 
 
 getNote : GetNote -> Rpc.Call GetNote String
 getNote =
-    notes "GetNote" True []
+    notes "GetNote" IdempotencyNoSideEffects []
 
 
 createNote : GetNote -> Rpc.Call GetNote String
 createNote =
-    notes "CreateNote" False []
+    notes "CreateNote" IdempotencyUnknown []
+
+
+{-| A method whose repeat changes nothing more, though it has effects.
+-}
+deleteNote : GetNote -> Rpc.Call GetNote String
+deleteNote =
+    notes "DeleteNote" IdempotencyIdempotent []
 
 
 {-| A method with a rule and one additional binding.
@@ -59,7 +66,7 @@ createNote =
 listNotes : GetNote -> Rpc.Call GetNote String
 listNotes =
     notes "ListNotes"
-        True
+        IdempotencyNoSideEffects
         [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
         , Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v2", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
         ]
@@ -311,6 +318,10 @@ requests =
             \_ ->
                 (Rpc.request { base | withCredentials = True } (getNote { name = "x" })).withCredentials
                     |> Expect.equal True
+        , test "useGet POSTs an idempotent call with effects: only NoSideEffects is a GET" <|
+            \_ ->
+                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.idempotent (deleteNote { name = "x" }) )
+                    |> Expect.equal ( "POST", False )
         , test "useGet sends an idempotent call as a GET with the message in the query" <|
             \_ ->
                 Rpc.request { base | transport = Rpc.Connect { useGet = True, maxGetUrl = Nothing }, timeout = Just 20 }
@@ -631,36 +642,42 @@ retries =
         [ test "a listed code waits the backoff, doubled per attempt, until attempts run out" <|
             \_ ->
                 [ 1, 2, 3 ]
-                    |> List.map (\tried -> Retry.delay policy True tried Unavailable)
+                    |> List.map (\tried -> Retry.delay policy IdempotencyNoSideEffects tried Unavailable)
                     |> Expect.equal [ Just 100, Just 200, Nothing ]
         , test "a code not listed stops" <|
             \_ ->
-                Retry.delay policy True 1 NotFound
+                Retry.delay policy IdempotencyNoSideEffects 1 NotFound
                     |> Expect.equal Nothing
-        , test "idempotentOnly stops a call with side effects" <|
+        , test "idempotentOnly retries both idempotency levels" <|
             \_ ->
-                ( Retry.delay policy False 1 Unavailable
-                , Retry.delay { policy | idempotentOnly = False } False 1 Unavailable
+                ( Retry.delay policy IdempotencyNoSideEffects 1 Unavailable
+                , Retry.delay policy IdempotencyIdempotent 1 Unavailable
+                )
+                    |> Expect.equal ( Just 100, Just 100 )
+        , test "idempotentOnly stops a call that may have side effects" <|
+            \_ ->
+                ( Retry.delay policy IdempotencyUnknown 1 Unavailable
+                , Retry.delay { policy | idempotentOnly = False } IdempotencyUnknown 1 Unavailable
                 )
                     |> Expect.equal ( Nothing, Just 100 )
         , test "one attempt never retries" <|
             \_ ->
-                Retry.delay { policy | attempts = 1 } True 1 Unavailable
+                Retry.delay { policy | attempts = 1 } IdempotencyNoSideEffects 1 Unavailable
                     |> Expect.equal Nothing
         , test "a timeout retries when DeadlineExceeded is listed, and not otherwise" <|
             \_ ->
-                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } True 1 (Rpc.code (Transport Http.Timeout))
-                , Retry.delay policy True 1 (Rpc.code (Transport Http.Timeout))
+                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
+                , Retry.delay policy IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Just 100, Nothing )
         , test "a network failure retries when Unavailable is listed" <|
             \_ ->
-                Retry.delay policy True 1 (Rpc.code (Transport Http.NetworkError))
+                Retry.delay policy IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.NetworkError))
                     |> Expect.equal (Just 100)
         , test "idempotentOnly stops a transport failure of a call with side effects" <|
             \_ ->
-                ( Retry.delay policy False 1 (Rpc.code (Transport Http.NetworkError))
-                , Retry.delay { policy | codes = [ DeadlineExceeded ] } False 1 (Rpc.code (Transport Http.Timeout))
+                ( Retry.delay policy IdempotencyUnknown 1 (Rpc.code (Transport Http.NetworkError))
+                , Retry.delay { policy | codes = [ DeadlineExceeded ] } IdempotencyUnknown 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Nothing, Nothing )
         ]

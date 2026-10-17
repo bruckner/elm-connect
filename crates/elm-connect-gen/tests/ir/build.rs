@@ -3,7 +3,8 @@
 
 use elm_connect_gen::diagnostics::{Code, Diagnostics};
 use elm_connect_gen::ir::{
-    Cardinality, Field, MapKey, Message, Package, ScalarKind, TypeRef, WellKnown,
+    Annotations, Cardinality, Field, FieldBehavior, MapKey, Message, Package, ScalarKind, TypeRef,
+    WellKnown,
 };
 
 use crate::common::{build, package, problems};
@@ -821,4 +822,76 @@ fn services_are_ignored() {
         "#,
     );
     assert_eq!(package.messages.len(), 1);
+}
+
+#[test]
+fn field_behavior_and_deprecation_are_read_from_the_options() {
+    let package = package(
+        r#"
+syntax = "proto3";
+package t.v1;
+import "google/api/field_behavior.proto";
+
+message Note {
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string etag = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE,
+    deprecated = true
+  ];
+  string body = 3;
+  oneof kind {
+    string text = 4 [(google.api.field_behavior) = REQUIRED, deprecated = true];
+  }
+}
+
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  LEVEL_OLD = 1 [deprecated = true];
+}
+"#,
+    );
+    let note = message(&package, "Note");
+    let annotations = |name: &str| field(note, name).annotations.clone();
+    assert_eq!(
+        annotations("name").behavior,
+        [FieldBehavior::Identifier],
+        "one value"
+    );
+    assert_eq!(
+        annotations("etag"),
+        Annotations {
+            behavior: vec![FieldBehavior::OutputOnly, FieldBehavior::Immutable],
+            deprecated: true,
+        }
+    );
+    assert_eq!(annotations("body"), Annotations::default());
+    assert_eq!(
+        note.oneofs[0].variants[0].annotations,
+        Annotations {
+            behavior: vec![FieldBehavior::Required],
+            deprecated: true,
+        }
+    );
+    let level = &package.enums[0];
+    assert!(level.is_deprecated("LEVEL_OLD"));
+    assert!(!level.is_deprecated("LEVEL_UNSPECIFIED"));
+}
+
+#[test]
+fn without_the_extension_a_field_has_no_behavior() {
+    let package = package(
+        r#"
+syntax = "proto3";
+package t.v1;
+message Note { string name = 1 [deprecated = true]; }
+"#,
+    );
+    assert_eq!(
+        field(message(&package, "Note"), "name").annotations,
+        Annotations {
+            behavior: Vec::new(),
+            deprecated: true,
+        }
+    );
 }
