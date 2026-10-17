@@ -1621,8 +1621,16 @@ default, and is `Nothing` for a number the method has no binding of
   comma-joined.
 - Fields with no query form are refused rather than dropped
   (`route::query_field`): maps, repeated messages, `Struct`, `Value`,
-  `ListValue` and `Any`, and a message that contains itself. `Empty` carries
-  nothing and has no parameter.
+  `ListValue` and `Any`, and a message that contains itself, directly or
+  through other messages. That message is refused at the field holding it
+  and not expanded, so a cycle of any length is one problem. A message
+  held deeper than 100 messages below the request, protobuf's nesting
+  limit for parsing ([proto limits]), is refused at the field holding it
+  too, for the query and for a path variable: no server reads it, and
+  the limit bounds the walk of a deep chain. `Empty` carries nothing and
+  has no parameter.
+
+[proto limits]: https://protobuf.dev/programming-guides/proto-limits/
 
 ### 5.4 Errors  *(Decided, 2026-10-13; built)*
 
