@@ -271,12 +271,7 @@ rpc shared call =
   `(..)` beside another union's and beside `Rpc.ErrorCode(..)` without
   a clash. (4) A `Proto.Internal` module exists only when two public
   modules must build or match one type: `Proto.Internal.Binding` (built
-  by `Proto.Http`, read by `Rpc`) and `Proto.Internal.Any`. The first
-  opaque layout defined each descriptor type three times, parameterised
-  in an internal module and aliased in a builder module and a reader
-  module; the second gave each descriptor type and each union a module
-  of its own under `Proto.Descriptor`, which put a concept's typed
-  value and its descriptor in different trees.
+  by `Proto.Http`, read by `Rpc`) and `Proto.Internal.Any`.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.

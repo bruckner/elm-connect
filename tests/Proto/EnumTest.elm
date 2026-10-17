@@ -78,4 +78,21 @@ suite =
             \_ ->
                 Enum.fromName (priorityAs (Enum.descriptor "t.v1.Priority" [])) "HIGH"
                     |> Expect.equal Nothing
+        , test "an enum's values, aliases and deprecation included" <|
+            \_ ->
+                let
+                    level =
+                        Enum.descriptor "t.v1.Level"
+                            [ EnumValue.descriptor "LEVEL_UNSPECIFIED" 0
+                            , EnumValue.descriptor "LEVEL_HIGH" 1
+                            , EnumValue.descriptor "LEVEL_URGENT" 1 |> EnumValue.withDeprecated
+                            ]
+                in
+                ( Enum.typeName level
+                , Enum.values level |> List.map (\v -> ( EnumValue.name v, EnumValue.number v, EnumValue.deprecated v ))
+                )
+                    |> Expect.equal
+                        ( "t.v1.Level"
+                        , [ ( "LEVEL_UNSPECIFIED", 0, False ), ( "LEVEL_HIGH", 1, False ), ( "LEVEL_URGENT", 1, True ) ]
+                        )
         ]
