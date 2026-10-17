@@ -82,7 +82,6 @@ import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
-import Rpc.Internal.Route as Route
 import Rpc.Internal.Trace
 import Rpc.Internal.Wire
 import Rpc.Request
@@ -334,37 +333,7 @@ taskTraced cfg c =
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        let
-                                            metadata =
-                                                outcome.metadata
-                                                    |> Maybe.map (.headers >> splitTrailers)
-                                                    |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
-                                        in
-                                        ( Rpc.Internal.Trace.Trace
-                                            { serviceName = Rpc.Call.serviceName c
-                                            , methodName = Rpc.Call.methodName c
-                                            , transport = Rpc.Transport.name cfg.transport
-                                            , binding =
-                                                case Route.route cfg.transport c of
-                                                    Route.Bound index _ ->
-                                                        Just index
-
-                                                    _ ->
-                                                        Nothing
-                                            , request = sent
-                                            , httpStatus = Maybe.map .statusCode outcome.metadata
-                                            , headers = metadata.headers
-                                            , trailers = metadata.trailers
-                                            , code =
-                                                case outcome.result of
-                                                    Ok _ ->
-                                                        Nothing
-
-                                                    Err error ->
-                                                        Just (Rpc.Error.code error)
-                                            , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
-                                            , attempts = outcome.attempts
-                                            }
+                                        ( Rpc.Internal.Trace.mint cfg.transport c sent outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
