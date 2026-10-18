@@ -5,8 +5,10 @@ module Rpc.Code exposing
     , toHttpStatus, fromHttpStatus
     )
 
-{-| The status an RPC ends with, shared by both transports: `ok`, or one of
-the sixteen [error codes](Rpc-ErrorCode).
+{-| The codes an RPC fails with, shared by both transports. Connect writes them
+as strings (`"not_found"`), `google.rpc.Status` as gRPC's numbers (`5`). Every
+[`Rpc.Error`](Rpc#Error) has one ([`Rpc.code`](Rpc#code)). Success has no code:
+the `Result` a call ends with already says whether it succeeded.
 
 @docs Code
 
@@ -27,96 +29,353 @@ the sixteen [error codes](Rpc-ErrorCode).
 
 -}
 
-import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
 
-
-{-| How an RPC ended: `Ok`, or failed with an error code.
-
-Every [`Rpc.Error`](Rpc#Error) has an [`ErrorCode`](Rpc-ErrorCode#ErrorCode)
-([`Rpc.code`](Rpc#code)), so it cannot claim `Ok`; the runtime never produces
-one for a call that succeeded, and reads a failed answer whose body claims `ok`
-(or `0`) as `Unknown`. `Code` is for what reports either outcome, such as a
-[`Trace`](Rpc#Trace).
-
-`Ok` shares its name with `Result`'s, which every module imports, so refer to
-it qualified (`Rpc.Code.Ok`) rather than exposing `Code(..)`.
-
+{-| Every error code: gRPC's `1` to `16`.
 -}
 type Code
-    = Ok
-    | Failed ErrorCode
+    = Canceled
+    | Unknown
+    | InvalidArgument
+    | DeadlineExceeded
+    | NotFound
+    | AlreadyExists
+    | PermissionDenied
+    | ResourceExhausted
+    | FailedPrecondition
+    | Aborted
+    | OutOfRange
+    | Unimplemented
+    | Internal
+    | Unavailable
+    | DataLoss
+    | Unauthenticated
 
 
-{-| The code as the Connect protocol writes it: `"ok"`, or the error code's
-name.
+{-| The code as the Connect protocol writes it: `"canceled"`, `"not_found"`.
 -}
 toString : Code -> String
 toString code =
     case code of
-        Ok ->
-            "ok"
+        Canceled ->
+            "canceled"
 
-        Failed errorCode ->
-            ErrorCode.toString errorCode
+        Unknown ->
+            "unknown"
+
+        InvalidArgument ->
+            "invalid_argument"
+
+        DeadlineExceeded ->
+            "deadline_exceeded"
+
+        NotFound ->
+            "not_found"
+
+        AlreadyExists ->
+            "already_exists"
+
+        PermissionDenied ->
+            "permission_denied"
+
+        ResourceExhausted ->
+            "resource_exhausted"
+
+        FailedPrecondition ->
+            "failed_precondition"
+
+        Aborted ->
+            "aborted"
+
+        OutOfRange ->
+            "out_of_range"
+
+        Unimplemented ->
+            "unimplemented"
+
+        Internal ->
+            "internal"
+
+        Unavailable ->
+            "unavailable"
+
+        DataLoss ->
+            "data_loss"
+
+        Unauthenticated ->
+            "unauthenticated"
 
 
-{-| The code a Connect name stands for, `"ok"` included, or `Nothing` for any
-other string.
+{-| The error code a Connect name stands for, or `Nothing` for any other
+string, `"ok"` included.
 -}
 fromString : String -> Maybe Code
 fromString name =
-    if name == "ok" then
-        Just Ok
+    case name of
+        "canceled" ->
+            Just Canceled
 
-    else
-        Maybe.map Failed (ErrorCode.fromString name)
+        "unknown" ->
+            Just Unknown
+
+        "invalid_argument" ->
+            Just InvalidArgument
+
+        "deadline_exceeded" ->
+            Just DeadlineExceeded
+
+        "not_found" ->
+            Just NotFound
+
+        "already_exists" ->
+            Just AlreadyExists
+
+        "permission_denied" ->
+            Just PermissionDenied
+
+        "resource_exhausted" ->
+            Just ResourceExhausted
+
+        "failed_precondition" ->
+            Just FailedPrecondition
+
+        "aborted" ->
+            Just Aborted
+
+        "out_of_range" ->
+            Just OutOfRange
+
+        "unimplemented" ->
+            Just Unimplemented
+
+        "internal" ->
+            Just Internal
+
+        "unavailable" ->
+            Just Unavailable
+
+        "data_loss" ->
+            Just DataLoss
+
+        "unauthenticated" ->
+            Just Unauthenticated
+
+        _ ->
+            Nothing
 
 
-{-| The code's gRPC number, `0` for `Ok`.
+{-| The code's gRPC number, `1` (`Canceled`) to `16` (`Unauthenticated`).
 -}
 toInt : Code -> Int
 toInt code =
     case code of
-        Ok ->
-            0
+        Canceled ->
+            1
 
-        Failed errorCode ->
-            ErrorCode.toInt errorCode
+        Unknown ->
+            2
+
+        InvalidArgument ->
+            3
+
+        DeadlineExceeded ->
+            4
+
+        NotFound ->
+            5
+
+        AlreadyExists ->
+            6
+
+        PermissionDenied ->
+            7
+
+        ResourceExhausted ->
+            8
+
+        FailedPrecondition ->
+            9
+
+        Aborted ->
+            10
+
+        OutOfRange ->
+            11
+
+        Unimplemented ->
+            12
+
+        Internal ->
+            13
+
+        Unavailable ->
+            14
+
+        DataLoss ->
+            15
+
+        Unauthenticated ->
+            16
 
 
-{-| The code a gRPC number stands for, `0` to `16`, or `Nothing` for any other
-number.
+{-| The error code a gRPC number stands for, or `Nothing` for `0` (`OK`) and
+any number outside `1` to `16`.
 -}
 fromInt : Int -> Maybe Code
 fromInt number =
-    if number == 0 then
-        Just Ok
+    case number of
+        1 ->
+            Just Canceled
 
-    else
-        Maybe.map Failed (ErrorCode.fromInt number)
+        2 ->
+            Just Unknown
+
+        3 ->
+            Just InvalidArgument
+
+        4 ->
+            Just DeadlineExceeded
+
+        5 ->
+            Just NotFound
+
+        6 ->
+            Just AlreadyExists
+
+        7 ->
+            Just PermissionDenied
+
+        8 ->
+            Just ResourceExhausted
+
+        9 ->
+            Just FailedPrecondition
+
+        10 ->
+            Just Aborted
+
+        11 ->
+            Just OutOfRange
+
+        12 ->
+            Just Unimplemented
+
+        13 ->
+            Just Internal
+
+        14 ->
+            Just Unavailable
+
+        15 ->
+            Just DataLoss
+
+        16 ->
+            Just Unauthenticated
+
+        _ ->
+            Nothing
 
 
-{-| The HTTP status a Connect server sends with the code: 200 for `Ok`, and
-[`ErrorCode.toHttpStatus`](Rpc-ErrorCode#toHttpStatus) for an error code.
+{-| The code a failed HTTP response stands for when it carries none of its own,
+by the table the Connect protocol and gRPC's HTTP mapping share: 400 is
+`Internal`, 401 `Unauthenticated`, 403 `PermissionDenied`, 404 `Unimplemented`,
+429, 502, 503 and 504 `Unavailable`, and every other status `Unknown`.
+
+It is not the inverse of [`toHttpStatus`](#toHttpStatus), which says why.
+
+-}
+fromHttpStatus : Int -> Code
+fromHttpStatus status =
+    case status of
+        400 ->
+            Internal
+
+        401 ->
+            Unauthenticated
+
+        403 ->
+            PermissionDenied
+
+        404 ->
+            Unimplemented
+
+        429 ->
+            Unavailable
+
+        502 ->
+            Unavailable
+
+        503 ->
+            Unavailable
+
+        504 ->
+            Unavailable
+
+        _ ->
+            Unknown
+
+
+{-| The HTTP status a Connect server sends with an error code, by the
+[Connect protocol's table](https://connectrpc.com/docs/protocol/#error-codes),
+which is `google/rpc/code.proto`'s HTTP mapping: `Canceled` 499, `Unknown`
+500, `InvalidArgument` 400, `DeadlineExceeded` 504, `NotFound` 404,
+`AlreadyExists` 409, `PermissionDenied` 403, `ResourceExhausted` 429,
+`FailedPrecondition` 400, `Aborted` 409, `OutOfRange` 400, `Unimplemented` 501,
+`Internal` 500, `Unavailable` 503, `DataLoss` 500, `Unauthenticated` 401.
+
+It is not the inverse of [`fromHttpStatus`](#fromHttpStatus), which reads 400
+as `Internal`: that table is
+[gRPC's mapping](https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md)
+for a response with no error body, where a 400 means a proxy or the transport
+rejected the request, not the request's argument.
+
 -}
 toHttpStatus : Code -> Int
 toHttpStatus code =
     case code of
-        Ok ->
-            200
+        Canceled ->
+            499
 
-        Failed errorCode ->
-            ErrorCode.toHttpStatus errorCode
+        Unknown ->
+            500
 
+        InvalidArgument ->
+            400
 
-{-| The code an HTTP response stands for when it carries none of its own: `Ok`
-for any 2xx, and [`ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus)
-for any other status.
--}
-fromHttpStatus : Int -> Code
-fromHttpStatus status =
-    if status >= 200 && status < 300 then
-        Ok
+        DeadlineExceeded ->
+            504
 
-    else
-        Failed (ErrorCode.fromHttpStatus status)
+        NotFound ->
+            404
+
+        AlreadyExists ->
+            409
+
+        PermissionDenied ->
+            403
+
+        ResourceExhausted ->
+            429
+
+        FailedPrecondition ->
+            400
+
+        Aborted ->
+            409
+
+        OutOfRange ->
+            400
+
+        Unimplemented ->
+            501
+
+        Internal ->
+            500
+
+        Unavailable ->
+            503
+
+        DataLoss ->
+            500
+
+        Unauthenticated ->
+            401

@@ -38,6 +38,7 @@
         }
       },
       "trace": {
+        "transport": "connect",
         "binding": null,
         "httpStatus": 200,
         "headers": {
@@ -921,6 +922,7 @@
         }
       },
       "trace": {
+        "transport": "transcode",
         "binding": 0,
         "httpStatus": 200,
         "code": "ok",

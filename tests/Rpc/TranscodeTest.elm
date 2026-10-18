@@ -9,7 +9,10 @@ import Proto.Any
 import Proto.Http
 import Proto.Method exposing (Idempotency(..), Method)
 import Rpc exposing (Error(..), Source(..))
-import Rpc.ErrorCode exposing (ErrorCode(..))
+import Rpc.Body
+import Rpc.Call
+import Rpc.Code exposing (Code(..))
+import Rpc.Transport
 import Test exposing (Test, describe, test)
 
 
@@ -57,7 +60,7 @@ config =
         base =
             Rpc.config "https://api.example.com"
     in
-    { base | transport = Rpc.Transcode }
+    { base | transport = Rpc.Transport.transcode }
 
 
 json : String -> Value
@@ -73,7 +76,7 @@ url r request =
 
 body : Rule -> String -> Maybe String
 body r request =
-    (Rpc.request config (bound r request)).body
+    Rpc.Body.toText (Rpc.request config (bound r request)).body
 
 
 suite : Test
@@ -215,8 +218,8 @@ bodies =
         , test "the method, headers, timeout and credentials come through, the call's headers last" <|
             \_ ->
                 bound { rule | method = "PATCH" } "{}"
-                    |> Rpc.withHeaders [ ( "X-Call", "1" ) ]
-                    |> Rpc.withTimeout 10
+                    |> Rpc.Call.withHeaders [ ( "X-Call", "1" ) ]
+                    |> Rpc.Call.withTimeout 10
                     |> Rpc.request { config | headers = [ ( "Authorization", "Bearer t" ) ], timeout = Just 30, withCredentials = True }
                     |> (\r -> ( ( r.method, r.headers ), ( r.timeout, r.withCredentials ) ))
                     |> Expect.equal ( ( "PATCH", [ ( "Authorization", "Bearer t" ), ( "X-Call", "1" ) ] ), ( Just 10, True ) )
@@ -245,12 +248,12 @@ routes =
                     |> Expect.equal "https://api.example.com/v1/first"
         , test "viaBinding picks an additional binding" <|
             \_ ->
-                Rpc.viaBinding 1 twice
-                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, r.body )))
+                Rpc.Call.viaBinding 1 twice
+                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
-                Rpc.viaBinding 0 twice
+                Rpc.Call.viaBinding 0 twice
                     |> Maybe.map (Rpc.request config >> .url)
                     |> Expect.equal (Just "https://api.example.com/v1/first")
         , test "a method without a rule is the Connect POST, verbatim" <|
@@ -258,7 +261,7 @@ routes =
                 Rpc.request { config | timeout = Just 20 } unbound
                     |> Expect.equal
                         (Rpc.request
-                            { config | transport = Rpc.connect, timeout = Just 20 }
+                            { config | transport = Rpc.Transport.connect, timeout = Just 20 }
                             unbound
                         )
         , test "the implicit route is a POST to the service and method" <|
@@ -272,8 +275,8 @@ routes =
                     |> Expect.equal (Ok "hi")
         , test "there is no binding past the end, and none for a method without a rule" <|
             \_ ->
-                [ Rpc.viaBinding 2 twice, Rpc.viaBinding -1 twice, Rpc.viaBinding 0 unbound, Rpc.viaBinding 1 unbound ]
-                    |> List.map (Maybe.map Rpc.methodName)
+                [ Rpc.Call.viaBinding 2 twice, Rpc.Call.viaBinding -1 twice, Rpc.Call.viaBinding 0 unbound, Rpc.Call.viaBinding 1 unbound ]
+                    |> List.map (Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing, Nothing ]
         ]
 
@@ -359,10 +362,10 @@ withoutResponse =
 
 blank : Rpc.Response
 blank =
-    { statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
+    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.text "" }
 
 
-stated : ErrorCode -> String -> Source -> Result Error a
+stated : Code -> String -> Source -> Result Error a
 stated code message source =
     Err (Status { code = code, message = message, details = [], source = source } blank)
 

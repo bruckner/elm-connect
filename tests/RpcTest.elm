@@ -12,9 +12,15 @@ import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
 import Proto.WellKnown
 import Rpc exposing (Error(..), Source(..))
-import Rpc.ErrorCode exposing (ErrorCode(..))
+import Rpc.Body
+import Rpc.Call
+import Rpc.Code exposing (Code(..))
 import Rpc.Internal.Http
 import Rpc.Internal.Retry as Retry
+import Rpc.Internal.Trace
+import Rpc.Retry
+import Rpc.Trace
+import Rpc.Transport
 import Test exposing (Test, describe, test)
 
 
@@ -79,7 +85,15 @@ base =
 
 getting : Maybe Int -> Rpc.Config
 getting maxGetUrl =
-    { base | transport = Rpc.Connect { useGet = True, maxGetUrl = maxGetUrl } }
+    { base
+        | transport =
+            case maxGetUrl of
+                Just limit ->
+                    Rpc.Transport.withMaxGetUrl limit Rpc.Transport.connectGet
+
+                Nothing ->
+                    Rpc.Transport.connectGet
+    }
 
 
 metadata : Int -> String -> Http.Metadata
@@ -119,7 +133,7 @@ withoutResponse =
 
 blank : Rpc.Response
 blank =
-    { statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
+    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.text "" }
 
 
 httpError : Int -> String -> Error
@@ -130,12 +144,12 @@ httpError status text =
 {-| An error with the code and message `Rpc.code` and `Rpc.message` read from
 it.
 -}
-withCode : Result Error a -> Result ( Error, ErrorCode, String ) a
+withCode : Result Error a -> Result ( Error, Code, String ) a
 withCode =
     Result.mapError (\error -> ( error, Rpc.code error, Rpc.message error ))
 
 
-fromBody : ErrorCode -> String -> Result Error String
+fromBody : Code -> String -> Result Error String
 fromBody code message =
     Err (Status { code = code, message = message, details = [], source = ConnectBody } blank)
 
@@ -158,6 +172,10 @@ suite =
         , responses
         , keptResponses
         , retries
+        , transports
+        , configs
+        , bodies
+        , traces
         , trailers
         , percentEncoding
         ]
@@ -216,29 +234,29 @@ calls =
     describe "calls"
         [ test "read back" <|
             \_ ->
-                ( ( Rpc.serviceName c, Rpc.methodName c ), ( Rpc.idempotent c, Rpc.requestMessage c ) )
-                    |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( True, { name = "notes/42" } ) )
+                ( ( Rpc.Call.serviceName c, Rpc.Call.methodName c ), ( Rpc.Call.idempotency c, Rpc.Call.requestMessage c ) )
+                    |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( Proto.Method.IdempotencyNoSideEffects, { name = "notes/42" } ) )
         , test "the method and its descriptor are the ones the call was made from" <|
             \_ ->
-                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.method c) { name = "x" }) ), Proto.Method.name (Rpc.descriptor c), Proto.Method.output (Rpc.descriptor c) )
+                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.Call.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.Call.method c) { name = "x" }) ), Proto.Method.name (Rpc.Call.descriptor c), Proto.Method.output (Rpc.Call.descriptor c) )
                     |> Expect.equal ( ( "notes.v1.GetNoteRequest", "{\"name\":\"x\"}" ), "GetNote", "notes.v1.Note" )
         , test "requestJson is the request's JSON" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.requestJson c)
+                Json.Encode.encode 0 (Rpc.Call.requestJson c)
                     |> Expect.equal "{\"name\":\"notes/42\"}"
         , test "viaBinding gives a call for each binding the method has, and only those" <|
             \_ ->
                 [ -1, 0, 1, 2 ]
-                    |> List.map (\index -> Rpc.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.methodName)
+                    |> List.map (\index -> Rpc.Call.viaBinding index (listNotes { name = "x" }) |> Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Just "ListNotes", Just "ListNotes", Nothing ]
         , test "a method without bindings has none to choose" <|
             \_ ->
                 [ -1, 0, 1 ]
-                    |> List.map (\index -> Rpc.viaBinding index c |> Maybe.map Rpc.methodName)
+                    |> List.map (\index -> Rpc.Call.viaBinding index c |> Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "toJson names the method and holds the request" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.toJson (Rpc.withTimeout 5 c))
+                Json.Encode.encode 0 (Rpc.Call.toJson (Rpc.Call.withTimeout 5 c))
                     |> Expect.equal "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"request\":{\"name\":\"notes/42\"}}"
         ]
 
@@ -253,7 +271,7 @@ requests =
                         { method = "POST"
                         , url = "https://api.example.com/notes.v1.Notes/GetNote"
                         , headers = [ ( "Connect-Protocol-Version", "1" ) ]
-                        , body = Just "{\"name\":\"notes/42\"}"
+                        , body = Rpc.Body.text "{\"name\":\"notes/42\"}"
                         , timeout = Nothing
                         , withCredentials = False
                         }
@@ -270,8 +288,8 @@ requests =
         , test "a call's headers follow the config's, in the order added" <|
             \_ ->
                 getNote { name = "x" }
-                    |> Rpc.withHeaders [ ( "X-A", "1" ) ]
-                    |> Rpc.withHeaders [ ( "X-B", "2" ) ]
+                    |> Rpc.Call.withHeaders [ ( "X-A", "1" ) ]
+                    |> Rpc.Call.withHeaders [ ( "X-B", "2" ) ]
                     |> Rpc.request { base | headers = [ ( "Authorization", "Bearer t" ) ] }
                     |> .headers
                     |> Expect.equal
@@ -287,7 +305,7 @@ requests =
         , test "a call's timeout replaces the config's" <|
             \_ ->
                 getNote { name = "x" }
-                    |> Rpc.withTimeout 20
+                    |> Rpc.Call.withTimeout 20
                     |> Rpc.request { base | timeout = Just 1000 }
                     |> (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal
@@ -311,20 +329,16 @@ requests =
         , test "a call's timeout that is not a positive number leaves the config's" <|
             \_ ->
                 [ 0, -5, 0 / 0 ]
-                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.withTimeout t (getNote { name = "x" })))
+                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.Call.withTimeout t (getNote { name = "x" })))
                     |> List.map (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal (List.repeat 3 ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1000" ) ], Just 1000 ))
         , test "withCredentials is carried to the request" <|
             \_ ->
                 (Rpc.request { base | withCredentials = True } (getNote { name = "x" })).withCredentials
                     |> Expect.equal True
-        , test "useGet POSTs an idempotent call with effects: only NoSideEffects is a GET" <|
+        , test "connectGet sends a call without side effects as a GET with the message in the query" <|
             \_ ->
-                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.idempotent (deleteNote { name = "x" }) )
-                    |> Expect.equal ( "POST", False )
-        , test "useGet sends an idempotent call as a GET with the message in the query" <|
-            \_ ->
-                Rpc.request { base | transport = Rpc.Connect { useGet = True, maxGetUrl = Nothing }, timeout = Just 20 }
+                Rpc.request { base | transport = Rpc.Transport.connectGet, timeout = Just 20 }
                     (getNote { name = "notes/42 é" })
                     |> Expect.equal
                         { method = "GET"
@@ -333,19 +347,23 @@ requests =
                                 ++ "?connect=v1&encoding=json&message="
                                 ++ "%7B%22name%22%3A%22notes%2F42%20%C3%A9%22%7D"
                         , headers = [ ( "Connect-Timeout-Ms", "20" ) ]
-                        , body = Nothing
+                        , body = Rpc.Body.none
                         , timeout = Just 20
                         , withCredentials = False
                         }
-        , test "useGet still POSTs a call with side effects" <|
+        , test "connectGet still POSTs a call with side effects" <|
             \_ ->
                 (Rpc.request (getting Nothing) (createNote { name = "x" })).method
                     |> Expect.equal "POST"
+        , test "connectGet POSTs an idempotent call with effects: only IdempotencyNoSideEffects is a GET" <|
+            \_ ->
+                ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.Call.idempotency (deleteNote { name = "x" }) )
+                    |> Expect.equal ( "POST", Proto.Method.IdempotencyIdempotent )
         , test "GET is off by default" <|
             \_ ->
                 (Rpc.request base (getNote { name = "x" })).method
                     |> Expect.equal "POST"
-        , test "maxGetUrl POSTs a call whose GET URL would be longer" <|
+        , test "withMaxGetUrl POSTs a call whose GET URL would be longer" <|
             \_ ->
                 let
                     length =
@@ -357,7 +375,7 @@ requests =
         , test "Connect ignores the binding chosen" <|
             \_ ->
                 listNotes { name = "x" }
-                    |> Rpc.viaBinding 1
+                    |> Rpc.Call.viaBinding 1
                     |> Maybe.map (Rpc.request base)
                     |> Expect.equal (Just (Rpc.request base (listNotes { name = "x" })))
         ]
@@ -560,7 +578,7 @@ responses =
         , test "a canceled call has the code Canceled, no message and no details" <|
             \_ ->
                 ( Rpc.code Rpc.Canceled, Rpc.message Rpc.Canceled, Rpc.details title Rpc.Canceled )
-                    |> Expect.equal ( Rpc.ErrorCode.Canceled, "", [] )
+                    |> Expect.equal ( Rpc.Code.Canceled, "", [] )
         ]
 
 
@@ -577,7 +595,7 @@ keptResponses =
                     (\error ->
                         let
                             kept got =
-                                ( got.statusCode, Dict.get "x-request-id" got.headers, got.body )
+                                ( got.statusCode, Dict.get "x-request-id" got.headers, Maybe.withDefault "" (Rpc.Body.toText got.body) )
                         in
                         case error of
                             Status r got ->
@@ -623,12 +641,27 @@ keptResponses =
                         (\error ->
                             case error of
                                 Http got ->
-                                    Just ( got.statusCode, got.statusText, got.body )
+                                    Just ( got.statusCode, got.statusText, Maybe.withDefault "" (Rpc.Body.toText got.body) )
 
                                 _ ->
                                     Nothing
                         )
                     |> Expect.equal (Err (Just ( 204, "No Content", "" )))
+        , test "the URL the answer came from, after any redirect" <|
+            \_ ->
+                Rpc.response base
+                    (getNote { name = "x" })
+                    (Http.BadStatus_ { url = "https://api.example.com/moved", statusCode = 404, statusText = "", headers = Dict.empty } "")
+                    |> Result.mapError
+                        (\error ->
+                            case error of
+                                Http got ->
+                                    got.url
+
+                                _ ->
+                                    ""
+                        )
+                    |> Expect.equal (Err "https://api.example.com/moved")
         ]
 
 
@@ -636,50 +669,253 @@ retries : Test
 retries =
     let
         policy =
-            { attempts = 3, backoff = 100, codes = [ Unavailable ], idempotentOnly = True }
+            Rpc.Retry.on [ Unavailable ]
+                |> Rpc.Retry.withBackoff 100
+                |> Rpc.Retry.withoutJitter
+
+        delays retry =
+            List.map (\tried -> Retry.delay retry Proto.Method.IdempotencyNoSideEffects tried Unavailable)
     in
     describe "retry policy"
         [ test "a listed code waits the backoff, doubled per attempt, until attempts run out" <|
             \_ ->
-                [ 1, 2, 3 ]
-                    |> List.map (\tried -> Retry.delay policy IdempotencyNoSideEffects tried Unavailable)
+                delays policy [ 1, 2, 3 ]
                     |> Expect.equal [ Just 100, Just 200, Nothing ]
+        , test "the defaults: 3 attempts, 200 ms doubling, idempotent only, jitter" <|
+            \_ ->
+                let
+                    defaults =
+                        Rpc.Retry.on [ Unavailable ]
+                in
+                ( delays defaults [ 1, 2, 3 ]
+                , Retry.delay defaults Proto.Method.IdempotencyUnknown 1 Unavailable
+                , defaults == (defaults |> Rpc.Retry.withoutJitter)
+                )
+                    |> Expect.equal ( [ Just 200, Just 400, Nothing ], Nothing, False )
+        , test "the defaults cap a wait at 30 seconds" <|
+            \_ ->
+                delays (Rpc.Retry.on [ Unavailable ] |> Rpc.Retry.withAttempts 20) [ 8, 9, 10 ]
+                    |> Expect.equal [ Just 25600, Just 30000, Just 30000 ]
+        , test "withMaxBackoff caps the doubling" <|
+            \_ ->
+                delays (policy |> Rpc.Retry.withAttempts 10 |> Rpc.Retry.withMaxBackoff 350) [ 1, 2, 3, 4 ]
+                    |> Expect.equal [ Just 100, Just 200, Just 350, Just 350 ]
+        , test "no wait is longer than setTimeout runs, 2^31 - 1 ms" <|
+            \_ ->
+                delays (policy |> Rpc.Retry.withAttempts 2000 |> Rpc.Retry.withMaxBackoff (1 / 0)) [ 40, 1500 ]
+                    |> Expect.equal [ Just 2147483647, Just 2147483647 ]
+        , test "a backoff that is not a positive number waits not at all, however many attempts" <|
+            \_ ->
+                [ 0, -5, 0 / 0 ]
+                    |> List.concatMap (\ms -> delays (policy |> Rpc.Retry.withAttempts 2000 |> Rpc.Retry.withBackoff ms) [ 1, 1500 ])
+                    |> Expect.equal (List.repeat 6 (Just 0))
         , test "a code not listed stops" <|
             \_ ->
                 Retry.delay policy IdempotencyNoSideEffects 1 NotFound
                     |> Expect.equal Nothing
-        , test "idempotentOnly retries both idempotency levels" <|
+        , test "idempotent-only stops a call that may have side effects; allowNonIdempotent retries it" <|
+            \_ ->
+                ( Retry.delay policy Proto.Method.IdempotencyUnknown 1 Unavailable
+                , Retry.delay (Rpc.Retry.allowNonIdempotent policy) Proto.Method.IdempotencyUnknown 1 Unavailable
+                )
+                    |> Expect.equal ( Nothing, Just 100 )
+        , test "idempotent-only retries both idempotency levels" <|
             \_ ->
                 ( Retry.delay policy IdempotencyNoSideEffects 1 Unavailable
                 , Retry.delay policy IdempotencyIdempotent 1 Unavailable
                 )
                     |> Expect.equal ( Just 100, Just 100 )
-        , test "idempotentOnly stops a call that may have side effects" <|
-            \_ ->
-                ( Retry.delay policy IdempotencyUnknown 1 Unavailable
-                , Retry.delay { policy | idempotentOnly = False } IdempotencyUnknown 1 Unavailable
-                )
-                    |> Expect.equal ( Nothing, Just 100 )
         , test "one attempt never retries" <|
             \_ ->
-                Retry.delay { policy | attempts = 1 } IdempotencyNoSideEffects 1 Unavailable
+                Retry.delay (Rpc.Retry.withAttempts 1 policy) Proto.Method.IdempotencyNoSideEffects 1 Unavailable
                     |> Expect.equal Nothing
         , test "a timeout retries when DeadlineExceeded is listed, and not otherwise" <|
             \_ ->
-                ( Retry.delay { policy | codes = [ DeadlineExceeded ] } IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
-                , Retry.delay policy IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
+                ( Retry.delay (Rpc.Retry.on [ DeadlineExceeded ] |> Rpc.Retry.withBackoff 100) Proto.Method.IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
+                , Retry.delay policy Proto.Method.IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Just 100, Nothing )
         , test "a network failure retries when Unavailable is listed" <|
             \_ ->
                 Retry.delay policy IdempotencyNoSideEffects 1 (Rpc.code (Transport Http.NetworkError))
                     |> Expect.equal (Just 100)
-        , test "idempotentOnly stops a transport failure of a call with side effects" <|
+        , test "idempotent-only stops a transport failure of a call with side effects" <|
             \_ ->
-                ( Retry.delay policy IdempotencyUnknown 1 (Rpc.code (Transport Http.NetworkError))
-                , Retry.delay { policy | codes = [ DeadlineExceeded ] } IdempotencyUnknown 1 (Rpc.code (Transport Http.Timeout))
+                ( Retry.delay policy Proto.Method.IdempotencyUnknown 1 (Rpc.code (Transport Http.NetworkError))
+                , Retry.delay (Rpc.Retry.on [ DeadlineExceeded ]) Proto.Method.IdempotencyUnknown 1 (Rpc.code (Transport Http.Timeout))
                 )
                     |> Expect.equal ( Nothing, Nothing )
+        , describe "jitter" (jitters policy)
+        ]
+
+
+jitters : Rpc.Retry.Retry -> List Test
+jitters policy =
+    let
+        jittered =
+            Rpc.Retry.on [ Unavailable ]
+
+        -- Times a millisecond apart, as clients that failed together read them.
+        seeds =
+            List.range 1760000000000 1760000000999
+
+        draws tried =
+            List.map (\seed -> Retry.jitter jittered seed tried 1000) seeds
+
+        mean values =
+            List.sum values / toFloat (List.length values)
+    in
+    [ test "without jitter the wait is the bound" <|
+        \_ ->
+            Retry.jitter policy 1760000000000 1 1000
+                |> Expect.equal 1000
+    , test "each wait is from zero to the bound" <|
+        \_ ->
+            draws 1
+                |> List.all (\wait -> wait >= 0 && wait < 1000)
+                |> Expect.equal True
+    , test "the same time and attempt draw the same wait" <|
+        \_ ->
+            Retry.jitter jittered 1760000000123 2 1000
+                |> Expect.within (Expect.Absolute 0) (Retry.jitter jittered 1760000000123 2 1000)
+    , test "waits drawn a millisecond apart spread over the range" <|
+        \_ ->
+            let
+                waits =
+                    draws 1
+
+                tenths =
+                    List.map (\wait -> floor (wait / 100)) waits
+            in
+            ( mean waits > 450 && mean waits < 550
+            , List.all (\tenth -> List.member tenth tenths) (List.range 0 9)
+            )
+                |> Expect.equal ( True, True )
+    , test "consecutive attempts draw differently" <|
+        \_ ->
+            List.map2 (/=) (draws 1) (draws 2)
+                |> List.filter identity
+                |> List.length
+                |> Expect.atLeast 990
+    ]
+
+
+transports : Test
+transports =
+    describe "transports"
+        [ test "the names" <|
+            \_ ->
+                List.map Rpc.Transport.name [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.withMaxGetUrl 10 Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> Expect.equal [ "connect", "connect", "connect", "transcode" ]
+        , test "withMaxGetUrl leaves a transport that sends no GET as it was" <|
+            \_ ->
+                ( Rpc.request { base | transport = Rpc.Transport.withMaxGetUrl 1 Rpc.Transport.connect } (getNote { name = "x" })
+                , Rpc.Transport.withMaxGetUrl 1 Rpc.Transport.transcode
+                )
+                    |> Expect.equal ( Rpc.request base (getNote { name = "x" }), Rpc.Transport.transcode )
+        , test "the config's default is Connect, POST only" <|
+            \_ ->
+                base.transport
+                    |> Expect.equal Rpc.Transport.connect
+        ]
+
+
+configs : Test
+configs =
+    describe "checkConfig"
+        [ test "a base URL that is an origin or a path is fine" <|
+            \_ ->
+                [ "https://api.example.com", "https://api.example.com/v1/", "/api", "" ]
+                    |> List.map (Rpc.config >> Rpc.checkConfig)
+                    |> Expect.equal [ [], [], [], [] ]
+        , test "a base URL holding a query or a fragment is reported" <|
+            \_ ->
+                [ "https://api.example.com/?key=1", "https://api.example.com/#top" ]
+                    |> List.map (Rpc.config >> Rpc.checkConfig >> List.length)
+                    |> Expect.equal [ 1, 1 ]
+        , test "the report names the base URL" <|
+            \_ ->
+                Rpc.checkConfig (Rpc.config "https://api.example.com/?key=1")
+                    |> List.all (String.contains "https://api.example.com/?key=1")
+                    |> Expect.equal True
+        ]
+
+
+bodies : Test
+bodies =
+    describe "Rpc.Body"
+        [ test "text reads back, none has no text" <|
+            \_ ->
+                ( Rpc.Body.toText (Rpc.Body.text "{}"), Rpc.Body.toText Rpc.Body.none )
+                    |> Expect.equal ( Just "{}", Nothing )
+        , test "a GET has no body, a POST the request's JSON" <|
+            \_ ->
+                ( Rpc.Body.toText (Rpc.request (getting Nothing) (getNote { name = "x" })).body
+                , Rpc.Body.toText (Rpc.request base (getNote { name = "x" })).body
+                )
+                    |> Expect.equal ( Nothing, Just "{\"name\":\"x\"}" )
+        ]
+
+
+traces : Test
+traces =
+    let
+        sent =
+            Rpc.request base (getNote { name = "notes/42" })
+
+        trace error status attempts =
+            Rpc.Internal.Trace.Trace
+                { serviceName = "notes.v1.Notes"
+                , methodName = "GetNote"
+                , transport = "connect"
+                , binding = Nothing
+                , request = sent
+                , httpStatus = status
+                , headers = Dict.fromList [ ( "content-type", "application/json" ) ]
+                , trailers = Dict.empty
+                , code = error
+                , duration = 12.4
+                , attempts = attempts
+                }
+
+        succeeded =
+            trace Nothing (Just 200) 1
+    in
+    describe "Rpc.Trace"
+        [ test "toJson gives every field under its key" <|
+            \_ ->
+                Json.Encode.encode 0 (Rpc.Trace.toJson succeeded)
+                    |> Expect.equal
+                        ("""{"service":"notes.v1.Notes","method":"GetNote","transport":"connect","binding":null,"""
+                            ++ """"request":{"method":"POST","url":"https://api.example.com/notes.v1.Notes/GetNote","headers":[["Connect-Protocol-Version","1"]],"body":"{\\"name\\":\\"notes/42\\"}","timeout":null,"withCredentials":false},"""
+                            ++ """"httpStatus":200,"headers":{"content-type":"application/json"},"trailers":{},"code":"ok","duration":12.4,"attempts":1}"""
+                        )
+        , test "toJson gives a failure's code as Connect writes it" <|
+            \_ ->
+                trace (Just DeadlineExceeded) Nothing 2
+                    |> Rpc.Trace.toJson
+                    |> Json.Decode.decodeValue (Json.Decode.map2 Tuple.pair (Json.Decode.field "code" Json.Decode.string) (Json.Decode.field "httpStatus" (Json.Decode.null ())))
+                    |> Expect.equal (Ok ( "deadline_exceeded", () ))
+        , test "toString is one line without the request" <|
+            \_ ->
+                [ Rpc.Trace.toString succeeded
+                , Rpc.Trace.toString (trace (Just Unavailable) Nothing 3)
+                ]
+                    |> Expect.equal
+                        [ "notes.v1.Notes/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms"
+                        , "notes.v1.Notes/GetNote over connect: unavailable, no answer, 3 attempts, 12 ms"
+                        ]
+        , test "the accessors" <|
+            \_ ->
+                ( ( Rpc.Trace.serviceName succeeded, Rpc.Trace.methodName succeeded, Rpc.Trace.transport succeeded )
+                , ( Rpc.Trace.binding succeeded, Rpc.Trace.request succeeded == sent, Rpc.Trace.httpStatus succeeded )
+                , ( Rpc.Trace.code succeeded, Rpc.Trace.duration succeeded, Rpc.Trace.attempts succeeded )
+                )
+                    |> Expect.equal
+                        ( ( "notes.v1.Notes", "GetNote", "connect" )
+                        , ( Nothing, True, Just 200 )
+                        , ( Nothing, 12.4, 1 )
+                        )
         ]
 
 

@@ -76,6 +76,15 @@ instead of reporting a conflict. It applies to local merges and
 rebases only; GitHub's merge ignores it, so a branch behind `main`
 still shows a conflict there until it is rebased.
 
+## Code comments
+
+Comments say what the code does and the durable why; the history of a
+change belongs in its commit message. A public doc string, on anything
+in an `exposed-modules` module, is written for users: what the value
+is, how you get one, and what it promises. A maintainer's rationale
+(why a module is shaped as it is, which alternative lost) goes in an
+`Internal` module's docs, in `docs/design.md`, or in the commit message.
+
 ## Commit messages
 
 Commits follow the seven rules from

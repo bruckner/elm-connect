@@ -5,6 +5,7 @@ a request to be signed with.
 -}
 
 import Rpc
+import Rpc.Body
 import Task exposing (Task)
 
 
@@ -28,4 +29,4 @@ signed cfg call =
 
 sign : Rpc.Request -> String
 sign request =
-    String.fromInt (String.length request.url + String.length (Maybe.withDefault "" request.body))
+    String.fromInt (String.length request.url + String.length (Maybe.withDefault "" (Rpc.Body.toText request.body)))

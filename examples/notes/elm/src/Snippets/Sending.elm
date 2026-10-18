@@ -8,6 +8,7 @@ module Snippets.Sending exposing (Msg(..), config, viaConnect, viaTranscoding)
 import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
+import Rpc.Transport
 
 
 type Msg
@@ -28,7 +29,7 @@ viaConnect =
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
-    Rpc.send { config | transport = Rpc.Transcode } (Notes.getNote { name = "notes/42" }) GotNote
+    Rpc.send { config | transport = Rpc.Transport.transcode } (Notes.getNote { name = "notes/42" }) GotNote
 
 
 

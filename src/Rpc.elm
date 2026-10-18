@@ -1,10 +1,8 @@
 module Rpc exposing
     ( Call, call
-    , withHeaders, withTimeout, withTracker, viaBinding
-    , method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
-    , Config, config, Transport(..), connect, Retry
+    , Config, config, checkConfig
     , task, send, cancel
-    , Trace, taskTraced, sendTraced
+    , taskTraced, sendTraced
     , Error(..), Source(..), Response, code, message, errorToString, details
     , Request, request, response, taskFromRequest, splitTrailers
     )
@@ -37,20 +35,12 @@ own state:
 
 @docs Call, call
 
-
-# Adjusting a call
-
-@docs withHeaders, withTimeout, withTracker, viaBinding
-
-
-# Reading a call
-
-@docs method, descriptor, serviceName, methodName, idempotent, requestMessage, requestJson, toJson
+[`Rpc.Call`](Rpc-Call) adjusts a call and reads it back.
 
 
 # Config
 
-@docs Config, config, Transport, connect, Retry
+@docs Config, config, checkConfig
 
 
 # Sending
@@ -60,7 +50,9 @@ own state:
 
 # Tracing
 
-@docs Trace, taskTraced, sendTraced
+A traced send gives an [`Rpc.Trace`](Rpc-Trace) beside the result.
+
+@docs taskTraced, sendTraced
 
 
 # Errors
@@ -90,10 +82,19 @@ import Proto.Internal.Any
 import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
 import Proto.Message exposing (Message)
 import Proto.Method as Method exposing (Idempotency(..), Method)
+import Rpc.Body as Body exposing (Body)
+import Rpc.Call
 import Rpc.Code as Code exposing (Code)
-import Rpc.ErrorCode as ErrorCode exposing (ErrorCode)
+import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Retry as Retry
+import Rpc.Internal.Retry
+import Rpc.Internal.Trace
+import Rpc.Internal.Transport
+import Rpc.Request
+import Rpc.Response
+import Rpc.Retry exposing (Retry)
+import Rpc.Trace exposing (Trace)
+import Rpc.Transport exposing (Transport)
 import Task exposing (Task)
 import Time
 
@@ -102,21 +103,17 @@ import Time
 -- CALLS
 
 
-{-| A method applied to its request: everything needed to send it, and the
-per-call adjustments made to it. Generated code builds one per method:
+{-| A method applied to its request, as generated code builds one per method:
 
     Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
 
+It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
+(`withHeaders`, `withTimeout`, `withTracker`, `viaBinding`) and read
+(`serviceName`, `methodName`, `descriptor`, `toJson`, …).
+
 -}
-type Call req res
-    = Call
-        { method : Method req res
-        , message : req
-        , binding : Int
-        , headers : List ( String, String )
-        , timeout : Maybe Float
-        , tracker : Maybe String
-        }
+type alias Call req res =
+    Rpc.Call.Call req res
 
 
 {-| A call of a method with a request, without any adjustment. Generated code
@@ -124,7 +121,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
 
     getNote =
         Rpc.call
-            (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            (Method.method Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
                 descriptorGetNote
             )
@@ -132,7 +129,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
 -}
 call : Method req res -> req -> Call req res
 call m req =
-    Call
+    Rpc.Internal.Call.Call
         { method = m
         , message = req
         , binding = 0
@@ -143,136 +140,30 @@ call m req =
 
 
 
--- ADJUSTING A CALL
-
-
-{-| Headers to send with this call, after the config's.
--}
-withHeaders : List ( String, String ) -> Call req res -> Call req res
-withHeaders extra (Call c) =
-    Call { c | headers = c.headers ++ extra }
-
-
-{-| A timeout for this call in milliseconds, in place of the config's. One
-that is not a positive number (`0`, a negative number, NaN or infinity) is
-ignored, and the config's applies.
--}
-withTimeout : Float -> Call req res -> Call req res
-withTimeout ms (Call c) =
-    Call { c | timeout = Just ms }
-
-
-{-| A tracker for this call, so [`cancel`](#cancel) can cancel it. elm/http
-tracks commands only, so only [`send`](#send) without a [`Retry`](#Retry) policy
-uses it; the other ways of sending ignore it.
--}
-withTracker : String -> Call req res -> Call req res
-withTracker tracker (Call c) =
-    Call { c | tracker = Just tracker }
-
-
-{-| The call over another of its method's HTTP bindings, for transcoding: `0`
-is the rule's own, which a call takes unless told otherwise, and `1` and up
-its `additional_bindings` in order. `Nothing` when the method has no binding
-of that number; a method without a rule has none, and its call goes over the
-implicit route. Connect has no use for bindings and ignores the choice.
--}
-viaBinding : Int -> Call req res -> Maybe (Call req res)
-viaBinding index (Call c) =
-    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
-        Just (Call { c | binding = index })
-
-    else
-        Nothing
-
-
-
--- READING A CALL
-
-
-{-| The method the call is of.
--}
-method : Call req res -> Method req res
-method (Call c) =
-    c.method
-
-
-{-| What the proto says about the method the call is of.
--}
-descriptor : Call req res -> Method.Descriptor
-descriptor (Call c) =
-    Method.toDescriptor c.method
-
-
-{-| The fully-qualified service name, such as `notes.v1.Notes`.
--}
-serviceName : Call req res -> String
-serviceName (Call c) =
-    Method.service (Method.toDescriptor c.method)
-
-
-{-| The method name as declared, such as `GetNote`.
--}
-methodName : Call req res -> String
-methodName (Call c) =
-    Method.name (Method.toDescriptor c.method)
-
-
-{-| Whether the method has no side effects: its idempotency is
-[`IdempotencyNoSideEffects`](Proto-Method#Idempotency).
--}
-idempotent : Call req res -> Bool
-idempotent (Call c) =
-    Method.idempotency (Method.toDescriptor c.method) == IdempotencyNoSideEffects
-
-
-{-| The request the call sends.
--}
-requestMessage : Call req res -> req
-requestMessage (Call c) =
-    c.message
-
-
-{-| The request's proto3 JSON.
--}
-requestJson : Call req res -> Value
-requestJson (Call c) =
-    Method.encodeRequest c.method c.message
-
-
-{-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
-deduplication keys or a queue of calls to send later. Per-call adjustments are
-not included.
--}
-toJson : Call req res -> Value
-toJson (Call c) =
-    Json.Encode.object
-        [ ( "service", Json.Encode.string (Method.service (Method.toDescriptor c.method)) )
-        , ( "method", Json.Encode.string (Method.name (Method.toDescriptor c.method)) )
-        , ( "request", Method.encodeRequest c.method c.message )
-        ]
-
-
-
 -- CONFIG
 
 
 {-| Where and how to send calls. It is plain data, with no functions in it, so
 it can be stored in a model, compared, and built per call from an
-application's state with record syntax.
+application's state with record syntax:
 
-  - `transport`: the protocol, with its own options.
+    { config | transport = Rpc.Transport.transcode, timeout = Just 5000 }
+
+  - `transport`: the protocol, with its own options
+    ([`Rpc.Transport`](Rpc-Transport)).
   - `baseUrl`: the server, with any routing prefix (`https://api.example.com`,
     `/api`). A trailing `/` is dropped. A call's path is appended to it, so it
     can hold no query or fragment: a call sent with a `baseUrl` holding `?` or
     `#` is not sent, and fails with `Transport (Http.BadUrl url)`.
+    [`checkConfig`](#checkConfig) finds that where the config is built.
   - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
   - `timeout`: milliseconds. Connect also tells the server, in
     `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
     negative number, NaN or infinity) means no timeout, as `Nothing` does.
   - `withCredentials`: send cookies and other credentials cross-origin
     (`Http.riskyRequest`).
-  - `retry`: whether and when to try a failed call again.
+  - `retry`: whether and when to try a failed call again
+    ([`Rpc.Retry`](Rpc-Retry)).
 
 -}
 type alias Config =
@@ -290,7 +181,7 @@ timeout, no credentials cross-origin and no retries.
 -}
 config : String -> Config
 config baseUrl =
-    { transport = connect
+    { transport = Rpc.Transport.connect
     , baseUrl = baseUrl
     , headers = []
     , timeout = Nothing
@@ -299,48 +190,31 @@ config baseUrl =
     }
 
 
-{-| The protocol calls are sent over.
+{-| What is wrong with a config, one sentence each, or `[]` when nothing is:
+the problems sending would otherwise find one call at a time. Run it where the
+application builds its config, at start-up or when its settings change, and
+report what it finds there:
 
-  - `Connect`: the Connect protocol. With `useGet`, a call of a method without
-    side effects (`IdempotencyNoSideEffects`) is a GET with the request in the
-    query, which caches can serve; with `maxGetUrl`, a GET whose URL would be longer than that many characters is POSTed instead.
-  - `Transcode`: HTTP transcoding, by the method's `google.api.http` rule. A
-    method without one is called over the implicit route
-    `POST /<service>/<method>`, which grpc-gateway (`generate_unbound_methods`),
-    Envoy (`auto_mapping`) and Vanguard serve: the request Connect would POST.
+    case Rpc.checkConfig cfg of
+        [] ->
+            Ok cfg
 
--}
-type Transport
-    = Connect { useGet : Bool, maxGetUrl : Maybe Int }
-    | Transcode
+        problems ->
+            Err (String.join "; " problems)
 
-
-{-| Connect with every call POSTed, as connect-es does by default.
--}
-connect : Transport
-connect =
-    Connect { useGet = False, maxGetUrl = Nothing }
-
-
-{-| When to try a call again: when an attempt fails with an error whose
-[`code`](#code) is one of `codes`, up to `attempts` tries in all, waiting
-`backoff` milliseconds before the second and twice as long before each one
-after. With `idempotentOnly`, only calls of a method declared
-`IdempotencyNoSideEffects` or `IdempotencyIdempotent` are retried.
-
-Every error is judged by its code, so a network failure reads as
-`Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
-may have reached the server, so `DeadlineExceeded` belongs in `codes` only
-with `idempotentOnly`, or for calls that are safe to replay. A `Canceled` call
-is never retried, since it ends outside the retry loop.
+Today it finds a `baseUrl` holding a query or a fragment. A call sent with
+such a config still fails with `Transport (Http.BadUrl url)`; this finds it
+before any call is made. Later releases may find more, so the result is
+read as a list rather than matched.
 
 -}
-type alias Retry =
-    { attempts : Int
-    , backoff : Float
-    , codes : List ErrorCode
-    , idempotentOnly : Bool
-    }
+checkConfig : Config -> List String
+checkConfig cfg =
+    if badBaseUrl cfg then
+        [ "baseUrl " ++ cfg.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
+
+    else
+        []
 
 
 
@@ -357,7 +231,7 @@ task cfg c =
 {-| Send a call, giving the result to `toMsg`.
 -}
 send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
-send cfg ((Call fields) as c) toMsg =
+send cfg ((Rpc.Internal.Call.Call fields) as c) toMsg =
     if cfg.retry == Nothing && not (badBaseUrl cfg) then
         Internal.send (response cfg c) toMsg fields.tracker (request cfg c)
 
@@ -366,8 +240,8 @@ send cfg ((Call fields) as c) toMsg =
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
-([`withTracker`](#withTracker)), and report it as [`Canceled`](#Error) to the
-same `toMsg` the call was sent with.
+([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), and report it as
+[`Canceled`](#Error) to the same `toMsg` the call was sent with.
 
     Rpc.cancel "note-42" GotNote
 
@@ -381,7 +255,7 @@ ignored.
 
 Cancellation with an outcome is for `send` alone, and for a request an
 application sends itself from [`request`](#request) with the tracker on its
-`Http.request`. A call sent with a [`Retry`](#Retry) policy has no tracker,
+`Http.request`. A call sent with a [`Retry`](Rpc-Retry#Retry) policy has no tracker,
 so it is not aborted: it runs on, and its result follows the cancellation.
 The tasks, [`task`](#task) and [`taskTraced`](#taskTraced) under
 [`sendTraced`](#sendTraced), ignore the tracker; one run under
@@ -401,45 +275,10 @@ cancel tracker toMsg =
 -- TRACING
 
 
-{-| What happened when a call was sent, for logs and metrics:
-
-  - `service` and `method`: the call's.
-  - `binding`: the HTTP binding used, or `Nothing` when there was none to use.
-  - `request`: the request sent.
-  - `httpStatus`: the HTTP status of the last answer, `Nothing` when there was
-    none (a timeout, a network failure).
-  - `headers` and `trailers`: the last answer's response metadata, split by
-    [`splitTrailers`](#splitTrailers): its trailers are the headers named
-    `trailer-<name>`, as a Connect unary answer carries them, and its headers
-    the rest. Names are lowercased. A header the server sent more than once has
-    its values joined with `", "` in the order they came, which is how elm/http
-    (and the browser before it) gives them. Both are empty when there was no
-    answer.
-  - `code`: how the call ended: `Ok` when it succeeded, and `Failed` with the
-    error's [`code`](#code) when it failed, so a timeout is
-    `Failed DeadlineExceeded`.
-  - `duration`: milliseconds from before the first attempt to after the last.
-  - `attempts`: how many times it was sent, retries included.
-
--}
-type alias Trace =
-    { service : String
-    , method : String
-    , binding : Maybe Int
-    , request : Request
-    , httpStatus : Maybe Int
-    , headers : Dict String String
-    , trailers : Dict String String
-    , code : Code
-    , duration : Float
-    , attempts : Int
-    }
-
-
 {-| Send a call, and say what happened along with the result.
 -}
 taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
-taskTraced cfg ((Call fields) as c) =
+taskTraced cfg c =
     let
         sent =
             request cfg c
@@ -459,38 +298,36 @@ taskTraced cfg ((Call fields) as c) =
                                                     |> Maybe.map (.headers >> splitTrailers)
                                                     |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
                                         in
-                                        ( { service = Method.service (Method.toDescriptor fields.method)
-                                          , method = Method.name (Method.toDescriptor fields.method)
-                                          , binding =
+                                        ( Rpc.Internal.Trace.Trace
+                                            { serviceName = Rpc.Call.serviceName c
+                                            , methodName = Rpc.Call.methodName c
+                                            , transport = Rpc.Transport.name cfg.transport
+                                            , binding =
                                                 case route cfg c of
                                                     Bound index _ ->
                                                         Just index
 
                                                     _ ->
                                                         Nothing
-                                          , request = sent
-                                          , httpStatus = Maybe.map .statusCode outcome.metadata
-                                          , headers = metadata.headers
-                                          , trailers = metadata.trailers
-                                          , code = outcomeCode outcome.result
-                                          , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
-                                          , attempts = outcome.attempts
-                                          }
+                                            , request = sent
+                                            , httpStatus = Maybe.map .statusCode outcome.metadata
+                                            , headers = metadata.headers
+                                            , trailers = metadata.trailers
+                                            , code =
+                                                case outcome.result of
+                                                    Ok _ ->
+                                                        Nothing
+
+                                                    Err error ->
+                                                        Just (code error)
+                                            , duration = toFloat (Time.posixToMillis end - Time.posixToMillis start)
+                                            , attempts = outcome.attempts
+                                            }
                                         , outcome.result
                                         )
                                     )
                         )
             )
-
-
-outcomeCode : Result Error res -> Code
-outcomeCode result =
-    case result of
-        Ok _ ->
-            Code.Ok
-
-        Err error ->
-            Code.Failed (code error)
 
 
 {-| Send a call, giving what happened and the result to `toMsg`.
@@ -511,9 +348,9 @@ sendTraced cfg c toMsg =
     message, its details, and where it was found ([`Source`](#Source)), with
     the answer itself. Each detail is a message packed in an
     [`Any`](Proto-Any#Any), read with [`details`](#details) or
-    [`Proto.Any.unpack`](Proto-Any#unpack). The code is an
-    [`ErrorCode`](Rpc-ErrorCode#ErrorCode), never `Ok`: an answer claiming
-    `ok` while failing reads as `Unknown`.
+    [`Proto.Any.unpack`](Proto-Any#unpack). The code is a
+    [`Code`](Rpc-Code#Code), which has no `ok`: an answer claiming `ok` while
+    failing reads as `Unknown`.
   - `Http`: the server answered, but stated no status; [`code`](#code) infers
     one from the HTTP status.
   - `Transport`: no answer to read: a bad URL, a timeout, a network failure, or
@@ -536,14 +373,16 @@ error in a shape the runtime does not read can still be:
 
     case error of
         Http response ->
-            myDecoder response.body
+            Rpc.Body.toText response.body
+                |> Maybe.withDefault ""
+                |> myDecoder
 
         _ ->
             Err (Rpc.errorToString error)
 
 -}
 type Error
-    = Status { code : ErrorCode, message : String, details : List Any, source : Source } Response
+    = Status { code : Code, message : String, details : List Any, source : Source } Response
     | Http Response
     | Transport Http.Error
     | Canceled
@@ -568,50 +407,46 @@ type Source
     | GrpcHeaders
 
 
-{-| An answer as it arrived: its HTTP status and status text, its headers as
-elm/http gives them, and its body.
+{-| An answer as it arrived, its URL, status, status text, headers and body:
+[`Rpc.Response.Response`](Rpc-Response#Response).
 -}
 type alias Response =
-    { statusCode : Int
-    , statusText : String
-    , headers : Dict String String
-    , body : String
-    }
+    Rpc.Response.Response
 
 
 {-| An error's code. A `Status` error has the server's; an `Http` error's is
 inferred from its HTTP status by
-[`ErrorCode.fromHttpStatus`](Rpc-ErrorCode#fromHttpStatus); a `Transport`
+[`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus); a `Transport`
 error's is the one the Connect clients give it: a timeout is
 `DeadlineExceeded`, a network failure `Unavailable`, a bad URL or an
 undecodable body `Internal`; `Canceled` is `Canceled`.
 -}
-code : Error -> ErrorCode
+code : Error -> Code
 code error =
     case error of
         Status status _ ->
             status.code
 
         Http answer ->
-            ErrorCode.fromHttpStatus answer.statusCode
+            Code.fromHttpStatus answer.statusCode
 
         Transport Http.Timeout ->
-            ErrorCode.DeadlineExceeded
+            Code.DeadlineExceeded
 
         Transport Http.NetworkError ->
-            ErrorCode.Unavailable
+            Code.Unavailable
 
         Transport (Http.BadUrl _) ->
-            ErrorCode.Internal
+            Code.Internal
 
         Transport (Http.BadBody _) ->
-            ErrorCode.Internal
+            Code.Internal
 
         Transport (Http.BadStatus status) ->
-            ErrorCode.fromHttpStatus status
+            Code.fromHttpStatus status
 
         Canceled ->
-            ErrorCode.Canceled
+            Code.Canceled
 
 
 {-| An error's message: a `Status` error's as the server sent it, which may be
@@ -679,7 +514,7 @@ errorToString error =
         text =
             message error
     in
-    ErrorCode.toString (code error)
+    Code.toString (code error)
         ++ (if String.isEmpty text then
                 ""
 
@@ -714,34 +549,21 @@ details proto error =
 -- REQUESTS AND RESPONSES
 
 
-{-| An HTTP request, ready to send.
-
-elm/http has no request value of its own: `Http.request` takes a record with
-opaque headers and body and an `expect`. `Request` is the data form of that
-record without `expect` and `tracker`: headers as pairs, the body as the JSON
-string, and `withCredentials` deciding whether the runtime calls
-`Http.request` or `Http.riskyRequest`.
-
-A body is sent as `application/json`, and `timeout` is in milliseconds.
-
+{-| An HTTP request, ready to send: the data form of the record
+`Http.request` takes, [`Rpc.Request.Request`](Rpc-Request#Request).
 -}
 type alias Request =
-    { method : String
-    , url : String
-    , headers : List ( String, String )
-    , body : Maybe String
-    , timeout : Maybe Float
-    , withCredentials : Bool
-    }
+    Rpc.Request.Request
 
 
 {-| The request a call sends.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
-as its body and `Connect-Protocol-Version: 1`. With `useGet`, a call of an
+as its body and `Connect-Protocol-Version: 1`. With
+[`connectGet`](Rpc-Transport#connectGet), a call of an
 `IdempotencyNoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
-would be longer than `maxGetUrl`. A timeout is sent as `Connect-Timeout-Ms`,
+would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows. A timeout is sent as `Connect-Timeout-Ms`,
 rounded up to a whole millisecond. The config's headers come first, then the
 call's.
 
@@ -758,16 +580,16 @@ the request Connect would POST.
 request : Config -> Call req res -> Request
 request cfg c =
     case cfg.transport of
-        Connect options ->
+        Rpc.Internal.Transport.Connect options ->
             connectRequest options cfg c
 
-        Transcode ->
+        Rpc.Internal.Transport.Transcode ->
             case route cfg c of
                 Bound _ rule ->
                     transcodeRequest rule cfg c
 
                 Implicit ->
-                    connectRequest { useGet = False, maxGetUrl = Nothing } cfg c
+                    connectRequest { get = False, maxGetUrl = Nothing } cfg c
 
 
 {-| How a call is sent: over a binding of its rule (by number), or over the
@@ -779,12 +601,12 @@ type Route
 
 
 route : Config -> Call req res -> Route
-route cfg (Call fields) =
+route cfg (Rpc.Internal.Call.Call fields) =
     case cfg.transport of
-        Connect _ ->
+        Rpc.Internal.Transport.Connect _ ->
             Implicit
 
-        Transcode ->
+        Rpc.Internal.Transport.Transcode ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
             case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of
@@ -795,14 +617,14 @@ route cfg (Call fields) =
                     Implicit
 
 
-connectRequest : { useGet : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
-connectRequest options cfg ((Call fields) as c) =
+connectRequest : { get : Bool, maxGetUrl : Maybe Int } -> Config -> Call req res -> Request
+connectRequest options cfg ((Rpc.Internal.Call.Call fields) as c) =
     let
         url =
-            trimSlash cfg.baseUrl ++ "/" ++ Method.service (Method.toDescriptor fields.method) ++ "/" ++ Method.name (Method.toDescriptor fields.method)
+            trimSlash cfg.baseUrl ++ "/" ++ Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c
 
         json =
-            Json.Encode.encode 0 (requestJson c)
+            Json.Encode.encode 0 (Rpc.Call.requestJson c)
 
         timeout =
             callTimeout cfg c
@@ -828,11 +650,11 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     True
     in
-    if options.useGet && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
+    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
         { method = "GET"
         , url = getUrl
         , headers = cfg.headers ++ fields.headers ++ timeoutHeader
-        , body = Nothing
+        , body = Body.none
         , timeout = timeout
         , withCredentials = cfg.withCredentials
         }
@@ -841,7 +663,7 @@ connectRequest options cfg ((Call fields) as c) =
         { method = "POST"
         , url = url
         , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-        , body = Just json
+        , body = Body.text json
         , timeout = timeout
         , withCredentials = cfg.withCredentials
         }
@@ -850,10 +672,10 @@ connectRequest options cfg ((Call fields) as c) =
 {-| The request over one binding of a method's rule.
 -}
 transcodeRequest : Rule -> Config -> Call req res -> Request
-transcodeRequest rule cfg ((Call fields) as c) =
+transcodeRequest rule cfg ((Rpc.Internal.Call.Call fields) as c) =
     let
         json =
-            requestJson c
+            Rpc.Call.requestJson c
 
         path =
             List.map (pathSegment json) rule.path
@@ -989,20 +811,20 @@ scalarText value =
         |> Result.withDefault Nothing
 
 
-bindingBody : Rule -> Value -> Maybe String
+bindingBody : Rule -> Value -> Body
 bindingBody rule json =
     case rule.body of
         NoBody ->
-            Nothing
+            Body.none
 
         WholeBody ->
-            Just (Json.Encode.encode 0 (List.foldl remove json (variables rule.path)))
+            Body.text (Json.Encode.encode 0 (List.foldl remove json (variables rule.path)))
 
         BodyField key ->
             lookup [ key ] json
                 |> Maybe.withDefault (Json.Encode.object [])
                 |> Json.Encode.encode 0
-                |> Just
+                |> Body.text
 
 
 variables : List Segment -> List (List String)
@@ -1048,7 +870,7 @@ remove fieldPath json =
 
 
 callTimeout : Config -> Call req res -> Maybe Float
-callTimeout cfg (Call fields) =
+callTimeout cfg (Rpc.Internal.Call.Call fields) =
     case usableTimeout fields.timeout of
         Just ms ->
             Just ms
@@ -1107,21 +929,21 @@ body reading as `{}`, and the response decoded from the field the binding's
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg ((Call fields) as c) answer =
+response cfg ((Rpc.Internal.Call.Call fields) as c) answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             case ( cfg.transport, route cfg c ) of
-                ( Connect _, _ ) ->
+                ( Rpc.Internal.Transport.Connect _, _ ) ->
                     if metadata.statusCode == 200 then
                         decodeBody (Method.responseDecoder fields.method) raw
 
                     else
                         Err (failure metadata raw)
 
-                ( Transcode, Bound _ rule ) ->
+                ( Rpc.Internal.Transport.Transcode, Bound _ rule ) ->
                     decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) (orEmptyObject raw)
 
-                ( Transcode, Implicit ) ->
+                ( Rpc.Internal.Transport.Transcode, Implicit ) ->
                     decodeBody (Method.responseDecoder fields.method) (orEmptyObject raw)
 
         Http.BadStatus_ metadata raw ->
@@ -1189,7 +1011,7 @@ have the prefix removed:
            , trailers = Dict.fromList [ ( "x-custom-trailer", "done" ) ]
            }
 
-[`Trace`](#Trace) splits its answer's headers so; this is for the
+[`Trace`](Rpc-Trace#Trace) splits its answer's headers so; this is for the
 `Http.Metadata` of an answer read through [`request`](#request) and
 [`response`](#response). elm/http gives a header the server sent more than once
 as one value, the values joined with `", "` in the order they came; were two
@@ -1249,8 +1071,9 @@ attempt cfg c sent =
                 |> Task.andThen
                     (\( metadata, result ) ->
                         case retryDelay cfg c tried result of
-                            Just wait ->
-                                Process.sleep wait
+                            Just ( policy, bound ) ->
+                                Time.now
+                                    |> Task.andThen (\now -> Process.sleep (Rpc.Internal.Retry.jitter policy (Time.posixToMillis now) tried bound))
                                     |> Task.andThen (\_ -> loop (tried + 1))
 
                             Nothing ->
@@ -1260,11 +1083,15 @@ attempt cfg c sent =
     loop 1
 
 
-retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe Float
-retryDelay cfg (Call fields) tried result =
+{-| The config's policy and the bound on the wait before trying again, or
+`Nothing` to stop.
+-}
+retryDelay : Config -> Call req res -> Int -> Result Error res -> Maybe ( Retry, Float )
+retryDelay cfg c tried result =
     case ( cfg.retry, result ) of
         ( Just policy, Err error ) ->
-            Retry.delay policy (Method.idempotency (Method.toDescriptor fields.method)) tried (code error)
+            Rpc.Internal.Retry.delay policy (Rpc.Call.idempotency c) tried (code error)
+                |> Maybe.map (Tuple.pair policy)
 
         _ ->
             Nothing
@@ -1279,10 +1106,11 @@ failure : Http.Metadata -> String -> Error
 failure metadata raw =
     let
         answer =
-            { statusCode = metadata.statusCode
+            { url = metadata.url
+            , statusCode = metadata.statusCode
             , statusText = metadata.statusText
             , headers = metadata.headers
-            , body = raw
+            , body = Body.text raw
             }
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
@@ -1321,12 +1149,12 @@ header key metadata =
 {-| A `Status` error as read, before the answer is attached.
 -}
 type alias Read =
-    { code : ErrorCode, message : String, details : List Any, source : Source }
+    { code : Code, message : String, details : List Any, source : Source }
 
 
-fromGrpc : Int -> ErrorCode
+fromGrpc : Int -> Code
 fromGrpc number =
-    ErrorCode.fromInt number |> Maybe.withDefault ErrorCode.Unknown
+    Code.fromInt number |> Maybe.withDefault Code.Unknown
 
 
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
@@ -1347,7 +1175,7 @@ connectBody : Decoder Read
 connectBody =
     Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
-            |> Json.Decode.map (ErrorCode.fromString >> Maybe.withDefault ErrorCode.Unknown)
+            |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
         )
         (optional "message" Json.Decode.string "")
         (optional "details" detailList [])
