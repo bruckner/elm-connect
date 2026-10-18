@@ -1,11 +1,8 @@
-module Proto.DescriptorTest exposing (suite)
+module Proto.MessageTest exposing (suite)
 
 import Expect
-import Proto.Enum as Enum
-import Proto.EnumValue as EnumValue
 import Proto.Field as Field exposing (Behavior(..), Cardinality(..), Kind(..), Scalar(..))
 import Proto.Message as Message
-import Proto.Method as Method exposing (Idempotency(..))
 import Test exposing (Test, describe, test)
 
 
@@ -28,7 +25,7 @@ event =
 
 suite : Test
 suite =
-    describe "descriptors"
+    describe "Proto.Message"
         [ test "a message's oneofs are the ones its fields name, in order of first appearance" <|
             \_ ->
                 ( Message.typeName event, Message.oneofs event, List.map Field.oneof (Message.fields event) )
@@ -45,31 +42,4 @@ suite =
                         , ( ( "link", "link", 4 ), ( CardinalitySingular, KindScalar ScalarString ), ( [], False ) )
                         , ( ( "create_time", "createTime", 5 ), ( CardinalitySingular, KindMessage "google.protobuf.Timestamp" ), ( [ BehaviorOutputOnly, BehaviorImmutable ], True ) )
                         ]
-        , test "an enum's values, aliases and deprecation included" <|
-            \_ ->
-                let
-                    level =
-                        Enum.descriptor "t.v1.Level"
-                            [ EnumValue.descriptor "LEVEL_UNSPECIFIED" 0
-                            , EnumValue.descriptor "LEVEL_HIGH" 1
-                            , EnumValue.descriptor "LEVEL_URGENT" 1 |> EnumValue.withDeprecated
-                            ]
-                in
-                ( Enum.typeName level
-                , Enum.values level |> List.map (\v -> ( EnumValue.name v, EnumValue.number v, EnumValue.deprecated v ))
-                )
-                    |> Expect.equal
-                        ( "t.v1.Level"
-                        , [ ( "LEVEL_UNSPECIFIED", 0, False ), ( "LEVEL_HIGH", 1, False ), ( "LEVEL_URGENT", 1, True ) ]
-                        )
-        , test "a method reads back what built it" <|
-            \_ ->
-                let
-                    get =
-                        Method.descriptor "t.v1.Events" "Get" IdempotencyIdempotent "t.v1.GetRequest" "t.v1.Event" []
-                in
-                ( ( Method.service get, Method.name get, Method.idempotency get )
-                , ( Method.input get, Method.output get, List.length (Method.bindings get) )
-                )
-                    |> Expect.equal ( ( "t.v1.Events", "Get", IdempotencyIdempotent ), ( "t.v1.GetRequest", "t.v1.Event", 0 ) )
         ]

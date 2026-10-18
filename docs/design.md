@@ -291,11 +291,6 @@ rpc shared call =
   functions that make them stay in `Rpc`, because they take a `Config`
   and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
   reads an answer into the errors that keep a `Response`.
-  The first opaque layout defined each descriptor type three times,
-  parameterised in an internal module and aliased in a builder module
-  and a reader module; the second gave each descriptor type and each
-  union a module of its own under `Proto.Descriptor`, which put a
-  concept's typed value and its descriptor in different trees.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
