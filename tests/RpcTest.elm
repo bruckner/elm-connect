@@ -133,7 +133,7 @@ withoutResponse =
 
 blank : Rpc.Response
 blank =
-    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = "" }
+    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.text "" }
 
 
 httpError : Int -> String -> Error
@@ -595,7 +595,7 @@ keptResponses =
                     (\error ->
                         let
                             kept got =
-                                ( got.statusCode, Dict.get "x-request-id" got.headers, got.body )
+                                ( got.statusCode, Dict.get "x-request-id" got.headers, Maybe.withDefault "" (Rpc.Body.toText got.body) )
                         in
                         case error of
                             Status r got ->
@@ -641,7 +641,7 @@ keptResponses =
                         (\error ->
                             case error of
                                 Http got ->
-                                    Just ( got.statusCode, got.statusText, got.body )
+                                    Just ( got.statusCode, got.statusText, Maybe.withDefault "" (Rpc.Body.toText got.body) )
 
                                 _ ->
                                     Nothing

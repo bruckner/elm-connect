@@ -1,7 +1,8 @@
 module Rpc.Body exposing (Body, none, text, toText)
 
-{-| The body of an [`Rpc.Request`](Rpc#Request): none, or the request's
-JSON as text, sent as `application/json`.
+{-| The body of an [`Rpc.Request`](Rpc#Request) or an
+[`Rpc.Response`](Rpc#Response): none, or text, a request's JSON sent as
+`application/json` or an answer's body as it arrived.
 
     Rpc.Body.toText request.body == Just "{\"name\":\"notes/42\"}"
 
@@ -10,7 +11,7 @@ JSON as text, sent as `application/json`.
 -}
 
 
-{-| A request body. It is opaque: make one with [`none`](#none) or
+{-| A body. It is opaque: make one with [`none`](#none) or
 [`text`](#text) and read it with [`toText`](#toText).
 -}
 type Body
@@ -25,7 +26,8 @@ none =
     None
 
 
-{-| A body of text, sent as `application/json`.
+{-| A body of text: a request's is sent as `application/json`, an answer's is
+what arrived, empty when the server sent none.
 -}
 text : String -> Body
 text =

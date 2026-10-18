@@ -676,9 +676,9 @@ tag (design §8).
   and `toString` (one log line, without the request). The record fields
   `service` and `method` are now `serviceName` and `methodName`, as on a
   call.
-- `Rpc.Request`'s `body` is an opaque `Rpc.Body` (`Rpc.Body.none`,
-  `text`, read by `toText`) in place of `Maybe String`, so a body of
-  bytes can be added in a minor.
+- `Rpc.Request`'s and `Rpc.Response`'s `body` are an opaque `Rpc.Body`
+  (`Rpc.Body.none`, `text`, read by `toText`) in place of `Maybe String`
+  and `String`, so a body of bytes can be added in a minor.
 - `Rpc.Config`, `Rpc.Request` and `Rpc.Response` are frozen records
   (design §8.3): a new option goes on `Transport`, `Retry` or `Call`,
   or on a future `Rpc.Client`, never into `Config`.

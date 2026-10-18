@@ -373,7 +373,9 @@ error in a shape the runtime does not read can still be:
 
     case error of
         Http response ->
-            myDecoder response.body
+            Rpc.Body.toText response.body
+                |> Maybe.withDefault ""
+                |> myDecoder
 
         _ ->
             Err (Rpc.errorToString error)
@@ -1108,7 +1110,7 @@ failure metadata raw =
             , statusCode = metadata.statusCode
             , statusText = metadata.statusText
             , headers = metadata.headers
-            , body = raw
+            , body = Body.text raw
             }
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of

@@ -365,7 +365,7 @@ viewError error =
                 [ h2 [] [ text (Rpc.Code.toString (Rpc.code error)) ]
                 , p [] [ text (Rpc.message error) ]
                 , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
-                , pre [] [ text answer.body ]
+                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 
         Rpc.Transport _ ->

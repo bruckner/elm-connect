@@ -314,7 +314,7 @@ encodeResponse_ answer =
     Encode.object
         [ ( "statusCode", Encode.int answer.statusCode )
         , ( "statusText", Encode.string answer.statusText )
-        , ( "body", Encode.string answer.body )
+        , ( "body", Encode.string (Maybe.withDefault "" (Rpc.Body.toText answer.body)) )
         ]
 
 

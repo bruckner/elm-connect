@@ -1636,7 +1636,7 @@ type alias Request =
     , body : Rpc.Body.Body, timeout : Maybe Float, withCredentials : Bool }
 type alias Response =
     { url : String, statusCode : Int, statusText : String
-    , headers : Dict String String, body : String }
+    , headers : Dict String String, body : Rpc.Body.Body }
 
 -- Rpc.Call
 type Call req res      -- opaque: method, request, binding, per-call adjustments
@@ -1931,7 +1931,7 @@ type Source
 -- Rpc.Response.Response, which Rpc aliases
 type alias Response =           -- elm/http's Http.Metadata, and the body; frozen (§8.3)
     { url : String, statusCode : Int, statusText : String
-    , headers : Dict String String, body : String }
+    , headers : Dict String String, body : Body }
 
 code : Error -> Rpc.Code.Code   -- Http: by Connect's table; Transport, Canceled: as below
 message : Error -> String
@@ -1992,7 +1992,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   status text and the headers as elm/http's `Http.Metadata` gives
   them, and the body, whichever reader
   recognised it, so an application can parse what the readers do not
-  (`Http response -> myDecoder response.body`). Some servers cannot be
+  (`Http response -> Rpc.Body.toText response.body`). Some servers cannot be
   changed to answer in a standard shape, and when the readers fall
   through to the status table the body that said more was otherwise
   lost. Reading the answer with the pure halves (§5.2) would work too,
