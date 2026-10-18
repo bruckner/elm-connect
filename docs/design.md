@@ -231,6 +231,10 @@ config =
 Notes.getNote { name = "notes/42" } |> Rpc.task config
     : Task Rpc.Error Note
 
+-- the same, as a command giving GotNote the result
+Notes.getNote { name = "notes/42" } |> Rpc.send config GotNote
+    : Cmd Msg
+
 -- GET https://api.example.com/v1/notes/42
 Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transport.transcode }
 
@@ -1570,14 +1574,30 @@ it.
   1 ms or the maximum.
 - A call's path is appended to `baseUrl`, so a `baseUrl` holding `?`
   or `#` would put it in the query or fragment. Such a call is not
-  sent: every way of sending fails it with `Transport (Http.BadUrl
-  url)`, the URL it would have used. The pure `Rpc.request` still
+  sent: every way of sending fails it with `NoAnswer (BadUrl url)`,
+  the URL it would have used, and it is never retried. The pure `Rpc.request` still
   builds that URL, since it has no error to give. `Rpc.checkConfig`
   reports it where the application builds its config, at start-up or
   when its settings change, rather than at the first call: a pure
   `Config -> List String`, empty when nothing is wrong, read as a list
-  so later releases can report more (invalid header values among
-  them). *(Decided, 2026-10-16.)*
+  so later releases can report more. It reports invalid config headers
+  too (below), each by name, its value left out since it may be a
+  credential. *(Decided, 2026-10-16.)*
+- A header a browser refuses is never handed to elm/http: a name that is
+  not an RFC 9110 token, or a value that, once the spaces and tabs at
+  either end are trimmed, holds NUL, CR or LF or a character above
+  U+00FF (XHR's values are byte strings). XHR's `setRequestHeader`
+  throws on such a header, and elm/http calls it outside any handler,
+  inside the scheduler's step, so one bad value (a token with a
+  newline, a display name in CJK) stopped every Elm process for good:
+  no HTTP, no ports, no timers. Every way of sending (`send`,
+  `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
+  config's and the call's headers first, and a call with one fails
+  with `NoAnswer (InvalidHeader name)`, nothing sent and never retried
+  (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
+  never altered to fit: a changed credential would fail later and less
+  clearly. The pure `Rpc.request` still builds the request, which has
+  no error to give. *(Decided, 2026-10-16.)*
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
   code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
@@ -1610,12 +1630,12 @@ The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 *(Decided, 2026-10-13.)* `Rpc` is the one module that sends, beside a
 module per type it takes or gives: `Rpc.Call` (below),
 `Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body`,
-`Rpc.Request`, `Rpc.Response` and `Rpc.Code` (§5.4). The first five
-are opaque. `Call`, `Transport`, `Retry` and `Trace` have their
-constructors in `Rpc.Internal.*` (where the rest of the internals live)
-so that `Rpc` can build or read them and users cannot, and each public
-module names its type by an alias; `Body`, which no other module builds
-or matches, is defined in `Rpc.Body` (§3.1, rule 4). `Request` and
+`Rpc.Request`, `Rpc.Response`, `Rpc.Error` and `Rpc.Code` (§5.4). The
+first five are opaque. `Call`, `Transport`, `Retry` and `Trace` have
+their constructors in `Rpc.Internal.*` (where the rest of the internals
+live) so that `Rpc` can build or read them and users cannot, and each
+public module names its type by an alias; `Body`, which no other module
+builds or matches, is defined in `Rpc.Body` (§3.1, rule 4). `Request` and
 `Response` are frozen records, each declared once in its module so
 that `Rpc`, `Rpc.Trace` and the internals share it without an import
 cycle (§3.1, rule 5); `Rpc` aliases both, so `Rpc.Request` and
@@ -1660,10 +1680,10 @@ call : Proto.Method.Method req res -> req -> Call req res
 
 -- sending
 task : Config -> Call req res -> Task Error res
-send : Config -> Call req res -> (Result Error res -> msg) -> Cmd msg
+send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
 taskTraced : Config -> Call req res -> Task Never ( Rpc.Trace.Trace, Result Error res )
-sendTraced : Config -> Call req res -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Cmd msg
-cancel : String -> (Result Error res -> msg) -> Cmd msg                  -- by tracker; reports Canceled
+sendTraced : Config -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
+cancel : String -> Cmd msg                                              -- Http.cancel by tracker; reports nothing
 
 -- pure halves
 type alias Request = Rpc.Request.Request
@@ -1717,33 +1737,53 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
+- `send` and `sendTraced` take the message before the call, as
+  `Task.attempt` and `Http.expectJson` take theirs before the data, so
+  a call pipes into them as into `task`: `Notes.getNote req |> Rpc.send
+  config GotNote`. *(Decided, 2026-10-16.)* They took the call first
+  until then, which needed parentheses around every call.
 - `send` without a retry policy is one `Http.request`, carrying the
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and
   retrying needs a task. The traced forms are tasks too.
-- `cancel tracker toMsg` is `Http.cancel tracker` batched with a
-  command giving `toMsg` the error `Canceled` (§5.4). elm/http cancels
-  by killing the process that runs the request, which aborts it and
-  delivers no message, and a package outside `elm/` cannot define an
-  effect manager to intercept that, so the outcome is synthesised in
-  the same command. Once the request is aborted no result can follow;
-  the one race is an answer whose message was queued before the
-  cancel ran, which the application sees before the cancellation and
-  is told to keep, ignoring a cancellation that follows a result. It
-  is for `send` alone, and for a request the application sends itself
-  from `request` with the tracker on its `Http.request`: a call sent
-  with a retry policy has no tracker and runs on, and the tasks
-  (`task`, and `taskTraced` under `sendTraced`) ignore the tracker;
-  one killed with `Process.kill` reports nothing and has no trace, its
-  attempts and duration ending with the process. *(Decided, 2026-10-15.)*
+- `cancel tracker` is `Http.cancel tracker`, and a cancelled call
+  reports nothing, as elm/http's requests do: elm/http cancels by
+  killing the process that runs the request, which aborts it and
+  delivers no message. An application that cancels knows it did, and
+  records it where it cancels, in its model or with a message it
+  batches itself (`Cmd.batch [ Rpc.cancel "note-42", Task.perform
+  identity (Task.succeed (Withdrew "note-42")) ]`). One race remains:
+  an answer whose message was queued before the cancel ran is still
+  delivered, so the application ignores, by its tracker or a request id
+  of its own, a result for a call it withdrew. It is for `send`
+  without a retry policy, and for a request the application sends
+  itself from `request` with the tracker on its `Http.request`: a call
+  sent with a retry policy has no tracker and cannot be cancelled, and
+  the tasks (`task`, and `taskTraced` under `sendTraced`) ignore the
+  tracker; one killed with `Process.kill` reports nothing and has no
+  trace, its attempts and duration ending with the process.
+  *(Decided, 2026-10-16.)* It was plain `Http.cancel` when decided on
+  2026-10-13; on 2026-10-15 it took the call's `toMsg` and reported a
+  synthetic `Canceled` error, so the application would see every call
+  end exactly once. Review found that outcome wrong both ways: it was
+  reported when nothing was in flight (a cancel after the answer, or
+  of a tracker never used), and beside a retry policy, which drops the
+  tracker, the call reported `Canceled` and then its real result.
+  Unary cancellation is rare, and an application that cancels holds
+  the locus of control to say so itself, so the runtime no longer
+  guesses. The exactly-once form is a later, additive design: a
+  model-held state machine (`Rpc.Pending` stepped by an `update`) that
+  owns the retry loop, so a retried call is cancellable and every call
+  reports one outcome; a streaming transport would need the same
+  machine, and would share it.
 - `Rpc.Trace` is opaque, made only by the runtime and read by
   accessors: `serviceName` and `methodName` (as a call's are named),
   `transport` (`Rpc.Transport.name` of the config's), `binding`
   (`Nothing` when none was used: Connect, the implicit route),
-  `request`, `httpStatus` (the last answer's, `Nothing` on a transport
-  failure), `headers` and `trailers` (its response metadata as
+  `request`, `httpStatus` (the last answer's, `Nothing` when none
+  came), `headers` and `trailers` (its response metadata as
   `splitTrailers` divides it, both empty when there was no answer),
-  `code` (`Rpc.code` of the error the call ended with, `Nothing` on
+  `code` (`Rpc.Error.code` of the error the call ended with, `Nothing` on
   success, so a timeout is `Just DeadlineExceeded`), `duration`
   (milliseconds by `Time.now` before the first attempt and after the
   last) and `attempts`. `toJson` gives every field under stable keys
@@ -1783,8 +1823,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `sendTraced`. `taskFromRequest` with a rewritten request is not run
   yet. `cancel` is run by both: the suite's cancellation test cancels
   calls sent through the halves (the tracker on `Http.request`), and a
-  smoke case one sent with `send`; each is aborted and reported
-  `Canceled` (2026-10-15).
+  smoke case one sent with `send`; each is aborted, and the runner
+  reports the cancellation it recorded itself, as an application
+  does (2026-10-16).
 - The pure halves and the traced forms give the application an
   answer's headers and trailers; `task` and `send` give the response or
   the error and nothing more. The conformance suite's tests of response
@@ -1811,7 +1852,7 @@ all 40 passing.
   millisecond, between 1 and 9,999,999,999 (ten digits); a timeout that
   is not a positive number sends none (§5.1).
 - Success is status 200 with a body the response decoder accepts; a 200
-  whose body it rejects is `Transport (Http.BadBody _)`. Any other
+  whose body it rejects is `BadResponse problem answer`. Any other
   answer is read as an error (§5.4).
 - Bindings are carried on the call and ignored, `viaBinding` too:
   Connect has one route per method.
@@ -1859,6 +1900,15 @@ default, and is `Nothing` for a number the method has no binding of
   unreserved characters); a variable matching one segment (`{name}`,
   `{name=*}`) escapes `/` as `%2F`, any other keeps it. A wildcard
   outside a variable never reaches the runtime (`route::template`).
+- A binding's literal segments and custom verb are written as RFC 3986
+  `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they
+  are, a `%` followed by two hex digits kept as an escape (never
+  encoded twice), and every other byte percent-encoded. The generator
+  already refuses a literal or verb outside that set, so generated
+  bindings are written unchanged; this is a second line of defence for
+  a binding built by hand with `Proto.Http.literal`, which could
+  otherwise end the path with `#` or start a query with `?`.
+  *(Decided, 2026-10-16.)*
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
   field's proto3 default, which the generator writes into the binding
@@ -1900,7 +1950,7 @@ default, and is `Nothing` for a number the method has no binding of
   `ListValue` and `Any`, and a message that contains itself. `Empty` carries
   nothing and has no parameter.
 
-### 5.4 Errors  *(Decided, 2026-10-13; built)*
+### 5.4 Errors  *(Decided, 2026-10-13; built; reshaped 2026-10-16)*
 
 Every source is read from a live answer by the live suite (§7): a
 Connect body and a `google.rpc.Status` body, each with details read
@@ -1911,32 +1961,37 @@ Connect body, with its message (Unicode included) and details, and
 is not met: connect-go, the suite's reference server, always sends it.
 
 ```elm
+-- Rpc.Error; Rpc aliases the type (type alias Error = Rpc.Error.Error)
 type Error
-    = Status                    -- the server stated a status
-        { code : Rpc.Code.Code
-        , message : String
-        , details : List Proto.Any.Any
-        , source : Source
-        }
-        Response
-    | Http Response             -- it answered, but stated none
-    | Transport Http.Error      -- bad URL, timeout, network, undecodable success
-    | Canceled                  -- the application withdrew the call (Rpc.cancel)
+    = RpcStatus StatusError Response    -- the server stated an RPC status
+    | HttpStatus Response               -- it answered with a failure and stated none
+    | BadResponse String Response       -- it answered 2xx and the body did not decode (the problem)
+    | NoAnswer Reason                   -- nothing came back, or nothing was sent
+
+type Reason                             -- frozen (§8.3)
+    = Timeout | NetworkError | BadUrl String | InvalidHeader String
+
+type alias StatusError =                -- frozen (§8.3)
+    { code : Rpc.Code.Code
+    , message : String
+    , details : List Proto.Any.Any
+    , source : Source
+    }
 
 type Source
-    = ConnectBody               -- {"code": "not_found", …}
-    | StatusBody                -- google.rpc.Status, {"code": 5, …}
-    | GrpcHeaders               -- grpc-status / grpc-message headers
+    = ConnectBody                       -- {"code": "not_found", …}
+    | StatusBody                        -- google.rpc.Status, {"code": 5, …}
+    | GrpcHeaders                       -- grpc-status / grpc-message headers
 
--- Rpc.Response.Response, which Rpc aliases
-type alias Response =           -- elm/http's Http.Metadata, and the body; frozen (§8.3)
-    { url : String, statusCode : Int, statusText : String
-    , headers : Dict String String, body : Body }
-
-code : Error -> Rpc.Code.Code   -- Http: by Connect's table; Transport, Canceled: as below
+code : Error -> Rpc.Code.Code           -- see below
 message : Error -> String
 details : Proto.Message.Message a -> Error -> List a
-errorToString : Error -> String -- "<code>: <message>", or "<code>" when the message is empty
+toString : Error -> String              -- "<code>: <message>", or "<code>" when the message is empty
+
+-- Rpc.Response.Response, which Rpc aliases
+type alias Response =                   -- elm/http's Http.Metadata, and the body; frozen (§8.3)
+    { url : String, statusCode : Int, statusText : String
+    , headers : Dict String String, body : Body }
 ```
 
 ```elm
@@ -1974,7 +2029,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   information without making every caller handle two types, and a
   server behind a transcoder can answer in either form.
 - A failed answer is read by one reader whatever the transport, in
-  order, and is a `Status` error when one of three readers finds a
+  order, and is an `RpcStatus` error when one of three readers finds a
   status: a Connect error body (`code` a string the protocol names; an
   unknown name reads as `Unknown`; `message` `""` and `details` `[]`
   when absent); a `google.rpc.Status` body as grpc-gateway and Envoy
@@ -1984,24 +2039,24 @@ two types shared one module, the helpers for `Code` prefixed.)
   message percent-decoded, the status text when absent). The shape of
   `code` tells the two bodies apart, so a server behind either
   transport may answer in either form. An answer none of them reads is
-  an `Http` error: `code` infers its code from the HTTP status by the
+  an `HttpStatus` error: `code` infers its code from the HTTP status by the
   protocol's table, `message` is the status text (`HTTP <status>` when
   empty), and it has no details.
-- `Status` and `Http` errors keep the answer they were read from, a
+- Every error that had an answer keeps it, a
   `Response`: the URL it came from (after any redirect), the status and
   status text and the headers as elm/http's `Http.Metadata` gives
   them, and the body, whichever reader
   recognised it, so an application can parse what the readers do not
-  (`Http response -> Rpc.Body.toText response.body`). Some servers cannot be
+  (`HttpStatus response -> Rpc.Body.toText response.body`). Some servers cannot be
   changed to answer in a standard shape, and when the readers fall
   through to the status table the body that said more was otherwise
   lost. Reading the answer with the pure halves (§5.2) would work too,
   but gives up the retry loop. A custom reader passed to the config as
   a function is the possible next step, deferred until a second
-  application asks for it. A `Transport` error has no answer.
-  *(Decided, 2026-10-15.)*
+  application asks for it. *(Decided, 2026-10-15; `BadResponse`
+  2026-10-16.)*
 - A constructor per kind of error, and `code` and `message` for the
-  common path (`case Rpc.code error of Unauthenticated -> …`).
+  common path (`case Rpc.Error.code error of Unauthenticated -> …`).
   *(Decided, 2026-10-15.)* The answer was first kept on one flat
   `Rpc` record beside `source`, whose `HttpStatus Int` marked an
   inferred code, until review found it bought nothing: Elm's record
@@ -2015,27 +2070,55 @@ two types shared one module, the helpers for `Code` prefixed.)
   details }` alias wrapped in the constructor was rejected, since
   `google.rpc.Status` generated from googleapis is already a
   `Google.Rpc.Status` record with `code : Int`, and two `Status`
-  records with different code types would confuse.
-- Every error has a code, a `Transport` error the one the Connect
-  clients give it: a timeout is `DeadlineExceeded`, a network failure
-  `Unavailable`, a bad URL or an undecodable success `Internal` (and
-  `Http.BadStatus n`, which the runtime never produces, `n` by the
-  status table). This settles whether a client timeout reads as
+  records with different code types would confuse; the record is
+  `StatusError` now, its constructor `RpcStatus`, which says the same
+  thing without the clash.
+- The errors and their readers are a module of their own, `Rpc.Error`,
+  as each type has its module (§5.2); `Rpc` keeps the alias `Error`
+  so annotations naming `Rpc.Error` compile, and the readers are
+  `Rpc.Error.code`, `message`, `details` and `toString` (which was
+  `Rpc.errorToString`). *(Decided, 2026-10-16.)*
+- Every error has a code, the one the Connect clients give it when the
+  server stated none: an `HttpStatus` error's by the status table, a
+  `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
+  `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
+  `InvalidHeader` `Internal`. This settles whether a client timeout reads as
   `DeadlineExceeded`: through `code` it does, while the constructor
-  still says no answer came. `message` gives a `Transport` error's
-  description (`timeout`, `network error`, `bad URL: <url>`,
-  `bad response body: <problem>`), and `errorToString` is the code and
-  the message for all of them. *(Decided, 2026-10-15.)* elm/json's
-  problem quotes the JSON it rejected, which can be the whole response,
-  so the message keeps the first 300 characters of it and `…`; the
-  whole problem stays in the `Http.BadBody`.
-- `Canceled` is the outcome of a call the application withdrew with
-  `Rpc.cancel` (§5.2): nothing the server said counts. It is not a
-  `Transport` error, since elm/http has no `Http.Error` for it, and not
-  a `Status`, since the server did not state it. Its code is
-  `Canceled`, its message empty (so `errorToString` gives `canceled`)
-  and it has no details. The retry loop never sees it: it is made
-  outside the task. *(Decided, 2026-10-15.)*
+  still says no answer came. `message` gives a description for those
+  (`timeout`, `network error`, `bad URL: <url>`, `invalid header
+  "<name>"`, `bad response body: <problem>`), and `toString` is the code and the message for all of
+  them. elm/json's problem quotes the JSON it rejected, which can be
+  the whole response, so the message keeps the first 300 characters of
+  it and `…`; the whole problem stays in the error. A bad URL is
+  printed without the `user:password@` a URL can carry and without its
+  query and fragment, which over Connect's GET hold the request
+  (`bad URL: https://api.example.com/base (query omitted)`); the whole
+  URL stays in the error. *(Decided, 2026-10-15; the URL's printing
+  2026-10-16.)*
+- `Reason` and `StatusError` are frozen (§8.3): every failure a browser
+  request can have before an answer is one of the reasons, and a later
+  kind of failure that arrives with an answer (a malformed stream
+  envelope, a failed decompression) is a `BadResponse`, whose problem
+  says what. A bad URL and an invalid header are never retried,
+  whatever the policy's codes: nothing was sent, and nothing would
+  change. `InvalidHeader` has its home here rather than in a
+  constructor of its own beside `NoAnswer`, since it is one more reason
+  nothing was sent (§5.1). *(Decided, 2026-10-16.)*
+- The shape until 2026-10-16 was `Status { code, message, details,
+  source } Response | Http Response | Transport Http.Error | Canceled`
+  (2026-10-15). Review found three of the four names clashing:
+  `Transport` with the `Rpc.Transport` type and module (`Rpc.Transport
+  _ ->` beside `transport = Rpc.Transport.transcode`), `Canceled` with
+  `Rpc.Code.Canceled` in every module exposing both, `Http` with the
+  `Http` module. `Transport Http.Error` put elm/http's type in the API,
+  so an elm/http major would have forced one here, and it let user code
+  match `Http.BadStatus`, which the runtime never produced. And a 2xx
+  whose body did not decode was `Transport (Http.BadBody _)`, which
+  dropped the answer, the status and body a developer most needs when a
+  schema drifts. So the constructors say what came back (`RpcStatus`,
+  `HttpStatus`, `BadResponse`, `NoAnswer`), the runtime maps elm/http's
+  errors to its own `Reason`, and `BadResponse` keeps the answer.
+  `Canceled` went with the synthetic cancel outcome (§5.2).
 - Error details are `Proto.Any.Any` values (§3.5). *(Decided,
   2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64
@@ -2046,9 +2129,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   form first; one in neither form is left out rather than losing the
   error's code and message with it. They were raw JSON values first,
   until `Any` was designed.
-- `Rpc.details : Proto.Message.Message a -> Error -> List a` gives the
-  details that are of that type and decode, in order; an `Http` or
-  `Transport` error has none. A binary-only detail never decodes: details meant for
+- `Rpc.Error.details : Proto.Message.Message a -> Error -> List a` gives
+  the details that are of that type and decode, in order; only an
+  `RpcStatus` error has any. A binary-only detail never decodes: details meant for
   this client need their JSON on the wire, as `debug` in a Connect body
   or, as always, in a `google.rpc.Status` body.
 
@@ -2305,14 +2388,15 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   way, lists none.
 - Cancellation is live: `Client Cancellation/unary/cancel-after-close-send`
   becomes an envelope with `cancelAfterMs`, the runner sends the call
-  under a tracker and issues `Rpc.cancel` that long after, and reports
-  whichever outcome comes first, so the race of §5.2 is reported once.
+  under a tracker and issues `Rpc.cancel` that long after, records the
+  cancellation itself as an application does, and reports whichever
+  outcome comes first, so the race of §5.2 is reported once.
   The smoke case `connect cancel` does the same through `send`, and
   asserts the exchange was aborted.
 - Known failing through `sendTraced` only (`known-failing-send.txt`):
   `cancel-after-close-send`: `sendTraced` and `task` ignore the tracker,
-  so the runner refuses to cancel a call sent so rather than report
-  `Canceled` while it runs on. `Basic/unary/success`, `Connect with
+  so the runner refuses to cancel a call sent so rather than report it
+  cancelled while it runs on. `Basic/unary/success`, `Connect with
   GET/success`, `Duplicate Metadata/unary/success` and `unary/error`, and
   `Errors/unary/error-with-metadata` assert the answer's headers and
   trailers; they failed through `sendTraced` until the `Trace` carried
@@ -2577,15 +2661,18 @@ Within a major version:
   runtime gives, `Rpc.Transport.Transport`, `Rpc.Retry.Retry`,
   `Rpc.Trace.Trace` and `Rpc.Body.Body`. The records an application
   builds or reads with record syntax are frozen within a major:
-  `Rpc.Config`, `Rpc.Request.Request` and `Rpc.Response.Response`
-  (which `Rpc` also names `Rpc.Request` and `Rpc.Response`). A new
+  `Rpc.Config`, `Rpc.Request.Request`, `Rpc.Response.Response`
+  (which `Rpc` also names `Rpc.Request` and `Rpc.Response`) and
+  `Rpc.Error.StatusError`. A new
   config knob goes where §5.1 routes it (a protocol's on `Transport`, a retry's on
   `Retry`, a call's on `Call`, hooks on a future `Rpc.Client`), never
   into `Config`. The public unions are
   frozen within a major, since users match on them exhaustively:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
   proto2), `Kind`, `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
-  and `Rpc.Code`; a value `google.api.FieldBehavior`
+  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` and `Source` (a
+  failure before an answer is one of the reasons, and a new kind found
+  in an answer is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
   gains waits for a major, and until then the generator drops it.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
@@ -2685,6 +2772,13 @@ without breaking it.
 Recorded 2026-10-16: a retry policy does not read `Retry-After` (a 429
 or 503's seconds) or a `google.rpc.RetryInfo` detail. Honouring either
 is additive, a modifier of the opaque `Rpc.Retry` (§5.1).
+
+Recorded 2026-10-16: a streaming design spike comes before 1.0. It is a
+spec-only pass that writes the streaming section against the runtime's
+API as reshaped on 2026-10-16 (opaque types, `Rpc.Error`, plain
+`cancel`) and lists every point where it would have wanted a 1.0
+surface to differ. Its outcome is open, and it may pull streaming into
+the pre-1.0 work.
 
 ## 10. Out of scope but recorded
 

@@ -8,11 +8,12 @@ generates from googleapis' `google/rpc/error_details.proto`.
 
 import Google.Rpc
 import Rpc
+import Rpc.Error
 
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.details Google.Rpc.messageBadRequest error
+    Rpc.Error.details Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 

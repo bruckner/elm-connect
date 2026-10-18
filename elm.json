@@ -8,6 +8,7 @@
         "Rpc",
         "Rpc.Call",
         "Rpc.Code",
+        "Rpc.Error",
         "Rpc.Transport",
         "Rpc.Retry",
         "Rpc.Trace",
