@@ -1,0 +1,50 @@
+route::query_field
+
+  × The HTTP rule of `graph.v1.Graph.GetRing` sends `next` as a query
+  │ parameter, but `graph.v1.Ring2` contains itself, which has no query form.
+    ╭─[graph.proto:41:5]
+ 40 │       rpc GetRing(Ring1) returns (Ring1) {
+ 41 │ ╭─▶     option (google.api.http) = {
+ 42 │ │         get: "/v1/ring"
+ 43 │ ├─▶     };
+    · ╰──── in this rule
+ 44 │       }
+    ╰────
+  help: Every request field outside the path and the body is a query
+        parameter, and a parameter holds scalars, enums and well-known types
+        with a string form. Send the field in the body (`body: "*"`, or a body
+        field holding it), or move it out of the request.
+
+route::query_field
+
+  × The HTTP rule of `graph.v1.Graph.GetEntry` sends `ring` as a query
+  │ parameter, but `graph.v1.Ring2` contains itself, which has no query form.
+    ╭─[graph.proto:47:5]
+ 46 │       rpc GetEntry(Entry) returns (Entry) {
+ 47 │ ╭─▶     option (google.api.http) = {
+ 48 │ │         get: "/v1/entry"
+ 49 │ ├─▶     };
+    · ╰──── in this rule
+ 50 │       }
+    ╰────
+  help: Every request field outside the path and the body is a query
+        parameter, and a parameter holds scalars, enums and well-known types
+        with a string form. Send the field in the body (`body: "*"`, or a body
+        field holding it), or move it out of the request.
+
+route::query_field
+
+  × The HTTP rule of `graph.v1.Graph.GetTree` sends `children` as a query
+  │ parameter, but it is a repeated message, which has no query form.
+    ╭─[graph.proto:53:5]
+ 52 │       rpc GetTree(Tree) returns (Tree) {
+ 53 │ ╭─▶     option (google.api.http) = {
+ 54 │ │         get: "/v1/tree"
+ 55 │ ├─▶     };
+    · ╰──── in this rule
+ 56 │       }
+    ╰────
+  help: Every request field outside the path and the body is a query
+        parameter, and a parameter holds scalars, enums and well-known types
+        with a string form. Send the field in the body (`body: "*"`, or a body
+        field holding it), or move it out of the request.
