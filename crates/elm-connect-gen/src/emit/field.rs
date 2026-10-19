@@ -33,6 +33,12 @@ pub(super) enum FieldShape<'p> {
     /// `Dict` since Elm's `Bool` is not `comparable`; `[]` when absent or
     /// `null` (design §3.2).
     BoolMap(ValueShape<'p>),
+    /// `Maybe Json.Encode.Value`: a singular or `optional` field of
+    /// `google.protobuf.Value`, `Nothing` when absent and `Just` its JSON
+    /// otherwise, `null` included, since `null` is one of a `Value`'s own
+    /// values and protobuf's parsers read a field holding it as set
+    /// (design §3.5).
+    Json,
 }
 
 /// The keys of a map field held in a `Dict`, as Elm holds them. JSON
@@ -84,8 +90,11 @@ pub(super) enum Zeroed<'p> {
     Scalar(Repr),
     /// A generated enum, whose zero value is this constructor.
     Enum(&'p TypeName, &'p str),
-    /// `google.protobuf.Value`: any JSON, held as a `Json.Encode.Value`,
-    /// whose zero value is `null` (design §3.5).
+    /// `google.protobuf.Value`: any JSON, held as a `Json.Encode.Value`.
+    /// A list, map or oneof member holds it bare; a singular or `optional`
+    /// field holds it as [`FieldShape::Json`], never as
+    /// [`FieldShape::Plain`], since `null` is a value it can be set to
+    /// (design §3.5).
     Json,
     /// `google.protobuf.Empty`: `()`, which carries nothing, so a singular
     /// field of it has no presence either: absent, `null` and `{}` all read
@@ -155,6 +164,10 @@ impl Emitter {
         match shape {
             FieldShape::Plain(zeroed) => self.value_type(ValueShape::Zeroed(zeroed)),
             FieldShape::Maybe(value) => ty(self.core("Maybe"), [self.value_type(value)]),
+            FieldShape::Json => {
+                let value = self.value_type(ValueShape::Zeroed(Zeroed::Json));
+                ty(self.core("Maybe"), [value])
+            }
             FieldShape::List(value) => ty(self.core("List"), [self.value_type(value)]),
             FieldShape::Dict(key, value) => {
                 let key = match key {
@@ -179,14 +192,16 @@ impl Emitter {
     /// the field is left out (design §3.2). A field without presence is
     /// left out at its proto3 default, a field with presence when
     /// `Nothing`, a repeated or map field when empty. A field of
-    /// `google.protobuf.Value` is always written, since `null` is one of
-    /// its values, and so is one of `google.protobuf.Empty`, as `{}`: Elm
-    /// holds it as `()`, without the presence its proto type has, and
-    /// writing it keeps it set (design §3.5).
+    /// `google.protobuf.Value` is its `Maybe Json.Encode.Value` itself, so
+    /// `Just Json.Encode.null` writes `null`. A field of
+    /// `google.protobuf.Empty` is always written, as `{}`: Elm holds it as
+    /// `()`, without the presence its proto type has, and writing it keeps
+    /// it set (design §3.5).
     pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
-            FieldShape::Plain(zeroed @ (Zeroed::Json | Zeroed::Empty)) => {
-                let encoded = self.encode_value(ValueShape::Zeroed(zeroed), value);
+            FieldShape::Json => return value,
+            FieldShape::Plain(Zeroed::Empty) => {
+                let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
             }
             FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
@@ -225,9 +240,12 @@ impl Emitter {
     }
 
     /// The decoder of a field, and the value an absent or `null` field
-    /// reads as.
-    pub(super) fn field_decoder(&mut self, shape: FieldShape) -> (Expr, Expr) {
+    /// reads as; `None` for [`FieldShape::Json`], which
+    /// `Proto.Json.valueField` reads whole, since for it `null` is not
+    /// absent.
+    pub(super) fn field_decoder(&mut self, shape: FieldShape) -> Option<(Expr, Expr)> {
         let decoder = match shape {
+            FieldShape::Json => return None,
             FieldShape::Plain(zeroed) => self.value_decoder(ValueShape::Zeroed(zeroed)),
             FieldShape::Maybe(value) => {
                 let value = self.value_decoder(value);
@@ -251,7 +269,7 @@ impl Emitter {
                 apply(self.reference((PROTO_JSON, "boolMap")), [value])
             }
         };
-        (decoder, self.field_default(shape))
+        Some((decoder, self.field_default(shape)))
     }
 
     /// A field's proto3 default: the value it reads as when absent or
@@ -262,9 +280,11 @@ impl Emitter {
             FieldShape::Plain(Zeroed::Enum(name, zero_ctor)) => {
                 self.generated_value(&name.module, zero_ctor.to_owned())
             }
-            FieldShape::Plain(Zeroed::Json) => self.reference((JSON_ENCODE, "null")),
+            FieldShape::Plain(Zeroed::Json) => {
+                unreachable!("a singular field of google.protobuf.Value is FieldShape::Json")
+            }
             FieldShape::Plain(Zeroed::Empty) => Expr::Unit,
-            FieldShape::Maybe(_) => var(self.core("Nothing")),
+            FieldShape::Maybe(_) | FieldShape::Json => var(self.core("Nothing")),
             FieldShape::List(_) | FieldShape::BoolMap(_) => list([]),
             FieldShape::Dict(..) => self.reference((CORE_DICT, "empty")),
         }
@@ -386,6 +406,11 @@ pub(super) fn field_shape<'m>(
         // none to add.
         (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Empty)) => {
             FieldShape::Plain(Zeroed::Empty)
+        }
+        // `null` sets a `Value`, so a singular one has presence whether or
+        // not it is `optional`.
+        (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Json)) => {
+            FieldShape::Json
         }
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
         (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),

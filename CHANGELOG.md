@@ -753,3 +753,13 @@ tag (design §8).
   bounds the walk of a long chain of messages, which was every leaf
   below each rule. The `routes_query_depth` case pins the limit from
   both sides.
+- A singular `google.protobuf.Value` field, `optional` or not, is now
+  `Maybe Json.Encode.Value`, decoded with the new
+  `Proto.Json.valueField` (`valueFieldEither`): a missing key is
+  `Nothing`, and `null` is `Just Json.Encode.null`, set, as protobuf's
+  parsers read it. The field was a bare `Json.Encode.Value` that read a
+  missing key as `null` and was always written, so a default message
+  sent `"payload": null` and the server saw the field set; an `optional`
+  one read `null` as `Nothing`. `Nothing` now leaves the field out, so a
+  default message with a `Value` field encodes as `{}`. Repeated, map
+  and oneof forms are unchanged.
