@@ -5,9 +5,10 @@ module Naming.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Naming.V1.HttpMethod
+import Naming.V1.Shape
+import Naming.V1.Tag
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -78,70 +79,36 @@ defaultTag =
 
 
 
--- DESCRIPTORS
-
-
-descriptorShape : Proto.Enum.Descriptor
-descriptorShape =
-    Proto.Enum.descriptor "naming.v1.Shape"
-        [ Proto.EnumValue.descriptor "SHAPE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "SHAPE_2D" 1
-        , Proto.EnumValue.descriptor "CUBE" 2
-        , Proto.EnumValue.descriptor "SHAPE_V3_MESH" 3
-        ]
+-- TYPED VALUES
 
 
 enumShape : Proto.Enum.Enum Shape
 enumShape =
-    Proto.Enum.enum encodeShape decodeShape ShapeUnspecified descriptorShape
-
-
-descriptorHttpMethod : Proto.Enum.Descriptor
-descriptorHttpMethod =
-    Proto.Enum.descriptor "naming.v1.HttpMethod"
-        [ Proto.EnumValue.descriptor "HTTP_METHOD_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "HTTP_METHOD_GET" 1
-        , Proto.EnumValue.descriptor "POST" 2
-        ]
+    Proto.Enum.enum encodeShape decodeShape ShapeUnspecified Naming.V1.Shape.descriptor
 
 
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
-    Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified descriptorHttpMethod
-
-
-descriptorTag : Proto.Message.Descriptor
-descriptorTag =
-    Proto.Message.descriptor "naming.v1.Tag"
-        [ Proto.Field.descriptor "type" "type" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "if" "if" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "port" "port" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "alias" "alias" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "display_name" "screenName" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "http_url" "httpUrl" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "v2_count" "v2Count" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "shape" "shape" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorShape)
-        , Proto.Field.descriptor "method" "method" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorHttpMethod)
-        , Proto.Field.descriptor "then" "then" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "case"
-        , Proto.Field.descriptor "of" "of" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-            |> Proto.Field.inOneof "case"
-        ]
+    Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified Naming.V1.HttpMethod.descriptor
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag descriptorTag
+    Proto.Message.message encodeTag decodeTag defaultTag Naming.V1.Tag.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorTag
+            [ Naming.V1.Tag.descriptor
             ]
-            [ descriptorShape
-            , descriptorHttpMethod
+            [ Naming.V1.Shape.descriptor
+            , Naming.V1.HttpMethod.descriptor
             ]
         )
         Proto.Registry.wellKnown

@@ -15,7 +15,7 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry

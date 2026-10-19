@@ -6,7 +6,7 @@ module Notes.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Field
+import Notes.V1.Note
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -57,34 +57,23 @@ defaultNote =
 
 
 
--- DESCRIPTORS
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Users.V1.descriptorRole)
-        , Proto.Field.descriptor "readers" "readers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum Users.V1.descriptorRole)
-        , Proto.Field.descriptor "user" "user" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-            |> Proto.Field.inOneof "owner"
-        , Proto.Field.descriptor "team" "team" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "owner"
-        ]
+-- TYPED VALUES
 
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorNote
+            [ Notes.V1.Note.descriptor
             ]
             []
         )

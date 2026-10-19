@@ -309,9 +309,10 @@ fn a_method_named_for_another_methods_descriptor_collides() {
 }
 
 #[test]
-fn a_service_may_share_a_type_name() {
+fn a_service_named_like_a_type_collides_with_its_descriptor_module() {
     // Proto forbids a message and a service of one name in a package, but
-    // not two whose Elm names coincide; a module and a type do not clash.
+    // not two whose Elm names coincide; the message's descriptor module
+    // and the service's module then have one name.
     let source = r#"syntax = "proto3";
 package t.v1;
 message notes {}
@@ -319,9 +320,17 @@ service Notes {
   rpc Notes(notes) returns (notes);
 }
 "#;
-    let package = package(source);
-    assert_eq!(package.services[0].module.to_string(), "T.V1.Notes");
-    assert_eq!(package.services[0].methods[0].elm_name, "notes");
+    let files = [("t.proto", source)];
+    let diagnostics = problems(&files, &["t.proto"]);
+    assert_eq!(codes(&diagnostics), [Code::ModuleCollision]);
+    let rendered = render(&diagnostics, &files);
+    for expected in [
+        "Two generated modules both become the Elm module `T.V1.Notes`",
+        "message `t.v1.notes` becomes `T.V1.Notes`",
+        "and so does service `t.v1.Notes`",
+    ] {
+        assert!(rendered.contains(expected), "{expected}\n{rendered}");
+    }
 }
 
 #[test]

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package profile.v1;
+
+message Profile {
+  // `descriptor` is the value of the message's own descriptor in
+  // `Profile.V1.Profile`.
+  string descriptor = 1;
+  // Renamed to `nickname` (options.txt), which a oneof member's
+  // descriptor is called too.
+  string display_name = 2;
+  oneof alias {
+    string nickname = 3;
+  }
+  // Renamed to the value every generated module defines (options.txt).
+  string version = 4;
+}

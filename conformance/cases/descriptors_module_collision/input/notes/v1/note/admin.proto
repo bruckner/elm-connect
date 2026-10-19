@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package notes.v1.note;
+
+message Admin {
+  string name = 1;
+}

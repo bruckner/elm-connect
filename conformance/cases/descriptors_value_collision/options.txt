@@ -1,0 +1,1 @@
+rename=profile.v1.Profile.display_name:nickname,rename=profile.v1.Profile.version:elmConnectVersion_

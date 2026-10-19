@@ -71,13 +71,15 @@ pub enum Code {
     /// `unbound_methods=error`.
     UnboundMethod,
     /// Two methods of a service get the same Elm value name, a method gets
-    /// another method's descriptor's name, or a method gets the name of the
-    /// value every generated module defines.
+    /// another method's descriptor's name, two fields of a message (or one
+    /// and the message's descriptor) get the same value name in its
+    /// descriptor module, or a method or field gets the name of the value
+    /// every generated module defines.
     ValueCollision,
     /// A method has no valid Elm value name.
     InvalidMethod,
-    /// Two generated modules, each a package's or a service's, get the
-    /// same Elm module name.
+    /// Two generated modules, each a package's, a service's or a type's
+    /// descriptor module, get the same Elm module name.
     ModuleCollision,
     /// A service has no valid Elm module name.
     InvalidService,
@@ -495,35 +497,59 @@ impl Problem {
         )
     }
 
-    /// A `rename` gives the method `method` the name `elm_name`, the value
-    /// every generated module defines to name the release it was generated
-    /// for. No proto name derives to it.
-    pub fn reserved_value(method: &str, elm_name: &str, site: Site) -> Self {
+    /// A `rename` gives `what` (such as "method `notes.v1.Notes.Get`" or
+    /// "field `title`") the name `elm_name`, the value every generated
+    /// module defines to name the release it was generated for. No proto
+    /// name derives to it.
+    pub fn reserved_value(what: &str, elm_name: &str, site: Site) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
-                "The method `{method}` is renamed to the Elm value `{elm_name}`, which every \
-                 generated module defines already."
+                "The {what} is renamed to the Elm value `{elm_name}`, which every generated \
+                 module defines already."
             ),
             "Every generated module defines `elmConnectVersion_`, which names the release of \
-             the generator it came from, so a module cannot have a method of that name too. \
-             Give the method another name in its `rename=<proto full name>:<Elm name>`.",
+             the generator it came from, so no method or field can take that name in the \
+             module that defines it. Give it another name in its \
+             `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
 
-    /// Two generated modules, each a package's or a service's, become the
-    /// same Elm module `elm_module`.
+    /// Two fields or oneof members of `message`, or one and the message's
+    /// own descriptor, become the same Elm value `elm_name` in the
+    /// message's descriptor module.
+    pub fn field_value_collision(message: &str, elm_name: &str, first: Site, second: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The descriptor module of `{message}` would define the Elm value \
+                 `{elm_name}` twice."
+            ),
+            "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
+             `descriptor`, the message's descriptor, and one value per field, named as its \
+             record field is (a oneof member as a field would be), so a field named \
+             `descriptor`, or two whose names convert to one, cannot both be defined. \
+             Rename the field in the proto, or rename it with \
+             `rename=<proto full name>:<Elm name>`.",
+            vec![first, second],
+        )
+    }
+
+    /// Two generated modules, each a package's, a service's or a message's
+    /// or enum's descriptor module, become the same Elm module
+    /// `elm_module`.
     pub fn module_collision(elm_module: &str, first: Site, second: Site) -> Self {
         Problem::new(
             Code::ModuleCollision,
             format!("Two generated modules both become the Elm module `{elm_module}`."),
             "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
-             service becomes a module inside its package's (`notes.v1.NotesService` becomes \
-             `Notes.V1.NotesService`), each segment in PascalCase, so a service can take the \
-             name of a package nested in its own, and names that differ only in case or \
-             underscores end up the same. Rename the service or the package, or rename one \
-             with `rename=<proto full name>:<Elm name>`.",
+             service, message and enum becomes a module inside its package's \
+             (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
+             `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
+             take the name of another or of a package nested in its own, and names that \
+             differ only in case or underscores end up the same. Rename one of them in the \
+             proto, or rename one with `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -545,8 +571,8 @@ impl Problem {
             format!(
                 "Each module is written to a file named for it (`Notes.V1` to \
                  `Notes/V1.elm`), and the default file systems of macOS and Windows ignore \
-                 case, so one of these would overwrite the other. Rename the service or the \
-                 package, or rename one with {escapes}."
+                 case, so one of these would overwrite the other. Rename one of them in the \
+                 proto, or rename one with {escapes}."
             ),
             vec![sites.0, sites.1],
         )

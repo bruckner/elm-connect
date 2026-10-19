@@ -6,9 +6,10 @@ module Maps.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Maps.V1.Member
+import Maps.V1.Role
+import Maps.V1.Team
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -84,67 +85,36 @@ defaultTeam =
 
 
 
--- DESCRIPTORS
-
-
-descriptorRole : Proto.Enum.Descriptor
-descriptorRole =
-    Proto.Enum.descriptor "maps.v1.Role"
-        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "ROLE_OWNER" 1
-        ]
+-- TYPED VALUES
 
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
-
-
-descriptorMember : Proto.Message.Descriptor
-descriptorMember =
-    Proto.Message.descriptor "maps.v1.Member"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified Maps.V1.Role.descriptor
 
 
 messageMember : Proto.Message.Message Member
 messageMember =
-    Proto.Message.message encodeMember decodeMember defaultMember descriptorMember
-
-
-descriptorTeam : Proto.Message.Descriptor
-descriptorTeam =
-    Proto.Message.descriptor "maps.v1.Team"
-        [ Proto.Field.descriptor "labels" "labels" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "by_seat" "bySeat" 2 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "scores" "scores" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarUint32) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        , Proto.Field.descriptor "flags" "flags" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarSint32) (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "totals" "totals" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed32) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
-        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum descriptorRole)
-        , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "by_offset" "byOffset" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed32) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "deltas" "deltas" 12 (Proto.Field.CardinalityMap Proto.Field.ScalarSint64) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "by_hash" "byHash" 13 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed64) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "by_stamp" "byStamp" 14 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed64) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeMember decodeMember defaultMember Maps.V1.Member.descriptor
 
 
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    Proto.Message.message encodeTeam decodeTeam defaultTeam descriptorTeam
+    Proto.Message.message encodeTeam decodeTeam defaultTeam Maps.V1.Team.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorMember
-            , descriptorTeam
+            [ Maps.V1.Member.descriptor
+            , Maps.V1.Team.descriptor
             ]
-            [ descriptorRole
+            [ Maps.V1.Role.descriptor
             ]
         )
         Proto.Registry.wellKnown

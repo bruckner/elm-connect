@@ -63,3 +63,20 @@ naming::reserved_module
         same name: every `import Time`, in the generated code or the
         application's, becomes ambiguous. Move the module with
         `rename=time:<Elm name>` or `module_prefix=<Elm module>`.
+
+naming::reserved_module
+
+  × The message `rpc.Call` becomes the Elm module `Rpc.Call`, which is a
+  │ module of the runtime package bruckner/elm-connect.
+   ╭─[rpc.proto:6:9]
+ 5 │
+ 6 │ message Call {
+   ·         ──┬─
+   ·           ╰── message `rpc.Call` becomes `Rpc.Call`
+ 7 │   string name = 1;
+   ╰────
+  help: An application that depends on the runtime package bruckner/elm-
+        connect cannot define a module of the same name: every `import
+        Rpc.Call`, in the generated code or the application's, becomes
+        ambiguous. Move the module with `rename=rpc.Call:<Elm name>` or
+        `module_prefix=<Elm module>`.

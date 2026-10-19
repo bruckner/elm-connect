@@ -4,10 +4,23 @@
 module Google.Rpc exposing (..)
 
 import Dict exposing (Dict)
+import Google.Rpc.BadRequest
+import Google.Rpc.BadRequestFieldViolation
+import Google.Rpc.DebugInfo
+import Google.Rpc.ErrorInfo
+import Google.Rpc.Help
+import Google.Rpc.HelpLink
+import Google.Rpc.LocalizedMessage
+import Google.Rpc.PreconditionFailure
+import Google.Rpc.PreconditionFailureViolation
+import Google.Rpc.QuotaFailure
+import Google.Rpc.QuotaFailureViolation
+import Google.Rpc.RequestInfo
+import Google.Rpc.ResourceInfo
+import Google.Rpc.RetryInfo
 import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -226,216 +239,101 @@ defaultLocalizedMessage =
 
 
 
--- DESCRIPTORS
-
-
-descriptorErrorInfo : Proto.Message.Descriptor
-descriptorErrorInfo =
-    Proto.Message.descriptor "google.rpc.ErrorInfo"
-        [ Proto.Field.descriptor "reason" "reason" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "domain" "domain" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "metadata" "metadata" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+-- TYPED VALUES
 
 
 messageErrorInfo : Proto.Message.Message ErrorInfo
 messageErrorInfo =
-    Proto.Message.message encodeErrorInfo decodeErrorInfo defaultErrorInfo descriptorErrorInfo
-
-
-descriptorRetryInfo : Proto.Message.Descriptor
-descriptorRetryInfo =
-    Proto.Message.descriptor "google.rpc.RetryInfo"
-        [ Proto.Field.descriptor "retry_delay" "retryDelay" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
-        ]
+    Proto.Message.message encodeErrorInfo decodeErrorInfo defaultErrorInfo Google.Rpc.ErrorInfo.descriptor
 
 
 messageRetryInfo : Proto.Message.Message RetryInfo
 messageRetryInfo =
-    Proto.Message.message encodeRetryInfo decodeRetryInfo defaultRetryInfo descriptorRetryInfo
-
-
-descriptorDebugInfo : Proto.Message.Descriptor
-descriptorDebugInfo =
-    Proto.Message.descriptor "google.rpc.DebugInfo"
-        [ Proto.Field.descriptor "stack_entries" "stackEntries" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "detail" "detail" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeRetryInfo decodeRetryInfo defaultRetryInfo Google.Rpc.RetryInfo.descriptor
 
 
 messageDebugInfo : Proto.Message.Message DebugInfo
 messageDebugInfo =
-    Proto.Message.message encodeDebugInfo decodeDebugInfo defaultDebugInfo descriptorDebugInfo
-
-
-descriptorQuotaFailure : Proto.Message.Descriptor
-descriptorQuotaFailure =
-    Proto.Message.descriptor "google.rpc.QuotaFailure"
-        [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.QuotaFailure.Violation")
-        ]
+    Proto.Message.message encodeDebugInfo decodeDebugInfo defaultDebugInfo Google.Rpc.DebugInfo.descriptor
 
 
 messageQuotaFailure : Proto.Message.Message QuotaFailure
 messageQuotaFailure =
-    Proto.Message.message encodeQuotaFailure decodeQuotaFailure defaultQuotaFailure descriptorQuotaFailure
-
-
-descriptorQuotaFailureViolation : Proto.Message.Descriptor
-descriptorQuotaFailureViolation =
-    Proto.Message.descriptor "google.rpc.QuotaFailure.Violation"
-        [ Proto.Field.descriptor "subject" "subject" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "description" "description" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "api_service" "apiService" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "quota_metric" "quotaMetric" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "quota_id" "quotaId" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "quota_dimensions" "quotaDimensions" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "quota_value" "quotaValue" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "future_quota_value" "futureQuotaValue" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        ]
+    Proto.Message.message encodeQuotaFailure decodeQuotaFailure defaultQuotaFailure Google.Rpc.QuotaFailure.descriptor
 
 
 messageQuotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 messageQuotaFailureViolation =
-    Proto.Message.message encodeQuotaFailureViolation decodeQuotaFailureViolation defaultQuotaFailureViolation descriptorQuotaFailureViolation
-
-
-descriptorPreconditionFailure : Proto.Message.Descriptor
-descriptorPreconditionFailure =
-    Proto.Message.descriptor "google.rpc.PreconditionFailure"
-        [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.PreconditionFailure.Violation")
-        ]
+    Proto.Message.message encodeQuotaFailureViolation decodeQuotaFailureViolation defaultQuotaFailureViolation Google.Rpc.QuotaFailureViolation.descriptor
 
 
 messagePreconditionFailure : Proto.Message.Message PreconditionFailure
 messagePreconditionFailure =
-    Proto.Message.message encodePreconditionFailure decodePreconditionFailure defaultPreconditionFailure descriptorPreconditionFailure
-
-
-descriptorPreconditionFailureViolation : Proto.Message.Descriptor
-descriptorPreconditionFailureViolation =
-    Proto.Message.descriptor "google.rpc.PreconditionFailure.Violation"
-        [ Proto.Field.descriptor "type" "type" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "subject" "subject" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "description" "description" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodePreconditionFailure decodePreconditionFailure defaultPreconditionFailure Google.Rpc.PreconditionFailure.descriptor
 
 
 messagePreconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 messagePreconditionFailureViolation =
-    Proto.Message.message encodePreconditionFailureViolation decodePreconditionFailureViolation defaultPreconditionFailureViolation descriptorPreconditionFailureViolation
-
-
-descriptorBadRequest : Proto.Message.Descriptor
-descriptorBadRequest =
-    Proto.Message.descriptor "google.rpc.BadRequest"
-        [ Proto.Field.descriptor "field_violations" "fieldViolations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.BadRequest.FieldViolation")
-        ]
+    Proto.Message.message encodePreconditionFailureViolation decodePreconditionFailureViolation defaultPreconditionFailureViolation Google.Rpc.PreconditionFailureViolation.descriptor
 
 
 messageBadRequest : Proto.Message.Message BadRequest
 messageBadRequest =
-    Proto.Message.message encodeBadRequest decodeBadRequest defaultBadRequest descriptorBadRequest
-
-
-descriptorBadRequestFieldViolation : Proto.Message.Descriptor
-descriptorBadRequestFieldViolation =
-    Proto.Message.descriptor "google.rpc.BadRequest.FieldViolation"
-        [ Proto.Field.descriptor "field" "field" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "description" "description" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "reason" "reason" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "localized_message" "localizedMessage" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.rpc.LocalizedMessage")
-        ]
+    Proto.Message.message encodeBadRequest decodeBadRequest defaultBadRequest Google.Rpc.BadRequest.descriptor
 
 
 messageBadRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 messageBadRequestFieldViolation =
-    Proto.Message.message encodeBadRequestFieldViolation decodeBadRequestFieldViolation defaultBadRequestFieldViolation descriptorBadRequestFieldViolation
-
-
-descriptorRequestInfo : Proto.Message.Descriptor
-descriptorRequestInfo =
-    Proto.Message.descriptor "google.rpc.RequestInfo"
-        [ Proto.Field.descriptor "request_id" "requestId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "serving_data" "servingData" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeBadRequestFieldViolation decodeBadRequestFieldViolation defaultBadRequestFieldViolation Google.Rpc.BadRequestFieldViolation.descriptor
 
 
 messageRequestInfo : Proto.Message.Message RequestInfo
 messageRequestInfo =
-    Proto.Message.message encodeRequestInfo decodeRequestInfo defaultRequestInfo descriptorRequestInfo
-
-
-descriptorResourceInfo : Proto.Message.Descriptor
-descriptorResourceInfo =
-    Proto.Message.descriptor "google.rpc.ResourceInfo"
-        [ Proto.Field.descriptor "resource_type" "resourceType" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "resource_name" "resourceName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "owner" "owner" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "description" "description" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeRequestInfo decodeRequestInfo defaultRequestInfo Google.Rpc.RequestInfo.descriptor
 
 
 messageResourceInfo : Proto.Message.Message ResourceInfo
 messageResourceInfo =
-    Proto.Message.message encodeResourceInfo decodeResourceInfo defaultResourceInfo descriptorResourceInfo
-
-
-descriptorHelp : Proto.Message.Descriptor
-descriptorHelp =
-    Proto.Message.descriptor "google.rpc.Help"
-        [ Proto.Field.descriptor "links" "links" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.Help.Link")
-        ]
+    Proto.Message.message encodeResourceInfo decodeResourceInfo defaultResourceInfo Google.Rpc.ResourceInfo.descriptor
 
 
 messageHelp : Proto.Message.Message Help
 messageHelp =
-    Proto.Message.message encodeHelp decodeHelp defaultHelp descriptorHelp
-
-
-descriptorHelpLink : Proto.Message.Descriptor
-descriptorHelpLink =
-    Proto.Message.descriptor "google.rpc.Help.Link"
-        [ Proto.Field.descriptor "description" "description" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "url" "url" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeHelp decodeHelp defaultHelp Google.Rpc.Help.descriptor
 
 
 messageHelpLink : Proto.Message.Message HelpLink
 messageHelpLink =
-    Proto.Message.message encodeHelpLink decodeHelpLink defaultHelpLink descriptorHelpLink
-
-
-descriptorLocalizedMessage : Proto.Message.Descriptor
-descriptorLocalizedMessage =
-    Proto.Message.descriptor "google.rpc.LocalizedMessage"
-        [ Proto.Field.descriptor "locale" "locale" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeHelpLink decodeHelpLink defaultHelpLink Google.Rpc.HelpLink.descriptor
 
 
 messageLocalizedMessage : Proto.Message.Message LocalizedMessage
 messageLocalizedMessage =
-    Proto.Message.message encodeLocalizedMessage decodeLocalizedMessage defaultLocalizedMessage descriptorLocalizedMessage
+    Proto.Message.message encodeLocalizedMessage decodeLocalizedMessage defaultLocalizedMessage Google.Rpc.LocalizedMessage.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorErrorInfo
-            , descriptorRetryInfo
-            , descriptorDebugInfo
-            , descriptorQuotaFailure
-            , descriptorQuotaFailureViolation
-            , descriptorPreconditionFailure
-            , descriptorPreconditionFailureViolation
-            , descriptorBadRequest
-            , descriptorBadRequestFieldViolation
-            , descriptorRequestInfo
-            , descriptorResourceInfo
-            , descriptorHelp
-            , descriptorHelpLink
-            , descriptorLocalizedMessage
+            [ Google.Rpc.ErrorInfo.descriptor
+            , Google.Rpc.RetryInfo.descriptor
+            , Google.Rpc.DebugInfo.descriptor
+            , Google.Rpc.QuotaFailure.descriptor
+            , Google.Rpc.QuotaFailureViolation.descriptor
+            , Google.Rpc.PreconditionFailure.descriptor
+            , Google.Rpc.PreconditionFailureViolation.descriptor
+            , Google.Rpc.BadRequest.descriptor
+            , Google.Rpc.BadRequestFieldViolation.descriptor
+            , Google.Rpc.RequestInfo.descriptor
+            , Google.Rpc.ResourceInfo.descriptor
+            , Google.Rpc.Help.descriptor
+            , Google.Rpc.HelpLink.descriptor
+            , Google.Rpc.LocalizedMessage.descriptor
             ]
             []
         )

@@ -295,8 +295,11 @@ mod tests {
             response.supported_features,
             Some(Feature::Proto3Optional as u64)
         );
-        let [file] = response.file.as_slice() else {
-            panic!("expected one file, got {:?}", response.file);
+        let [file, _, _] = response.file.as_slice() else {
+            panic!(
+                "expected the package's module and two descriptor modules, got {:?}",
+                response.file
+            );
         };
         assert_eq!(file.name.as_deref(), Some("Scalars/V1.elm"));
         let expected = blessed(&scalars_case().join("expected/Scalars/V1.elm"));
@@ -362,7 +365,10 @@ mod tests {
             .iter()
             .filter_map(|f| f.name.as_deref())
             .collect();
-        assert_eq!(names, ["Chat/V1.elm", "Chat/V1/Chat.elm"]);
+        assert_eq!(
+            names,
+            ["Chat/V1.elm", "Chat/V1/Chat.elm", "Chat/V1/Line.elm"]
+        );
         assert!(warnings.starts_with("services::streaming\n"), "{warnings}");
         assert!(warnings.contains("`chat.v1.Chat.Listen`"), "{warnings}");
         assert!(warnings.contains("`chat.v1.Uploads.Upload`"), "{warnings}");
@@ -395,7 +401,10 @@ mod tests {
             .iter()
             .filter_map(|f| f.name.as_deref())
             .collect();
-        assert_eq!(names, ["Notes/V1.elm"]);
+        assert_eq!(
+            names,
+            ["Notes/V1.elm", "Notes/V1/Note.elm", "Notes/V1/Tag.elm"]
+        );
         let expected = blessed(&case.join("expected/Notes/V1.elm"));
         assert!(
             response.file[0].content.as_deref() == Some(expected.as_str()),
@@ -441,7 +450,25 @@ mod tests {
             .iter()
             .filter_map(|f| f.name.as_deref())
             .collect();
-        assert_eq!(names, ["Notes/V1.elm", "Notes/V1/NotesService.elm"]);
+        assert_eq!(
+            names,
+            [
+                "Notes/V1.elm",
+                "Notes/V1/ArchiveNoteRequest.elm",
+                "Notes/V1/CreateNoteRequest.elm",
+                "Notes/V1/DeleteNoteRequest.elm",
+                "Notes/V1/GetNoteRequest.elm",
+                "Notes/V1/ListNotesRequest.elm",
+                "Notes/V1/ListNotesRequestFilter.elm",
+                "Notes/V1/ListNotesResponse.elm",
+                "Notes/V1/Note.elm",
+                "Notes/V1/NotesService.elm",
+                "Notes/V1/ReadFileRequest.elm",
+                "Notes/V1/Summary.elm",
+                "Notes/V1/UpdateNoteRequest.elm",
+                "Notes/V1/Visibility.elm"
+            ]
+        );
         for file in &response.file {
             let name = file.name.as_deref().expect("a name");
             let expected = blessed(&case.join("expected").join(name));
@@ -562,7 +589,7 @@ service Notes {
         assert_eq!(warnings, "");
         assert_eq!(
             names(&response),
-            ["Notes/V1.elm", "Notes/V1/Notes.elm"],
+            ["Notes/V1.elm", "Notes/V1/Note.elm", "Notes/V1/Notes.elm"],
             "no Google/Api.elm"
         );
     }
@@ -594,11 +621,15 @@ message Task {
         let (response, warnings) = run(&request);
         assert_eq!(response.error, None);
         assert_eq!(warnings, "");
-        assert_eq!(names(&response), ["Tasks/V1.elm"], "no Google/Api.elm");
-        let module = response.file[0].content.as_deref().expect("content");
+        assert_eq!(
+            names(&response),
+            ["Tasks/V1.elm", "Tasks/V1/Task.elm"],
+            "no Google/Api.elm"
+        );
+        let module = response.file[1].content.as_deref().expect("content");
         assert!(
             module.contains(
-                "|> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]\n            \
+                "|> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]\n        \
                  |> Proto.Field.withDeprecated"
             ),
             "{module}"
@@ -636,7 +667,12 @@ service Uploads {
         assert_eq!(response.error, None);
         assert_eq!(
             names(&response),
-            ["Google/Api.elm", "Uploads/V1.elm", "Uploads/V1/Uploads.elm"]
+            [
+                "Google/Api.elm",
+                "Google/Api/HttpBody.elm",
+                "Uploads/V1.elm",
+                "Uploads/V1/Uploads.elm"
+            ]
         );
         let api = response.file[0].content.as_deref().expect("content");
         assert!(api.contains("type alias HttpBody ="), "{api}");

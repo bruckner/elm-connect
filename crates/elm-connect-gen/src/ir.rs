@@ -239,6 +239,12 @@ pub struct TypeName {
 }
 
 impl TypeName {
+    /// The module of the type's descriptor, such as `Notes.V1.Note`
+    /// ([`crate::naming::descriptor_module`]).
+    pub fn descriptor_module(&self) -> ModuleName {
+        crate::naming::descriptor_module(&self.module, &self.name)
+    }
+
     /// The Elm name of the type's JSON encoder, such as `encodeNote`.
     pub fn encoder_name(&self) -> String {
         crate::naming::encoder_name(&self.name)
@@ -324,10 +330,10 @@ impl Message {
         crate::naming::message_value_name(&self.elm_name)
     }
 
-    /// The Elm name of the message's descriptor, such as
-    /// `descriptorNote`.
-    pub fn descriptor_name(&self) -> String {
-        crate::naming::descriptor_name(&self.elm_name)
+    /// The module of the message's descriptor inside `package`, its
+    /// package's module: `Notes.V1.Note`.
+    pub fn descriptor_module(&self, package: &ModuleName) -> ModuleName {
+        crate::naming::descriptor_module(package, &self.elm_name)
     }
 }
 
@@ -669,6 +675,10 @@ pub struct OneofVariant {
     pub number: u32,
     /// The constructor, such as `NoteEventKindCreated`.
     pub elm_ctor: String,
+    /// The Elm value of the member's descriptor in its message's
+    /// descriptor module, such as `created`: the proto name as a field's
+    /// is converted, its first letter lowercased ([`crate::naming::member_value_name`]).
+    pub elm_name: String,
     /// The type of the value the constructor carries.
     pub ty: TypeRef,
     /// Whether the member closes a cycle: its message type reaches back to
@@ -797,10 +807,10 @@ impl Enum {
         crate::naming::enum_value_name(&self.elm_name)
     }
 
-    /// The Elm name of the enum's descriptor, such as
-    /// `descriptorStatus`.
-    pub fn descriptor_name(&self) -> String {
-        crate::naming::descriptor_name(&self.elm_name)
+    /// The module of the enum's descriptor inside `package`, its
+    /// package's module: `Notes.V1.Visibility`.
+    pub fn descriptor_module(&self, package: &ModuleName) -> ModuleName {
+        crate::naming::descriptor_module(package, &self.elm_name)
     }
 }
 

@@ -803,3 +803,17 @@ tag (design §8).
   write `KindEnum descriptorVisibility`; code matching on `KindEnum`
   reads the name with `Proto.Enum.typeName`. `KindMessage` still names
   its message, since a message can contain itself.
+- Descriptors move out of the package module into a module per message
+  and enum beside it: `Notes.V1.Note` holds `descriptor :
+  Proto.Message.Descriptor` and one `Proto.Field.Descriptor` per field,
+  named as its record field (`Notes.V1.Note.title`), and
+  `Notes.V1.Visibility` holds the enum's `descriptor`. `Notes.V1` keeps
+  the values a program sends and receives: types, defaults, codecs, the
+  typed values (`messageNote`, `enumVisibility`) and `registry`, in
+  sections types, defaults, typed values, registry, encoders, decoders.
+  `Notes.V1.descriptorNote` is now `Notes.V1.Note.descriptor`. A message
+  or enum whose module name another generated module has (a service of
+  its package, a package nested in its own, or another type's but for
+  case) is `naming::module_collision`; a field named `descriptor`, two
+  fields whose descriptor values meet, or a field renamed to
+  `elmConnectVersion_` is `naming::value_collision`.

@@ -5,11 +5,12 @@ module Zones.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Zones.V1.Zone
+import Zones.V1.ZoneRequest
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -52,40 +53,29 @@ defaultZone =
 
 
 
--- DESCRIPTORS
-
-
-descriptorZoneRequest : Proto.Message.Descriptor
-descriptorZoneRequest =
-    Proto.Message.descriptor "zones.v1.ZoneRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+-- TYPED VALUES
 
 
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest descriptorZoneRequest
-
-
-descriptorZone : Proto.Message.Descriptor
-descriptorZone =
-    Proto.Message.descriptor "zones.v1.Zone"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "offset_seconds" "offsetSeconds" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        ]
+    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
 
 
 messageZone : Proto.Message.Message Zone
 messageZone =
-    Proto.Message.message encodeZone decodeZone defaultZone descriptorZone
+    Proto.Message.message encodeZone decodeZone defaultZone Zones.V1.Zone.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorZoneRequest
-            , descriptorZone
+            [ Zones.V1.ZoneRequest.descriptor
+            , Zones.V1.Zone.descriptor
             ]
             []
         )

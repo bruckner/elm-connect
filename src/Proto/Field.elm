@@ -8,6 +8,8 @@ module Proto.Field exposing
 {-| A field of a message, as its message's descriptor
 ([`Proto.Message.Descriptor`](Proto-Message#Descriptor)) holds it: the
 descriptor type, its builder and its readers, and the unions it holds.
+Generated code gives each field's descriptor a value of its own, in the
+module of its message's descriptor (`Notes.V1.Note.title`).
 
 Each union's constructors carry the union's name as a prefix
 (`CardinalitySingular`, `KindMessage`, `ScalarString`, `BehaviorRequired`), so

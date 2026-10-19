@@ -9,12 +9,13 @@ naming::module_collision
  4 │
    ╰────
   help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
-        and every service becomes a module inside its package's
-        (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
-        segment in PascalCase, so a service can take the name of a package
-        nested in its own, and names that differ only in case or underscores
-        end up the same. Rename the service or the package, or rename one with
-        `rename=<proto full name>:<Elm name>`.
+        and every service, message and enum becomes a module inside its
+        package's (`notes.v1.NotesService` becomes `Notes.V1.NotesService`,
+        the descriptors of `notes.v1.Note` are in `Notes.V1.Note`), each
+        segment in PascalCase, so one can take the name of another or of a
+        package nested in its own, and names that differ only in case or
+        underscores end up the same. Rename one of them in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.
 
 Advice:
   ☞ and in `notes/v1/notes.proto`:
@@ -43,9 +44,10 @@ naming::module_collision
  21 │   rpc GetNote(Note) returns (Note);
     ╰────
   help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
-        and every service becomes a module inside its package's
-        (`notes.v1.NotesService` becomes `Notes.V1.NotesService`), each
-        segment in PascalCase, so a service can take the name of a package
-        nested in its own, and names that differ only in case or underscores
-        end up the same. Rename the service or the package, or rename one with
-        `rename=<proto full name>:<Elm name>`.
+        and every service, message and enum becomes a module inside its
+        package's (`notes.v1.NotesService` becomes `Notes.V1.NotesService`,
+        the descriptors of `notes.v1.Note` are in `Notes.V1.Note`), each
+        segment in PascalCase, so one can take the name of another or of a
+        package nested in its own, and names that differ only in case or
+        underscores end up the same. Rename one of them in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.

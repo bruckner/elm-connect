@@ -1,0 +1,87 @@
+naming::module_collision
+
+  × Two generated modules both become the Elm module `Notes.V1.Note`.
+   ╭─[notes/v1/note/admin.proto:3:1]
+ 2 │
+ 3 │ package notes.v1.note;
+   · ───────────┬──────────
+   ·            ╰── package `notes.v1.note` becomes `Notes.V1.Note`
+ 4 │
+   ╰────
+  help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
+        and every service, message and enum becomes a module inside its
+        package's (`notes.v1.NotesService` becomes `Notes.V1.NotesService`,
+        the descriptors of `notes.v1.Note` are in `Notes.V1.Note`), each
+        segment in PascalCase, so one can take the name of another or of a
+        package nested in its own, and names that differ only in case or
+        underscores end up the same. Rename one of them in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.
+
+Advice:
+  ☞ and in `notes/v1/notes.proto`:
+   ╭─[notes/v1/notes.proto:7:9]
+ 6 │ // of the package `notes.v1.note`.
+ 7 │ message Note {
+   ·         ──┬─
+   ·           ╰── and so does message `notes.v1.Note`
+ 8 │   string name = 1;
+   ╰────
+
+naming::module_collision
+
+  × Two generated modules both become the Elm module `Notes.V1.NotesService`.
+    ╭─[notes/v1/notes.proto:13:9]
+ 12 │ // is also the module of the service `NotesService`.
+ 13 │ message notes_service {
+    ·         ──────┬──────
+    ·               ╰── message `notes.v1.notes_service` becomes `Notes.V1.NotesService`
+ 14 │   string name = 1;
+ 15 │ }
+ 16 │
+ 17 │ // So are an enum's.
+ 18 │ enum Archive {
+ 19 │   ARCHIVE_UNSPECIFIED = 0;
+ 20 │ }
+ 21 │
+ 22 │ service NotesService {
+    ·         ──────┬─────
+    ·               ╰── and so does service `notes.v1.NotesService`
+ 23 │   rpc GetNote(Note) returns (Note);
+    ╰────
+  help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
+        and every service, message and enum becomes a module inside its
+        package's (`notes.v1.NotesService` becomes `Notes.V1.NotesService`,
+        the descriptors of `notes.v1.Note` are in `Notes.V1.Note`), each
+        segment in PascalCase, so one can take the name of another or of a
+        package nested in its own, and names that differ only in case or
+        underscores end up the same. Rename one of them in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.
+
+naming::module_collision
+
+  × Two generated modules both become the Elm module `Notes.V1.Archive`.
+    ╭─[notes/v1/notes.proto:18:6]
+ 17 │ // So are an enum's.
+ 18 │ enum Archive {
+    ·      ───┬───
+    ·         ╰── enum `notes.v1.Archive` becomes `Notes.V1.Archive`
+ 19 │   ARCHIVE_UNSPECIFIED = 0;
+ 20 │ }
+ 21 │
+ 22 │ service NotesService {
+ 23 │   rpc GetNote(Note) returns (Note);
+ 24 │ }
+ 25 │
+ 26 │ service archive {
+    ·         ───┬───
+    ·            ╰── and so does service `notes.v1.archive`
+ 27 │   rpc GetNote(Note) returns (Note);
+    ╰────
+  help: Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`),
+        and every service, message and enum becomes a module inside its
+        package's (`notes.v1.NotesService` becomes `Notes.V1.NotesService`,
+        the descriptors of `notes.v1.Note` are in `Notes.V1.Note`), each
+        segment in PascalCase, so one can take the name of another or of a
+        package nested in its own, and names that differ only in case or
+        underscores end up the same. Rename one of them in the proto, or
+        rename one with `rename=<proto full name>:<Elm name>`.

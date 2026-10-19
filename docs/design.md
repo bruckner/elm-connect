@@ -304,6 +304,36 @@ rpc shared call =
   "notes", Proto.Http.wildcard ] ""`), a query parameter's field names,
   and a field's behaviors (`Proto.Field.withBehavior [ … ]`). Layout is
   not API (§8.3): it can change in any release.
+- **Values in the package module, descriptions beside it.** *(Decided,
+  2026-10-19.)* The package module holds what a program sends and
+  receives: the types (messages, oneofs, recursion wrappers, enums),
+  their defaults and codecs, the typed values (`messageNote`,
+  `enumVisibility`) and the registry. What the proto says about a type
+  lives in a module of the type's own inside the package's, named by
+  its Elm type name: `Notes.V1.Note` holds one
+  `Proto.Field.Descriptor` per field, named as its record field
+  (`title`, `pageSize`; a oneof member as a field would be, §3.9), and
+  `descriptor : Proto.Message.Descriptor` built from them;
+  `Notes.V1.Visibility` holds `descriptor : Proto.Enum.Descriptor`; a
+  nested `Outer.Inner` is `Notes.V1.OuterInner`. Imports go one way:
+  the package module imports its descriptor modules (for the typed
+  values and the registry), a message's descriptor module imports the
+  descriptor modules of the enums its fields hold (another package's
+  included), and a service module imports the descriptor modules its
+  routes name (§4); nothing imports a package module from below, so no
+  cycle can form. Why: a field's descriptor is something a program can
+  name (`Notes.V1.Note.title`), which routes build on (§5.3) and UI
+  code can, and the package module of values reads as the API a
+  program uses. The cost is a module per type (§3.9 measures it). A
+  descriptor module is a generated module like any other: it opens
+  with `elmConnectVersion_`, `module_prefix` applies to it, and its
+  name is claimed with every other module's, so a message or enum
+  named like a service of its package (`notes_service` beside
+  `NotesService`), like a package nested in its own (`Note` beside
+  `notes.v1.note`), or like another type but for case (`ShopItem`,
+  `Shopitem`) is `naming::module_collision`, with `rename` the escape
+  (`descriptors_module_collision` and `descriptors_module_case`
+  cases).
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
   diagnostic naming the files involved. *(Proposed.)* Alternative: fold
@@ -909,7 +939,10 @@ Built *(Proposed in its details)*:
   `Outer.Inner` → `OuterInner`, `Outer.Inner.Kind` → `OuterInnerKind`.
   *(Decided, 2026-10-11.)* A submodule per message (`Pkg.Outer.Inner`)
   was considered and rejected: a parent referring to its own nested
-  type would be an Elm module cycle.
+  type would be an Elm module cycle. The descriptor modules (§3.1) are
+  flat for the same reason, `Notes.V1.OuterInner` beside `Notes.V1.Outer`,
+  and hold no types, so a message containing itself or its nested type
+  needs no import between them (a field names a message by full name).
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
 
@@ -930,14 +963,21 @@ Built, as the `naming` and `naming_collision` cases show:
 - An enum claims one constructor per number: an alias (§3.3) has no
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.
-- Top-level values are a prefix and a type name: `encodeFoo`,
-  `decodeFoo`, `defaultFoo`, `descriptorFoo`, `messageFoo` and
-  `enumFoo` (§3.9). Type
+- A package module's top-level values are a prefix and a type name:
+  `encodeFoo`, `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo`
+  (§3.9). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
   `registry`, is all lowercase, so it is none of them. A suffix scheme was
   rejected for the typed values: `encodeFooMessage` would be both the
   encoder of `FooMessage` and the typed value of `EncodeFoo`.
+- A descriptor module's values are `descriptor` and one per field,
+  named as its record field (a oneof member's is its proto name
+  converted as a field's, its first letter lowercased). A field named
+  `descriptor`, or a renamed one that meets another field's or a
+  member's name, is `naming::value_collision`, naming both; a field
+  renamed to `elmConnectVersion_` likewise (`descriptors_value_collision`
+  case).
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof
@@ -972,8 +1012,8 @@ what the proto name resolves to among the generated packages:
   though protobuf scopes it beside the enum): its constructor.
 
 Names derived from a renamed one follow it through the rules above: a
-type's codecs, default, descriptor and typed value (`Memo` gives
-`encodeMemo`, `defaultMemo`, `descriptorMemo`, `messageMemo`), a
+type's codecs, default, typed value and descriptor module (`Memo`
+gives `encodeMemo`, `defaultMemo`, `messageMemo`, `Notes.Api.Memo`), a
 recursive message's wrapper (`Memo_`),
 an enum's other constructors (`Audience` gives `AudienceUnspecified`),
 a oneof's type and constructors, and a nested type's name (renaming
@@ -1122,53 +1162,81 @@ case names it):
 
 ### 3.9 Descriptors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
 
-Every message and enum gets a descriptor and a typed value, in a
-`-- DESCRIPTORS` section between the defaults and the encoders, each
-type's descriptor followed by its typed value, which holds its codecs
-and default with the descriptor:
+Every message and enum gets a descriptor, in a module of its own
+beside the package's (§3.1), and a typed value, in the package's
+module, which holds its codecs and default with the descriptor:
 
 ```elm
-descriptorVisibility : Proto.Enum.Descriptor
-descriptorVisibility =
+-- Notes/V1/Visibility.elm
+descriptor : Proto.Enum.Descriptor
+descriptor =
     Proto.Enum.descriptor "notes.v1.Visibility"
         [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
         , …
         ]
 
 
-enumVisibility : Proto.Enum.Enum Visibility
-enumVisibility =
-    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
+-- Notes/V1/Note.elm
+descriptor : Proto.Message.Descriptor
+descriptor =
     Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
-        , Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
+        [ name
+        , visibility
+        , text
         , …
         ]
 
 
+name : Proto.Field.Descriptor
+name =
+    Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+visibility : Proto.Field.Descriptor
+visibility =
+    Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.V1.Visibility.descriptor)
+
+
+text : Proto.Field.Descriptor
+text =
+    Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "kind"
+
+
+-- Notes/V1.elm, in its TYPED VALUES and REGISTRY sections
+enumVisibility : Proto.Enum.Enum Visibility
+enumVisibility =
+    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified Notes.V1.Visibility.descriptor
+
+
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorNote
+            [ Notes.V1.Note.descriptor
             , …
             ]
-            [ descriptorVisibility
+            [ Notes.V1.Visibility.descriptor
             ]
         )
         (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
+
+- **The layout** *(Decided, 2026-10-19)*. A descriptor module holds
+  its `elmConnectVersion_`, then `descriptor`, then a message's fields
+  in declaration order, each oneof's members where the oneof is, each
+  value documented (what the field is, and its oneof). The package
+  module's sections are types, defaults, typed values (each enum's,
+  then each message's), the registry, encoders and decoders; a package
+  without types has the registry alone. Until 2026-10-19 each
+  descriptor was a value of the package module, `descriptorNote`, its
+  fields written inline, in a descriptors section beside the typed
+  values.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
   `Proto.Thing.Thing a` the typed value carrying it beside the type's
@@ -1234,7 +1302,8 @@ registry =
   never gives. A field of a message type refers to it by full name,
   never by value, since a message can contain itself and Elm forbids
   cyclic values; a `Proto.Registry` resolves the names. A field of an
-  enum type holds the enum's descriptor, `KindEnum descriptorVisibility`:
+  enum type holds the enum's descriptor, `KindEnum
+  Notes.V1.Visibility.descriptor`:
   an enum contains nothing, so it cannot lead back to the field, and its
   zero value's name is wanted wherever the field is read alone, by a
   route's default path or query text (§5.3) and by UI code that renders
@@ -1283,8 +1352,9 @@ registry =
   elimination keeps a top-level value whole: a method holding a typed
   value would bring the type's default and descriptor tree into every
   program that calls it. *(Decided, 2026-10-15.)* For the same reason
-  each descriptor is a top-level value of its own and the registry is
-  built from those, never from the typed values: a registry of
+  each descriptor is a top-level value of its own (in its descriptor
+  module) and the registry is built from those, never from the typed
+  values: a registry of
   `messageFoo.descriptor` kept every type's codecs and default in any
   program that used it, which on a large API was most of the program.
   *(Decided, 2026-10-16.)*
@@ -1295,8 +1365,8 @@ registry =
   diagnosed. There is no service, file or package descriptor: nothing
   consumes one, and a service module's namespace is its methods' calls
   and descriptors, so any fixed value name could collide with a method.
-- **The registry.** Each package module ends its descriptors section
-  with `registry : Proto.Registry.Registry`, transitive: the package's
+- **The registry.** Each package module has a registry section,
+  `registry : Proto.Registry.Registry`, transitive: the package's
   own descriptors, then the registries of the generated packages its
   module imports (each holding its own imports'), then
   `Proto.Registry.wellKnown`, joined with `Proto.Registry.union`, which
@@ -1305,7 +1375,8 @@ registry =
   not in it: importing them could make a cycle Elm rejects. It is a
   top-level constant, built once at start-up and dropped by dead-code
   elimination when nothing uses it. A package without types has a
-  module holding its registry alone.
+  module holding its registry alone. It names each descriptor module's
+  `descriptor`, so the package module imports every one of them.
 - **No option to leave the trees out.** A `descriptors=off` setting
   that wrote the message trees empty and no registry was built,
   measured (below) and dropped *(2026-10-14)*. It saved generated
@@ -1327,6 +1398,15 @@ registry =
   always written: the cost falls on applications that use them. (That
   measurement predates the descriptors' split from the typed values:
   the registry then kept every type's codecs too.)
+- **Cost of the descriptor modules** *(measured 2026-10-19, source
+  only)*: the notes example's generated Elm goes from 5 modules of
+  2,598 lines (92,404 bytes) to 39 modules of 3,956 lines (124,335
+  bytes), and the Connect conformance suite's from 118,842 to 184,463
+  bytes. Most of the growth is per module (its header, imports and
+  `elmConnectVersion_`, about fifteen lines) and per value (a two-line
+  doc comment, and a field's own annotation and name). Compile time and
+  optimized program size were not measured; dead-code elimination works
+  per top-level value either way.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
@@ -1502,9 +1582,10 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   package `notes.v1.notes_service`), two services whose module names
   coincide (`Archive` and `archive`), or two packages whose do
   (`notes.v1` and `notes.V1`) are `naming::module_collision`, each
-  site labelled. A service named like a type of its package needs no
-  check: proto forbids the same name, and an Elm module and a type
-  with one name do not clash.
+  site labelled. So is a service named like a type of its package,
+  whose descriptor module has the service module's name (§3.1): proto
+  forbids the same name, but not two that convert to one
+  (`notes_service` and `NotesService`).
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`), through
   the runtime's codecs for it (`services_types` case). Any other

@@ -11,8 +11,8 @@ naming::module_collision
    ╰────
   help: Each module is written to a file named for it (`Notes.V1` to `Notes/
         V1.elm`), and the default file systems of macOS and Windows ignore
-        case, so one of these would overwrite the other. Rename the service or
-        the package, or rename one with `rename=shop.api:<Elm name>`.
+        case, so one of these would overwrite the other. Rename one of them in
+        the proto, or rename one with `rename=shop.api:<Elm name>`.
 
 Advice:
   ☞ and in `lower.proto`:

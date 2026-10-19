@@ -45,9 +45,10 @@ fn a_tree_just_generated_is_current() {
     let (out, files) = written("check-current");
     let check = check_tree(&files, &out);
     assert!(check.is_current(), "{check:?}");
-    assert_eq!(check.modules, 2);
+    // The package's module, its service's, and one per message and enum.
+    assert_eq!(check.modules, 14);
     assert!(
-        check.render().contains("2 generated modules"),
+        check.render().contains("14 generated modules"),
         "{}",
         check.render()
     );
@@ -68,7 +69,7 @@ fn a_missing_module_is_drift() {
     assert!(check.render().contains("missing: "), "{}", check.render());
 
     let nothing = check_tree(&files, &out.join("absent"));
-    assert_eq!(nothing.drift.len(), 2);
+    assert_eq!(nothing.drift.len(), files.len());
 }
 
 #[test]
@@ -157,7 +158,7 @@ fn a_tree_from_another_release_says_so_once() {
         fs::write(&path, as_release(&text, "0.0.7", "v0_0")).expect("write");
     }
     let check = check_tree(&files, &out);
-    assert_eq!(check.drift.len(), 2);
+    assert_eq!(check.drift.len(), files.len());
     assert_eq!(check.version_only(), Some(vec!["0.0.7".to_owned()]));
     let report = check.render();
     assert!(
@@ -250,7 +251,11 @@ fn gen_warns_about_stale_files_and_deletes_nothing() {
         "{stderr}"
     );
     assert!(
-        stderr.contains(&format!("Wrote 2 modules under {}.", out.display())),
+        stderr.contains(&format!(
+            "Wrote {} modules under {}.",
+            files.len(),
+            out.display()
+        )),
         "{stderr}"
     );
     assert!(old.exists(), "nothing is deleted");

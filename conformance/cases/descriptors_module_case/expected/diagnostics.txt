@@ -1,0 +1,21 @@
+naming::module_collision
+
+  × The generated modules `Shop.V1.ShopItem` and `Shop.V1.Shopitem` differ
+  │ only in case, so they are written to the same file on macOS and Windows.
+    ╭─[shop.proto:8:9]
+  7 │ // case is ignored.
+  8 │ message ShopItem {
+    ·         ────┬───
+    ·             ╰── message `shop.v1.ShopItem` becomes `Shop.V1.ShopItem`
+  9 │   string name = 1;
+ 10 │ }
+ 11 │
+ 12 │ message Shopitem {
+    ·         ────┬───
+    ·             ╰── and message `shop.v1.Shopitem` becomes `Shop.V1.Shopitem`
+ 13 │   string name = 1;
+    ╰────
+  help: Each module is written to a file named for it (`Notes.V1` to `Notes/
+        V1.elm`), and the default file systems of macOS and Windows ignore
+        case, so one of these would overwrite the other. Rename one of them in
+        the proto, or rename one with `rename=shop.v1.Shopitem:<Elm name>`.

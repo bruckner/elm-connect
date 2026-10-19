@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package notes.v1;
+
+// `Note`'s descriptors are in `Notes.V1.Note`, which is also the module
+// of the package `notes.v1.note`.
+message Note {
+  string name = 1;
+}
+
+// `notes_service`'s descriptors are in `Notes.V1.NotesService`, which
+// is also the module of the service `NotesService`.
+message notes_service {
+  string name = 1;
+}
+
+// So are an enum's.
+enum Archive {
+  ARCHIVE_UNSPECIFIED = 0;
+}
+
+service NotesService {
+  rpc GetNote(Note) returns (Note);
+}
+
+service archive {
+  rpc GetNote(Note) returns (Note);
+}

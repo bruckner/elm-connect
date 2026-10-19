@@ -6,12 +6,12 @@ module Users.V1 exposing (..)
 import Json.Decode
 import Json.Encode
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Users.V1.Role
+import Users.V1.User
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -48,42 +48,30 @@ defaultUser =
 
 
 
--- DESCRIPTORS
-
-
-descriptorRole : Proto.Enum.Descriptor
-descriptorRole =
-    Proto.Enum.descriptor "users.v1.Role"
-        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "ROLE_EDITOR" 1
-        ]
+-- TYPED VALUES
 
 
 enumRole : Proto.Enum.Enum Role
 enumRole =
-    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
-
-
-descriptorUser : Proto.Message.Descriptor
-descriptorUser =
-    Proto.Message.descriptor "users.v1.User"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorRole)
-        ]
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified Users.V1.Role.descriptor
 
 
 messageUser : Proto.Message.Message User
 messageUser =
-    Proto.Message.message encodeUser decodeUser defaultUser descriptorUser
+    Proto.Message.message encodeUser decodeUser defaultUser Users.V1.User.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorUser
+            [ Users.V1.User.descriptor
             ]
-            [ descriptorRole
+            [ Users.V1.Role.descriptor
             ]
         )
         Proto.Registry.wellKnown

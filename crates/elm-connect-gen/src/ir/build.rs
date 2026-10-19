@@ -704,8 +704,11 @@ impl Builder {
                 &[path, &[tag::METHOD_NAME]].concat(),
                 format!("method `{full_name}` is renamed to `{}`", built.elm_name),
             );
-            self.diagnostics
-                .push(Problem::reserved_value(full_name, &built.elm_name, site));
+            self.diagnostics.push(Problem::reserved_value(
+                &format!("method `{full_name}`"),
+                &built.elm_name,
+                site,
+            ));
         }
         let service = method.parent_service();
         let what = format!("method `{full_name}`");
@@ -794,10 +797,57 @@ impl Builder {
         }
     }
 
-    fn claim_type(&mut self, types: &mut Namespace, package: &str, name: &str, origin: Origin) {
+    /// Claims the type `name` in its package's module; `false` after
+    /// reporting that another type has it.
+    fn claim_type(
+        &mut self,
+        types: &mut Namespace,
+        package: &str,
+        name: &str,
+        origin: Origin,
+    ) -> bool {
         if let Some((first, second)) = types.claim(name, origin) {
             self.diagnostics
                 .push(Problem::type_collision(package, name, first, second));
+            return false;
+        }
+        true
+    }
+
+    /// Claims the descriptor module of the type `full_name`, named `name`
+    /// in its package's module, for `origin`. A type whose name another
+    /// type of the package has was reported already, and claims nothing.
+    fn claim_descriptor_module(&mut self, full_name: &str, name: &str, origin: Origin) {
+        let Some(package) = self.types.get(full_name).map(|ty| ty.module.clone()) else {
+            return;
+        };
+        let module = naming::descriptor_module(&package, name);
+        self.claim_module(&module, origin, full_name);
+    }
+
+    /// Claims `name`, the Elm value of the descriptor of a field or oneof
+    /// member of `message` in its descriptor module, for `origin`. The
+    /// module also defines `descriptor` (claimed first, by the message)
+    /// and [`naming::VERSION_VALUE`], which only a rename can give a field.
+    fn claim_field_value(
+        &mut self,
+        values: &mut Namespace,
+        message: &str,
+        name: &str,
+        origin: Origin,
+    ) {
+        if name == naming::VERSION_VALUE {
+            let site = Site {
+                label: format!("{} is renamed to `{name}`", origin.what),
+                ..origin.site
+            };
+            self.diagnostics
+                .push(Problem::reserved_value(&origin.what, name, site));
+            return;
+        }
+        if let Some((first, second)) = values.claim(name, origin) {
+            self.diagnostics
+                .push(Problem::field_value_collision(message, name, first, second));
         }
     }
 
@@ -824,8 +874,11 @@ impl Builder {
         let elm_name = self.types.get(enumeration.full_name())?.name.clone();
         let package = file.package_name();
         let what = format!("enum `{}`", enumeration.full_name());
-        let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what);
-        self.claim_type(types, package, &elm_name, origin);
+        let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what.clone());
+        if self.claim_type(types, package, &elm_name, origin) {
+            let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what);
+            self.claim_descriptor_module(enumeration.full_name(), &elm_name, origin);
+        }
 
         let mut values: Vec<EnumValue> = Vec::new();
         let mut declared = Vec::new();
@@ -891,9 +944,19 @@ impl Builder {
         let full_name = message.full_name();
         let what = format!("message `{full_name}`");
         let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what.clone());
-        self.claim_type(types, package, &elm_name, origin);
+        if self.claim_type(types, package, &elm_name, origin) {
+            let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what.clone());
+            self.claim_descriptor_module(full_name, &elm_name, origin);
+        }
         let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
         self.claim_constructor(constructors, package, &elm_name, origin);
+
+        // The values of the message's descriptor module: its descriptor,
+        // then one per field and oneof member.
+        let mut values = Namespace::default();
+        let what = format!("the descriptor of message `{full_name}`");
+        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
+        values.claim(naming::DESCRIPTOR_VALUE, origin);
 
         let mut record = Namespace::default();
         let mut fields = Vec::new();
@@ -953,12 +1016,34 @@ impl Builder {
                     let what = format!("oneof field `{}` of `{full_name}`", member.name());
                     let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
                     self.claim_constructor(constructors, package, &elm_ctor, origin);
+                    let elm_name = match naming::member_value_name(member.name()) {
+                        Ok(name) => name,
+                        Err(error) => {
+                            let converted = match error {
+                                NameError::WrongStart { converted } => converted,
+                                _ => String::new(),
+                            };
+                            let path = [member.path(), &[tag::FIELD_NAME]].concat();
+                            let site = self.site(file, &path, "this name".into());
+                            self.diagnostics.push(Problem::invalid_field(
+                                full_name,
+                                member.name(),
+                                &converted,
+                                site,
+                            ));
+                            continue;
+                        }
+                    };
+                    let what = format!("oneof field `{}`", member.name());
+                    let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
+                    self.claim_field_value(&mut values, full_name, &elm_name, origin);
                     if let Some(ty) = self.resolve(file, message, &member, member.kind()) {
                         variants.push(OneofVariant {
                             proto_name: member.name().to_owned(),
                             json_name: member.json_name().to_owned(),
                             number: member.number(),
                             elm_ctor,
+                            elm_name,
                             ty,
                             cyclic: false,
                             jstype: jstype(&member),
@@ -983,7 +1068,7 @@ impl Builder {
                 continue;
             };
             let what = format!("field `{}`", field.name());
-            let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
+            let origin = self.origin(file, field.path(), tag::FIELD_NAME, what.clone());
             if let Some((first, second)) = record.claim(&elm_field_name, origin) {
                 self.diagnostics.push(Problem::field_collision(
                     full_name,
@@ -991,6 +1076,11 @@ impl Builder {
                     first,
                     second,
                 ));
+            } else {
+                // Two record fields of one name were reported as such; their
+                // descriptor values clash too, which is the same problem.
+                let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
+                self.claim_field_value(&mut values, full_name, &elm_field_name, origin);
             }
             if let Some((cardinality, ty)) = self.field_type(file, message, &field) {
                 fields.push(Field {

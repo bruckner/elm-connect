@@ -7,12 +7,12 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
 import Time
+import WellKnown.V1.Event
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -105,62 +105,23 @@ defaultEvent =
 
 
 
--- DESCRIPTORS
-
-
-descriptorEvent : Proto.Message.Descriptor
-descriptorEvent =
-    Proto.Message.descriptor "well_known.v1.Event"
-        [ Proto.Field.descriptor "created_at" "createdAt" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        , Proto.Field.descriptor "timeout" "timeout" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
-        , Proto.Field.descriptor "update_mask" "updateMask" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
-        , Proto.Field.descriptor "marker" "marker" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "metadata" "metadata" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
-        , Proto.Field.descriptor "payload" "payload" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
-        , Proto.Field.descriptor "items" "items" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
-        , Proto.Field.descriptor "ratio" "ratio" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.DoubleValue")
-        , Proto.Field.descriptor "weight" "weight" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FloatValue")
-        , Proto.Field.descriptor "big_count" "bigCount" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int64Value")
-        , Proto.Field.descriptor "big_total" "bigTotal" 11 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt64Value")
-        , Proto.Field.descriptor "count" "count" 12 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
-        , Proto.Field.descriptor "total" "total" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt32Value")
-        , Proto.Field.descriptor "enabled" "enabled" 14 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BoolValue")
-        , Proto.Field.descriptor "nickname" "nickname" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
-        , Proto.Field.descriptor "avatar" "avatar" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BytesValue")
-        , Proto.Field.descriptor "history" "history" 17 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        , Proto.Field.descriptor "limits" "limits" 18 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Duration")
-        , Proto.Field.descriptor "values" "values" 19 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Value")
-        , Proto.Field.descriptor "counts" "counts" 20 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Int32Value")
-        , Proto.Field.descriptor "acked" "acked" 24 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "pings" "pings" 25 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
-        , Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
-        , Proto.Field.descriptor "last_value" "lastValue" 31 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Value")
-        , Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
-        , Proto.Field.descriptor "at" "at" 21 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-            |> Proto.Field.inOneof "when"
-        , Proto.Field.descriptor "after" "after" 22 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
-            |> Proto.Field.inOneof "when"
-        , Proto.Field.descriptor "whenever" "whenever" 23 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
-            |> Proto.Field.inOneof "when"
-        , Proto.Field.descriptor "schedule" "schedule" 29 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
-            |> Proto.Field.inOneof "when"
-        , Proto.Field.descriptor "dates" "dates" 30 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
-            |> Proto.Field.inOneof "when"
-        ]
+-- TYPED VALUES
 
 
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.message encodeEvent decodeEvent defaultEvent descriptorEvent
+    Proto.Message.message encodeEvent decodeEvent defaultEvent WellKnown.V1.Event.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorEvent
+            [ WellKnown.V1.Event.descriptor
             ]
             []
         )

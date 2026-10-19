@@ -3,9 +3,9 @@
 
 module Clock.V1 exposing (..)
 
+import Clock.V1.Alarm
 import Json.Decode
 import Json.Encode
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -40,26 +40,23 @@ defaultAlarm =
 
 
 
--- DESCRIPTORS
-
-
-descriptorAlarm : Proto.Message.Descriptor
-descriptorAlarm =
-    Proto.Message.descriptor "clock.v1.Alarm"
-        [ Proto.Field.descriptor "at" "at" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        ]
+-- TYPED VALUES
 
 
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
-    Proto.Message.message encodeAlarm decodeAlarm defaultAlarm descriptorAlarm
+    Proto.Message.message encodeAlarm decodeAlarm defaultAlarm Clock.V1.Alarm.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorAlarm
+            [ Clock.V1.Alarm.descriptor
             ]
             []
         )
