@@ -1,10 +1,30 @@
 //! The Elm side of each proto scalar (design §3.4): its type, its zero
 //! value, and the library functions that encode and decode it.
 
-use super::{Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_JSON};
+use super::{ELM_BYTES, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_BYTES, PROTO_JSON};
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{int, string, ty, var};
 use crate::ir::ScalarKind;
+use crate::options::{Bytes, Int64, Options};
+
+/// How the scalars the generator's options govern are held where a value
+/// appears: 64-bit integers as the `int64` option or the field's `jstype`
+/// says, `bytes` as the `bytes` option says.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct Holding {
+    pub(super) int64: Int64,
+    pub(super) bytes: Bytes,
+}
+
+impl Holding {
+    /// What the options say where no field says otherwise.
+    pub(super) fn of(options: &Options) -> Self {
+        Holding {
+            int64: options.int64,
+            bytes: options.bytes,
+        }
+    }
+}
 
 /// How Elm holds a scalar.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -36,10 +56,14 @@ pub(super) enum Repr {
     String,
     /// `String` holding base64, as on the wire.
     Bytes,
+    /// elm/bytes' `Bytes`, from `bytes` under `bytes=bytes`: decoded from
+    /// base64, encoded as standard base64 with padding.
+    BytesAsBytes,
 }
 
-/// How Elm holds a scalar of `kind`; a 64-bit integer as `int64` says.
-pub(super) fn repr(kind: ScalarKind, int64: Int64) -> Repr {
+/// How Elm holds a scalar of `kind`, as `holding` says.
+pub(super) fn repr(kind: ScalarKind, holding: Holding) -> Repr {
+    let int64 = holding.int64;
     match kind {
         ScalarKind::Double | ScalarKind::Float => Repr::Float,
         ScalarKind::Int32 | ScalarKind::SInt32 | ScalarKind::SFixed32 => Repr::Int32,
@@ -54,7 +78,10 @@ pub(super) fn repr(kind: ScalarKind, int64: Int64) -> Repr {
         },
         ScalarKind::Bool => Repr::Bool,
         ScalarKind::String => Repr::String,
-        ScalarKind::Bytes => Repr::Bytes,
+        ScalarKind::Bytes => match holding.bytes {
+            Bytes::String => Repr::Bytes,
+            Bytes::Bytes => Repr::BytesAsBytes,
+        },
     }
 }
 
@@ -62,6 +89,7 @@ impl Emitter {
     /// The Elm type of a scalar.
     pub(super) fn scalar_type(&mut self, repr: Repr) -> Type {
         let name = match repr {
+            Repr::BytesAsBytes => return self.library_type(ELM_BYTES, "Bytes", []),
             Repr::Float => "Float",
             Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => "Int",
             Repr::Bool => "Bool",
@@ -82,6 +110,7 @@ impl Emitter {
             Repr::Int64 | Repr::UInt64 => string("0"),
             // The empty string is also the base64 of no bytes.
             Repr::String | Repr::Bytes => string(""),
+            Repr::BytesAsBytes => self.reference((PROTO_BYTES, "empty")),
         }
     }
 }
@@ -96,6 +125,7 @@ pub(super) fn encoder(repr: Repr) -> (&'static str, &'static str) {
         Repr::Bool => (JSON_ENCODE, "bool"),
         Repr::String => (JSON_ENCODE, "string"),
         Repr::Bytes => (PROTO_JSON, "encodeBytes"),
+        Repr::BytesAsBytes => (PROTO_JSON, "encodeBytesAsBytes"),
     }
 }
 
@@ -112,5 +142,6 @@ pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
         Repr::Bool => (JSON_DECODE, "bool"),
         Repr::String => (JSON_DECODE, "string"),
         Repr::Bytes => (PROTO_JSON, "bytes"),
+        Repr::BytesAsBytes => (PROTO_JSON, "bytesAsBytes"),
     }
 }

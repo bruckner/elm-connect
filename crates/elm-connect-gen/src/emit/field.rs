@@ -1,14 +1,16 @@
 //! A field's shape, and the Elm type, encoder and decoder that follow
 //! from it.
 
-use super::scalar::Repr;
+use super::scalar::{Holding, Repr};
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, Int64, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
+    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
     PROTO_JSON, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
 use std::collections::HashMap;
+
+use crate::options::Int64;
 
 use crate::ir::{
     Cardinality, Field, JsType, MapKey, Message, ScalarKind, TypeName, TypeRef, WellKnown, Wrapper,
@@ -132,10 +134,10 @@ pub(super) enum Present<'p> {
     Any,
 }
 
-/// The shape of a well-known type's values; `int64` says how the 64-bit
-/// wrappers hold their value.
-fn well_known(well_known: WellKnown, int64: Int64) -> ValueShape<'static> {
-    let wrapper = |kind| Present::Wrapper(scalar::repr(kind, int64));
+/// The shape of a well-known type's values; `holding` says how the 64-bit
+/// and bytes wrappers hold their value.
+fn well_known(well_known: WellKnown, holding: Holding) -> ValueShape<'static> {
+    let wrapper = |kind| Present::Wrapper(scalar::repr(kind, holding));
     let present = match well_known {
         WellKnown::Value => return ValueShape::Zeroed(Zeroed::Json),
         WellKnown::Struct => Present::Struct,
@@ -206,6 +208,11 @@ impl Emitter {
             }
             FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
                 return apply(self.reference((PROTO_JSON, "implicitFloat")), [value]);
+            }
+            // Not `implicit`, which compares with `==`: Elm finds any two
+            // `Bytes` equal, so every value would read as the default.
+            FieldShape::Plain(Zeroed::Scalar(Repr::BytesAsBytes)) => {
+                return apply(self.reference((PROTO_JSON, "implicitBytes")), [value]);
             }
             FieldShape::Plain(zeroed) => {
                 let zero = self.field_default(shape);
@@ -382,12 +389,12 @@ impl Emitter {
 
 /// The shape of `field`. `by_name` holds the messages of the field's
 /// package, where a field that closes a cycle finds its target's wrapper;
-/// `int64` is the generator's option, which the field's `jstype` may
-/// override.
+/// `holding` is what the generator's options say, which the field's
+/// `jstype` may override.
 pub(super) fn field_shape<'m>(
     field: &'m Field,
     by_name: &HashMap<&str, &'m Message>,
-    int64: Int64,
+    holding: Holding,
 ) -> FieldShape<'m> {
     let value = match &field.ty {
         TypeRef::Message(name) if field.cyclic => {
@@ -399,7 +406,7 @@ pub(super) fn field_shape<'m>(
                 .expect("a message on a cycle has a wrapper");
             ValueShape::Present(Present::Wrapped(wrapper))
         }
-        ty => value_shape(ty, field_int64(field.jstype, int64)),
+        ty => value_shape(ty, field_holding(field.jstype, holding)),
     };
     match (field.cardinality, value) {
         // `optional` adds no presence to a message type, and `Empty` has
@@ -422,23 +429,25 @@ pub(super) fn field_shape<'m>(
     }
 }
 
-/// How a field with this `jstype` holds 64-bit integers, under the
-/// generator's `int64` option.
-pub(super) fn field_int64(jstype: JsType, int64: Int64) -> Int64 {
-    match jstype {
-        JsType::Normal => int64,
+/// How a field with this `jstype` holds its scalars, under what the
+/// generator's options say: `jstype` decides 64-bit integers unless it is
+/// `JS_NORMAL`.
+pub(super) fn field_holding(jstype: JsType, holding: Holding) -> Holding {
+    let int64 = match jstype {
+        JsType::Normal => holding.int64,
         JsType::String => Int64::String,
         JsType::Number => Int64::Int,
-    }
+    };
+    Holding { int64, ..holding }
 }
 
-/// The shape of one value of type `ty`, holding 64-bit integers as
-/// `int64` says.
-pub(super) fn value_shape(ty: &TypeRef, int64: Int64) -> ValueShape<'_> {
+/// The shape of one value of type `ty`, holding its scalars as `holding`
+/// says.
+pub(super) fn value_shape(ty: &TypeRef, holding: Holding) -> ValueShape<'_> {
     match ty {
-        TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(scalar::repr(*kind, int64))),
+        TypeRef::Scalar(kind) => ValueShape::Zeroed(Zeroed::Scalar(scalar::repr(*kind, holding))),
         TypeRef::Enum { name, zero_ctor } => ValueShape::Zeroed(Zeroed::Enum(name, zero_ctor)),
         TypeRef::Message(name) => ValueShape::Present(Present::Message(name)),
-        TypeRef::WellKnown(known) => well_known(*known, int64),
+        TypeRef::WellKnown(known) => well_known(*known, holding),
     }
 }

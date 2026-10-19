@@ -6,7 +6,8 @@
 //! applications are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::{Emitter, Int64, PROTO_HTTP, PROTO_METHOD, RPC};
+use super::scalar::Holding;
+use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
@@ -100,7 +101,7 @@ impl Emitter {
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
     fn request_encoder(&mut self, ty: &TypeRef) -> Expr {
-        match method_shape(ty, self.int64) {
+        match method_shape(ty, self.holding) {
             // Qualified: a method may be called `identity`, and its own
             // name would then refer to itself.
             ValueShape::Zeroed(Zeroed::Json) => qualified("Basics", "identity"),
@@ -111,7 +112,7 @@ impl Emitter {
     /// The JSON decoder of a method's response type, as
     /// [`Self::request_encoder`] finds the encoder.
     fn response_decoder(&mut self, ty: &TypeRef) -> Expr {
-        let shape = method_shape(ty, self.int64);
+        let shape = method_shape(ty, self.holding);
         self.value_decoder(shape)
     }
 
@@ -157,7 +158,7 @@ impl Emitter {
 
     /// The Elm type of a method's request or response.
     fn method_type(&mut self, ty: &TypeRef) -> Type {
-        let shape = method_shape(ty, self.int64);
+        let shape = method_shape(ty, self.holding);
         self.value_type(shape)
     }
 
@@ -220,12 +221,12 @@ fn maybe(value: Option<Expr>) -> Expr {
 }
 
 /// The shape of a method's request or response type.
-fn method_shape(ty: &TypeRef, int64: Int64) -> ValueShape<'_> {
+fn method_shape(ty: &TypeRef, holding: Holding) -> ValueShape<'_> {
     // A method's types are messages (`ir::Method::input`).
     if let TypeRef::Scalar(_) | TypeRef::Enum { .. } = ty {
         unreachable!("a method type that is not a message")
     }
-    value_shape(ty, int64)
+    value_shape(ty, holding)
 }
 
 /// A method type's full proto name, such as `notes.v1.Note`.

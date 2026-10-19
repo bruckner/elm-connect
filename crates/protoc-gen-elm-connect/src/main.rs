@@ -182,8 +182,8 @@ A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
     protoc --elm-connect_out=generated --elm-connect_opt=int64=int notes.proto
 
 Options go in the plugin parameter, comma-separated `key=value` pairs:
-int64, unbound_methods, streaming, enum_unknown, rename (repeatable) and
-module_prefix. To generate without protoc, use the `elm-connect` CLI.
+int64, bytes, unbound_methods, streaming, enum_unknown, rename (repeatable)
+and module_prefix. To generate without protoc, use the `elm-connect` CLI.
 
 Usage: protoc-gen-elm-connect [--version | --help]
 "
@@ -315,6 +315,13 @@ mod tests {
         assert_eq!(response.error, None);
         let content = response.file[0].content.as_deref().expect("content");
         assert!(content.contains("int64Value : Int"), "{content}");
+
+        let mut request = scalars_request();
+        request.parameter = Some("bytes=bytes".into());
+        let response = round_trip(request);
+        assert_eq!(response.error, None);
+        let content = response.file[0].content.as_deref().expect("content");
+        assert!(content.contains("bytesValue : Bytes.Bytes"), "{content}");
 
         let mut request = scalars_request();
         request.parameter = Some("int64=long".into());

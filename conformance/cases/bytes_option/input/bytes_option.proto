@@ -1,0 +1,24 @@
+// Generated with the `bytes=bytes` option (options.txt): bytes fields are
+// elm/bytes' Bytes, decoded from base64 and encoded as standard base64 with
+// padding, wherever they appear.
+syntax = "proto3";
+
+package bytes_option.v1;
+
+import "google/protobuf/wrappers.proto";
+
+message Blob {
+  bytes data = 1;
+  optional bytes maybe_data = 2;
+  repeated bytes chunks = 3;
+  // Map keys cannot be bytes; values follow the option.
+  map<string, bytes> by_name = 4;
+  google.protobuf.BytesValue wrapped = 5;
+  repeated google.protobuf.BytesValue wrapped_chunks = 6;
+  oneof source {
+    bytes inline = 7;
+    string url = 8;
+  }
+  // Other scalars are unchanged.
+  string name = 9;
+}
