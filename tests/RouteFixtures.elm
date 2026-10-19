@@ -177,7 +177,9 @@ fixtures =
         "{\"messageId\":\"m/1\",\"name\":\"messages/x y\",\"revision\":\"2\",\"sub\":{\"subfield\":\"s\"}}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
-        , headers = [ ( "Connect-Protocol-Version", "1" ) ]
+        , headers =
+            [ ( "Connect-Protocol-Version", "1" )
+            ]
         , body = Just "{\"messageId\":\"m/1\",\"name\":\"messages/x y\",\"revision\":\"2\",\"sub\":{\"subfield\":\"s\"}}"
         }
     , Replay.fixture "implicit: an empty request is an empty object"
@@ -187,7 +189,9 @@ fixtures =
         "{}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
-        , headers = [ ( "Connect-Protocol-Version", "1" ) ]
+        , headers =
+            [ ( "Connect-Protocol-Version", "1" )
+            ]
         , body = Just "{}"
         }
     , Replay.fixture "query: fields at their defaults are left out"

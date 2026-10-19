@@ -724,17 +724,19 @@ mod tests {
         let on = printed(&Options::default());
         assert!(
             on.contains(
-                "descriptorA =\n    Proto.Message.descriptor \"t.v1.A\" [ \
+                "descriptorA =\n    Proto.Message.descriptor \"t.v1.A\"\n        [ \
                  Proto.Field.descriptor \"n\" \"n\" 1 \
                  (Proto.Field.CardinalityMap Proto.Field.ScalarBool) \
-                 (Proto.Field.KindScalar Proto.Field.ScalarSfixed64) ]"
+                 (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)\n        ]"
             ),
             "{on}"
         );
         assert!(
             on.contains(
-                "registry =\n    Proto.Registry.union (Proto.Registry.fromDescriptors \
-                 [ descriptorA ] []) Proto.Registry.wellKnown"
+                "registry =\n    Proto.Registry.union\n        \
+                 (Proto.Registry.fromDescriptors\n            \
+                 [ descriptorA\n            ]\n            []\n        \
+                 )\n        Proto.Registry.wellKnown"
             ),
             "{on}"
         );

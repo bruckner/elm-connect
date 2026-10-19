@@ -143,7 +143,8 @@ registry =
             [ descriptorTask
             , descriptorGetTaskRequest
             ]
-            [ descriptorState ]
+            [ descriptorState
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -186,15 +187,19 @@ encodeTaskDue value =
             []
 
         TaskDueDate member ->
-            [ ( "date", Just (Json.Encode.string member) ) ]
+            [ ( "date", Just (Json.Encode.string member) )
+            ]
 
         TaskDueNever member ->
-            [ ( "never", Just (Json.Encode.string member) ) ]
+            [ ( "never", Just (Json.Encode.string member) )
+            ]
 
 
 encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
 encodeGetTaskRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 

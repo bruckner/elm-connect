@@ -128,7 +128,8 @@ registry =
             [ descriptorDraft
             , descriptorDraftMargin
             ]
-            [ descriptorMood ]
+            [ descriptorMood
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -166,10 +167,12 @@ encodeDraftBody value =
             []
 
         DraftBodyText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
         DraftBodyBlob member ->
-            [ ( "blob", Just (Proto.Json.encodeBytes member) ) ]
+            [ ( "blob", Just (Proto.Json.encodeBytes member) )
+            ]
 
 
 encodeDraftMargin : DraftMargin -> Json.Encode.Value

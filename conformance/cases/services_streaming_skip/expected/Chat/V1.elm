@@ -44,7 +44,9 @@ defaultLine =
 
 descriptorLine : Proto.Message.Descriptor
 descriptorLine =
-    Proto.Message.descriptor "chat.v1.Line" [ Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "chat.v1.Line"
+        [ Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageLine : Proto.Message.Message Line
@@ -54,7 +56,13 @@ messageLine =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorLine ] []) Proto.Registry.wellKnown
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorLine
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 
@@ -63,7 +71,9 @@ registry =
 
 encodeLine : Line -> Json.Encode.Value
 encodeLine value =
-    Proto.Json.object [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text ) ]
+    Proto.Json.object
+        [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
+        ]
 
 
 

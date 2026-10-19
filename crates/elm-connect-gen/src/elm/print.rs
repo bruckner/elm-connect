@@ -10,7 +10,8 @@
 //! - `case`, `let` and `if` always span lines.
 //! - Non-empty records and record updates put one field per line, except
 //!   an [`Expr::InlineRecord`] whose fields all fit on one line.
-//! - Lists of more than one element put one element per line.
+//! - Non-empty lists put one element per line, even a list of one,
+//!   except an [`Expr::InlineList`] whose elements all fit on one line.
 //! - An [`Expr::StackedApply`] puts one argument per line, the first on
 //!   the function's line, as an application whose last argument alone
 //!   spans lines does.
@@ -576,7 +577,7 @@ fn expression(expr: &Expr) -> Block {
                     .chain([Block::text("}")]),
             )
         }
-        Expr::List(items) => sequence(items, "[", "]", items.len() > 1),
+        Expr::List(items) => sequence(items, "[", "]", true),
         Expr::InlineList(items) => sequence(items, "[", "]", false),
         Expr::Tuple(items) => sequence(items, "(", ")", false),
         Expr::BinOp { .. } => operator_chain(expr),

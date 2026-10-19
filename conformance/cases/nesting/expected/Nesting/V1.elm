@@ -197,7 +197,9 @@ messageOuter =
 
 descriptorOuterInner : Proto.Message.Descriptor
 descriptorOuterInner =
-    Proto.Message.descriptor "nesting.v1.Outer.Inner" [ Proto.Field.descriptor "deepest" "deepest" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest") ]
+    Proto.Message.descriptor "nesting.v1.Outer.Inner"
+        [ Proto.Field.descriptor "deepest" "deepest" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
+        ]
 
 
 messageOuterInner : Proto.Message.Message OuterInner
@@ -207,7 +209,9 @@ messageOuterInner =
 
 descriptorOuterInnerDeepest : Proto.Message.Descriptor
 descriptorOuterInnerDeepest =
-    Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest" [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind") ]
+    Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest"
+        [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        ]
 
 
 messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
@@ -257,7 +261,9 @@ messageCompany =
 
 descriptorForest : Proto.Message.Descriptor
 descriptorForest =
-    Proto.Message.descriptor "nesting.v1.Forest" [ Proto.Field.descriptor "trees" "trees" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node") ]
+    Proto.Message.descriptor "nesting.v1.Forest"
+        [ Proto.Field.descriptor "trees" "trees" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
+        ]
 
 
 messageForest : Proto.Message.Message Forest
@@ -282,7 +288,9 @@ messageExpr =
 
 descriptorSum : Proto.Message.Descriptor
 descriptorSum =
-    Proto.Message.descriptor "nesting.v1.Sum" [ Proto.Field.descriptor "terms" "terms" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Expr") ]
+    Proto.Message.descriptor "nesting.v1.Sum"
+        [ Proto.Field.descriptor "terms" "terms" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Expr")
+        ]
 
 
 messageSum : Proto.Message.Message Sum
@@ -304,7 +312,8 @@ registry =
             , descriptorExpr
             , descriptorSum
             ]
-            [ descriptorOuterInnerKind ]
+            [ descriptorOuterInnerKind
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -334,12 +343,16 @@ encodeOuter value =
 
 encodeOuterInner : OuterInner -> Json.Encode.Value
 encodeOuterInner value =
-    Proto.Json.object [ ( "deepest", Maybe.map encodeOuterInnerDeepest value.deepest ) ]
+    Proto.Json.object
+        [ ( "deepest", Maybe.map encodeOuterInnerDeepest value.deepest )
+        ]
 
 
 encodeOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
 encodeOuterInnerDeepest value =
-    Proto.Json.object [ ( "kind", Proto.Json.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind ) ]
+    Proto.Json.object
+        [ ( "kind", Proto.Json.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+        ]
 
 
 encodeNode : Node -> Json.Encode.Value
@@ -384,7 +397,9 @@ encodeCompany_ (Company_ value) =
 
 encodeForest : Forest -> Json.Encode.Value
 encodeForest value =
-    Proto.Json.object [ ( "trees", Proto.Json.repeated encodeNode value.trees ) ]
+    Proto.Json.object
+        [ ( "trees", Proto.Json.repeated encodeNode value.trees )
+        ]
 
 
 encodeExpr : Expr -> Json.Encode.Value
@@ -399,15 +414,19 @@ encodeExprValue value =
             []
 
         ExprValueNumber member ->
-            [ ( "number", Just (Proto.Json.encodeInt64 member) ) ]
+            [ ( "number", Just (Proto.Json.encodeInt64 member) )
+            ]
 
         ExprValueSum member ->
-            [ ( "sum", Just (encodeSum member) ) ]
+            [ ( "sum", Just (encodeSum member) )
+            ]
 
 
 encodeSum : Sum -> Json.Encode.Value
 encodeSum value =
-    Proto.Json.object [ ( "terms", Proto.Json.repeated encodeExpr value.terms ) ]
+    Proto.Json.object
+        [ ( "terms", Proto.Json.repeated encodeExpr value.terms )
+        ]
 
 
 

@@ -79,7 +79,9 @@ defaultNote =
 
 descriptorAuthor : Proto.Message.Descriptor
 descriptorAuthor =
-    Proto.Message.descriptor "cardinality.v1.Author" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "cardinality.v1.Author"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageAuthor : Proto.Message.Message Author
@@ -129,7 +131,9 @@ registry =
 
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeNote : Note -> Json.Encode.Value

@@ -74,7 +74,9 @@ messageNote =
 
 descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.GetNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
@@ -109,7 +111,9 @@ encodeNote value =
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 

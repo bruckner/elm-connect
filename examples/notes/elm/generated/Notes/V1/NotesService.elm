@@ -106,7 +106,9 @@ descriptorUpdateNote =
             , customVerb = Nothing
             , body = Proto.Http.bodyField "note"
             , responseBody = Nothing
-            , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
+            , query =
+                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                ]
             }
         ]
 

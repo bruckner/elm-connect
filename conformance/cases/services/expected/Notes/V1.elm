@@ -222,7 +222,9 @@ messageNote =
 
 descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.GetNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
@@ -328,7 +330,9 @@ messageArchiveNoteRequest =
 
 descriptorReadFileRequest : Proto.Message.Descriptor
 descriptorReadFileRequest =
-    Proto.Message.descriptor "notes.v1.ReadFileRequest" [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.ReadFileRequest"
+        [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageReadFileRequest : Proto.Message.Message ReadFileRequest
@@ -338,7 +342,9 @@ messageReadFileRequest =
 
 descriptorSummary : Proto.Message.Descriptor
 descriptorSummary =
-    Proto.Message.descriptor "notes.v1.Summary" [ Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.Summary"
+        [ Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageSummary : Proto.Message.Message Summary
@@ -362,7 +368,8 @@ registry =
             , descriptorReadFileRequest
             , descriptorSummary
             ]
-            [ descriptorVisibility ]
+            [ descriptorVisibility
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -396,7 +403,9 @@ encodeNote value =
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
@@ -462,12 +471,16 @@ encodeArchiveNoteRequest value =
 
 encodeReadFileRequest : ReadFileRequest -> Json.Encode.Value
 encodeReadFileRequest value =
-    Proto.Json.object [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path ) ]
+    Proto.Json.object
+        [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path )
+        ]
 
 
 encodeSummary : Summary -> Json.Encode.Value
 encodeSummary value =
-    Proto.Json.object [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text ) ]
+    Proto.Json.object
+        [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
+        ]
 
 
 

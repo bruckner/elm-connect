@@ -116,7 +116,9 @@ messageMemo =
 
 descriptorEdit : Proto.Message.Descriptor
 descriptorEdit =
-    Proto.Message.descriptor "notes.v1.Note.Revision" [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32) ]
+    Proto.Message.descriptor "notes.v1.Note.Revision"
+        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        ]
 
 
 messageEdit : Proto.Message.Message Edit
@@ -126,7 +128,9 @@ messageEdit =
 
 descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.GetNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
@@ -142,7 +146,8 @@ registry =
             , descriptorEdit
             , descriptorGetNoteRequest
             ]
-            [ descriptorAudience ]
+            [ descriptorAudience
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -179,20 +184,26 @@ encodeMemoBody value =
             []
 
         MemoBodyText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
         BodyUrl member ->
-            [ ( "link", Just (Json.Encode.string member) ) ]
+            [ ( "link", Just (Json.Encode.string member) )
+            ]
 
 
 encodeEdit : Edit -> Json.Encode.Value
 encodeEdit value =
-    Proto.Json.object [ ( "number", Proto.Json.implicit 0 Json.Encode.int value.number ) ]
+    Proto.Json.object
+        [ ( "number", Proto.Json.implicit 0 Json.Encode.int value.number )
+        ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 

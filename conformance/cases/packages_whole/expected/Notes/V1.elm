@@ -70,7 +70,9 @@ messageNote =
 
 descriptorTag : Proto.Message.Descriptor
 descriptorTag =
-    Proto.Message.descriptor "notes.v1.Tag" [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.Tag"
+        [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageTag : Proto.Message.Message Tag
@@ -104,7 +106,9 @@ encodeNote value =
 
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
-    Proto.Json.object [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label ) ]
+    Proto.Json.object
+        [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label )
+        ]
 
 
 

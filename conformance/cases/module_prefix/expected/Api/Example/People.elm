@@ -79,7 +79,14 @@ messageUser =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorUser ] [ descriptorRole ]) Proto.Registry.wellKnown
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorUser
+            ]
+            [ descriptorRole
+            ]
+        )
+        Proto.Registry.wellKnown
 
 
 

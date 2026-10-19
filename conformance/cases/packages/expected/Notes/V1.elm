@@ -82,7 +82,13 @@ messageNote =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorNote ] []) (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorNote
+            ]
+            []
+        )
+        (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 
 
 
@@ -109,10 +115,12 @@ encodeNoteOwner value =
             []
 
         NoteOwnerUser member ->
-            [ ( "user", Just (Users.V1.encodeUser member) ) ]
+            [ ( "user", Just (Users.V1.encodeUser member) )
+            ]
 
         NoteOwnerTeam member ->
-            [ ( "team", Just (Json.Encode.string member) ) ]
+            [ ( "team", Just (Json.Encode.string member) )
+            ]
 
 
 

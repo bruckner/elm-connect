@@ -113,7 +113,9 @@ messageTask =
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ descriptorTask ]
+        (Proto.Registry.fromDescriptors
+            [ descriptorTask
+            ]
             [ descriptorStatus
             , descriptorPriority
             ]

@@ -256,7 +256,9 @@ messageGetMessageRequest =
 
 descriptorGetMessageRequestSubMessage : Proto.Message.Descriptor
 descriptorGetMessageRequestSubMessage =
-    Proto.Message.descriptor "routes.v1.GetMessageRequest.SubMessage" [ Proto.Field.descriptor "subfield" "subfield" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "routes.v1.GetMessageRequest.SubMessage"
+        [ Proto.Field.descriptor "subfield" "subfield" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
@@ -353,7 +355,9 @@ messageDeep =
 
 descriptorFileRequest : Proto.Message.Descriptor
 descriptorFileRequest =
-    Proto.Message.descriptor "routes.v1.FileRequest" [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "routes.v1.FileRequest"
+        [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageFileRequest : Proto.Message.Message FileRequest
@@ -405,7 +409,8 @@ registry =
             , descriptorResource
             , descriptorUpdateResourceRequest
             ]
-            [ descriptorKind ]
+            [ descriptorKind
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -440,7 +445,9 @@ encodeGetMessageRequest value =
 
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Json.Encode.Value
 encodeGetMessageRequestSubMessage value =
-    Proto.Json.object [ ( "subfield", Proto.Json.implicit "" Json.Encode.string value.subfield ) ]
+    Proto.Json.object
+        [ ( "subfield", Proto.Json.implicit "" Json.Encode.string value.subfield )
+        ]
 
 
 encodeMessage : Message -> Json.Encode.Value
@@ -494,10 +501,12 @@ encodeEverythingChoice value =
             []
 
         EverythingChoiceText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
         EverythingChoiceNumber member ->
-            [ ( "number", Just (Json.Encode.int member) ) ]
+            [ ( "number", Just (Json.Encode.int member) )
+            ]
 
 
 encodeInner : Inner -> Json.Encode.Value
@@ -518,7 +527,9 @@ encodeDeep value =
 
 encodeFileRequest : FileRequest -> Json.Encode.Value
 encodeFileRequest value =
-    Proto.Json.object [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path ) ]
+    Proto.Json.object
+        [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path )
+        ]
 
 
 encodeResource : Resource -> Json.Encode.Value

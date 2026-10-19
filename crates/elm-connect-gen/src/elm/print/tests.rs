@@ -397,13 +397,17 @@ fn record_literals() {
 #[test]
 fn lists_and_tuples() {
     assert_eq!(print_expr(&list([])), "[]");
-    assert_eq!(print_expr(&list([int(1)])), "[ 1 ]");
+    assert_eq!(print_expr(&list([int(1)])), "[ 1\n]");
     assert_eq!(print_expr(&list([int(1), int(2)])), "[ 1\n, 2\n]");
     assert_eq!(print_expr(&tuple2(string("a"), int(1))), "( \"a\", 1 )");
     assert_eq!(
         print_expr(&tuple2(var("a"), list([int(1), int(2)]))),
         "( a\n, [ 1\n  , 2\n  ]\n)"
     );
+    assert_eq!(print_expr(&inline_list([])), "[]");
+    assert_eq!(print_expr(&inline_list([int(1)])), "[ 1 ]");
+    assert_eq!(print_expr(&inline_list([int(1), int(2)])), "[ 1, 2 ]");
+    assert_eq!(print_expr(&inline_list([list([int(1)])])), "[ [ 1\n  ]\n]");
 }
 
 #[test]

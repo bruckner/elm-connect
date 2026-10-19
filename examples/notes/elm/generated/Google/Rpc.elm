@@ -245,7 +245,9 @@ messageErrorInfo =
 
 descriptorRetryInfo : Proto.Message.Descriptor
 descriptorRetryInfo =
-    Proto.Message.descriptor "google.rpc.RetryInfo" [ Proto.Field.descriptor "retry_delay" "retryDelay" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration") ]
+    Proto.Message.descriptor "google.rpc.RetryInfo"
+        [ Proto.Field.descriptor "retry_delay" "retryDelay" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
+        ]
 
 
 messageRetryInfo : Proto.Message.Message RetryInfo
@@ -268,7 +270,9 @@ messageDebugInfo =
 
 descriptorQuotaFailure : Proto.Message.Descriptor
 descriptorQuotaFailure =
-    Proto.Message.descriptor "google.rpc.QuotaFailure" [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.QuotaFailure.Violation") ]
+    Proto.Message.descriptor "google.rpc.QuotaFailure"
+        [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.QuotaFailure.Violation")
+        ]
 
 
 messageQuotaFailure : Proto.Message.Message QuotaFailure
@@ -297,7 +301,9 @@ messageQuotaFailureViolation =
 
 descriptorPreconditionFailure : Proto.Message.Descriptor
 descriptorPreconditionFailure =
-    Proto.Message.descriptor "google.rpc.PreconditionFailure" [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.PreconditionFailure.Violation") ]
+    Proto.Message.descriptor "google.rpc.PreconditionFailure"
+        [ Proto.Field.descriptor "violations" "violations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.PreconditionFailure.Violation")
+        ]
 
 
 messagePreconditionFailure : Proto.Message.Message PreconditionFailure
@@ -321,7 +327,9 @@ messagePreconditionFailureViolation =
 
 descriptorBadRequest : Proto.Message.Descriptor
 descriptorBadRequest =
-    Proto.Message.descriptor "google.rpc.BadRequest" [ Proto.Field.descriptor "field_violations" "fieldViolations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.BadRequest.FieldViolation") ]
+    Proto.Message.descriptor "google.rpc.BadRequest"
+        [ Proto.Field.descriptor "field_violations" "fieldViolations" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.BadRequest.FieldViolation")
+        ]
 
 
 messageBadRequest : Proto.Message.Message BadRequest
@@ -374,7 +382,9 @@ messageResourceInfo =
 
 descriptorHelp : Proto.Message.Descriptor
 descriptorHelp =
-    Proto.Message.descriptor "google.rpc.Help" [ Proto.Field.descriptor "links" "links" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.Help.Link") ]
+    Proto.Message.descriptor "google.rpc.Help"
+        [ Proto.Field.descriptor "links" "links" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.rpc.Help.Link")
+        ]
 
 
 messageHelp : Proto.Message.Message Help
@@ -447,7 +457,9 @@ encodeErrorInfo value =
 
 encodeRetryInfo : RetryInfo -> Json.Encode.Value
 encodeRetryInfo value =
-    Proto.Json.object [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay ) ]
+    Proto.Json.object
+        [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay )
+        ]
 
 
 encodeDebugInfo : DebugInfo -> Json.Encode.Value
@@ -460,7 +472,9 @@ encodeDebugInfo value =
 
 encodeQuotaFailure : QuotaFailure -> Json.Encode.Value
 encodeQuotaFailure value =
-    Proto.Json.object [ ( "violations", Proto.Json.repeated encodeQuotaFailureViolation value.violations ) ]
+    Proto.Json.object
+        [ ( "violations", Proto.Json.repeated encodeQuotaFailureViolation value.violations )
+        ]
 
 
 encodeQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
@@ -479,7 +493,9 @@ encodeQuotaFailureViolation value =
 
 encodePreconditionFailure : PreconditionFailure -> Json.Encode.Value
 encodePreconditionFailure value =
-    Proto.Json.object [ ( "violations", Proto.Json.repeated encodePreconditionFailureViolation value.violations ) ]
+    Proto.Json.object
+        [ ( "violations", Proto.Json.repeated encodePreconditionFailureViolation value.violations )
+        ]
 
 
 encodePreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
@@ -493,7 +509,9 @@ encodePreconditionFailureViolation value =
 
 encodeBadRequest : BadRequest -> Json.Encode.Value
 encodeBadRequest value =
-    Proto.Json.object [ ( "fieldViolations", Proto.Json.repeated encodeBadRequestFieldViolation value.fieldViolations ) ]
+    Proto.Json.object
+        [ ( "fieldViolations", Proto.Json.repeated encodeBadRequestFieldViolation value.fieldViolations )
+        ]
 
 
 encodeBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
@@ -526,7 +544,9 @@ encodeResourceInfo value =
 
 encodeHelp : Help -> Json.Encode.Value
 encodeHelp value =
-    Proto.Json.object [ ( "links", Proto.Json.repeated encodeHelpLink value.links ) ]
+    Proto.Json.object
+        [ ( "links", Proto.Json.repeated encodeHelpLink value.links )
+        ]
 
 
 encodeHelpLink : HelpLink -> Json.Encode.Value
