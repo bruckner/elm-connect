@@ -13,6 +13,15 @@ just check      # run the gate
 
 `just` with no arguments lists every recipe.
 
+Cargo builds into `target/`, and the live suite's binaries go under it
+too. With several worktrees of the repository, set `CARGO_TARGET_DIR`
+to one directory and every recipe builds there: a `mise.toml` in the
+directory holding the worktrees (`[env]` `CARGO_TARGET_DIR =
+"{{config_root}}/.cargo-target"`) does it for all of them, or the
+gitignored `mise.local.toml` for one. Cargo serialises its own builds
+on that directory; run one `just live` at a time, since it writes its
+binaries there unlocked, and `just clean` empties it for every worktree.
+
 ## The gate
 
 `just check` runs formatting checks (`cargo fmt`, `elm-format

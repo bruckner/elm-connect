@@ -233,7 +233,8 @@ node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gat
 ```
 
 `just live` regenerates the example with buf and fails if the output
-differs from what is committed, builds the server and `Live.elm`
+differs from what is committed, builds the server (into `target/live/bin`,
+under `CARGO_TARGET_DIR` when that is set) and `Live.elm`
 (unoptimized), starts the server on a free port and runs the suite.
 `--print` prints each result instead of checking it. `--prefix` adds a
 path to the server's URL for the cases' `baseUrl`: the server serves

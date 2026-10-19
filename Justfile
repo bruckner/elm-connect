@@ -6,6 +6,11 @@
 # output.
 elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests"
 
+# Cargo's build directory, which the live suite's binaries share
+# (target/live). CARGO_TARGET_DIR moves it, as it does for cargo, so several
+# worktrees can build into one directory instead of each carrying its own.
+target := absolute_path(env("CARGO_TARGET_DIR", "target"))
+
 [private]
 default:
     @just --list
@@ -93,43 +98,43 @@ bless:
 # runs it as its own job. It builds the browser example too, so the README's
 # excerpts of it compile.
 live: live-gen live-build example-notes-build && live-conformance
-    node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/notes.json
-    node conformance/live/run.mjs --serve target/live/bin/notes-server conformance/live/cases/transcode.json
-    node conformance/live/routes.mjs --serve target/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
-    node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
-    node conformance/live/routes.mjs --serve target/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/notes.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/transcode.json
+    node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+    node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
 
 # Regenerate the example's Go stubs, grpc-gateway's proxies (two templates;
 # buf.gen.gateway.yaml says why) and the Elm client with buf, and fail if
 # they differ from what is committed (or staged). The plugins are built into
-# target/live/bin: protoc-gen-go, protoc-gen-connect-go, protoc-gen-go-grpc and
+# the build directory's live/bin: protoc-gen-go, protoc-gen-connect-go, protoc-gen-go-grpc and
 # protoc-gen-grpc-gateway at the versions the server's go.mod pins,
 # protoc-gen-elm-connect from this workspace.
 #
 # Then generate the Elm again under `buf generate --include-imports`, into
-# target/live/include-imports, and fail unless it is the committed set,
+# the build directory's live/include-imports, and fail unless it is the committed set,
 # file for file. This proves the plugin, asked for every import, generates
 # no `Google.Api` module from the googleapis files that only carry
 # `google.api.http`, and none for `google/protobuf`.
 live-gen:
-    mkdir -p target/live/bin
-    cd examples/notes/server && go build -o ../../../target/live/bin/ google.golang.org/protobuf/cmd/protoc-gen-go connectrpc.com/connect/v2/cmd/protoc-gen-connect-go google.golang.org/grpc/cmd/protoc-gen-go-grpc github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
+    mkdir -p {{target}}/live/bin
+    cd examples/notes/server && go build -o {{target}}/live/bin/ google.golang.org/protobuf/cmd/protoc-gen-go connectrpc.com/connect/v2/cmd/protoc-gen-connect-go google.golang.org/grpc/cmd/protoc-gen-go-grpc github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
     cargo build -p protoc-gen-elm-connect
-    cp target/debug/protoc-gen-elm-connect target/live/bin/
-    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate
-    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.gateway.yaml
-    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.gateway-apart.yaml
-    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
+    cp {{target}}/debug/protoc-gen-elm-connect {{target}}/live/bin/
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway.yaml
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway-apart.yaml
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
     git diff --exit-code -- examples/notes/server/gen examples/notes/elm/generated
     @test -z "$(git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated; exit 1)
-    rm -rf target/live/include-imports
-    cd examples/notes && PATH="$PWD/../../target/live/bin:$PATH" buf generate --include-imports --template buf.gen.include-imports.yaml -o ../../target/live/include-imports
-    diff -r target/live/include-imports/elm/generated examples/notes/elm/generated
+    rm -rf {{target}}/live/include-imports
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --include-imports --template buf.gen.include-imports.yaml -o {{target}}/live/include-imports
+    diff -r {{target}}/live/include-imports/elm/generated examples/notes/elm/generated
 
 # Build the example server and the live runner's Elm program. The bare
 # `elm make` resolves dependencies first, as in elm-check.
 live-build:
-    cd examples/notes/server && go vet ./... && go build -o ../../../target/live/bin/notes-server .
+    cd examples/notes/server && go vet ./... && go build -o {{target}}/live/bin/notes-server .
     -@cd conformance/live && elm make >/dev/null 2>&1
     cd conformance/live && elm make src/Live.elm --output=build/elm.js
 
@@ -156,10 +161,10 @@ live-conformance: live-conformance-gen live-build
 # live-gen.
 live-conformance-gen:
     cd conformance/live && npm ci --ignore-scripts --no-audit --no-fund
-    mkdir -p target/live/bin
+    mkdir -p {{target}}/live/bin
     cargo build -p protoc-gen-elm-connect
-    cp target/debug/protoc-gen-elm-connect target/live/bin/
-    cd conformance/live/suite && PATH="$PWD/../../../target/live/bin:$PWD/../node_modules/.bin:$PATH" buf generate
+    cp {{target}}/debug/protoc-gen-elm-connect {{target}}/live/bin/
+    cd conformance/live/suite && PATH="{{target}}/live/bin:$PWD/../node_modules/.bin:$PATH" buf generate
     git diff --exit-code -- conformance/live/suite
     @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
 
@@ -196,8 +201,8 @@ protos-refresh:
 # README's excerpts in src/Snippets with it. The bare `elm make` resolves
 # dependencies first, as in elm-check.
 example-notes-build:
-    mkdir -p target/live/bin
-    cd examples/notes/server && go build -o ../../../target/live/bin/notes-server .
+    mkdir -p {{target}}/live/bin
+    cd examples/notes/server && go build -o {{target}}/live/bin/notes-server .
     -@cd examples/notes/elm && elm make >/dev/null 2>&1
     cd examples/notes/elm && elm make --optimize src/Main.elm --output=dist/elm.js
     cd examples/notes/elm && elm make src/Snippets/*.elm --output=/dev/null
@@ -206,9 +211,9 @@ example-notes-build:
 # Build the notes example and serve it: the page and the API on one origin,
 # http://127.0.0.1:8080 unless `addr` says otherwise. Ctrl-C stops it.
 example-notes addr="127.0.0.1:8080": example-notes-build
-    target/live/bin/notes-server -addr {{addr}} -static examples/notes/elm/dist
+    {{target}}/live/bin/notes-server -addr {{addr}} -static examples/notes/elm/dist
 
-# Remove build output.
+# Remove build output (the cargo build directory, shared or not).
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff
