@@ -21,7 +21,7 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
 ];
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 24] = [
+pub const RUNTIME_MODULES: [&str; 25] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -43,16 +43,17 @@ pub const RUNTIME_MODULES: [&str; 24] = [
     "Proto.Any",
     "Proto.Json",
     "Proto.Int64",
+    "Proto.Bytes",
     "Proto.Duration",
     "Proto.Timestamp",
     "Proto.Version",
 ];
 
 /// The packages the runtime depends on, each with its exposed modules (at
-/// elm/core 1.0.5, elm/json 1.1.3, elm/http 2.0.0 and elm/time 1.0.0). An
-/// application using generated code depends on them too, elm/http and
-/// elm/json directly for the runtime's API.
-pub const DEPENDENCY_MODULES: [(&str, &[&str]); 4] = [
+/// elm/core 1.0.5, elm/json 1.1.3, elm/http 2.0.0, elm/time 1.0.0 and
+/// elm/bytes 1.0.8). An application using generated code depends on them
+/// too, elm/http and elm/json directly for the runtime's API.
+pub const DEPENDENCY_MODULES: [(&str, &[&str]); 5] = [
     (
         "elm/core",
         &[
@@ -78,6 +79,7 @@ pub const DEPENDENCY_MODULES: [(&str, &[&str]); 4] = [
     ("elm/json", &["Json.Decode", "Json.Encode"]),
     ("elm/http", &["Http"]),
     ("elm/time", &["Time"]),
+    ("elm/bytes", &["Bytes", "Bytes.Decode", "Bytes.Encode"]),
 ];
 
 /// The package that already has a module named `module`, the runtime or
@@ -459,6 +461,7 @@ mod tests {
     #[test]
     fn reserved_modules_name_their_package() {
         assert_eq!(reserved_module("Time"), Some("elm/time"));
+        assert_eq!(reserved_module("Bytes.Encode"), Some("elm/bytes"));
         assert_eq!(reserved_module("Json.Decode"), Some("elm/json"));
         assert_eq!(
             reserved_module("Proto.Json"),

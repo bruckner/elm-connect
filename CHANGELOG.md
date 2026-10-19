@@ -773,3 +773,10 @@ tag (design §8).
   any, a list of one included, rather than only from two elements on.
   A path variable's field names and template, a query parameter's
   field names and a field's behaviors stay on one line (design §3.1).
+- The runtime gains `Proto.Bytes`, converting base64 text to and from
+  elm/bytes' `Bytes` (`fromBase64`, `toBase64`, `empty`), and the
+  `Proto.Json` codecs for bytes held as `Bytes` (`bytesAsBytes`,
+  `encodeBytesAsBytes`, `implicitBytes`). The package now depends on
+  elm/bytes. Elm's `==` finds any two `Bytes` values equal, whatever
+  they hold; the module documentation says what that means for records
+  and tests.

@@ -110,10 +110,11 @@ the repository's `src`, beside its own sources and the generated ones:
 
 and takes the runtime's dependencies directly:
 
-```json examples/notes/elm/elm.json
-"elm/http": "2.0.0",
-"elm/json": "1.1.4",
-"elm/time": "1.0.0"
+```json examples/notes/elm/elm.json excerpt
+            "elm/bytes": "1.0.8",
+            "elm/http": "2.0.0",
+            "elm/json": "1.1.4",
+            "elm/time": "1.0.0"
 ```
 
 Once the package is published, `elm install bruckner/elm-connect` replaces

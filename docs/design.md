@@ -1686,7 +1686,7 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
 whether a request can be sent. The data modules, which generated code
 calls whatever the transport, are the codecs (`Proto.Json`,
-`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`), the typed values
+`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
