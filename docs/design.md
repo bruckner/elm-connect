@@ -154,6 +154,7 @@ codecs, and the service gets a module of its own (§4):
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
+import Notes.V1.GetNoteRequest
 import Proto.Http
 import Proto.Method
 import Rpc
@@ -174,7 +175,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -299,11 +303,13 @@ rpc shared call =
   with elements puts each on its own line, a list of one too, so a list's
   layout does not change as it grows and every element is a line of its
   own in a diff. Four lists stay on one line where they fit, since each
-  reads as one token of the proto source: a path variable's field names
-  and its template (`Proto.Http.variable [ "name" ] [ Proto.Http.literal
-  "notes", Proto.Http.wildcard ] ""`), a query parameter's field names,
-  and a field's behaviors (`Proto.Field.withBehavior [ … ]`). Layout is
-  not API (§8.3): it can change in any release.
+  reads as one token of the proto source: a path variable's path of
+  field descriptors and its template (`Proto.Http.variable { fieldPath =
+  [ Notes.V1.GetNoteRequest.name ], template = [ Proto.Http.literal
+  "notes", Proto.Http.wildcard ] }`), a query parameter's path of field
+  descriptors (each path reads as the dotted field path the rule
+  writes), and a field's behaviors (`Proto.Field.withBehavior [ … ]`).
+  Layout is not API (§8.3): it can change in any release.
 - **Values in the package module, descriptions beside it.** *(Decided,
   2026-10-19.)* The package module holds what a program sends and
   receives: the types (messages, oneofs, recursion wrappers, enums),
@@ -1431,7 +1437,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -1462,7 +1471,9 @@ keeps.
 *(Decided, 2026-10-16.)*
 
 - The service module imports `Rpc`, `Proto.Method` (for the method
-  and its descriptor), `Proto.Http` (for the bindings), the package module and the modules of any other package
+  and its descriptor), `Proto.Http` (for the bindings), the descriptor
+  modules of the messages its bindings' fields belong to
+  (`Notes.V1.GetNoteRequest`, §3.1), the package module and the modules of any other package
   its request and response types come from (`Proto.Json`, `Proto.Any`,
   `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
   refers to every one of them qualified. Each method is written
@@ -2080,6 +2091,31 @@ rule, the rule's own binding first and its
 default, and is `Nothing` for a number the method has no binding of
 (§5.2).
 
+- **Variables and parameters are paths of field descriptors.**
+  *(Decided, 2026-10-19.)* A variable is `Proto.Http.variable { fieldPath,
+  template }` and a parameter `Proto.Http.param fieldPath`, where `fieldPath`
+  is the path of `Proto.Field.Descriptor`s from the request message
+  down to the field, each from its message's descriptor module (§3.1):
+  `[ Notes.V1.ListNotesRequest.filter,
+  Notes.V1.ListNotesRequestFilter.visibility ]`. The runtime derives
+  the rest once, when the binding is built: the JSON path from each
+  field's `jsonName`, a parameter's name from the proto names joined
+  with dots, the text of the default from the last field's kind (`""`
+  for a string or bytes, `false`, `0` for any number, an enum's zero
+  value's name, which is why `KindEnum` holds the enum's descriptor,
+  §3.9), and whether a parameter is left out at that text from the
+  last field: one without presence (`CardinalitySingular`, outside any
+  oneof, not a message) is, any other only when unset or empty. The
+  generator keeps what may be a variable or a parameter (below) and
+  writes the descriptors; the derivation exists once, in the runtime.
+  Before, the generator computed the names, JSON paths, default text
+  and omission and wrote them as positional strings
+  (`Proto.Http.variable [ "name" ] [ … ] ""`, `Proto.Http.param
+  "page_size" [ "pageSize" ] (Just "0")`). `responseBody` and
+  `bodyField` still take a top-level field's JSON name. A variable of a
+  well-known request (`{seconds}` of a `Timestamp`) is refused
+  (`route::path_field`): its JSON is not an object of its fields.
+
 - **The implicit route.** A method without a rule has no bindings, and
   is called as `POST /<package>.<Service>/<Method>` with the request as
   its JSON body, which grpc-gateway (`generate_unbound_methods`), Envoy
@@ -2111,9 +2147,8 @@ default, and is `Nothing` for a number the method has no binding of
   *(Decided, 2026-10-16.)*
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
-  field's proto3 default, which the generator writes into the binding
-  (`Proto.Http.variable`'s last argument: `0`, `""`, `false`, an enum's
-  zero name). proto3 reads the field as its default there, and a
+  field's proto3 default, which the runtime reads from the variable's
+  last field descriptor (`0`, `""`, `false`, an enum's zero name). proto3 reads the field as its default there, and a
   server parses the segment as the field's type: Vanguard rejected the
   empty segment the runtime sent before
   (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`, `invalid parameter

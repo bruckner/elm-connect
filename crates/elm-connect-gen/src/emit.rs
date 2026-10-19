@@ -35,7 +35,10 @@
 //!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
 //!   `Proto.Method.descriptor` from its service, name, idempotency, type
 //!   names and bindings, the bindings its HTTP rule's own and then its
-//!   additional ones, as data (`Proto.Http.binding`). A method without a
+//!   additional ones, as data (`Proto.Http.binding`), each path variable
+//!   and query parameter the path of field descriptors from the request
+//!   down to its field (`[ Notes.V1.GetNoteRequest.name ]`), from the
+//!   descriptor modules the service's module then imports. A method without a
 //!   rule has no bindings, and the runtime calls it over the implicit
 //!   route. Its call is a function from its request to an `Rpc.Call`,
 //!   written point-free as `Rpc.call` of the method's

@@ -6,6 +6,9 @@ import Http
 import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Any
+import Proto.Enum
+import Proto.EnumValue
+import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Method exposing (Idempotency(..), Method)
 import Rpc
@@ -22,7 +25,7 @@ type alias Rule =
     , path : List Proto.Http.Segment
     , customVerb : Maybe String
     , body : Proto.Http.Body
-    , responseBody : Maybe String
+    , responseBody : Maybe Proto.Field.Descriptor
     , query : List Proto.Http.Param
     }
 
@@ -36,6 +39,36 @@ rule =
     , responseBody = Nothing
     , query = []
     }
+
+
+{-| A field of a request, as a generated descriptor module declares one: its
+proto name, its JSON name, how many values it holds and their kind.
+-}
+field : String -> String -> Cardinality -> Kind -> Proto.Field.Descriptor
+field protoName jsonName =
+    Proto.Field.descriptor protoName jsonName 1
+
+
+string : String -> String -> Proto.Field.Descriptor
+string protoName jsonName =
+    field protoName jsonName CardinalitySingular (KindScalar ScalarString)
+
+
+sub : String -> String -> Proto.Field.Descriptor
+sub protoName jsonName =
+    field protoName jsonName CardinalitySingular (KindMessage "t.v1.Sub")
+
+
+kind : Proto.Enum.Descriptor
+kind =
+    Proto.Enum.descriptor "t.v1.Kind" [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0, Proto.EnumValue.descriptor "KIND_TEXT" 1 ]
+
+
+{-| A path variable of this field path, without a template.
+-}
+var : List Proto.Field.Descriptor -> Proto.Http.Segment
+var fieldPath =
+    Proto.Http.variable { fieldPath = fieldPath, template = [] }
 
 
 {-| A method whose request is its JSON, and whose response is its `title`,
@@ -97,22 +130,22 @@ paths =
     describe "paths"
         [ test "a single-segment variable escapes everything but unreserved characters" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "messages", Proto.Http.variable [ "messageId" ] [] "" ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "messages", var [ string "message_id" "messageId" ] ] }
                     """{"messageId":"a/b c?d#e!*'()é~._-"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/a%2Fb%20c%3Fd%23e%21%2A%27%28%29%C3%A9~._-"
         , test "a multi-segment variable keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] "" ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable { fieldPath = [ string "name" "name" ], template = [ Proto.Http.literal "messages", Proto.Http.wildcard ] } ] }
                     """{"name":"messages/1 2"}"""
                     |> Expect.equal "https://api.example.com/v1/messages/1%202"
         , test "** keeps its slashes" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] "" ] }
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable { fieldPath = [ string "path" "path" ], template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] } ] }
                     """{"path":"files/a/b/c.txt"}"""
                     |> Expect.equal "https://api.example.com/v1/files/a/b/c.txt"
         , test "{name=*} is one segment" <|
             \_ ->
-                url { rule | path = [ Proto.Http.variable [ "name" ] [ Proto.Http.wildcard ] "" ] } """{"name":"a/b"}"""
+                url { rule | path = [ Proto.Http.variable { fieldPath = [ string "name" "name" ], template = [ Proto.Http.wildcard ] } ] } """{"name":"a/b"}"""
                     |> Expect.equal "https://api.example.com/a%2Fb"
         , test "a hand-built literal or verb is percent-encoded where a path segment cannot hold it" <|
             \_ ->
@@ -139,10 +172,10 @@ paths =
                     { rule
                         | path =
                             [ Proto.Http.literal "v1"
-                            , Proto.Http.variable [ "sub", "subfield" ] [] ""
-                            , Proto.Http.variable [ "n" ] [] "0"
-                            , Proto.Http.variable [ "f" ] [] "0"
-                            , Proto.Http.variable [ "b" ] [] "false"
+                            , var [ sub "sub" "sub", string "subfield" "subfield" ]
+                            , var [ field "n" "n" CardinalitySingular (KindScalar ScalarInt32) ]
+                            , var [ field "f" "f" CardinalitySingular (KindScalar ScalarDouble) ]
+                            , var [ field "b" "b" CardinalitySingular (KindScalar ScalarBool) ]
                             ]
                         , customVerb = Just "cancel"
                     }
@@ -151,21 +184,21 @@ paths =
         , test "an absent string is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
                 (Rpc.request { config | baseUrl = "/api/" }
-                    (bound { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "sub", "subfield" ] [] "" ] } """{"sub":null}""")
+                    (bound { rule | path = [ Proto.Http.literal "v1", var [ sub "sub" "sub", string "subfield" "subfield" ] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
         , test "a value under an unset message is the field's default" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "inner", "deep", "b" ] [] "0", Proto.Http.variable [ "inner", "kind" ] [] "KIND_UNSPECIFIED" ] }
+                url { rule | path = [ Proto.Http.literal "v1", var [ sub "inner" "inner", sub "deep" "deep", field "b" "b" CardinalitySingular (KindScalar ScalarUint64) ], var [ sub "inner" "inner", field "kind" "kind" CardinalitySingular (KindEnum kind) ] ] }
                     """{"inner":null}"""
                     |> Expect.equal "https://api.example.com/v1/0/KIND_UNSPECIFIED"
         , test "a value missing from the JSON is the field's default" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "n" ] [] "0", Proto.Http.variable [ "b" ] [] "false" ] } "{}"
+                url { rule | path = [ Proto.Http.literal "v1", var [ field "n" "n" CardinalitySingular (KindScalar ScalarSint64) ], var [ field "b" "b" CardinalitySingular (KindScalar ScalarBool) ] ] } "{}"
                     |> Expect.equal "https://api.example.com/v1/0/false"
         , test "a value at its default in a set message is written as it is" <|
             \_ ->
-                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable [ "inner", "deep", "b" ] [] "0" ] }
+                url { rule | path = [ Proto.Http.literal "v1", var [ sub "inner" "inner", sub "deep" "deep", field "b" "b" CardinalitySingular (KindScalar ScalarInt32) ] ] }
                     """{"inner":{"deep":{"b":0}}}"""
                     |> Expect.equal "https://api.example.com/v1/0"
         ]
@@ -177,12 +210,12 @@ queries =
         r =
             { rule
                 | query =
-                    [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                    , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                    , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                    , Proto.Http.param "tags" [ "tags" ] Nothing
-                    , Proto.Http.param "pinned" [ "pinned" ] Nothing
-                    , Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
+                    [ Proto.Http.param [ field "revision" "revision" CardinalitySingular (KindScalar ScalarInt64) ]
+                    , Proto.Http.param [ sub "sub" "sub", string "subfield" "subfield" ]
+                    , Proto.Http.param [ field "kind" "kind" CardinalitySingular (KindEnum kind) ]
+                    , Proto.Http.param [ field "tags" "tags" CardinalityRepeated (KindScalar ScalarString) ]
+                    , Proto.Http.param [ field "pinned" "pinned" CardinalityOptional (KindScalar ScalarBool) ]
+                    , Proto.Http.param [ field "page_size" "pageSize" CardinalitySingular (KindScalar ScalarInt32) ]
                     ]
             }
     in
@@ -203,6 +236,25 @@ queries =
             \_ ->
                 url r """{"sub":null}"""
                     |> Expect.equal "https://api.example.com/v1"
+        , test "a oneof member and a message are left out only when unset" <|
+            \_ ->
+                url
+                    { rule
+                        | query =
+                            [ Proto.Http.param [ string "author" "author" |> Proto.Field.inOneof "filter" ]
+                            , Proto.Http.param [ field "only" "only" CardinalitySingular (KindEnum kind) |> Proto.Field.inOneof "filter" ]
+                            , Proto.Http.param [ field "since" "since" CardinalitySingular (KindMessage "google.protobuf.Timestamp") ]
+                            , Proto.Http.param [ field "limit" "limit" CardinalitySingular (KindMessage "google.protobuf.Int32Value") ]
+                            , Proto.Http.param [ field "data" "data" CardinalitySingular (KindScalar ScalarBytes) ]
+                            ]
+                    }
+                    """{"author":"","only":"KIND_UNSPECIFIED","since":"1970-01-01T00:00:00Z","limit":0,"data":""}"""
+                    |> Expect.equal "https://api.example.com/v1?author=&only=KIND_UNSPECIFIED&since=1970-01-01T00%3A00%3A00Z&limit=0"
+        , test "the parameter's name is the dotted proto names, its value read by JSON names" <|
+            \_ ->
+                url { rule | query = [ Proto.Http.param [ sub "sub_message" "subMessage", string "page_token" "pageToken" ] ] }
+                    """{"subMessage":{"pageToken":"t"}}"""
+                    |> Expect.equal "https://api.example.com/v1?sub_message.page_token=t"
         ]
 
 
@@ -218,7 +270,7 @@ bodies =
                 body
                     { rule
                         | body = Proto.Http.wholeBody
-                        , path = [ Proto.Http.variable [ "id" ] [] "", Proto.Http.variable [ "sub", "subfield" ] [] "" ]
+                        , path = [ var [ string "id" "id" ], var [ sub "sub" "sub", string "subfield" "subfield" ] ]
                     }
                     """{"id":"1","text":"hi","sub":{"subfield":"x","other":2}}"""
                     |> Expect.equal (Just """{"text":"hi","sub":{"other":2}}""")
@@ -226,15 +278,19 @@ bodies =
             \_ ->
                 body
                     { rule
-                        | body = Proto.Http.bodyField "message"
-                        , path = [ Proto.Http.variable [ "message", "messageId" ] [] "" ]
+                        | body = Proto.Http.bodyField (sub "message" "message")
+                        , path = [ var [ sub "message" "message", string "message_id" "messageId" ] ]
                     }
                     """{"messageId":"1","message":{"messageId":"1","text":"hi"}}"""
                     |> Expect.equal (Just """{"messageId":"1","text":"hi"}""")
         , test "an unset body field is an empty object" <|
             \_ ->
-                body { rule | body = Proto.Http.bodyField "message" } """{"message":null}"""
+                body { rule | body = Proto.Http.bodyField (sub "message" "message") } """{"message":null}"""
                     |> Expect.equal (Just "{}")
+        , test "a body field is read by its JSON name" <|
+            \_ ->
+                body { rule | body = Proto.Http.bodyField (sub "the_message" "theMessage") } """{"the_message":{"a":1},"theMessage":{"b":2}}"""
+                    |> Expect.equal (Just """{"b":2}""")
         , test "the method, headers, timeout and credentials come through, the call's headers last" <|
             \_ ->
                 bound { rule | method = "PATCH" } "{}"
@@ -336,7 +392,7 @@ responses =
                     |> Expect.equal (Ok ())
         , test "a response body field is the named field" <|
             \_ ->
-                respond { rule | responseBody = Just "title" } (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
+                respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
                     |> Expect.equal (Ok "hi")
         , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->

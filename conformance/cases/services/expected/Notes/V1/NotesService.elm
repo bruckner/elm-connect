@@ -4,6 +4,15 @@
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
+import Notes.V1.ArchiveNoteRequest
+import Notes.V1.CreateNoteRequest
+import Notes.V1.DeleteNoteRequest
+import Notes.V1.GetNoteRequest
+import Notes.V1.ListNotesRequest
+import Notes.V1.ListNotesRequestFilter
+import Notes.V1.Note
+import Notes.V1.ReadFileRequest
+import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -33,7 +42,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -44,7 +56,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -65,20 +80,23 @@ descriptorListNotes =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ListNotesRequest.parent ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                    }
                 , Proto.Http.literal "notes"
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Just "notes"
             , query =
-                [ Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
-                , Proto.Http.param "page_token" [ "pageToken" ] (Just "")
-                , Proto.Http.param "filter.visibility" [ "filter", "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
-                , Proto.Http.param "filter.since" [ "filter", "since" ] Nothing
-                , Proto.Http.param "tags" [ "tags" ] Nothing
-                , Proto.Http.param "archived" [ "archived" ] Nothing
-                , Proto.Http.param "revision" [ "revision" ] (Just "0")
+                [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.visibility ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.since ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.tags ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.archived ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.revision ]
                 ]
             }
         ]
@@ -95,7 +113,10 @@ descriptorCreateNote =
             { method = "POST"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "parent" ] [ Proto.Http.literal "users", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.CreateNoteRequest.parent ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                    }
                 , Proto.Http.literal "notes"
                 ]
             , customVerb = Nothing
@@ -117,13 +138,16 @@ descriptorUpdateNote =
             { method = "PATCH"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.bodyField "note"
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
                 ]
             }
         ]
@@ -140,7 +164,10 @@ descriptorReplaceNote =
             { method = "PUT"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.Note.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.wholeBody
@@ -161,13 +188,16 @@ descriptorDeleteNote =
             { method = "DELETE"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "force" [ "force" ] (Just "false")
+                [ Proto.Http.param [ Notes.V1.DeleteNoteRequest.force ]
                 ]
             }
         ]
@@ -184,7 +214,10 @@ descriptorArchiveNote =
             { method = "POST"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Just "archive"
             , body = Proto.Http.wholeBody
@@ -205,7 +238,10 @@ descriptorReadFile =
             { method = "HEAD"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ReadFileRequest.path ]
+                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody

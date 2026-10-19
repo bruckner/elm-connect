@@ -18,6 +18,9 @@ them under the Transcode transport.
 
 -}
 
+import Proto.Enum
+import Proto.EnumValue
+import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Internal.Binding as Internal
 
 
@@ -33,8 +36,8 @@ type alias Binding =
   - `path`: the path template's segments.
   - `customVerb`: the text after `:` at the end of the template, if any.
   - `body`: what the request body holds.
-  - `responseBody`: the JSON name of the response field the answer holds, if it
-    is not the whole response.
+  - `responseBody`: the JSON name (not the proto name) of the response field
+    the answer holds, if it is not the whole response.
   - `query`: the query parameters, every request field outside the path and the
     body.
 
@@ -65,19 +68,27 @@ literal =
     Internal.Literal
 
 
-{-| A request field's value: the field's JSON path (`[ "book", "name" ]`), the
-variable's template (`[ literal "books", wildcard ]` for `{book.name=books/*}`;
-`[]` for `{name}`), and the text of the field's proto3 default (`"0"`, `""`,
-`"false"`, an enum's zero name). A variable matching one segment (`{name}`,
-`{name=*}`) is percent-encoded with `/` escaped as `%2F`; any other keeps its
-`/`s. A value absent from the request's JSON, or `null` there, as under an
-unset message, is the default: proto3 reads the field as its default, and a
-server parsing the segment as the field's type rejects an empty one. The value
-is not checked against the template: the server does that.
+{-| A request field's value. `fieldPath` is the path of field descriptors from the
+request message down to the field, a scalar or an enum, through singular
+message fields: `[ Notes.V1.GetNoteRequest.name ]`, or
+`[ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.visibility ]`
+for `{filter.visibility}`. `template` is the variable's template
+(`[ literal "books", wildcard ]` for `{book.name=books/*}`; `[]` for `{name}`).
+
+The value is read from the request's JSON by each field's JSON name. A variable
+matching one segment (`{name}`, `{name=*}`) is percent-encoded with `/`
+escaped as `%2F`; any other keeps its `/`s. A value absent from the request's
+JSON, or `null` there, as under an unset message, is the text of the field's
+proto3 default, read from the last descriptor's kind: `""` for a string or
+bytes, `false`, `0` for any number, and an enum's zero value's name. Proto3
+reads the field as its default, and a server parsing the segment as the
+field's type rejects an empty one. The value is not checked against the
+template: the server does that.
+
 -}
-variable : List String -> List Segment -> String -> Segment
-variable =
-    Internal.Variable
+variable : { fieldPath : List Proto.Field.Descriptor, template : List Segment } -> Segment
+variable { fieldPath, template } =
+    Internal.Variable (List.map Proto.Field.jsonName fieldPath) template (defaultText fieldPath)
 
 
 {-| `*`, one path segment, inside a variable's template.
@@ -114,9 +125,9 @@ wholeBody =
     Internal.WholeBody
 
 
-{-| `body: "note"`: the JSON of one top-level field, by its JSON name, sent
-whole even when the path holds a field inside it. An unset field is sent as
-`{}`.
+{-| `body: "note"`: the JSON of one top-level field, by its JSON name (not its
+proto name), sent whole even when the path holds a field inside it. An unset
+field is sent as `{}`.
 -}
 bodyField : String -> Body
 bodyField =
@@ -129,12 +140,86 @@ type alias Param =
     Internal.Param
 
 
-{-| A query parameter: its name (the dotted proto field path, `sub.subfield`),
-the field's JSON path (`[ "sub", "subfield" ]`), and the text of the value at
-which it is left out (`Just "0"`, `Just ""`, an enum's zero name), or
-`Nothing` to leave it out only when the field is unset. A JSON array is sent
-as one parameter per element.
+{-| A query parameter: one request field, by the path of field descriptors from
+the request message down to it (`[ Notes.V1.ListNotesRequest.pageSize ]`). Its
+name in the query is the dotted path of proto names (`page_size`,
+`filter.visibility`); its value is read from the request's JSON by JSON names.
+A JSON array is sent as one parameter per element.
+
+Whether a value is left out follows from the last field: one without presence
+(a singular scalar or enum outside any oneof) is left out at its proto3
+default, the text [`variable`](#variable) describes; one with presence (a
+proto3 `optional` field, a oneof member, a message) is left out only when
+unset, and a repeated field only when empty.
+
 -}
-param : String -> List String -> Maybe String -> Param
-param name path zero =
-    Internal.Param { name = name, path = path, zero = zero }
+param : List Proto.Field.Descriptor -> Param
+param fieldPath =
+    Internal.Param
+        { name = String.join "." (List.map Proto.Field.name fieldPath)
+        , path = List.map Proto.Field.jsonName fieldPath
+        , zero =
+            if hasPresence fieldPath then
+                Nothing
+
+            else
+                Just (defaultText fieldPath)
+        }
+
+
+{-| Whether the last field of a path is told apart from its default by being
+set rather than by its value, or is a list.
+-}
+hasPresence : List Proto.Field.Descriptor -> Bool
+hasPresence field =
+    case last field of
+        Just leaf ->
+            case ( Proto.Field.cardinality leaf, Proto.Field.kind leaf, Proto.Field.oneof leaf ) of
+                ( CardinalitySingular, KindMessage _, _ ) ->
+                    True
+
+                ( CardinalitySingular, _, Nothing ) ->
+                    False
+
+                _ ->
+                    True
+
+        Nothing ->
+            True
+
+
+{-| The text of the last field's proto3 default as a path or query value: `""`
+for a string or bytes, `false`, `0` for any number, and an enum's zero value's
+name.
+-}
+defaultText : List Proto.Field.Descriptor -> String
+defaultText field =
+    case Maybe.map Proto.Field.kind (last field) of
+        Just (KindScalar ScalarString) ->
+            ""
+
+        Just (KindScalar ScalarBytes) ->
+            ""
+
+        Just (KindScalar ScalarBool) ->
+            "false"
+
+        Just (KindScalar _) ->
+            "0"
+
+        Just (KindEnum enum) ->
+            Proto.Enum.values enum
+                |> List.head
+                |> Maybe.map Proto.EnumValue.name
+                |> Maybe.withDefault ""
+
+        Just (KindMessage _) ->
+            ""
+
+        Nothing ->
+            ""
+
+
+last : List a -> Maybe a
+last list =
+    List.head (List.reverse list)

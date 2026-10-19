@@ -817,3 +817,13 @@ tag (design §8).
   case) is `naming::module_collision`; a field named `descriptor`, two
   fields whose descriptor values meet, or a field renamed to
   `elmConnectVersion_` is `naming::value_collision`.
+- `Proto.Http.variable` takes `{ fieldPath, template }` and `Proto.Http.param`
+  a path, where `fieldPath` is the path of field descriptors from the
+  request message down to the field (`[ Notes.V1.GetNoteRequest.name ]`)
+  instead of positional names and texts. The runtime derives a
+  variable's or parameter's JSON path, a parameter's dotted proto name,
+  the text of the field's default (an enum's zero value's name from its
+  descriptor) and whether a parameter is left out at it, once, when the
+  binding is built; the generator no longer computes them. Generated
+  service modules import the descriptor modules their routes name. A
+  path variable of a well-known request type is `route::path_field`.

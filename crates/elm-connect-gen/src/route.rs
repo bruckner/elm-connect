@@ -15,16 +15,19 @@
 //!
 //! [`resolve`] then checks a parsed rule against the request and response
 //! messages and computes what the runtime needs to turn a request into an
-//! HTTP request without knowing its type: the JSON path of every path
-//! variable with the text of its default, the body, and every query
-//! parameter with its JSON path and the text of the value it is left out
-//! at. A [`Route`] is data the emitter writes out as Elm; the runtime
-//! never parses a template.
+//! HTTP request without knowing its type: every path variable and every
+//! query parameter as the path of fields from the request down to it,
+//! each field named as generated code names its descriptor
+//! ([`FieldRef`]), and the body. A [`Route`] is data the emitter writes
+//! out as Elm; the runtime never parses a template, and derives from the
+//! field descriptors what follows from the fields (JSON names, the text
+//! of a default, whether a parameter is left out at it).
 //!
 //! The rules:
 //!
-//! - A path variable names a non-repeated scalar or enum field, possibly
-//!   through singular fields of generated messages (`{sub.subfield}`). A
+//! - A path variable names a non-repeated scalar or enum field of a
+//!   generated request, possibly through singular fields of generated
+//!   messages (`{sub.subfield}`). A
 //!   bare `*` or `**` outside a variable cannot be filled by a client and
 //!   is refused. `**` may only be the last segment of the template.
 //! - A message held deeper than [`NESTING_LIMIT`] messages below the
@@ -51,7 +54,7 @@ use std::fmt;
 
 use prost_reflect::{FieldDescriptor, Kind, MessageDescriptor};
 
-use crate::ir::{HttpRule, HttpVerb, WellKnown, declared_fields};
+use crate::ir::{HttpRule, HttpVerb, ModuleName, WellKnown, declared_fields};
 
 /// How deep a message may hold other messages: protobuf's nesting limit
 /// for parsing, counted in messages below the top-level one
@@ -393,11 +396,9 @@ pub enum PathSegment {
         /// The variable's template as written (`messages/*`), without
         /// variables; empty for `{name}`.
         template: Vec<Segment>,
-        /// The text of the field's proto3 default (`0`, `""`, `false`, or
-        /// the zero value's name for an enum), written when the request
-        /// has no value for it: a message on the way is unset, or the
-        /// field has presence and is unset.
-        zero: String,
+        /// Each field of the path, outermost first, as generated code
+        /// names its descriptor.
+        fields: Vec<FieldRef>,
     },
 }
 
@@ -434,6 +435,21 @@ impl FieldPath {
     }
 }
 
+/// A field as generated code names its descriptor: the value `name` of
+/// its message's descriptor module, `Notes.V1.Note.title`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct FieldRef {
+    /// The message's descriptor module, such as `Notes.V1.Note`.
+    pub module: ModuleName,
+    /// The field's value in it, such as `title`.
+    pub name: String,
+}
+
+/// Names a field of a generated message as generated code names its
+/// descriptor, or `None` for one of a message without an Elm name, which
+/// was reported already.
+pub type Namer<'a> = &'a dyn Fn(&FieldDescriptor) -> Option<FieldRef>;
+
 /// What a request body holds.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Body {
@@ -450,12 +466,10 @@ pub enum Body {
 pub struct QueryParam {
     /// The field, whose dotted proto path names the parameter.
     pub field: FieldPath,
-    /// The text of the field's value when it is at its proto3 default
-    /// and so left out of the query: `""`, `0`, `false`, or the zero
-    /// value's name for an enum. `None` for a field with presence, which
-    /// is left out only when unset, and for a repeated field, whose
-    /// elements are each sent.
-    pub zero: Option<String>,
+    /// Each field of the path, outermost first, as generated code names
+    /// its descriptor. The runtime reads from the last whether the
+    /// parameter is left out at the field's default.
+    pub fields: Vec<FieldRef>,
 }
 
 /// Why a rule does not resolve against its messages.
@@ -521,12 +535,14 @@ pub enum RouteError {
 
 /// Checks `rule` (one binding; its own additional bindings are reported,
 /// not followed) against the method's `request` and `response`, giving
-/// the route or every problem found.
+/// the route or every problem found. `name` names the fields of path
+/// variables and query parameters, all of generated messages.
 pub fn resolve(
     rule: &HttpRule,
     request: &MessageDescriptor,
     response: &MessageDescriptor,
     nested: bool,
+    name: Namer,
 ) -> Result<Route, Vec<RouteError>> {
     let mut errors = Vec::new();
     if nested && !rule.additional_bindings.is_empty() {
@@ -568,8 +584,8 @@ pub fn resolve(
             Segment::Variable {
                 field,
                 segments: template,
-            } => match path_field(request, &field) {
-                Ok((path, zero)) => {
+            } => match path_field(request, &field, name) {
+                Ok((path, fields)) => {
                     if bound.contains(&path) {
                         errors.push(RouteError::PathFieldTwice {
                             field: path.dotted(),
@@ -579,7 +595,7 @@ pub fn resolve(
                     segments.push(PathSegment::Variable {
                         field: path,
                         template,
-                        zero,
+                        fields,
                     });
                 }
                 Err(reason) => errors.push(RouteError::PathField {
@@ -648,8 +664,9 @@ pub fn resolve(
             params: &mut query,
             errors: &mut errors,
             recursion: HashMap::new(),
+            name,
         };
-        walk.message(request, &FieldPath::default(), skip.as_deref());
+        walk.message(request, &FieldPath::default(), &[], skip.as_deref());
     }
 
     if errors.is_empty() {
@@ -684,18 +701,31 @@ fn well_known(message: &MessageDescriptor) -> Option<Option<WellKnown>> {
 }
 
 /// The field a path variable names, through singular fields of generated
-/// messages to a non-repeated scalar or enum, and the text of its default.
+/// messages to a non-repeated scalar or enum, with each field of the way
+/// named by `name`.
 fn path_field(
     request: &MessageDescriptor,
     names: &[String],
-) -> Result<(FieldPath, String), String> {
+    name: Namer,
+) -> Result<(FieldPath, Vec<FieldRef>), String> {
+    if well_known(request).is_some() {
+        return Err(format!(
+            "the request is `{}`, whose fields have no JSON form of their own",
+            request.full_name()
+        ));
+    }
     let mut message = request.clone();
     let mut path = FieldPath::default();
-    for (index, name) in names.iter().enumerate() {
-        let Some(field) = message.get_field_by_name(name) else {
-            return Err(format!("`{}` has no field `{name}`", message.full_name()));
+    let mut fields = Vec::new();
+    for (index, field_name) in names.iter().enumerate() {
+        let Some(field) = message.get_field_by_name(field_name) else {
+            return Err(format!(
+                "`{}` has no field `{field_name}`",
+                message.full_name()
+            ));
         };
         path = path.child(&field);
+        fields.extend(name(&field));
         let last = index + 1 == names.len();
         if field.is_list() || field.is_map() {
             return Err(format!(
@@ -728,7 +758,7 @@ fn path_field(
                 }
                 message = inner;
             }
-            kind if last => return Ok((path, default_text(&kind))),
+            _ if last => return Ok((path, fields)),
             _ => {
                 return Err(format!(
                     "`{}` is not a message, so it has no field `{}`",
@@ -739,23 +769,6 @@ fn path_field(
         }
     }
     unreachable!("a path variable names at least one field")
-}
-
-/// The text of a scalar or enum's proto3 default as a path or query
-/// value: `""` for a string or bytes, `false`, the zero value's name for
-/// an enum, and `0` for a number.
-fn default_text(kind: &Kind) -> String {
-    match kind {
-        Kind::Enum(enumeration) => enumeration
-            .enum_descriptor_proto()
-            .value
-            .first()
-            .map(|value| value.name().to_owned())
-            .unwrap_or_default(),
-        Kind::String | Kind::Bytes => String::new(),
-        Kind::Bool => "false".into(),
-        _ => "0".into(),
-    }
 }
 
 /// The top-level singular message field `name` of the request.
@@ -793,10 +806,19 @@ struct QueryWalk<'a> {
     /// Whether a message holds itself, by full name, once asked
     /// ([`QueryWalk::recursive`]).
     recursion: HashMap<String, bool>,
+    name: Namer<'a>,
 }
 
 impl QueryWalk<'_> {
-    fn message(&mut self, message: &MessageDescriptor, prefix: &FieldPath, skip: Option<&str>) {
+    /// The parameters of `message`, the message at `prefix`, whose fields
+    /// along the way are `refs`.
+    fn message(
+        &mut self,
+        message: &MessageDescriptor,
+        prefix: &FieldPath,
+        refs: &[FieldRef],
+        skip: Option<&str>,
+    ) {
         for field in declared_fields(message) {
             if prefix.proto.is_empty() && skip == Some(field.name()) {
                 continue;
@@ -805,7 +827,9 @@ impl QueryWalk<'_> {
             if self.bound.contains(&path) {
                 continue;
             }
-            self.field(&field, path);
+            let mut fields = refs.to_vec();
+            fields.extend((self.name)(&field));
+            self.field(&field, path, fields);
         }
     }
 
@@ -816,16 +840,14 @@ impl QueryWalk<'_> {
         });
     }
 
-    fn field(&mut self, field: &FieldDescriptor, path: FieldPath) {
+    fn field(&mut self, field: &FieldDescriptor, path: FieldPath, fields: Vec<FieldRef>) {
         if field.is_map() {
             return self.refuse(&path, "it is a map");
         }
         let repeated = field.is_list();
-        let presence = field.supports_presence();
-        let zero = |text: String| (!repeated && !presence).then_some(text);
-        let param = |zero| QueryParam {
+        let param = |fields| QueryParam {
             field: path.clone(),
-            zero,
+            fields,
         };
         match field.kind() {
             Kind::Message(_) if path.proto.len() > NESTING_LIMIT => self.refuse(
@@ -844,16 +866,16 @@ impl QueryWalk<'_> {
                     &path,
                     "`google.protobuf.Any` holds a message whose fields are not known",
                 ),
-                Some(Some(_)) => self.params.push(param(None)),
+                Some(Some(_)) => self.params.push(param(fields)),
                 // Unsupported well-known types are reported by the IR.
                 Some(None) => {}
                 None if repeated => self.refuse(&path, "it is a repeated message"),
                 None if self.recursive(&inner) => {
                     self.refuse(&path, format!("`{}` contains itself", inner.full_name()))
                 }
-                None => self.message(&inner, &path, None),
+                None => self.message(&inner, &path, &fields, None),
             },
-            kind => self.params.push(param(zero(default_text(&kind)))),
+            _ => self.params.push(param(fields)),
         }
     }
 
@@ -1114,7 +1136,7 @@ mod tests {
                     json: field,
                 },
                 template: segments,
-                zero: String::new(),
+                fields: Vec::new(),
             }
             .is_single()
         };

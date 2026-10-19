@@ -1,8 +1,8 @@
 //! Routes resolved against their messages: path variables, bodies and
 //! query parameters, and the problems reported instead.
 
-use elm_connect_gen::ir::{HttpVerb, Method, Package};
-use elm_connect_gen::route::{Body, FieldPath, PathSegment, QueryParam, Route, Segment};
+use elm_connect_gen::ir::{HttpVerb, Method, ModuleName, Package};
+use elm_connect_gen::route::{Body, FieldPath, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 use crate::common::{package, problems, render};
 
@@ -22,11 +22,29 @@ fn path(proto: &str, json: &str) -> FieldPath {
     }
 }
 
-fn params(route: &Route) -> Vec<(String, Option<&str>)> {
+/// `Messages.V1.Type.name`, a field as generated code names its
+/// descriptor.
+fn field_ref(dotted: &str) -> FieldRef {
+    let (module, name) = dotted.rsplit_once('.').expect("a module and a name");
+    FieldRef {
+        module: ModuleName::parse(module).expect("a module name"),
+        name: name.to_owned(),
+    }
+}
+
+/// Each parameter's dotted proto path, with its fields as generated code
+/// names their descriptors.
+fn params(route: &Route) -> Vec<(String, Vec<String>)> {
     route
         .query
         .iter()
-        .map(|QueryParam { field, zero }| (field.dotted(), zero.as_deref()))
+        .map(|QueryParam { field, fields }| {
+            let refs = fields
+                .iter()
+                .map(|field| format!("{}.{}", field.module, field.name))
+                .collect();
+            (field.dotted(), refs)
+        })
         .collect()
 }
 
@@ -100,24 +118,26 @@ fn query_parameters_are_every_leaf_outside_the_path() {
             PathSegment::Variable {
                 field: path("message_id", "messageId"),
                 template: Vec::new(),
-                zero: String::new(),
+                fields: vec![field_ref("Messages.V1.GetMessageRequest.messageId")],
             },
         ]
     );
     assert_eq!(route.body, Body::None);
     assert_eq!(route.custom_verb, None);
+    let request = |name: &str| format!("Messages.V1.GetMessageRequest.{name}");
+    let sub = |name: &str| format!("Messages.V1.GetMessageRequestSubMessage.{name}");
     assert_eq!(
         params(route),
         [
-            ("revision".into(), Some("0")),
-            ("sub.subfield".into(), Some("")),
-            ("sub.kind".into(), Some("KIND_UNSPECIFIED")),
-            ("tags".into(), None),
-            ("pinned".into(), None),
-            ("since".into(), None),
-            ("limit".into(), None),
-            ("author".into(), None),
-            ("only".into(), None),
+            ("revision".into(), vec![request("revision")]),
+            ("sub.subfield".into(), vec![request("sub"), sub("subfield")]),
+            ("sub.kind".into(), vec![request("sub"), sub("kind")]),
+            ("tags".into(), vec![request("tags")]),
+            ("pinned".into(), vec![request("pinned")]),
+            ("since".into(), vec![request("since")]),
+            ("limit".into(), vec![request("limit")]),
+            ("author".into(), vec![request("author")]),
+            ("only".into(), vec![request("only")]),
         ]
     );
 
@@ -127,7 +147,10 @@ fn query_parameters_are_every_leaf_outside_the_path() {
         PathSegment::Variable {
             field: path("sub.subfield", "sub.subfield"),
             template: Vec::new(),
-            zero: String::new(),
+            fields: vec![
+                field_ref("Messages.V1.GetMessageRequest.sub"),
+                field_ref("Messages.V1.GetMessageRequestSubMessage.subfield"),
+            ],
         }
     );
     assert!(
@@ -139,18 +162,20 @@ fn query_parameters_are_every_leaf_outside_the_path() {
 }
 
 #[test]
-fn a_path_variable_carries_the_text_of_its_default() {
+fn a_path_variable_names_each_field_of_its_path() {
+    // The runtime reads the text of a field's default from the last one
+    // (`Proto.Http.variable`).
     let package = package(MESSAGES);
     let typed = &method(&package, "Typed").routes[0];
-    let zeros: Vec<&str> = typed
+    let leaves: Vec<&str> = typed
         .segments
         .iter()
         .filter_map(|segment| match segment {
-            PathSegment::Variable { zero, .. } => Some(zero.as_str()),
+            PathSegment::Variable { fields, .. } => fields.last().map(|f| f.name.as_str()),
             PathSegment::Literal(_) => None,
         })
         .collect();
-    assert_eq!(zeros, ["0", "KIND_UNSPECIFIED", "false", ""]);
+    assert_eq!(leaves, ["revision", "kind", "pinned", "messageId"]);
 }
 
 #[test]
@@ -172,7 +197,13 @@ fn bodies_and_response_bodies() {
         [Segment::Literal("messages".into()), Segment::Wildcard]
     );
     assert!(!update.segments[1].is_single());
-    assert_eq!(params(update), [("message_id".into(), Some(""))]);
+    assert_eq!(
+        params(update),
+        [(
+            "message_id".into(),
+            vec!["Messages.V1.UpdateMessageRequest.messageId".to_owned()]
+        )]
+    );
 
     let put = &method(&package, "PutMessage").routes[0];
     assert_eq!(put.verb, HttpVerb::Custom("PUT".into()));
@@ -283,6 +314,20 @@ fn each_route_problem_is_reported() {
         assert!(rendered.starts_with(code), "{rule}\n{rendered}");
         assert!(rendered.contains(text), "{rule}: {text}\n{rendered}");
     }
+}
+
+#[test]
+fn a_path_variable_of_a_well_known_request_is_refused() {
+    // Its JSON is not an object of its fields, so no field reads a value.
+    let rendered = route_problems(
+        r#"  rpc Get(google.protobuf.Struct) returns (Thing) { option (google.api.http) = { get: "/v1/{fields}" }; }"#,
+    );
+    assert!(rendered.starts_with("route::path_field"), "{rendered}");
+    assert!(
+        rendered
+            .contains("the request is `google.protobuf.Struct`, whose fields have no JSON form"),
+        "{rendered}"
+    );
 }
 
 #[test]

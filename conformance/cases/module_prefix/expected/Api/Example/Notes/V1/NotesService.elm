@@ -4,6 +4,7 @@
 module Api.Example.Notes.V1.NotesService exposing (..)
 
 import Api.Example.Notes.V1
+import Api.Example.Notes.V1.GetNoteRequest
 import Proto.Http
 import Proto.Method
 import Proto.Version
@@ -32,7 +33,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Api.Example.Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody

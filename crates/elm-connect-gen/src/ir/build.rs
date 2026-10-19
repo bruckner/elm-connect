@@ -584,8 +584,19 @@ impl Builder {
         );
         let mut routes = Vec::new();
         let mut failed = false;
-        for (index, (binding, nested)) in bindings.enumerate() {
-            match route::resolve(binding, &method.input(), &method.output(), nested) {
+        let name = |field: &FieldDescriptor| self.field_ref(field);
+        let mut resolved = Vec::new();
+        for (binding, nested) in bindings {
+            resolved.push(route::resolve(
+                binding,
+                &method.input(),
+                &method.output(),
+                nested,
+                &name,
+            ));
+        }
+        for (index, resolved) in resolved.into_iter().enumerate() {
+            match resolved {
                 Ok(route) => routes.push(route),
                 Err(errors) => {
                     failed = true;
@@ -601,6 +612,31 @@ impl Builder {
             }
         }
         (!failed).then_some(routes)
+    }
+
+    /// A field of a generated message as generated code names its
+    /// descriptor: its message's descriptor module and its value there,
+    /// named as [`Builder::message`] names it (a record field's name, or a
+    /// oneof member's [`naming::member_value_name`]). `None` for a field
+    /// whose message or name was reported already.
+    fn field_ref(&self, field: &FieldDescriptor) -> Option<route::FieldRef> {
+        let message = field.parent_message();
+        let ty = self.types.get(message.full_name())?;
+        let member = field
+            .containing_oneof()
+            .is_some_and(|oneof| !oneof.is_synthetic());
+        let name = if member {
+            naming::member_value_name(field.name()).ok()?
+        } else {
+            match self.renames.get(field.full_name()) {
+                Some(given) => given.clone(),
+                None => naming::field_name(field.name()).ok()?,
+            }
+        };
+        Some(route::FieldRef {
+            module: naming::descriptor_module(&ty.module, &ty.name),
+            name,
+        })
     }
 
     /// A site at `path` in `file`, or at the nearest enclosing element the
