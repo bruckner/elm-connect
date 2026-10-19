@@ -1,5 +1,5 @@
 module Proto.Json exposing
-    ( field, fieldEither, valueField, valueFieldEither
+    ( field, fieldEither, valueField, valueFieldEither, emptyMessage
     , object, implicit, implicitFloat, implicitBytes, repeated, dict, boolDict
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
@@ -25,7 +25,7 @@ Application code rarely needs them directly.
 
 # Fields
 
-@docs field, fieldEither, valueField, valueFieldEither
+@docs field, fieldEither, valueField, valueFieldEither, emptyMessage
 
 
 # Encoding fields
@@ -215,6 +215,19 @@ jsonAt names =
                     Spelled (Ok found) ->
                         Json.Decode.succeed (Maybe.map Tuple.second found)
             )
+
+
+{-| Decode a message without fields: any JSON object, usually `{}`, whatever
+its keys. Anything else fails, as it does for a message with fields.
+
+    decodePing : Decoder Ping
+    decodePing =
+        emptyMessage
+
+-}
+emptyMessage : Decoder {}
+emptyMessage =
+    Json.Decode.map (\() -> {}) empty
 
 
 {-| The value under whichever of `names`, the spellings of one field, the

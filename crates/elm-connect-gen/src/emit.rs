@@ -706,6 +706,8 @@ mod tests {
             ]
         );
 
+        // An empty message's decoder is `Proto.Json.emptyMessage`; it has
+        // no fields to describe, so no `Proto.Field`.
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
@@ -714,6 +716,7 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version"

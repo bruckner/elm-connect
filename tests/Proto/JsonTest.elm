@@ -16,6 +16,7 @@ suite =
         [ fieldTests
         , fieldEitherTests
         , valueFieldTests
+        , emptyMessageTests
         , lookupTests
         , presenceTests
         , encodingTests
@@ -215,6 +216,32 @@ failsOnEach decoder inputs =
     inputs
         |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeString decoder json) /= Nothing)
         |> Expect.equal []
+
+
+emptyMessageTests : Test
+emptyMessageTests =
+    describe "emptyMessage"
+        [ test "an empty object" <|
+            \_ -> decodes Proto.Json.emptyMessage "{}" {}
+        , test "an object with keys, which it ignores" <|
+            \_ -> decodes Proto.Json.emptyMessage """{"a":1,"hasOwnProperty":2}""" {}
+        , test "anything but an object fails as a message with fields does" <|
+            \_ ->
+                [ "5", "\"x\"", "[]", "[{}]", "null", "true" ]
+                    |> List.map (\json -> ( json, Json.Decode.decodeString Proto.Json.emptyMessage json |> Result.mapError Json.Decode.errorToString ))
+                    |> List.filter (\( _, result ) -> not (isObjectFailure result))
+                    |> Expect.equal []
+        ]
+
+
+isObjectFailure : Result String {} -> Bool
+isObjectFailure result =
+    case result of
+        Ok _ ->
+            False
+
+        Err problem ->
+            String.contains "Expecting an OBJECT" problem
 
 
 lookupTests : Test

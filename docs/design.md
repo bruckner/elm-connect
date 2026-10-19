@@ -426,6 +426,9 @@ rpc shared call =
   diagnostic, and `Dict String V` keyed by `"true"`/`"false"` was
   considered; both hid the proto type.
 - Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
+  The decoder (`Proto.Json.emptyMessage`) accepts any JSON object,
+  ignoring its keys, and fails on anything else, as every other message
+  does. *(Decided 2026-10-19; it accepted any JSON before.)*
 - Every message gets `defaultFoo`, so callers write
   `{ defaultFoo | title = "x" }` and
   `Maybe.withDefault defaultFoo.stars msg.stars` without knowing the
@@ -634,9 +637,10 @@ just the form encoders write. *(Proposed; built.)*
   inherited properties, so a field named after one of
   `Object.prototype`'s (`constructor`, `toString`, `__proto__`, …) is
   looked up among the object's own keys instead, in time linear in
-  them. A message with a field fails on any JSON that is not an object,
-  arrays included; when no field is present the check is constant-time
-  too, and never lists the keys. The package requires elm/json 1.1.4,
+  them. A message fails on any JSON that is not an object, arrays
+  included, whether or not it has fields; when no field is present the
+  check is constant-time too, and never lists the keys, and an empty
+  message (`Proto.Json.emptyMessage`) makes the same check. The package requires elm/json 1.1.4,
   which lists an object's keys without calling the object's own
   `hasOwnProperty`, so a key of that name decodes wherever keys are
   listed: a prototype-named field, a map, a `Struct` or an `Any`.

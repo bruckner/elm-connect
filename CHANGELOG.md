@@ -794,3 +794,6 @@ tag (design §8).
   read as a 64-bit value's string is, so `"07"` and `"1e2"` are keys; two
   keys that name one integer (`"7"` and `"07"`) fail the decode instead of
   one replacing the other. The Elm types are unchanged.
+- A message without fields decodes only from a JSON object, through the
+  new `Proto.Json.emptyMessage`, as every other message does; it
+  accepted any JSON (`5`, `"x"`, `[]`, `true`) before.
