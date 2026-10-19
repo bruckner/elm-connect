@@ -15,6 +15,7 @@ suite =
     describe "Proto.Json"
         [ fieldTests
         , fieldEitherTests
+        , valueFieldTests
         , lookupTests
         , presenceTests
         , encodingTests
@@ -114,6 +115,61 @@ fieldEitherTests =
             \_ -> decodes decodeNamed """{"display_name":null}""" (Named "")
         , test "a wrong type under the proto name fails" <|
             \_ -> fails decodeNamed """{"display_name":1}"""
+        ]
+
+
+type alias Setting =
+    { name : String, value : Maybe Json.Encode.Value }
+
+
+decodeSetting : Decoder Setting
+decodeSetting =
+    Json.Decode.succeed Setting
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.valueField "value"
+
+
+decodeSettingEither : Decoder Setting
+decodeSettingEither =
+    Json.Decode.succeed Setting
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.valueFieldEither "defaultValue" "default_value"
+
+
+valueFieldTests : Test
+valueFieldTests =
+    describe "valueField"
+        [ test "a missing key gives Nothing" <|
+            \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
+        , test "null is set, holding null" <|
+            \_ -> decodes decodeSetting """{"value":null}""" (Setting "" (Just Json.Encode.null))
+        , test "any other JSON is held as it is" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes decodeSetting """{"value":5}""" (Setting "" (Just (Json.Encode.int 5)))
+                    , \_ -> decodes decodeSetting """{"value":"x"}""" (Setting "" (Just (Json.Encode.string "x")))
+                    , \_ -> decodes decodeSetting """{"value":[true]}""" (Setting "" (Just (Json.Encode.list Json.Encode.bool [ True ])))
+                    ]
+                    ()
+        , test "a value that is not an object fails" <|
+            \_ -> fails decodeSetting "[]"
+        , test "either name, null included" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes decodeSettingEither """{"defaultValue":1}""" (Setting "" (Just (Json.Encode.int 1)))
+                    , \_ -> decodes decodeSettingEither """{"default_value":null}""" (Setting "" (Just Json.Encode.null))
+                    , \_ -> decodes decodeSettingEither "{}" (Setting "" Nothing)
+                    ]
+                    ()
+        , test "both names fail, even when one is null" <|
+            \_ -> failsWith decodeSettingEither """{"defaultValue":null,"default_value":1}""" "Expecting \"defaultValue\" or \"default_value\", but got both"
+        , test "Nothing leaves the field out, Just null writes null" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> encodesTo (Proto.Json.object [ ( "value", Nothing ) ]) "{}"
+                    , \_ -> encodesTo (Proto.Json.object [ ( "value", Just Json.Encode.null ) ]) """{"value":null}"""
+                    ]
+                    ()
         ]
 
 
