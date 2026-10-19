@@ -1676,8 +1676,24 @@ and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
-They were `Connect.*` at first, a name that tied proto3 JSON to one of
-the two transports; no public `Connect` module remains.
+The names stay `Rpc` and `Proto.*`. *(Decided 2026-10-19.)* They say
+what the modules are: proto data, and RPC calls over either transport.
+They were `Connect.*` at first, a product prefix that tied proto3 JSON
+to one of the two transports; no public `Connect` module remains. The
+cost of short names is collision: an application with a module of its
+own named `Rpc` (or `Proto.Json`) cannot import either, since Elm 0.19
+refuses a module name defined twice: `AMBIGUOUS IMPORT`, "I found
+multiple modules with that name. One in the … package, and another
+defined locally", or with the runtime vendored as a source directory,
+"I found multiple files in your `source-directories` with that name".
+The application renames its own module; generated modules go under
+`module_prefix` (§3.1, the README's option table); a package whose
+module would be one of the runtime's is refused
+(`naming::reserved_module`, §3.8). An option to
+move the runtime's own modules under a prefix was considered and
+deferred: it can only work where the runtime is vendored or bundled
+rather than installed as a package, and it is a complex option to carry
+before anyone asks for it.
 
 ```elm
 -- Rpc.Request, Rpc.Response: frozen (§8.3)
