@@ -47,7 +47,6 @@ type alias Event =
     , limits : Dict String Duration
     , values : List Json.Encode.Value
     , counts : List Int
-    , when : EventWhen
     , acked : ()
     , pings : List ()
     , seen : Dict String ()
@@ -55,6 +54,7 @@ type alias Event =
     , columns : Dict String (List Json.Encode.Value)
     , lastValue : Maybe Json.Encode.Value
     , settings : Dict String Json.Encode.Value
+    , when : EventWhen
     }
 
 
@@ -93,7 +93,6 @@ defaultEvent =
     , limits = Dict.empty
     , values = []
     , counts = []
-    , when = EventWhenUnset
     , acked = ()
     , pings = []
     , seen = Dict.empty
@@ -101,6 +100,7 @@ defaultEvent =
     , columns = Dict.empty
     , lastValue = Nothing
     , settings = Dict.empty
+    , when = EventWhenUnset
     }
 
 
@@ -131,6 +131,13 @@ descriptorEvent =
         , Proto.Field.descriptor "limits" "limits" 18 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Duration")
         , Proto.Field.descriptor "values" "values" 19 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Value")
         , Proto.Field.descriptor "counts" "counts" 20 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Int32Value")
+        , Proto.Field.descriptor "acked" "acked" 24 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "pings" "pings" 25 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
+        , Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
+        , Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
+        , Proto.Field.descriptor "last_value" "lastValue" 31 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Value")
+        , Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
         , Proto.Field.descriptor "at" "at" 21 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
             |> Proto.Field.inOneof "when"
         , Proto.Field.descriptor "after" "after" 22 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
@@ -141,13 +148,6 @@ descriptorEvent =
             |> Proto.Field.inOneof "when"
         , Proto.Field.descriptor "dates" "dates" 30 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
             |> Proto.Field.inOneof "when"
-        , Proto.Field.descriptor "acked" "acked" 24 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "pings" "pings" 25 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
-        , Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
-        , Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
-        , Proto.Field.descriptor "last_value" "lastValue" 31 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Value")
-        , Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
         ]
 
 
@@ -249,7 +249,6 @@ decodeEvent =
         |> Proto.Json.field "limits" Dict.empty (Json.Decode.dict Proto.Json.duration)
         |> Proto.Json.field "values" [] (Json.Decode.list Json.Decode.value)
         |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
-        |> Proto.Json.oneof decodeEventWhen
         |> Proto.Json.field "acked" () Proto.Json.empty
         |> Proto.Json.field "pings" [] (Json.Decode.list Proto.Json.empty)
         |> Proto.Json.field "seen" Dict.empty (Json.Decode.dict Proto.Json.empty)
@@ -257,6 +256,7 @@ decodeEvent =
         |> Proto.Json.field "columns" Dict.empty (Json.Decode.dict Proto.Json.listValue)
         |> Proto.Json.valueFieldEither "lastValue" "last_value"
         |> Proto.Json.field "settings" Dict.empty (Json.Decode.dict Json.Decode.value)
+        |> Proto.Json.oneof decodeEventWhen
 
 
 decodeEventWhen : Json.Decode.Decoder EventWhen

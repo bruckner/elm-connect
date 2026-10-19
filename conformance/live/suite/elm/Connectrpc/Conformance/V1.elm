@@ -233,8 +233,8 @@ type alias UnaryResponseDefinition =
     { responseHeaders : List Header
     , response : UnaryResponseDefinitionResponse
     , responseTrailers : List Header
-    , rawResponse : Maybe RawHTTPResponse
     , responseDelayMs : Int
+    , rawResponse : Maybe RawHTTPResponse
     }
 
 
@@ -579,8 +579,8 @@ defaultUnaryResponseDefinition =
     { responseHeaders = []
     , response = UnaryResponseDefinitionResponseUnset
     , responseTrailers = []
-    , rawResponse = Nothing
     , responseDelayMs = 0
+    , rawResponse = Nothing
     }
 
 
@@ -1146,8 +1146,8 @@ descriptorUnaryResponseDefinition =
         , Proto.Field.descriptor "error" "error" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
             |> Proto.Field.inOneof "response"
         , Proto.Field.descriptor "response_trailers" "responseTrailers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
-        , Proto.Field.descriptor "raw_response" "rawResponse" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPResponse")
         , Proto.Field.descriptor "response_delay_ms" "responseDelayMs" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "raw_response" "rawResponse" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPResponse")
         ]
 
 
@@ -1922,8 +1922,8 @@ encodeUnaryResponseDefinition value =
     Proto.Json.object
         ([ ( "responseHeaders", Proto.Json.repeated encodeHeader value.responseHeaders )
          , ( "responseTrailers", Proto.Json.repeated encodeHeader value.responseTrailers )
-         , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
          , ( "responseDelayMs", Proto.Json.implicit 0 Json.Encode.int value.responseDelayMs )
+         , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
          ]
             ++ encodeUnaryResponseDefinitionResponse value.response
         )
@@ -2459,8 +2459,8 @@ decodeUnaryResponseDefinition =
         |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.oneof decodeUnaryResponseDefinitionResponse
         |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
         |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
+        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
 
 
 decodeUnaryResponseDefinitionResponse : Json.Decode.Decoder UnaryResponseDefinitionResponse

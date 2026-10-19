@@ -900,7 +900,7 @@ impl Builder {
         let mut oneofs = Vec::new();
         let mut oneofs_seen = BTreeSet::new();
 
-        for field in message.fields() {
+        for field in declared_fields(message) {
             if let Some(oneof) = field
                 .containing_oneof()
                 .filter(|oneof| !oneof.is_synthetic())
@@ -942,6 +942,8 @@ impl Builder {
                 );
                 self.claim_constructor(constructors, package, &unset_ctor, origin);
 
+                // prost-reflect lists a oneof's members in declaration
+                // order, so the variants follow the file as the fields do.
                 let mut variants = Vec::new();
                 for member in oneof.fields() {
                     let elm_ctor = match self.renames.get(member.full_name()) {
@@ -1356,6 +1358,20 @@ fn all_enums(file: &FileDescriptor) -> Vec<EnumDescriptor> {
                 .iter()
                 .flat_map(|message| message.child_enums()),
         )
+        .collect()
+}
+
+/// The fields of `message` in declaration order, the order the `.proto`
+/// file writes them in, oneof members among them. The record's fields
+/// follow this order and its constructor is positional, so the order is
+/// public API; it follows the file so the record reads beside the proto.
+/// prost-reflect's `fields()` iterates in number order instead.
+pub(crate) fn declared_fields(message: &MessageDescriptor) -> Vec<FieldDescriptor> {
+    message
+        .descriptor_proto()
+        .field
+        .iter()
+        .filter_map(|field| message.get_field_by_name(field.name()))
         .collect()
 }
 

@@ -763,3 +763,9 @@ tag (design §8).
   one read `null` as `Nothing`. `Nothing` now leaves the field out, so a
   default message with a `Value` field encodes as `{}`. Repeated, map
   and oneof forms are unchanged.
+- A generated record's fields, and its default, descriptor, encoder and
+  decoder, are in declaration order, the order the `.proto` file writes
+  them in; they were in field-number order, against the design. The
+  record constructor is positional, so a message whose numbers are out
+  of declaration order now takes its arguments in another order. The
+  `field_order` conformance case pins it.

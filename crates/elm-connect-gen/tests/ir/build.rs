@@ -264,6 +264,43 @@ fn real_oneof_is_a_union_with_an_unset_case() {
 }
 
 #[test]
+fn fields_keep_declaration_order() {
+    let package = package(
+        r#"
+        syntax = "proto3";
+        package t;
+        message Draft {
+          string title = 5;
+          oneof body {
+            string text = 9;
+            bytes blob = 1;
+          }
+          int32 revision = 2;
+          repeated string tags = 7;
+        }
+        "#,
+    );
+    let draft = message(&package, "Draft");
+    let fields: Vec<_> = draft
+        .fields
+        .iter()
+        .map(|f| (f.elm_name.as_str(), f.number))
+        .collect();
+    // The order the file writes them in, not number order.
+    assert_eq!(fields, [("title", 5), ("revision", 2), ("tags", 7)]);
+    // The oneof sits where its first member was declared, after `title`,
+    // though its member numbered 1 would put it first by number.
+    let body = &draft.oneofs[0];
+    assert_eq!(body.position, 1);
+    let members: Vec<_> = body
+        .variants
+        .iter()
+        .map(|v| (v.proto_name.as_str(), v.number))
+        .collect();
+    assert_eq!(members, [("text", 9), ("blob", 1)]);
+}
+
+#[test]
 fn enum_records_its_zero_value() {
     let package = package(
         r#"

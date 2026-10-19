@@ -39,9 +39,9 @@ type alias Note =
     , counts : List Int
     , weights : List Float
     , reviewers : List Author
-    , title : String
     , relatedLinks : List String
     , isDraft : Maybe Bool
+    , title : String
     }
 
 
@@ -67,9 +67,9 @@ defaultNote =
     , counts = []
     , weights = []
     , reviewers = []
-    , title = ""
     , relatedLinks = []
     , isDraft = Nothing
+    , title = ""
     }
 
 
@@ -100,9 +100,9 @@ descriptorNote =
         , Proto.Field.descriptor "counts" "counts" 8 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
         , Proto.Field.descriptor "weights" "weights" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFloat)
         , Proto.Field.descriptor "reviewers" "reviewers" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "cardinality.v1.Author")
-        , Proto.Field.descriptor "title" "title" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "related_links" "relatedLinks" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "is_draft" "isDraft" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "title" "title" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
 
 
@@ -145,9 +145,9 @@ encodeNote value =
         , ( "counts", Proto.Json.repeated Json.Encode.int value.counts )
         , ( "weights", Proto.Json.repeated Proto.Json.encodeFloat value.weights )
         , ( "reviewers", Proto.Json.repeated encodeAuthor value.reviewers )
-        , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
         , ( "relatedLinks", Proto.Json.repeated Json.Encode.string value.relatedLinks )
         , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
+        , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
         ]
 
 
@@ -174,6 +174,6 @@ decodeNote =
         |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
         |> Proto.Json.field "weights" [] (Json.Decode.list Proto.Json.float)
         |> Proto.Json.field "reviewers" [] (Json.Decode.list decodeAuthor)
-        |> Proto.Json.field "title" "" Json.Decode.string
         |> Proto.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Json.Decode.string)
         |> Proto.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
+        |> Proto.Json.field "title" "" Json.Decode.string

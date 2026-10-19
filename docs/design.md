@@ -369,6 +369,18 @@ rpc shared call =
 - A record type alias per message. Nested messages are flattened into
   the package module with the outer name as a prefix
   (`Outer.Inner` → `OuterInner`). *(Decided.)*
+- The record's fields are in declaration order, the order the `.proto`
+  file writes them in, not field-number order; a oneof's field sits
+  where its first member is declared (§3.6). *(Decided 2026-10-19.)* The
+  record's constructor is positional, so this order is API, and the
+  defaults, descriptors (§3.9), encoders and decoders follow it too.
+  Field-number order was considered: the record would survive a
+  cosmetic reordering of the file, and prost-reflect's `fields()` gives
+  it by accident. Rejected, since the record should read beside the
+  proto in its author's grouping, peer generators emit file order, and a
+  new field changes the positional constructor under either order, so
+  neither is stable under appends. The `field_order` conformance case
+  pins it.
 - Scalars use proto3 zero values directly, not `Maybe`. *(Decided.)* A
   missing JSON field decodes to the zero value, and `null` decodes to
   the zero value, matching proto3 JSON.
