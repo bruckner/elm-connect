@@ -4,7 +4,7 @@ module Proto.Json exposing
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , enum, enumOrZero
-    , intDict, boolMap, encodeBoolMap
+    , int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
     , int32, uint32
     , int64, uint64, encodeInt64
     , int64AsInt, uint64AsInt, encodeInt64AsInt
@@ -60,7 +60,7 @@ reads a missing field as its default, so nothing is lost.
 
 # Maps
 
-@docs intDict, boolMap, encodeBoolMap
+@docs int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
 
 
 # 32-bit integers
@@ -849,80 +849,122 @@ enumWith unknownName zero values =
             )
 
 
-{-| Decode a map with 32-bit integer keys. JSON object keys are strings, so
-proto3 JSON writes each key as its decimal string. A key must be one in its
-canonical form, as `String.fromInt` writes it, within -2147483648 to 4294967295;
-any other key fails, such as `"abc"`, `"1.5"`, `"+5"`, `"-0"` or `"07"`, which
-would otherwise collide with `"7"`. The bounds span both the signed and the
-unsigned 32-bit types, since the decoder is not told which one it reads.
+{-| Decode a map with signed 32-bit integer keys (`int32`, `sint32`,
+`sfixed32`). JSON object keys are strings, so proto3 JSON writes each key as
+its decimal string. A key is an integer written as an `int64` string may be,
+in decimal or exponent notation, within -2147483648 to 2147483647: `"7"`,
+`"-7"`, `"1e2"`, and `"07"`, whose leading zero protobuf's own parsers accept
+too. Any other key fails, such as `"abc"`, `"1.5"`, `"+5"` or `"2147483648"`,
+and so do two keys that name one integer, such as `"7"` and `"07"`.
 
-    Json.Decode.decodeString (intDict Json.Decode.string) """{"1":"a","-2":"b"}"""
+    Json.Decode.decodeString (int32Dict Json.Decode.string) """{"1":"a","-2":"b"}"""
     -- Ok (Dict.fromList [ ( -2, "b" ), ( 1, "a" ) ])
 
 Encode one with `Json.Encode.dict String.fromInt`.
 
 -}
-intDict : Decoder a -> Decoder (Dict.Dict Int a)
-intDict decoder =
-    Json.Decode.keyValuePairs decoder
-        |> Json.Decode.andThen
-            (\pairs ->
-                List.foldr
-                    (\( key, value ) result ->
-                        Result.map2 (\int entries -> Dict.insert int value entries)
-                            (intKey key |> Result.fromMaybe key)
-                            result
-                    )
-                    (Ok Dict.empty)
-                    pairs
-                    |> fromKeyResult
-            )
+int32Dict : Decoder a -> Decoder (Dict.Dict Int a)
+int32Dict =
+    keyedDict (boundedKey "an int32 map key (-2147483648 to 2147483647)" -2147483648 2147483647)
 
 
-{-| A map key in the canonical decimal form of a 32-bit integer.
+{-| Decode a map with unsigned 32-bit integer keys (`uint32`, `fixed32`): the
+keys [`int32Dict`](#int32Dict) accepts, within 0 to 4294967295.
 -}
-intKey : String -> Maybe Int
-intKey key =
-    let
-        digits =
-            if String.startsWith "-" key then
-                String.dropLeft 1 key
+uint32Dict : Decoder a -> Decoder (Dict.Dict Int a)
+uint32Dict =
+    keyedDict (boundedKey "a uint32 map key (0 to 4294967295)" 0 4294967295)
+
+
+{-| Decode a map with signed 64-bit integer keys (`int64`, `sint64`,
+`sfixed64`), keyed by decimal strings as [`int64`](#int64) holds its values,
+whatever the `int64` option. A key is read as `int64` reads a string, and held
+in its canonical form: `"007"` is the key `"7"`, `"1e3"` the key `"1000"`.
+Any other key fails, such as `"abc"` or `"1.5"`, and so do two keys that name
+one integer, such as `"7"` and `"007"`.
+
+    Json.Decode.decodeString (int64Dict Json.Decode.string) """{"007":"a","-2":"b"}"""
+    -- Ok (Dict.fromList [ ( "-2", "b" ), ( "7", "a" ) ])
+
+Encode one with `Json.Encode.dict identity`.
+
+-}
+int64Dict : Decoder a -> Decoder (Dict.Dict String a)
+int64Dict =
+    keyedDict int64Key
+
+
+{-| Decode a map with unsigned 64-bit integer keys (`uint64`, `fixed64`): the
+keys [`int64Dict`](#int64Dict) accepts, zero or more.
+-}
+uint64Dict : Decoder a -> Decoder (Dict.Dict String a)
+uint64Dict =
+    keyedDict
+        (\text ->
+            int64Key text
+                |> Result.andThen
+                    (\decimal ->
+                        if String.startsWith "-" decimal then
+                            Err ("Expecting a uint64 map key (0 or more), but got " ++ quote text)
+
+                        else
+                            Ok decimal
+                    )
+        )
+
+
+{-| A map whose keys `readKey` reads from their text, failing on a key it
+rejects and on two keys it reads as one.
+-}
+keyedDict : (String -> Result String comparable) -> Decoder a -> Decoder (Dict.Dict comparable a)
+keyedDict readKey decoder =
+    Json.Decode.keyValuePairs decoder
+        |> Json.Decode.andThen (\pairs -> fromResult (insertKeys readKey Dict.empty Dict.empty pairs))
+
+
+insertKeys : (String -> Result String comparable) -> Dict.Dict comparable String -> Dict.Dict comparable a -> List ( String, a ) -> Result String (Dict.Dict comparable a)
+insertKeys readKey seen entries pairs =
+    case pairs of
+        [] ->
+            Ok entries
+
+        ( text, value ) :: rest ->
+            case readKey text of
+                Err problem ->
+                    Err problem
+
+                Ok key ->
+                    case Dict.get key seen of
+                        Just earlier ->
+                            Err ("Expecting distinct map keys, but " ++ quote earlier ++ " and " ++ quote text ++ " are the same key")
+
+                        Nothing ->
+                            insertKeys readKey (Dict.insert key text seen) (Dict.insert key value entries) rest
+
+
+{-| A 32-bit integer map key within `low` to `high`, read as an `int64` string
+is.
+-}
+boundedKey : String -> Int -> Int -> String -> Result String Int
+boundedKey what low high text =
+    case Result.toMaybe (canonicalInteger text) |> Maybe.andThen String.toInt of
+        Just int ->
+            if int >= low && int <= high then
+                Ok int
 
             else
-                key
+                Err ("Expecting " ++ what ++ ", but got " ++ quote text)
 
-        canonical =
-            (digits == "0" && key == "0")
-                || (String.length digits
-                        <= 10
-                        && String.all Char.isDigit digits
-                        && not (String.isEmpty digits)
-                        && not (String.startsWith "0" digits)
-                   )
-    in
-    if canonical then
-        String.toInt key
-            |> Maybe.andThen
-                (\int ->
-                    if int >= -2147483648 && int <= 4294967295 then
-                        Just int
-
-                    else
-                        Nothing
-                )
-
-    else
-        Nothing
+        Nothing ->
+            Err ("Expecting " ++ what ++ ", but got " ++ quote text)
 
 
-fromKeyResult : Result String (Dict.Dict Int a) -> Decoder (Dict.Dict Int a)
-fromKeyResult result =
-    case result of
-        Ok entries ->
-            Json.Decode.succeed entries
-
-        Err key ->
-            Json.Decode.fail ("Expecting an integer map key, but got \"" ++ key ++ "\"")
+{-| A 64-bit integer map key in its canonical decimal form.
+-}
+int64Key : String -> Result String String
+int64Key text =
+    canonicalInteger text
+        |> Result.mapError (\_ -> "Expecting an int64 map key, but got " ++ quote text)
 
 
 {-| Decode a map with `bool` keys as an association list, since Elm's `Bool`

@@ -400,12 +400,20 @@ rpc shared call =
   map keys will become `Dict String V` under §3.4.
   Built: `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
-  keys are read from their decimal strings (`Proto.Json.intDict`, which
-  fails on any other key) and written with `String.fromInt`. A key
-  must be in canonical form, as `String.fromInt` writes it, so `"07"`
-  fails rather than colliding with `"7"`, and within -2^31 to 2^32 − 1,
-  the span of the signed and unsigned types together: `intDict` is not
-  told which of them it reads.
+  keys are read from their decimal strings and written with
+  `String.fromInt` (32-bit) or as held (64-bit). Every integer key is
+  validated and canonicalised like a value of its kind, by a decoder
+  per kind: `Proto.Json.int32Dict` (−2^31 to 2^31 − 1), `uint32Dict`
+  (0 to 2^32 − 1), `int64Dict`, and `uint64Dict` (0 or more). Each reads
+  a key as `Proto.Json.int64` reads a string, so `"07"`, `"-0"` and
+  `"1e2"` are keys and `"+5"`, `"1.5"` and `"abc"` are not. A 64-bit key is held
+  in the canonical decimal form `int64` gives (`"007"` is the key
+  `"7"`). Two keys that canonicalise to one (`"7"` and `"07"`) fail the
+  decode, naming both, rather than one silently replacing the other.
+  protobuf's own parsers (protobuf-go's protojson) reject the same keys:
+  out of range, not an integer, or a duplicate. *(Decided 2026-10-19;
+  32-bit keys were checked only against the span of the signed and
+  unsigned types together, and 64-bit keys not at all, before.)*
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
@@ -591,7 +599,8 @@ just the form encoders write. *(Proposed; built.)*
   integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
   past every 64-bit integer, which also bounds the text an exponent can
   ask for. `Proto.Json.int64AsInt` reads the same forms within its
-  range. A 64-bit map key is kept as the text received (§3.2).
+  range. A 64-bit map key is validated and canonicalised the same way
+  (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
@@ -703,8 +712,10 @@ just the form encoders write. *(Proposed; built.)*
   anywhere else.
 - The option reaches every 64-bit value without a `jstype`: map values
   and the `Int64Value`/`UInt64Value` wrappers too. Map **keys** stay
-  `String` under either setting: they are strings on the wire, and a
-  `Dict String V` keyed by decimal text needs no range check.
+  `String` under either setting, since they are strings on the wire,
+  but are validated and canonicalised as the `String` form's values are,
+  and two keys that canonicalise to one fail (§3.2). *(Decided
+  2026-10-19.)*
 - The unsigned 64-bit kinds refuse a negative value when decoded
   (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit ones do; the
   encoders are the signed ones. *(Decided 2026-10-14; a negative

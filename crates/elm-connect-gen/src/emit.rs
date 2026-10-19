@@ -90,7 +90,9 @@
 //!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Proto.Json.dict`; absent or `null` decodes as `Dict.empty`. A map
+//!   `Proto.Json.dict` and decoded by the key's kind
+//!   (`Json.Decode.dict`, `Proto.Json.int32Dict`, `uint32Dict`,
+//!   `int64Dict`, `uint64Dict`); absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
 //!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
 //!   `boolDict`; absent or `null` decodes as `[]`.

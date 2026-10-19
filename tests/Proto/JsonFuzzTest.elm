@@ -574,7 +574,19 @@ mapProperties =
                         Dict.isEmpty entries |> Expect.equal True
 
                     Just json ->
-                        decodes (Proto.Json.intDict Json.Decode.string) json entries
+                        decodes (Proto.Json.int32Dict Json.Decode.string) json entries
+        , fuzz (Fuzz.list (Fuzz.pair Fuzzers.int64Text Fuzzers.awkwardString)) "an int64-keyed map round-trips, its keys as held" <|
+            \pairs ->
+                let
+                    entries =
+                        Dict.fromList pairs
+                in
+                case Proto.Json.dict identity Json.Encode.string entries of
+                    Nothing ->
+                        Dict.isEmpty entries |> Expect.equal True
+
+                    Just json ->
+                        decodes (Proto.Json.int64Dict Json.Decode.string) json entries
         , fuzz2 uniqueBools (Fuzz.pair Fuzzers.awkwardString Fuzzers.awkwardString) "a bool-keyed map round-trips in order" <|
             \keys ( first, second ) ->
                 let

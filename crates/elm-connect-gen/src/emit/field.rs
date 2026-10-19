@@ -43,35 +43,42 @@ pub(super) enum FieldShape<'p> {
     Json,
 }
 
-/// The keys of a map field held in a `Dict`, as Elm holds them. JSON
-/// object keys are strings whatever the proto key type.
+/// The keys of a map field held in a `Dict`, by the decoder that reads
+/// them. JSON object keys are strings whatever the proto key type; an
+/// integer key is checked against its type's range, and two keys that
+/// name one integer fail (design §3.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum KeyShape {
-    /// `String`: `string` keys, and 64-bit integer keys held as decimal
-    /// strings like 64-bit values (design §3.4).
+    /// `String`: `string` keys, taken as they are.
     String,
-    /// `Int`: 32-bit integer keys, read from and written as their decimal
-    /// strings.
-    Int,
+    /// `Int`: signed 32-bit integer keys.
+    Int32,
+    /// `Int`: unsigned 32-bit integer keys.
+    UInt32,
+    /// `String`: signed 64-bit integer keys, held as canonical decimal
+    /// strings like 64-bit values under either `int64` option (design
+    /// §3.4).
+    Int64,
+    /// `String`: unsigned 64-bit integer keys, likewise.
+    UInt64,
 }
 
 impl KeyShape {
     /// The `Dict` key for `key`; `None` for `bool`, which has none.
     fn of(key: MapKey) -> Option<Self> {
         Some(match key {
-            MapKey::String
-            | MapKey::Int64
-            | MapKey::UInt64
-            | MapKey::SInt64
-            | MapKey::Fixed64
-            | MapKey::SFixed64 => KeyShape::String,
-            MapKey::Int32
-            | MapKey::UInt32
-            | MapKey::SInt32
-            | MapKey::Fixed32
-            | MapKey::SFixed32 => KeyShape::Int,
+            MapKey::String => KeyShape::String,
+            MapKey::Int32 | MapKey::SInt32 | MapKey::SFixed32 => KeyShape::Int32,
+            MapKey::UInt32 | MapKey::Fixed32 => KeyShape::UInt32,
+            MapKey::Int64 | MapKey::SInt64 | MapKey::SFixed64 => KeyShape::Int64,
+            MapKey::UInt64 | MapKey::Fixed64 => KeyShape::UInt64,
             MapKey::Bool => return None,
         })
+    }
+
+    /// Whether Elm holds the key as an `Int`, rather than a `String`.
+    fn is_int(self) -> bool {
+        matches!(self, KeyShape::Int32 | KeyShape::UInt32)
     }
 }
 
@@ -172,9 +179,10 @@ impl Emitter {
             }
             FieldShape::List(value) => ty(self.core("List"), [self.value_type(value)]),
             FieldShape::Dict(key, value) => {
-                let key = match key {
-                    KeyShape::String => ty(self.core("String"), []),
-                    KeyShape::Int => ty(self.core("Int"), []),
+                let key = if key.is_int() {
+                    ty(self.core("Int"), [])
+                } else {
+                    ty(self.core("String"), [])
                 };
                 let value = self.value_type(value);
                 self.exposed_type(CORE_DICT, "Dict", [key, value])
@@ -232,9 +240,10 @@ impl Emitter {
             }
             FieldShape::Dict(key, inner) => {
                 let encoder = self.value_encoder(inner);
-                let key = match key {
-                    KeyShape::String => var("identity"),
-                    KeyShape::Int => qualified(CORE_STRING, "fromInt"),
+                let key = if key.is_int() {
+                    qualified(CORE_STRING, "fromInt")
+                } else {
+                    var("identity")
                 };
                 (self.reference((PROTO_JSON, "dict")), vec![key, encoder])
             }
@@ -267,7 +276,10 @@ impl Emitter {
                 let value = self.value_decoder(value);
                 let dict = match key {
                     KeyShape::String => self.reference((JSON_DECODE, "dict")),
-                    KeyShape::Int => self.reference((PROTO_JSON, "intDict")),
+                    KeyShape::Int32 => self.reference((PROTO_JSON, "int32Dict")),
+                    KeyShape::UInt32 => self.reference((PROTO_JSON, "uint32Dict")),
+                    KeyShape::Int64 => self.reference((PROTO_JSON, "int64Dict")),
+                    KeyShape::UInt64 => self.reference((PROTO_JSON, "uint64Dict")),
                 };
                 apply(dict, [value])
             }

@@ -786,3 +786,11 @@ tag (design §8).
   elm/bytes. Elm's `==` finds any two `Bytes` values equal, whatever
   they hold; the module documentation says what that means for records
   and tests.
+- Map keys are decoded by their kind. `Proto.Json.intDict` is replaced by
+  `int32Dict` and `uint32Dict`, which check the key type's own range, and
+  64-bit keys, which were taken as received, now go through `int64Dict`
+  and `uint64Dict`, which validate them as 64-bit values and hold them in
+  canonical decimal form (`"007"` is the key `"7"`). Every integer key is
+  read as a 64-bit value's string is, so `"07"` and `"1e2"` are keys; two
+  keys that name one integer (`"7"` and `"07"`) fail the decode instead of
+  one replacing the other. The Elm types are unchanged.

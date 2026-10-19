@@ -656,7 +656,7 @@ decodeResource =
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
         |> Proto.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Proto.Json.field "kinds" Dict.empty (Json.Decode.dict decodeKind)
+        |> Proto.Json.field "kinds" Dict.empty (Proto.Json.int64Dict decodeKind)
         |> Proto.Json.field "weights" [] (Proto.Json.boolMap Proto.Json.float)
 
 
