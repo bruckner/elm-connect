@@ -404,7 +404,7 @@ rpc shared call =
   its proto3 default, the value it decodes to when absent: `0`, `0.0`,
   `False`, `""`, `"0"` for a 64-bit integer held as a `String` (`0` as
   an `Int`), an enum's zero constructor, `Nothing`, `[]`, `Dict.empty`,
-  `()` for `Empty`, `Json.Encode.null` for `Value`, and each oneof's
+  `()` for `Empty`, and each oneof's
   unset constructor. The name is the naming layer's (`default` + the
   type name), in the value namespace with the encoders and decoders,
   where it cannot collide (§3.7). The generated module gains a
@@ -533,16 +533,17 @@ out:
   written, `-0` as `0`: JavaScript's JSON writer has no negative zero,
   and a server reads `+0` either way.
 - A field with presence (`Maybe`: `optional`, a message, a wrapper,
-  `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Any`) is
-  left out when `Nothing` and written when `Just`, at its default too
-  (`Just 0` writes `0`, `Just` an empty message writes `{}`): presence
-  is what the `Maybe` says (`Maybe.map encoder value`).
+  `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Value`,
+  `Any`) is left out when `Nothing` and written when `Just`, at its
+  default too (`Just 0` writes `0`, `Just` an empty message writes `{}`,
+  `Just Json.Encode.null` writes `null`): presence is what the `Maybe`
+  says (`Maybe.map encoder value`, or the `Value` field's own `Maybe
+  Json.Encode.Value`).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
 - A repeated or map field is left out when empty (`Proto.Json.repeated`,
   `Proto.Json.dict`, `Proto.Json.boolDict`).
-- A `Value` field is always written, since `null` is one of its values,
-  and an `Empty` field always writes `{}` (§3.5).
+- An `Empty` field always writes `{}` (§3.5).
 
 Why: request bodies shrink to what the message holds; protobuf-go's
 `protojson`, and so connect-go, writes the same way unless
@@ -583,7 +584,8 @@ just the form encoders write. *(Proposed; built.)*
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. *(Decided.)* The same holds for every two-name
-  helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`). The
+  helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`,
+  `valueFieldEither`). The
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `fieldEither`. A list of names
   (`field [ "title" ]`) was the alternative; it puts brackets on every
@@ -663,7 +665,7 @@ argument.)*
 | `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
 | `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
-| `google.protobuf.Value` | `Json.Encode.Value` | it *is* JSON |
+| `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; *(Decided; see below)* |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | *(Decided, 2026-10-13; built)* the message's JSON plus `"@type"` on the wire |
 
@@ -696,8 +698,20 @@ Built as proposed, with these details *(each Proposed)*:
   and fail on anything but an object or an array; their encoders are
   `Proto.Json.encodeStruct` and `encodeListValue`. The members and
   elements are passed through as received.
-- `Value` fields are `Json.Encode.Value` without `Maybe`: an absent
-  field reads as `null`, and the value is passed through as received
+- A singular `Value` field, `optional` or not, is `Maybe
+  Json.Encode.Value`. *(Decided, 2026-10-19.)* `Value` is a message, and
+  `null` is one of its values: protojson reads `"payload": null` as set,
+  holding `NullValue`, and only a missing key as unset. So a missing key
+  is `Nothing`, and any JSON under the key is `Just` it, `null` included
+  (`Just Json.Encode.null`); `Nothing` leaves the field out and `Just`
+  writes its JSON, `null` too. The step is `Proto.Json.valueField`
+  (`valueFieldEither` when the names differ), which reads `null` as set
+  where `field` reads it as the default. This keeps a default message
+  `{}` and matches `Struct` and `ListValue`. It replaces a bare
+  `Json.Encode.Value` that read a missing key as `null` and always wrote
+  the field, so a client that never touched it sent `null` and the
+  server saw it set. Repeated, as a map value and as a oneof member it
+  stays a bare `Json.Encode.Value`, passed through as received
   (`Json.Decode.value`, written back as is). A `Value` member of a oneof
   that arrives as `null` is set and holds `null`, as protojson reads it,
   unlike any other member (§3.6).
@@ -2278,7 +2292,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   ±315,576,000,000 s, field masks, enums, maps, repeated fields,
   `Struct`, `ListValue`, `Value`), decoders accept the other forms
   proto3 JSON allows, the generated codecs of `routes.proto` leave out
-  defaults (a default message is `{}`, `{}` decodes to it, and
+  defaults (a default message is `{}`, which holds for every message
+  but one with an `Empty` field, always written as `{}` (§3.5); `{}`
+  decodes to it, and
   `encode (decode (encode x)) == encode x`), and `Rpc.request` over
   Transcode keeps structural laws (a path segment percent-decodes to its
   field's value, a field bound in the path is in neither the query nor

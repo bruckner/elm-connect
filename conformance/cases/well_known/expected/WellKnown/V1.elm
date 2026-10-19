@@ -32,7 +32,7 @@ type alias Event =
     , updateMask : Maybe (List String)
     , marker : ()
     , metadata : Maybe (Dict String Json.Encode.Value)
-    , payload : Json.Encode.Value
+    , payload : Maybe Json.Encode.Value
     , items : Maybe (List Json.Encode.Value)
     , ratio : Maybe Float
     , weight : Maybe Float
@@ -53,6 +53,8 @@ type alias Event =
     , seen : Dict String ()
     , records : List (Dict String Json.Encode.Value)
     , columns : Dict String (List Json.Encode.Value)
+    , lastValue : Maybe Json.Encode.Value
+    , settings : Dict String Json.Encode.Value
     }
 
 
@@ -76,7 +78,7 @@ defaultEvent =
     , updateMask = Nothing
     , marker = ()
     , metadata = Nothing
-    , payload = Json.Encode.null
+    , payload = Nothing
     , items = Nothing
     , ratio = Nothing
     , weight = Nothing
@@ -97,6 +99,8 @@ defaultEvent =
     , seen = Dict.empty
     , records = []
     , columns = Dict.empty
+    , lastValue = Nothing
+    , settings = Dict.empty
     }
 
 
@@ -142,6 +146,8 @@ descriptorEvent =
         , Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
         , Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
         , Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
+        , Proto.Field.descriptor "last_value" "lastValue" 31 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Value")
+        , Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
         ]
 
 
@@ -167,7 +173,7 @@ encodeEvent value =
          , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
          , ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
          , ( "metadata", Maybe.map Proto.Json.encodeStruct value.metadata )
-         , ( "payload", Just value.payload )
+         , ( "payload", value.payload )
          , ( "items", Maybe.map Proto.Json.encodeListValue value.items )
          , ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
          , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
@@ -187,6 +193,8 @@ encodeEvent value =
          , ( "seen", Proto.Json.dict identity Proto.Json.encodeEmpty value.seen )
          , ( "records", Proto.Json.repeated Proto.Json.encodeStruct value.records )
          , ( "columns", Proto.Json.dict identity Proto.Json.encodeListValue value.columns )
+         , ( "lastValue", value.lastValue )
+         , ( "settings", Proto.Json.dict identity identity value.settings )
          ]
             ++ encodeEventWhen value.when
         )
@@ -226,7 +234,7 @@ decodeEvent =
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
         |> Proto.Json.field "marker" () Proto.Json.empty
         |> Proto.Json.field "metadata" Nothing (Json.Decode.map Just Proto.Json.struct)
-        |> Proto.Json.field "payload" Json.Encode.null Json.Decode.value
+        |> Proto.Json.valueField "payload"
         |> Proto.Json.field "items" Nothing (Json.Decode.map Just Proto.Json.listValue)
         |> Proto.Json.field "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
         |> Proto.Json.field "weight" Nothing (Json.Decode.map Just Proto.Json.float)
@@ -247,6 +255,8 @@ decodeEvent =
         |> Proto.Json.field "seen" Dict.empty (Json.Decode.dict Proto.Json.empty)
         |> Proto.Json.field "records" [] (Json.Decode.list Proto.Json.struct)
         |> Proto.Json.field "columns" Dict.empty (Json.Decode.dict Proto.Json.listValue)
+        |> Proto.Json.valueFieldEither "lastValue" "last_value"
+        |> Proto.Json.field "settings" Dict.empty (Json.Decode.dict Json.Decode.value)
 
 
 decodeEventWhen : Json.Decode.Decoder EventWhen

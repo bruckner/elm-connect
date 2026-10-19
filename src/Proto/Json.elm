@@ -1,5 +1,5 @@
 module Proto.Json exposing
-    ( field, fieldEither
+    ( field, fieldEither, valueField, valueFieldEither
     , object, implicit, implicitFloat, repeated, dict, boolDict
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
@@ -24,7 +24,7 @@ Application code rarely needs them directly.
 
 # Fields
 
-@docs field, fieldEither
+@docs field, fieldEither, valueField, valueFieldEither
 
 
 # Encoding fields
@@ -91,9 +91,10 @@ the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
 
 # Well-known types
 
-`Value` needs no helpers: it is any JSON, held as a `Json.Encode.Value` and
-decoded with `Json.Decode.value`. The wrapper types (`Int32Value` and the
-rest) use their scalar's helpers.
+`Value` is any JSON, held as a `Json.Encode.Value`: a field of it decodes
+with [`valueField`](#valueField), and a list or map of it, or a oneof member,
+with `Json.Decode.value`. The wrapper types (`Int32Value` and the rest) use
+their scalar's helpers.
 
 @docs timestamp, encodeTimestamp
 @docs duration, encodeDuration
@@ -153,6 +154,59 @@ key, but not both: an object holding both fails, even when one of them is
 fieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
 fieldEither jsonName protoName default decoder =
     Json.Decode.map2 (|>) (valueAt (spellings jsonName protoName) default decoder)
+
+
+{-| Decode a field of type `google.protobuf.Value`, held as a
+`Maybe Json.Encode.Value`. A missing key gives `Nothing`. Any value under the
+key gives `Just` it, `null` included: `null` is one of a `Value`'s own values,
+so a field holding it is set, as protobuf's own parsers read it.
+
+    type alias Setting =
+        { name : String, value : Maybe Json.Encode.Value }
+
+    decodeSetting : Decoder Setting
+    decodeSetting =
+        Json.Decode.succeed Setting
+            |> field "name" "" Json.Decode.string
+            |> valueField "value"
+
+To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
+
+    object [ ( "value", setting.value ) ]
+
+-}
+valueField : String -> Decoder (Maybe Value -> b) -> Decoder b
+valueField name =
+    valueFieldEither name name
+
+
+{-| [`valueField`](#valueField) for a field whose JSON name differs from its
+proto name: the JSON name first, then the proto name, as in
+[`fieldEither`](#fieldEither).
+-}
+valueFieldEither : String -> String -> Decoder (Maybe Value -> b) -> Decoder b
+valueFieldEither jsonName protoName =
+    Json.Decode.map2 (|>) (jsonAt (spellings jsonName protoName))
+
+
+{-| The JSON under whichever of `names`, the spellings of one field, the object
+holds, `null` included; `Nothing` when it holds none of them.
+-}
+jsonAt : List String -> Decoder (Maybe Value)
+jsonAt names =
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\object_ ->
+                case spelledAs names object_ of
+                    NotAnObject ->
+                        notAnObject
+
+                    Spelled (Err problem) ->
+                        Json.Decode.fail problem
+
+                    Spelled (Ok found) ->
+                        Json.Decode.succeed (Maybe.map Tuple.second found)
+            )
 
 
 {-| The value under whichever of `names`, the spellings of one field, the

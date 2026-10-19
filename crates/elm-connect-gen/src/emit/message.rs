@@ -127,20 +127,22 @@ impl Emitter {
 
     /// A decoding pipeline step reading the field `json_name`, also
     /// accepted under `proto_name` as proto3 JSON requires:
-    /// `Proto.Json.field json_name ...` when the two are equal, else
-    /// `Proto.Json.fieldEither json_name proto_name ...`, followed by
-    /// `args`.
+    /// `Proto.Json.<one> json_name ...` when the two are equal, else
+    /// `Proto.Json.<either> json_name proto_name ...`, followed by `args`,
+    /// where `(one, either)` is `helpers`.
     fn field_step(
         &mut self,
+        helpers: (&'static str, &'static str),
         json_name: &str,
         proto_name: &str,
         args: impl IntoIterator<Item = Expr>,
     ) -> Expr {
+        let (one, either) = helpers;
         let step = if json_name == proto_name {
-            let field = self.reference((PROTO_JSON, "field"));
+            let field = self.reference((PROTO_JSON, one));
             apply(field, [string(json_name)])
         } else {
-            let field = self.reference((PROTO_JSON, "fieldEither"));
+            let field = self.reference((PROTO_JSON, either));
             apply(field, [string(json_name), string(proto_name)])
         };
         call(step, args)
@@ -148,8 +150,9 @@ impl Emitter {
 
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Json.Decode.succeed Foo`
     /// with one step per record field, in record order: an
-    /// [`Emitter::field_step`] per proto field, a `Proto.Json.oneof` per
-    /// oneof.
+    /// [`Emitter::field_step`] per proto field (`Proto.Json.field`, or
+    /// `Proto.Json.valueField` for a singular `google.protobuf.Value`), a
+    /// `Proto.Json.oneof` per oneof.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Decl {
         let succeed = self.reference((JSON_DECODE, "succeed"));
         let name = &shape.message.elm_name;
@@ -161,10 +164,20 @@ impl Emitter {
                 .record()
                 .into_iter()
                 .map(|field| match field {
-                    RecordField::Field(field, value) => {
-                        let (decoder, zero) = self.field_decoder(value);
-                        self.field_step(&field.json_name, &field.proto_name, [zero, decoder])
-                    }
+                    RecordField::Field(field, value) => match self.field_decoder(value) {
+                        Some((decoder, zero)) => self.field_step(
+                            ("field", "fieldEither"),
+                            &field.json_name,
+                            &field.proto_name,
+                            [zero, decoder],
+                        ),
+                        None => self.field_step(
+                            ("valueField", "valueFieldEither"),
+                            &field.json_name,
+                            &field.proto_name,
+                            [],
+                        ),
+                    },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
                         apply(step, [var(oneof.oneof.decoder_name())])

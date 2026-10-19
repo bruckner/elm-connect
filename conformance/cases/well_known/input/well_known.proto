@@ -1,7 +1,7 @@
 // Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
 // runtime's Duration, FieldMask as its paths, Empty as () without
 // presence, Struct and ListValue as a Dict and a List of JSON values,
-// Value as JSON, and the wrappers as a Maybe of their scalar.
+// Value as a Maybe of JSON, and the wrappers as a Maybe of their scalar.
 syntax = "proto3";
 
 package well_known.v1;
@@ -21,7 +21,8 @@ message Event {
   // Empty carries nothing, presence included: (), never Maybe ().
   google.protobuf.Empty marker = 4;
   // Struct and ListValue are a Dict and a List of JSON values, with
-  // presence like any message; Value is any JSON, null when absent.
+  // presence like any message. Value is any JSON, with presence too,
+  // `optional` or not: Nothing when absent, Just null when null.
   google.protobuf.Struct metadata = 5;
   google.protobuf.Value payload = 6;
   google.protobuf.ListValue items = 7;
@@ -45,6 +46,10 @@ message Event {
   map<string, google.protobuf.Empty> seen = 26;
   repeated google.protobuf.Struct records = 27;
   map<string, google.protobuf.ListValue> columns = 28;
+  // An optional Value is the same Maybe; its JSON name differs, so it
+  // decodes with valueFieldEither. A map of Value holds it bare.
+  optional google.protobuf.Value last_value = 31;
+  map<string, google.protobuf.Value> settings = 32;
   oneof when {
     google.protobuf.Timestamp at = 21;
     google.protobuf.Duration after = 22;
