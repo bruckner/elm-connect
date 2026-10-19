@@ -21,7 +21,7 @@ use prost_reflect::DescriptorPool;
 
 use crate::diagnostics::Diagnostics;
 pub use crate::options::{
-    EnumUnknown, Int64, Options, Spelling, Streaming, UnboundMethods, parse_module_prefix,
+    Bytes, EnumUnknown, Int64, Options, Spelling, Streaming, UnboundMethods, parse_module_prefix,
     parse_rename,
 };
 

@@ -4,7 +4,7 @@ use std::process::ExitCode;
 use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::ir::ModuleName;
 use elm_connect_gen::{
-    EnumUnknown, Generated, Int64, Options, Spelling, Streaming, UnboundMethods,
+    Bytes, EnumUnknown, Generated, Int64, Options, Spelling, Streaming, UnboundMethods,
 };
 use miette::{Report, miette};
 
@@ -51,6 +51,12 @@ struct GenArgs {
     /// A field's `jstype` option overrides it.
     #[arg(long, value_name = "string|int", default_value = "string")]
     int64: Int64,
+    /// How to hold `bytes` fields: `string` (the base64 text as
+    /// received) or `bytes` (elm/bytes' `Bytes`; Elm's `==` finds any two
+    /// `Bytes` equal, so records holding them compare equal whatever the
+    /// bytes).
+    #[arg(long, value_name = "string|bytes", default_value = "string")]
+    bytes: Bytes,
     /// What a method without a `google.api.http` rule gets: `implicit`
     /// (a call the runtime sends over the implicit route,
     /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
@@ -93,6 +99,7 @@ impl GenArgs {
     fn options(&self) -> miette::Result<Options> {
         let mut options = Options::default();
         options.int64 = self.int64;
+        options.bytes = self.bytes;
         options.unbound_methods = self.unbound_methods;
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
@@ -204,6 +211,8 @@ mod tests {
             "generated",
             "--int64",
             "int",
+            "--bytes",
+            "bytes",
             "--unbound-methods",
             "error",
             "--streaming",
@@ -227,6 +236,7 @@ mod tests {
         assert_eq!(args.out, PathBuf::from("generated"));
         let options = args.options().expect("valid options");
         assert_eq!(options.int64, Int64::Int);
+        assert_eq!(options.bytes, Bytes::Bytes);
         assert_eq!(options.unbound_methods, UnboundMethods::Error);
         assert_eq!(options.streaming, Streaming::Skip);
         assert_eq!(options.enum_unknown, EnumUnknown::Zero);
@@ -345,5 +355,17 @@ mod tests {
         assert_eq!(int64(&[]).expect("parses"), Int64::String);
         assert_eq!(int64(&["--int64", "int"]).expect("parses"), Int64::Int);
         assert!(int64(&["--int64", "long"]).is_err());
+    }
+
+    fn bytes(args: &[&str]) -> Result<Bytes, clap::Error> {
+        gen_args(args).map(|args| args.bytes)
+    }
+
+    #[test]
+    fn bytes_defaults_to_string_and_takes_bytes() {
+        assert_eq!(bytes(&[]).expect("parses"), Bytes::String);
+        assert_eq!(bytes(&["--bytes", "bytes"]).expect("parses"), Bytes::Bytes);
+        assert!(bytes(&["--bytes", "base64"]).is_err());
+        assert!(bytes(&["--bytes", "bytes", "--bytes", "string"]).is_err());
     }
 }

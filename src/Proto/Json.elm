@@ -1,6 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither
-    , object, implicit, implicitFloat, repeated, dict, boolDict
+    , object, implicit, implicitFloat, implicitBytes, repeated, dict, boolDict
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , enum, enumOrZero
@@ -10,6 +10,7 @@ module Proto.Json exposing
     , int64AsInt, uint64AsInt, encodeInt64AsInt
     , float, encodeFloat
     , bytes, encodeBytes
+    , bytesAsBytes, encodeBytesAsBytes
     , timestamp, encodeTimestamp
     , duration, encodeDuration
     , fieldMask, encodeFieldMask
@@ -43,7 +44,7 @@ reads a missing field as its default, so nothing is lost.
             , ( "tags", repeated Json.Encode.string value.tags )
             ]
 
-@docs object, implicit, implicitFloat, repeated, dict, boolDict
+@docs object, implicit, implicitFloat, implicitBytes, repeated, dict, boolDict
 
 
 # Oneofs
@@ -86,7 +87,12 @@ the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
 
 # Bytes
 
+By default a `bytes` field is held as its base64 text. Code generated with the
+`bytes=bytes` option holds it as elm/bytes' `Bytes` instead; see
+[`Proto.Bytes`](Proto-Bytes) for what `==` does with those.
+
 @docs bytes, encodeBytes
+@docs bytesAsBytes, encodeBytesAsBytes
 
 
 # Well-known types
@@ -105,9 +111,11 @@ their scalar's helpers.
 
 -}
 
+import Bytes exposing (Bytes)
 import Dict
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
+import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Int64
 import Proto.Timestamp
@@ -464,8 +472,9 @@ objectOf pairs =
 
 {-| A field without presence: `Nothing` when it holds its proto3 default, the
 first argument, else its JSON. For a string, a number held as an `Int`, a
-64-bit integer held as its decimal string, a `Bool`, bytes or an enum; a
-`Float` uses [`implicitFloat`](#implicitFloat).
+64-bit integer held as its decimal string, a `Bool`, bytes held as base64 or an
+enum; a `Float` uses [`implicitFloat`](#implicitFloat), and bytes held as `Bytes`
+[`implicitBytes`](#implicitBytes).
 
     implicit "" Json.Encode.string "" -- Nothing
 
@@ -479,6 +488,20 @@ implicit zero encode value =
 
     else
         Just (encode value)
+
+
+{-| A `bytes` field held as `Bytes`, without presence: `Nothing` when it holds
+no bytes, else its JSON as [`encodeBytesAsBytes`](#encodeBytesAsBytes) writes
+it. Not [`implicit`](#implicit), which compares with `==`, and `==` finds any
+two `Bytes` equal.
+-}
+implicitBytes : Bytes -> Maybe Value
+implicitBytes value =
+    if Bytes.width value == 0 then
+        Nothing
+
+    else
+        Just (encodeBytesAsBytes value)
 
 
 {-| A `double` or `float` field without presence: `Nothing` at `0`, else its
@@ -1441,6 +1464,36 @@ dropPadding text =
 encodeBytes : String -> Value
 encodeBytes =
     Json.Encode.string
+
+
+{-| Decode `bytes`, which proto3 JSON writes as a base64 string, as the bytes
+it holds. It accepts what [`bytes`](#bytes) accepts.
+
+    Json.Decode.decodeString bytesAsBytes "\"aGk=\"" |> Result.map Bytes.width -- Ok 2
+
+    Json.Decode.decodeString bytesAsBytes "\"a\"" -- Err ...
+
+-}
+bytesAsBytes : Decoder Bytes
+bytesAsBytes =
+    Json.Decode.string
+        |> Json.Decode.andThen
+            (\text ->
+                case Proto.Bytes.fromBase64 text of
+                    Just value ->
+                        Json.Decode.succeed value
+
+                    Nothing ->
+                        Json.Decode.fail ("Expecting base64 (standard or URL-safe, padding optional), but got \"" ++ text ++ "\"")
+            )
+
+
+{-| Encode `bytes` held as `Bytes` as base64 text: the standard alphabet, with
+`=` padding, as proto3 JSON writes it.
+-}
+encodeBytesAsBytes : Bytes -> Value
+encodeBytesAsBytes value =
+    Json.Encode.string (Proto.Bytes.toBase64 value)
 
 
 {-| Decode a `google.protobuf.Timestamp`, an RFC 3339 string; see

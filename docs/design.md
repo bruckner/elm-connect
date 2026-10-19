@@ -540,7 +540,7 @@ rpc shared call =
 | `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String`, or `Int` under `int64=int` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 *(Decided; see below)* |
 | `bool` | `Bool` | |
 | `string` | `String` | |
-| `bytes` | `String` (base64, as on the wire) | *(Decided; see below.)* |
+| `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | *(Decided 2026-10-19; see below.)* |
 
 Encoders leave out every field at its default. *(Decided, 2026-10-15.)*
 A message's encoder is `Proto.Json.object` over `( jsonName, Maybe
@@ -632,18 +632,55 @@ just the form encoders write. *(Proposed; built.)*
   `hasOwnProperty`, so a key of that name decodes wherever keys are
   listed: a prototype-named field, a map, a `Struct` or an `Any`.
 
-**Bytes** *(Decided.)* A `bytes` field is a `String` holding the base64
-text exactly as received; nothing normalises it. `Proto.Json.bytes`
-validates it at decode time, with no new dependency: the standard
-alphabet (`A`–`Z`, `a`–`z`, `0`–`9`, `+`, `/`) or the URL-safe one (`-`,
-`_`), not both in one string, with or without `=` padding. It fails on
-any other character, on a length no base64 has (after stripping the
-padding, length mod 4 is 1), and on padding that does not complete the
-last group to four characters. The encoder writes the string unchecked.
-A `Bytes.Bytes`-typed option and `Proto.Bytes` helpers (base64 to and
-from elm/bytes) would live in a separate optional package, such as
-`elm-connect-bytes`, depending on elm/bytes, so the runtime keeps its
-dependencies; not prioritised.
+**Bytes** *(Decided 2026-10-19.)* The rule:
+
+- By default a `bytes` field is a `String` holding the base64 text
+  exactly as received; nothing normalises it. `Proto.Json.bytes`
+  validates it at decode time: the standard alphabet (`A`–`Z`, `a`–`z`,
+  `0`–`9`, `+`, `/`) or the URL-safe one (`-`, `_`), not both in one
+  string, with or without `=` padding. It fails on any other character,
+  on a length no base64 has (after stripping the padding, length mod 4
+  is 1), and on padding that does not complete the last group to four
+  characters. The encoder writes the string unchecked. The zero value is
+  `""`, the base64 of no bytes.
+- The option `bytes=bytes` makes every `bytes` value elm/bytes'
+  `Bytes`: singular `Bytes`, `optional` `Maybe Bytes`, repeated
+  `List Bytes`, a map value `Dict K Bytes`, a oneof member `… Bytes`,
+  and the `BytesValue` wrapper `Maybe Bytes` (bare `Bytes` repeated or
+  as a map value, as for the other wrappers). The decoder
+  (`Proto.Json.bytesAsBytes`) accepts what `Proto.Json.bytes` accepts;
+  the encoder (`Proto.Json.encodeBytesAsBytes`) writes the standard
+  alphabet with `=` padding, as proto3 JSON writers do, so a value does
+  not re-encode as the text it arrived as. The zero value is
+  `Proto.Bytes.empty`.
+- `Proto.Bytes` converts either way (`fromBase64`, `toBase64`) for an
+  application on the `String` default that wants the bytes at one
+  place. It is always there, whatever the option.
+- Elm's `==` does not look inside a `Bytes` value: any two compare
+  equal, whatever they hold (elm/bytes 1.0.8: `encode (unsignedInt8 1)
+  == encode (unsignedInt8 2)` is `True`), because the kernel compares a
+  `DataView` by its enumerable keys, of which it has none. So a record
+  holding a `Bytes` field equals one differing only there, `Expect.equal`
+  passes when it should fail, and a model's change check misses the
+  change. Generated code does not use `==` on such a field: a singular
+  one is left out at its default by its width (`Proto.Json.implicitBytes`)
+  rather than through `Proto.Json.implicit`, which would leave out every
+  value. The README's option row and `Proto.Bytes`'s documentation say
+  this where a user meets `Bytes`.
+- Why `String` stays the default: the trap above. A record of `String`s
+  compares, tests and diffs as its users expect; one holding `Bytes`
+  silently does not, which is a bad thing to hand anyone who did not ask
+  for it. `Bytes` by default was rejected for that reason.
+- Why in the runtime: a separate `elm-connect-bytes` package, depending
+  on elm/bytes so the runtime would not, was the earlier plan. It is not
+  needed: elm/http, which the runtime requires, already depends on
+  elm/bytes, so every application has it and the runtime's direct
+  dependency adds nothing to install.
+- A per-field override, as `jstype` is for 64-bit integers, is deferred.
+  Protobuf's `jstype` is valid only on 64-bit integer fields (protoc
+  rejects it elsewhere), so there is no standard field option to read;
+  an override would be a generator option naming fields, additive later.
+  No custom proto option is defined for it.
 
 **64-bit integers** *(Decided.)* The rule:
 
@@ -1686,7 +1723,7 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
 whether a request can be sent. The data modules, which generated code
 calls whatever the transport, are the codecs (`Proto.Json`,
-`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`), the typed values
+`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
@@ -2220,7 +2257,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   tab stops, prefix, indent), and a corpus test holds the output to
   `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
-  `unbound_methods=implicit|error`, `streaming=error|skip`,
+  `bytes=string|bytes`, `unbound_methods=implicit|error`, `streaming=error|skip`,
   `enum_unknown=fail|zero`,
   `rename=<proto full name>:<Elm name>` (repeatable), `module_prefix=`,
   and later perhaps a `variant` value for `enum_unknown` (§3.3 defers
@@ -2229,7 +2266,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   generated, went with the shape it chose between (§4). *(Decided,
   2026-10-13.)*
   Built so far: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
-  `elm-connect gen --int64 int`), `unbound_methods` (§4;
+  `elm-connect gen --int64 int`), `bytes` (§3.4;
+  `--elm-connect_opt=bytes=bytes`, or `elm-connect gen --bytes bytes`),
+  `unbound_methods` (§4;
   `--elm-connect_opt=unbound_methods=error`, or `elm-connect gen
   --unbound-methods error`), `streaming` (§3.8;
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming

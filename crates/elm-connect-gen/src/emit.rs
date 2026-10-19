@@ -82,8 +82,12 @@
 //!   `Proto.Json.field` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
-//!   as strings under [`Int64::Int`], a field's `jstype` overriding the
-//!   option either way.
+//!   as strings under [`Int64::Int`](crate::options::Int64::Int), a
+//!   field's `jstype` overriding the option either way. `bytes` is a
+//!   `String` of base64, or elm/bytes' `Bytes` under
+//!   [`Bytes::Bytes`](crate::options::Bytes::Bytes), whose default is left
+//!   out by its width (`Proto.Json.implicitBytes`) since Elm's `==` finds
+//!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
 //!   `Proto.Json.dict`; absent or `null` decodes as `Dict.empty`. A map
@@ -137,10 +141,11 @@ use crate::ir::{
     Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Int64, Options};
+use crate::options::{EnumUnknown, Options};
 use crate::{HEADER_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
+use self::scalar::Holding;
 
 /// elm/json's decoders.
 const JSON_DECODE: &str = "Json.Decode";
@@ -155,6 +160,10 @@ const CORE_DICT: &str = "Dict";
 const CORE_STRING: &str = "String";
 /// elm/time's `Time`, for `Time.Posix`.
 const TIME: &str = "Time";
+/// elm/bytes' `Bytes`, for `Bytes.Bytes` under `bytes=bytes`.
+const ELM_BYTES: &str = "Bytes";
+/// The runtime package's bytes conversions, home of `Proto.Bytes.empty`.
+const PROTO_BYTES: &str = "Proto.Bytes";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
@@ -285,16 +294,16 @@ struct OneofShape<'m> {
 
 /// `message` with the shape of each of its fields and oneof members.
 /// `by_name` holds every message of the package, for the wrappers of
-/// cyclic fields; `int64` is the generator's option.
+/// cyclic fields; `holding` is what the generator's options say.
 fn message_shape<'m>(
     message: &'m Message,
     by_name: &HashMap<&str, &'m Message>,
-    int64: Int64,
+    holding: Holding,
 ) -> MessageShape<'m> {
     let fields = message
         .fields
         .iter()
-        .map(|field| (field, field::field_shape(field, by_name, int64)))
+        .map(|field| (field, field::field_shape(field, by_name, holding)))
         .collect();
     let oneofs = message
         .oneofs
@@ -305,8 +314,8 @@ fn message_shape<'m>(
                 .variants
                 .iter()
                 .map(|variant| {
-                    let int64 = field::field_int64(variant.jstype, int64);
-                    (variant, field::value_shape(&variant.ty, int64))
+                    let holding = field::field_holding(variant.jstype, holding);
+                    (variant, field::value_shape(&variant.ty, holding))
                 })
                 .collect(),
         })
@@ -327,8 +336,9 @@ struct Emitter {
     /// Every name of a library the code refers to unqualified, a default
     /// import's or an exposed type's, with the module it comes from.
     unqualified: BTreeMap<(Kind, String), &'static str>,
-    /// How 64-bit integers are held where a field does not say.
-    int64: Int64,
+    /// How the scalars the options govern are held where a field does not
+    /// say.
+    holding: Holding,
     /// What an unknown enum value name reads as.
     enum_unknown: EnumUnknown,
 }
@@ -339,7 +349,7 @@ impl Emitter {
             module: module.clone(),
             imports: BTreeMap::new(),
             unqualified: BTreeMap::new(),
-            int64: options.int64,
+            holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
         }
     }
@@ -393,7 +403,7 @@ impl Emitter {
         let messages: Vec<_> = package
             .messages
             .iter()
-            .map(|message| message_shape(message, &by_name, self.int64))
+            .map(|message| message_shape(message, &by_name, self.holding))
             .collect();
         if messages.is_empty() && package.enums.is_empty() {
             return vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)];
@@ -594,6 +604,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 mod tests {
     use super::*;
     use crate::ir::{Cardinality, ScalarKind, TypeRef, WellKnown};
+    use crate::options::Int64;
 
     fn package(messages: Vec<Message>) -> Package {
         Package {

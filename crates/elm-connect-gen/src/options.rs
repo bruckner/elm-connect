@@ -13,6 +13,8 @@ pub struct Options {
     /// How 64-bit integer fields are held (`int64=`), unless a field's
     /// `jstype` says otherwise (design §3.4).
     pub int64: Int64,
+    /// How `bytes` fields are held (`bytes=`, design §3.4).
+    pub bytes: Bytes,
     /// What a method without a `google.api.http` rule gets
     /// (`unbound_methods=`, design §4).
     pub unbound_methods: UnboundMethods,
@@ -89,6 +91,7 @@ impl Options {
             }
             match key {
                 "int64" => options.int64 = value.parse()?,
+                "bytes" => options.bytes = value.parse()?,
                 "unbound_methods" => options.unbound_methods = value.parse()?,
                 "streaming" => options.streaming = value.parse()?,
                 "enum_unknown" => options.enum_unknown = value.parse()?,
@@ -96,8 +99,8 @@ impl Options {
                 "module_prefix" => options.module_prefix = Some(parse_module_prefix(value)?),
                 _ => {
                     return Err(format!(
-                        "unknown option `{key}`; the options are: int64, unbound_methods, \
-                         streaming, enum_unknown, rename, module_prefix"
+                        "unknown option `{key}`; the options are: int64, bytes, \
+                         unbound_methods, streaming, enum_unknown, rename, module_prefix"
                     ));
                 }
             }
@@ -167,6 +170,30 @@ impl std::str::FromStr for Int64 {
             "string" => Ok(Int64::String),
             "int" => Ok(Int64::Int),
             _ => Err(format!("`int64` is `string` or `int`, not `{value}`")),
+        }
+    }
+}
+
+/// How `bytes` fields are held in Elm (design §3.4).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Bytes {
+    /// `String`, the base64 text as proto3 JSON carries it, validated
+    /// when decoded and kept as received.
+    #[default]
+    String,
+    /// elm/bytes' `Bytes`, decoded from base64 and encoded as standard
+    /// base64 with padding. Elm's `==` finds any two `Bytes` equal.
+    Bytes,
+}
+
+impl std::str::FromStr for Bytes {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "string" => Ok(Bytes::String),
+            "bytes" => Ok(Bytes::Bytes),
+            _ => Err(format!("`bytes` is `string` or `bytes`, not `{value}`")),
         }
     }
 }
@@ -269,6 +296,16 @@ mod tests {
         assert!(error("int64").contains("`key=value`"));
         assert!(error("colour=red").contains("unknown option `colour`"));
         assert!(error("int64=int,int64=string").contains("more than once"));
+        let bytes = |parameter| Options::from_parameter(parameter).map(|o| o.bytes);
+        assert_eq!(bytes(""), Ok(Bytes::String));
+        assert_eq!(bytes("bytes=bytes"), Ok(Bytes::Bytes));
+        assert_eq!(bytes("bytes=string,int64=int"), Ok(Bytes::String));
+        assert_eq!(
+            Options::from_parameter("bytes=bytes").map(|o| o.int64),
+            Ok(Int64::String)
+        );
+        assert!(error("bytes=base64").contains("`string` or `bytes`"));
+        assert!(error("bytes=bytes,bytes=string").contains("more than once"));
         let unbound = |parameter| Options::from_parameter(parameter).map(|o| o.unbound_methods);
         assert_eq!(unbound(""), Ok(UnboundMethods::Implicit));
         assert_eq!(unbound("unbound_methods=error"), Ok(UnboundMethods::Error));
