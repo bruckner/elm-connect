@@ -769,3 +769,7 @@ tag (design §8).
   record constructor is positional, so a message whose numbers are out
   of declaration order now takes its arguments in another order. The
   `field_order` conformance case pins it.
+- Generated list literals put one element per line whenever they have
+  any, a list of one included, rather than only from two elements on.
+  A path variable's field names and template, a query parameter's
+  field names and a field's behaviors stay on one line (design §3.1).

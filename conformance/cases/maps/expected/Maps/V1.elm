@@ -94,7 +94,9 @@ enumRole =
 
 descriptorMember : Proto.Message.Descriptor
 descriptorMember =
-    Proto.Message.descriptor "maps.v1.Member" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "maps.v1.Member"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageMember : Proto.Message.Message Member
@@ -130,7 +132,8 @@ registry =
             [ descriptorMember
             , descriptorTeam
             ]
-            [ descriptorRole ]
+            [ descriptorRole
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -151,7 +154,9 @@ encodeRole value =
 
 encodeMember : Member -> Json.Encode.Value
 encodeMember value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeTeam : Team -> Json.Encode.Value

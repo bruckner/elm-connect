@@ -137,7 +137,9 @@ messageTag =
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ descriptorTag ]
+        (Proto.Registry.fromDescriptors
+            [ descriptorTag
+            ]
             [ descriptorShape
             , descriptorHttpMethod
             ]
@@ -202,10 +204,12 @@ encodeTagCase value =
             []
 
         TagCaseThen member ->
-            [ ( "then", Just (Json.Encode.string member) ) ]
+            [ ( "then", Just (Json.Encode.string member) )
+            ]
 
         TagCaseOf member ->
-            [ ( "of", Just (Json.Encode.int member) ) ]
+            [ ( "of", Just (Json.Encode.int member) )
+            ]
 
 
 

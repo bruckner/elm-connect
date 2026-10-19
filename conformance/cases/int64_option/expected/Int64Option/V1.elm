@@ -102,7 +102,13 @@ messageCounters =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorCounters ] []) Proto.Registry.wellKnown
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorCounters
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 
@@ -136,10 +142,12 @@ encodeCountersLimit value =
             []
 
         CountersLimitAtMost member ->
-            [ ( "atMost", Just (Proto.Json.encodeInt64AsInt member) ) ]
+            [ ( "atMost", Just (Proto.Json.encodeInt64AsInt member) )
+            ]
 
         CountersLimitExactly member ->
-            [ ( "exactly", Just (Proto.Json.encodeInt64 member) ) ]
+            [ ( "exactly", Just (Proto.Json.encodeInt64 member) )
+            ]
 
 
 

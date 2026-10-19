@@ -122,7 +122,9 @@ descriptorUpdateNote =
             , customVerb = Nothing
             , body = Proto.Http.bodyField "note"
             , responseBody = Nothing
-            , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
+            , query =
+                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                ]
             }
         ]
 
@@ -164,7 +166,9 @@ descriptorDeleteNote =
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
-            , query = [ Proto.Http.param "force" [ "force" ] (Just "false") ]
+            , query =
+                [ Proto.Http.param "force" [ "force" ] (Just "false")
+                ]
             }
         ]
 

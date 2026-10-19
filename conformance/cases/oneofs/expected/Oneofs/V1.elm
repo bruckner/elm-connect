@@ -114,7 +114,9 @@ enumColor =
 
 descriptorCreated : Proto.Message.Descriptor
 descriptorCreated =
-    Proto.Message.descriptor "oneofs.v1.Created" [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "oneofs.v1.Created"
+        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageCreated : Proto.Message.Message Created
@@ -174,7 +176,8 @@ registry =
             , descriptorNoteEvent
             , descriptorChoice
             ]
-            [ descriptorColor ]
+            [ descriptorColor
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -195,7 +198,9 @@ encodeColor value =
 
 encodeCreated : Created -> Json.Encode.Value
 encodeCreated value =
-    Proto.Json.object [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title ) ]
+    Proto.Json.object
+        [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        ]
 
 
 encodeNoteEvent : NoteEvent -> Json.Encode.Value
@@ -216,22 +221,28 @@ encodeNoteEventKind value =
             []
 
         NoteEventKindCreated member ->
-            [ ( "created", Just (encodeCreated member) ) ]
+            [ ( "created", Just (encodeCreated member) )
+            ]
 
         NoteEventKindTitleChanged member ->
-            [ ( "titleChanged", Just (Json.Encode.string member) ) ]
+            [ ( "titleChanged", Just (Json.Encode.string member) )
+            ]
 
         NoteEventKindRecolored member ->
-            [ ( "recolored", Just (encodeColor member) ) ]
+            [ ( "recolored", Just (encodeColor member) )
+            ]
 
         NoteEventKindDeletedAt member ->
-            [ ( "deletedAt", Just (Proto.Json.encodeInt64 member) ) ]
+            [ ( "deletedAt", Just (Proto.Json.encodeInt64 member) )
+            ]
 
         NoteEventKindArchived ->
-            [ ( "archived", Just (Json.Encode.object []) ) ]
+            [ ( "archived", Just (Json.Encode.object []) )
+            ]
 
         NoteEventKindClearedAll ->
-            [ ( "clearedAll", Just (Json.Encode.object []) ) ]
+            [ ( "clearedAll", Just (Json.Encode.object []) )
+            ]
 
 
 encodeNoteEventSource : NoteEventSource -> List ( String, Maybe Json.Encode.Value )
@@ -241,10 +252,12 @@ encodeNoteEventSource value =
             []
 
         NoteEventSourceUser member ->
-            [ ( "user", Just (Json.Encode.string member) ) ]
+            [ ( "user", Just (Json.Encode.string member) )
+            ]
 
         NoteEventSourceAutomated member ->
-            [ ( "automated", Just (Json.Encode.bool member) ) ]
+            [ ( "automated", Just (Json.Encode.bool member) )
+            ]
 
 
 encodeChoice : Choice -> Json.Encode.Value
@@ -259,10 +272,12 @@ encodeChoiceValue value =
             []
 
         ChoiceValueNumber member ->
-            [ ( "number", Just (Proto.Json.encodeFloat member) ) ]
+            [ ( "number", Just (Proto.Json.encodeFloat member) )
+            ]
 
         ChoiceValueText member ->
-            [ ( "label", Just (Json.Encode.string member) ) ]
+            [ ( "label", Just (Json.Encode.string member) )
+            ]
 
 
 

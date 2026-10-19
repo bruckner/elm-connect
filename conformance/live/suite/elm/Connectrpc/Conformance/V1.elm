@@ -1014,7 +1014,9 @@ messageClientResponseResult =
 
 descriptorClientErrorResult : Proto.Message.Descriptor
 descriptorClientErrorResult =
-    Proto.Message.descriptor "connectrpc.conformance.v1.ClientErrorResult" [ Proto.Field.descriptor "message" "message" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientErrorResult"
+        [ Proto.Field.descriptor "message" "message" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageClientErrorResult : Proto.Message.Message ClientErrorResult
@@ -1188,7 +1190,9 @@ messageUnaryRequest =
 
 descriptorUnaryResponse : Proto.Message.Descriptor
 descriptorUnaryResponse =
-    Proto.Message.descriptor "connectrpc.conformance.v1.UnaryResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.UnaryResponse"
+        [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        ]
 
 
 messageUnaryResponse : Proto.Message.Message UnaryResponse
@@ -1211,7 +1215,9 @@ messageIdempotentUnaryRequest =
 
 descriptorIdempotentUnaryResponse : Proto.Message.Descriptor
 descriptorIdempotentUnaryResponse =
-    Proto.Message.descriptor "connectrpc.conformance.v1.IdempotentUnaryResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.IdempotentUnaryResponse"
+        [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        ]
 
 
 messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
@@ -1234,7 +1240,9 @@ messageServerStreamRequest =
 
 descriptorServerStreamResponse : Proto.Message.Descriptor
 descriptorServerStreamResponse =
-    Proto.Message.descriptor "connectrpc.conformance.v1.ServerStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.ServerStreamResponse"
+        [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        ]
 
 
 messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
@@ -1257,7 +1265,9 @@ messageClientStreamRequest =
 
 descriptorClientStreamResponse : Proto.Message.Descriptor
 descriptorClientStreamResponse =
-    Proto.Message.descriptor "connectrpc.conformance.v1.ClientStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.ClientStreamResponse"
+        [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        ]
 
 
 messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
@@ -1281,7 +1291,9 @@ messageBidiStreamRequest =
 
 descriptorBidiStreamResponse : Proto.Message.Descriptor
 descriptorBidiStreamResponse =
-    Proto.Message.descriptor "connectrpc.conformance.v1.BidiStreamResponse" [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.BidiStreamResponse"
+        [ Proto.Field.descriptor "payload" "payload" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
+        ]
 
 
 messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
@@ -1339,7 +1351,9 @@ messageConformancePayloadRequestInfo =
 
 descriptorConformancePayloadConnectGetInfo : Proto.Message.Descriptor
 descriptorConformancePayloadConnectGetInfo =
-    Proto.Message.descriptor "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" [ Proto.Field.descriptor "query_params" "queryParams" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo"
+        [ Proto.Field.descriptor "query_params" "queryParams" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
+        ]
 
 
 messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
@@ -1428,7 +1442,9 @@ messageMessageContents =
 
 descriptorStreamContents : Proto.Message.Descriptor
 descriptorStreamContents =
-    Proto.Message.descriptor "connectrpc.conformance.v1.StreamContents" [ Proto.Field.descriptor "items" "items" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamContents.StreamItem") ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.StreamContents"
+        [ Proto.Field.descriptor "items" "items" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamContents.StreamItem")
+        ]
 
 
 messageStreamContents : Proto.Message.Message StreamContents
@@ -1508,7 +1524,9 @@ messageTestCase =
 
 descriptorTestCaseExpandedSize : Proto.Message.Descriptor
 descriptorTestCaseExpandedSize =
-    Proto.Message.descriptor "connectrpc.conformance.v1.TestCase.ExpandedSize" [ Proto.Field.descriptor "size_relative_to_limit" "sizeRelativeToLimit" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32) ]
+    Proto.Message.descriptor "connectrpc.conformance.v1.TestCase.ExpandedSize"
+        [ Proto.Field.descriptor "size_relative_to_limit" "sizeRelativeToLimit" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        ]
 
 
 messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
@@ -1792,18 +1810,25 @@ encodeClientCompatRequestCancelCancelTiming value =
             []
 
         ClientCompatRequestCancelCancelTimingBeforeCloseSend ->
-            [ ( "beforeCloseSend", Just (Json.Encode.object []) ) ]
+            [ ( "beforeCloseSend", Just (Json.Encode.object []) )
+            ]
 
         ClientCompatRequestCancelCancelTimingAfterCloseSendMs member ->
-            [ ( "afterCloseSendMs", Just (Json.Encode.int member) ) ]
+            [ ( "afterCloseSendMs", Just (Json.Encode.int member) )
+            ]
 
         ClientCompatRequestCancelCancelTimingAfterNumResponses member ->
-            [ ( "afterNumResponses", Just (Json.Encode.int member) ) ]
+            [ ( "afterNumResponses", Just (Json.Encode.int member) )
+            ]
 
 
 encodeClientCompatResponse : ClientCompatResponse -> Json.Encode.Value
 encodeClientCompatResponse value =
-    Proto.Json.object ([ ( "testName", Proto.Json.implicit "" Json.Encode.string value.testName ) ] ++ encodeClientCompatResponseResult value.result)
+    Proto.Json.object
+        ([ ( "testName", Proto.Json.implicit "" Json.Encode.string value.testName )
+         ]
+            ++ encodeClientCompatResponseResult value.result
+        )
 
 
 encodeClientCompatResponseResult : ClientCompatResponseResult -> List ( String, Maybe Json.Encode.Value )
@@ -1813,10 +1838,12 @@ encodeClientCompatResponseResult value =
             []
 
         ClientCompatResponseResultResponse member ->
-            [ ( "response", Just (encodeClientResponseResult member) ) ]
+            [ ( "response", Just (encodeClientResponseResult member) )
+            ]
 
         ClientCompatResponseResultError member ->
-            [ ( "error", Just (encodeClientErrorResult member) ) ]
+            [ ( "error", Just (encodeClientErrorResult member) )
+            ]
 
 
 encodeClientResponseResult : ClientResponseResult -> Json.Encode.Value
@@ -1834,7 +1861,9 @@ encodeClientResponseResult value =
 
 encodeClientErrorResult : ClientErrorResult -> Json.Encode.Value
 encodeClientErrorResult value =
-    Proto.Json.object [ ( "message", Proto.Json.implicit "" Json.Encode.string value.message ) ]
+    Proto.Json.object
+        [ ( "message", Proto.Json.implicit "" Json.Encode.string value.message )
+        ]
 
 
 encodeWireDetails : WireDetails -> Json.Encode.Value
@@ -1936,10 +1965,12 @@ encodeUnaryResponseDefinitionResponse value =
             []
 
         UnaryResponseDefinitionResponseResponseData member ->
-            [ ( "responseData", Just (Proto.Json.encodeBytes member) ) ]
+            [ ( "responseData", Just (Proto.Json.encodeBytes member) )
+            ]
 
         UnaryResponseDefinitionResponseError member ->
-            [ ( "error", Just (encodeError member) ) ]
+            [ ( "error", Just (encodeError member) )
+            ]
 
 
 encodeStreamResponseDefinition : StreamResponseDefinition -> Json.Encode.Value
@@ -1964,7 +1995,9 @@ encodeUnaryRequest value =
 
 encodeUnaryResponse : UnaryResponse -> Json.Encode.Value
 encodeUnaryResponse value =
-    Proto.Json.object [ ( "payload", Maybe.map encodeConformancePayload value.payload ) ]
+    Proto.Json.object
+        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+        ]
 
 
 encodeIdempotentUnaryRequest : IdempotentUnaryRequest -> Json.Encode.Value
@@ -1977,7 +2010,9 @@ encodeIdempotentUnaryRequest value =
 
 encodeIdempotentUnaryResponse : IdempotentUnaryResponse -> Json.Encode.Value
 encodeIdempotentUnaryResponse value =
-    Proto.Json.object [ ( "payload", Maybe.map encodeConformancePayload value.payload ) ]
+    Proto.Json.object
+        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+        ]
 
 
 encodeServerStreamRequest : ServerStreamRequest -> Json.Encode.Value
@@ -1990,7 +2025,9 @@ encodeServerStreamRequest value =
 
 encodeServerStreamResponse : ServerStreamResponse -> Json.Encode.Value
 encodeServerStreamResponse value =
-    Proto.Json.object [ ( "payload", Maybe.map encodeConformancePayload value.payload ) ]
+    Proto.Json.object
+        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+        ]
 
 
 encodeClientStreamRequest : ClientStreamRequest -> Json.Encode.Value
@@ -2003,7 +2040,9 @@ encodeClientStreamRequest value =
 
 encodeClientStreamResponse : ClientStreamResponse -> Json.Encode.Value
 encodeClientStreamResponse value =
-    Proto.Json.object [ ( "payload", Maybe.map encodeConformancePayload value.payload ) ]
+    Proto.Json.object
+        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+        ]
 
 
 encodeBidiStreamRequest : BidiStreamRequest -> Json.Encode.Value
@@ -2017,7 +2056,9 @@ encodeBidiStreamRequest value =
 
 encodeBidiStreamResponse : BidiStreamResponse -> Json.Encode.Value
 encodeBidiStreamResponse value =
-    Proto.Json.object [ ( "payload", Maybe.map encodeConformancePayload value.payload ) ]
+    Proto.Json.object
+        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+        ]
 
 
 encodeUnimplementedRequest : UnimplementedRequest -> Json.Encode.Value
@@ -2050,7 +2091,9 @@ encodeConformancePayloadRequestInfo value =
 
 encodeConformancePayloadConnectGetInfo : ConformancePayloadConnectGetInfo -> Json.Encode.Value
 encodeConformancePayloadConnectGetInfo value =
-    Proto.Json.object [ ( "queryParams", Proto.Json.repeated encodeHeader value.queryParams ) ]
+    Proto.Json.object
+        [ ( "queryParams", Proto.Json.repeated encodeHeader value.queryParams )
+        ]
 
 
 encodeError : Error -> Json.Encode.Value
@@ -2090,10 +2133,12 @@ encodeRawHTTPRequestBody value =
             []
 
         RawHTTPRequestBodyUnary member ->
-            [ ( "unary", Just (encodeMessageContents member) ) ]
+            [ ( "unary", Just (encodeMessageContents member) )
+            ]
 
         RawHTTPRequestBodyStream member ->
-            [ ( "stream", Just (encodeStreamContents member) ) ]
+            [ ( "stream", Just (encodeStreamContents member) )
+            ]
 
 
 encodeRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam -> Json.Encode.Value
@@ -2107,7 +2152,11 @@ encodeRawHTTPRequestEncodedQueryParam value =
 
 encodeMessageContents : MessageContents -> Json.Encode.Value
 encodeMessageContents value =
-    Proto.Json.object ([ ( "compression", Proto.Json.implicit CompressionUnspecified encodeCompression value.compression ) ] ++ encodeMessageContentsData value.data)
+    Proto.Json.object
+        ([ ( "compression", Proto.Json.implicit CompressionUnspecified encodeCompression value.compression )
+         ]
+            ++ encodeMessageContentsData value.data
+        )
 
 
 encodeMessageContentsData : MessageContentsData -> List ( String, Maybe Json.Encode.Value )
@@ -2117,18 +2166,23 @@ encodeMessageContentsData value =
             []
 
         MessageContentsDataBinary member ->
-            [ ( "binary", Just (Proto.Json.encodeBytes member) ) ]
+            [ ( "binary", Just (Proto.Json.encodeBytes member) )
+            ]
 
         MessageContentsDataText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
         MessageContentsDataBinaryMessage member ->
-            [ ( "binaryMessage", Just (Proto.Any.encodeJson member) ) ]
+            [ ( "binaryMessage", Just (Proto.Any.encodeJson member) )
+            ]
 
 
 encodeStreamContents : StreamContents -> Json.Encode.Value
 encodeStreamContents value =
-    Proto.Json.object [ ( "items", Proto.Json.repeated encodeStreamContentsStreamItem value.items ) ]
+    Proto.Json.object
+        [ ( "items", Proto.Json.repeated encodeStreamContentsStreamItem value.items )
+        ]
 
 
 encodeStreamContentsStreamItem : StreamContentsStreamItem -> Json.Encode.Value
@@ -2158,10 +2212,12 @@ encodeRawHTTPResponseBody value =
             []
 
         RawHTTPResponseBodyUnary member ->
-            [ ( "unary", Just (encodeMessageContents member) ) ]
+            [ ( "unary", Just (encodeMessageContents member) )
+            ]
 
         RawHTTPResponseBodyStream member ->
-            [ ( "stream", Just (encodeStreamContents member) ) ]
+            [ ( "stream", Just (encodeStreamContents member) )
+            ]
 
 
 encodeTestSuite : TestSuite -> Json.Encode.Value
@@ -2194,7 +2250,9 @@ encodeTestCase value =
 
 encodeTestCaseExpandedSize : TestCaseExpandedSize -> Json.Encode.Value
 encodeTestCaseExpandedSize value =
-    Proto.Json.object [ ( "sizeRelativeToLimit", Maybe.map Json.Encode.int value.sizeRelativeToLimit ) ]
+    Proto.Json.object
+        [ ( "sizeRelativeToLimit", Maybe.map Json.Encode.int value.sizeRelativeToLimit )
+        ]
 
 
 

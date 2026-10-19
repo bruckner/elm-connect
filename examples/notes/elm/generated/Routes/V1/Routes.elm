@@ -406,7 +406,9 @@ descriptorUpdateResource =
             , customVerb = Nothing
             , body = Proto.Http.bodyField "resource"
             , responseBody = Nothing
-            , query = [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing ]
+            , query =
+                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                ]
             }
         ]
 

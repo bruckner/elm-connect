@@ -158,7 +158,13 @@ messageEvent =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorEvent ] []) Proto.Registry.wellKnown
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorEvent
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 
@@ -207,19 +213,24 @@ encodeEventWhen value =
             []
 
         EventWhenAt member ->
-            [ ( "at", Just (Proto.Json.encodeTimestamp member) ) ]
+            [ ( "at", Just (Proto.Json.encodeTimestamp member) )
+            ]
 
         EventWhenAfter member ->
-            [ ( "after", Just (Proto.Json.encodeDuration member) ) ]
+            [ ( "after", Just (Proto.Json.encodeDuration member) )
+            ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", Just member ) ]
+            [ ( "whenever", Just member )
+            ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Just (Proto.Json.encodeStruct member) ) ]
+            [ ( "schedule", Just (Proto.Json.encodeStruct member) )
+            ]
 
         EventWhenDates member ->
-            [ ( "dates", Just (Proto.Json.encodeListValue member) ) ]
+            [ ( "dates", Just (Proto.Json.encodeListValue member) )
+            ]
 
 
 

@@ -295,6 +295,15 @@ rpc shared call =
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
+- **Lists in generated code.** *(Decided, 2026-10-19.)* A list literal
+  with elements puts each on its own line, a list of one too, so a list's
+  layout does not change as it grows and every element is a line of its
+  own in a diff. Four lists stay on one line where they fit, since each
+  reads as one token of the proto source: a path variable's field names
+  and its template (`Proto.Http.variable [ "name" ] [ Proto.Http.literal
+  "notes", Proto.Http.wildcard ] ""`), a query parameter's field names,
+  and a field's behaviors (`Proto.Field.withBehavior [ … ]`). Layout is
+  not API (§8.3): it can change in any release.
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
   diagnostic naming the files involved. *(Proposed.)* Alternative: fold
@@ -1099,7 +1108,13 @@ messageNote =
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
-        (Proto.Registry.fromDescriptors [ descriptorNote, … ] [ descriptorVisibility ])
+        (Proto.Registry.fromDescriptors
+            [ descriptorNote
+            , …
+            ]
+            [ descriptorVisibility
+            ]
+        )
         (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
 

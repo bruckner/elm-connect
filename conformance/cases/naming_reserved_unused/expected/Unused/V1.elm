@@ -115,7 +115,9 @@ enumChar =
 
 descriptorDict : Proto.Message.Descriptor
 descriptorDict =
-    Proto.Message.descriptor "unused.v1.Dict" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "unused.v1.Dict"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageDict : Proto.Message.Message Dict
@@ -188,7 +190,8 @@ registry =
             , descriptorCmd
             , descriptorTrue
             ]
-            [ descriptorChar ]
+            [ descriptorChar
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -209,7 +212,9 @@ encodeChar value =
 
 encodeDict : Dict -> Json.Encode.Value
 encodeDict value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeResult : Result -> Json.Encode.Value

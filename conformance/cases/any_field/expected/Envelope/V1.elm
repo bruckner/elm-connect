@@ -79,7 +79,13 @@ messageEnvelope =
 
 registry : Proto.Registry.Registry
 registry =
-    Proto.Registry.union (Proto.Registry.fromDescriptors [ descriptorEnvelope ] []) Proto.Registry.wellKnown
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorEnvelope
+            ]
+            []
+        )
+        Proto.Registry.wellKnown
 
 
 
@@ -105,10 +111,12 @@ encodeEnvelopeBody value =
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Just (Proto.Any.encodeJson member) ) ]
+            [ ( "packed", Just (Proto.Any.encodeJson member) )
+            ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
 
 

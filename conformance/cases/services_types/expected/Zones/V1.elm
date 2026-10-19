@@ -57,7 +57,9 @@ defaultZone =
 
 descriptorZoneRequest : Proto.Message.Descriptor
 descriptorZoneRequest =
-    Proto.Message.descriptor "zones.v1.ZoneRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "zones.v1.ZoneRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageZoneRequest : Proto.Message.Message ZoneRequest
@@ -96,7 +98,9 @@ registry =
 
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeZone : Zone -> Json.Encode.Value

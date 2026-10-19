@@ -241,8 +241,8 @@ pub enum Expr {
     Access(Box<Expr>, String),
     /// A field accessor function: `.field`.
     Accessor(String),
-    /// A list literal. With more than one item it prints one item per
-    /// line.
+    /// A list literal. Unless it is empty it prints one item per line,
+    /// even when it has one.
     List(Vec<Expr>),
     /// A list literal printed on one line when every item fits on one, as
     /// elm-format keeps a list written that way: `[ "sub", "field" ]`.

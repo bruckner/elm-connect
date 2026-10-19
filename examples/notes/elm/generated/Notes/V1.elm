@@ -214,7 +214,9 @@ messageNote =
 
 descriptorGetNoteRequest : Proto.Message.Descriptor
 descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.GetNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
@@ -252,7 +254,9 @@ messageListNotesResponse =
 
 descriptorCreateNoteRequest : Proto.Message.Descriptor
 descriptorCreateNoteRequest =
-    Proto.Message.descriptor "notes.v1.CreateNoteRequest" [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note") ]
+    Proto.Message.descriptor "notes.v1.CreateNoteRequest"
+        [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
+        ]
 
 
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
@@ -275,7 +279,9 @@ messageUpdateNoteRequest =
 
 descriptorDeleteNoteRequest : Proto.Message.Descriptor
 descriptorDeleteNoteRequest =
-    Proto.Message.descriptor "notes.v1.DeleteNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.DeleteNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
@@ -285,7 +291,9 @@ messageDeleteNoteRequest =
 
 descriptorArchiveNoteRequest : Proto.Message.Descriptor
 descriptorArchiveNoteRequest =
-    Proto.Message.descriptor "notes.v1.ArchiveNoteRequest" [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString) ]
+    Proto.Message.descriptor "notes.v1.ArchiveNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
 
 
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
@@ -306,7 +314,8 @@ registry =
             , descriptorDeleteNoteRequest
             , descriptorArchiveNoteRequest
             ]
-            [ descriptorVisibility ]
+            [ descriptorVisibility
+            ]
         )
         Proto.Registry.wellKnown
 
@@ -355,15 +364,19 @@ encodeNoteKind value =
             []
 
         NoteKindText member ->
-            [ ( "text", Just (Json.Encode.string member) ) ]
+            [ ( "text", Just (Json.Encode.string member) )
+            ]
 
         NoteKindLink member ->
-            [ ( "link", Just (Json.Encode.string member) ) ]
+            [ ( "link", Just (Json.Encode.string member) )
+            ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
@@ -386,7 +399,9 @@ encodeListNotesResponse value =
 
 encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
-    Proto.Json.object [ ( "note", Maybe.map encodeNote value.note ) ]
+    Proto.Json.object
+        [ ( "note", Maybe.map encodeNote value.note )
+        ]
 
 
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
@@ -399,12 +414,16 @@ encodeUpdateNoteRequest value =
 
 encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
 encodeDeleteNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
-    Proto.Json.object [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name ) ]
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
 
 
 
