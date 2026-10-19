@@ -275,19 +275,19 @@ decodeResult =
 
 decodeOrder : Json.Decode.Decoder Order
 decodeOrder =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage
 
 
 decodeNever : Json.Decode.Decoder Never
 decodeNever =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage
 
 
 decodeCmd : Json.Decode.Decoder Cmd
 decodeCmd =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage
 
 
 decodeTrue : Json.Decode.Decoder True
 decodeTrue =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage

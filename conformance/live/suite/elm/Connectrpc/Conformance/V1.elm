@@ -2609,12 +2609,12 @@ decodeBidiStreamResponse =
 
 decodeUnimplementedRequest : Json.Decode.Decoder UnimplementedRequest
 decodeUnimplementedRequest =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage
 
 
 decodeUnimplementedResponse : Json.Decode.Decoder UnimplementedResponse
 decodeUnimplementedResponse =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage
 
 
 decodeConformancePayload : Json.Decode.Decoder ConformancePayload

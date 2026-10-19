@@ -152,14 +152,16 @@ impl Emitter {
     /// with one step per record field, in record order: an
     /// [`Emitter::field_step`] per proto field (`Proto.Json.field`, or
     /// `Proto.Json.valueField` for a singular `google.protobuf.Value`), a
-    /// `Proto.Json.oneof` per oneof.
+    /// `Proto.Json.oneof` per oneof; `Proto.Json.emptyMessage` for a message
+    /// without fields.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Decl {
-        let succeed = self.reference((JSON_DECODE, "succeed"));
         let name = &shape.message.elm_name;
         let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
-            // An empty message decodes to the empty record.
-            apply(succeed, [record::<String>([])])
+            // An empty message decodes to the empty record, from a JSON
+            // object only, as a message with fields does.
+            self.reference((PROTO_JSON, "emptyMessage"))
         } else {
+            let succeed = self.reference((JSON_DECODE, "succeed"));
             let steps: Vec<Expr> = shape
                 .record()
                 .into_iter()

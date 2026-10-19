@@ -16,13 +16,17 @@ suite =
         [ fieldTests
         , fieldEitherTests
         , valueFieldTests
+        , emptyMessageTests
         , lookupTests
         , presenceTests
         , encodingTests
         , oneofTests
         , enumTests
         , enumOrZeroTests
-        , intDictTests
+        , int32DictTests
+        , uint32DictTests
+        , int64DictTests
+        , uint64DictTests
         , boolMapTests
         , protoKeyTests
         , int32Tests
@@ -212,6 +216,32 @@ failsOnEach decoder inputs =
     inputs
         |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeString decoder json) /= Nothing)
         |> Expect.equal []
+
+
+emptyMessageTests : Test
+emptyMessageTests =
+    describe "emptyMessage"
+        [ test "an empty object" <|
+            \_ -> decodes Proto.Json.emptyMessage "{}" {}
+        , test "an object with keys, which it ignores" <|
+            \_ -> decodes Proto.Json.emptyMessage """{"a":1,"hasOwnProperty":2}""" {}
+        , test "anything but an object fails as a message with fields does" <|
+            \_ ->
+                [ "5", "\"x\"", "[]", "[{}]", "null", "true" ]
+                    |> List.map (\json -> ( json, Json.Decode.decodeString Proto.Json.emptyMessage json |> Result.mapError Json.Decode.errorToString ))
+                    |> List.filter (\( _, result ) -> not (isObjectFailure result))
+                    |> Expect.equal []
+        ]
+
+
+isObjectFailure : Result String {} -> Bool
+isObjectFailure result =
+    case result of
+        Ok _ ->
+            False
+
+        Err problem ->
+            String.contains "Expecting an OBJECT" problem
 
 
 lookupTests : Test
@@ -554,50 +584,166 @@ enumOrZeroTests =
         ]
 
 
-intDictTests : Test
-intDictTests =
-    describe "intDict"
+{-| Those of `keys` that `decoder` accepts, each the only key of an object.
+-}
+acceptedKeys : Decoder a -> List String -> List String
+acceptedKeys decoder keys =
+    List.filter
+        (\key ->
+            Json.Encode.object [ ( key, Json.Encode.string "x" ) ]
+                |> Json.Decode.decodeValue decoder
+                |> Result.toMaybe
+                |> (/=) Nothing
+        )
+        keys
+
+
+{-| Keys no integer key decoder accepts.
+-}
+notIntegerKeys : List String
+notIntegerKeys =
+    [ "abc", "1.5", "+5", " 7", "7 ", "0x10", "", "-", "1e", "e2", "1.5e0", "Infinity", "NaN" ]
+
+
+int32DictTests : Test
+int32DictTests =
+    describe "int32Dict"
         [ test "decimal keys" <|
             \_ ->
-                decodes (Proto.Json.intDict Json.Decode.string)
+                decodes (Proto.Json.int32Dict Json.Decode.string)
                     """{"1":"a","-2":"b","0":"c"}"""
                     (Dict.fromList [ ( 1, "a" ), ( -2, "b" ), ( 0, "c" ) ])
         , test "an empty object" <|
-            \_ -> decodes (Proto.Json.intDict Json.Decode.string) "{}" Dict.empty
+            \_ -> decodes (Proto.Json.int32Dict Json.Decode.string) "{}" Dict.empty
+        , test "keys an int64 string may be: leading zeros, -0, exponent notation" <|
+            \_ ->
+                decodes (Proto.Json.int32Dict Json.Decode.string)
+                    """{"07":"a","-0":"b","1e2":"c","-1.5e1":"d"}"""
+                    (Dict.fromList [ ( 7, "a" ), ( 0, "b" ), ( 100, "c" ), ( -15, "d" ) ])
         , test "a key that is not an integer fails" <|
-            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"a":"x"}"""
-        , test "a fractional key fails" <|
-            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1.5":"x"}"""
-        , test "a key not in canonical decimal form fails" <|
+            \_ -> acceptedKeys (Proto.Json.int32Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
+        , test "the int32 bounds are keys" <|
             \_ ->
-                [ "07", "+5", "-0", "00", " 7", "7 ", "1e2", "0x10", "", "-", "abc" ]
-                    |> List.map (\key -> Json.Encode.object [ ( key, Json.Encode.string "x" ) ])
-                    |> List.filter (\json -> Result.toMaybe (Json.Decode.decodeValue (Proto.Json.intDict Json.Decode.string) json) /= Nothing)
-                    |> List.map (Json.Encode.encode 0)
-                    |> Expect.equal []
-        , test "a key with a leading zero fails, naming it" <|
-            \_ -> failsWith (Proto.Json.intDict Json.Decode.string) """{"7":"a","07":"b"}""" "Expecting an integer map key, but got \"07\""
-        , test "a key outside 32 bits fails" <|
+                decodes (Proto.Json.int32Dict Json.Decode.string)
+                    """{"-2147483648":"a","2147483647":"b"}"""
+                    (Dict.fromList [ ( -2147483648, "a" ), ( 2147483647, "b" ) ])
+        , test "a key past the int32 bounds fails, naming it" <|
             \_ ->
-                ( Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"4294967296":"x"}""" |> Result.toMaybe
-                , Json.Decode.decodeString (Proto.Json.intDict Json.Decode.string) """{"-2147483649":"x"}""" |> Result.toMaybe
-                )
-                    |> Expect.equal ( Nothing, Nothing )
-        , test "the 32-bit bounds are keys" <|
-            \_ ->
-                decodes (Proto.Json.intDict Json.Decode.string)
-                    """{"-2147483648":"a","4294967295":"b","7":"c"}"""
-                    (Dict.fromList [ ( -2147483648, "a" ), ( 4294967295, "b" ), ( 7, "c" ) ])
+                Expect.all
+                    [ \_ -> failsWith (Proto.Json.int32Dict Json.Decode.string) """{"2147483648":"x"}""" "Expecting an int32 map key (-2147483648 to 2147483647), but got \"2147483648\""
+                    , \_ -> fails (Proto.Json.int32Dict Json.Decode.string) """{"-2147483649":"x"}"""
+                    , \_ -> fails (Proto.Json.int32Dict Json.Decode.string) """{"4294967295":"x"}"""
+                    ]
+                    ()
+        , test "two keys that name one integer fail, naming both" <|
+            \_ -> failsWith (Proto.Json.int32Dict Json.Decode.string) """{"7":"a","07":"b"}""" "Expecting distinct map keys, but \"7\" and \"07\" are the same key"
+        , test "-0 and 0 are the same key" <|
+            \_ -> fails (Proto.Json.int32Dict Json.Decode.string) """{"0":"a","-0":"b"}"""
         , test "a value of the wrong type fails" <|
-            \_ -> fails (Proto.Json.intDict Json.Decode.string) """{"1":2}"""
+            \_ -> fails (Proto.Json.int32Dict Json.Decode.string) """{"1":2}"""
         , test "round-trips through Json.Encode.dict String.fromInt" <|
             \_ ->
                 let
                     dict =
-                        Dict.fromList [ ( 3, "c" ), ( -1, "a" ) ]
+                        Dict.fromList [ ( 3, "c" ), ( -1, "a" ), ( -2147483648, "m" ) ]
                 in
                 Json.Encode.dict String.fromInt Json.Encode.string dict
-                    |> Json.Decode.decodeValue (Proto.Json.intDict Json.Decode.string)
+                    |> Json.Decode.decodeValue (Proto.Json.int32Dict Json.Decode.string)
+                    |> Expect.equal (Ok dict)
+        ]
+
+
+uint32DictTests : Test
+uint32DictTests =
+    describe "uint32Dict"
+        [ test "the uint32 bounds are keys" <|
+            \_ ->
+                decodes (Proto.Json.uint32Dict Json.Decode.string)
+                    """{"0":"a","4294967295":"b","007":"c"}"""
+                    (Dict.fromList [ ( 0, "a" ), ( 4294967295, "b" ), ( 7, "c" ) ])
+        , test "a key past the uint32 bounds fails, naming it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith (Proto.Json.uint32Dict Json.Decode.string) """{"-1":"x"}""" "Expecting a uint32 map key (0 to 4294967295), but got \"-1\""
+                    , \_ -> fails (Proto.Json.uint32Dict Json.Decode.string) """{"4294967296":"x"}"""
+                    ]
+                    ()
+        , test "-0 is the key 0" <|
+            \_ -> decodes (Proto.Json.uint32Dict Json.Decode.string) """{"-0":"x"}""" (Dict.fromList [ ( 0, "x" ) ])
+        , test "a key that is not an integer fails" <|
+            \_ -> acceptedKeys (Proto.Json.uint32Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
+        , test "two keys that name one integer fail, naming both" <|
+            \_ -> failsWith (Proto.Json.uint32Dict Json.Decode.string) """{"10":"a","1e1":"b"}""" "Expecting distinct map keys, but \"10\" and \"1e1\" are the same key"
+        , test "round-trips through Json.Encode.dict String.fromInt" <|
+            \_ ->
+                let
+                    dict =
+                        Dict.fromList [ ( 0, "z" ), ( 4294967295, "m" ) ]
+                in
+                Json.Encode.dict String.fromInt Json.Encode.string dict
+                    |> Json.Decode.decodeValue (Proto.Json.uint32Dict Json.Decode.string)
+                    |> Expect.equal (Ok dict)
+        ]
+
+
+int64DictTests : Test
+int64DictTests =
+    describe "int64Dict"
+        [ test "keys are held in canonical decimal form" <|
+            \_ ->
+                decodes (Proto.Json.int64Dict Json.Decode.string)
+                    """{"007":"a","-2":"b","-0":"c","1e3":"d"}"""
+                    (Dict.fromList [ ( "7", "a" ), ( "-2", "b" ), ( "0", "c" ), ( "1000", "d" ) ])
+        , test "the int64 bounds are keys, every digit kept" <|
+            \_ ->
+                decodes (Proto.Json.int64Dict Json.Decode.string)
+                    """{"-9223372036854775808":"a","9223372036854775807":"b"}"""
+                    (Dict.fromList [ ( "-9223372036854775808", "a" ), ( "9223372036854775807", "b" ) ])
+        , test "a key that is not an integer fails, naming it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> acceptedKeys (Proto.Json.int64Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
+                    , \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"abc":"x"}""" "Expecting an int64 map key, but got \"abc\""
+                    ]
+                    ()
+        , test "a key of more than 20 digits fails" <|
+            \_ -> fails (Proto.Json.int64Dict Json.Decode.string) """{"123456789012345678901":"x"}"""
+        , test "two keys that name one integer fail, naming both" <|
+            \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"7":"a","007":"b"}""" "Expecting distinct map keys, but \"7\" and \"007\" are the same key"
+        , test "a canonical key encodes as held and round-trips" <|
+            \_ ->
+                let
+                    dict =
+                        Dict.fromList [ ( "-9223372036854775808", "a" ), ( "0", "z" ), ( "7", "b" ) ]
+                in
+                Json.Encode.dict identity Json.Encode.string dict
+                    |> Json.Decode.decodeValue (Proto.Json.int64Dict Json.Decode.string)
+                    |> Expect.equal (Ok dict)
+        ]
+
+
+uint64DictTests : Test
+uint64DictTests =
+    describe "uint64Dict"
+        [ test "keys are held in canonical decimal form, up to the uint64 bound" <|
+            \_ ->
+                decodes (Proto.Json.uint64Dict Json.Decode.string)
+                    """{"007":"a","18446744073709551615":"b","-0":"c"}"""
+                    (Dict.fromList [ ( "7", "a" ), ( "18446744073709551615", "b" ), ( "0", "c" ) ])
+        , test "a negative key fails, naming it" <|
+            \_ -> failsWith (Proto.Json.uint64Dict Json.Decode.string) """{"-1":"x"}""" "Expecting a uint64 map key (0 or more), but got \"-1\""
+        , test "a key that is not an integer fails" <|
+            \_ -> acceptedKeys (Proto.Json.uint64Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
+        , test "two keys that name one integer fail, naming both" <|
+            \_ -> failsWith (Proto.Json.uint64Dict Json.Decode.string) """{"100":"a","1e2":"b"}""" "Expecting distinct map keys, but \"100\" and \"1e2\" are the same key"
+        , test "a canonical key encodes as held and round-trips" <|
+            \_ ->
+                let
+                    dict =
+                        Dict.fromList [ ( "18446744073709551615", "a" ), ( "1", "b" ) ]
+                in
+                Json.Encode.dict identity Json.Encode.string dict
+                    |> Json.Decode.decodeValue (Proto.Json.uint64Dict Json.Decode.string)
                     |> Expect.equal (Ok dict)
         ]
 

@@ -47,6 +47,10 @@ type alias Team =
     , members : Dict String Member
     , roles : Dict Int Role
     , byFlag : List ( Bool, String )
+    , byOffset : Dict Int String
+    , deltas : Dict String String
+    , byHash : Dict String String
+    , byStamp : Dict String String
     }
 
 
@@ -72,6 +76,10 @@ defaultTeam =
     , members = Dict.empty
     , roles = Dict.empty
     , byFlag = []
+    , byOffset = Dict.empty
+    , deltas = Dict.empty
+    , byHash = Dict.empty
+    , byStamp = Dict.empty
     }
 
 
@@ -117,6 +125,10 @@ descriptorTeam =
         , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
         , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum "maps.v1.Role")
         , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "by_offset" "byOffset" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed32) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "deltas" "deltas" 12 (Proto.Field.CardinalityMap Proto.Field.ScalarSint64) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "by_hash" "byHash" 13 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed64) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "by_stamp" "byStamp" 14 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed64) (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
 
 
@@ -172,6 +184,10 @@ encodeTeam value =
         , ( "members", Proto.Json.dict identity encodeMember value.members )
         , ( "roles", Proto.Json.dict String.fromInt encodeRole value.roles )
         , ( "byFlag", Proto.Json.boolDict Json.Encode.string value.byFlag )
+        , ( "byOffset", Proto.Json.dict String.fromInt Json.Encode.string value.byOffset )
+        , ( "deltas", Proto.Json.dict identity Json.Encode.string value.deltas )
+        , ( "byHash", Proto.Json.dict identity Json.Encode.string value.byHash )
+        , ( "byStamp", Proto.Json.dict identity Json.Encode.string value.byStamp )
         ]
 
 
@@ -198,12 +214,16 @@ decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
     Json.Decode.succeed Team
         |> Proto.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Proto.Json.fieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.intDict Json.Decode.string)
-        |> Proto.Json.field "scores" Dict.empty (Proto.Json.intDict Proto.Json.float)
-        |> Proto.Json.field "flags" Dict.empty (Proto.Json.intDict Json.Decode.bool)
-        |> Proto.Json.field "totals" Dict.empty (Proto.Json.intDict Proto.Json.int64)
-        |> Proto.Json.fieldEither "byId" "by_id" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Proto.Json.field "counts" Dict.empty (Json.Decode.dict Proto.Json.int32)
+        |> Proto.Json.fieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.int32Dict Json.Decode.string)
+        |> Proto.Json.field "scores" Dict.empty (Proto.Json.uint32Dict Proto.Json.float)
+        |> Proto.Json.field "flags" Dict.empty (Proto.Json.int32Dict Json.Decode.bool)
+        |> Proto.Json.field "totals" Dict.empty (Proto.Json.uint32Dict Proto.Json.int64)
+        |> Proto.Json.fieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Json.Decode.string)
+        |> Proto.Json.field "counts" Dict.empty (Proto.Json.uint64Dict Proto.Json.int32)
         |> Proto.Json.field "members" Dict.empty (Json.Decode.dict decodeMember)
-        |> Proto.Json.field "roles" Dict.empty (Proto.Json.intDict decodeRole)
+        |> Proto.Json.field "roles" Dict.empty (Proto.Json.int32Dict decodeRole)
         |> Proto.Json.fieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Json.Decode.string)
+        |> Proto.Json.fieldEither "byOffset" "by_offset" Dict.empty (Proto.Json.int32Dict Json.Decode.string)
+        |> Proto.Json.field "deltas" Dict.empty (Proto.Json.int64Dict Json.Decode.string)
+        |> Proto.Json.fieldEither "byHash" "by_hash" Dict.empty (Proto.Json.uint64Dict Json.Decode.string)
+        |> Proto.Json.fieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.int64Dict Json.Decode.string)

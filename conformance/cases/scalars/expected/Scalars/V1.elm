@@ -193,4 +193,4 @@ decodeScalars =
 
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =
-    Json.Decode.succeed {}
+    Proto.Json.emptyMessage

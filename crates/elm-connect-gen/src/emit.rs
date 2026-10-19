@@ -90,7 +90,9 @@
 //!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Proto.Json.dict`; absent or `null` decodes as `Dict.empty`. A map
+//!   `Proto.Json.dict` and decoded by the key's kind
+//!   (`Json.Decode.dict`, `Proto.Json.int32Dict`, `uint32Dict`,
+//!   `int64Dict`, `uint64Dict`); absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
 //!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
 //!   `boolDict`; absent or `null` decodes as `[]`.
@@ -704,6 +706,8 @@ mod tests {
             ]
         );
 
+        // An empty message's decoder is `Proto.Json.emptyMessage`; it has
+        // no fields to describe, so no `Proto.Field`.
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
@@ -712,6 +716,7 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version"
