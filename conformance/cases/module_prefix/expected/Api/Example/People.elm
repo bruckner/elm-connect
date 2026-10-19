@@ -68,7 +68,7 @@ descriptorUser : Proto.Message.Descriptor
 descriptorUser =
     Proto.Message.descriptor "users.v1.User"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorRole)
         ]
 
 

@@ -100,7 +100,7 @@ descriptorMemo : Proto.Message.Descriptor
 descriptorMemo =
     Proto.Message.descriptor "notes.v1.Note"
         [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "visibility" "visibility" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorAudience)
         , Proto.Field.descriptor "revisions" "revisions" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note.Revision")
         , Proto.Field.descriptor "text" "text" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "kind"

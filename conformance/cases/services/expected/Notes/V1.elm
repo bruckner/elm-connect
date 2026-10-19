@@ -210,7 +210,7 @@ descriptorNote =
     Proto.Message.descriptor "notes.v1.Note"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
         , Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]
 
@@ -253,7 +253,7 @@ messageListNotesRequest =
 descriptorListNotesRequestFilter : Proto.Message.Descriptor
 descriptorListNotesRequestFilter =
     Proto.Message.descriptor "notes.v1.ListNotesRequest.Filter"
-        [ Proto.Field.descriptor "visibility" "visibility" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        [ Proto.Field.descriptor "visibility" "visibility" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
         , Proto.Field.descriptor "since" "since" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
         ]
 

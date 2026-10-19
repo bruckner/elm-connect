@@ -46,7 +46,8 @@
 //! - A message's descriptor, `descriptorFoo : Proto.Message.Descriptor`,
 //!   is built with `Proto.Message.descriptor` from its full name and one
 //!   `Proto.Field.descriptor` per field, faithful to the proto: its
-//!   names, number, cardinality and kind (other types by full name), then
+//!   names, number, cardinality and kind (an enum by its descriptor
+//!   value, a message by its full name), then
 //!   a modifier only for what it has beyond those (`inOneof`,
 //!   `withBehavior`, `withDeprecated`); the builder derives the oneofs.
 //!   An enum's, `descriptorBar : Proto.Enum.Descriptor`, holds every

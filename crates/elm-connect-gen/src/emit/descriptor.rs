@@ -17,7 +17,7 @@ use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind, TypeRef,
 };
-use crate::naming::REGISTRY;
+use crate::naming::{self, REGISTRY};
 
 impl Emitter {
     /// `descriptorFoo : Proto.Message.Descriptor`: the
@@ -263,12 +263,15 @@ impl Emitter {
         }
     }
 
-    /// `Proto.Field.KindScalar` of the scalar, or `KindEnum` or
-    /// `KindMessage` of the type's full name.
+    /// `Proto.Field.KindScalar` of the scalar, `KindEnum` of the enum's
+    /// descriptor value, or `KindMessage` of the message's full name.
     fn kind(&mut self, ty: &TypeRef) -> Expr {
         let (constructor, argument) = match ty {
             TypeRef::Scalar(kind) => ("KindScalar", self.reference((PROTO_FIELD, scalar(*kind)))),
-            TypeRef::Enum { name, .. } => ("KindEnum", string(name.proto_full_name.clone())),
+            TypeRef::Enum { name, .. } => (
+                "KindEnum",
+                self.generated_value(&name.module, naming::descriptor_name(&name.name)),
+            ),
             TypeRef::Message(name) => ("KindMessage", string(name.proto_full_name.clone())),
             TypeRef::WellKnown(known) => ("KindMessage", string(known.proto_full_name())),
         };

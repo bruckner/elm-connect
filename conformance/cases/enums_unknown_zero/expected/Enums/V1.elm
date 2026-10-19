@@ -98,10 +98,10 @@ enumPriority =
 descriptorTask : Proto.Message.Descriptor
 descriptorTask =
     Proto.Message.descriptor "enums.v1.Task"
-        [ Proto.Field.descriptor "status" "status" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "enums.v1.Status")
-        , Proto.Field.descriptor "priority" "priority" 2 Proto.Field.CardinalityOptional (Proto.Field.KindEnum "enums.v1.Priority")
-        , Proto.Field.descriptor "history" "history" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "enums.v1.Status")
-        , Proto.Field.descriptor "previous_status" "previousStatus" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "enums.v1.Status")
+        [ Proto.Field.descriptor "status" "status" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorStatus)
+        , Proto.Field.descriptor "priority" "priority" 2 Proto.Field.CardinalityOptional (Proto.Field.KindEnum descriptorPriority)
+        , Proto.Field.descriptor "history" "history" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorStatus)
+        , Proto.Field.descriptor "previous_status" "previousStatus" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorStatus)
         ]
 
 

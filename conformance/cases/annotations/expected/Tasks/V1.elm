@@ -101,7 +101,7 @@ descriptorTask =
             |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
         , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
-        , Proto.Field.descriptor "state" "state" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "tasks.v1.State")
+        , Proto.Field.descriptor "state" "state" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorState)
             |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
         , Proto.Field.descriptor "labels" "labels" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]

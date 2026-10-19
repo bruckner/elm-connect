@@ -132,7 +132,7 @@ descriptorNoteEvent =
             |> Proto.Field.inOneof "kind"
         , Proto.Field.descriptor "title_changed" "titleChanged" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "recolored" "recolored" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "oneofs.v1.Color")
+        , Proto.Field.descriptor "recolored" "recolored" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorColor)
             |> Proto.Field.inOneof "kind"
         , Proto.Field.descriptor "deleted_at" "deletedAt" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
             |> Proto.Field.inOneof "kind"

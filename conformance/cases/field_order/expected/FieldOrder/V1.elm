@@ -97,7 +97,7 @@ descriptorDraft =
             |> Proto.Field.inOneof "body"
         , Proto.Field.descriptor "blob" "blob" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
             |> Proto.Field.inOneof "body"
-        , Proto.Field.descriptor "mood" "mood" 6 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "field_order.v1.Mood")
+        , Proto.Field.descriptor "mood" "mood" 6 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorMood)
         , Proto.Field.descriptor "margin" "margin" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "field_order.v1.Draft.Margin")
         , Proto.Field.descriptor "tags" "tags" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
         ]

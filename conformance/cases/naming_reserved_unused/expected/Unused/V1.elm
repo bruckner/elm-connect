@@ -130,7 +130,7 @@ descriptorResult =
     Proto.Message.descriptor "unused.v1.Result"
         [ Proto.Field.descriptor "ok" "ok" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "dict" "dict" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "unused.v1.Dict")
-        , Proto.Field.descriptor "chars" "chars" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "unused.v1.Char")
+        , Proto.Field.descriptor "chars" "chars" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorChar)
         ]
 
 

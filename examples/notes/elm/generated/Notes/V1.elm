@@ -192,7 +192,7 @@ descriptorNote =
         , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "body" "body" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "visibility" "visibility" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
         , Proto.Field.descriptor "create_time" "createTime" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
         , Proto.Field.descriptor "update_time" "updateTime" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
         , Proto.Field.descriptor "ttl" "ttl" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
@@ -230,7 +230,7 @@ descriptorListNotesRequest =
         [ Proto.Field.descriptor "page_size" "pageSize" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
         , Proto.Field.descriptor "page_token" "pageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "filter" "filter" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "visibility" "visibility" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
         ]
 
 

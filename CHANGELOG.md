@@ -797,3 +797,9 @@ tag (design §8).
 - A message without fields decodes only from a JSON object, through the
   new `Proto.Json.emptyMessage`, as every other message does; it
   accepted any JSON (`5`, `"x"`, `[]`, `true`) before.
+- `Proto.Field.KindEnum` holds the enum's `Proto.Enum.Descriptor`
+  instead of its full name, so a field's enum values, its zero value
+  among them, can be read from the field alone. Generated descriptors
+  write `KindEnum descriptorVisibility`; code matching on `KindEnum`
+  reads the name with `Proto.Enum.typeName`. `KindMessage` still names
+  its message, since a message can contain itself.

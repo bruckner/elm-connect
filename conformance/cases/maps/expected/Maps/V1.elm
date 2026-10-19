@@ -123,7 +123,7 @@ descriptorTeam =
         , Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
         , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
-        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum "maps.v1.Role")
+        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum descriptorRole)
         , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "by_offset" "byOffset" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed32) (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "deltas" "deltas" 12 (Proto.Field.CardinalityMap Proto.Field.ScalarSint64) (Proto.Field.KindScalar Proto.Field.ScalarString)

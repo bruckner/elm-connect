@@ -34,6 +34,8 @@ things.
 
 -}
 
+import Proto.Enum
+
 
 {-| A field's descriptor. It is opaque, built by [`descriptor`](#descriptor)
 and its modifiers and read by the functions below, so that a later release can
@@ -72,12 +74,19 @@ type Cardinality
     | CardinalityMap Scalar
 
 
-{-| The type of a field's values: a scalar, or an enum or a message by its full
-name (`google.protobuf.Timestamp` for a well-known type).
+{-| The type of a field's values: a scalar, an enum by its descriptor, or a
+message by its full name (`google.protobuf.Timestamp` for a well-known type).
+
+An enum is held whole, so its values, and so its zero value, can be read from
+the field alone ([`Proto.Enum.values`](Proto-Enum#values)). A message is held
+by name because a message can contain itself, and Elm values cannot refer to
+themselves; a [`Proto.Registry`](Proto-Registry) resolves the name. An enum
+cannot contain anything, so its descriptor never leads back to the field.
+
 -}
 type Kind
     = KindScalar Scalar
-    | KindEnum String
+    | KindEnum Proto.Enum.Descriptor
     | KindMessage String
 
 

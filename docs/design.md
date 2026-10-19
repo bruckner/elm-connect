@@ -1145,7 +1145,7 @@ descriptorNote : Proto.Message.Descriptor
 descriptorNote =
     Proto.Message.descriptor "notes.v1.Note"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorVisibility)
         , Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "kind"
         , …
@@ -1231,9 +1231,15 @@ registry =
   `Maybe`; a proto3 `optional` field is `CardinalityOptional`, its
   synthetic oneof not listed. `Cardinality` has `CardinalityRequired`
   for proto2's `required`, which the generator, reading proto3 alone,
-  never gives. Types
-  refer to each other by full name, never by value, since Elm forbids
-  cyclic values; a `Proto.Registry` resolves the names.
+  never gives. A field of a message type refers to it by full name,
+  never by value, since a message can contain itself and Elm forbids
+  cyclic values; a `Proto.Registry` resolves the names. A field of an
+  enum type holds the enum's descriptor, `KindEnum descriptorVisibility`:
+  an enum contains nothing, so it cannot lead back to the field, and its
+  zero value's name is wanted wherever the field is read alone, by a
+  route's default path or query text (§5.3) and by UI code that renders
+  the field. *(Decided, 2026-10-19; `KindEnum` held the full name
+  before.)*
 - `Proto.Field.Behavior` mirrors `google.api.FieldBehavior` but its
   unspecified zero: `BehaviorOptional`, `BehaviorRequired`,
   `BehaviorOutputOnly`, `BehaviorInputOnly`, `BehaviorImmutable`,
@@ -2794,7 +2800,8 @@ Within a major version:
   into `Config`. The public unions are
   frozen within a major, since users match on them exhaustively:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
-  proto2), `Kind`, `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
+  proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and
+  `KindMessage` the message's full name, §3.9), `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` and `Source` (a
   failure before an answer is one of the reasons, and a new kind found
   in an answer is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`

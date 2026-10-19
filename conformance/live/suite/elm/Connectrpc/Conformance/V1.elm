@@ -934,10 +934,10 @@ descriptorClientCompatRequest : Proto.Message.Descriptor
 descriptorClientCompatRequest =
     Proto.Message.descriptor "connectrpc.conformance.v1.ClientCompatRequest"
         [ Proto.Field.descriptor "test_name" "testName" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
-        , Proto.Field.descriptor "protocol" "protocol" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
-        , Proto.Field.descriptor "codec" "codec" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
-        , Proto.Field.descriptor "compression" "compression" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorHTTPVersion)
+        , Proto.Field.descriptor "protocol" "protocol" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorProtocol)
+        , Proto.Field.descriptor "codec" "codec" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCodec)
+        , Proto.Field.descriptor "compression" "compression" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCompression)
         , Proto.Field.descriptor "host" "host" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "port" "port" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
         , Proto.Field.descriptor "server_tls_cert" "serverTlsCert" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
@@ -945,7 +945,7 @@ descriptorClientCompatRequest =
         , Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
         , Proto.Field.descriptor "service" "service" 11 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "method" "method" 12 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "stream_type" "streamType" 13 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        , Proto.Field.descriptor "stream_type" "streamType" 13 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorStreamType)
         , Proto.Field.descriptor "use_get_http_method" "useGetHttpMethod" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "request_headers" "requestHeaders" 15 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
         , Proto.Field.descriptor "request_messages" "requestMessages" 16 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
@@ -1056,11 +1056,11 @@ messageConfig =
 descriptorFeatures : Proto.Message.Descriptor
 descriptorFeatures =
     Proto.Message.descriptor "connectrpc.conformance.v1.Features"
-        [ Proto.Field.descriptor "versions" "versions" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
-        , Proto.Field.descriptor "protocols" "protocols" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
-        , Proto.Field.descriptor "codecs" "codecs" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
-        , Proto.Field.descriptor "compressions" "compressions" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
-        , Proto.Field.descriptor "stream_types" "streamTypes" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        [ Proto.Field.descriptor "versions" "versions" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorHTTPVersion)
+        , Proto.Field.descriptor "protocols" "protocols" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorProtocol)
+        , Proto.Field.descriptor "codecs" "codecs" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorCodec)
+        , Proto.Field.descriptor "compressions" "compressions" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorCompression)
+        , Proto.Field.descriptor "stream_types" "streamTypes" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorStreamType)
         , Proto.Field.descriptor "supports_h2c" "supportsH2c" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "supports_tls" "supportsTls" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "supports_tls_client_certs" "supportsTlsClientCerts" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
@@ -1079,11 +1079,11 @@ messageFeatures =
 descriptorConfigCase : Proto.Message.Descriptor
 descriptorConfigCase =
     Proto.Message.descriptor "connectrpc.conformance.v1.ConfigCase"
-        [ Proto.Field.descriptor "version" "version" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
-        , Proto.Field.descriptor "protocol" "protocol" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
-        , Proto.Field.descriptor "codec" "codec" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
-        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
-        , Proto.Field.descriptor "stream_type" "streamType" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.StreamType")
+        [ Proto.Field.descriptor "version" "version" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorHTTPVersion)
+        , Proto.Field.descriptor "protocol" "protocol" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorProtocol)
+        , Proto.Field.descriptor "codec" "codec" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCodec)
+        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCompression)
+        , Proto.Field.descriptor "stream_type" "streamType" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorStreamType)
         , Proto.Field.descriptor "use_tls" "useTls" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "use_tls_client_certs" "useTlsClientCerts" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "use_message_receive_limit" "useMessageReceiveLimit" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
@@ -1111,8 +1111,8 @@ messageTLSCreds =
 descriptorServerCompatRequest : Proto.Message.Descriptor
 descriptorServerCompatRequest =
     Proto.Message.descriptor "connectrpc.conformance.v1.ServerCompatRequest"
-        [ Proto.Field.descriptor "protocol" "protocol" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
-        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
+        [ Proto.Field.descriptor "protocol" "protocol" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorProtocol)
+        , Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorHTTPVersion)
         , Proto.Field.descriptor "use_tls" "useTls" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "client_tls_cert" "clientTlsCert" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
         , Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
@@ -1364,7 +1364,7 @@ messageConformancePayloadConnectGetInfo =
 descriptorError : Proto.Message.Descriptor
 descriptorError =
     Proto.Message.descriptor "connectrpc.conformance.v1.Error"
-        [ Proto.Field.descriptor "code" "code" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Code")
+        [ Proto.Field.descriptor "code" "code" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCode)
         , Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "details" "details" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
         ]
@@ -1431,7 +1431,7 @@ descriptorMessageContents =
             |> Proto.Field.inOneof "data"
         , Proto.Field.descriptor "binary_message" "binaryMessage" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
             |> Proto.Field.inOneof "data"
-        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
+        , Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorCompression)
         ]
 
 
@@ -1488,13 +1488,13 @@ descriptorTestSuite : Proto.Message.Descriptor
 descriptorTestSuite =
     Proto.Message.descriptor "connectrpc.conformance.v1.TestSuite"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "mode" "mode" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.TestSuite.TestMode")
+        , Proto.Field.descriptor "mode" "mode" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorTestSuiteTestMode)
         , Proto.Field.descriptor "test_cases" "testCases" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase")
-        , Proto.Field.descriptor "relevant_protocols" "relevantProtocols" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Protocol")
-        , Proto.Field.descriptor "relevant_http_versions" "relevantHttpVersions" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.HTTPVersion")
-        , Proto.Field.descriptor "relevant_codecs" "relevantCodecs" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Codec")
-        , Proto.Field.descriptor "relevant_compressions" "relevantCompressions" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Compression")
-        , Proto.Field.descriptor "connect_version_mode" "connectVersionMode" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "connectrpc.conformance.v1.TestSuite.ConnectVersionMode")
+        , Proto.Field.descriptor "relevant_protocols" "relevantProtocols" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorProtocol)
+        , Proto.Field.descriptor "relevant_http_versions" "relevantHttpVersions" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorHTTPVersion)
+        , Proto.Field.descriptor "relevant_codecs" "relevantCodecs" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorCodec)
+        , Proto.Field.descriptor "relevant_compressions" "relevantCompressions" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorCompression)
+        , Proto.Field.descriptor "connect_version_mode" "connectVersionMode" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorTestSuiteConnectVersionMode)
         , Proto.Field.descriptor "relies_on_tls" "reliesOnTls" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "relies_on_tls_client_certs" "reliesOnTlsClientCerts" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
         , Proto.Field.descriptor "relies_on_connect_get" "reliesOnConnectGet" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
@@ -1513,7 +1513,7 @@ descriptorTestCase =
         [ Proto.Field.descriptor "request" "request" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest")
         , Proto.Field.descriptor "expand_requests" "expandRequests" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase.ExpandedSize")
         , Proto.Field.descriptor "expected_response" "expectedResponse" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientResponseResult")
-        , Proto.Field.descriptor "other_allowed_error_codes" "otherAllowedErrorCodes" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "connectrpc.conformance.v1.Code")
+        , Proto.Field.descriptor "other_allowed_error_codes" "otherAllowedErrorCodes" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorCode)
         ]
 
 

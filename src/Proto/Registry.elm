@@ -4,9 +4,9 @@ module Proto.Registry exposing
     , messages, enums
     )
 
-{-| Descriptors by full name. A descriptor names the messages and enums its
-fields hold rather than containing them (a message may contain itself), and a
-registry resolves those names. Generated code gives one per package module
+{-| Descriptors by full name. A descriptor names the messages its fields hold
+rather than containing them (a message may contain itself), and a registry
+resolves those names; it finds enums by name too. Generated code gives one per package module
 (`Notes.V1.registry`), holding the package's types, those of every package it
 imports, and the well-known types.
 

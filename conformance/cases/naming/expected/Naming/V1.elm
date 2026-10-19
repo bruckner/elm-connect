@@ -120,8 +120,8 @@ descriptorTag =
         , Proto.Field.descriptor "display_name" "screenName" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "http_url" "httpUrl" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "v2_count" "v2Count" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "shape" "shape" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "naming.v1.Shape")
-        , Proto.Field.descriptor "method" "method" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "naming.v1.HttpMethod")
+        , Proto.Field.descriptor "shape" "shape" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorShape)
+        , Proto.Field.descriptor "method" "method" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorHttpMethod)
         , Proto.Field.descriptor "then" "then" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
             |> Proto.Field.inOneof "case"
         , Proto.Field.descriptor "of" "of" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)

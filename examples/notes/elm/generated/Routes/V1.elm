@@ -303,9 +303,9 @@ descriptorEverything =
         , Proto.Field.descriptor "ratio" "ratio" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
         , Proto.Field.descriptor "scale" "scale" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
         , Proto.Field.descriptor "data" "data" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "kind" "kind" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "kind" "kind" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorKind)
         , Proto.Field.descriptor "tags" "tags" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "kinds" "kinds" 11 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "kinds" "kinds" 11 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum descriptorKind)
         , Proto.Field.descriptor "numbers" "numbers" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
         , Proto.Field.descriptor "maybe_count" "maybeCount" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
         , Proto.Field.descriptor "maybe_name" "maybeName" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
@@ -371,7 +371,7 @@ descriptorResource =
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "display_name" "displayName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "labels" "labels" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "kinds" "kinds" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindEnum "routes.v1.Kind")
+        , Proto.Field.descriptor "kinds" "kinds" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindEnum descriptorKind)
         , Proto.Field.descriptor "weights" "weights" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
         ]
 

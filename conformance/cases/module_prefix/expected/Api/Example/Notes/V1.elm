@@ -63,7 +63,7 @@ descriptorNote =
     Proto.Message.descriptor "notes.v1.Note"
         [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
         , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Api.Example.People.descriptorRole)
         ]
 
 

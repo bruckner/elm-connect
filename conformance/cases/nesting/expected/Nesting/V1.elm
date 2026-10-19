@@ -185,7 +185,7 @@ descriptorOuter : Proto.Message.Descriptor
 descriptorOuter =
     Proto.Message.descriptor "nesting.v1.Outer"
         [ Proto.Field.descriptor "inner" "inner" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner")
-        , Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        , Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorOuterInnerKind)
         , Proto.Field.descriptor "all" "all" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
         ]
 
@@ -210,7 +210,7 @@ messageOuterInner =
 descriptorOuterInnerDeepest : Proto.Message.Descriptor
 descriptorOuterInnerDeepest =
     Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest"
-        [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum descriptorOuterInnerKind)
         ]
 
 
