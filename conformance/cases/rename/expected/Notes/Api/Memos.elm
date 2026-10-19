@@ -17,6 +17,19 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
+fetchMemo =
+    Rpc.call
+        (Proto.Method.method Notes.Api.encodeGetNoteRequest
+            Notes.Api.decodeMemo
+            descriptorFetchMemo
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -28,16 +41,3 @@ descriptorFetchMemo =
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         []
-
-
-
--- CALLS
-
-
-fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
-fetchMemo =
-    Rpc.call
-        (Proto.Method.method Notes.Api.encodeGetNoteRequest
-            Notes.Api.decodeMemo
-            descriptorFetchMemo
-        )

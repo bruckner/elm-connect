@@ -160,6 +160,28 @@ import Rpc
 
 
 
+-- CALLS
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -190,28 +212,6 @@ descriptorSummarize =
         "Summarize"
         …
         []   -- no rule: the implicit route
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeSummarizeRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )
 ```
 
 Application code applies a method to its request and sends the call
@@ -295,6 +295,20 @@ rpc shared call =
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
+- **The layout of a generated module.** *(Decided, 2026-10-19.)* After
+  its header, imports and `elmConnectVersion_`, a package's module holds
+  up to five sections in this order: `-- TYPES`, `-- DEFAULTS` (left out
+  when the package has no messages), `-- ENCODERS`, `-- DECODERS`,
+  `-- DESCRIPTORS`, the last ending with the registry (§3.9). A package
+  without types has the descriptors section alone, holding its
+  registry. A service's module holds `-- CALLS`, then `-- DESCRIPTORS`.
+  Within a section the enums come first, then the messages; each in
+  declaration order, files taken by name, a message before the messages
+  nested in it (depth first), and each message followed by its
+  recursion wrapper and its oneofs. Descriptors come last because a
+  reader of the module needs them least and their rows are the longest.
+  The order is not API (§8.3): it can change in any release, since Elm
+  resolves top-level names in any order and no code can depend on it.
 - **Lists in generated code.** *(Decided, 2026-10-19.)* A list literal
   with elements puts each on its own line, a list of one too, so a list's
   layout does not change as it grows and every element is a line of its
@@ -1071,7 +1085,7 @@ case names it):
 ### 3.9 Descriptors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
 
 Every message and enum gets a descriptor and a typed value, in a
-`-- DESCRIPTORS` section between the defaults and the encoders, each
+`-- DESCRIPTORS` section after the decoders, last in the module (§3.1), each
 type's descriptor followed by its typed value, which holds its codecs
 and default with the descriptor:
 
@@ -1273,12 +1287,25 @@ registry =
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding a descriptors section with
-each method's `Proto.Method.Descriptor` and then a calls
-section with one function per method from its request to an
-`Rpc.Call` (§5.2). The `services` conformance case pins the output:
+beside the package's `Notes.V1`, holding a calls section with one
+function per method from its request to an `Rpc.Call` (§5.2) and then
+a descriptors section with each method's `Proto.Method.Descriptor`
+(§3.1 gives the order). The `services` conformance case pins the output:
 
 ```elm
+-- CALLS
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -1302,19 +1329,6 @@ descriptorGetNote =
             }
         , Proto.Http.binding { … }   -- the additional binding
         ]
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
 ```
 
 Both applications put one argument per line however short their

@@ -168,159 +168,6 @@ defaultArchiveNoteRequest =
 
 
 
--- DESCRIPTORS
-
-
-descriptorVisibility : Proto.Enum.Descriptor
-descriptorVisibility =
-    Proto.Enum.descriptor "notes.v1.Visibility"
-        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "VISIBILITY_PRIVATE" 1
-        , Proto.EnumValue.descriptor "VISIBILITY_PUBLIC" 2
-        ]
-
-
-enumVisibility : Proto.Enum.Enum Visibility
-enumVisibility =
-    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "body" "body" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
-        , Proto.Field.descriptor "create_time" "createTime" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        , Proto.Field.descriptor "update_time" "updateTime" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        , Proto.Field.descriptor "ttl" "ttl" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
-        , Proto.Field.descriptor "metadata" "metadata" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "extra" "extra" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
-        , Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "link" "link" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "attachment" "attachment" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "revision" "revision" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        ]
-
-
-messageNote : Proto.Message.Message Note
-messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
-
-
-descriptorGetNoteRequest : Proto.Message.Descriptor
-descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageGetNoteRequest : Proto.Message.Message GetNoteRequest
-messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest descriptorGetNoteRequest
-
-
-descriptorListNotesRequest : Proto.Message.Descriptor
-descriptorListNotesRequest =
-    Proto.Message.descriptor "notes.v1.ListNotesRequest"
-        [ Proto.Field.descriptor "page_size" "pageSize" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "page_token" "pageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "filter" "filter" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
-        ]
-
-
-messageListNotesRequest : Proto.Message.Message ListNotesRequest
-messageListNotesRequest =
-    Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest descriptorListNotesRequest
-
-
-descriptorListNotesResponse : Proto.Message.Descriptor
-descriptorListNotesResponse =
-    Proto.Message.descriptor "notes.v1.ListNotesResponse"
-        [ Proto.Field.descriptor "notes" "notes" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note")
-        , Proto.Field.descriptor "next_page_token" "nextPageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageListNotesResponse : Proto.Message.Message ListNotesResponse
-messageListNotesResponse =
-    Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse descriptorListNotesResponse
-
-
-descriptorCreateNoteRequest : Proto.Message.Descriptor
-descriptorCreateNoteRequest =
-    Proto.Message.descriptor "notes.v1.CreateNoteRequest"
-        [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
-        ]
-
-
-messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
-messageCreateNoteRequest =
-    Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest descriptorCreateNoteRequest
-
-
-descriptorUpdateNoteRequest : Proto.Message.Descriptor
-descriptorUpdateNoteRequest =
-    Proto.Message.descriptor "notes.v1.UpdateNoteRequest"
-        [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
-        , Proto.Field.descriptor "update_mask" "updateMask" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
-        ]
-
-
-messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
-messageUpdateNoteRequest =
-    Proto.Message.message encodeUpdateNoteRequest decodeUpdateNoteRequest defaultUpdateNoteRequest descriptorUpdateNoteRequest
-
-
-descriptorDeleteNoteRequest : Proto.Message.Descriptor
-descriptorDeleteNoteRequest =
-    Proto.Message.descriptor "notes.v1.DeleteNoteRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
-messageDeleteNoteRequest =
-    Proto.Message.message encodeDeleteNoteRequest decodeDeleteNoteRequest defaultDeleteNoteRequest descriptorDeleteNoteRequest
-
-
-descriptorArchiveNoteRequest : Proto.Message.Descriptor
-descriptorArchiveNoteRequest =
-    Proto.Message.descriptor "notes.v1.ArchiveNoteRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
-messageArchiveNoteRequest =
-    Proto.Message.message encodeArchiveNoteRequest decodeArchiveNoteRequest defaultArchiveNoteRequest descriptorArchiveNoteRequest
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorNote
-            , descriptorGetNoteRequest
-            , descriptorListNotesRequest
-            , descriptorListNotesResponse
-            , descriptorCreateNoteRequest
-            , descriptorUpdateNoteRequest
-            , descriptorDeleteNoteRequest
-            , descriptorArchiveNoteRequest
-            ]
-            [ descriptorVisibility
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -512,3 +359,156 @@ decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest
         |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
+-- DESCRIPTORS
+
+
+descriptorVisibility : Proto.Enum.Descriptor
+descriptorVisibility =
+    Proto.Enum.descriptor "notes.v1.Visibility"
+        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "VISIBILITY_PRIVATE" 1
+        , Proto.EnumValue.descriptor "VISIBILITY_PUBLIC" 2
+        ]
+
+
+enumVisibility : Proto.Enum.Enum Visibility
+enumVisibility =
+    Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
+
+
+descriptorNote : Proto.Message.Descriptor
+descriptorNote =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "body" "body" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "visibility" "visibility" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        , Proto.Field.descriptor "create_time" "createTime" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        , Proto.Field.descriptor "update_time" "updateTime" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        , Proto.Field.descriptor "ttl" "ttl" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
+        , Proto.Field.descriptor "metadata" "metadata" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "extra" "extra" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
+        , Proto.Field.descriptor "text" "text" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "kind"
+        , Proto.Field.descriptor "link" "link" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "kind"
+        , Proto.Field.descriptor "attachment" "attachment" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "revision" "revision" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        ]
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+descriptorGetNoteRequest : Proto.Message.Descriptor
+descriptorGetNoteRequest =
+    Proto.Message.descriptor "notes.v1.GetNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest =
+    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest descriptorGetNoteRequest
+
+
+descriptorListNotesRequest : Proto.Message.Descriptor
+descriptorListNotesRequest =
+    Proto.Message.descriptor "notes.v1.ListNotesRequest"
+        [ Proto.Field.descriptor "page_size" "pageSize" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "page_token" "pageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "filter" "filter" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "visibility" "visibility" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
+        ]
+
+
+messageListNotesRequest : Proto.Message.Message ListNotesRequest
+messageListNotesRequest =
+    Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest descriptorListNotesRequest
+
+
+descriptorListNotesResponse : Proto.Message.Descriptor
+descriptorListNotesResponse =
+    Proto.Message.descriptor "notes.v1.ListNotesResponse"
+        [ Proto.Field.descriptor "notes" "notes" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note")
+        , Proto.Field.descriptor "next_page_token" "nextPageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageListNotesResponse : Proto.Message.Message ListNotesResponse
+messageListNotesResponse =
+    Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse descriptorListNotesResponse
+
+
+descriptorCreateNoteRequest : Proto.Message.Descriptor
+descriptorCreateNoteRequest =
+    Proto.Message.descriptor "notes.v1.CreateNoteRequest"
+        [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
+        ]
+
+
+messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
+messageCreateNoteRequest =
+    Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest descriptorCreateNoteRequest
+
+
+descriptorUpdateNoteRequest : Proto.Message.Descriptor
+descriptorUpdateNoteRequest =
+    Proto.Message.descriptor "notes.v1.UpdateNoteRequest"
+        [ Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
+        , Proto.Field.descriptor "update_mask" "updateMask" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
+        ]
+
+
+messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
+messageUpdateNoteRequest =
+    Proto.Message.message encodeUpdateNoteRequest decodeUpdateNoteRequest defaultUpdateNoteRequest descriptorUpdateNoteRequest
+
+
+descriptorDeleteNoteRequest : Proto.Message.Descriptor
+descriptorDeleteNoteRequest =
+    Proto.Message.descriptor "notes.v1.DeleteNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
+messageDeleteNoteRequest =
+    Proto.Message.message encodeDeleteNoteRequest decodeDeleteNoteRequest defaultDeleteNoteRequest descriptorDeleteNoteRequest
+
+
+descriptorArchiveNoteRequest : Proto.Message.Descriptor
+descriptorArchiveNoteRequest =
+    Proto.Message.descriptor "notes.v1.ArchiveNoteRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
+messageArchiveNoteRequest =
+    Proto.Message.message encodeArchiveNoteRequest decodeArchiveNoteRequest defaultArchiveNoteRequest descriptorArchiveNoteRequest
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorNote
+            , descriptorGetNoteRequest
+            , descriptorListNotesRequest
+            , descriptorListNotesResponse
+            , descriptorCreateNoteRequest
+            , descriptorUpdateNoteRequest
+            , descriptorDeleteNoteRequest
+            , descriptorArchiveNoteRequest
+            ]
+            [ descriptorVisibility
+            ]
+        )
+        Proto.Registry.wellKnown

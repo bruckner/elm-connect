@@ -18,6 +18,127 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+getMessage =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorGetMessage
+        )
+
+
+updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
+updateMessage =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUpdateMessage
+        )
+
+
+updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
+updateMessageWhole =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeMessage
+            Routes.V1.decodeMessage
+            descriptorUpdateMessageWhole
+        )
+
+
+postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+postSub =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorPostSub
+        )
+
+
+query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+query =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorQuery
+        )
+
+
+single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+single =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorSingle
+        )
+
+
+multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+multi =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorMulti
+        )
+
+
+typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+typed =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorTyped
+        )
+
+
+files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+files =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorFiles
+        )
+
+
+cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
+cancel =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeResource
+            Routes.V1.decodeResource
+            descriptorCancel
+        )
+
+
+updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
+updateResource =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
+            Routes.V1.decodeResource
+            descriptorUpdateResource
+        )
+
+
+head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+head =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorHead
+        )
+
+
+unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+unbound =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUnbound
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -442,124 +563,3 @@ descriptorUnbound =
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
         []
-
-
-
--- CALLS
-
-
-getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-getMessage =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorGetMessage
-        )
-
-
-updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
-updateMessage =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUpdateMessage
-        )
-
-
-updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
-updateMessageWhole =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
-            descriptorUpdateMessageWhole
-        )
-
-
-postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-postSub =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorPostSub
-        )
-
-
-query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-query =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorQuery
-        )
-
-
-single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-single =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorSingle
-        )
-
-
-multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-multi =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorMulti
-        )
-
-
-typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-typed =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorTyped
-        )
-
-
-files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
-files =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorFiles
-        )
-
-
-cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
-cancel =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeResource
-            Routes.V1.decodeResource
-            descriptorCancel
-        )
-
-
-updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
-updateResource =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
-            descriptorUpdateResource
-        )
-
-
-head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
-head =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorHead
-        )
-
-
-unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-unbound =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUnbound
-        )

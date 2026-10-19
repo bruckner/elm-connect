@@ -48,48 +48,6 @@ defaultUser =
 
 
 
--- DESCRIPTORS
-
-
-descriptorRole : Proto.Enum.Descriptor
-descriptorRole =
-    Proto.Enum.descriptor "users.v1.Role"
-        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "ROLE_EDITOR" 1
-        ]
-
-
-enumRole : Proto.Enum.Enum Role
-enumRole =
-    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
-
-
-descriptorUser : Proto.Message.Descriptor
-descriptorUser =
-    Proto.Message.descriptor "users.v1.User"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
-        ]
-
-
-messageUser : Proto.Message.Message User
-messageUser =
-    Proto.Message.message encodeUser decodeUser defaultUser descriptorUser
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorUser
-            ]
-            [ descriptorRole
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -129,3 +87,45 @@ decodeUser =
     Json.Decode.succeed User
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.field "role" RoleUnspecified decodeRole
+
+
+
+-- DESCRIPTORS
+
+
+descriptorRole : Proto.Enum.Descriptor
+descriptorRole =
+    Proto.Enum.descriptor "users.v1.Role"
+        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "ROLE_EDITOR" 1
+        ]
+
+
+enumRole : Proto.Enum.Enum Role
+enumRole =
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorUser : Proto.Message.Descriptor
+descriptorUser =
+    Proto.Message.descriptor "users.v1.User"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "role" "role" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
+        ]
+
+
+messageUser : Proto.Message.Message User
+messageUser =
+    Proto.Message.message encodeUser decodeUser defaultUser descriptorUser
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorUser
+            ]
+            [ descriptorRole
+            ]
+        )
+        Proto.Registry.wellKnown

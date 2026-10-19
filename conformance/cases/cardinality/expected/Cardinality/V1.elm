@@ -74,58 +74,6 @@ defaultNote =
 
 
 
--- DESCRIPTORS
-
-
-descriptorAuthor : Proto.Message.Descriptor
-descriptorAuthor =
-    Proto.Message.descriptor "cardinality.v1.Author"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageAuthor : Proto.Message.Message Author
-messageAuthor =
-    Proto.Message.message encodeAuthor decodeAuthor defaultAuthor descriptorAuthor
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "cardinality.v1.Note"
-        [ Proto.Field.descriptor "subtitle" "subtitle" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "stars" "stars" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "score" "score" 3 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        , Proto.Field.descriptor "views" "views" 4 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "author" "author" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cardinality.v1.Author")
-        , Proto.Field.descriptor "editor" "editor" 6 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "cardinality.v1.Author")
-        , Proto.Field.descriptor "tags" "tags" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "counts" "counts" 8 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "weights" "weights" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFloat)
-        , Proto.Field.descriptor "reviewers" "reviewers" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "cardinality.v1.Author")
-        , Proto.Field.descriptor "related_links" "relatedLinks" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "is_draft" "isDraft" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "title" "title" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageNote : Proto.Message.Message Note
-messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorAuthor
-            , descriptorNote
-            ]
-            []
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -181,3 +129,55 @@ decodeNote =
         |> Proto.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Json.Decode.string)
         |> Proto.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.field "title" "" Json.Decode.string
+
+
+
+-- DESCRIPTORS
+
+
+descriptorAuthor : Proto.Message.Descriptor
+descriptorAuthor =
+    Proto.Message.descriptor "cardinality.v1.Author"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageAuthor : Proto.Message.Message Author
+messageAuthor =
+    Proto.Message.message encodeAuthor decodeAuthor defaultAuthor descriptorAuthor
+
+
+descriptorNote : Proto.Message.Descriptor
+descriptorNote =
+    Proto.Message.descriptor "cardinality.v1.Note"
+        [ Proto.Field.descriptor "subtitle" "subtitle" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "stars" "stars" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "score" "score" 3 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        , Proto.Field.descriptor "views" "views" 4 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "author" "author" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cardinality.v1.Author")
+        , Proto.Field.descriptor "editor" "editor" 6 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "cardinality.v1.Author")
+        , Proto.Field.descriptor "tags" "tags" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "counts" "counts" 8 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "weights" "weights" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFloat)
+        , Proto.Field.descriptor "reviewers" "reviewers" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "cardinality.v1.Author")
+        , Proto.Field.descriptor "related_links" "relatedLinks" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "is_draft" "isDraft" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "title" "title" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorAuthor
+            , descriptorNote
+            ]
+            []
+        )
+        Proto.Registry.wellKnown

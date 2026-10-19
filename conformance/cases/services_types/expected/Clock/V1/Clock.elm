@@ -24,6 +24,109 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+now : () -> Rpc.Call () Time.Posix
+now =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.timestamp
+            descriptorNow
+        )
+
+
+sleep : Duration -> Rpc.Call Duration ()
+sleep =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeDuration
+            Proto.Json.empty
+            descriptorSleep
+        )
+
+
+mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
+mask =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeFieldMask
+            Proto.Json.struct
+            descriptorMask
+        )
+
+
+echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
+echo =
+    Rpc.call
+        (Proto.Method.method Basics.identity
+            Proto.Json.listValue
+            descriptorEcho
+        )
+
+
+ticks : Int -> Rpc.Call Int Int
+ticks =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeInt64AsInt
+            Proto.Json.uint64AsInt
+            descriptorTicks
+        )
+
+
+count : Int -> Rpc.Call Int Int
+count =
+    Rpc.call
+        (Proto.Method.method Json.Encode.int
+            Proto.Json.uint32
+            descriptorCount
+        )
+
+
+ratio : Float -> Rpc.Call Float Float
+ratio =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeFloat
+            Proto.Json.float
+            descriptorRatio
+        )
+
+
+name : String -> Rpc.Call String Bool
+name =
+    Rpc.call
+        (Proto.Method.method Json.Encode.string
+            Json.Decode.bool
+            descriptorName
+        )
+
+
+raw : String -> Rpc.Call String String
+raw =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeBytes
+            Proto.Json.bytes
+            descriptorRaw
+        )
+
+
+zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
+zone =
+    Rpc.call
+        (Proto.Method.method Zones.V1.encodeZoneRequest
+            Zones.V1.decodeZone
+            descriptorZone
+        )
+
+
+set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
+set =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeAlarm
+            Clock.V1.decodeAlarm
+            descriptorSet
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -135,106 +238,3 @@ descriptorSet =
         "clock.v1.Alarm"
         "clock.v1.Alarm"
         []
-
-
-
--- CALLS
-
-
-now : () -> Rpc.Call () Time.Posix
-now =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.timestamp
-            descriptorNow
-        )
-
-
-sleep : Duration -> Rpc.Call Duration ()
-sleep =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeDuration
-            Proto.Json.empty
-            descriptorSleep
-        )
-
-
-mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
-mask =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeFieldMask
-            Proto.Json.struct
-            descriptorMask
-        )
-
-
-echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
-echo =
-    Rpc.call
-        (Proto.Method.method Basics.identity
-            Proto.Json.listValue
-            descriptorEcho
-        )
-
-
-ticks : Int -> Rpc.Call Int Int
-ticks =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeInt64AsInt
-            Proto.Json.uint64AsInt
-            descriptorTicks
-        )
-
-
-count : Int -> Rpc.Call Int Int
-count =
-    Rpc.call
-        (Proto.Method.method Json.Encode.int
-            Proto.Json.uint32
-            descriptorCount
-        )
-
-
-ratio : Float -> Rpc.Call Float Float
-ratio =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeFloat
-            Proto.Json.float
-            descriptorRatio
-        )
-
-
-name : String -> Rpc.Call String Bool
-name =
-    Rpc.call
-        (Proto.Method.method Json.Encode.string
-            Json.Decode.bool
-            descriptorName
-        )
-
-
-raw : String -> Rpc.Call String String
-raw =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeBytes
-            Proto.Json.bytes
-            descriptorRaw
-        )
-
-
-zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
-zone =
-    Rpc.call
-        (Proto.Method.method Zones.V1.encodeZoneRequest
-            Zones.V1.decodeZone
-            descriptorZone
-        )
-
-
-set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
-set =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeAlarm
-            Clock.V1.decodeAlarm
-            descriptorSet
-        )

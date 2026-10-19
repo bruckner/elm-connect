@@ -55,6 +55,44 @@ defaultGetNoteRequest =
 
 
 
+-- ENCODERS
+
+
+encodeNote : Note -> Json.Encode.Value
+encodeNote value =
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "author", Maybe.map Api.Example.People.encodeUser value.author )
+        , ( "requiredRole", Proto.Json.implicit Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
+        ]
+
+
+encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest value =
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
+
+
+
+-- DECODERS
+
+
+decodeNote : Json.Decode.Decoder Note
+decodeNote =
+    Json.Decode.succeed Note
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
+        |> Proto.Json.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
+
+
+decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
+decodeGetNoteRequest =
+    Json.Decode.succeed GetNoteRequest
+        |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
 -- DESCRIPTORS
 
 
@@ -94,41 +132,3 @@ registry =
             []
         )
         (Proto.Registry.union Api.Example.People.registry Proto.Registry.wellKnown)
-
-
-
--- ENCODERS
-
-
-encodeNote : Note -> Json.Encode.Value
-encodeNote value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "author", Maybe.map Api.Example.People.encodeUser value.author )
-        , ( "requiredRole", Proto.Json.implicit Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
-        ]
-
-
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
-encodeGetNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        ]
-
-
-
--- DECODERS
-
-
-decodeNote : Json.Decode.Decoder Note
-decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
-        |> Proto.Json.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
-
-
-decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
-decodeGetNoteRequest =
-    Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string

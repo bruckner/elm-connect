@@ -165,160 +165,6 @@ defaultSum =
 
 
 
--- DESCRIPTORS
-
-
-descriptorOuterInnerKind : Proto.Enum.Descriptor
-descriptorOuterInnerKind =
-    Proto.Enum.descriptor "nesting.v1.Outer.Inner.Kind"
-        [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "KIND_DRAFT" 1
-        ]
-
-
-enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
-enumOuterInnerKind =
-    Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified descriptorOuterInnerKind
-
-
-descriptorOuter : Proto.Message.Descriptor
-descriptorOuter =
-    Proto.Message.descriptor "nesting.v1.Outer"
-        [ Proto.Field.descriptor "inner" "inner" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner")
-        , Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
-        , Proto.Field.descriptor "all" "all" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
-        ]
-
-
-messageOuter : Proto.Message.Message Outer
-messageOuter =
-    Proto.Message.message encodeOuter decodeOuter defaultOuter descriptorOuter
-
-
-descriptorOuterInner : Proto.Message.Descriptor
-descriptorOuterInner =
-    Proto.Message.descriptor "nesting.v1.Outer.Inner"
-        [ Proto.Field.descriptor "deepest" "deepest" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
-        ]
-
-
-messageOuterInner : Proto.Message.Message OuterInner
-messageOuterInner =
-    Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner descriptorOuterInner
-
-
-descriptorOuterInnerDeepest : Proto.Message.Descriptor
-descriptorOuterInnerDeepest =
-    Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest"
-        [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
-        ]
-
-
-messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
-messageOuterInnerDeepest =
-    Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest descriptorOuterInnerDeepest
-
-
-descriptorNode : Proto.Message.Descriptor
-descriptorNode =
-    Proto.Message.descriptor "nesting.v1.Node"
-        [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "children" "children" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
-        , Proto.Field.descriptor "by_name" "byName" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "nesting.v1.Node")
-        ]
-
-
-messageNode : Proto.Message.Message Node
-messageNode =
-    Proto.Message.message encodeNode decodeNode defaultNode descriptorNode
-
-
-descriptorPerson : Proto.Message.Descriptor
-descriptorPerson =
-    Proto.Message.descriptor "nesting.v1.Person"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "employer" "employer" 2 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "nesting.v1.Company")
-        ]
-
-
-messagePerson : Proto.Message.Message Person
-messagePerson =
-    Proto.Message.message encodePerson decodePerson defaultPerson descriptorPerson
-
-
-descriptorCompany : Proto.Message.Descriptor
-descriptorCompany =
-    Proto.Message.descriptor "nesting.v1.Company"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "staff" "staff" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Person")
-        ]
-
-
-messageCompany : Proto.Message.Message Company
-messageCompany =
-    Proto.Message.message encodeCompany decodeCompany defaultCompany descriptorCompany
-
-
-descriptorForest : Proto.Message.Descriptor
-descriptorForest =
-    Proto.Message.descriptor "nesting.v1.Forest"
-        [ Proto.Field.descriptor "trees" "trees" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
-        ]
-
-
-messageForest : Proto.Message.Message Forest
-messageForest =
-    Proto.Message.message encodeForest decodeForest defaultForest descriptorForest
-
-
-descriptorExpr : Proto.Message.Descriptor
-descriptorExpr =
-    Proto.Message.descriptor "nesting.v1.Expr"
-        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-            |> Proto.Field.inOneof "value"
-        , Proto.Field.descriptor "sum" "sum" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Sum")
-            |> Proto.Field.inOneof "value"
-        ]
-
-
-messageExpr : Proto.Message.Message Expr
-messageExpr =
-    Proto.Message.message encodeExpr decodeExpr defaultExpr descriptorExpr
-
-
-descriptorSum : Proto.Message.Descriptor
-descriptorSum =
-    Proto.Message.descriptor "nesting.v1.Sum"
-        [ Proto.Field.descriptor "terms" "terms" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Expr")
-        ]
-
-
-messageSum : Proto.Message.Message Sum
-messageSum =
-    Proto.Message.message encodeSum decodeSum defaultSum descriptorSum
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorOuter
-            , descriptorOuterInner
-            , descriptorOuterInnerDeepest
-            , descriptorNode
-            , descriptorPerson
-            , descriptorCompany
-            , descriptorForest
-            , descriptorExpr
-            , descriptorSum
-            ]
-            [ descriptorOuterInnerKind
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -524,3 +370,157 @@ decodeSum : Json.Decode.Decoder Sum
 decodeSum =
     Json.Decode.succeed Sum
         |> Proto.Json.field "terms" [] (Json.Decode.list decodeExpr)
+
+
+
+-- DESCRIPTORS
+
+
+descriptorOuterInnerKind : Proto.Enum.Descriptor
+descriptorOuterInnerKind =
+    Proto.Enum.descriptor "nesting.v1.Outer.Inner.Kind"
+        [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "KIND_DRAFT" 1
+        ]
+
+
+enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
+enumOuterInnerKind =
+    Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified descriptorOuterInnerKind
+
+
+descriptorOuter : Proto.Message.Descriptor
+descriptorOuter =
+    Proto.Message.descriptor "nesting.v1.Outer"
+        [ Proto.Field.descriptor "inner" "inner" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner")
+        , Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        , Proto.Field.descriptor "all" "all" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
+        ]
+
+
+messageOuter : Proto.Message.Message Outer
+messageOuter =
+    Proto.Message.message encodeOuter decodeOuter defaultOuter descriptorOuter
+
+
+descriptorOuterInner : Proto.Message.Descriptor
+descriptorOuterInner =
+    Proto.Message.descriptor "nesting.v1.Outer.Inner"
+        [ Proto.Field.descriptor "deepest" "deepest" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner.Deepest")
+        ]
+
+
+messageOuterInner : Proto.Message.Message OuterInner
+messageOuterInner =
+    Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner descriptorOuterInner
+
+
+descriptorOuterInnerDeepest : Proto.Message.Descriptor
+descriptorOuterInnerDeepest =
+    Proto.Message.descriptor "nesting.v1.Outer.Inner.Deepest"
+        [ Proto.Field.descriptor "kind" "kind" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "nesting.v1.Outer.Inner.Kind")
+        ]
+
+
+messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
+messageOuterInnerDeepest =
+    Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest descriptorOuterInnerDeepest
+
+
+descriptorNode : Proto.Message.Descriptor
+descriptorNode =
+    Proto.Message.descriptor "nesting.v1.Node"
+        [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "children" "children" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
+        , Proto.Field.descriptor "by_name" "byName" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "nesting.v1.Node")
+        ]
+
+
+messageNode : Proto.Message.Message Node
+messageNode =
+    Proto.Message.message encodeNode decodeNode defaultNode descriptorNode
+
+
+descriptorPerson : Proto.Message.Descriptor
+descriptorPerson =
+    Proto.Message.descriptor "nesting.v1.Person"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "employer" "employer" 2 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "nesting.v1.Company")
+        ]
+
+
+messagePerson : Proto.Message.Message Person
+messagePerson =
+    Proto.Message.message encodePerson decodePerson defaultPerson descriptorPerson
+
+
+descriptorCompany : Proto.Message.Descriptor
+descriptorCompany =
+    Proto.Message.descriptor "nesting.v1.Company"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "staff" "staff" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Person")
+        ]
+
+
+messageCompany : Proto.Message.Message Company
+messageCompany =
+    Proto.Message.message encodeCompany decodeCompany defaultCompany descriptorCompany
+
+
+descriptorForest : Proto.Message.Descriptor
+descriptorForest =
+    Proto.Message.descriptor "nesting.v1.Forest"
+        [ Proto.Field.descriptor "trees" "trees" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
+        ]
+
+
+messageForest : Proto.Message.Message Forest
+messageForest =
+    Proto.Message.message encodeForest decodeForest defaultForest descriptorForest
+
+
+descriptorExpr : Proto.Message.Descriptor
+descriptorExpr =
+    Proto.Message.descriptor "nesting.v1.Expr"
+        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+            |> Proto.Field.inOneof "value"
+        , Proto.Field.descriptor "sum" "sum" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Sum")
+            |> Proto.Field.inOneof "value"
+        ]
+
+
+messageExpr : Proto.Message.Message Expr
+messageExpr =
+    Proto.Message.message encodeExpr decodeExpr defaultExpr descriptorExpr
+
+
+descriptorSum : Proto.Message.Descriptor
+descriptorSum =
+    Proto.Message.descriptor "nesting.v1.Sum"
+        [ Proto.Field.descriptor "terms" "terms" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Expr")
+        ]
+
+
+messageSum : Proto.Message.Message Sum
+messageSum =
+    Proto.Message.message encodeSum decodeSum defaultSum descriptorSum
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorOuter
+            , descriptorOuterInner
+            , descriptorOuterInnerDeepest
+            , descriptorNode
+            , descriptorPerson
+            , descriptorCompany
+            , descriptorForest
+            , descriptorExpr
+            , descriptorSum
+            ]
+            [ descriptorOuterInnerKind
+            ]
+        )
+        Proto.Registry.wellKnown

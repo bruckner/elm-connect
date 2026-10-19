@@ -76,69 +76,6 @@ defaultTeam =
 
 
 
--- DESCRIPTORS
-
-
-descriptorRole : Proto.Enum.Descriptor
-descriptorRole =
-    Proto.Enum.descriptor "maps.v1.Role"
-        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "ROLE_OWNER" 1
-        ]
-
-
-enumRole : Proto.Enum.Enum Role
-enumRole =
-    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
-
-
-descriptorMember : Proto.Message.Descriptor
-descriptorMember =
-    Proto.Message.descriptor "maps.v1.Member"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageMember : Proto.Message.Message Member
-messageMember =
-    Proto.Message.message encodeMember decodeMember defaultMember descriptorMember
-
-
-descriptorTeam : Proto.Message.Descriptor
-descriptorTeam =
-    Proto.Message.descriptor "maps.v1.Team"
-        [ Proto.Field.descriptor "labels" "labels" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "by_seat" "bySeat" 2 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "scores" "scores" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarUint32) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        , Proto.Field.descriptor "flags" "flags" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarSint32) (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "totals" "totals" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed32) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
-        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum "maps.v1.Role")
-        , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageTeam : Proto.Message.Message Team
-messageTeam =
-    Proto.Message.message encodeTeam decodeTeam defaultTeam descriptorTeam
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorMember
-            , descriptorTeam
-            ]
-            [ descriptorRole
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -207,3 +144,66 @@ decodeTeam =
         |> Proto.Json.field "members" Dict.empty (Json.Decode.dict decodeMember)
         |> Proto.Json.field "roles" Dict.empty (Proto.Json.intDict decodeRole)
         |> Proto.Json.fieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Json.Decode.string)
+
+
+
+-- DESCRIPTORS
+
+
+descriptorRole : Proto.Enum.Descriptor
+descriptorRole =
+    Proto.Enum.descriptor "maps.v1.Role"
+        [ Proto.EnumValue.descriptor "ROLE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "ROLE_OWNER" 1
+        ]
+
+
+enumRole : Proto.Enum.Enum Role
+enumRole =
+    Proto.Enum.enum encodeRole decodeRole RoleUnspecified descriptorRole
+
+
+descriptorMember : Proto.Message.Descriptor
+descriptorMember =
+    Proto.Message.descriptor "maps.v1.Member"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageMember : Proto.Message.Message Member
+messageMember =
+    Proto.Message.message encodeMember decodeMember defaultMember descriptorMember
+
+
+descriptorTeam : Proto.Message.Descriptor
+descriptorTeam =
+    Proto.Message.descriptor "maps.v1.Team"
+        [ Proto.Field.descriptor "labels" "labels" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "by_seat" "bySeat" 2 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "scores" "scores" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarUint32) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        , Proto.Field.descriptor "flags" "flags" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarSint32) (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "totals" "totals" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed32) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
+        , Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum "maps.v1.Role")
+        , Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageTeam : Proto.Message.Message Team
+messageTeam =
+    Proto.Message.message encodeTeam decodeTeam defaultTeam descriptorTeam
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorMember
+            , descriptorTeam
+            ]
+            [ descriptorRole
+            ]
+        )
+        Proto.Registry.wellKnown

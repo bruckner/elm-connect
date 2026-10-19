@@ -57,41 +57,6 @@ defaultNote =
 
 
 
--- DESCRIPTORS
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
-        , Proto.Field.descriptor "readers" "readers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum "users.v1.Role")
-        , Proto.Field.descriptor "user" "user" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-            |> Proto.Field.inOneof "owner"
-        , Proto.Field.descriptor "team" "team" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "owner"
-        ]
-
-
-messageNote : Proto.Message.Message Note
-messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorNote
-            ]
-            []
-        )
-        (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
-
-
-
 -- ENCODERS
 
 
@@ -145,3 +110,38 @@ decodeNoteOwner =
         [ Proto.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
         , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Json.Decode.string)
         ]
+
+
+
+-- DESCRIPTORS
+
+
+descriptorNote : Proto.Message.Descriptor
+descriptorNote =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "readers" "readers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "users.v1.User")
+        , Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum "users.v1.Role")
+        , Proto.Field.descriptor "user" "user" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+            |> Proto.Field.inOneof "owner"
+        , Proto.Field.descriptor "team" "team" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "owner"
+        ]
+
+
+messageNote : Proto.Message.Message Note
+messageNote =
+    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorNote
+            ]
+            []
+        )
+        (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)

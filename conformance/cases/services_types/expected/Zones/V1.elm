@@ -52,6 +52,42 @@ defaultZone =
 
 
 
+-- ENCODERS
+
+
+encodeZoneRequest : ZoneRequest -> Json.Encode.Value
+encodeZoneRequest value =
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
+
+
+encodeZone : Zone -> Json.Encode.Value
+encodeZone value =
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "offsetSeconds", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
+        ]
+
+
+
+-- DECODERS
+
+
+decodeZoneRequest : Json.Decode.Decoder ZoneRequest
+decodeZoneRequest =
+    Json.Decode.succeed ZoneRequest
+        |> Proto.Json.field "name" "" Json.Decode.string
+
+
+decodeZone : Json.Decode.Decoder Zone
+decodeZone =
+    Json.Decode.succeed Zone
+        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt
+
+
+
 -- DESCRIPTORS
 
 
@@ -90,39 +126,3 @@ registry =
             []
         )
         Proto.Registry.wellKnown
-
-
-
--- ENCODERS
-
-
-encodeZoneRequest : ZoneRequest -> Json.Encode.Value
-encodeZoneRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        ]
-
-
-encodeZone : Zone -> Json.Encode.Value
-encodeZone value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "offsetSeconds", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
-        ]
-
-
-
--- DECODERS
-
-
-decodeZoneRequest : Json.Decode.Decoder ZoneRequest
-decodeZoneRequest =
-    Json.Decode.succeed ZoneRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
-
-
-decodeZone : Json.Decode.Decoder Zone
-decodeZone =
-    Json.Decode.succeed Zone
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.fieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt

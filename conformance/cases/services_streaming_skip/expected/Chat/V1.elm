@@ -39,6 +39,27 @@ defaultLine =
 
 
 
+-- ENCODERS
+
+
+encodeLine : Line -> Json.Encode.Value
+encodeLine value =
+    Proto.Json.object
+        [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
+        ]
+
+
+
+-- DECODERS
+
+
+decodeLine : Json.Decode.Decoder Line
+decodeLine =
+    Json.Decode.succeed Line
+        |> Proto.Json.field "text" "" Json.Decode.string
+
+
+
 -- DESCRIPTORS
 
 
@@ -63,24 +84,3 @@ registry =
             []
         )
         Proto.Registry.wellKnown
-
-
-
--- ENCODERS
-
-
-encodeLine : Line -> Json.Encode.Value
-encodeLine value =
-    Proto.Json.object
-        [ ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
-        ]
-
-
-
--- DECODERS
-
-
-decodeLine : Json.Decode.Decoder Line
-decodeLine =
-    Json.Decode.succeed Line
-        |> Proto.Json.field "text" "" Json.Decode.string

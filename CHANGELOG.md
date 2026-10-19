@@ -773,3 +773,7 @@ tag (design §8).
   any, a list of one included, rather than only from two elements on.
   A path variable's field names and template, a query parameter's
   field names and a field's behaviors stay on one line (design §3.1).
+- Generated modules put their descriptors last: a package's sections are
+  types, defaults, encoders, decoders, descriptors (with the registry),
+  and a service's are calls, then descriptors. The declarations are
+  unchanged; the order is not API (design §3.1).

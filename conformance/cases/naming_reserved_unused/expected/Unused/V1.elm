@@ -97,6 +97,103 @@ defaultTrue =
 
 
 
+-- ENCODERS
+
+
+encodeChar : Char -> Json.Encode.Value
+encodeChar value =
+    case value of
+        CharUnspecified ->
+            Json.Encode.string "CHAR_UNSPECIFIED"
+
+        CharA ->
+            Json.Encode.string "CHAR_A"
+
+
+encodeDict : Dict -> Json.Encode.Value
+encodeDict value =
+    Proto.Json.object
+        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        ]
+
+
+encodeResult : Result -> Json.Encode.Value
+encodeResult value =
+    Proto.Json.object
+        [ ( "ok", Proto.Json.implicit False Json.Encode.bool value.ok )
+        , ( "dict", Maybe.map encodeDict value.dict )
+        , ( "chars", Proto.Json.repeated encodeChar value.chars )
+        ]
+
+
+encodeOrder : Order -> Json.Encode.Value
+encodeOrder _ =
+    Json.Encode.object []
+
+
+encodeNever : Never -> Json.Encode.Value
+encodeNever _ =
+    Json.Encode.object []
+
+
+encodeCmd : Cmd -> Json.Encode.Value
+encodeCmd _ =
+    Json.Encode.object []
+
+
+encodeTrue : True -> Json.Encode.Value
+encodeTrue _ =
+    Json.Encode.object []
+
+
+
+-- DECODERS
+
+
+decodeChar : Json.Decode.Decoder Char
+decodeChar =
+    Proto.Json.enum "Char"
+        CharUnspecified
+        [ ( "CHAR_UNSPECIFIED", 0, CharUnspecified )
+        , ( "CHAR_A", 1, CharA )
+        ]
+
+
+decodeDict : Json.Decode.Decoder Dict
+decodeDict =
+    Json.Decode.succeed Dict
+        |> Proto.Json.field "name" "" Json.Decode.string
+
+
+decodeResult : Json.Decode.Decoder Result
+decodeResult =
+    Json.Decode.succeed Result
+        |> Proto.Json.field "ok" False Json.Decode.bool
+        |> Proto.Json.field "dict" Nothing (Json.Decode.map Just decodeDict)
+        |> Proto.Json.field "chars" [] (Json.Decode.list decodeChar)
+
+
+decodeOrder : Json.Decode.Decoder Order
+decodeOrder =
+    Json.Decode.succeed {}
+
+
+decodeNever : Json.Decode.Decoder Never
+decodeNever =
+    Json.Decode.succeed {}
+
+
+decodeCmd : Json.Decode.Decoder Cmd
+decodeCmd =
+    Json.Decode.succeed {}
+
+
+decodeTrue : Json.Decode.Decoder True
+decodeTrue =
+    Json.Decode.succeed {}
+
+
+
 -- DESCRIPTORS
 
 
@@ -194,100 +291,3 @@ registry =
             ]
         )
         Proto.Registry.wellKnown
-
-
-
--- ENCODERS
-
-
-encodeChar : Char -> Json.Encode.Value
-encodeChar value =
-    case value of
-        CharUnspecified ->
-            Json.Encode.string "CHAR_UNSPECIFIED"
-
-        CharA ->
-            Json.Encode.string "CHAR_A"
-
-
-encodeDict : Dict -> Json.Encode.Value
-encodeDict value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        ]
-
-
-encodeResult : Result -> Json.Encode.Value
-encodeResult value =
-    Proto.Json.object
-        [ ( "ok", Proto.Json.implicit False Json.Encode.bool value.ok )
-        , ( "dict", Maybe.map encodeDict value.dict )
-        , ( "chars", Proto.Json.repeated encodeChar value.chars )
-        ]
-
-
-encodeOrder : Order -> Json.Encode.Value
-encodeOrder _ =
-    Json.Encode.object []
-
-
-encodeNever : Never -> Json.Encode.Value
-encodeNever _ =
-    Json.Encode.object []
-
-
-encodeCmd : Cmd -> Json.Encode.Value
-encodeCmd _ =
-    Json.Encode.object []
-
-
-encodeTrue : True -> Json.Encode.Value
-encodeTrue _ =
-    Json.Encode.object []
-
-
-
--- DECODERS
-
-
-decodeChar : Json.Decode.Decoder Char
-decodeChar =
-    Proto.Json.enum "Char"
-        CharUnspecified
-        [ ( "CHAR_UNSPECIFIED", 0, CharUnspecified )
-        , ( "CHAR_A", 1, CharA )
-        ]
-
-
-decodeDict : Json.Decode.Decoder Dict
-decodeDict =
-    Json.Decode.succeed Dict
-        |> Proto.Json.field "name" "" Json.Decode.string
-
-
-decodeResult : Json.Decode.Decoder Result
-decodeResult =
-    Json.Decode.succeed Result
-        |> Proto.Json.field "ok" False Json.Decode.bool
-        |> Proto.Json.field "dict" Nothing (Json.Decode.map Just decodeDict)
-        |> Proto.Json.field "chars" [] (Json.Decode.list decodeChar)
-
-
-decodeOrder : Json.Decode.Decoder Order
-decodeOrder =
-    Json.Decode.succeed {}
-
-
-decodeNever : Json.Decode.Decoder Never
-decodeNever =
-    Json.Decode.succeed {}
-
-
-decodeCmd : Json.Decode.Decoder Cmd
-decodeCmd =
-    Json.Decode.succeed {}
-
-
-decodeTrue : Json.Decode.Decoder True
-decodeTrue =
-    Json.Decode.succeed {}

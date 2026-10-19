@@ -17,6 +17,37 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
+getTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorGetTask
+        )
+
+
+putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
+putTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeTask
+            Tasks.V1.decodeTask
+            descriptorPutTask
+        )
+
+
+closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
+closeTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorCloseTask
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -48,34 +79,3 @@ descriptorCloseTask =
         "tasks.v1.GetTaskRequest"
         "tasks.v1.Task"
         []
-
-
-
--- CALLS
-
-
-getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
-getTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
-            descriptorGetTask
-        )
-
-
-putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
-putTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeTask
-            Tasks.V1.decodeTask
-            descriptorPutTask
-        )
-
-
-closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
-closeTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
-            descriptorCloseTask
-        )

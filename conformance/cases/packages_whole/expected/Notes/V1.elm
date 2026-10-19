@@ -52,6 +52,42 @@ defaultTag =
 
 
 
+-- ENCODERS
+
+
+encodeNote : Note -> Json.Encode.Value
+encodeNote value =
+    Proto.Json.object
+        [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        , ( "tags", Proto.Json.repeated encodeTag value.tags )
+        ]
+
+
+encodeTag : Tag -> Json.Encode.Value
+encodeTag value =
+    Proto.Json.object
+        [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label )
+        ]
+
+
+
+-- DECODERS
+
+
+decodeNote : Json.Decode.Decoder Note
+decodeNote =
+    Json.Decode.succeed Note
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
+
+
+decodeTag : Json.Decode.Decoder Tag
+decodeTag =
+    Json.Decode.succeed Tag
+        |> Proto.Json.field "label" "" Json.Decode.string
+
+
+
 -- DESCRIPTORS
 
 
@@ -90,39 +126,3 @@ registry =
             []
         )
         Proto.Registry.wellKnown
-
-
-
--- ENCODERS
-
-
-encodeNote : Note -> Json.Encode.Value
-encodeNote value =
-    Proto.Json.object
-        [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
-        , ( "tags", Proto.Json.repeated encodeTag value.tags )
-        ]
-
-
-encodeTag : Tag -> Json.Encode.Value
-encodeTag value =
-    Proto.Json.object
-        [ ( "label", Proto.Json.implicit "" Json.Encode.string value.label )
-        ]
-
-
-
--- DECODERS
-
-
-decodeNote : Json.Decode.Decoder Note
-decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Json.Decode.string
-        |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
-
-
-decodeTag : Json.Decode.Decoder Tag
-decodeTag =
-    Json.Decode.succeed Tag
-        |> Proto.Json.field "label" "" Json.Decode.string

@@ -18,6 +18,28 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
+forward =
+    Rpc.call
+        (Proto.Method.method Proto.Any.encodeJson
+            Proto.Any.jsonDecoder
+            descriptorForward
+        )
+
+
+send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
+send =
+    Rpc.call
+        (Proto.Method.method Envelope.V1.encodeEnvelope
+            Envelope.V1.decodeEnvelope
+            descriptorSend
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -39,25 +61,3 @@ descriptorSend =
         "envelope.v1.Envelope"
         "envelope.v1.Envelope"
         []
-
-
-
--- CALLS
-
-
-forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
-forward =
-    Rpc.call
-        (Proto.Method.method Proto.Any.encodeJson
-            Proto.Any.jsonDecoder
-            descriptorForward
-        )
-
-
-send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
-send =
-    Rpc.call
-        (Proto.Method.method Envelope.V1.encodeEnvelope
-            Envelope.V1.decodeEnvelope
-            descriptorSend
-        )

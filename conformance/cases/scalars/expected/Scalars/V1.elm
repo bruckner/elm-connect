@@ -80,60 +80,6 @@ defaultEmpty =
 
 
 
--- DESCRIPTORS
-
-
-descriptorScalars : Proto.Message.Descriptor
-descriptorScalars =
-    Proto.Message.descriptor "scalars.v1.Scalars"
-        [ Proto.Field.descriptor "double_value" "doubleValue" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        , Proto.Field.descriptor "float_value" "floatValue" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
-        , Proto.Field.descriptor "int32_value" "int32Value" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "int64_value" "int64Value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "uint32_value" "uint32Value" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
-        , Proto.Field.descriptor "uint64_value" "uint64Value" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
-        , Proto.Field.descriptor "sint32_value" "sint32Value" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint32)
-        , Proto.Field.descriptor "sint64_value" "sint64Value" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint64)
-        , Proto.Field.descriptor "fixed32_value" "fixed32Value" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed32)
-        , Proto.Field.descriptor "fixed64_value" "fixed64Value" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
-        , Proto.Field.descriptor "sfixed32_value" "sfixed32Value" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed32)
-        , Proto.Field.descriptor "sfixed64_value" "sfixed64Value" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
-        , Proto.Field.descriptor "bool_value" "boolValue" 13 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "string_value" "text" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "bytes_value" "bytesValue" 15 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "small_count" "smallCount" 16 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "exact_total" "exactTotal" 17 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
-        ]
-
-
-messageScalars : Proto.Message.Message Scalars
-messageScalars =
-    Proto.Message.message encodeScalars decodeScalars defaultScalars descriptorScalars
-
-
-descriptorEmpty : Proto.Message.Descriptor
-descriptorEmpty =
-    Proto.Message.descriptor "scalars.v1.Empty" []
-
-
-messageEmpty : Proto.Message.Message Empty
-messageEmpty =
-    Proto.Message.message encodeEmpty decodeEmpty defaultEmpty descriptorEmpty
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorScalars
-            , descriptorEmpty
-            ]
-            []
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -194,3 +140,57 @@ decodeScalars =
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =
     Json.Decode.succeed {}
+
+
+
+-- DESCRIPTORS
+
+
+descriptorScalars : Proto.Message.Descriptor
+descriptorScalars =
+    Proto.Message.descriptor "scalars.v1.Scalars"
+        [ Proto.Field.descriptor "double_value" "doubleValue" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        , Proto.Field.descriptor "float_value" "floatValue" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
+        , Proto.Field.descriptor "int32_value" "int32Value" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "int64_value" "int64Value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "uint32_value" "uint32Value" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        , Proto.Field.descriptor "uint64_value" "uint64Value" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        , Proto.Field.descriptor "sint32_value" "sint32Value" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint32)
+        , Proto.Field.descriptor "sint64_value" "sint64Value" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint64)
+        , Proto.Field.descriptor "fixed32_value" "fixed32Value" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed32)
+        , Proto.Field.descriptor "fixed64_value" "fixed64Value" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
+        , Proto.Field.descriptor "sfixed32_value" "sfixed32Value" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed32)
+        , Proto.Field.descriptor "sfixed64_value" "sfixed64Value" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
+        , Proto.Field.descriptor "bool_value" "boolValue" 13 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        , Proto.Field.descriptor "string_value" "text" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "bytes_value" "bytesValue" 15 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+        , Proto.Field.descriptor "small_count" "smallCount" 16 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        , Proto.Field.descriptor "exact_total" "exactTotal" 17 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        ]
+
+
+messageScalars : Proto.Message.Message Scalars
+messageScalars =
+    Proto.Message.message encodeScalars decodeScalars defaultScalars descriptorScalars
+
+
+descriptorEmpty : Proto.Message.Descriptor
+descriptorEmpty =
+    Proto.Message.descriptor "scalars.v1.Empty" []
+
+
+messageEmpty : Proto.Message.Message Empty
+messageEmpty =
+    Proto.Message.message encodeEmpty decodeEmpty defaultEmpty descriptorEmpty
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorScalars
+            , descriptorEmpty
+            ]
+            []
+        )
+        Proto.Registry.wellKnown

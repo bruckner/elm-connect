@@ -19,6 +19,100 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+        )
+
+
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+        )
+
+
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
+            descriptorUpdateNote
+        )
+
+
+replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeNote
+            Notes.V1.decodeNote
+            descriptorReplaceNote
+        )
+
+
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
+deleteNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
+            descriptorDeleteNote
+        )
+
+
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
+            descriptorArchiveNote
+        )
+
+
+readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
+readFile =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeReadFileRequest
+            Notes.V1.decodeSummary
+            descriptorReadFile
+        )
+
+
+ping : () -> Rpc.Call () ()
+ping =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+        )
+
+
+summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -244,97 +338,3 @@ descriptorSummarize =
         "notes.v1.GetNoteRequest"
         "notes.v1.Summary"
         []
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
-listNotes =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            descriptorListNotes
-        )
-
-
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
-createNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            descriptorCreateNote
-        )
-
-
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
-updateNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            descriptorUpdateNote
-        )
-
-
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
-replaceNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            descriptorReplaceNote
-        )
-
-
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
-deleteNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
-            descriptorDeleteNote
-        )
-
-
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
-archiveNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
-            descriptorArchiveNote
-        )
-
-
-readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
-readFile =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeReadFileRequest
-            Notes.V1.decodeSummary
-            descriptorReadFile
-        )
-
-
-ping : () -> Rpc.Call () ()
-ping =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
-        )
-
-
-summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )

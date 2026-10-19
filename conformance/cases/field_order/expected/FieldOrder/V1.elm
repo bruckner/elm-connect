@@ -73,68 +73,6 @@ defaultDraftMargin =
 
 
 
--- DESCRIPTORS
-
-
-descriptorMood : Proto.Enum.Descriptor
-descriptorMood =
-    Proto.Enum.descriptor "field_order.v1.Mood"
-        [ Proto.EnumValue.descriptor "MOOD_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "MOOD_CALM" 1
-        ]
-
-
-enumMood : Proto.Enum.Enum Mood
-enumMood =
-    Proto.Enum.enum encodeMood decodeMood MoodUnspecified descriptorMood
-
-
-descriptorDraft : Proto.Message.Descriptor
-descriptorDraft =
-    Proto.Message.descriptor "field_order.v1.Draft"
-        [ Proto.Field.descriptor "title" "title" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "text" "text" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "body"
-        , Proto.Field.descriptor "blob" "blob" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-            |> Proto.Field.inOneof "body"
-        , Proto.Field.descriptor "mood" "mood" 6 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "field_order.v1.Mood")
-        , Proto.Field.descriptor "margin" "margin" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "field_order.v1.Draft.Margin")
-        , Proto.Field.descriptor "tags" "tags" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
-
-
-messageDraft : Proto.Message.Message Draft
-messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft descriptorDraft
-
-
-descriptorDraftMargin : Proto.Message.Descriptor
-descriptorDraftMargin =
-    Proto.Message.descriptor "field_order.v1.Draft.Margin"
-        [ Proto.Field.descriptor "left" "left" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "right" "right" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        ]
-
-
-messageDraftMargin : Proto.Message.Message DraftMargin
-messageDraftMargin =
-    Proto.Message.message encodeDraftMargin decodeDraftMargin defaultDraftMargin descriptorDraftMargin
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorDraft
-            , descriptorDraftMargin
-            ]
-            [ descriptorMood
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -220,3 +158,65 @@ decodeDraftMargin =
     Json.Decode.succeed DraftMargin
         |> Proto.Json.field "left" 0 Proto.Json.int32
         |> Proto.Json.field "right" 0 Proto.Json.int32
+
+
+
+-- DESCRIPTORS
+
+
+descriptorMood : Proto.Enum.Descriptor
+descriptorMood =
+    Proto.Enum.descriptor "field_order.v1.Mood"
+        [ Proto.EnumValue.descriptor "MOOD_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "MOOD_CALM" 1
+        ]
+
+
+enumMood : Proto.Enum.Enum Mood
+enumMood =
+    Proto.Enum.enum encodeMood decodeMood MoodUnspecified descriptorMood
+
+
+descriptorDraft : Proto.Message.Descriptor
+descriptorDraft =
+    Proto.Message.descriptor "field_order.v1.Draft"
+        [ Proto.Field.descriptor "title" "title" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "text" "text" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "blob" "blob" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "mood" "mood" 6 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "field_order.v1.Mood")
+        , Proto.Field.descriptor "margin" "margin" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "field_order.v1.Draft.Margin")
+        , Proto.Field.descriptor "tags" "tags" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        ]
+
+
+messageDraft : Proto.Message.Message Draft
+messageDraft =
+    Proto.Message.message encodeDraft decodeDraft defaultDraft descriptorDraft
+
+
+descriptorDraftMargin : Proto.Message.Descriptor
+descriptorDraftMargin =
+    Proto.Message.descriptor "field_order.v1.Draft.Margin"
+        [ Proto.Field.descriptor "left" "left" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        , Proto.Field.descriptor "right" "right" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        ]
+
+
+messageDraftMargin : Proto.Message.Message DraftMargin
+messageDraftMargin =
+    Proto.Message.message encodeDraftMargin decodeDraftMargin defaultDraftMargin descriptorDraftMargin
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorDraft
+            , descriptorDraftMargin
+            ]
+            [ descriptorMood
+            ]
+        )
+        Proto.Registry.wellKnown

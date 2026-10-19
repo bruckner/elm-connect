@@ -55,40 +55,6 @@ defaultEnvelope =
 
 
 
--- DESCRIPTORS
-
-
-descriptorEnvelope : Proto.Message.Descriptor
-descriptorEnvelope =
-    Proto.Message.descriptor "envelope.v1.Envelope"
-        [ Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "payload" "payload" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "attachments" "attachments" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "headers" "headers" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "packed" "packed" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-            |> Proto.Field.inOneof "body"
-        , Proto.Field.descriptor "text" "text" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "body"
-        ]
-
-
-messageEnvelope : Proto.Message.Message Envelope
-messageEnvelope =
-    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope descriptorEnvelope
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorEnvelope
-            ]
-            []
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -140,3 +106,37 @@ decodeEnvelopeBody =
         [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked Proto.Any.jsonDecoder)
         , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Json.Decode.string)
         ]
+
+
+
+-- DESCRIPTORS
+
+
+descriptorEnvelope : Proto.Message.Descriptor
+descriptorEnvelope =
+    Proto.Message.descriptor "envelope.v1.Envelope"
+        [ Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "payload" "payload" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "attachments" "attachments" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "headers" "headers" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Any")
+        , Proto.Field.descriptor "packed" "packed" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
+            |> Proto.Field.inOneof "body"
+        , Proto.Field.descriptor "text" "text" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "body"
+        ]
+
+
+messageEnvelope : Proto.Message.Message Envelope
+messageEnvelope =
+    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope descriptorEnvelope
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorEnvelope
+            ]
+            []
+        )
+        Proto.Registry.wellKnown

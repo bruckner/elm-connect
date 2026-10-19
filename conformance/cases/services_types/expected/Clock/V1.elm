@@ -40,6 +40,27 @@ defaultAlarm =
 
 
 
+-- ENCODERS
+
+
+encodeAlarm : Alarm -> Json.Encode.Value
+encodeAlarm value =
+    Proto.Json.object
+        [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
+        ]
+
+
+
+-- DECODERS
+
+
+decodeAlarm : Json.Decode.Decoder Alarm
+decodeAlarm =
+    Json.Decode.succeed Alarm
+        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+
+
+
 -- DESCRIPTORS
 
 
@@ -64,24 +85,3 @@ registry =
             []
         )
         Proto.Registry.wellKnown
-
-
-
--- ENCODERS
-
-
-encodeAlarm : Alarm -> Json.Encode.Value
-encodeAlarm value =
-    Proto.Json.object
-        [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
-        ]
-
-
-
--- DECODERS
-
-
-decodeAlarm : Json.Decode.Decoder Alarm
-decodeAlarm =
-    Json.Decode.succeed Alarm
-        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)

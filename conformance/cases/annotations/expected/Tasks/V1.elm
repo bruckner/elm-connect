@@ -76,80 +76,6 @@ defaultGetTaskRequest =
 
 
 
--- DESCRIPTORS
-
-
-descriptorState : Proto.Enum.Descriptor
-descriptorState =
-    Proto.Enum.descriptor "tasks.v1.State"
-        [ Proto.EnumValue.descriptor "STATE_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "STATE_OPEN" 1
-        , Proto.EnumValue.descriptor "STATE_STALE" 2
-            |> Proto.EnumValue.withDeprecated
-        ]
-
-
-enumState : Proto.Enum.Enum State
-enumState =
-    Proto.Enum.enum encodeState decodeState StateUnspecified descriptorState
-
-
-descriptorTask : Proto.Message.Descriptor
-descriptorTask =
-    Proto.Message.descriptor "tasks.v1.Task"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
-        , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
-        , Proto.Field.descriptor "state" "state" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "tasks.v1.State")
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
-        , Proto.Field.descriptor "labels" "labels" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
-        , Proto.Field.descriptor "owner" "owner" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOptional, Proto.Field.BehaviorImmutable ]
-            |> Proto.Field.withDeprecated
-        , Proto.Field.descriptor "notes" "notes" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "date" "date" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "due"
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorInputOnly ]
-        , Proto.Field.descriptor "never" "never" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "due"
-            |> Proto.Field.withDeprecated
-        ]
-
-
-messageTask : Proto.Message.Message Task
-messageTask =
-    Proto.Message.message encodeTask decodeTask defaultTask descriptorTask
-
-
-descriptorGetTaskRequest : Proto.Message.Descriptor
-descriptorGetTaskRequest =
-    Proto.Message.descriptor "tasks.v1.GetTaskRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
-        ]
-
-
-messageGetTaskRequest : Proto.Message.Message GetTaskRequest
-messageGetTaskRequest =
-    Proto.Message.message encodeGetTaskRequest decodeGetTaskRequest defaultGetTaskRequest descriptorGetTaskRequest
-
-
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
-            [ descriptorTask
-            , descriptorGetTaskRequest
-            ]
-            [ descriptorState
-            ]
-        )
-        Proto.Registry.wellKnown
-
-
-
 -- ENCODERS
 
 
@@ -241,3 +167,77 @@ decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
     Json.Decode.succeed GetTaskRequest
         |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
+-- DESCRIPTORS
+
+
+descriptorState : Proto.Enum.Descriptor
+descriptorState =
+    Proto.Enum.descriptor "tasks.v1.State"
+        [ Proto.EnumValue.descriptor "STATE_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "STATE_OPEN" 1
+        , Proto.EnumValue.descriptor "STATE_STALE" 2
+            |> Proto.EnumValue.withDeprecated
+        ]
+
+
+enumState : Proto.Enum.Enum State
+enumState =
+    Proto.Enum.enum encodeState decodeState StateUnspecified descriptorState
+
+
+descriptorTask : Proto.Message.Descriptor
+descriptorTask =
+    Proto.Message.descriptor "tasks.v1.Task"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
+        , Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
+        , Proto.Field.descriptor "state" "state" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "tasks.v1.State")
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
+        , Proto.Field.descriptor "labels" "labels" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
+        , Proto.Field.descriptor "owner" "owner" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorOptional, Proto.Field.BehaviorImmutable ]
+            |> Proto.Field.withDeprecated
+        , Proto.Field.descriptor "notes" "notes" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        , Proto.Field.descriptor "date" "date" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "due"
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorInputOnly ]
+        , Proto.Field.descriptor "never" "never" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.inOneof "due"
+            |> Proto.Field.withDeprecated
+        ]
+
+
+messageTask : Proto.Message.Message Task
+messageTask =
+    Proto.Message.message encodeTask decodeTask defaultTask descriptorTask
+
+
+descriptorGetTaskRequest : Proto.Message.Descriptor
+descriptorGetTaskRequest =
+    Proto.Message.descriptor "tasks.v1.GetTaskRequest"
+        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+            |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
+        ]
+
+
+messageGetTaskRequest : Proto.Message.Message GetTaskRequest
+messageGetTaskRequest =
+    Proto.Message.message encodeGetTaskRequest decodeGetTaskRequest defaultGetTaskRequest descriptorGetTaskRequest
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.union
+        (Proto.Registry.fromDescriptors
+            [ descriptorTask
+            , descriptorGetTaskRequest
+            ]
+            [ descriptorState
+            ]
+        )
+        Proto.Registry.wellKnown

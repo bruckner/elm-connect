@@ -18,6 +18,19 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
+            Api.Example.Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -40,16 +53,3 @@ descriptorGetNote =
             , query = []
             }
         ]
-
-
-
--- CALLS
-
-
-getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
-            Api.Example.Notes.V1.decodeNote
-            descriptorGetNote
-        )

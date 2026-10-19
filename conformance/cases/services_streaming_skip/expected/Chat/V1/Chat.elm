@@ -17,6 +17,19 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
+send =
+    Rpc.call
+        (Proto.Method.method Chat.V1.encodeLine
+            Chat.V1.decodeLine
+            descriptorSend
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -28,16 +41,3 @@ descriptorSend =
         "chat.v1.Line"
         "chat.v1.Line"
         []
-
-
-
--- CALLS
-
-
-send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
-send =
-    Rpc.call
-        (Proto.Method.method Chat.V1.encodeLine
-            Chat.V1.decodeLine
-            descriptorSend
-        )

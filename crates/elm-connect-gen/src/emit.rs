@@ -18,14 +18,15 @@
 //!   `Proto.Version` value of the release it was generated for, which the
 //!   compiler refuses unless the runtime package is of a compatible
 //!   release (design §8). A package's module then holds five sections in
-//!   order: types, defaults, descriptors,
-//!   encoders, decoders. Each section has the enums, then the messages,
-//!   each followed by its recursion wrapper and its oneofs; the defaults
-//!   section has the messages alone, and is left out when there are none,
-//!   and the descriptors section has each enum's and message's descriptor
-//!   followed by its typed value.
+//!   order: types, defaults, encoders, decoders, descriptors. Each section
+//!   has the enums, then the messages, each followed by its recursion
+//!   wrapper and its oneofs; the defaults section has the messages alone,
+//!   and is left out when there are none, and the descriptors section has
+//!   each enum's and message's descriptor followed by its typed value.
+//!   Descriptors come last because a reader needs them least and their
+//!   rows are the longest.
 //! - A service's module, `Notes.V1.NotesService`, holds two sections:
-//!   descriptors, then calls. Each method's descriptor,
+//!   calls, then descriptors. Each method's descriptor,
 //!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
 //!   `Proto.Method.descriptor` from its service, name, idempotency, type
 //!   names and bindings, the bindings its HTTP rule's own and then its
@@ -235,13 +236,13 @@ pub fn emit_service(package: &Package, service: &Service, options: &Options) -> 
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
-        decls.push(Decl::Comment("DESCRIPTORS".into()));
-        for method in &service.methods {
-            decls.push(emitter.method_descriptor(&service.proto_full_name, method));
-        }
         decls.push(Decl::Comment("CALLS".into()));
         for method in &service.methods {
             decls.push(emitter.method(method));
+        }
+        decls.push(Decl::Comment("DESCRIPTORS".into()));
+        for method in &service.methods {
+            decls.push(emitter.method_descriptor(&service.proto_full_name, method));
         }
     }
     emitter.module(package, decls)
@@ -436,9 +437,9 @@ impl Emitter {
         types
             .into_iter()
             .chain(defaults)
-            .chain(descriptors)
             .chain(encoders)
             .chain(decoders)
+            .chain(descriptors)
             .collect()
     }
 
@@ -765,7 +766,7 @@ mod tests {
         let one = package(vec![message("A", Vec::new())]);
         assert_eq!(
             sections(&one),
-            ["TYPES", "DEFAULTS", "DESCRIPTORS", "ENCODERS", "DECODERS"]
+            ["TYPES", "DEFAULTS", "ENCODERS", "DECODERS", "DESCRIPTORS"]
         );
         let printed = crate::elm::print::print_module(&emit(&one, &Options::default()).unwrap());
         assert!(
@@ -792,7 +793,7 @@ mod tests {
         );
         assert_eq!(
             sections(&enums_only),
-            ["TYPES", "DESCRIPTORS", "ENCODERS", "DECODERS"]
+            ["TYPES", "ENCODERS", "DECODERS", "DESCRIPTORS"]
         );
     }
 
@@ -942,7 +943,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(sections, ["DESCRIPTORS", "CALLS"]);
+        assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",
