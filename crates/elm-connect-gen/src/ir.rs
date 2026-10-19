@@ -39,6 +39,7 @@ mod rename;
 
 use std::fmt;
 
+pub(crate) use build::declared_fields;
 pub use build::{Built, build, build_with, build_with_imports, unbound_methods};
 
 /// Everything generated from one proto package, across all of its files:

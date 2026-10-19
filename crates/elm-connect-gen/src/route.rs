@@ -51,7 +51,7 @@ use std::fmt;
 
 use prost_reflect::{FieldDescriptor, Kind, MessageDescriptor};
 
-use crate::ir::{HttpRule, HttpVerb, WellKnown};
+use crate::ir::{HttpRule, HttpVerb, WellKnown, declared_fields};
 
 /// How deep a message may hold other messages: protobuf's nesting limit
 /// for parsing, counted in messages below the top-level one
@@ -797,7 +797,7 @@ struct QueryWalk<'a> {
 
 impl QueryWalk<'_> {
     fn message(&mut self, message: &MessageDescriptor, prefix: &FieldPath, skip: Option<&str>) {
-        for field in message.fields() {
+        for field in declared_fields(message) {
             if prefix.proto.is_empty() && skip == Some(field.name()) {
                 continue;
             }
@@ -894,7 +894,7 @@ impl QueryWalk<'_> {
         }
         let node = |message: &MessageDescriptor, index: usize| Node {
             message: message.clone(),
-            fields: message.fields().collect(),
+            fields: declared_fields(message),
             next: 0,
             low: index,
             holds_itself: false,

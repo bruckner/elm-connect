@@ -1,0 +1,30 @@
+// Field order: a record's fields, and its descriptor's, follow the order
+// the file declares them in, not their numbers. The record constructor is
+// positional, so this order is the generated API.
+syntax = "proto3";
+
+package field_order.v1;
+
+enum Mood {
+  MOOD_UNSPECIFIED = 0;
+  MOOD_CALM = 1;
+}
+
+message Draft {
+  // A nested message, declared before the fields that use it.
+  message Margin {
+    int32 left = 2;
+    int32 right = 1;
+  }
+
+  string title = 4;
+  // The oneof's record field sits where its first member is declared,
+  // after `title`; by number, `blob` would put it first.
+  oneof body {
+    string text = 8;
+    bytes blob = 1;
+  }
+  Mood mood = 6;
+  Margin margin = 3;
+  repeated string tags = 2;
+}
