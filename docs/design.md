@@ -2585,6 +2585,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   its escape are listed in [`diagnostics.md`](diagnostics.md), which a
   test (`crates/elm-connect-gen/tests/catalogue.rs`) holds to the
   generator's own list.
+  A help that names an option writes it as the reader gave it: a flag
+  under the CLI (`--streaming skip`), a parameter under the plugin
+  (`streaming=skip`), from `Options::spelling`, which each binary sets.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.

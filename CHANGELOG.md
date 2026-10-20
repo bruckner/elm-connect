@@ -885,3 +885,8 @@ tag (design §8).
   `input::unknown_file`, `input::editions` and `input::file_name`
   cannot come from the corpus and stay covered by the crates' tests, as
   `docs/diagnostics.md` says.
+- Every diagnostic help that names an option writes it as the front end
+  takes it: `--rename`, `--streaming skip` and `--unbound-methods
+  implicit` under the CLI, `rename=`, `streaming=skip` and
+  `unbound_methods=implicit` under the plugin. Only `naming::reserved_*`
+  did before.

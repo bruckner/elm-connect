@@ -54,3 +54,28 @@ fn without_sources_a_problem_still_names_its_elements() {
     assert!(rendered.contains("`notes.v1.Note`"), "{rendered}");
     assert!(!rendered.contains("╭─["), "{rendered}");
 }
+
+#[test]
+fn help_names_options_as_each_front_end_writes_them() {
+    use elm_connect_gen::Spelling;
+    use elm_connect_gen::diagnostics::{Diagnostics, Problem, Site, render_narrow};
+
+    let render = |spelling| {
+        let site = Site {
+            file: "chat.proto".into(),
+            span: None,
+            label: "streams here".into(),
+        };
+        let problem = Problem::streaming("chat.v1.Chat.Listen", "server", site, spelling);
+        render_narrow(&Diagnostics::from(problem))
+    };
+    let plugin = render(Spelling::Parameter);
+    let cli = render(Spelling::Flags);
+    assert!(
+        plugin.contains("Pass `streaming=skip` to leave"),
+        "{plugin}"
+    );
+    assert!(!plugin.contains("--streaming"), "{plugin}");
+    assert!(cli.contains("Pass `--streaming skip` to leave"), "{cli}");
+    assert!(!cli.contains("streaming=skip"), "{cli}");
+}

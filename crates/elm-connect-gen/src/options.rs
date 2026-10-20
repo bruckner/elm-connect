@@ -61,6 +61,15 @@ impl Spelling {
         }
     }
 
+    /// The option `key` set to `value`, quoted: `` `streaming=skip` `` or
+    /// `` `--streaming skip` ``.
+    pub fn option(self, key: &str, value: &str) -> String {
+        match self {
+            Spelling::Parameter => format!("`{key}={value}`"),
+            Spelling::Flags => format!("`--{} {value}`", key.replace('_', "-")),
+        }
+    }
+
     /// The `module_prefix` option with a placeholder, quoted.
     pub fn module_prefix(self) -> &'static str {
         match self {
@@ -479,8 +488,8 @@ mod tests {
             assert_eq!(codes(&parameter), [Code::InvalidModulePrefix]);
             assert!(
                 error(&parameter).starts_with(&format!(
-                    "The module prefix `{invalid}` is not an Elm module name. \
-                     `module_prefix` is dot-separated Elm module segments"
+                    "The module prefix `{invalid}` is not an Elm module name. A module \
+                     prefix is dot-separated Elm module segments"
                 )),
                 "{invalid}"
             );

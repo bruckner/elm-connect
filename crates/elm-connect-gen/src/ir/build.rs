@@ -20,6 +20,9 @@ use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
+/// What a rename's help names in place of the proto element's full name.
+const RENAME_PLACEHOLDER: &str = "<proto full name>";
+
 /// The package whose types are well-known types, never generated.
 const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 
@@ -150,9 +153,12 @@ pub fn build_with_imports(
             }
             Err(NameError::InvalidSegment { segment }) => {
                 let site = builder.site(&files[0], &[tag::FILE_PACKAGE], "this package".into());
-                builder
-                    .diagnostics
-                    .push(Problem::invalid_module(package, &segment, site));
+                builder.diagnostics.push(Problem::invalid_module(
+                    package,
+                    &segment,
+                    site,
+                    &builder.spelling.rename(RENAME_PLACEHOLDER),
+                ));
             }
             Err(_) => {
                 for file in files {
@@ -233,8 +239,15 @@ fn whole_packages(
 /// A `services::unbound_method` problem for every method of `packages`
 /// (built from `pool`) without a `google.api.http` rule, at the method's
 /// name: what `unbound_methods=error` reports (design §4).
-pub fn unbound_methods(pool: &DescriptorPool, packages: &[Package]) -> Diagnostics {
-    let mut builder = Builder::default();
+pub fn unbound_methods(
+    pool: &DescriptorPool,
+    packages: &[Package],
+    spelling: Spelling,
+) -> Diagnostics {
+    let mut builder = Builder {
+        spelling,
+        ..Builder::default()
+    };
     for service in packages.iter().flat_map(|package| &package.services) {
         let Some(descriptor) = pool.get_service_by_name(&service.proto_full_name) else {
             continue;
@@ -248,9 +261,11 @@ pub fn unbound_methods(pool: &DescriptorPool, packages: &[Package]) -> Diagnosti
             if built.is_some_and(|built| built.http.is_none()) {
                 let path = [method.path(), &[tag::METHOD_NAME]].concat();
                 let site = builder.site(&file, &path, "no `google.api.http` rule".into());
-                builder
-                    .diagnostics
-                    .push(Problem::unbound_method(method.full_name(), site));
+                builder.diagnostics.push(Problem::unbound_method(
+                    method.full_name(),
+                    site,
+                    builder.spelling,
+                ));
             }
         }
     }
@@ -472,9 +487,12 @@ impl Builder {
                     };
                     let path = [path, &[name_tag]].concat();
                     let site = builder.site(file, &path, "this name".into());
-                    builder
-                        .diagnostics
-                        .push(Problem::invalid_type(full_name, &converted, site));
+                    builder.diagnostics.push(Problem::invalid_type(
+                        full_name,
+                        &converted,
+                        site,
+                        &builder.spelling.rename(RENAME_PLACEHOLDER),
+                    ));
                 }
             }
         };
@@ -538,8 +556,11 @@ impl Builder {
                     Err(_) => {
                         let path = [service.path(), &[tag::SERVICE_NAME]].concat();
                         let site = self.site(file, &path, "this name".into());
-                        self.diagnostics
-                            .push(Problem::invalid_service(full_name, site));
+                        self.diagnostics.push(Problem::invalid_service(
+                            full_name,
+                            site,
+                            &self.spelling.rename(RENAME_PLACEHOLDER),
+                        ));
                         None
                     }
                 };
@@ -696,8 +717,10 @@ impl Builder {
         if let Some((which, stream_tag)) = streaming {
             let site = self.site(file, &[path, &[stream_tag]].concat(), "streams here".into());
             self.diagnostics.push(match self.streaming {
-                Streaming::Error => Problem::streaming(full_name, which, site),
-                Streaming::Skip => Problem::streaming_skipped(full_name, which, site),
+                Streaming::Error => Problem::streaming(full_name, which, site, self.spelling),
+                Streaming::Skip => {
+                    Problem::streaming_skipped(full_name, which, site, self.spelling)
+                }
             });
             return None;
         }
@@ -731,8 +754,12 @@ impl Builder {
                     &[path, &[tag::METHOD_NAME]].concat(),
                     "this name".into(),
                 );
-                self.diagnostics
-                    .push(Problem::invalid_method(full_name, &converted, site));
+                self.diagnostics.push(Problem::invalid_method(
+                    full_name,
+                    &converted,
+                    site,
+                    &self.spelling.rename(RENAME_PLACEHOLDER),
+                ));
                 return None;
             }
         };
@@ -761,6 +788,7 @@ impl Builder {
                 &format!("method `{full_name}`"),
                 &built.elm_name,
                 site,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
             ));
         }
         let service = method.parent_service();
@@ -772,8 +800,13 @@ impl Builder {
             } else {
                 Problem::value_collision
             };
-            self.diagnostics
-                .push(problem(service.full_name(), &built.elm_name, first, second));
+            self.diagnostics.push(problem(
+                service.full_name(),
+                &built.elm_name,
+                first,
+                second,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
         } else {
             // A call that clashes with another call has a descriptor that
             // clashes with the other's too; that is one problem, reported.
@@ -786,6 +819,7 @@ impl Builder {
                     &descriptor,
                     first,
                     second,
+                    &self.spelling.rename(RENAME_PLACEHOLDER),
                 ));
             }
             values.descriptors.insert(descriptor);
@@ -845,8 +879,12 @@ impl Builder {
             .entry(folded)
             .or_insert((name.clone(), site));
         if let Some((first, second)) = self.module_names.claim(&name, origin) {
-            self.diagnostics
-                .push(Problem::module_collision(&name, first, second));
+            self.diagnostics.push(Problem::module_collision(
+                &name,
+                first,
+                second,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
         }
     }
 
@@ -860,8 +898,13 @@ impl Builder {
         origin: Origin,
     ) -> bool {
         if let Some((first, second)) = types.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::type_collision(package, name, first, second));
+            self.diagnostics.push(Problem::type_collision(
+                package,
+                name,
+                first,
+                second,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
             return false;
         }
         true
@@ -894,13 +937,22 @@ impl Builder {
                 label: format!("{} is renamed to `{name}`", origin.what),
                 ..origin.site
             };
-            self.diagnostics
-                .push(Problem::reserved_value(&origin.what, name, site));
+            self.diagnostics.push(Problem::reserved_value(
+                &origin.what,
+                name,
+                site,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
             return;
         }
         if let Some((first, second)) = values.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::field_value_collision(message, name, first, second));
+            self.diagnostics.push(Problem::field_value_collision(
+                message,
+                name,
+                first,
+                second,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
         }
     }
 
@@ -912,8 +964,13 @@ impl Builder {
         origin: Origin,
     ) {
         if let Some((first, second)) = constructors.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::constructor_collision(package, name, first, second));
+            self.diagnostics.push(Problem::constructor_collision(
+                package,
+                name,
+                first,
+                second,
+                &self.spelling.rename(RENAME_PLACEHOLDER),
+            ));
         }
     }
 
@@ -1039,6 +1096,7 @@ impl Builder {
                         &elm_field_name,
                         first,
                         second,
+                        &self.spelling.rename(RENAME_PLACEHOLDER),
                     ));
                 }
 
@@ -1130,6 +1188,7 @@ impl Builder {
                     &elm_field_name,
                     first,
                     second,
+                    &self.spelling.rename(RENAME_PLACEHOLDER),
                 ));
             } else {
                 // Two record fields of one name were reported as such; their
@@ -1195,6 +1254,7 @@ impl Builder {
                     proto_name,
                     &converted,
                     site,
+                    &self.spelling.rename(RENAME_PLACEHOLDER),
                 ));
                 None
             }
