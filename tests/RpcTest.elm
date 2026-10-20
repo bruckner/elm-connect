@@ -483,7 +483,7 @@ responses =
                     |> Result.mapError
                         (\error ->
                             ( Rpc.Error.details title error
-                            , Rpc.Error.details Proto.WellKnown.duration error |> List.map Proto.Duration.milliseconds
+                            , Rpc.Error.details Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
                             , case error of
                                 RpcStatus r _ ->
                                     Just ( r.code, r.source, List.length r.details )

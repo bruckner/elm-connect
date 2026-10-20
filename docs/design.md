@@ -806,7 +806,7 @@ argument.)*
 | proto | Elm | notes |
 |---|---|---|
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
-| `google.protobuf.Duration` | `Proto.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
+| `google.protobuf.Duration` | `Proto.Duration` (opaque; `toSeconds : Duration -> Float`) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
 | `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
@@ -870,12 +870,21 @@ Built as proposed, with these details *(each Proposed)*:
   `23:59:59` with its fraction.
 - `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
   nanoseconds like protobuf, rather than as a `Float` of seconds. The
-  `Float` views (`fromSeconds`, `seconds`) are exact to the nanosecond
+  `Float` views (`fromSeconds`, `toSeconds`) are exact to the nanosecond
   only below 2^53 ns (about 104 days); `fromMilliseconds` and
-  `milliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
+  `toMilliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
   digits, the fewest that keep every nanosecond, as protobuf does;
   `-0s` reads as zero and prints `0s`. The range is protobuf's,
-  ±315,576,000,000 s.
+  ±315,576,000,000 s. `fromString` refuses a duration past it;
+  `fromSeconds` and `fromMilliseconds` give the limit for one past it
+  (nanoseconds zero), and `fromSeconds` gives zero for NaN and the
+  infinities, so every `Duration` prints as text `fromString` reads.
+  *(Decided 2026-10-19; they built any span before, which `toString`
+  wrote and `fromString` refused.)* The readers are `toSeconds` and
+  `toMilliseconds`, as `Proto.Int64.toInt` and `Proto.Bytes.toBase64`
+  are, and not the nouns `seconds` and `milliseconds`: elm-units names
+  its constructor `Duration.seconds`, so the noun would read as the
+  opposite conversion. *(Decided 2026-10-19.)*
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.

@@ -845,3 +845,8 @@ tag (design §8).
   well-known types' codecs. Generated code calls the new names (design
   §3.1, which also records why generated codecs stay `encodeX` and
   `decodeX`).
+- `Proto.Duration.seconds` and `milliseconds` are `toSeconds` and
+  `toMilliseconds`, as `Proto.Int64.toInt` is. `fromSeconds` and
+  `fromMilliseconds` give protobuf's limit, ±315,576,000,000 s, for a
+  value past it, and `fromSeconds` gives zero for NaN and the
+  infinities, so every `Duration` prints as text `fromString` reads.

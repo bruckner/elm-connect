@@ -117,7 +117,7 @@ suite =
         , test "a well-known type unpacks after a round trip through JSON" <|
             \_ ->
                 roundTrip (Any.pack WellKnown.duration (Duration.fromMilliseconds 1500))
-                    |> Result.map (Any.unpack WellKnown.duration >> outcome >> Maybe.map (Result.map Duration.milliseconds))
+                    |> Result.map (Any.unpack WellKnown.duration >> outcome >> Maybe.map (Result.map Duration.toMilliseconds))
                     |> Expect.equal (Ok (Just (Ok 1500)))
         , test "an Any packs inside an Any" <|
             \_ ->
