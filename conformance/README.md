@@ -264,6 +264,8 @@ An **envelope**, what the runner sends:
     "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
   },
   "binding": null,
+  "headers": [["x-echo", "from the call"]],
+  "rewrite": [],
   "send": "sendTraced",
   "tracker": null,
   "cancelAfterMs": null
@@ -272,8 +274,9 @@ An **envelope**, what the runner sends:
 
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
-`binding` (applied with `Rpc.Call.viaBinding`), `send` (`sendTraced`, the
-default, `send`, `task` or `halves`), `tracker` (`Rpc.Call.withTracker`) and
+`binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
+own, `Rpc.Call.withHeaders`, sent after the config's), `send` (`sendTraced`, the
+default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
 (`Rpc.Transport.connectGet`, `withMaxGetUrl`). `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
@@ -281,7 +284,12 @@ default, `send`, `task` or `halves`), `tracker` (`Rpc.Call.withTracker`) and
 `jitter` (default false, so a case's waits are the bounds it states).
 `halves` sends through the pure halves, as an application
 that needs the answer's headers does: `Rpc.request`, `Http.request` with the
-answer kept whole, and `Rpc.response`.
+answer kept whole, and `Rpc.response`. `taskFromRequest` builds the request
+with `Rpc.request`, puts each `[name, value]` of `rewrite` in place of the
+header of that name (in any case), or after the headers when there is none,
+and sends it with `Rpc.taskFromRequest`, the config's retry policy applying,
+as an application that refreshes a token does; its `trace` is `null`, and
+`wire` shows the rewritten request on every attempt.
 
 With `cancelAfterMs` the runner cancels the call that many milliseconds
 after sending it with `Rpc.cancel`, under the envelope's tracker or, without
@@ -289,8 +297,8 @@ one, its `id`. `Rpc.cancel` reports nothing, so the runner records the
 cancellation itself, as an application does, and reports whichever outcome
 comes first, the result or `{"canceled": true}`; a later one is dropped, so
 a call is reported once. Only `send` without a retry policy and `halves` put
-the tracker on the request; `sendTraced`, `task` and `send` with a retry
-policy ignore it, so an envelope sending one of those with `cancelAfterMs` is
+the tracker on the request; `sendTraced`, `task`, `taskFromRequest` and
+`send` with a retry policy ignore it, so an envelope sending one of those with `cancelAfterMs` is
 refused (`{"runner": …}`) rather than reported cancelled while the call runs
 on.
 
@@ -481,5 +489,7 @@ update mask), sent with `fetch` as written (`request`: `method`, `path`
 under the prefix, `body`), whose `observed` is matched against `{status,
 body}`, the body parsed as JSON. The probes are the same in both files and
 record where the two transcoders answer differently. A listed fixture
-passes while that answer holds, and fails once it agrees, until its entry
-is removed; a probe fails when its answer changes.
+passes while that answer holds and its request (verb, path, query, body
+and headers) is still the fixture's, so an entry excuses the
+transcoder's answer and never the request; it fails once it agrees, until
+its entry is removed; a probe fails when its answer changes.

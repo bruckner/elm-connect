@@ -2660,6 +2660,13 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   header line read as a placeholder, `0.1.X` (§8.4); a second test runs
   `elm make` over all expected output against the runtime at the repo's
   version; a third runs `elm-format --validate`.
+- The plugin replays the corpus as protoc runs it
+  (`crates/protoc-gen-elm-connect/tests/plugin.rs`): the built binary is
+  sent each case's `CodeGeneratorRequest` on stdin, and its response must
+  carry the expected modules, or the problems in `error`, with warnings
+  on stderr. protoc sends no sources, so its rendering names the proto
+  elements; it is compared with the generator's own without sources and,
+  by problem code, with `diagnostics.txt` and `warnings.txt`.
 - Route fixtures: a JSON file of `(template, request) → (path, query,
   body)` expectations, checked against the generator's parser. The same
   file is intended to be consumable by a server-side implementation so
@@ -2794,8 +2801,11 @@ error reader's four sources (a Connect body, a `google.rpc.Status`
 body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `BadRequest` details decoded from each body, timeouts (a
 `Transport Timeout`, the server never answering first), retries,
-Connect GET and `maxGetUrl`, percent-encoded path values, `viaBinding`
-in and out of range, and `sendTraced`, `send` and `task`.
+Connect GET (with the config's and the call's headers) and `maxGetUrl`,
+percent-encoded path values, `viaBinding`
+in and out of range, and `sendTraced`, `send`, `task` and
+`taskFromRequest` (a header rewritten between `Rpc.request` and it,
+seen on the wire on every retry).
 
 Built, the Connect conformance suite *(2026-10-15)*: `connectconformance`
 v1.0.6, fetched from its GitHub release with its SHA-256 pinned per
@@ -3018,6 +3028,9 @@ kept compiling the same way.
   package's first release, so the package and the crates move to
   `1.0.0` together at its first publish. Until then an application
   takes the runtime from this repository at the matching tag.
+- The agreement is tested (`crates/elm-connect-gen/tests/lockstep.rs`):
+  the workspace's version is `elm.json`'s, and the corpus's header
+  placeholder (§8.4) is that release's.
 
 ### 8.2 The compatibility sentinel
 
@@ -3064,6 +3077,9 @@ kept compiling the same way.
   runtime has everything the generated code uses. That changes only
   the generator (which value it names) and adds a CI job compiling the
   corpus against that older runtime.
+- `crates/elm-connect-gen/tests/lockstep.rs` tests that `Proto.Version`
+  exposes the value `SENTINEL` names and every earlier value of its
+  major, and that every expected module of the corpus names it.
 
 ### 8.3 The surfaces and their promises
 
@@ -3176,6 +3192,37 @@ Within a major version:
   harness set to that release. Nothing the 0.19.2 output needs is refused
   by 0.19.0 or 0.19.1 so far. Decoders for messages with more than eight
   fields use the runtime's pipeline helpers rather than `map8` chunking.
+- The same job runs the runtime's and the notes example's Elm tests,
+  fuzz tests included, with elm-test-rs under that release
+  (`conformance/test-with.sh`, `just test-with`), the example from a
+  copy of its `elm.json` set to the release. Under 0.19.1 only:
+  elm-test-rs's runner package (`mpizenberg/elm-test-runner` 6) requires
+  Elm 0.19.1, so 0.19.0 cannot run the tests, and is held to the compile.
+- What CI checks, all told: `just check` on Linux and macOS (formatting,
+  clippy, the Rust tests with the corpus, the plugin's replay and the
+  lockstep test, the runtime's build and Elm tests, the README's
+  excerpts, zizmor, gitleaks, `cargo deny` and `cargo package`), with
+  the toolchain mise pins, which is the crates' `rust-version`; `just
+  live` on Linux (§7); and the job above per earlier Elm release.
+
+### 8.7 Releasing
+
+The steps of a release, in order; the tests named enforce what they
+can.
+
+1. Set the version in the Cargo workspace and in `elm.json`, and, for a
+   minor or major, add its `Proto.Version` value (§8.2); `cargo test`
+   fails until they agree (`tests/lockstep.rs`).
+2. Run `just bless`, then `just live`, and commit the regenerated
+   trees (§8.4).
+3. From 1.1 on, before tagging: check out the last release's tag beside
+   this commit, compile its corpus's expected output against this
+   commit's `src/` (`conformance/compile-with.sh` with the harness's
+   source directories pointed there), and run `elm diff <last tag>`,
+   whose magnitude must not exceed the release's (§8.1). Code generated
+   by the last minor must compile against this runtime (§8.3). This is
+   a manual step, not yet a CI job.
+4. Tag the commit with the bare version (§8.1).
 
 ## 9. Open questions, collected
 

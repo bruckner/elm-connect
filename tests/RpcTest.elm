@@ -354,6 +354,22 @@ requests =
                         , timeout = Just 20
                         , withCredentials = False
                         }
+        , test "a GET carries the config's headers, then the call's, then the timeout, and no protocol version" <|
+            \_ ->
+                getNote { name = "x" }
+                    |> Rpc.Call.withHeaders [ ( "X-A", "1" ) ]
+                    |> Rpc.Call.withHeaders [ ( "X-B", "2" ) ]
+                    |> Rpc.request
+                        { base
+                            | transport = Rpc.Transport.connectGet
+                            , headers = [ ( "Authorization", "Bearer t" ) ]
+                            , timeout = Just 20
+                        }
+                    |> (\r -> ( r.method, r.headers ))
+                    |> Expect.equal
+                        ( "GET"
+                        , [ ( "Authorization", "Bearer t" ), ( "X-A", "1" ), ( "X-B", "2" ), ( "Connect-Timeout-Ms", "20" ) ]
+                        )
         , test "connectGet still POSTs a call with side effects" <|
             \_ ->
                 (Rpc.request (getting Nothing) (createNote { name = "x" })).method

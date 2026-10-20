@@ -213,6 +213,8 @@ envelope =
                     |> with (Decode.succeed t)
                     |> with (Decode.field "config" (config t))
                     |> with (optional "binding" (Decode.nullable Decode.int) Nothing)
+                    |> with (optional "headers" (Decode.list pair) [])
+                    |> with (optional "rewrite" (Decode.list pair) [])
                     |> with (optional "send" sending Traced)
                     |> with (optional "tracker" (Decode.nullable Decode.string) Nothing)
                     |> with (optional "cancelAfterMs" (Decode.nullable Decode.int) Nothing)
@@ -231,7 +233,7 @@ transport =
 
 sending : Decoder Sending
 sending =
-    oneOfNames "send" [ ( "sendTraced", Traced ), ( "send", Plain ), ( "task", AsTask ), ( "halves", Halves ) ]
+    oneOfNames "send" [ ( "sendTraced", Traced ), ( "send", Plain ), ( "task", AsTask ), ( "halves", Halves ), ( "taskFromRequest", FromRequest ) ]
 
 
 oneOfNames : String -> List ( String, a ) -> Decoder a

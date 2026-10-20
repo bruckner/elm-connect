@@ -3,8 +3,12 @@ name = "protoc-gen-elm-connect"
 description = "protoc plugin that generates Elm clients for protobuf APIs"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+# The integration tests run from the repository, reading its conformance
+# corpus and runtime outside the crate, so they are not published.
+exclude = ["tests/"]
 
 [dependencies]
 elm-connect-gen.workspace = true

@@ -32,86 +32,14 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 use elm_connect_gen::diagnostics::{Columns, Diagnostics, render_narrow};
-use elm_connect_gen::{GeneratedFile, HEADER_PREFIX, Options, VERSION, generate};
+use elm_connect_gen::{GeneratedFile, HEADER_PREFIX, VERSION, generate};
 
 mod common;
-use common::placeholder_header;
+use common::{
+    Compiled, DIAGNOSTICS, OPTIONS, WARNINGS, case_name, case_options, cases, compile_case,
+    files_under, is_diagnostics_case, placeholder_header, protos, repo_root,
+};
 use similar::TextDiff;
-
-/// The file in `expected/` that makes a case a diagnostics case.
-const DIAGNOSTICS: &str = "diagnostics.txt";
-/// The file in `expected/` beside the modules that pins the warnings a
-/// successful run reports.
-const WARNINGS: &str = "warnings.txt";
-/// The optional file in a case that sets the generator's options.
-const OPTIONS: &str = "options.txt";
-
-// The corpus.
-
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
-
-/// Every case directory, sorted by name.
-fn cases() -> Vec<PathBuf> {
-    let root = repo_root().join("conformance/cases");
-    let mut cases: Vec<PathBuf> = fs::read_dir(&root)
-        .unwrap_or_else(|e| panic!("read {}: {e}", root.display()))
-        .map(|entry| entry.expect("read a case").path())
-        .filter(|path| path.is_dir())
-        .collect();
-    cases.sort();
-    assert!(!cases.is_empty(), "no cases under {}", root.display());
-    cases
-}
-
-fn case_name(case: &Path) -> String {
-    case.file_name()
-        .expect("a case has a name")
-        .to_string_lossy()
-        .into_owned()
-}
-
-fn is_diagnostics_case(case: &Path) -> bool {
-    case.join("expected").join(DIAGNOSTICS).is_file()
-}
-
-/// Every file under `dir`, as `/`-separated paths relative to it, sorted.
-fn files_under(dir: &Path) -> Vec<String> {
-    fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) {
-        let Ok(entries) = fs::read_dir(dir) else {
-            return;
-        };
-        for entry in entries {
-            let path = entry.expect("read a directory entry").path();
-            if path.is_dir() {
-                walk(root, &path, out);
-            } else {
-                let relative = path.strip_prefix(root).expect("under the root");
-                let parts: Vec<_> = relative
-                    .components()
-                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                    .collect();
-                out.push(parts.join("/"));
-            }
-        }
-    }
-    let mut out = Vec::new();
-    walk(dir, dir, &mut out);
-    out.sort();
-    out
-}
-
-/// The generator options of `case`: its optional `options.txt`, a protoc
-/// plugin parameter (`int64=int`) on one line, or the defaults; or the
-/// problems in that parameter.
-fn case_options(case: &Path) -> Result<Options, Diagnostics> {
-    match fs::read_to_string(case.join(OPTIONS)) {
-        Ok(text) => Options::from_parameter(text.trim()),
-        Err(e) if e.kind() == ErrorKind::NotFound => Ok(Options::default()),
-        Err(e) => panic!("read {}: {e}", case.join(OPTIONS).display()),
-    }
-}
 
 /// What a successful run of the generator over a case gives.
 struct Run {
@@ -129,27 +57,11 @@ struct Run {
 /// case's `options.txt`, if any, sets the generator's
 /// options.
 fn run_generator(case: &Path) -> Result<Run, String> {
-    let input = case.join("input");
-    let include = case.join("include");
-    let protos = |dir: &Path| -> Vec<String> {
-        files_under(dir)
-            .into_iter()
-            .filter(|name| name.ends_with(".proto"))
-            .collect()
-    };
-    let names = protos(&input);
-    assert!(!names.is_empty(), "{} has no input protos", input.display());
-    let mut include_paths = vec![input.clone()];
-    if include.is_dir() {
-        include_paths.push(include.clone());
-    }
-    let mut compiler = protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver(
-        include_paths.clone(),
-    ));
-    compiler.include_source_info(true).include_imports(true);
-    compiler
-        .open_files(&names)
-        .unwrap_or_else(|e| panic!("{} does not compile: {e:?}", input.display()));
+    let Compiled {
+        compiler,
+        names,
+        include_paths,
+    } = compile_case(case);
     let generate_set: Vec<&str> = names.iter().map(String::as_str).collect();
     let render = |mut diagnostics: Diagnostics| {
         let mut sources = HashMap::new();

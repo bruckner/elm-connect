@@ -941,3 +941,15 @@ tag (design §8).
   and a path through a well-known type (`{at.seconds}`), are still
   `route::path_field`. The `routes_well_known_path` conformance case
   pins it.
+- The crates declare their minimum supported Rust version,
+  `rust-version = "1.99.0"`, the toolchain `mise.toml` pins and `just
+  check` builds with; a test keeps the two equal.
+- `just check` runs `cargo deny` (`just deny`, `deny.toml`): a security
+  advisory, a license outside the allow-list (MIT, Apache-2.0,
+  Unicode-3.0, ISC), a wildcard version or a source other than crates.io
+  fails the gate. It also runs `cargo package` (`just package`), which
+  builds each crate from what it would publish; the crates' integration
+  tests are no longer packaged.
+- CI runs the runtime's and the notes example's Elm tests under Elm 0.19.1
+  as well as 0.19.2 (`just test-with`); 0.19.0 still compiles the
+  runtime and the corpus, but elm-test-rs's runner needs 0.19.1.

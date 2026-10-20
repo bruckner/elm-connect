@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check snippets zizmor gitleaks
+check: fmt-check clippy test elm-check snippets zizmor gitleaks deny package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -74,10 +74,29 @@ zizmor:
 gitleaks:
     gitleaks git --redact --log-opts=HEAD .
 
+# Check the Rust dependencies against deny.toml: security advisories (from
+# the RustSec database, which it fetches), licenses, duplicate and wildcard
+# versions, and sources. Any failure, an advisory included, fails the gate.
+deny:
+    cargo deny check
+
+# Package the three crates as `cargo publish` would, and build each package
+# alone, so a file a crate needs but does not ship fails here rather than
+# at publish. The integration tests are not shipped (each crate's
+# Cargo.toml says why), so the packages are built, not tested. Cargo
+# refuses a crate with uncommitted changes: commit, then run the gate.
+package:
+    cargo package --workspace --locked
+
 # Compile the runtime package and the conformance corpus with another Elm
 # compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).
 compile-with elm:
     conformance/compile-with.sh {{elm}}
+
+# Run the runtime package's and the notes example's Elm tests with another
+# Elm compiler, as CI does with 0.19.1 (design section 8).
+test-with elm:
+    conformance/test-with.sh {{elm}}
 
 # Rewrite the conformance corpus's expected output (modules and warnings.txt, or
 # diagnostics.txt), and the Elm replay of the route fixtures and the route

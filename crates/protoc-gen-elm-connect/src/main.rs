@@ -491,38 +491,7 @@ mod tests {
 
     #[test]
     fn extension_options_survive_the_request() {
-        let dir = std::env::temp_dir().join("protoc-gen-elm-connect-http");
-        std::fs::create_dir_all(&dir).expect("create");
-        std::fs::write(
-            dir.join("notes.proto"),
-            r#"syntax = "proto3";
-package notes.v1;
-import "google/api/annotations.proto";
-message Note { string name = 1; }
-service Notes {
-  rpc GetNote(Note) returns (Note) {
-    option (google.api.http) = { get: "/v1/{name=notes/*}" };
-  }
-}
-"#,
-        )
-        .expect("write");
-        let mut compiler =
-            protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([dir]));
-        compiler.include_imports(true);
-        compiler.open_file("notes.proto").expect("compiles");
-        let set = RawSet::decode(compiler.encode_file_descriptor_set().as_slice()).expect("set");
-        let mut request = CodeGeneratorRequest {
-            file_to_generate: vec!["notes.proto".into()],
-            ..CodeGeneratorRequest::default()
-        }
-        .encode_to_vec();
-        RawProtoFiles {
-            proto_file: set.file,
-        }
-        .encode(&mut request)
-        .expect("encode");
-
+        let request = request_for(&[("notes.proto", NOTES)], &["notes.proto"]);
         let raw = RawProtoFiles::decode(request.as_slice()).expect("the files");
         let pool = pool(&raw).expect("a pool");
         let packages = elm_connect_gen::ir::build(&pool, &["notes.proto"]).expect("the IR builds");
@@ -531,19 +500,32 @@ service Notes {
         assert_eq!(rule.template, "/v1/{name=notes/*}");
     }
 
-    /// The request `buf generate --include-imports` sends for `files`
-    /// (each a name and its source, written under a temporary directory
-    /// named `case`) asking for `to_generate`, compiled against the
-    /// embedded googleapis files, options intact.
-    fn request_for(case: &str, files: &[(&str, &str)], to_generate: &[&str]) -> Vec<u8> {
-        let dir = std::env::temp_dir().join(format!("protoc-gen-elm-connect-{case}"));
-        for (name, source) in files {
-            let path = dir.join(name);
-            std::fs::create_dir_all(path.parent().expect("a parent")).expect("create");
-            std::fs::write(path, source).expect("write");
+    /// Protos held in memory, by import name, so that no test writes files
+    /// another run, in this checkout or another, could share.
+    struct Sources(Vec<(String, String)>);
+
+    impl protox::file::FileResolver for Sources {
+        fn open_file(&self, name: &str) -> Result<protox::file::File, protox::Error> {
+            match self.0.iter().find(|(file, _)| file == name) {
+                Some((_, source)) => protox::file::File::from_source(name, source),
+                None => Err(protox::Error::file_not_found(name)),
+            }
         }
-        let mut compiler =
-            protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([dir]));
+    }
+
+    /// The request `buf generate --include-imports` sends for `files`
+    /// (each a name and its source) asking for `to_generate`, compiled
+    /// against the embedded googleapis files, options intact.
+    fn request_for(files: &[(&str, &str)], to_generate: &[&str]) -> Vec<u8> {
+        let mut resolver = protox::file::ChainFileResolver::new();
+        resolver.add(Sources(
+            files
+                .iter()
+                .map(|&(name, source)| (name.to_owned(), source.to_owned()))
+                .collect(),
+        ));
+        resolver.add(elm_connect_gen::googleapis::resolver([]));
+        let mut compiler = protox::Compiler::with_file_resolver(resolver);
         compiler.include_imports(true);
         compiler
             .open_files(files.iter().map(|(name, _)| *name))
@@ -584,7 +566,6 @@ service Notes {
     #[test]
     fn the_embedded_googleapis_files_are_not_generated() {
         let request = request_for(
-            "googleapis-skipped",
             &[("notes.proto", NOTES)],
             &[
                 "google/api/http.proto",
@@ -613,7 +594,6 @@ message Task {
 }
 "#;
         let request = request_for(
-            "field-behavior",
             &[("tasks.proto", tasks)],
             &["google/api/field_behavior.proto", "tasks.proto"],
         );
@@ -664,7 +644,6 @@ service Uploads {
 }
 "#;
         let request = request_for(
-            "httpbody",
             &[
                 ("google/api/httpbody.proto", httpbody),
                 ("uploads.proto", upload),
