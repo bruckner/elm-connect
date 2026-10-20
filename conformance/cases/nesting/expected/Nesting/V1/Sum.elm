@@ -3,6 +3,9 @@
 
 module Nesting.V1.Sum exposing (..)
 
+{-| The descriptor of `nesting.v1.Sum` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

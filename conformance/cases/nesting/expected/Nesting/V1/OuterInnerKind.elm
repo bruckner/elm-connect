@@ -3,6 +3,9 @@
 
 module Nesting.V1.OuterInnerKind exposing (..)
 
+{-| The descriptor of `nesting.v1.Outer.Inner.Kind`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

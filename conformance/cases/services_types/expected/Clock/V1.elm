@@ -3,6 +3,10 @@
 
 module Clock.V1 exposing (..)
 
+{-| Methods whose request or response is a well-known type, or a message of
+another generated package, generated under `int64=int`.
+-}
+
 import Clock.V1.Alarm
 import Json.Decode
 import Json.Encode

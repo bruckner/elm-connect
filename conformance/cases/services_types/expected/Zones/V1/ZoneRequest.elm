@@ -3,6 +3,9 @@
 
 module Zones.V1.ZoneRequest exposing (..)
 
+{-| The descriptor of `zones.v1.ZoneRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

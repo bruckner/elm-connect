@@ -3,6 +3,9 @@
 
 module Notes.V1.ListNotesRequest exposing (..)
 
+{-| The descriptor of `notes.v1.ListNotesRequest` and its fields.
+-}
+
 import Notes.V1.Visibility
 import Proto.Field
 import Proto.Message

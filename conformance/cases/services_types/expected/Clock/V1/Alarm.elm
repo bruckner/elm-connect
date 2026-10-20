@@ -3,6 +3,9 @@
 
 module Clock.V1.Alarm exposing (..)
 
+{-| The descriptor of `clock.v1.Alarm` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

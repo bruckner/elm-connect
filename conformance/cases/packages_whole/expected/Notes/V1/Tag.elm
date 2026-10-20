@@ -3,6 +3,9 @@
 
 module Notes.V1.Tag exposing (..)
 
+{-| The descriptor of `notes.v1.Tag` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

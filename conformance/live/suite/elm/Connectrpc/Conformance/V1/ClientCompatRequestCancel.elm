@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ClientCompatRequestCancel exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ClientCompatRequest.Cancel` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

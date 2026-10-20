@@ -3,6 +3,9 @@
 
 module Tasks.V1.State exposing (..)
 
+{-| The descriptor of `tasks.v1.State`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

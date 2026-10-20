@@ -3,6 +3,13 @@
 
 module Routes.V1 exposing (..)
 
+{-| The request messages and HTTP rules the route fixtures (\*.json beside
+this file) exercise. Each fixture names a method and one of its
+bindings, or none for a method without a rule; its expectations hold
+for any client or server that follows google/api/http.proto and proto3
+JSON, and for a method without a rule, serves the implicit route.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

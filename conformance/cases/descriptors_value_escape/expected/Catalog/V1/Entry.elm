@@ -3,6 +3,9 @@
 
 module Catalog.V1.Entry exposing (..)
 
+{-| The descriptor of `catalog.v1.Entry` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

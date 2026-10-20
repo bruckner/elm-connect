@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.TestCase exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.TestCase` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.Code
 import Proto.Field
 import Proto.Message

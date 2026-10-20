@@ -3,6 +3,9 @@
 
 module Routes.V1.UpdateResourceRequest exposing (..)
 
+{-| The descriptor of `routes.v1.UpdateResourceRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

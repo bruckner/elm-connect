@@ -3,6 +3,9 @@
 
 module BytesOption.V1.Blob exposing (..)
 
+{-| The descriptor of `bytes_option.v1.Blob` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

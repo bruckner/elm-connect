@@ -3,6 +3,9 @@
 
 module Naming.V1 exposing (..)
 
+{-| The naming rules of design section 3.7.
+-}
+
 import Json.Decode
 import Json.Encode
 import Naming.V1.HttpMethod

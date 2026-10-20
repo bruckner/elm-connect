@@ -3,6 +3,9 @@
 
 module First.V1.Link exposing (..)
 
+{-| The descriptor of `first.v1.Link` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

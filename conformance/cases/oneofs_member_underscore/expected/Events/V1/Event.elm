@@ -3,6 +3,9 @@
 
 module Events.V1.Event exposing (..)
 
+{-| The descriptor of `events.v1.Event` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Api.Example.People exposing (..)
 
+{-| The package another package refers to, renamed `People`.
+-}
+
 import Api.Example.People.Role
 import Api.Example.People.User
 import Json.Decode

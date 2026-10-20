@@ -3,6 +3,9 @@
 
 module Api.Example.Notes.V1.Note exposing (..)
 
+{-| The descriptor of `notes.v1.Note` and its fields.
+-}
+
 import Api.Example.People.Role
 import Proto.Field
 import Proto.Message

@@ -3,6 +3,11 @@
 
 module Oneofs.V1 exposing (..)
 
+{-| Oneofs: a custom type per oneof whose first constructor is the unset
+case, held in one record field. Encoded as the set member alone;
+decoded from the one member present and not null, else unset.
+-}
+
 import Json.Decode
 import Json.Encode
 import Oneofs.V1.Choice

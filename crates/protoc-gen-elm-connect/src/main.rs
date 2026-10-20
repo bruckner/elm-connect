@@ -393,7 +393,7 @@ mod tests {
             .join("../../conformance/cases/packages_whole");
         let mut compiler =
             protox::Compiler::new([case.join("input"), case.join("include")]).expect("paths");
-        compiler.include_imports(true);
+        compiler.include_imports(true).include_source_info(true);
         compiler
             .open_file("notes/v1/note.proto")
             .expect("the case compiles");

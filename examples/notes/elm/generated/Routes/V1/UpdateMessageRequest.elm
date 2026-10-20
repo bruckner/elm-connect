@@ -3,6 +3,9 @@
 
 module Routes.V1.UpdateMessageRequest exposing (..)
 
+{-| The descriptor of `routes.v1.UpdateMessageRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

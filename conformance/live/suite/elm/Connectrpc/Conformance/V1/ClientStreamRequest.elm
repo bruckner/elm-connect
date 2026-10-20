@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ClientStreamRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ClientStreamRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

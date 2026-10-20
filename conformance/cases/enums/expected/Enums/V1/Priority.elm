@@ -3,6 +3,9 @@
 
 module Enums.V1.Priority exposing (..)
 
+{-| The descriptor of `enums.v1.Priority`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

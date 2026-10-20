@@ -3,6 +3,9 @@
 
 module Catalog.V1.Part exposing (..)
 
+{-| The descriptor of `catalog.v1.Part` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

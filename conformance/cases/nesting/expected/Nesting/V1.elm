@@ -3,6 +3,11 @@
 
 module Nesting.V1 exposing (..)
 
+{-| Nesting and recursion: nested messages and enums are flattened into the
+module with the enclosing names as a prefix; a field that closes a
+cycle of record fields holds the target's wrapper type.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

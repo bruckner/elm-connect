@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Codec exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Codec`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

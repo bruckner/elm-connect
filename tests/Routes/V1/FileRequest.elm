@@ -3,6 +3,9 @@
 
 module Routes.V1.FileRequest exposing (..)
 
+{-| The descriptor of `routes.v1.FileRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

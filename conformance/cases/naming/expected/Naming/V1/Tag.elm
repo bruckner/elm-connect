@@ -3,6 +3,9 @@
 
 module Naming.V1.Tag exposing (..)
 
+{-| The descriptor of `naming.v1.Tag` and its fields.
+-}
+
 import Naming.V1.HttpMethod
 import Naming.V1.Shape
 import Proto.Field

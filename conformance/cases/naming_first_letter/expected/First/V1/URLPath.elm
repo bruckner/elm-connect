@@ -3,6 +3,9 @@
 
 module First.V1.URLPath exposing (..)
 
+{-| The descriptor of `first.v1.URLPath` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

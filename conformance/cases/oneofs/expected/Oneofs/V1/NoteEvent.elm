@@ -3,6 +3,9 @@
 
 module Oneofs.V1.NoteEvent exposing (..)
 
+{-| The descriptor of `oneofs.v1.NoteEvent` and its fields.
+-}
+
 import Oneofs.V1.Color
 import Proto.Field
 import Proto.Message

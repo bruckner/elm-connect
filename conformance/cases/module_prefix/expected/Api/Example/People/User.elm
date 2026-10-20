@@ -3,6 +3,9 @@
 
 module Api.Example.People.User exposing (..)
 
+{-| The descriptor of `users.v1.User` and its fields.
+-}
+
 import Api.Example.People.Role
 import Proto.Field
 import Proto.Message

@@ -3,6 +3,9 @@
 
 module FieldOrder.V1.Draft exposing (..)
 
+{-| The descriptor of `field_order.v1.Draft` and its fields.
+-}
+
 import FieldOrder.V1.Mood
 import Proto.Field
 import Proto.Message

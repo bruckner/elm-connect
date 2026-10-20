@@ -3,6 +3,15 @@
 
 module Notes.Api exposing (..)
 
+{-| The rename map gives Elm names in place of derived ones (options.txt):
+the package's module, a service's module, a method's value, a message's,
+a nested message's and an enum's type, a field, a oneof (its field and,
+through it, its type), a oneof's field (its constructor) and an enum
+value (its constructor). The names derived from a renamed one follow it:
+`Memo` has `encodeMemo` and `messageMemo`, `Audience` the constructor
+`AudienceUnspecified`, and the oneof `body` the type `MemoBody`.
+-}
+
 import Json.Decode
 import Json.Encode
 import Notes.Api.Audience

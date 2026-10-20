@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.MessageContents exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.MessageContents` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.Compression
 import Proto.Field
 import Proto.Message

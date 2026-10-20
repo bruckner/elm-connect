@@ -476,6 +476,17 @@ rpc shared call =
   doc starts with `Deprecated.`, a field's item with it. A comment of
   several paragraphs stays whole in its item, which makes the list
   loose (blank lines between items), as Markdown does.
+  Modules carry docs too. A package's module has the package's
+  comment: each file's leading comment on its `package` statement or,
+  where that has none, on its `syntax` statement, where a file's
+  overview often sits (a trailing comment on either line is left out),
+  as paragraphs in file order, a comment that several files repeat
+  written once; a package with none has no module doc. A service's
+  module has the service's comment and its declaration (§4). A
+  descriptor module has one line naming what it holds
+  (`` The descriptor of `notes.v1.Note` and its fields. ``,
+  `` The descriptor of `notes.v1.Visibility`. ``); the message's
+  comment stays on its `descriptor`.
   The docs link to each other as the package site and elm-doc-preview
   resolve links, `#name` within a module and `Module-Name#name` (dots
   as dashes) to another: a type's declaration line to its descriptor

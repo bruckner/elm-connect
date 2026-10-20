@@ -3,6 +3,14 @@
 
 module Awkward.V1 exposing (..)
 
+{-| Comments that Markdown, elm-format or Elm itself would read as more than
+text: comment delimiters, `@docs`, emphasis, lists of every marker,
+headings, code blocks indented and fenced, tables, HTML, links, tabs, a
+200-character line, non-ASCII, a comment of whitespace alone and
+detached comments, which must not appear; in a service's module doc
+and a method's doc too.
+-}
+
 import Awkward.V1.Delimiters
 import Awkward.V1.Docs
 import Awkward.V1.Marks

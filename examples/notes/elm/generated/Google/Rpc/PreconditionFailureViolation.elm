@@ -3,6 +3,9 @@
 
 module Google.Rpc.PreconditionFailureViolation exposing (..)
 
+{-| The descriptor of `google.rpc.PreconditionFailure.Violation` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Google.Rpc.RetryInfo exposing (..)
 
+{-| The descriptor of `google.rpc.RetryInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Unused.V1.Result exposing (..)
 
+{-| The descriptor of `unused.v1.Result` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

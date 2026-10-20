@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.RawHTTPResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.RawHTTPResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

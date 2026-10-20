@@ -3,6 +3,9 @@
 
 module FieldOrder.V1.DraftMargin exposing (..)
 
+{-| The descriptor of `field_order.v1.Draft.Margin` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

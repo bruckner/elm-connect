@@ -3,6 +3,9 @@
 
 module Users.V1.Role exposing (..)
 
+{-| The descriptor of `users.v1.Role`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

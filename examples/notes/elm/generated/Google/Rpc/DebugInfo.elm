@@ -3,6 +3,9 @@
 
 module Google.Rpc.DebugInfo exposing (..)
 
+{-| The descriptor of `google.rpc.DebugInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

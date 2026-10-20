@@ -3,6 +3,9 @@
 
 module Oneofs.V1.Created exposing (..)
 
+{-| The descriptor of `oneofs.v1.Created` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

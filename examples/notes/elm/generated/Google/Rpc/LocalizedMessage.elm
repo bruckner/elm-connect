@@ -3,6 +3,9 @@
 
 module Google.Rpc.LocalizedMessage exposing (..)
 
+{-| The descriptor of `google.rpc.LocalizedMessage` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

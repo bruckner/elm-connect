@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Code exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Code`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

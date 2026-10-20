@@ -3,6 +3,9 @@
 
 module Users.V1 exposing (..)
 
+{-| The package another package refers to: it generates on its own.
+-}
+
 import Json.Decode
 import Json.Encode
 import Proto.Enum

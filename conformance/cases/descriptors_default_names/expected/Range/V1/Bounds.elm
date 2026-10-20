@@ -3,6 +3,9 @@
 
 module Range.V1.Bounds exposing (..)
 
+{-| The descriptor of `range.v1.Bounds` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

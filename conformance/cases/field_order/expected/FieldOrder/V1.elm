@@ -3,6 +3,11 @@
 
 module FieldOrder.V1 exposing (..)
 
+{-| Field order: a record's fields, and its descriptor's, follow the order
+the file declares them in, not their numbers. The record constructor is
+positional, so this order is the generated API.
+-}
+
 import FieldOrder.V1.Draft
 import FieldOrder.V1.DraftMargin
 import FieldOrder.V1.Mood

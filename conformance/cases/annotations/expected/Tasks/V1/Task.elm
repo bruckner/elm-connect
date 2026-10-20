@@ -3,6 +3,9 @@
 
 module Tasks.V1.Task exposing (..)
 
+{-| The descriptor of `tasks.v1.Task` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

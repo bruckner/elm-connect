@@ -58,6 +58,11 @@ pub struct Package {
     pub module: ModuleName,
     /// The generated files that declare this package, sorted by name.
     pub files: Vec<String>,
+    /// The package's comments, one per file in [`Package::files`] order
+    /// and each written once: a file's leading comment on its `package`
+    /// statement or, without one, on its `syntax` statement, cleaned as
+    /// [`comments::clean`] cleans it.
+    pub comments: Vec<String>,
     /// Every message of the package, nested ones included, in declaration
     /// order (files by name, an enclosing message before its nested ones).
     /// Map entry messages are not messages here; they are

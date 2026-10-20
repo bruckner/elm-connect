@@ -3,6 +3,9 @@
 
 module Awkward.V1.Delimiters exposing (..)
 
+{-| The descriptor of `awkward.v1.Delimiters` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Maps.V1.Team exposing (..)
 
+{-| The descriptor of `maps.v1.Team` and its fields.
+-}
+
 import Maps.V1.Role
 import Proto.Field
 import Proto.Message

@@ -3,6 +3,11 @@
 
 module Int64Option.V1 exposing (..)
 
+{-| Generated with the `int64=int` option (options.txt): 64-bit integers are
+Elm Ints, decoded only within ±(2^53 − 1) and encoded as decimal
+strings, wherever they appear, unless a field's jstype says otherwise.
+-}
+
 import Dict exposing (Dict)
 import Int64Option.V1.Counters
 import Json.Decode

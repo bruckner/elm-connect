@@ -8,15 +8,17 @@
 //! each with its comment and, for a field, its behaviors in words. A
 //! descriptor carries the comment and the declaration line alone, a
 //! field's descriptor value the field's full line. Codecs, defaults and
-//! typed values get one sentence naming their type. The text is Markdown, which the printer
-//! puts in elm-format's form ([`crate::elm::markdown`]); each comment is
-//! settled on its own first, so a construct it leaves open cannot take in
-//! the text after it.
+//! typed values get one sentence naming their type. A package's module
+//! carries the package's comments, a descriptor module one line naming
+//! what it holds. The text is Markdown, which the printer puts in
+//! elm-format's form ([`crate::elm::markdown`]); each comment is settled
+//! on its own first, so a construct it leaves open cannot take in the
+//! text after it.
 
 use std::fmt::Display;
 
 use crate::elm::markdown;
-use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Service};
+use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Package, Service};
 use crate::naming::RUNTIME_DOCS;
 
 /// `text` as a Markdown code span.
@@ -394,6 +396,33 @@ pub(super) fn service(service: &Service) -> String {
             .into_iter()
             .chain([code(&service.doc.declaration)]),
     )
+}
+
+/// The doc of a package's module: the package's comments, each settled
+/// on its own as a paragraph or more; `None` when it has none.
+pub(super) fn package(package: &Package) -> Option<String> {
+    let text = paragraphs(
+        package
+            .comments
+            .iter()
+            .map(|comment| markdown::blocks(comment)),
+    );
+    (!text.is_empty()).then_some(text)
+}
+
+/// The doc of a message's descriptor module, naming what it holds; the
+/// message's own doc stays on its `descriptor`.
+pub(super) fn message_descriptor_module(message: &Message, has_fields: bool) -> String {
+    let fields = if has_fields { " and its fields" } else { "" };
+    format!(
+        "The descriptor of {}{fields}.",
+        code(&message.proto_full_name)
+    )
+}
+
+/// The doc of an enum's descriptor module, naming what it holds.
+pub(super) fn enum_descriptor_module(enumeration: &Enum) -> String {
+    format!("The descriptor of {}.", code(&enumeration.proto_full_name))
 }
 
 #[cfg(test)]

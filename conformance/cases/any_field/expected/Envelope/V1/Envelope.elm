@@ -3,6 +3,9 @@
 
 module Envelope.V1.Envelope exposing (..)
 
+{-| The descriptor of `envelope.v1.Envelope` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

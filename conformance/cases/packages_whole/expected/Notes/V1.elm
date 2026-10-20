@@ -3,6 +3,13 @@
 
 module Notes.V1 exposing (..)
 
+{-| A requested package is generated whole: `Tag` is declared in a file of
+`notes.v1` that is only imported, and is in the module all the same.
+
+Compiled but not requested; its package is, so it is generated.
+
+-}
+
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note

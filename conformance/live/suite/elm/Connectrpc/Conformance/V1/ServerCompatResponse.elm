@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ServerCompatResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ServerCompatResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

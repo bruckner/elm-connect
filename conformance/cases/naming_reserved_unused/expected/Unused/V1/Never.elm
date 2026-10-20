@@ -3,6 +3,9 @@
 
 module Unused.V1.Never exposing (..)
 
+{-| The descriptor of `unused.v1.Never`.
+-}
+
 import Proto.Message
 import Proto.Version
 

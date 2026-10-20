@@ -3,6 +3,9 @@
 
 module Unused.V1.Order exposing (..)
 
+{-| The descriptor of `unused.v1.Order`.
+-}
+
 import Proto.Message
 import Proto.Version
 

@@ -3,6 +3,9 @@
 
 module Notes.Api.Edit exposing (..)
 
+{-| The descriptor of `notes.v1.Note.Revision` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

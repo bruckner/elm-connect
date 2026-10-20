@@ -3,6 +3,9 @@
 
 module Maps.V1.Member exposing (..)
 
+{-| The descriptor of `maps.v1.Member` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

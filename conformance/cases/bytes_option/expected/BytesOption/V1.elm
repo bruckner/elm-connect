@@ -3,6 +3,11 @@
 
 module BytesOption.V1 exposing (..)
 
+{-| Generated with the `bytes=bytes` option (options.txt): bytes fields are
+elm/bytes' Bytes, decoded from base64 and encoded as standard base64 with
+padding, wherever they appear.
+-}
+
 import Bytes
 import BytesOption.V1.Blob
 import Dict exposing (Dict)

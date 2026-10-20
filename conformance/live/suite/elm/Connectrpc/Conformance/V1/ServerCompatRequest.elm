@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ServerCompatRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ServerCompatRequest` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.HTTPVersion
 import Connectrpc.Conformance.V1.Protocol
 import Proto.Field

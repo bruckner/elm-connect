@@ -1,0 +1,8 @@
+// Detached: a blank line separates it from the syntax statement, so it is
+// left out.
+
+// A file whose package statement has no comment gives the one on its
+// syntax statement instead.
+syntax = "proto3";
+
+package notes.v1;

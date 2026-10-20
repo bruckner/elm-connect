@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnimplementedRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnimplementedRequest`.
+-}
+
 import Proto.Message
 import Proto.Version
 

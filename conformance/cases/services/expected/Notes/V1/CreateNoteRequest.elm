@@ -3,6 +3,9 @@
 
 module Notes.V1.CreateNoteRequest exposing (..)
 
+{-| The descriptor of `notes.v1.CreateNoteRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

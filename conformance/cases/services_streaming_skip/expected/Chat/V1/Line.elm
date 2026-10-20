@@ -3,6 +3,9 @@
 
 module Chat.V1.Line exposing (..)
 
+{-| The descriptor of `chat.v1.Line` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,11 @@
 
 module First.V1 exposing (..)
 
+{-| Names starting with capitals or underscores (design section 3.7): the
+leading run of capitals is lowercased, keeping its last letter when a
+lowercase letter follows. Types keep their names as written.
+-}
+
 import First.V1.Link
 import First.V1.URLPath
 import Json.Decode

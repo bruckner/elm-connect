@@ -3,6 +3,11 @@
 
 module Clock.V1 exposing (..)
 
+{-| Path variables of well-known types whose JSON is one string or scalar:
+the variable's text is that JSON value, and the field is not repeated
+in the query.
+-}
+
 import Clock.V1.Moment
 import Json.Decode
 import Json.Encode

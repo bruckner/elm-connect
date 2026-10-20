@@ -3,6 +3,11 @@
 
 module Envelope.V1 exposing (..)
 
+{-| `google.protobuf.Any` is the runtime's `Proto.Any.Any`: a message
+field, so singular it is a `Maybe`; repeated, a map value and a oneof
+member hold it bare. A method may take or return one.
+-}
+
 import Dict exposing (Dict)
 import Envelope.V1.Envelope
 import Json.Decode

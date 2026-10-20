@@ -3,6 +3,9 @@
 
 module Nesting.V1.Node exposing (..)
 
+{-| The descriptor of `nesting.v1.Node` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

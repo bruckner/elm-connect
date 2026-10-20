@@ -3,6 +3,9 @@
 
 module Nesting.V1.OuterInner exposing (..)
 
+{-| The descriptor of `nesting.v1.Outer.Inner` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

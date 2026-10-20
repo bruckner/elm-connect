@@ -3,6 +3,9 @@
 
 module Unused.V1.Char exposing (..)
 
+{-| The descriptor of `unused.v1.Char`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

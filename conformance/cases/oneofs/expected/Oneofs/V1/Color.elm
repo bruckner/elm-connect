@@ -3,6 +3,9 @@
 
 module Oneofs.V1.Color exposing (..)
 
+{-| The descriptor of `oneofs.v1.Color`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Unused.V1.Dict exposing (..)
 
+{-| The descriptor of `unused.v1.Dict` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

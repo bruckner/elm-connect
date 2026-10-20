@@ -3,6 +3,9 @@
 
 module Int64Option.V1.Counters exposing (..)
 
+{-| The descriptor of `int64_option.v1.Counters` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

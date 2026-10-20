@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.TestSuiteConnectVersionMode exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.TestSuite.ConnectVersionMode`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

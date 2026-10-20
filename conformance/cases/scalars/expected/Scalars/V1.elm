@@ -3,6 +3,10 @@
 
 module Scalars.V1 exposing (..)
 
+{-| Every proto3 scalar type, singular, and a message with no fields.
+64-bit integers are Strings by default (design §3.4).
+-}
+
 import Json.Decode
 import Json.Encode
 import Proto.Json

@@ -3,6 +3,9 @@
 
 module Routes.V1.Kind exposing (..)
 
+{-| The descriptor of `routes.v1.Kind`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

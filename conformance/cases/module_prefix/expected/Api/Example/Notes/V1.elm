@@ -3,6 +3,12 @@
 
 module Api.Example.Notes.V1 exposing (..)
 
+{-| Under `module_prefix`, every generated module goes inside the prefix:
+package modules, a renamed one too (`users.v1` is renamed `People`), and
+service modules inside theirs. References and imports between them use
+the prefixed names; the runtime's modules are not prefixed.
+-}
+
 import Api.Example.Notes.V1.GetNoteRequest
 import Api.Example.Notes.V1.Note
 import Api.Example.People

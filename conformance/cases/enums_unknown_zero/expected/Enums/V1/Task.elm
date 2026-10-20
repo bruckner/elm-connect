@@ -3,6 +3,9 @@
 
 module Enums.V1.Task exposing (..)
 
+{-| The descriptor of `enums.v1.Task` and its fields.
+-}
+
 import Enums.V1.Priority
 import Enums.V1.Status
 import Proto.Field

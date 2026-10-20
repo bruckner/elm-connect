@@ -3,6 +3,10 @@
 
 module Notes.V1 exposing (..)
 
+{-| A package referring to another: every reference is qualified with the
+other module's name, which the module imports.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

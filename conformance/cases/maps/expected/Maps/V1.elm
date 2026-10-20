@@ -3,6 +3,12 @@
 
 module Maps.V1 exposing (..)
 
+{-| Maps: `Dict String V` for string and 64-bit integer keys, `Dict Int V`
+for 32-bit integer keys, read from and written as decimal strings, and
+`List ( Bool, V )` for bool keys, which Elm's `Dict` cannot hold. Each
+integer key kind has a decoder that checks its range.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

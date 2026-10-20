@@ -3,6 +3,9 @@
 
 module Maps.V1.Role exposing (..)
 
+{-| The descriptor of `maps.v1.Role`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

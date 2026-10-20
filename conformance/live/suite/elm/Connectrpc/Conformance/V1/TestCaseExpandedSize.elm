@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.TestCaseExpandedSize exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.TestCase.ExpandedSize` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

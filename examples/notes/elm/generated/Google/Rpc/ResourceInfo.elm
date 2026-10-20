@@ -3,6 +3,9 @@
 
 module Google.Rpc.ResourceInfo exposing (..)
 
+{-| The descriptor of `google.rpc.ResourceInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

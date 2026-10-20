@@ -3,6 +3,9 @@
 
 module Google.Rpc.QuotaFailureViolation exposing (..)
 
+{-| The descriptor of `google.rpc.QuotaFailure.Violation` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

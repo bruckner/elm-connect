@@ -3,6 +3,11 @@
 
 module Chat.V1 exposing (..)
 
+{-| Under `streaming=skip`, streaming methods are left out, each a warning,
+and the rest is generated. A service whose every method streams is left
+with no methods, and so gets no module.
+-}
+
 import Chat.V1.Line
 import Json.Decode
 import Json.Encode

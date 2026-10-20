@@ -3,7 +3,7 @@
 
 use elm_connect_gen::ir::{Doc, Package, declaration};
 
-use crate::common::{package, pool};
+use crate::common::{build, package, pool};
 
 const NOTES: &str = r#"syntax = "proto3";
 
@@ -331,4 +331,35 @@ fn a_package_without_comments_has_none() {
     let a = &package.messages[0];
     assert_eq!(a.doc, doc(None, "message p.A", false));
     assert_eq!(a.fields[0].doc, doc(None, "int32 x = 1;", false));
+    assert!(package.comments.is_empty());
+}
+
+#[test]
+fn a_package_gathers_each_files_comment_once_in_file_order() {
+    let files = [
+        (
+            "b.proto",
+            "syntax = \"proto3\";\n\n// From b.\npackage p;\nmessage B {}\n",
+        ),
+        (
+            "a.proto",
+            "// Detached.\n\n// From a's syntax line.\nsyntax = \"proto3\";\n\npackage p;\n\
+             message A {}\n",
+        ),
+        (
+            "c.proto",
+            "syntax = \"proto3\";\n\n// From b.\npackage p; // Trailing.\nmessage C {}\n",
+        ),
+        (
+            "d.proto",
+            "// Of syntax.\nsyntax = \"proto3\";\n\n// Of the package.\npackage p;\n\
+             message D {}\n",
+        ),
+    ];
+    let packages =
+        build(&files, &["a.proto", "b.proto", "c.proto", "d.proto"]).expect("the package builds");
+    assert_eq!(
+        packages[0].comments,
+        ["From a's syntax line.", "From b.", "Of the package."]
+    );
 }

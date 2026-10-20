@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.WireDetails exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.WireDetails` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

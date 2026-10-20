@@ -3,6 +3,9 @@
 
 module Routes.V1.Resource exposing (..)
 
+{-| The descriptor of `routes.v1.Resource` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

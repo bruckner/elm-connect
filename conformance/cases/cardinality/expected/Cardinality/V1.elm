@@ -3,6 +3,10 @@
 
 module Cardinality.V1 exposing (..)
 
+{-| Presence and repetition: proto3 `optional` scalars and messages,
+singular message fields, and repeated scalars and messages.
+-}
+
 import Cardinality.V1.Author
 import Cardinality.V1.Note
 import Json.Decode

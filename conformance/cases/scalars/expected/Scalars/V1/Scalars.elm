@@ -3,6 +3,9 @@
 
 module Scalars.V1.Scalars exposing (..)
 
+{-| The descriptor of `scalars.v1.Scalars` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

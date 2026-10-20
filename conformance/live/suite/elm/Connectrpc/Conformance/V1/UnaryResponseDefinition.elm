@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnaryResponseDefinition exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnaryResponseDefinition` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

@@ -3,6 +3,10 @@
 
 module Ping.V1 exposing (..)
 
+{-| A package of services alone: its package module has no types, holds
+its registry alone, and must still compile beside the service module.
+-}
+
 import Proto.Registry
 import Proto.Version
 

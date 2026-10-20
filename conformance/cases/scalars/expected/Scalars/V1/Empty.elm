@@ -3,6 +3,9 @@
 
 module Scalars.V1.Empty exposing (..)
 
+{-| The descriptor of `scalars.v1.Empty`.
+-}
+
 import Proto.Message
 import Proto.Version
 

@@ -3,6 +3,9 @@
 
 module Notes.V1.Visibility exposing (..)
 
+{-| The descriptor of `notes.v1.Visibility`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

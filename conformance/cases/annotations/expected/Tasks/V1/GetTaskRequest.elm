@@ -3,6 +3,9 @@
 
 module Tasks.V1.GetTaskRequest exposing (..)
 
+{-| The descriptor of `tasks.v1.GetTaskRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

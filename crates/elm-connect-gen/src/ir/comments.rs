@@ -16,7 +16,15 @@ use prost_types::FileDescriptorProto;
 /// The comments of one file, by descriptor path.
 #[derive(Clone, Debug, Default)]
 pub struct Comments {
-    by_path: HashMap<Vec<i32>, Option<String>>,
+    by_path: HashMap<Vec<i32>, Entry>,
+}
+
+/// What one location records: the element's comment, and its leading
+/// comment alone.
+#[derive(Clone, Debug, Default)]
+struct Entry {
+    comment: Option<String>,
+    leading: Option<String>,
 }
 
 impl Comments {
@@ -26,19 +34,29 @@ impl Comments {
     pub fn new(file: &FileDescriptorProto) -> Self {
         let mut by_path = HashMap::new();
         for location in file.source_code_info.iter().flat_map(|info| &info.location) {
-            by_path.entry(location.path.clone()).or_insert_with(|| {
-                comment(
-                    location.leading_comments.as_deref(),
-                    location.trailing_comments.as_deref(),
-                )
-            });
+            by_path
+                .entry(location.path.clone())
+                .or_insert_with(|| Entry {
+                    comment: comment(
+                        location.leading_comments.as_deref(),
+                        location.trailing_comments.as_deref(),
+                    ),
+                    leading: location.leading_comments.as_deref().and_then(clean),
+                });
         }
         Comments { by_path }
     }
 
     /// The comment of the element at `path`, if it has one.
     pub fn get(&self, path: &[i32]) -> Option<&str> {
-        self.by_path.get(path)?.as_deref()
+        self.by_path.get(path)?.comment.as_deref()
+    }
+
+    /// The leading comment alone of the element at `path`, if it has one:
+    /// the comment of a statement such as `package`, whose trailing
+    /// comment is as likely to introduce what follows.
+    pub fn leading(&self, path: &[i32]) -> Option<&str> {
+        self.by_path.get(path)?.leading.as_deref()
     }
 }
 
@@ -118,6 +136,7 @@ mod tests {
                     location(vec![4, 0, 2, 0], None, Some(" A field.\n")),
                     location(vec![4, 1], None, None),
                     location(vec![4, 1], Some(" Too late.\n"), None),
+                    location(vec![2], Some(" The package.\n"), Some(" After it.\n")),
                 ],
             }),
             ..FileDescriptorProto::default()
@@ -127,5 +146,7 @@ mod tests {
         assert_eq!(comments.get(&[4, 0, 2, 0]), Some("A field."));
         assert_eq!(comments.get(&[4, 1]), None);
         assert_eq!(comments.get(&[5]), None);
+        assert_eq!(comments.leading(&[2]), Some("The package."));
+        assert_eq!(comments.leading(&[4, 0, 2, 0]), None);
     }
 }

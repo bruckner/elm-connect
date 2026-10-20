@@ -601,6 +601,19 @@ impl Builder {
         }
     }
 
+    /// The comment `file` gives its package: the leading comment of its
+    /// `package` statement, or else of its `syntax` statement.
+    fn package_comment(&mut self, file: &FileDescriptor) -> Option<String> {
+        let comments = self
+            .comments
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Comments::new(file.file_descriptor_proto()));
+        comments
+            .leading(&[tag::FILE_PACKAGE])
+            .or_else(|| comments.leading(&[tag::FILE_SYNTAX]))
+            .map(str::to_owned)
+    }
+
     /// The doc of `field`, a field or a oneof member of a message of
     /// `file`, deprecated as `annotations` say.
     fn field_doc(
@@ -810,10 +823,20 @@ impl Builder {
             }
         }
 
+        let mut comments = Vec::new();
+        for file in files {
+            if let Some(comment) = self.package_comment(file)
+                && !comments.contains(&comment)
+            {
+                comments.push(comment);
+            }
+        }
+
         Package {
             proto_name: proto_name.to_owned(),
             module: module.clone(),
             files: files.iter().map(|file| file.name().to_owned()).collect(),
+            comments,
             messages,
             enums,
             services,

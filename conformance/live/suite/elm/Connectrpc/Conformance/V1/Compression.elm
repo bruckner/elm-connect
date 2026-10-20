@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Compression exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Compression`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

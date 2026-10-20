@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// Detached: the comment below repeats notes.proto's word for word, so the
+// package module writes it once.
+
+// Proto comments become the documentation of what each element becomes,
+// beside its one-line declaration: messages and nested messages, fields
+// with options, `json_name` and deprecation, enums and their values with
+// an alias, oneofs and their members, a service and its methods, whose
+// docs name their Connect path and HTTP bindings. A leading comment and a
+// trailing one are both kept; a detached comment is left out.
+package notes.v1;

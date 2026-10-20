@@ -3,6 +3,9 @@
 
 module Awkward.V1.Docs exposing (..)
 
+{-| The descriptor of `awkward.v1.Docs` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

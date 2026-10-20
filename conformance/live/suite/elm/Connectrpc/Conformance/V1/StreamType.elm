@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.StreamType exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.StreamType`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Features exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Features` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.Codec
 import Connectrpc.Conformance.V1.Compression
 import Connectrpc.Conformance.V1.HTTPVersion

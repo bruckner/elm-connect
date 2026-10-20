@@ -3,6 +3,9 @@
 
 module WellKnown.V1.Event exposing (..)
 
+{-| The descriptor of `well_known.v1.Event` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

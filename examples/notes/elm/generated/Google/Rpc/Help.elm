@@ -3,6 +3,9 @@
 
 module Google.Rpc.Help exposing (..)
 
+{-| The descriptor of `google.rpc.Help` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

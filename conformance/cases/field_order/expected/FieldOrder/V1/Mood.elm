@@ -3,6 +3,9 @@
 
 module FieldOrder.V1.Mood exposing (..)
 
+{-| The descriptor of `field_order.v1.Mood`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

@@ -3,6 +3,9 @@
 
 module Naming.V1.Shape exposing (..)
 
+{-| The descriptor of `naming.v1.Shape`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

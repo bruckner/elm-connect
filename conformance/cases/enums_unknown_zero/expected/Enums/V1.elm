@@ -3,6 +3,11 @@
 
 module Enums.V1 exposing (..)
 
+{-| The enums case under enum\_unknown=zero: the same protos, and the same
+output but for each decoder, which is Proto.Json.enumOrZero, reading an
+unknown name as the zero value as it does an unknown number.
+-}
+
 import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task

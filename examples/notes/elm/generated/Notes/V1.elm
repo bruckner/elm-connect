@@ -3,6 +3,12 @@
 
 module Notes.V1 exposing (..)
 
+{-| A small notes API, the example the live suite runs against. Every path of
+the runtime has a method or a behaviour here: path, query and body bindings,
+a custom verb, a method without an HTTP rule, errors with details, a slow
+note for timeouts, a flaky one for retries and an echoed header.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

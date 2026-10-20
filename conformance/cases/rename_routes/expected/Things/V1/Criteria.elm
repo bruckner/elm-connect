@@ -3,6 +3,9 @@
 
 module Things.V1.Criteria exposing (..)
 
+{-| The descriptor of `things.v1.Filter` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

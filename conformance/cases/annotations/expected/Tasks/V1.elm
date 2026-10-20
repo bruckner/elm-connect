@@ -3,6 +3,12 @@
 
 module Tasks.V1 exposing (..)
 
+{-| What a descriptor carries beyond a field's type: `google.api.field_behavior`
+and `deprecated` on fields, oneof members and enum values become
+modifiers, written only where set; a method's idempotency level is
+carried whole.
+-}
+
 import Json.Decode
 import Json.Encode
 import Proto.Enum

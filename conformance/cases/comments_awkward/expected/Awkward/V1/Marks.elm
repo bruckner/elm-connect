@@ -3,6 +3,9 @@
 
 module Awkward.V1.Marks exposing (..)
 
+{-| The descriptor of `awkward.v1.Marks`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

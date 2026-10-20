@@ -3,6 +3,9 @@
 
 module Users.V1.User exposing (..)
 
+{-| The descriptor of `users.v1.User` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

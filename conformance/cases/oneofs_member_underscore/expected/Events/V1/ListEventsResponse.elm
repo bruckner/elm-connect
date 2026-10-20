@@ -3,6 +3,9 @@
 
 module Events.V1.ListEventsResponse exposing (..)
 
+{-| The descriptor of `events.v1.ListEventsResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

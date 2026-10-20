@@ -3,6 +3,11 @@
 
 module Enums.V1 exposing (..)
 
+{-| Enums: a custom type per enum, the zero value first; encoded by name,
+decoded by name or number. An unknown number reads as the zero value;
+an unknown name fails.
+-}
+
 import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task

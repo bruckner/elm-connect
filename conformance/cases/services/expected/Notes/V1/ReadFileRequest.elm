@@ -3,6 +3,9 @@
 
 module Notes.V1.ReadFileRequest exposing (..)
 
+{-| The descriptor of `notes.v1.ReadFileRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

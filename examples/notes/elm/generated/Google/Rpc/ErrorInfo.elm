@@ -3,6 +3,9 @@
 
 module Google.Rpc.ErrorInfo exposing (..)
 
+{-| The descriptor of `google.rpc.ErrorInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

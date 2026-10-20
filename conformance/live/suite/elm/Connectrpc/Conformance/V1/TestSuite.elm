@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.TestSuite exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.TestSuite` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.Codec
 import Connectrpc.Conformance.V1.Compression
 import Connectrpc.Conformance.V1.HTTPVersion

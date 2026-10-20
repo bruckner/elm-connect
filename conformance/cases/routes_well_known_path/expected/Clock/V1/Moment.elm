@@ -3,6 +3,9 @@
 
 module Clock.V1.Moment exposing (..)
 
+{-| The descriptor of `clock.v1.Moment` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

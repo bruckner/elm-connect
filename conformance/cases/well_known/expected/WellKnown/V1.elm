@@ -3,6 +3,12 @@
 
 module WellKnown.V1 exposing (..)
 
+{-| Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
+runtime's Duration, FieldMask as its paths, Empty as () without
+presence, Struct and ListValue as a Dict and a List of JSON values,
+Value as a Maybe of JSON, and the wrappers as a Maybe of their scalar.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode

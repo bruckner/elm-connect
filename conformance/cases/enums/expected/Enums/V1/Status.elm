@@ -3,6 +3,9 @@
 
 module Enums.V1.Status exposing (..)
 
+{-| The descriptor of `enums.v1.Status`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version

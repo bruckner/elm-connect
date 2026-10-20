@@ -254,7 +254,9 @@ pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics>
     if !reserved.is_empty() {
         return Err(reserved);
     }
-    Ok(emitter.module(package, decls))
+    let mut module = emitter.module(package, decls);
+    module.doc = docs::package(package);
+    Ok(module)
 }
 
 /// The descriptor modules of `package`: one per enum, then one per
@@ -265,13 +267,20 @@ pub fn emit_descriptor_modules(package: &Package, options: &Options) -> Vec<Modu
     for enumeration in &package.enums {
         let mut emitter = Emitter::new(&enumeration.descriptor_module(&package.module), options);
         let decls = emitter.enum_descriptor_module(&package.module, enumeration);
-        modules.push(emitter.module(package, decls));
+        let mut module = emitter.module(package, decls);
+        module.doc = Some(docs::enum_descriptor_module(enumeration));
+        modules.push(module);
     }
     for message in &package.messages {
         let shape = message_shape(message, &by_name, Holding::of(options));
         let mut emitter = Emitter::new(&message.descriptor_module(&package.module), options);
         let decls = emitter.message_descriptor_module(&package.module, &shape);
-        modules.push(emitter.module(package, decls));
+        let mut module = emitter.module(package, decls);
+        module.doc = Some(docs::message_descriptor_module(
+            message,
+            !shape.record().is_empty(),
+        ));
+        modules.push(module);
     }
     modules
 }
@@ -657,6 +666,7 @@ mod tests {
             proto_name: "t.v1".into(),
             module: IrModule::new(vec!["T".into(), "V1".into()]).expect("valid"),
             files: vec!["a.proto".into(), "b.proto".into()],
+            comments: Vec::new(),
             messages,
             enums: Vec::new(),
             services: Vec::new(),

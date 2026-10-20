@@ -3,6 +3,9 @@
 
 module Google.Rpc.BadRequestFieldViolation exposing (..)
 
+{-| The descriptor of `google.rpc.BadRequest.FieldViolation` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

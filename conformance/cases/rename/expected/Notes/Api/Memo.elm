@@ -3,6 +3,9 @@
 
 module Notes.Api.Memo exposing (..)
 
+{-| The descriptor of `notes.v1.Note` and its fields.
+-}
+
 import Notes.Api.Audience
 import Proto.Field
 import Proto.Message

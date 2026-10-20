@@ -3,6 +3,9 @@
 
 module Nesting.V1.OuterInnerDeepest exposing (..)
 
+{-| The descriptor of `nesting.v1.Outer.Inner.Deepest` and its fields.
+-}
+
 import Nesting.V1.OuterInnerKind
 import Proto.Field
 import Proto.Message

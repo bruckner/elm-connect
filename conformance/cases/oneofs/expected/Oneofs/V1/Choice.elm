@@ -3,6 +3,9 @@
 
 module Oneofs.V1.Choice exposing (..)
 
+{-| The descriptor of `oneofs.v1.Choice` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

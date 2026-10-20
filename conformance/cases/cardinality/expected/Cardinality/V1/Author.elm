@@ -3,6 +3,9 @@
 
 module Cardinality.V1.Author exposing (..)
 
+{-| The descriptor of `cardinality.v1.Author` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version

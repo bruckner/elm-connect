@@ -966,7 +966,9 @@ tag (design §8).
   (`Required.`), a field's descriptor value its full line
   (`` `string name = 1;` ``); a call its comment, then its declaration,
   Connect path and HTTP bindings
-  (`` `GET /v1/{name=notes/*}` ``); a service's module with its comment.
+  (`` `GET /v1/{name=notes/*}` ``); a package's module with its files'
+  package comments, a service's module with its comment, and a
+  descriptor module with a line naming what it holds.
   Codecs, defaults, typed values and `registry` get a sentence or two.
   Doc comments are printed in elm-format's Markdown, so
   `elm-format --validate` still accepts generated code (design §3.1,

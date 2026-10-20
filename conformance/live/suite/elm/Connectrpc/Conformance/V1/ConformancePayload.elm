@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ConformancePayload exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ConformancePayload` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
