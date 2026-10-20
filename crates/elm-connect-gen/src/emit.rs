@@ -74,8 +74,9 @@
 //!   well-known types', so it is transitive.
 //! - A declaration a proto element becomes is documented with what the
 //!   proto says about it: its comment and its one-line declaration, as
-//!   [`docs`] lays them out; codecs, defaults and typed values with one
-//!   sentence naming their type.
+//!   [`docs`] lays them out; a method's call with its Connect path and
+//!   HTTP bindings too, a service's in its module's documentation; codecs,
+//!   defaults, typed values and method descriptors with one sentence.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -297,10 +298,12 @@ pub fn emit_service(package: &Package, service: &Service, options: &Options) -> 
         }
         decls.push(Decl::Comment("CALLS".into()));
         for method in &service.methods {
-            decls.push(emitter.method(method));
+            decls.push(emitter.method(&service.proto_full_name, method));
         }
     }
-    emitter.module(package, decls)
+    let mut module = emitter.module(package, decls);
+    module.doc = Some(docs::service(service));
+    module
 }
 
 /// A message whose every field and oneof member has a shape.

@@ -436,7 +436,8 @@ mod tests {
             protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([
                 case.join("input")
             ]));
-        compiler.include_imports(true);
+        // protoc sends source info, which the docs' comments come from.
+        compiler.include_imports(true).include_source_info(true);
         compiler
             .open_file("notes.proto")
             .expect("the case compiles");

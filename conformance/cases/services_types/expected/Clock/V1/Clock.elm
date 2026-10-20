@@ -3,6 +3,9 @@
 
 module Clock.V1.Clock exposing (..)
 
+{-| `service clock.v1.Clock`
+-}
+
 import Clock.V1
 import Dict exposing (Dict)
 import Json.Decode
@@ -27,6 +30,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `Now` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorNow : Proto.Method.Descriptor
 descriptorNow =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -37,6 +42,8 @@ descriptorNow =
         []
 
 
+{-| What the proto says about the method `Sleep` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorSleep : Proto.Method.Descriptor
 descriptorSleep =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -47,6 +54,8 @@ descriptorSleep =
         []
 
 
+{-| What the proto says about the method `Mask` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorMask : Proto.Method.Descriptor
 descriptorMask =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -57,6 +66,8 @@ descriptorMask =
         []
 
 
+{-| What the proto says about the method `Echo` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorEcho : Proto.Method.Descriptor
 descriptorEcho =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -67,6 +78,8 @@ descriptorEcho =
         []
 
 
+{-| What the proto says about the method `Ticks` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorTicks : Proto.Method.Descriptor
 descriptorTicks =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -77,6 +90,8 @@ descriptorTicks =
         []
 
 
+{-| What the proto says about the method `Count` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorCount : Proto.Method.Descriptor
 descriptorCount =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -87,6 +102,8 @@ descriptorCount =
         []
 
 
+{-| What the proto says about the method `Ratio` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorRatio : Proto.Method.Descriptor
 descriptorRatio =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -97,6 +114,8 @@ descriptorRatio =
         []
 
 
+{-| What the proto says about the method `Name` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorName : Proto.Method.Descriptor
 descriptorName =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -107,6 +126,8 @@ descriptorName =
         []
 
 
+{-| What the proto says about the method `Raw` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorRaw : Proto.Method.Descriptor
 descriptorRaw =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -117,6 +138,8 @@ descriptorRaw =
         []
 
 
+{-| What the proto says about the method `Zone` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorZone : Proto.Method.Descriptor
 descriptorZone =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -127,6 +150,8 @@ descriptorZone =
         []
 
 
+{-| What the proto says about the method `Set` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorSet : Proto.Method.Descriptor
 descriptorSet =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -141,6 +166,9 @@ descriptorSet =
 -- CALLS
 
 
+{-| `rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp)`. Connect: `POST /clock.v1.Clock/Now`.
+No HTTP rule: the Connect path.
+-}
 now : () -> Rpc.Call () Time.Posix
 now =
     Rpc.call
@@ -150,6 +178,9 @@ now =
         )
 
 
+{-| `rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty)`. Connect: `POST /clock.v1.Clock/Sleep`.
+No HTTP rule: the Connect path.
+-}
 sleep : Duration -> Rpc.Call Duration ()
 sleep =
     Rpc.call
@@ -159,6 +190,9 @@ sleep =
         )
 
 
+{-| `rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct)`. Connect: `POST /clock.v1.Clock/Mask`.
+No HTTP rule: the Connect path.
+-}
 mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
 mask =
     Rpc.call
@@ -168,6 +202,9 @@ mask =
         )
 
 
+{-| `rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue)`. Connect: `POST /clock.v1.Clock/Echo`.
+No HTTP rule: the Connect path.
+-}
 echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
 echo =
     Rpc.call
@@ -177,6 +214,9 @@ echo =
         )
 
 
+{-| `rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value)`. Connect: `POST /clock.v1.Clock/Ticks`.
+No HTTP rule: the Connect path.
+-}
 ticks : Int -> Rpc.Call Int Int
 ticks =
     Rpc.call
@@ -186,6 +226,9 @@ ticks =
         )
 
 
+{-| `rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value)`. Connect: `POST /clock.v1.Clock/Count`.
+No HTTP rule: the Connect path.
+-}
 count : Int -> Rpc.Call Int Int
 count =
     Rpc.call
@@ -195,6 +238,9 @@ count =
         )
 
 
+{-| `rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue)`. Connect: `POST /clock.v1.Clock/Ratio`.
+No HTTP rule: the Connect path.
+-}
 ratio : Float -> Rpc.Call Float Float
 ratio =
     Rpc.call
@@ -204,6 +250,9 @@ ratio =
         )
 
 
+{-| `rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue)`. Connect: `POST /clock.v1.Clock/Name`.
+No HTTP rule: the Connect path.
+-}
 name : String -> Rpc.Call String Bool
 name =
     Rpc.call
@@ -213,6 +262,9 @@ name =
         )
 
 
+{-| `rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue)`. Connect: `POST /clock.v1.Clock/Raw`.
+No HTTP rule: the Connect path.
+-}
 raw : String -> Rpc.Call String String
 raw =
     Rpc.call
@@ -222,6 +274,9 @@ raw =
         )
 
 
+{-| `rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone)`. Connect: `POST /clock.v1.Clock/Zone`.
+No HTTP rule: the Connect path.
+-}
 zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
     Rpc.call
@@ -231,6 +286,9 @@ zone =
         )
 
 
+{-| `rpc Set(Alarm) returns (Alarm)`. Connect: `POST /clock.v1.Clock/Set`.
+No HTTP rule: the Connect path.
+-}
 set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
 set =
     Rpc.call

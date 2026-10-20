@@ -3,6 +3,9 @@
 
 module Tasks.V1.Tasks exposing (..)
 
+{-| `service tasks.v1.Tasks`
+-}
+
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -20,6 +23,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetTask : Proto.Method.Descriptor
 descriptorGetTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -30,6 +35,8 @@ descriptorGetTask =
         []
 
 
+{-| What the proto says about the method `PutTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorPutTask : Proto.Method.Descriptor
 descriptorPutTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -40,6 +47,8 @@ descriptorPutTask =
         []
 
 
+{-| What the proto says about the method `CloseTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorCloseTask : Proto.Method.Descriptor
 descriptorCloseTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -54,6 +63,9 @@ descriptorCloseTask =
 -- CALLS
 
 
+{-| `rpc GetTask(GetTaskRequest) returns (Task)`. Connect: `POST /tasks.v1.Tasks/GetTask`.
+No HTTP rule: the Connect path.
+-}
 getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 getTask =
     Rpc.call
@@ -63,6 +75,9 @@ getTask =
         )
 
 
+{-| `rpc PutTask(Task) returns (Task)`. Connect: `POST /tasks.v1.Tasks/PutTask`.
+No HTTP rule: the Connect path.
+-}
 putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
 putTask =
     Rpc.call
@@ -72,6 +87,9 @@ putTask =
         )
 
 
+{-| `rpc CloseTask(GetTaskRequest) returns (Task)`. Connect: `POST /tasks.v1.Tasks/CloseTask`.
+No HTTP rule: the Connect path.
+-}
 closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 closeTask =
     Rpc.call

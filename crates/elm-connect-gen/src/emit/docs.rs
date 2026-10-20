@@ -13,7 +13,7 @@
 //! the text after it.
 
 use crate::elm::markdown;
-use crate::ir::{Doc, Enum, Message, Oneof};
+use crate::ir::{Doc, Enum, HttpRule, Message, Method, Oneof, Service};
 
 /// `text` as a Markdown code span.
 pub(super) fn code(text: &str) -> String {
@@ -232,6 +232,61 @@ pub(super) fn enum_descriptor(sentence: String, enumeration: &Enum) -> String {
     )
 }
 
+/// The doc of a method's call: `Deprecated.` when it is, then its
+/// declaration, its Connect path and its HTTP bindings as its rule writes
+/// them, then its comment.
+pub(super) fn method(service: &str, method: &Method) -> String {
+    let routes = match &method.http {
+        Some(rule) => {
+            let bindings = std::iter::once(rule)
+                .chain(&rule.additional_bindings)
+                .enumerate()
+                .map(|(index, rule)| match index {
+                    0 => binding(rule),
+                    n => format!("binding {n}: {}", binding(rule)),
+                })
+                .collect::<Vec<_>>();
+            format!("Transcode: {}.", bindings.join("; "))
+        }
+        None => "No HTTP rule: the Connect path.".to_owned(),
+    };
+    let head = format!(
+        "{}. Connect: {}.\n{routes}",
+        code(&method.doc.declaration),
+        code(&format!("POST /{service}/{}", method.proto_name)),
+    );
+    let deprecated = method.doc.deprecated.then(|| "Deprecated.".to_owned());
+    paragraphs(
+        deprecated
+            .into_iter()
+            .chain([head])
+            .chain(comment(&method.doc)),
+    )
+}
+
+/// One binding of an HTTP rule: `` `GET /v1/{name=notes/*}` ``, then its
+/// `body` and `response_body` where it sets them.
+fn binding(rule: &HttpRule) -> String {
+    let mut text = code(&format!("{} {}", rule.verb.as_str(), rule.template));
+    if !rule.body.is_empty() {
+        text.push_str(&format!(" body {}", code(&rule.body)));
+    }
+    if !rule.response_body.is_empty() {
+        text.push_str(&format!(" response body {}", code(&rule.response_body)));
+    }
+    text
+}
+
+/// The doc of a service's module: the proto's part and the service's
+/// declaration.
+pub(super) fn service(service: &Service) -> String {
+    paragraphs(
+        proto_part(&service.doc)
+            .into_iter()
+            .chain([code(&service.doc.declaration)]),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,6 +296,30 @@ mod tests {
         assert_eq!(code("a"), "`a`");
         assert_eq!(code("a`b"), "`` a`b ``");
         assert_eq!(code("``"), "``` `` ```");
+    }
+
+    #[test]
+    fn bindings_read_as_their_rule_writes_them() {
+        use crate::ir::HttpVerb;
+        let rule = |verb, template: &str, body: &str, response_body: &str| HttpRule {
+            verb,
+            template: template.into(),
+            body: body.into(),
+            response_body: response_body.into(),
+            additional_bindings: Vec::new(),
+        };
+        assert_eq!(
+            binding(&rule(HttpVerb::Get, "/v1/{name=notes/*}", "", "")),
+            "`GET /v1/{name=notes/*}`"
+        );
+        assert_eq!(
+            binding(&rule(HttpVerb::Post, "/v1/notes:batch", "*", "notes")),
+            "`POST /v1/notes:batch` body `*` response body `notes`"
+        );
+        assert_eq!(
+            binding(&rule(HttpVerb::Custom("PURGE".into()), "/v1/x", "", "")),
+            "`PURGE /v1/x`"
+        );
     }
 
     #[test]

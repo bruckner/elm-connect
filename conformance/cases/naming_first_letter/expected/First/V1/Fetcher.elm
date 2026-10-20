@@ -3,6 +3,9 @@
 
 module First.V1.Fetcher exposing (..)
 
+{-| `service first.v1.Fetcher`
+-}
+
 import First.V1
 import Proto.Method
 import Proto.Version
@@ -20,6 +23,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetNote` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -30,6 +35,8 @@ descriptorGetNote =
         []
 
 
+{-| What the proto says about the method `HTTPGet` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorHttpGet : Proto.Method.Descriptor
 descriptorHttpGet =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -40,6 +47,8 @@ descriptorHttpGet =
         []
 
 
+{-| What the proto says about the method `_Ping` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -50,6 +59,8 @@ descriptorPing =
         []
 
 
+{-| What the proto says about the method `Type` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorType_ : Proto.Method.Descriptor
 descriptorType_ =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -64,6 +75,9 @@ descriptorType_ =
 -- CALLS
 
 
+{-| `rpc GetNote(URLPath) returns (URLPath)`. Connect: `POST /first.v1.Fetcher/GetNote`.
+No HTTP rule: the Connect path.
+-}
 getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 getNote =
     Rpc.call
@@ -73,6 +87,9 @@ getNote =
         )
 
 
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`. Connect: `POST /first.v1.Fetcher/HTTPGet`.
+No HTTP rule: the Connect path.
+-}
 httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 httpGet =
     Rpc.call
@@ -82,6 +99,9 @@ httpGet =
         )
 
 
+{-| `rpc _Ping(URLPath) returns (URLPath)`. Connect: `POST /first.v1.Fetcher/_Ping`.
+No HTTP rule: the Connect path.
+-}
 ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 ping =
     Rpc.call
@@ -91,6 +111,9 @@ ping =
         )
 
 
+{-| `rpc Type(URLPath) returns (URLPath)`. Connect: `POST /first.v1.Fetcher/Type`.
+No HTTP rule: the Connect path.
+-}
 type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 type_ =
     Rpc.call

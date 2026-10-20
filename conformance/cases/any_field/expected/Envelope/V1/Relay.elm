@@ -3,6 +3,9 @@
 
 module Envelope.V1.Relay exposing (..)
 
+{-| `service envelope.v1.Relay`
+-}
+
 import Envelope.V1
 import Proto.Any
 import Proto.Json
@@ -22,6 +25,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `Forward` of `envelope.v1.Relay`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorForward : Proto.Method.Descriptor
 descriptorForward =
     Proto.Method.descriptor "envelope.v1.Relay"
@@ -32,6 +37,8 @@ descriptorForward =
         []
 
 
+{-| What the proto says about the method `Send` of `envelope.v1.Relay`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "envelope.v1.Relay"
@@ -46,6 +53,9 @@ descriptorSend =
 -- CALLS
 
 
+{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`. Connect: `POST /envelope.v1.Relay/Forward`.
+No HTTP rule: the Connect path.
+-}
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
@@ -55,6 +65,9 @@ forward =
         )
 
 
+{-| `rpc Send(Envelope) returns (Envelope)`. Connect: `POST /envelope.v1.Relay/Send`.
+No HTTP rule: the Connect path.
+-}
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call

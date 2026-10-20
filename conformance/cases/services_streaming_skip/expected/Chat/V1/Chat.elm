@@ -3,6 +3,9 @@
 
 module Chat.V1.Chat exposing (..)
 
+{-| `service chat.v1.Chat`
+-}
+
 import Chat.V1
 import Proto.Method
 import Proto.Version
@@ -20,6 +23,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `Send` of `chat.v1.Chat`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "chat.v1.Chat"
@@ -34,6 +39,9 @@ descriptorSend =
 -- CALLS
 
 
+{-| `rpc Send(Line) returns (Line)`. Connect: `POST /chat.v1.Chat/Send`.
+No HTTP rule: the Connect path.
+-}
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call

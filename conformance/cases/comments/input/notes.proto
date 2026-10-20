@@ -3,11 +3,14 @@ syntax = "proto3";
 // Proto comments become the documentation of what each element becomes,
 // beside its one-line declaration: messages and nested messages, fields
 // with options, `json_name` and deprecation, enums and their values with
-// an alias, oneofs and their members. A leading comment and a trailing
-// one are both kept; a detached comment is left out.
+// an alias, oneofs and their members, a service and its methods, whose
+// docs name their Connect path and HTTP bindings. A leading comment and a
+// trailing one are both kept; a detached comment is left out.
 package notes.v1;
 
+import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // Detached: a blank line separates it from Visibility.
@@ -72,4 +75,75 @@ enum Legacy {
   option deprecated = true;
 
   LEGACY_UNSPECIFIED = 0;
+}
+
+message GetNoteRequest {
+  string name = 1;
+}
+
+message ListNotesRequest {
+  string parent = 1;
+}
+
+message ListNotesResponse {
+  repeated Note notes = 1;
+}
+
+message CreateNoteRequest {
+  Note note = 1;
+}
+
+// The notes service.
+//
+// Every method reads or writes notes.
+service NotesService {
+  // Gets a note by name.
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      get: "/v1/{name=notes/*}"
+      additional_bindings { get: "/v1/{name=users/*/notes/*}" }
+    };
+  }
+
+  // Lists a user's notes; the response is the list alone.
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=users/*}/notes"
+      response_body: "notes"
+    };
+  }
+
+  // Creates a note from the `note` field.
+  rpc CreateNote(CreateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1/notes"
+      body: "note"
+    };
+  }
+
+  // Replaces a note: the body is the whole request.
+  rpc ReplaceNote(Note) returns (Note) {
+    option deprecated = true;
+    option (google.api.http) = {
+      put: "/v1/{name=notes/*}"
+      body: "*"
+    };
+  }
+
+  // Answers without an HTTP rule, over the Connect path.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+// A service kept for older clients.
+service LegacyService {
+  option deprecated = true;
+
+  rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      custom: {
+        kind: "PURGE"
+        path: "/v1/notes"
+      }
+    };
+  }
 }

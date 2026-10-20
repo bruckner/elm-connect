@@ -3,6 +3,9 @@
 
 module Ping.V1.Ping exposing (..)
 
+{-| `service ping.v1.Ping`
+-}
+
 import Proto.Json
 import Proto.Method
 import Proto.Version
@@ -21,6 +24,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `Ping` of `ping.v1.Ping`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "ping.v1.Ping"
@@ -35,6 +40,9 @@ descriptorPing =
 -- CALLS
 
 
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`. Connect: `POST /ping.v1.Ping/Ping`.
+No HTTP rule: the Connect path.
+-}
 ping : () -> Rpc.Call () Time.Posix
 ping =
     Rpc.call

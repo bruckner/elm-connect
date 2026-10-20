@@ -3,6 +3,9 @@
 
 module Api.Example.Notes.V1.NotesService exposing (..)
 
+{-| `service notes.v1.NotesService`
+-}
+
 import Api.Example.Notes.V1
 import Api.Example.Notes.V1.GetNoteRequest
 import Proto.Http
@@ -22,6 +25,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -50,6 +55,9 @@ descriptorGetNote =
 -- CALLS
 
 
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`.
+-}
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call

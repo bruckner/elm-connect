@@ -3,6 +3,9 @@
 
 module Clock.V1.Clock exposing (..)
 
+{-| `service clock.v1.Clock`
+-}
+
 import Clock.V1
 import Clock.V1.Moment
 import Proto.Http
@@ -22,6 +25,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetMoment : Proto.Method.Descriptor
 descriptorGetMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -53,6 +58,8 @@ descriptorGetMoment =
         ]
 
 
+{-| What the proto says about the method `MaskMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorMaskMoment : Proto.Method.Descriptor
 descriptorMaskMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -88,6 +95,8 @@ descriptorMaskMoment =
         ]
 
 
+{-| What the proto says about the method `CountMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorCountMoment : Proto.Method.Descriptor
 descriptorCountMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -123,6 +132,8 @@ descriptorCountMoment =
         ]
 
 
+{-| What the proto says about the method `WaitMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorWaitMoment : Proto.Method.Descriptor
 descriptorWaitMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -152,6 +163,9 @@ descriptorWaitMoment =
 -- CALLS
 
 
+{-| `rpc GetMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/GetMoment`.
+Transcode: `GET /v1/at/{at}`.
+-}
 getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 getMoment =
     Rpc.call
@@ -161,6 +175,9 @@ getMoment =
         )
 
 
+{-| `rpc MaskMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/MaskMoment`.
+Transcode: `GET /v1/at/{at}/mask/{mask}`.
+-}
 maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 maskMoment =
     Rpc.call
@@ -170,6 +187,9 @@ maskMoment =
         )
 
 
+{-| `rpc CountMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/CountMoment`.
+Transcode: `GET /v1/count/{count}/seen/{seen}`.
+-}
 countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 countMoment =
     Rpc.call
@@ -179,6 +199,9 @@ countMoment =
         )
 
 
+{-| `rpc WaitMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/WaitMoment`.
+Transcode: `POST /v1/wait/{wait}` body `*`.
+-}
 waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 waitMoment =
     Rpc.call

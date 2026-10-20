@@ -7,7 +7,7 @@
 
 use super::field::{ValueShape, Zeroed, value_shape};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC};
+use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
@@ -49,7 +49,11 @@ impl Emitter {
             ],
         );
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "What the proto says about the method `{}` of `{service}`: its names, \
+                 idempotency, types and HTTP bindings.",
+                method.proto_name
+            )),
             name: method.descriptor_name(),
             annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
             params: Vec::new(),
@@ -66,8 +70,9 @@ impl Emitter {
     /// The value binds no locals and every library name in it is
     /// qualified, so it cannot clash with the package module's names or
     /// the runtime's, whatever the method is called; the descriptor it
-    /// refers to is the module's own.
-    pub(super) fn method(&mut self, method: &Method) -> Decl {
+    /// refers to is the module's own. Its documentation names its Connect
+    /// path, under `service`, the full name of its service.
+    pub(super) fn method(&mut self, service: &str, method: &Method) -> Decl {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let encode_request = self.request_encoder(&method.input);
@@ -83,7 +88,7 @@ impl Emitter {
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {
-            doc: None,
+            doc: Some(docs::method(service, method)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),

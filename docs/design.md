@@ -449,7 +449,8 @@ rpc shared call =
 - **Comments and declaration lines.** *(Decided, 2026-10-20.)* The
   declaration a proto element becomes is documented with the proto's
   comment for it and the element's one-line declaration, as a reader of
-  Java's, C++'s or protobuf-es's generated code finds them. A message's
+  Java's, C++'s or protobuf-es's generated code finds them (a method's
+  and a service's: §4). A message's
   record alias carries its comment, `` `message notes.v1.Note` `` and an
   item per record field, `` `name`: `string name = 1;` `` and the
   field's comment, a oneof's item naming its custom type; an enum's
@@ -1625,6 +1626,8 @@ section with one function per method from its request to an
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -1654,6 +1657,9 @@ descriptorGetNote =
 -- CALLS
 
 
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+-}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
@@ -1669,6 +1675,22 @@ them; the emitter asks the printer for that layout, which elm-format
 keeps.
 *(Decided, 2026-10-16.)*
 
+- **A method's documentation shows its routes.** *(Decided,
+  2026-10-20.)* A call's doc comment gives the method's declaration
+  line, its Connect path and its HTTP bindings as its
+  `google.api.http` rule writes them, the rule's own first and each
+  additional binding numbered as `Rpc.Call.viaBinding` counts it, each
+  with its `body` and `response_body` where set, then the method's
+  comment (§3.1); `No HTTP rule: the Connect path.` for a method
+  without a rule, and `Deprecated.` first for a deprecated method. The
+  request and response types in the line are named as the service's
+  package would write them, relative to it inside it and by full name
+  outside (`returns (google.protobuf.Empty)`). Why: the call is the
+  value a program uses, and the routes it may take were visible only as
+  `Proto.Http` data in its descriptor. The descriptor gets one sentence.
+  A service has no declaration of its own, so its module's
+  documentation carries its comment and `` `service
+  notes.v1.NotesService` ``.
 - The service module imports `Rpc`, `Proto.Method` (for the method
   and its descriptor), `Proto.Http` (for the bindings), the descriptor
   modules of the messages its bindings' fields belong to

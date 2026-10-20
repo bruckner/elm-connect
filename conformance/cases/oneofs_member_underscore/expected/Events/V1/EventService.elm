@@ -3,6 +3,9 @@
 
 module Events.V1.EventService exposing (..)
 
+{-| `service events.v1.EventService`
+-}
+
 import Events.V1
 import Events.V1.ListEventsRequest
 import Proto.Http
@@ -22,6 +25,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `ListEvents` of `events.v1.EventService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorListEvents : Proto.Method.Descriptor
 descriptorListEvents =
     Proto.Method.descriptor "events.v1.EventService"
@@ -53,6 +58,13 @@ descriptorListEvents =
 -- CALLS
 
 
+{-| `rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
+Transcode: `GET /v1/{parent=feeds/*}/events`.
+
+`_legacy` is a query parameter, named by
+`Events.V1.ListEventsRequest.legacy`.
+
+-}
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call

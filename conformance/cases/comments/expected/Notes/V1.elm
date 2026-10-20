@@ -6,8 +6,12 @@ module Notes.V1 exposing (..)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Notes.V1.CreateNoteRequest
 import Notes.V1.Draft
+import Notes.V1.GetNoteRequest
 import Notes.V1.Legacy
+import Notes.V1.ListNotesRequest
+import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Notes.V1.NoteEdit
 import Notes.V1.Visibility
@@ -148,6 +152,46 @@ type alias Draft =
     }
 
 
+{-| `message notes.v1.GetNoteRequest`
+
+  - `name`: `string name = 1;`
+
+-}
+type alias GetNoteRequest =
+    { name : String
+    }
+
+
+{-| `message notes.v1.ListNotesRequest`
+
+  - `parent`: `string parent = 1;`
+
+-}
+type alias ListNotesRequest =
+    { parent : String
+    }
+
+
+{-| `message notes.v1.ListNotesResponse`
+
+  - `notes`: `repeated notes.v1.Note notes = 1;`
+
+-}
+type alias ListNotesResponse =
+    { notes : List Note
+    }
+
+
+{-| `message notes.v1.CreateNoteRequest`
+
+  - `note`: `notes.v1.Note note = 1;`
+
+-}
+type alias CreateNoteRequest =
+    { note : Maybe Note
+    }
+
+
 
 -- DEFAULTS
 
@@ -181,6 +225,38 @@ defaultNoteEdit =
 defaultDraft : Draft
 defaultDraft =
     { text = ""
+    }
+
+
+{-| A `GetNoteRequest` with every field at its default and every oneof unset.
+-}
+defaultGetNoteRequest : GetNoteRequest
+defaultGetNoteRequest =
+    { name = ""
+    }
+
+
+{-| A `ListNotesRequest` with every field at its default and every oneof unset.
+-}
+defaultListNotesRequest : ListNotesRequest
+defaultListNotesRequest =
+    { parent = ""
+    }
+
+
+{-| A `ListNotesResponse` with every field at its default and every oneof unset.
+-}
+defaultListNotesResponse : ListNotesResponse
+defaultListNotesResponse =
+    { notes = []
+    }
+
+
+{-| A `CreateNoteRequest` with every field at its default and every oneof unset.
+-}
+defaultCreateNoteRequest : CreateNoteRequest
+defaultCreateNoteRequest =
+    { note = Nothing
     }
 
 
@@ -223,6 +299,34 @@ messageDraft =
     Proto.Message.message encodeDraft decodeDraft defaultDraft Notes.V1.Draft.descriptor
 
 
+{-| The typed value of `GetNoteRequest`: its codecs, default and descriptor together.
+-}
+messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest =
+    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.V1.GetNoteRequest.descriptor
+
+
+{-| The typed value of `ListNotesRequest`: its codecs, default and descriptor together.
+-}
+messageListNotesRequest : Proto.Message.Message ListNotesRequest
+messageListNotesRequest =
+    Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest Notes.V1.ListNotesRequest.descriptor
+
+
+{-| The typed value of `ListNotesResponse`: its codecs, default and descriptor together.
+-}
+messageListNotesResponse : Proto.Message.Message ListNotesResponse
+messageListNotesResponse =
+    Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse Notes.V1.ListNotesResponse.descriptor
+
+
+{-| The typed value of `CreateNoteRequest`: its codecs, default and descriptor together.
+-}
+messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
+messageCreateNoteRequest =
+    Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest Notes.V1.CreateNoteRequest.descriptor
+
+
 
 -- REGISTRY
 
@@ -234,6 +338,10 @@ registry =
             [ Notes.V1.Note.descriptor
             , Notes.V1.NoteEdit.descriptor
             , Notes.V1.Draft.descriptor
+            , Notes.V1.GetNoteRequest.descriptor
+            , Notes.V1.ListNotesRequest.descriptor
+            , Notes.V1.ListNotesResponse.descriptor
+            , Notes.V1.CreateNoteRequest.descriptor
             ]
             [ Notes.V1.Visibility.descriptor
             , Notes.V1.Legacy.descriptor
@@ -323,6 +431,42 @@ encodeDraft value =
         ]
 
 
+{-| Encodes a `GetNoteRequest` as proto3 JSON.
+-}
+encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        ]
+
+
+{-| Encodes a `ListNotesRequest` as proto3 JSON.
+-}
+encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
+encodeListNotesRequest value =
+    Proto.Json.objectOfFields
+        [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+        ]
+
+
+{-| Encodes a `ListNotesResponse` as proto3 JSON.
+-}
+encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
+encodeListNotesResponse value =
+    Proto.Json.objectOfFields
+        [ ( "notes", Proto.Json.repeatedField encodeNote value.notes )
+        ]
+
+
+{-| Encodes a `CreateNoteRequest` as proto3 JSON.
+-}
+encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
+encodeCreateNoteRequest value =
+    Proto.Json.objectOfFields
+        [ ( "note", Maybe.map encodeNote value.note )
+        ]
+
+
 
 -- DECODERS
 
@@ -391,3 +535,35 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Json.Decode.succeed Draft
         |> Proto.Json.field "text" "" Json.Decode.string
+
+
+{-| Decodes a `GetNoteRequest` from proto3 JSON.
+-}
+decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
+decodeGetNoteRequest =
+    Json.Decode.succeed GetNoteRequest
+        |> Proto.Json.field "name" "" Json.Decode.string
+
+
+{-| Decodes a `ListNotesRequest` from proto3 JSON.
+-}
+decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
+decodeListNotesRequest =
+    Json.Decode.succeed ListNotesRequest
+        |> Proto.Json.field "parent" "" Json.Decode.string
+
+
+{-| Decodes a `ListNotesResponse` from proto3 JSON.
+-}
+decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
+decodeListNotesResponse =
+    Json.Decode.succeed ListNotesResponse
+        |> Proto.Json.field "notes" [] (Json.Decode.list decodeNote)
+
+
+{-| Decodes a `CreateNoteRequest` from proto3 JSON.
+-}
+decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
+decodeCreateNoteRequest =
+    Json.Decode.succeed CreateNoteRequest
+        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)

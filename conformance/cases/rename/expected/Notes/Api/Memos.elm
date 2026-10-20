@@ -3,6 +3,9 @@
 
 module Notes.Api.Memos exposing (..)
 
+{-| `service notes.v1.NotesService`
+-}
+
 import Notes.Api
 import Proto.Method
 import Proto.Version
@@ -20,6 +23,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorFetchMemo : Proto.Method.Descriptor
 descriptorFetchMemo =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -34,6 +39,9 @@ descriptorFetchMemo =
 -- CALLS
 
 
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+No HTTP rule: the Connect path.
+-}
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call

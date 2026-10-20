@@ -4,8 +4,12 @@ syntax = "proto3";
 // text: comment delimiters, `@docs`, emphasis, lists of every marker,
 // headings, code blocks indented and fenced, tables, HTML, links, tabs, a
 // 200-character line, non-ASCII, a comment of whitespace alone and
-// detached comments, which must not appear.
+// detached comments, which must not appear; in a service's module doc
+// and a method's doc too.
 package awkward.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 // Detached, before the first message: left out.
 
@@ -97,4 +101,26 @@ enum Marks {
 message Docs {
   // @docs field
   string field = 1;
+}
+
+// A service whose comment closes an Elm comment -} and lists names:
+// @docs ping
+//
+// # A heading in a module doc
+service AwkwardService {
+
+  // Detached, before a method: left out.
+
+  // ```
+  // HEAD /v1/{name=*}
+  //
+  // An unclosed fence in a method's comment.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      custom: {
+        kind: "HEAD"
+        path: "/v1/ping"
+      }
+    };
+  }
 }

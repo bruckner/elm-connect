@@ -3,6 +3,9 @@
 
 module Catalog.V1.CatalogService exposing (..)
 
+{-| `service catalog.v1.CatalogService`
+-}
+
 import Catalog.V1
 import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
@@ -23,6 +26,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `GetEntry` of `catalog.v1.CatalogService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorGetEntry : Proto.Method.Descriptor
 descriptorGetEntry =
     Proto.Method.descriptor "catalog.v1.CatalogService"
@@ -55,6 +60,14 @@ descriptorGetEntry =
 -- CALLS
 
 
+{-| `rpc GetEntry(GetEntryRequest) returns (Entry)`. Connect: `POST /catalog.v1.CatalogService/GetEntry`.
+Transcode: `GET /v1/{name=entries/*}`.
+
+`descriptor` and `part.descriptor` are query parameters, named by
+`Catalog.V1.GetEntryRequest.descriptor_` and
+`Catalog.V1.Part.descriptor_`.
+
+-}
 getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call

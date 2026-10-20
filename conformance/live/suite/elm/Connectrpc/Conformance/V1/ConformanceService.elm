@@ -3,6 +3,16 @@
 
 module Connectrpc.Conformance.V1.ConformanceService exposing (..)
 
+{-| The service implemented by conformance test servers. This is implemented by
+the reference servers, used to test clients, and is expected to be implemented
+by test servers, since this is the service used by reference clients.
+
+Test servers must implement the service as described.
+
+`service connectrpc.conformance.v1.ConformanceService`
+
+-}
+
 import Connectrpc.Conformance.V1
 import Proto.Method
 import Proto.Version
@@ -20,6 +30,8 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
+{-| What the proto says about the method `Unary` of `connectrpc.conformance.v1.ConformanceService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorUnary : Proto.Method.Descriptor
 descriptorUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
@@ -30,6 +42,8 @@ descriptorUnary =
         []
 
 
+{-| What the proto says about the method `Unimplemented` of `connectrpc.conformance.v1.ConformanceService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorUnimplemented : Proto.Method.Descriptor
 descriptorUnimplemented =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
@@ -40,6 +54,8 @@ descriptorUnimplemented =
         []
 
 
+{-| What the proto says about the method `IdempotentUnary` of `connectrpc.conformance.v1.ConformanceService`: its names, idempotency, types and HTTP bindings.
+-}
 descriptorIdempotentUnary : Proto.Method.Descriptor
 descriptorIdempotentUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
@@ -54,6 +70,25 @@ descriptorIdempotentUnary =
 -- CALLS
 
 
+{-| `rpc Unary(UnaryRequest) returns (UnaryResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
+No HTTP rule: the Connect path.
+
+A unary operation. The request indicates the response headers and trailers
+and also indicates either a response message or an error to send back.
+
+Response message data is specified as bytes. The service should echo back
+request properties in the ConformancePayload and then include the message
+data in the data field.
+
+If the response\_delay\_ms duration is specified, the server should wait the
+given duration after reading the request before sending the corresponding
+response.
+
+Servers should allow the response definition to be unset in the request and
+if it is, set no response headers or trailers and return no response data.
+The returned payload should only contain the request info.
+
+-}
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
 unary =
     Rpc.call
@@ -63,6 +98,13 @@ unary =
         )
 
 
+{-| `rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
+No HTTP rule: the Connect path.
+
+A unary endpoint that the server should not implement and should instead
+return an unimplemented error when invoked.
+
+-}
 unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
 unimplemented =
     Rpc.call
@@ -72,6 +114,14 @@ unimplemented =
         )
 
 
+{-| `rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
+No HTTP rule: the Connect path.
+
+A unary endpoint denoted as having no side effects (i.e. idempotent).
+Implementations should use an HTTP GET when invoking this endpoint and
+leverage query parameters to send data.
+
+-}
 idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
 idempotentUnary =
     Rpc.call

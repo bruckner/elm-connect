@@ -959,3 +959,12 @@ tag (design §8).
   generated from it under the default options, `int64=int`,
   `enum_unknown=zero` and `bytes=bytes` decode and re-encode every sample
   in Elm (`tests/Codec/`, design §7, `conformance/README.md`).
+- Generated code carries the proto's comments: a message's record
+  alias, an enum's and a oneof's custom type, and every descriptor are
+  documented with the element's comment and its one-line declaration
+  (`` `string name = 1;` ``), field by field and value by value; a
+  call with its declaration, Connect path and HTTP bindings
+  (`` `GET /v1/{name=notes/*}` ``); a service's module with its comment.
+  Codecs, defaults and typed values get one sentence. Doc comments are
+  printed in elm-format's Markdown, so `elm-format --validate` still
+  accepts generated code (design §3.1, §4).
