@@ -529,3 +529,10 @@ The generator embeds two files from googleapis, under the Apache License
 Unless you explicitly state otherwise, any contribution intentionally
 submitted for inclusion in this work by you shall be dual-licensed as
 above, without any additional terms or conditions.
+
+### Trademarks
+
+elm-connect is an independent project. It is not affiliated with, sponsored
+by or endorsed by the Connect project, the Cloud Native Computing Foundation
+or The Linux Foundation. Connect RPC™ is a trademark of The Linux Foundation;
+the name elm-connect says which protocol the generated clients speak.
