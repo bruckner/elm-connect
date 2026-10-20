@@ -13,10 +13,10 @@ naming::value_collision
     ·             ╰── and so does method `settings.v1.SettingsService.Get_Settings`
  16 │   // `elmConnectVersion` is fine: the value every generated module
     ╰────
-  help: A service's module defines one value per method, its name with the
-        first letter lowercased and underscores dropped, so names that differ
-        only in those ways end up the same, and a module cannot define two
-        values with one name. Rename one of the methods in the proto, or
+  help: A service's module defines one value per method, its name with its
+        leading capitals lowercased and underscores dropped, so names that
+        differ only in those ways end up the same, and a module cannot define
+        two values with one name. Rename one of the methods in the proto, or
         rename one with `rename=settings.v1.SettingsService.Get_Settings:<Elm
         name>`.
 
@@ -61,7 +61,7 @@ naming::value_collision
  23 │ }
     ╰────
   help: A service's module defines two values per method: its call, its name
-        with the first letter lowercased and underscores dropped, and its
+        with its leading capitals lowercased and underscores dropped, and its
         descriptor, `descriptor` followed by the call's name with the first
         letter uppercased. So a method named for another's descriptor
         (`DescriptorGetNote` beside `GetNote`) takes that descriptor's name,

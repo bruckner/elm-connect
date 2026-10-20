@@ -652,6 +652,19 @@ message M { google.protobuf.Api api = 1; google.protobuf.NullValue null = 2; }
 }
 
 #[test]
+fn field_collision_after_lowercasing_capitals() {
+    // protoc and protox reject two proto3 fields `ID` and `id`, but not a
+    // oneof `ID` beside a field `id`; both become the record field `id`.
+    let source = r#"
+syntax = "proto3";
+package t;
+message M { string id = 1; oneof ID { string a = 2; } }
+"#;
+    let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
+    assert_eq!(codes(&diagnostics), [Code::FieldCollision]);
+}
+
+#[test]
 fn field_collision_after_casing() {
     // Two plain fields cannot collide here: protoc and protox already
     // reject proto3 fields whose default JSON names clash, and those are
@@ -777,7 +790,7 @@ message M { oneof choice { bool unset = 1; } }
 
 #[test]
 fn invalid_names() {
-    let field = "syntax = \"proto3\"; package t; message M { string Title = 1; }";
+    let field = "syntax = \"proto3\"; package t; message M { string _1title = 1; }";
     assert_eq!(
         codes(&problems(&[("test.proto", field)], &["test.proto"])),
         [Code::InvalidField]

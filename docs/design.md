@@ -1015,9 +1015,30 @@ Built *(Proposed in its details)*:
 
 - Field names → lowerCamelCase from the proto name (not `json_name`;
   `json_name` only affects the wire). Elm reserved words get a trailing
-  underscore (`type` → `type_`). *(Decided.)*
-- Collisions after casing (`foo_bar` and `fooBar` in one message) are a
-  diagnostic, not a silent rename. *(Decided.)*
+  underscore (`type` → `type_`). *(Decided.)* A name starting with
+  capitals or underscores is converted too: after the underscores are
+  dropped, the leading run of uppercase letters is lowercased, except
+  that a run followed by a lowercase letter keeps its last letter, which
+  starts the next word. `Label` → `label`, `ID` → `id`, `URLPath` →
+  `urlPath`, `HTTPRequest` → `httpRequest`, `XCoord` → `xCoord`,
+  `_internal` → `internal`, `__Label` → `label`. The rule cannot tell
+  `ID` + `s` from `I` + `Ds`, so `IDs` → `iDs`; a `rename` gives it
+  another name, and the rule does not special-case it. Methods, oneofs
+  and oneof members' descriptor values follow the same rule (`HTTPGet` →
+  `httpGet`, `_Ping` → `ping`); types, enum constructors, modules and
+  services do not (a message `URLPath` stays `URLPath`), and neither
+  does a `rename`, which is taken as written. A name that is only
+  underscores, or has a digit before its first letter (`_1x`), is still
+  `naming::invalid_field` or `naming::invalid_method`: any Elm name for
+  it would be invented. *(Decided, 2026-10-20; `naming_first_letter`
+  case.)* Refusing a name that did not start with a lowercase letter was
+  the first build.
+- Collisions after casing (`foo_bar` and `fooBar` in one message, or
+  a oneof `ID` beside a field `id`, which protoc accepts since it checks
+  only fields' JSON names against each other) are
+  `naming::field_collision`, not a silent rename. This is about
+  collisions only: converting one name to its Elm form is not a rename.
+  *(Decided.)*
 - Nested messages and enums are flattened into their package's module,
   prefixed with the names of the messages enclosing them:
   `Outer.Inner` → `OuterInner`, `Outer.Inner.Kind` → `OuterInnerKind`.
@@ -1060,8 +1081,9 @@ Built, as the `naming` and `naming_collision` cases show:
 - A descriptor module's values are `descriptor` and one per field,
   named as its record field, but that a field or member named
   `descriptor` takes `descriptor_` (§3.1). A oneof member has no record
-  field, so its value is the end of its constructor, its first letter
-  lowercased: `NoteEventKindCreated` gives `created`, and `_legacy`,
+  field, so its value is the end of its constructor converted by the
+  field rule: `NoteEventKindCreated` gives `created`, `URL` gives `url`,
+  and `_legacy`,
   whose constructor is `EventKindLegacy`, gives `legacy`
   (`oneofs_member_underscore` case). It is the derived constructor's
   end, so a member's `rename`, which renames the constructor, leaves it
@@ -1702,9 +1724,9 @@ Built so far, in the IR (`ir::Service`, `ir::Method`) *(each Proposed)*:
   method values in one namespace with each other across services and
   with the codecs and defaults, so `DefaultSettings` beside a message
   `Settings` clashed, and two services could not both have a `Get`.
-- A method's value is its name with the first letter lowercased and
-  underscores dropped as for a field (`GetNote` → `getNote`), a reserved
-  word escaped (`Type` → `type_`), and its descriptor's is
+- A method's value is its name converted as a field's is (`GetNote` →
+  `getNote`, `HTTPGet` → `httpGet`), a reserved word escaped (`Type` →
+  `type_`), and its descriptor's is
   `descriptor` followed by that with its first letter uppercased
   (`descriptorGetNote`). They share a namespace only with the other
   methods' values in its service: two methods that coincide (`GetNote`
@@ -1769,6 +1791,15 @@ gets exactly this as data and never parses a template.
   through singular fields of generated messages (`{sub.subfield}`); not
   through a well-known type, whose fields have no JSON form of their own.
   A field bound twice is refused. Each violation is `route::path_field`.
+- The variable's field may also be a well-known type whose JSON is one
+  string or scalar: `Timestamp`, `Duration`, `FieldMask` and the nine
+  wrappers, the set a query parameter holds, from one predicate in
+  `route.rs` so the two cannot drift. Its text is that JSON value
+  (`/v1/at/2026-10-20T12%3A34%3A56Z`), as grpc-gateway reads it. `Empty`,
+  `Any`, `Struct`, `Value` and `ListValue` stay refused, as does a
+  repeated one. *(Decided, 2026-10-20; `routes_well_known_path` case.)*
+  Refusing every message here was the first build, although
+  `route::query_field` already accepted these.
 - The client does not check a value against the variable's template
   (`notes/42` against `notes/*`): the server matches, and a mismatch is
   its 404.
@@ -2292,7 +2323,11 @@ default, and is `Nothing` for a number the method has no binding of
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
   field's proto3 default, which the runtime reads from the variable's
-  last field descriptor (`0`, `""`, `false`, an enum's zero name). proto3 reads the field as its default there, and a
+  last field descriptor (`0`, `""`, `false`, an enum's zero name). An
+  unset well-known field (a timestamp, a wrapper) is `""`, as an unset
+  string is, so the server sees an empty segment there too; a
+  well-known type has no zero text of its own to send. *(Decided,
+  2026-10-20.)* proto3 reads the field as its default there, and a
   server parses the segment as the field's type: Vanguard rejected the
   empty segment the runtime sent before
   (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`, `invalid parameter

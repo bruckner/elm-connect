@@ -344,6 +344,110 @@ fn a_path_variable_of_a_well_known_request_is_refused() {
     );
 }
 
+/// A service `S` whose method `Get` binds `{variable}` in its path, on a
+/// request whose field `value` has the type `field_type`, beside a string
+/// `name`.
+fn well_known_path(field_type: &str, variable: &str) -> String {
+    format!(
+        r#"syntax = "proto3";
+package t.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+message Req {{ {field_type} value = 1; string name = 2; }}
+service S {{
+  rpc Get(Req) returns (Req) {{ option (google.api.http) = {{ get: "/v1/{{{variable}}}" }}; }}
+}}
+"#
+    )
+}
+
+/// Each problem `source` reports, as `code: message` on a line.
+fn problem_lines(source: &str) -> String {
+    problems(&[("t.proto", source)], &["t.proto"])
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[test]
+fn a_path_variable_holds_a_well_known_type_with_a_scalar_json_form() {
+    let types = [
+        "Timestamp",
+        "Duration",
+        "FieldMask",
+        "DoubleValue",
+        "FloatValue",
+        "Int64Value",
+        "UInt64Value",
+        "Int32Value",
+        "UInt32Value",
+        "BoolValue",
+        "StringValue",
+        "BytesValue",
+    ];
+    for known in types {
+        let source = well_known_path(&format!("google.protobuf.{known}"), "value");
+        let package = package(&source);
+        let route = &method(&package, "Get").routes[0];
+        assert_eq!(
+            route.segments[1],
+            PathSegment::Variable {
+                field: path("value", "value"),
+                template: Vec::new(),
+                fields: vec![field_ref("T.V1.Req.value")],
+            },
+            "{known}"
+        );
+        assert_eq!(
+            params(route),
+            [("name".into(), vec!["T.V1.Req.name".into()])],
+            "{known}"
+        );
+    }
+}
+
+#[test]
+fn a_path_variable_refuses_a_well_known_type_without_one() {
+    for known in ["Empty", "Any", "Struct", "Value", "ListValue"] {
+        let source = well_known_path(&format!("google.protobuf.{known}"), "value");
+        let rendered = problem_lines(&source);
+        assert!(
+            rendered.starts_with("route::path_field"),
+            "{known}\n{rendered}"
+        );
+        assert!(
+            rendered.contains(&format!("is the message `google.protobuf.{known}`")),
+            "{known}\n{rendered}"
+        );
+    }
+}
+
+#[test]
+fn a_path_variable_does_not_run_through_a_well_known_type() {
+    let source = well_known_path("google.protobuf.Timestamp", "value.seconds");
+    let rendered = problem_lines(&source);
+    assert!(rendered.starts_with("route::path_field"), "{rendered}");
+    assert!(
+        rendered.contains("whose fields have no JSON form of their own"),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn a_path_variable_refuses_a_repeated_well_known_field() {
+    let source = well_known_path("repeated google.protobuf.Timestamp", "value");
+    let rendered = problem_lines(&source);
+    assert!(rendered.starts_with("route::path_field"), "{rendered}");
+    assert!(rendered.contains("is repeated"), "{rendered}");
+}
+
 #[test]
 fn query_fields_without_a_query_form_are_named() {
     let rendered = route_problems(
@@ -575,8 +679,7 @@ message Thing { string name = 1; }
 }}
 "#
     );
-    let files = [("t.proto", source.as_str())];
-    let rendered = render(&problems(&files, &["t.proto"]), &files);
+    let rendered = problem_lines(&source);
     assert!(rendered.starts_with("route::query_field"), "{rendered}");
     assert!(rendered.contains("well-known type"), "{rendered}");
 }

@@ -31,8 +31,8 @@ parameter), the row says which test covers it instead.
 | **`naming::`** | **An Elm name that cannot be formed, or that collides with another.** | |
 | `naming::invalid_module` | A package segment does not start with a letter, so it has no Elm module name, or a file to generate has no package. | `--rename <package>:<Elm module>` / `rename=<package>:<Elm module>`, or rename the package. A file without a package has no rename; add a package. |
 | `naming::invalid_type` | A message or enum has no valid Elm type name. | `--rename <proto full name>:<Elm name>` / `rename=<proto full name>:<Elm name>`, or rename it in the proto. |
-| `naming::invalid_field` | A field or oneof has no valid Elm record field name, or a oneof member's descriptor value has no valid Elm value name. | `--rename` / `rename=` the field or oneof, or rename it in the proto. A oneof member's descriptor value follows its proto name, not its rename: rename it in the proto. |
-| `naming::invalid_method` | A method has no valid Elm value name. | `--rename` / `rename=` the method, or rename it in the proto. |
+| `naming::invalid_field` | A field or oneof has no valid Elm record field name, or a oneof member's descriptor value has no valid Elm value name: the name is only underscores, or has a digit before its first letter (`_1x`). Leading capitals and underscores are converted, not refused (`Label` → `label`). | `--rename` / `rename=` the field or oneof, or rename it in the proto. A oneof member's descriptor value follows its proto name, not its rename: rename it in the proto. |
+| `naming::invalid_method` | A method has no valid Elm value name: the name is only underscores, or has a digit before its first letter. Leading capitals and underscores are converted, not refused (`HTTPGet` → `httpGet`). | `--rename` / `rename=` the method, or rename it in the proto. |
 | `naming::invalid_service` | A service has no valid Elm module name. | `--rename` / `rename=` the service, or rename it in the proto. |
 | `naming::field_collision` | Two fields, or a field and a oneof, of a message become the same Elm record field. | `--rename` / `rename=` one of them, or rename it in the proto. |
 | `naming::type_collision` | Two messages, enums or oneofs of a package become the same Elm type. Two messages also share their record constructor's name, which this one problem reports. | `--rename` / `rename=` one of them, or rename it in the proto. |
@@ -49,7 +49,7 @@ parameter), the row says which test covers it instead.
 | **`route::`** | **A `google.api.http` rule that does not resolve.** | |
 | `route::rule` | A rule has no path, a `custom` kind that is not an HTTP method a browser sends, or additional bindings nested in an additional binding. | Fix the rule. |
 | `route::template` | A path template does not parse, or has a wildcard outside a variable. | Fix the template. |
-| `route::path_field` | A path variable names no non-repeated scalar or enum field of the request, or names one twice. | Fix the variable's field path. |
+| `route::path_field` | A path variable names no non-repeated scalar, enum or well-known field with a one-value JSON form (`Timestamp`, `Duration`, `FieldMask`, a wrapper) of the request, runs through a well-known type (`{at.seconds}`), or names a field twice. | Fix the variable's field path. |
 | `route::body_field` | `body` names no top-level singular message field of the request. | `body: "*"`, a message field's name, or no `body`. |
 | `route::response_body` | `response_body` names no top-level field of the response. | A field of the response, or no `response_body`. |
 | `route::query_field` | A request field that would be a query parameter has no query form, such as a message that is not a well-known type with a string form. | Send the field in the body (`body: "*"`, or a body field holding it), or move it out of the request. |

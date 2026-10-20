@@ -31,17 +31,17 @@ naming::invalid_type
 
 naming::invalid_field
 
-  × The field `Label` of `catalog.v1.Shelf` becomes `Label` in Elm, which is
-  │ not a valid record field name.
+  × The field `_2nd_label` of `catalog.v1.Shelf` becomes `2ndLabel` in Elm,
+  │ which is not a valid record field name.
     ╭─[names.proto:11:10]
  10 │ message Shelf {
- 11 │   string Label = 1;
-    ·          ──┬──
-    ·            ╰── this name
+ 11 │   string _2nd_label = 1;
+    ·          ─────┬────
+    ·               ╰── this name
  12 │ }
     ╰────
-  help: Elm record fields must start with a lowercase letter. elm-connect
-        converts proto field names to lowerCamelCase without changing their
-        first letter, so the proto name should be lower_snake_case, starting
-        with a letter. Rename it in the proto, or rename it with
-        `rename=catalog.v1.Shelf.Label:<Elm name>`.
+  help: Elm record fields must start with a letter. elm-connect drops a proto
+        field name's underscores and lowercases its leading capitals, so a
+        name that is only underscores, or has a digit before its first letter,
+        has no Elm field name. Rename it in the proto, or rename it with
+        `rename=catalog.v1.Shelf._2nd_label:<Elm name>`.

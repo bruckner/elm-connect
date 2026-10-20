@@ -1,5 +1,5 @@
 // A message whose PascalCase form starts with a digit has no Elm type
-// name, and a field starting with an uppercase letter no record field
+// name, and a field with a digit before its first letter no record field
 // name.
 syntax = "proto3";
 
@@ -8,5 +8,5 @@ package catalog.v1;
 message _3dModel {}
 
 message Shelf {
-  string Label = 1;
+  string _2nd_label = 1;
 }

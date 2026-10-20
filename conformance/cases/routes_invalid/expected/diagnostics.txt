@@ -2,26 +2,28 @@ route::path_field
 
   × The HTTP rule of `library.v1.Library.GetBook` binds `{book_name}` in its
   │ path, but `library.v1.GetBookRequest` has no field `book_name`.
-    ╭─[library.proto:21:12]
- 20 │     option (google.api.http) = {
- 21 │       get: "/v1/{book_name=shelves/*/books/*}"
+    ╭─[library.proto:28:12]
+ 27 │     option (google.api.http) = {
+ 28 │       get: "/v1/{book_name=shelves/*/books/*}"
     ·            ─────────────────┬─────────────────
     ·                             ╰── this path
- 22 │     };
+ 29 │     };
     ╰────
-  help: A path variable names a non-repeated scalar or enum field of the
-        request, possibly through singular message fields (`{book.name}`).
+  help: A path variable names a non-repeated field of the request, possibly
+        through singular message fields (`{book.name}`), that holds a scalar,
+        an enum, or a Timestamp, Duration, FieldMask or wrapper, whose JSON is
+        one value.
 
 route::body_field
 
   × The HTTP rule of `library.v1.Library.CreateBook` has `body: "name"`, but
   │ `name` is not a message.
-    ╭─[library.proto:28:13]
- 27 │       post: "/v1/books"
- 28 │       body: "name"
+    ╭─[library.proto:35:13]
+ 34 │       post: "/v1/books"
+ 35 │       body: "name"
     ·             ───┬──
     ·                ╰── this body
- 29 │     };
+ 36 │     };
     ╰────
   help: `body` is `*` for every field not in the path, or the name of a top-
         level singular message field of the request, or left out for no body.
@@ -30,13 +32,13 @@ route::query_field
 
   × The HTTP rule of `library.v1.Library.FindBook` sends `labels` as a query
   │ parameter, but it is a map, which has no query form.
-    ╭─[library.proto:33:5]
- 32 │       rpc FindBook(Book) returns (Book) {
- 33 │ ╭─▶     option (google.api.http) = {
- 34 │ │         get: "/v1/books:find"
- 35 │ ├─▶     };
+    ╭─[library.proto:40:5]
+ 39 │       rpc FindBook(Book) returns (Book) {
+ 40 │ ╭─▶     option (google.api.http) = {
+ 41 │ │         get: "/v1/books:find"
+ 42 │ ├─▶     };
     · ╰──── in this rule
- 36 │       }
+ 43 │       }
     ╰────
   help: Every request field outside the path and the body is a query
         parameter, and a parameter holds scalars, enums and well-known types
@@ -47,12 +49,12 @@ route::template
 
   × The HTTP rule of `library.v1.Library.ListBooks` has the path `/v1/*/
   │ books`, with a wildcard outside a variable.
-    ╭─[library.proto:40:12]
- 39 │     option (google.api.http) = {
- 40 │       get: "/v1/*/books"
+    ╭─[library.proto:47:12]
+ 46 │     option (google.api.http) = {
+ 47 │       get: "/v1/*/books"
     ·            ──────┬──────
     ·                  ╰── this path
- 41 │       additional_bindings {
+ 48 │       additional_bindings {
     ╰────
   help: A client fills each path segment from a request field, and a bare `*`
         or `**` names none. Bind it to a field, like `{name=*}`.
@@ -61,12 +63,46 @@ route::response_body
 
   × Additional binding 1 of `library.v1.Library.ListBooks` has `response_body:
   │ "title"`, but the response has no such field.
-    ╭─[library.proto:43:24]
- 42 │         get: "/v1/books"
- 43 │         response_body: "title"
+    ╭─[library.proto:50:24]
+ 49 │         get: "/v1/books"
+ 50 │         response_body: "title"
     ·                        ───┬───
     ·                           ╰── this response body
- 44 │       }
+ 51 │       }
     ╰────
   help: `response_body` names a top-level field of the response, a generated
         message, or is left out for the whole response.
+
+route::path_field
+
+  × The HTTP rule of `library.v1.Library.StampBook` binds `{at.seconds}` in
+  │ its path, but `at` is `google.protobuf.Timestamp`, whose fields have no
+  │ JSON form of their own.
+    ╭─[library.proto:58:13]
+ 57 │     option (google.api.http) = {
+ 58 │       post: "/v1/stamps/{at.seconds}"
+    ·             ────────────┬────────────
+    ·                         ╰── this path
+ 59 │       body: "*"
+    ╰────
+  help: A path variable names a non-repeated field of the request, possibly
+        through singular message fields (`{book.name}`), that holds a scalar,
+        an enum, or a Timestamp, Duration, FieldMask or wrapper, whose JSON is
+        one value.
+
+route::path_field
+
+  × The HTTP rule of `library.v1.Library.TagBook` binds `{extra}` in its path,
+  │ but `extra` is the message `google.protobuf.Struct`, and a path holds a
+  │ scalar, an enum or a well-known type with a string or scalar JSON form.
+    ╭─[library.proto:65:13]
+ 64 │     option (google.api.http) = {
+ 65 │       post: "/v1/tags/{extra}"
+    ·             ─────────┬────────
+    ·                      ╰── this path
+ 66 │       body: "*"
+    ╰────
+  help: A path variable names a non-repeated field of the request, possibly
+        through singular message fields (`{book.name}`), that holds a scalar,
+        an enum, or a Timestamp, Duration, FieldMask or wrapper, whose JSON is
+        one value.

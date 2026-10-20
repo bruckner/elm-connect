@@ -1,0 +1,45 @@
+// Path variables of well-known types whose JSON is one string or scalar:
+// the variable's text is that JSON value, and the field is not repeated
+// in the query.
+syntax = "proto3";
+
+package clock.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+message Moment {
+  google.protobuf.Timestamp at = 1;
+  google.protobuf.FieldMask mask = 2;
+  google.protobuf.Int32Value count = 3;
+  google.protobuf.BoolValue seen = 4;
+  google.protobuf.Duration wait = 5;
+  string note = 6;
+}
+
+service Clock {
+  rpc GetMoment(Moment) returns (Moment) {
+    option (google.api.http) = {
+      get: "/v1/at/{at}"
+    };
+  }
+  rpc MaskMoment(Moment) returns (Moment) {
+    option (google.api.http) = {
+      get: "/v1/at/{at}/mask/{mask}"
+    };
+  }
+  rpc CountMoment(Moment) returns (Moment) {
+    option (google.api.http) = {
+      get: "/v1/count/{count}/seen/{seen}"
+    };
+  }
+  rpc WaitMoment(Moment) returns (Moment) {
+    option (google.api.http) = {
+      post: "/v1/wait/{wait}"
+      body: "*"
+    };
+  }
+}

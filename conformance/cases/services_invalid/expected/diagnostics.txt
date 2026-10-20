@@ -27,9 +27,11 @@ naming::invalid_method
     ·          ╰── this name
  18 │
     ╰────
-  help: A method's Elm value is its name with the first letter lowercased and
-        underscores dropped, and must start with a letter. Rename the method,
-        or rename it with `rename=jobs.v1.Jobs._9Lives:<Elm name>`.
+  help: A method's Elm value is its name with underscores dropped and its
+        leading capitals lowercased, and must start with a letter, so a name
+        that is only underscores, or has a digit before its first letter, has
+        none. Rename the method, or rename it with
+        `rename=jobs.v1.Jobs._9Lives:<Elm name>`.
 
 route::rule
 

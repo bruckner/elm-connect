@@ -30,9 +30,10 @@ route::path_field
     ·                     ╰── this path
  32 │     };
     ╰────
-  help: Did you mean `name`? A path variable names a non-repeated scalar or
-        enum field of the request, possibly through singular message fields
-        (`{book.name}`).
+  help: Did you mean `name`? A path variable names a non-repeated field of the
+        request, possibly through singular message fields (`{book.name}`),
+        that holds a scalar, an enum, or a Timestamp, Duration, FieldMask or
+        wrapper, whose JSON is one value.
 
 route::body_field
 

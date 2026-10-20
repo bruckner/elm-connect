@@ -686,7 +686,7 @@ pub struct OneofVariant {
     pub elm_ctor: String,
     /// The Elm value of the member's descriptor in its message's
     /// descriptor module, such as `created`: the ending of its derived
-    /// constructor, its first letter lowercased
+    /// constructor, converted as a field name is
     /// ([`crate::naming::member_value_name`]).
     pub elm_name: String,
     /// The type of the value the constructor carries.
