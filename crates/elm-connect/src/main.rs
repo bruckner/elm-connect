@@ -2,11 +2,12 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
+use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::ir::ModuleName;
 use elm_connect_gen::{
     Bytes, EnumUnknown, Generated, Int64, Options, Spelling, Streaming, UnboundMethods,
 };
-use miette::{Report, miette};
+use miette::Report;
 
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
@@ -81,7 +82,7 @@ struct GenArgs {
     /// The module every generated module goes inside, such as
     /// `Api.Notes`: `notes.v1` then becomes `Api.Notes.V1`, in
     /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
-    #[arg(long, value_name = "MODULE", value_parser = elm_connect_gen::parse_module_prefix)]
+    #[arg(long, value_name = "MODULE", value_parser = module_prefix)]
     module_prefix: Option<ModuleName>,
     /// Also generate every imported file that declares a message or enum
     /// the given files' packages refer to, transitively, each imported
@@ -105,10 +106,14 @@ impl GenArgs {
         options.enum_unknown = self.enum_unknown;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;
+        let mut problems = Diagnostics::new();
         for entry in &self.rename {
-            options
-                .add_rename(entry)
-                .map_err(|err| miette!("--rename: {err}"))?;
+            if let Err(problem) = options.add_rename(entry) {
+                problems.push(problem);
+            }
+        }
+        if !problems.is_empty() {
+            return Err(Report::new(problems));
         }
         Ok(options)
     }
@@ -131,7 +136,15 @@ impl GenArgs {
 /// A `--rename` value, checked for its `<proto full name>:<Elm name>`
 /// form.
 fn rename_entry(value: &str) -> Result<String, String> {
-    elm_connect_gen::parse_rename(value).map(|_| value.to_owned())
+    elm_connect_gen::parse_rename(value)
+        .map(|_| value.to_owned())
+        .map_err(|problem| format!("{} {}", problem.message(), problem.help_text()))
+}
+
+/// A `--module-prefix` value: dot-separated Elm module segments.
+fn module_prefix(value: &str) -> Result<ModuleName, String> {
+    elm_connect_gen::parse_module_prefix(value)
+        .map_err(|problem| format!("{} {}", problem.message(), problem.help_text()))
 }
 
 /// `check`'s exit status when it cannot tell whether the tree is current,
@@ -144,7 +157,13 @@ fn main() -> ExitCode {
         Command::Check(args) => (check(&args), ExitCode::from(CHECK_ERROR)),
     };
     result.unwrap_or_else(|report| {
-        eprintln!("Error: {report:?}");
+        // Problems render each under its own `Error:`, below a header
+        // counting them; any other failure is one error, named here.
+        if report.downcast_ref::<Diagnostics>().is_some() {
+            eprintln!("{report:?}");
+        } else {
+            eprintln!("Error: {report:?}");
+        }
         error_status
     })
 }
@@ -314,6 +333,30 @@ mod tests {
         assert!(rename(&["--rename", "notes.v1.Note"]).is_err());
         assert!(rename(&["--rename", "notes.v1.Note:"]).is_err());
         assert!(int64(&["--int64", "int", "--int64", "string"]).is_err());
+    }
+
+    #[test]
+    fn a_proto_renamed_twice_is_a_problem_in_the_options() {
+        let args = gen_args(&["--rename", "a.B:C", "--rename", "a.B:D"]).expect("parses");
+        let report = args.options().expect_err("a.B is renamed twice");
+        let handler =
+            miette::GraphicalReportHandler::new_themed(miette::GraphicalTheme::unicode_nocolor());
+        let mut rendered = String::new();
+        handler
+            .render_report(&mut rendered, report.as_ref())
+            .expect("rendering into a String cannot fail");
+        assert!(
+            rendered.contains("elm-connect found a problem in the options"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Error: options::duplicate_option"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("rename `a.B` more than once"),
+            "{rendered}"
+        );
     }
 
     fn module_prefix(args: &[&str]) -> Result<Option<String>, clap::Error> {

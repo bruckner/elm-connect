@@ -120,6 +120,11 @@ Both binaries take the same options: the protoc plugin as
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
+A problem in the protos or the options is reported as a diagnostic with
+a code, such as `services::unbound_method`, and fails the run;
+[docs/diagnostics.md](docs/diagnostics.md) lists every code with the
+option or edit that gets past it.
+
 For example, to give `notes.v1.Note` the Elm type `Memo` and its field
 `title` the record field `heading`:
 

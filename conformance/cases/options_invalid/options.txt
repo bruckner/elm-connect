@@ -1,0 +1,1 @@
+colour=red,int64=long,streaming,bytes=bytes,bytes=string,rename=notes.v1.Note:Memo,rename=notes.v1.Note:Jotting,rename=notes.v1.Note.title,module_prefix=api

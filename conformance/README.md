@@ -24,7 +24,9 @@ and every file under `input/` is requested; nothing under `include/` is.
 A requested package is generated whole (design §3.1), so an `include/`
 file of a requested package is in its module (`packages_whole` case);
 one of any other package is not generated. Without `options.txt` a
-case is generated with the default options.
+case is generated with the default options; an `options.txt` with
+problems (`options::*`) is not generated at all, and its problems are the
+case's `diagnostics.txt`.
 
 ## The checks
 

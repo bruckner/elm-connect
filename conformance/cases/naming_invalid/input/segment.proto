@@ -1,0 +1,7 @@
+// A package segment that does not start with a letter has no Elm module
+// name.
+syntax = "proto3";
+
+package inventory.v1._2024;
+
+message Item {}

@@ -1,0 +1,44 @@
+options::unknown_option
+
+  × There is no option `colour`.
+  help: The plugin parameter is comma-separated `key=value` pairs, and its
+        options are `int64`, `bytes`, `unbound_methods`, `streaming`,
+        `enum_unknown`, `rename` and `module_prefix`.
+
+options::unknown_option
+
+  × The option `int64` is `long`, which is not one of its values.
+  help: `int64` is `string` or `int`; left out, it is `string`.
+
+options::unknown_option
+
+  × The plugin parameter holds `streaming`, which is not a `key=value` pair.
+  help: The plugin parameter is comma-separated `key=value` pairs, and its
+        options are `int64`, `bytes`, `unbound_methods`, `streaming`,
+        `enum_unknown`, `rename` and `module_prefix`.
+
+options::duplicate_option
+
+  × The option `bytes` is given more than once.
+  help: Every option but `rename` takes one value, and a second would silently
+        replace the first. Keep the one you mean.
+
+options::duplicate_option
+
+  × The options rename `notes.v1.Note` more than once.
+  help: A proto element has one Elm name, so it takes one `rename`. Keep the
+        one you mean.
+
+options::invalid_rename
+
+  × The rename `notes.v1.Note.title` is not `<proto full name>:<Elm name>`.
+  help: A rename names a proto element by its full name and gives its Elm
+        name, the two separated by `:`, such as `notes.v1.Note:Memo`; neither
+        may be empty.
+
+options::invalid_module_prefix
+
+  × The module prefix `api` is not an Elm module name.
+  help: `module_prefix` is dot-separated Elm module segments, such as
+        `Api.Notes`, each an uppercase letter followed by letters, digits or
+        underscores.

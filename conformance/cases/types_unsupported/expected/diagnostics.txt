@@ -1,0 +1,14 @@
+types::unsupported_well_known
+
+  × The field `api` of `registry.v1.Entry` has type `google.protobuf.Api`, a
+  │ well-known type elm-connect has no Elm mapping for.
+    ╭─[plugin.proto:11:3]
+ 10 │   string name = 1;
+ 11 │   google.protobuf.Api api = 2;
+    ·   ─────────┬─────────
+    ·            ╰── `google.protobuf.Api` here
+ 12 │ }
+    ╰────
+  help: The supported well-known types are Timestamp, Duration, FieldMask,
+        Empty, Any, Struct, Value, ListValue and the wrappers like Int32Value.
+        Use one of those, or a message of your own.

@@ -1,0 +1,21 @@
+// `Book` and `book` both become the Elm type `Book`. The enum value
+// `STATUS_ACTIVE` becomes the constructor `StatusActive`, which is also
+// the record constructor of the message `StatusActive`.
+syntax = "proto3";
+
+package library.v1;
+
+message Book {
+  string title = 1;
+}
+
+message book {
+  string title = 1;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+}
+
+message StatusActive {}

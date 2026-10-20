@@ -1,0 +1,12 @@
+// `google.protobuf.Api` describes a protobuf service, and has no Elm
+// mapping.
+syntax = "proto3";
+
+package registry.v1;
+
+import "google/protobuf/api.proto";
+
+message Entry {
+  string name = 1;
+  google.protobuf.Api api = 2;
+}

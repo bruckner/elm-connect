@@ -1,0 +1,47 @@
+naming::invalid_module
+
+  × The package `inventory.v1._2024` cannot become an Elm module name: its
+  │ segment `_2024` does not start with a letter.
+   ╭─[segment.proto:5:1]
+ 4 │
+ 5 │ package inventory.v1._2024;
+   · ─────────────┬─────────────
+   ·              ╰── this package
+ 6 │
+   ╰────
+  help: Each package segment becomes a segment of the Elm module name in
+        PascalCase (`notes.v1` becomes `Notes.V1`), and an Elm module segment
+        must start with a letter. Rename the package, or rename it with
+        `rename=<proto full name>:<Elm name>`.
+
+naming::invalid_type
+
+  × The type `catalog.v1._3dModel` becomes `3dModel` in Elm, which is not a
+  │ valid Elm type name.
+   ╭─[names.proto:8:9]
+ 7 │
+ 8 │ message _3dModel {}
+   ·         ────┬───
+   ·             ╰── this name
+ 9 │
+   ╰────
+  help: Elm type names must start with an uppercase letter. Rename the proto
+        type so its PascalCase form starts with one, or rename it with
+        `rename=<proto full name>:<Elm name>`.
+
+naming::invalid_field
+
+  × The field `Label` of `catalog.v1.Shelf` becomes `Label` in Elm, which is
+  │ not a valid record field name.
+    ╭─[names.proto:11:10]
+ 10 │ message Shelf {
+ 11 │   string Label = 1;
+    ·          ──┬──
+    ·            ╰── this name
+ 12 │ }
+    ╰────
+  help: Elm record fields must start with a lowercase letter. elm-connect
+        converts proto field names to lowerCamelCase without changing their
+        first letter, so the proto name should be lower_snake_case, starting
+        with a letter. Rename it in the proto, or rename it with
+        `rename=<proto full name>:<Elm name>`.

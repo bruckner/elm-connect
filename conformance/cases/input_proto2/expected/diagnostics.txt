@@ -1,0 +1,14 @@
+input::not_proto3
+
+  × The file `legacy.proto` uses proto2 syntax, but elm-connect generates
+  │ proto3.
+   ╭─[legacy.proto:2:1]
+ 1 │ // elm-connect generates proto3; a proto2 file is refused.
+ 2 │ syntax = "proto2";
+   · ─────────┬────────
+   ·          ╰── proto2 here
+ 3 │
+   ╰────
+  help: elm-connect implements the proto3 JSON mapping; proto2 features like
+        `required` and default values have no Elm mapping. Use `syntax =
+        "proto3";`.

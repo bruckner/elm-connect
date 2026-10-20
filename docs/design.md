@@ -60,7 +60,8 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack.
 - gRPC-web.
-- proto2 syntax, and editions. A file that declares an edition
+- proto2 syntax, and editions. A proto2 file to generate is
+  `input::not_proto3`. A file that declares an edition
   (`edition = "2023";`) is `input::editions`, from either binary, before
   anything is generated, even where its features would reduce to proto3
   semantics: protox, under the CLI, does not parse editions, and the
@@ -1175,18 +1176,19 @@ case names it):
   flattening (`naming::type_collision`), two constructors in one module,
   such as enum values or oneof members (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
-  `naming_collision` case). Escape: rename one of them with `rename=`
+  `naming_collision` and `naming_type_collision` cases). Escape: rename one of them with `rename=`
   (§3.7).
 - **Names with no Elm form**: a package segment, type, field or method
   whose converted name is not a valid Elm identifier
   (`naming::invalid_module`, `naming::invalid_type`,
-  `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
-  case). Escape: give it a name with `rename=` (§3.7). A file without a
+  `naming::invalid_field`, `naming::invalid_method`, `naming_invalid`
+  and `services_invalid` cases). Escape: give it a name with `rename=` (§3.7). A file without a
   package declaration (`naming::invalid_module` too) has no escape yet:
   a rename names its element by proto full name, and the file's
   package has none; its help text says to add a package.
 - **A `google.protobuf` type without a mapping**
-  (`types::unsupported_well_known`), such as `Api` or `Type`. `Any`
+  (`types::unsupported_well_known`, `types_unsupported` case), such as
+  `Api` or `Type`. `Any`
   was refused here (`types::any`) until it was built (§3.5). No escape
   yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
@@ -2551,8 +2553,11 @@ two types shared one module, the helpers for `Code` prefixed.)
   The plugin parameter is comma-separated `key=value` pairs; an unknown
   key or value, or a key other than `rename` given twice, is an error,
   as is a `rename` without its `:` or one renaming a proto name twice,
-  or a `module_prefix` that is not dot-separated Elm module segments. A conformance case sets options with an
-  `options.txt` holding that parameter.
+  or a `module_prefix` that is not dot-separated Elm module segments,
+  each an `options::*` diagnostic, all of a parameter's reported
+  together. A conformance case sets options with an
+  `options.txt` holding that parameter, and a case whose parameter has
+  problems expects them as its `diagnostics.txt`.
 - The CLI's `--include-imports` flag *(Decided, 2026-10-15; built;
   narrowed 2026-10-16)*, named after buf's: the CLI also generates every
   imported file that declares a message or enum the requested packages
@@ -2576,16 +2581,10 @@ two types shared one module, the helpers for `Code` prefixed.)
   The corpus cannot set it (`options.txt` is the plugin parameter), so
   `crates/elm-connect/tests/generate.rs` covers it.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
-  of Elm's compiler. First catalogue: route variable names a field the
-  request does not have; route body names a non-message field; map key
-  of an unsupported type (dropped: every key proto allows has an Elm
-  form, `bool` an association list, §3.2); package
-  import cycle; name collision after casing; streaming
-  method; method value collision (§4); the `route::*` problems of
-  HTTP rules (§4); a method without a rule under
-  `unbound_methods=error` (§4). A recursive
-  message was listed as an informational diagnostic; it is dropped,
-  since the wrapper type in the output says the same (§3.2).
+  of Elm's compiler, each under a code. The codes, what each reports and
+  its escape are listed in [`diagnostics.md`](diagnostics.md), which a
+  test (`crates/elm-connect-gen/tests/catalogue.rs`) holds to the
+  generator's own list.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.

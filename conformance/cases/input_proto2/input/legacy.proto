@@ -1,0 +1,8 @@
+// elm-connect generates proto3; a proto2 file is refused.
+syntax = "proto2";
+
+package legacy.v1;
+
+message Record {
+  required string id = 1;
+}

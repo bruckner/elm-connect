@@ -861,3 +861,27 @@ tag (design §8).
   then check the range, so `"+5"`, `"1.e3"` and `".5e1"` fail as they
   do for a 64-bit value and an integer map key; they went through
   `String.toFloat` before.
+- The diagnostic code `generate::unimplemented` is gone: nothing reported
+  it since every proto3 construct is generated, and codes become
+  permanent at 1.0 (design §8.3).
+- Option problems are diagnostics with codes, rendered like every other:
+  `options::unknown_option` (an unknown key, an unknown value for a known
+  key, or a pair without `=`), `options::duplicate_option` (an option
+  other than `rename` given twice, or one proto name renamed twice) and
+  `options::invalid_module_prefix`; a `rename` without its `:` is
+  `options::invalid_rename`. The plugin reports every problem in its
+  parameter at once rather than the first. A run whose only problems are
+  in the options says "a problem in the options", and the CLI prints one
+  `Error:` per problem rather than another before the header.
+- `docs/diagnostics.md` lists every diagnostic code by family, with what
+  it reports and its escape in both the CLI's and the plugin's
+  spelling; a test holds the list to the generator's codes. Two codes
+  move to the `input::` family, which holds what the generator was
+  handed: `generate::unknown_file` is now `input::unknown_file` and
+  `generate::not_proto3` is now `input::not_proto3`.
+- Every diagnostic code the corpus can reach has a rendered snapshot:
+  the `naming_invalid`, `naming_type_collision`, `types_unsupported`,
+  `input_proto2` and `options_invalid` conformance cases.
+  `input::unknown_file`, `input::editions` and `input::file_name`
+  cannot come from the corpus and stay covered by the crates' tests, as
+  `docs/diagnostics.md` says.
