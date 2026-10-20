@@ -340,6 +340,21 @@ rpc shared call =
   `Shopitem`) is `naming::module_collision`, with `rename` the escape
   (`descriptors_module_collision` and `descriptors_module_case`
   cases).
+- **A descriptor module's values.** *(Decided, 2026-10-19.)* Its
+  values share a namespace with the message's field names, so the
+  generator claims as few names there as it can. It claims one,
+  `descriptor`, which the protobuf style guide already lists among the
+  names a field should avoid
+  (<https://protobuf.dev/programming-guides/style/#collisions>); a
+  field named `descriptor` gets the value `descriptor_` instead, with
+  no diagnostic, and keeps `descriptor` as its record field in the
+  package module (`descriptors_value_escape` case). Any value the
+  generator adds to a descriptor module later ends in `_`, as
+  `elmConnectVersion_` does: a field's derived name ends in `_` only as
+  the escape of one of the fourteen reserved words (`type_`) or as
+  `descriptor_`, so a later addition that avoids those fifteen cannot
+  collide with a field, and adding one breaks no proto that generates
+  without a `rename` to a name ending in `_`.
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
   diagnostic naming the files involved. *(Proposed.)* Alternative: fold
@@ -979,11 +994,11 @@ Built, as the `naming` and `naming_collision` cases show:
   encoder of `FooMessage` and the typed value of `EncodeFoo`.
 - A descriptor module's values are `descriptor` and one per field,
   named as its record field (a oneof member's is its proto name
-  converted as a field's, its first letter lowercased). A field named
-  `descriptor`, or a renamed one that meets another field's or a
-  member's name, is `naming::value_collision`, naming both; a field
-  renamed to `elmConnectVersion_` likewise (`descriptors_value_collision`
-  case).
+  converted as a field's, its first letter lowercased), but that a
+  field or member named `descriptor` takes `descriptor_` (§3.1). A
+  renamed field that meets another field's or a member's name is
+  `naming::value_collision`, naming both; a field renamed to
+  `elmConnectVersion_` likewise (`descriptors_value_collision` case).
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof

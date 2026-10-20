@@ -516,9 +516,8 @@ impl Problem {
         )
     }
 
-    /// Two fields or oneof members of `message`, or one and the message's
-    /// own descriptor, become the same Elm value `elm_name` in the
-    /// message's descriptor module.
+    /// Two fields or oneof members of `message` become the same Elm value
+    /// `elm_name` in the message's descriptor module.
     pub fn field_value_collision(message: &str, elm_name: &str, first: Site, second: Site) -> Self {
         Problem::new(
             Code::ValueCollision,
@@ -528,9 +527,9 @@ impl Problem {
             ),
             "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
              `descriptor`, the message's descriptor, and one value per field, named as its \
-             record field is (a oneof member as a field would be), so a field named \
-             `descriptor`, or two whose names convert to one, cannot both be defined. \
-             Rename the field in the proto, or rename it with \
+             record field is (a oneof member as a field would be; a field named \
+             `descriptor` takes `descriptor_`), so two fields whose values meet cannot both \
+             be defined. Rename the field in the proto, or rename it with \
              `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )

@@ -299,18 +299,35 @@ pub fn descriptor_module(package_module: &ModuleName, type_elm_name: &str) -> Mo
 }
 
 /// The value of a type's descriptor in its [`descriptor_module`]:
-/// `Notes.V1.Note.descriptor`. A field of the message whose Elm name is
-/// this takes it, which is `naming::value_collision`.
+/// `Notes.V1.Note.descriptor`. It is the one value the generator adds to
+/// a descriptor module whose name a field could take; a field of that
+/// name takes `descriptor_` instead ([`field_value_name`]). Any value
+/// added to descriptor modules later ends in `_`, which a field's name
+/// does only as a reserved word's escape (`type_`) or as this one's
+/// (design §3.1).
 pub const DESCRIPTOR_VALUE: &str = "descriptor";
+
+/// The Elm value of a field's descriptor in its message's
+/// [`descriptor_module`], from the field's record field name: the same
+/// name, but [`DESCRIPTOR_VALUE`], which the message's own descriptor
+/// holds, gains a trailing underscore (`descriptor_`).
+pub fn field_value_name(elm_name: &str) -> String {
+    if elm_name == DESCRIPTOR_VALUE {
+        format!("{elm_name}_")
+    } else {
+        elm_name.to_owned()
+    }
+}
 
 /// The Elm value of a oneof member's descriptor in its message's
 /// [`descriptor_module`]: the member's proto name converted as
 /// [`field_name`] converts a field's, its first letter lowercased first
 /// as [`method_name`] does, so that every member a constructor can be
-/// named for has a value name too (`Text` becomes `text`). A record field
-/// is the Elm name of a field outside a oneof; a member has none.
+/// named for has a value name too (`Text` becomes `text`), then escaped
+/// as [`field_value_name`] escapes a field's. A record field is the Elm
+/// name of a field outside a oneof; a member has none.
 pub fn member_value_name(proto_name: &str) -> Result<String, NameError> {
-    method_name(proto_name)
+    method_name(proto_name).map(|name| field_value_name(&name))
 }
 
 /// The prefix the descriptor of a method takes.
@@ -513,6 +530,10 @@ mod tests {
         assert_eq!(member_value_name("legal_name"), Ok("legalName".into()));
         assert_eq!(member_value_name("Text"), Ok("text".into()));
         assert_eq!(member_value_name("type"), Ok("type_".into()));
+        assert_eq!(member_value_name("descriptor"), Ok("descriptor_".into()));
+        assert_eq!(field_value_name("descriptor"), "descriptor_");
+        assert_eq!(field_value_name("descriptors"), "descriptors");
+        assert_eq!(field_value_name("type_"), "type_");
         assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
         assert_eq!(method_descriptor_name("type_"), "descriptorType_");
         assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");

@@ -814,9 +814,10 @@ tag (design §8).
   `Notes.V1.descriptorNote` is now `Notes.V1.Note.descriptor`. A message
   or enum whose module name another generated module has (a service of
   its package, a package nested in its own, or another type's but for
-  case) is `naming::module_collision`; a field named `descriptor`, two
-  fields whose descriptor values meet, or a field renamed to
-  `elmConnectVersion_` is `naming::value_collision`.
+  case) is `naming::module_collision`. A field named `descriptor` gets
+  the value `descriptor_` there (its record field stays `descriptor`);
+  two fields whose descriptor values meet, or a field renamed to
+  `elmConnectVersion_`, is `naming::value_collision`.
 - `Proto.Http.variable` takes `{ fieldPath, template }` and `Proto.Http.param`
   a path, where `fieldPath` is the path of field descriptors from the
   request message down to the field (`[ Notes.V1.GetNoteRequest.name ]`)

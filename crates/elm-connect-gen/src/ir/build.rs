@@ -628,10 +628,11 @@ impl Builder {
         let name = if member {
             naming::member_value_name(field.name()).ok()?
         } else {
-            match self.renames.get(field.full_name()) {
+            let elm_name = match self.renames.get(field.full_name()) {
                 Some(given) => given.clone(),
                 None => naming::field_name(field.name()).ok()?,
-            }
+            };
+            naming::field_value_name(&elm_name)
         };
         Some(route::FieldRef {
             module: naming::descriptor_module(&ty.module, &ty.name),
@@ -988,7 +989,9 @@ impl Builder {
         self.claim_constructor(constructors, package, &elm_name, origin);
 
         // The values of the message's descriptor module: its descriptor,
-        // then one per field and oneof member.
+        // then one per field and oneof member. No field's value can be
+        // `descriptor` (`naming::field_value_name`); claiming it keeps
+        // that checked.
         let mut values = Namespace::default();
         let what = format!("the descriptor of message `{full_name}`");
         let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
@@ -1116,7 +1119,8 @@ impl Builder {
                 // Two record fields of one name were reported as such; their
                 // descriptor values clash too, which is the same problem.
                 let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
-                self.claim_field_value(&mut values, full_name, &elm_field_name, origin);
+                let value = naming::field_value_name(&elm_field_name);
+                self.claim_field_value(&mut values, full_name, &value, origin);
             }
             if let Some((cardinality, ty)) = self.field_type(file, message, &field) {
                 fields.push(Field {

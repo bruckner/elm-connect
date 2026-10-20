@@ -28,7 +28,7 @@ use crate::naming::{DESCRIPTOR_VALUE, REGISTRY};
 /// declares it.
 struct FieldValue<'m> {
     /// The Elm value, such as `pageSize`.
-    elm_name: &'m str,
+    elm_name: String,
     proto_name: &'m str,
     json_name: &'m str,
     number: u32,
@@ -53,7 +53,7 @@ impl Emitter {
             builder,
             [
                 string(message.proto_full_name.clone()),
-                list(fields.iter().map(|field| var(field.elm_name))),
+                list(fields.iter().map(|field| var(field.elm_name.clone()))),
             ],
         );
         let mut decls = vec![Decl::Value {
@@ -81,7 +81,7 @@ impl Emitter {
             let body = self.field_descriptor(field);
             decls.push(Decl::Value {
                 doc: Some(doc),
-                name: field.elm_name.to_owned(),
+                name: field.elm_name.clone(),
                 annotation: self.library_type(PROTO_FIELD, "Descriptor", []),
                 params: Vec::new(),
                 body,
@@ -338,7 +338,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
     for field in shape.record() {
         match field {
             RecordField::Field(field, _) => fields.push(FieldValue {
-                elm_name: &field.elm_name,
+                elm_name: field.value_name(),
                 proto_name: &field.proto_name,
                 json_name: &field.json_name,
                 number: field.number,
@@ -350,7 +350,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
             RecordField::Oneof(oneof) => {
                 for (variant, _) in &oneof.variants {
                     fields.push(FieldValue {
-                        elm_name: &variant.elm_name,
+                        elm_name: variant.elm_name.clone(),
                         proto_name: &variant.proto_name,
                         json_name: &variant.json_name,
                         number: variant.number,

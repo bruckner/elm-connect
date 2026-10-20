@@ -367,6 +367,15 @@ pub struct Field {
     pub annotations: Annotations,
 }
 
+impl Field {
+    /// The Elm value of the field's descriptor in its message's
+    /// descriptor module: its record field name, `descriptor_` for
+    /// `descriptor` ([`crate::naming::field_value_name`]).
+    pub fn value_name(&self) -> String {
+        crate::naming::field_value_name(&self.elm_name)
+    }
+}
+
 /// What a field's options say about it that the descriptor carries:
 /// its `google.api.field_behavior` values in order, and whether it is
 /// `deprecated`.
