@@ -1,3 +1,11 @@
+// Portions of this file are a port of elm-format 0.8.8: its vendored
+// Markdown parser (`elm-format-markdown`, a fork of Cheapskate, Copyright (c)
+// 2013 John MacFarlane and Copyright (c) 2017 Aaron VonderHaar) and its
+// Markdown printer (`ElmFormat.Render.Markdown`, Copyright (c) 2015-2023 Aaron
+// VonderHaar and the elm-format contributors), both under the BSD 3-Clause
+// License. The licenses are in `third_party/elm-format/` beside this crate's
+// manifest, and the repository's THIRD_PARTY.md names the material.
+
 //! Doc comments as elm-format leaves them.
 //!
 //! elm-format parses a doc comment as Markdown and prints it back in its
