@@ -1323,25 +1323,25 @@ encodeTestSuiteConnectVersionMode value =
 
 encodeClientCompatRequest : ClientCompatRequest -> Json.Encode.Value
 encodeClientCompatRequest value =
-    Proto.Json.object
-        [ ( "testName", Proto.Json.implicit "" Json.Encode.string value.testName )
-        , ( "httpVersion", Proto.Json.implicit HTTPVersionUnspecified encodeHTTPVersion value.httpVersion )
-        , ( "protocol", Proto.Json.implicit ProtocolUnspecified encodeProtocol value.protocol )
-        , ( "codec", Proto.Json.implicit CodecUnspecified encodeCodec value.codec )
-        , ( "compression", Proto.Json.implicit CompressionUnspecified encodeCompression value.compression )
-        , ( "host", Proto.Json.implicit "" Json.Encode.string value.host )
-        , ( "port", Proto.Json.implicit 0 Json.Encode.int value.port_ )
-        , ( "serverTlsCert", Proto.Json.implicit "" Proto.Json.encodeBytes value.serverTlsCert )
+    Proto.Json.objectOfFields
+        [ ( "testName", Proto.Json.implicitField "" Json.Encode.string value.testName )
+        , ( "httpVersion", Proto.Json.implicitField HTTPVersionUnspecified encodeHTTPVersion value.httpVersion )
+        , ( "protocol", Proto.Json.implicitField ProtocolUnspecified encodeProtocol value.protocol )
+        , ( "codec", Proto.Json.implicitField CodecUnspecified encodeCodec value.codec )
+        , ( "compression", Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression )
+        , ( "host", Proto.Json.implicitField "" Json.Encode.string value.host )
+        , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
+        , ( "serverTlsCert", Proto.Json.implicitField "" Proto.Json.encodeBytes value.serverTlsCert )
         , ( "clientTlsCreds", Maybe.map encodeTLSCreds value.clientTlsCreds )
-        , ( "messageReceiveLimit", Proto.Json.implicit 0 Json.Encode.int value.messageReceiveLimit )
+        , ( "messageReceiveLimit", Proto.Json.implicitField 0 Json.Encode.int value.messageReceiveLimit )
         , ( "service", Maybe.map Json.Encode.string value.service )
         , ( "method", Maybe.map Json.Encode.string value.method )
-        , ( "streamType", Proto.Json.implicit StreamTypeUnspecified encodeStreamType value.streamType )
-        , ( "useGetHttpMethod", Proto.Json.implicit False Json.Encode.bool value.useGetHttpMethod )
-        , ( "requestHeaders", Proto.Json.repeated encodeHeader value.requestHeaders )
-        , ( "requestMessages", Proto.Json.repeated Proto.Any.encodeJson value.requestMessages )
+        , ( "streamType", Proto.Json.implicitField StreamTypeUnspecified encodeStreamType value.streamType )
+        , ( "useGetHttpMethod", Proto.Json.implicitField False Json.Encode.bool value.useGetHttpMethod )
+        , ( "requestHeaders", Proto.Json.repeatedField encodeHeader value.requestHeaders )
+        , ( "requestMessages", Proto.Json.repeatedField Proto.Json.encodeAny value.requestMessages )
         , ( "timeoutMs", Maybe.map Json.Encode.int value.timeoutMs )
-        , ( "requestDelayMs", Proto.Json.implicit 0 Json.Encode.int value.requestDelayMs )
+        , ( "requestDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.requestDelayMs )
         , ( "cancel", Maybe.map encodeClientCompatRequestCancel value.cancel )
         , ( "rawRequest", Maybe.map encodeRawHTTPRequest value.rawRequest )
         ]
@@ -1349,7 +1349,7 @@ encodeClientCompatRequest value =
 
 encodeClientCompatRequestCancel : ClientCompatRequestCancel -> Json.Encode.Value
 encodeClientCompatRequestCancel value =
-    Proto.Json.object (encodeClientCompatRequestCancelCancelTiming value.cancelTiming)
+    Proto.Json.objectOfFields (encodeClientCompatRequestCancelCancelTiming value.cancelTiming)
 
 
 encodeClientCompatRequestCancelCancelTiming : ClientCompatRequestCancelCancelTiming -> List ( String, Maybe Json.Encode.Value )
@@ -1373,8 +1373,8 @@ encodeClientCompatRequestCancelCancelTiming value =
 
 encodeClientCompatResponse : ClientCompatResponse -> Json.Encode.Value
 encodeClientCompatResponse value =
-    Proto.Json.object
-        ([ ( "testName", Proto.Json.implicit "" Json.Encode.string value.testName )
+    Proto.Json.objectOfFields
+        ([ ( "testName", Proto.Json.implicitField "" Json.Encode.string value.testName )
          ]
             ++ encodeClientCompatResponseResult value.result
         )
@@ -1397,51 +1397,51 @@ encodeClientCompatResponseResult value =
 
 encodeClientResponseResult : ClientResponseResult -> Json.Encode.Value
 encodeClientResponseResult value =
-    Proto.Json.object
-        [ ( "responseHeaders", Proto.Json.repeated encodeHeader value.responseHeaders )
-        , ( "payloads", Proto.Json.repeated encodeConformancePayload value.payloads )
+    Proto.Json.objectOfFields
+        [ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
+        , ( "payloads", Proto.Json.repeatedField encodeConformancePayload value.payloads )
         , ( "error", Maybe.map encodeError value.error )
-        , ( "responseTrailers", Proto.Json.repeated encodeHeader value.responseTrailers )
-        , ( "numUnsentRequests", Proto.Json.implicit 0 Json.Encode.int value.numUnsentRequests )
+        , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
+        , ( "numUnsentRequests", Proto.Json.implicitField 0 Json.Encode.int value.numUnsentRequests )
         , ( "httpStatusCode", Maybe.map Json.Encode.int value.httpStatusCode )
-        , ( "feedback", Proto.Json.repeated Json.Encode.string value.feedback )
+        , ( "feedback", Proto.Json.repeatedField Json.Encode.string value.feedback )
         ]
 
 
 encodeClientErrorResult : ClientErrorResult -> Json.Encode.Value
 encodeClientErrorResult value =
-    Proto.Json.object
-        [ ( "message", Proto.Json.implicit "" Json.Encode.string value.message )
+    Proto.Json.objectOfFields
+        [ ( "message", Proto.Json.implicitField "" Json.Encode.string value.message )
         ]
 
 
 encodeWireDetails : WireDetails -> Json.Encode.Value
 encodeWireDetails value =
-    Proto.Json.object
-        [ ( "actualStatusCode", Proto.Json.implicit 0 Json.Encode.int value.actualStatusCode )
+    Proto.Json.objectOfFields
+        [ ( "actualStatusCode", Proto.Json.implicitField 0 Json.Encode.int value.actualStatusCode )
         , ( "connectErrorRaw", Maybe.map Proto.Json.encodeStruct value.connectErrorRaw )
-        , ( "actualHttpTrailers", Proto.Json.repeated encodeHeader value.actualHttpTrailers )
+        , ( "actualHttpTrailers", Proto.Json.repeatedField encodeHeader value.actualHttpTrailers )
         , ( "actualGrpcwebTrailers", Maybe.map Json.Encode.string value.actualGrpcwebTrailers )
         ]
 
 
 encodeConfig : Config -> Json.Encode.Value
 encodeConfig value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "features", Maybe.map encodeFeatures value.features )
-        , ( "includeCases", Proto.Json.repeated encodeConfigCase value.includeCases )
-        , ( "excludeCases", Proto.Json.repeated encodeConfigCase value.excludeCases )
+        , ( "includeCases", Proto.Json.repeatedField encodeConfigCase value.includeCases )
+        , ( "excludeCases", Proto.Json.repeatedField encodeConfigCase value.excludeCases )
         ]
 
 
 encodeFeatures : Features -> Json.Encode.Value
 encodeFeatures value =
-    Proto.Json.object
-        [ ( "versions", Proto.Json.repeated encodeHTTPVersion value.versions )
-        , ( "protocols", Proto.Json.repeated encodeProtocol value.protocols )
-        , ( "codecs", Proto.Json.repeated encodeCodec value.codecs )
-        , ( "compressions", Proto.Json.repeated encodeCompression value.compressions )
-        , ( "streamTypes", Proto.Json.repeated encodeStreamType value.streamTypes )
+    Proto.Json.objectOfFields
+        [ ( "versions", Proto.Json.repeatedField encodeHTTPVersion value.versions )
+        , ( "protocols", Proto.Json.repeatedField encodeProtocol value.protocols )
+        , ( "codecs", Proto.Json.repeatedField encodeCodec value.codecs )
+        , ( "compressions", Proto.Json.repeatedField encodeCompression value.compressions )
+        , ( "streamTypes", Proto.Json.repeatedField encodeStreamType value.streamTypes )
         , ( "supportsH2c", Maybe.map Json.Encode.bool value.supportsH2c )
         , ( "supportsTls", Maybe.map Json.Encode.bool value.supportsTls )
         , ( "supportsTlsClientCerts", Maybe.map Json.Encode.bool value.supportsTlsClientCerts )
@@ -1454,12 +1454,12 @@ encodeFeatures value =
 
 encodeConfigCase : ConfigCase -> Json.Encode.Value
 encodeConfigCase value =
-    Proto.Json.object
-        [ ( "version", Proto.Json.implicit HTTPVersionUnspecified encodeHTTPVersion value.version )
-        , ( "protocol", Proto.Json.implicit ProtocolUnspecified encodeProtocol value.protocol )
-        , ( "codec", Proto.Json.implicit CodecUnspecified encodeCodec value.codec )
-        , ( "compression", Proto.Json.implicit CompressionUnspecified encodeCompression value.compression )
-        , ( "streamType", Proto.Json.implicit StreamTypeUnspecified encodeStreamType value.streamType )
+    Proto.Json.objectOfFields
+        [ ( "version", Proto.Json.implicitField HTTPVersionUnspecified encodeHTTPVersion value.version )
+        , ( "protocol", Proto.Json.implicitField ProtocolUnspecified encodeProtocol value.protocol )
+        , ( "codec", Proto.Json.implicitField CodecUnspecified encodeCodec value.codec )
+        , ( "compression", Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression )
+        , ( "streamType", Proto.Json.implicitField StreamTypeUnspecified encodeStreamType value.streamType )
         , ( "useTls", Maybe.map Json.Encode.bool value.useTls )
         , ( "useTlsClientCerts", Maybe.map Json.Encode.bool value.useTlsClientCerts )
         , ( "useMessageReceiveLimit", Maybe.map Json.Encode.bool value.useMessageReceiveLimit )
@@ -1468,39 +1468,39 @@ encodeConfigCase value =
 
 encodeTLSCreds : TLSCreds -> Json.Encode.Value
 encodeTLSCreds value =
-    Proto.Json.object
-        [ ( "cert", Proto.Json.implicit "" Proto.Json.encodeBytes value.cert )
-        , ( "key", Proto.Json.implicit "" Proto.Json.encodeBytes value.key )
+    Proto.Json.objectOfFields
+        [ ( "cert", Proto.Json.implicitField "" Proto.Json.encodeBytes value.cert )
+        , ( "key", Proto.Json.implicitField "" Proto.Json.encodeBytes value.key )
         ]
 
 
 encodeServerCompatRequest : ServerCompatRequest -> Json.Encode.Value
 encodeServerCompatRequest value =
-    Proto.Json.object
-        [ ( "protocol", Proto.Json.implicit ProtocolUnspecified encodeProtocol value.protocol )
-        , ( "httpVersion", Proto.Json.implicit HTTPVersionUnspecified encodeHTTPVersion value.httpVersion )
-        , ( "useTls", Proto.Json.implicit False Json.Encode.bool value.useTls )
-        , ( "clientTlsCert", Proto.Json.implicit "" Proto.Json.encodeBytes value.clientTlsCert )
-        , ( "messageReceiveLimit", Proto.Json.implicit 0 Json.Encode.int value.messageReceiveLimit )
+    Proto.Json.objectOfFields
+        [ ( "protocol", Proto.Json.implicitField ProtocolUnspecified encodeProtocol value.protocol )
+        , ( "httpVersion", Proto.Json.implicitField HTTPVersionUnspecified encodeHTTPVersion value.httpVersion )
+        , ( "useTls", Proto.Json.implicitField False Json.Encode.bool value.useTls )
+        , ( "clientTlsCert", Proto.Json.implicitField "" Proto.Json.encodeBytes value.clientTlsCert )
+        , ( "messageReceiveLimit", Proto.Json.implicitField 0 Json.Encode.int value.messageReceiveLimit )
         , ( "serverCreds", Maybe.map encodeTLSCreds value.serverCreds )
         ]
 
 
 encodeServerCompatResponse : ServerCompatResponse -> Json.Encode.Value
 encodeServerCompatResponse value =
-    Proto.Json.object
-        [ ( "host", Proto.Json.implicit "" Json.Encode.string value.host )
-        , ( "port", Proto.Json.implicit 0 Json.Encode.int value.port_ )
-        , ( "pemCert", Proto.Json.implicit "" Proto.Json.encodeBytes value.pemCert )
+    Proto.Json.objectOfFields
+        [ ( "host", Proto.Json.implicitField "" Json.Encode.string value.host )
+        , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
+        , ( "pemCert", Proto.Json.implicitField "" Proto.Json.encodeBytes value.pemCert )
         ]
 
 
 encodeUnaryResponseDefinition : UnaryResponseDefinition -> Json.Encode.Value
 encodeUnaryResponseDefinition value =
-    Proto.Json.object
-        ([ ( "responseHeaders", Proto.Json.repeated encodeHeader value.responseHeaders )
-         , ( "responseTrailers", Proto.Json.repeated encodeHeader value.responseTrailers )
-         , ( "responseDelayMs", Proto.Json.implicit 0 Json.Encode.int value.responseDelayMs )
+    Proto.Json.objectOfFields
+        ([ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
+         , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
+         , ( "responseDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs )
          , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
          ]
             ++ encodeUnaryResponseDefinitionResponse value.response
@@ -1524,88 +1524,88 @@ encodeUnaryResponseDefinitionResponse value =
 
 encodeStreamResponseDefinition : StreamResponseDefinition -> Json.Encode.Value
 encodeStreamResponseDefinition value =
-    Proto.Json.object
-        [ ( "responseHeaders", Proto.Json.repeated encodeHeader value.responseHeaders )
-        , ( "responseData", Proto.Json.repeated Proto.Json.encodeBytes value.responseData )
-        , ( "responseDelayMs", Proto.Json.implicit 0 Json.Encode.int value.responseDelayMs )
+    Proto.Json.objectOfFields
+        [ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
+        , ( "responseData", Proto.Json.repeatedField Proto.Json.encodeBytes value.responseData )
+        , ( "responseDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs )
         , ( "error", Maybe.map encodeError value.error )
-        , ( "responseTrailers", Proto.Json.repeated encodeHeader value.responseTrailers )
+        , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
         , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
         ]
 
 
 encodeUnaryRequest : UnaryRequest -> Json.Encode.Value
 encodeUnaryRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicit "" Proto.Json.encodeBytes value.requestData )
+        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
         ]
 
 
 encodeUnaryResponse : UnaryResponse -> Json.Encode.Value
 encodeUnaryResponse value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "payload", Maybe.map encodeConformancePayload value.payload )
         ]
 
 
 encodeIdempotentUnaryRequest : IdempotentUnaryRequest -> Json.Encode.Value
 encodeIdempotentUnaryRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicit "" Proto.Json.encodeBytes value.requestData )
+        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
         ]
 
 
 encodeIdempotentUnaryResponse : IdempotentUnaryResponse -> Json.Encode.Value
 encodeIdempotentUnaryResponse value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "payload", Maybe.map encodeConformancePayload value.payload )
         ]
 
 
 encodeServerStreamRequest : ServerStreamRequest -> Json.Encode.Value
 encodeServerStreamRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "responseDefinition", Maybe.map encodeStreamResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicit "" Proto.Json.encodeBytes value.requestData )
+        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
         ]
 
 
 encodeServerStreamResponse : ServerStreamResponse -> Json.Encode.Value
 encodeServerStreamResponse value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "payload", Maybe.map encodeConformancePayload value.payload )
         ]
 
 
 encodeClientStreamRequest : ClientStreamRequest -> Json.Encode.Value
 encodeClientStreamRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicit "" Proto.Json.encodeBytes value.requestData )
+        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
         ]
 
 
 encodeClientStreamResponse : ClientStreamResponse -> Json.Encode.Value
 encodeClientStreamResponse value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "payload", Maybe.map encodeConformancePayload value.payload )
         ]
 
 
 encodeBidiStreamRequest : BidiStreamRequest -> Json.Encode.Value
 encodeBidiStreamRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "responseDefinition", Maybe.map encodeStreamResponseDefinition value.responseDefinition )
-        , ( "fullDuplex", Proto.Json.implicit False Json.Encode.bool value.fullDuplex )
-        , ( "requestData", Proto.Json.implicit "" Proto.Json.encodeBytes value.requestData )
+        , ( "fullDuplex", Proto.Json.implicitField False Json.Encode.bool value.fullDuplex )
+        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
         ]
 
 
 encodeBidiStreamResponse : BidiStreamResponse -> Json.Encode.Value
 encodeBidiStreamResponse value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "payload", Maybe.map encodeConformancePayload value.payload )
         ]
 
@@ -1622,54 +1622,54 @@ encodeUnimplementedResponse _ =
 
 encodeConformancePayload : ConformancePayload -> Json.Encode.Value
 encodeConformancePayload value =
-    Proto.Json.object
-        [ ( "data", Proto.Json.implicit "" Proto.Json.encodeBytes value.data )
+    Proto.Json.objectOfFields
+        [ ( "data", Proto.Json.implicitField "" Proto.Json.encodeBytes value.data )
         , ( "requestInfo", Maybe.map encodeConformancePayloadRequestInfo value.requestInfo )
         ]
 
 
 encodeConformancePayloadRequestInfo : ConformancePayloadRequestInfo -> Json.Encode.Value
 encodeConformancePayloadRequestInfo value =
-    Proto.Json.object
-        [ ( "requestHeaders", Proto.Json.repeated encodeHeader value.requestHeaders )
+    Proto.Json.objectOfFields
+        [ ( "requestHeaders", Proto.Json.repeatedField encodeHeader value.requestHeaders )
         , ( "timeoutMs", Maybe.map Proto.Json.encodeInt64 value.timeoutMs )
-        , ( "requests", Proto.Json.repeated Proto.Any.encodeJson value.requests )
+        , ( "requests", Proto.Json.repeatedField Proto.Json.encodeAny value.requests )
         , ( "connectGetInfo", Maybe.map encodeConformancePayloadConnectGetInfo value.connectGetInfo )
         ]
 
 
 encodeConformancePayloadConnectGetInfo : ConformancePayloadConnectGetInfo -> Json.Encode.Value
 encodeConformancePayloadConnectGetInfo value =
-    Proto.Json.object
-        [ ( "queryParams", Proto.Json.repeated encodeHeader value.queryParams )
+    Proto.Json.objectOfFields
+        [ ( "queryParams", Proto.Json.repeatedField encodeHeader value.queryParams )
         ]
 
 
 encodeError : Error -> Json.Encode.Value
 encodeError value =
-    Proto.Json.object
-        [ ( "code", Proto.Json.implicit CodeUnspecified encodeCode value.code )
+    Proto.Json.objectOfFields
+        [ ( "code", Proto.Json.implicitField CodeUnspecified encodeCode value.code )
         , ( "message", Maybe.map Json.Encode.string value.message )
-        , ( "details", Proto.Json.repeated Proto.Any.encodeJson value.details )
+        , ( "details", Proto.Json.repeatedField Proto.Json.encodeAny value.details )
         ]
 
 
 encodeHeader : Header -> Json.Encode.Value
 encodeHeader value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "value", Proto.Json.repeated Json.Encode.string value.value )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "value", Proto.Json.repeatedField Json.Encode.string value.value )
         ]
 
 
 encodeRawHTTPRequest : RawHTTPRequest -> Json.Encode.Value
 encodeRawHTTPRequest value =
-    Proto.Json.object
-        ([ ( "verb", Proto.Json.implicit "" Json.Encode.string value.verb )
-         , ( "uri", Proto.Json.implicit "" Json.Encode.string value.uri )
-         , ( "headers", Proto.Json.repeated encodeHeader value.headers )
-         , ( "rawQueryParams", Proto.Json.repeated encodeHeader value.rawQueryParams )
-         , ( "encodedQueryParams", Proto.Json.repeated encodeRawHTTPRequestEncodedQueryParam value.encodedQueryParams )
+    Proto.Json.objectOfFields
+        ([ ( "verb", Proto.Json.implicitField "" Json.Encode.string value.verb )
+         , ( "uri", Proto.Json.implicitField "" Json.Encode.string value.uri )
+         , ( "headers", Proto.Json.repeatedField encodeHeader value.headers )
+         , ( "rawQueryParams", Proto.Json.repeatedField encodeHeader value.rawQueryParams )
+         , ( "encodedQueryParams", Proto.Json.repeatedField encodeRawHTTPRequestEncodedQueryParam value.encodedQueryParams )
          ]
             ++ encodeRawHTTPRequestBody value.body
         )
@@ -1692,17 +1692,17 @@ encodeRawHTTPRequestBody value =
 
 encodeRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam -> Json.Encode.Value
 encodeRawHTTPRequestEncodedQueryParam value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         , ( "value", Maybe.map encodeMessageContents value.value )
-        , ( "base64Encode", Proto.Json.implicit False Json.Encode.bool value.base64Encode )
+        , ( "base64Encode", Proto.Json.implicitField False Json.Encode.bool value.base64Encode )
         ]
 
 
 encodeMessageContents : MessageContents -> Json.Encode.Value
 encodeMessageContents value =
-    Proto.Json.object
-        ([ ( "compression", Proto.Json.implicit CompressionUnspecified encodeCompression value.compression )
+    Proto.Json.objectOfFields
+        ([ ( "compression", Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression )
          ]
             ++ encodeMessageContentsData value.data
         )
@@ -1723,21 +1723,21 @@ encodeMessageContentsData value =
             ]
 
         MessageContentsDataBinaryMessage member ->
-            [ ( "binaryMessage", Just (Proto.Any.encodeJson member) )
+            [ ( "binaryMessage", Just (Proto.Json.encodeAny member) )
             ]
 
 
 encodeStreamContents : StreamContents -> Json.Encode.Value
 encodeStreamContents value =
-    Proto.Json.object
-        [ ( "items", Proto.Json.repeated encodeStreamContentsStreamItem value.items )
+    Proto.Json.objectOfFields
+        [ ( "items", Proto.Json.repeatedField encodeStreamContentsStreamItem value.items )
         ]
 
 
 encodeStreamContentsStreamItem : StreamContentsStreamItem -> Json.Encode.Value
 encodeStreamContentsStreamItem value =
-    Proto.Json.object
-        [ ( "flags", Proto.Json.implicit 0 Json.Encode.int value.flags )
+    Proto.Json.objectOfFields
+        [ ( "flags", Proto.Json.implicitField 0 Json.Encode.int value.flags )
         , ( "length", Maybe.map Json.Encode.int value.length )
         , ( "payload", Maybe.map encodeMessageContents value.payload )
         ]
@@ -1745,10 +1745,10 @@ encodeStreamContentsStreamItem value =
 
 encodeRawHTTPResponse : RawHTTPResponse -> Json.Encode.Value
 encodeRawHTTPResponse value =
-    Proto.Json.object
-        ([ ( "statusCode", Proto.Json.implicit 0 Json.Encode.int value.statusCode )
-         , ( "headers", Proto.Json.repeated encodeHeader value.headers )
-         , ( "trailers", Proto.Json.repeated encodeHeader value.trailers )
+    Proto.Json.objectOfFields
+        ([ ( "statusCode", Proto.Json.implicitField 0 Json.Encode.int value.statusCode )
+         , ( "headers", Proto.Json.repeatedField encodeHeader value.headers )
+         , ( "trailers", Proto.Json.repeatedField encodeHeader value.trailers )
          ]
             ++ encodeRawHTTPResponseBody value.body
         )
@@ -1771,35 +1771,35 @@ encodeRawHTTPResponseBody value =
 
 encodeTestSuite : TestSuite -> Json.Encode.Value
 encodeTestSuite value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "mode", Proto.Json.implicit TestSuiteTestModeUnspecified encodeTestSuiteTestMode value.mode )
-        , ( "testCases", Proto.Json.repeated encodeTestCase value.testCases )
-        , ( "relevantProtocols", Proto.Json.repeated encodeProtocol value.relevantProtocols )
-        , ( "relevantHttpVersions", Proto.Json.repeated encodeHTTPVersion value.relevantHttpVersions )
-        , ( "relevantCodecs", Proto.Json.repeated encodeCodec value.relevantCodecs )
-        , ( "relevantCompressions", Proto.Json.repeated encodeCompression value.relevantCompressions )
-        , ( "connectVersionMode", Proto.Json.implicit TestSuiteConnectVersionModeUnspecified encodeTestSuiteConnectVersionMode value.connectVersionMode )
-        , ( "reliesOnTls", Proto.Json.implicit False Json.Encode.bool value.reliesOnTls )
-        , ( "reliesOnTlsClientCerts", Proto.Json.implicit False Json.Encode.bool value.reliesOnTlsClientCerts )
-        , ( "reliesOnConnectGet", Proto.Json.implicit False Json.Encode.bool value.reliesOnConnectGet )
-        , ( "reliesOnMessageReceiveLimit", Proto.Json.implicit False Json.Encode.bool value.reliesOnMessageReceiveLimit )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "mode", Proto.Json.implicitField TestSuiteTestModeUnspecified encodeTestSuiteTestMode value.mode )
+        , ( "testCases", Proto.Json.repeatedField encodeTestCase value.testCases )
+        , ( "relevantProtocols", Proto.Json.repeatedField encodeProtocol value.relevantProtocols )
+        , ( "relevantHttpVersions", Proto.Json.repeatedField encodeHTTPVersion value.relevantHttpVersions )
+        , ( "relevantCodecs", Proto.Json.repeatedField encodeCodec value.relevantCodecs )
+        , ( "relevantCompressions", Proto.Json.repeatedField encodeCompression value.relevantCompressions )
+        , ( "connectVersionMode", Proto.Json.implicitField TestSuiteConnectVersionModeUnspecified encodeTestSuiteConnectVersionMode value.connectVersionMode )
+        , ( "reliesOnTls", Proto.Json.implicitField False Json.Encode.bool value.reliesOnTls )
+        , ( "reliesOnTlsClientCerts", Proto.Json.implicitField False Json.Encode.bool value.reliesOnTlsClientCerts )
+        , ( "reliesOnConnectGet", Proto.Json.implicitField False Json.Encode.bool value.reliesOnConnectGet )
+        , ( "reliesOnMessageReceiveLimit", Proto.Json.implicitField False Json.Encode.bool value.reliesOnMessageReceiveLimit )
         ]
 
 
 encodeTestCase : TestCase -> Json.Encode.Value
 encodeTestCase value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "request", Maybe.map encodeClientCompatRequest value.request )
-        , ( "expandRequests", Proto.Json.repeated encodeTestCaseExpandedSize value.expandRequests )
+        , ( "expandRequests", Proto.Json.repeatedField encodeTestCaseExpandedSize value.expandRequests )
         , ( "expectedResponse", Maybe.map encodeClientResponseResult value.expectedResponse )
-        , ( "otherAllowedErrorCodes", Proto.Json.repeated encodeCode value.otherAllowedErrorCodes )
+        , ( "otherAllowedErrorCodes", Proto.Json.repeatedField encodeCode value.otherAllowedErrorCodes )
         ]
 
 
 encodeTestCaseExpandedSize : TestCaseExpandedSize -> Json.Encode.Value
 encodeTestCaseExpandedSize value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "sizeRelativeToLimit", Maybe.map Json.Encode.int value.sizeRelativeToLimit )
         ]
 
@@ -1930,7 +1930,7 @@ decodeClientCompatRequest =
         |> Proto.Json.fieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
         |> Proto.Json.fieldEither "useGetHttpMethod" "use_get_http_method" False Json.Decode.bool
         |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "requestMessages" "request_messages" [] (Json.Decode.list Proto.Any.jsonDecoder)
+        |> Proto.Json.fieldEither "requestMessages" "request_messages" [] (Json.Decode.list Proto.Json.any)
         |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.uint32)
         |> Proto.Json.fieldEither "requestDelayMs" "request_delay_ms" 0 Proto.Json.uint32
         |> Proto.Json.field "cancel" Nothing (Json.Decode.map Just decodeClientCompatRequestCancel)
@@ -2178,7 +2178,7 @@ decodeConformancePayloadRequestInfo =
     Json.Decode.succeed ConformancePayloadRequestInfo
         |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.int64)
-        |> Proto.Json.field "requests" [] (Json.Decode.list Proto.Any.jsonDecoder)
+        |> Proto.Json.field "requests" [] (Json.Decode.list Proto.Json.any)
         |> Proto.Json.fieldEither "connectGetInfo" "connect_get_info" Nothing (Json.Decode.map Just decodeConformancePayloadConnectGetInfo)
 
 
@@ -2193,7 +2193,7 @@ decodeError =
     Json.Decode.succeed Error
         |> Proto.Json.field "code" CodeUnspecified decodeCode
         |> Proto.Json.field "message" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Proto.Json.field "details" [] (Json.Decode.list Proto.Any.jsonDecoder)
+        |> Proto.Json.field "details" [] (Json.Decode.list Proto.Json.any)
 
 
 decodeHeader : Json.Decode.Decoder Header
@@ -2244,7 +2244,7 @@ decodeMessageContentsData =
         MessageContentsDataUnset
         [ Proto.Json.member "binary" (Json.Decode.map MessageContentsDataBinary Proto.Json.bytes)
         , Proto.Json.member "text" (Json.Decode.map MessageContentsDataText Json.Decode.string)
-        , Proto.Json.memberEither "binaryMessage" "binary_message" (Json.Decode.map MessageContentsDataBinaryMessage Proto.Any.jsonDecoder)
+        , Proto.Json.memberEither "binaryMessage" "binary_message" (Json.Decode.map MessageContentsDataBinaryMessage Proto.Json.any)
         ]
 
 

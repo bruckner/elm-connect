@@ -2,7 +2,6 @@ module Proto.Any exposing
     ( Any, typeUrl, typeName, is
     , pack, packWith, unpack, Problem(..)
     , describe
-    , encodeJson, jsonDecoder
     )
 
 {-| `google.protobuf.Any`: a message of any type, with the URL naming its type.
@@ -17,7 +16,9 @@ module Proto.Any exposing
 An `Any` read from proto3 JSON holds the message's JSON. One read from a Connect
 error detail without its `debug` JSON holds only the message's protobuf
 binary, which this package does not decode: such an `Any` still says its type,
-but [`unpack`](#unpack) gives [`BinaryOnly`](#Problem).
+but [`unpack`](#unpack) gives [`BinaryOnly`](#Problem). The proto3 JSON
+codecs of an `Any` are [`Proto.Json.any`](Proto-Json#any) and
+[`Proto.Json.encodeAny`](Proto-Json#encodeAny).
 
 @docs Any, typeUrl, typeName, is
 
@@ -31,15 +32,9 @@ but [`unpack`](#unpack) gives [`BinaryOnly`](#Problem).
 
 @docs describe
 
-
-# JSON
-
-@docs encodeJson, jsonDecoder
-
 -}
 
 import Json.Decode
-import Json.Encode
 import Proto.Internal.Any as Internal exposing (Payload(..))
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -64,15 +59,7 @@ typeUrl (Internal.Any url _) =
 -}
 typeName : Any -> String
 typeName (Internal.Any url _) =
-    nameOf url
-
-
-nameOf : String -> String
-nameOf url =
-    String.split "/" url
-        |> List.reverse
-        |> List.head
-        |> Maybe.withDefault url
+    Internal.nameOf url
 
 
 {-| Whether the packed message is of this type, by full name.
@@ -149,132 +136,3 @@ type Problem
 describe : Registry -> Any -> Maybe Message.Descriptor
 describe registry any =
     Registry.message (typeName any) registry
-
-
-
--- JSON
-
-
-{-| The well-known types whose proto3 JSON is not an object of their fields. An
-`Any` holding one writes that form under `"value"`, beside `"@type"`.
--}
-withJsonForm : List String
-withJsonForm =
-    [ "google.protobuf.Any"
-    , "google.protobuf.Timestamp"
-    , "google.protobuf.Duration"
-    , "google.protobuf.FieldMask"
-    , "google.protobuf.Empty"
-    , "google.protobuf.Struct"
-    , "google.protobuf.Value"
-    , "google.protobuf.ListValue"
-    , "google.protobuf.DoubleValue"
-    , "google.protobuf.FloatValue"
-    , "google.protobuf.Int64Value"
-    , "google.protobuf.UInt64Value"
-    , "google.protobuf.Int32Value"
-    , "google.protobuf.UInt32Value"
-    , "google.protobuf.BoolValue"
-    , "google.protobuf.StringValue"
-    , "google.protobuf.BytesValue"
-    ]
-
-
-hasJsonForm : String -> Bool
-hasJsonForm url =
-    List.member (nameOf url) withJsonForm
-
-
-{-| An `Any` in proto3 JSON: the message's own JSON object with `"@type"`
-added, or `{"@type": …, "value": …}` for a well-known type with a JSON form of
-its own. An `Any` holding only binary is written as Connect writes an error
-detail, `{"type": "notes.v1.Note", "value": "<base64>"}`, which
-[`jsonDecoder`](#jsonDecoder) does not read. The empty `Any` (no type URL,
-as `Proto.Message.default Proto.WellKnown.any`) is `{}`.
--}
-encodeJson : Any -> Json.Encode.Value
-encodeJson ((Internal.Any url payload) as any) =
-    let
-        typed =
-            ( "@type", Json.Encode.string url )
-    in
-    case payload of
-        InJson json ->
-            if hasJsonForm url then
-                Json.Encode.object [ typed, ( "value", json ) ]
-
-            else
-                case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
-                    Ok pairs ->
-                        Json.Encode.object (typed :: pairs)
-
-                    Err _ ->
-                        -- Only a hand-built record writes a message as other
-                        -- than an object; this keeps its JSON whole.
-                        Json.Encode.object [ typed, ( "value", json ) ]
-
-        InBinary bytes ->
-            if String.isEmpty url && String.isEmpty bytes then
-                Json.Encode.object []
-
-            else
-                Json.Encode.object
-                    [ ( "type", Json.Encode.string (typeName any) )
-                    , ( "value", Json.Encode.string bytes )
-                    ]
-
-
-{-| Reads an `Any` from proto3 JSON: an object with `"@type"`, holding the
-message's fields or, for a well-known type with a JSON form of its own,
-`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`.
--}
-jsonDecoder : Json.Decode.Decoder Any
-jsonDecoder =
-    Json.Decode.keyValuePairs Json.Decode.value
-        |> Json.Decode.andThen fromPairs
-
-
-fromPairs : List ( String, Json.Decode.Value ) -> Json.Decode.Decoder Any
-fromPairs pairs =
-    case ( lookup "@type" pairs, pairs ) of
-        ( Nothing, [] ) ->
-            Json.Decode.succeed (Internal.Any "" (InBinary ""))
-
-        ( Nothing, _ ) ->
-            Json.Decode.fail "Expecting an Any: an object with \"@type\""
-
-        ( Just found, _ ) ->
-            case Json.Decode.decodeValue Json.Decode.string found of
-                Err _ ->
-                    Json.Decode.fail "Expecting an Any whose \"@type\" is a string"
-
-                Ok url ->
-                    if hasJsonForm url then
-                        case lookup "value" pairs of
-                            Just json ->
-                                Json.Decode.succeed (Internal.Any url (InJson json))
-
-                            Nothing ->
-                                Json.Decode.fail ("Expecting an Any of " ++ nameOf url ++ " to hold \"value\"")
-
-                    else
-                        pairs
-                            |> List.filter (\( key, _ ) -> key /= "@type")
-                            |> Json.Encode.object
-                            |> InJson
-                            |> Internal.Any url
-                            |> Json.Decode.succeed
-
-
-lookup : String -> List ( String, a ) -> Maybe a
-lookup key pairs =
-    case pairs of
-        [] ->
-            Nothing
-
-        ( k, v ) :: rest ->
-            if k == key then
-                Just v
-
-            else
-                lookup key rest

@@ -14,7 +14,7 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Proto.Any
+import Proto.Json
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -291,7 +291,7 @@ encodeResult encodeResponse result =
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString status.code) )
                         , ( "message", Encode.string status.message )
-                        , ( "details", Encode.list Proto.Any.encodeJson status.details )
+                        , ( "details", Encode.list Proto.Json.encodeAny status.details )
                         , ( "source", Encode.string (sourceToString status.source) )
                         , ( "response", encodeResponse_ answer )
                         ]
@@ -304,7 +304,7 @@ encodeResult encodeResponse result =
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
                         , ( "message", Encode.string (Rpc.Error.message error) )
-                        , ( "details", Encode.list Proto.Any.encodeJson [] )
+                        , ( "details", Encode.list Proto.Json.encodeAny [] )
                         , ( "source", Encode.string "HttpStatus" )
                         , ( "response", encodeResponse_ answer )
                         ]

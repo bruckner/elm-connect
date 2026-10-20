@@ -76,7 +76,7 @@
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
 //!   (`Json.Decode.Decoder Foo`).
-//! - Encoders are `Proto.Json.object` over one `( jsonName, Maybe Value )`
+//! - Encoders are `Proto.Json.objectOfFields` over one `( jsonName, Maybe Value )`
 //!   pair per field, and leave out every field at its default, as
 //!   protobuf-go's `protojson` does: a field without presence at its zero
 //!   value, a `Maybe` when `Nothing`, a list or map when empty (design
@@ -97,16 +97,16 @@
 //!   field's `jstype` overriding the option either way. `bytes` is a
 //!   `String` of base64, or elm/bytes' `Bytes` under
 //!   [`Bytes::Bytes`](crate::options::Bytes::Bytes), whose default is left
-//!   out by its width (`Proto.Json.implicitBytes`) since Elm's `==` finds
+//!   out by its width (`Proto.Json.implicitBytesField`) since Elm's `==` finds
 //!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Proto.Json.dict` and decoded by the key's kind
+//!   `Proto.Json.dictField` and decoded by the key's kind
 //!   (`Json.Decode.dict`, `Proto.Json.int32Dict`, `uint32Dict`,
 //!   `int64Dict`, `uint64Dict`); absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
 //!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
-//!   `boolDict`; absent or `null` decodes as `[]`.
+//!   `boolMapField`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Proto.Json.enum`
 //!   decoder that reads a name or a number, an unknown number as the zero
@@ -1038,7 +1038,7 @@ mod tests {
             "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n            \
              descriptorIdentity\n",
             "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
-             Proto.Any.jsonDecoder\n            descriptorTicks\n",
+             Proto.Json.any\n            descriptorTicks\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \

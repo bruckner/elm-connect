@@ -91,17 +91,17 @@ registry =
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         , ( "author", Maybe.map Api.Example.People.encodeUser value.author )
-        , ( "requiredRole", Proto.Json.implicit Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
+        , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
         ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 

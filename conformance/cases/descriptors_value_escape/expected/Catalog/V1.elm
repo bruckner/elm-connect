@@ -116,15 +116,15 @@ registry =
 
 encodeEntry : Entry -> Json.Encode.Value
 encodeEntry value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicit "" Json.Encode.string value.descriptor )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
         ]
 
 
 encodePart : Part -> Json.Encode.Value
 encodePart value =
-    Proto.Json.object (encodePartKind value.kind)
+    Proto.Json.objectOfFields (encodePartKind value.kind)
 
 
 encodePartKind : PartKind -> List ( String, Maybe Json.Encode.Value )
@@ -144,9 +144,9 @@ encodePartKind value =
 
 encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
 encodeGetEntryRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicit "" Json.Encode.string value.descriptor )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
         , ( "part", Maybe.map encodePart value.part )
         ]
 

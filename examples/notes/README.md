@@ -223,7 +223,7 @@ viewError error =
 
 viewDetail : Proto.Any.Any -> Html msg
 viewDetail detail =
-    pre [] [ text (Json.Encode.encode 2 (Proto.Any.encodeJson detail)) ]
+    pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny detail)) ]
 
 
 sourceToString : Rpc.Error.Source -> String

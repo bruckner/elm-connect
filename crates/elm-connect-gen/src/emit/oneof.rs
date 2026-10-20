@@ -36,7 +36,7 @@ impl Emitter {
 
     /// `encodeFooKind : FooKind -> List ( String, Maybe Json.Encode.Value )`:
     /// the set member under its JSON name, or nothing when unset, for the
-    /// message's encoder to add to its `Proto.Json.object`. The set member
+    /// message's encoder to add to its `Proto.Json.objectOfFields`. The set member
     /// is always `Just`, even at its type's default: being set is what a
     /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {

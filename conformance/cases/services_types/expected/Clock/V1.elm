@@ -69,7 +69,7 @@ registry =
 
 encodeAlarm : Alarm -> Json.Encode.Value
 encodeAlarm value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
         ]
 

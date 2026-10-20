@@ -119,8 +119,8 @@ registry =
 
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
-    Proto.Json.object
-        ([ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
          ]
             ++ encodeEventKind value.kind
         )
@@ -143,8 +143,8 @@ encodeEventKind value =
 
 encodeListEventsRequest : ListEventsRequest -> Json.Encode.Value
 encodeListEventsRequest value =
-    Proto.Json.object
-        ([ ( "parent", Proto.Json.implicit "" Json.Encode.string value.parent )
+    Proto.Json.objectOfFields
+        ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
          ]
             ++ encodeListEventsRequestFilter value.filter
         )
@@ -163,8 +163,8 @@ encodeListEventsRequestFilter value =
 
 encodeListEventsResponse : ListEventsResponse -> Json.Encode.Value
 encodeListEventsResponse value =
-    Proto.Json.object
-        [ ( "events", Proto.Json.repeated encodeEvent value.events )
+    Proto.Json.objectOfFields
+        [ ( "events", Proto.Json.repeatedField encodeEvent value.events )
         ]
 
 

@@ -198,7 +198,7 @@ impl Emitter {
     }
 
     /// The JSON of a field whose Elm value is `value`, as a
-    /// `Maybe Json.Encode.Value` for `Proto.Json.object`: `Nothing` when
+    /// `Maybe Json.Encode.Value` for `Proto.Json.objectOfFields`: `Nothing` when
     /// the field is left out (design §3.2). A field without presence is
     /// left out at its proto3 default, a field with presence when
     /// `Nothing`, a repeated or map field when empty. A field of
@@ -215,18 +215,18 @@ impl Emitter {
                 return apply(var(self.core("Just")), [encoded]);
             }
             FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
-                return apply(self.reference((PROTO_JSON, "implicitFloat")), [value]);
+                return apply(self.reference((PROTO_JSON, "implicitFloatField")), [value]);
             }
-            // Not `implicit`, which compares with `==`: Elm finds any two
+            // Not `implicitField`, which compares with `==`: Elm finds any two
             // `Bytes` equal, so every value would read as the default.
             FieldShape::Plain(Zeroed::Scalar(Repr::BytesAsBytes)) => {
-                return apply(self.reference((PROTO_JSON, "implicitBytes")), [value]);
+                return apply(self.reference((PROTO_JSON, "implicitBytesField")), [value]);
             }
             FieldShape::Plain(zeroed) => {
                 let zero = self.field_default(shape);
                 let encoder = self.value_encoder(ValueShape::Zeroed(zeroed));
                 (
-                    self.reference((PROTO_JSON, "implicit")),
+                    self.reference((PROTO_JSON, "implicitField")),
                     vec![zero, encoder],
                 )
             }
@@ -236,7 +236,7 @@ impl Emitter {
             }
             FieldShape::List(inner) => {
                 let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "repeated")), vec![encoder])
+                (self.reference((PROTO_JSON, "repeatedField")), vec![encoder])
             }
             FieldShape::Dict(key, inner) => {
                 let encoder = self.value_encoder(inner);
@@ -245,11 +245,14 @@ impl Emitter {
                 } else {
                     var("identity")
                 };
-                (self.reference((PROTO_JSON, "dict")), vec![key, encoder])
+                (
+                    self.reference((PROTO_JSON, "dictField")),
+                    vec![key, encoder],
+                )
             }
             FieldShape::BoolMap(inner) => {
                 let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "boolDict")), vec![encoder])
+                (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
             }
         };
         apply(helper, args.into_iter().chain([value]))
@@ -371,7 +374,7 @@ impl Emitter {
             ValueShape::Present(Present::ListValue) => {
                 self.reference((PROTO_JSON, "encodeListValue"))
             }
-            ValueShape::Present(Present::Any) => self.reference((PROTO_ANY, "encodeJson")),
+            ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAny")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
@@ -392,7 +395,7 @@ impl Emitter {
             ValueShape::Present(Present::FieldMask) => self.reference((PROTO_JSON, "fieldMask")),
             ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
-            ValueShape::Present(Present::Any) => self.reference((PROTO_ANY, "jsonDecoder")),
+            ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }

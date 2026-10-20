@@ -1,7 +1,7 @@
 module Proto.Duration exposing
     ( Duration
-    , fromSeconds, seconds
-    , fromMilliseconds, milliseconds
+    , fromSeconds, toSeconds
+    , fromMilliseconds, toMilliseconds
     , fromString, toString
     )
 
@@ -13,12 +13,12 @@ nanosecond, between about -10,000 and 10,000 years.
 
 # Seconds
 
-@docs fromSeconds, seconds
+@docs fromSeconds, toSeconds
 
 
 # Milliseconds
 
-@docs fromMilliseconds, milliseconds
+@docs fromMilliseconds, toMilliseconds
 
 
 # proto3 JSON
@@ -37,40 +37,60 @@ type Duration
 
 {-| The duration of so many seconds, rounded to the nanosecond. Past 2^53
 nanoseconds (about 104 days) a `Float` holds fewer than nine decimal places, so
-the nanoseconds of a longer duration are only as exact as the `Float`.
+the nanoseconds of a longer duration are only as exact as the `Float`. A value
+past ±315,576,000,000 seconds, protobuf's limit, gives that limit, and NaN or
+an infinity gives zero.
 
-    fromSeconds 1.5 |> toString == "1.5s"
+    fromSeconds 1.5 |> toString == "1.500s"
 
 -}
 fromSeconds : Float -> Duration
 fromSeconds value =
-    let
-        whole =
-            towardZero value
-    in
-    normalize whole (Basics.round ((value - toFloat whole) * 1.0e9))
+    if isNaN value || isInfinite value then
+        Duration { seconds = 0, nanos = 0 }
+
+    else if value >= toFloat maxSeconds then
+        Duration { seconds = maxSeconds, nanos = 0 }
+
+    else if value <= toFloat -maxSeconds then
+        Duration { seconds = -maxSeconds, nanos = 0 }
+
+    else
+        let
+            whole =
+                towardZero value
+        in
+        normalize whole (Basics.round ((value - toFloat whole) * 1.0e9))
 
 
 {-| The duration in seconds. Past 2^53 nanoseconds, as for
 [`fromSeconds`](#fromSeconds), the result is the nearest `Float`.
 -}
-seconds : Duration -> Float
-seconds (Duration parts) =
+toSeconds : Duration -> Float
+toSeconds (Duration parts) =
     toFloat parts.seconds + toFloat parts.nanos / 1.0e9
 
 
-{-| The duration of so many milliseconds, exactly.
+{-| The duration of so many milliseconds, exactly. A value past
+±315,576,000,000 seconds, protobuf's limit, gives that limit.
 -}
 fromMilliseconds : Int -> Duration
 fromMilliseconds value =
-    normalize (towardZero (toFloat value / 1000)) (remainderBy 1000 value * 1000000)
+    if value >= maxSeconds * 1000 then
+        Duration { seconds = maxSeconds, nanos = 0 }
+
+    else if value <= -maxSeconds * 1000 then
+        Duration { seconds = -maxSeconds, nanos = 0 }
+
+    else
+        normalize (towardZero (toFloat value / 1000)) (remainderBy 1000 value * 1000000)
 
 
 {-| The duration in whole milliseconds, rounded toward zero, as
 `Process.sleep` and `Time.posixToMillis` count them.
 -}
-milliseconds : Duration -> Int
-milliseconds (Duration parts) =
+toMilliseconds : Duration -> Int
+toMilliseconds (Duration parts) =
     parts.seconds * 1000 + towardZero (toFloat parts.nanos / 1.0e6)
 
 
@@ -166,11 +186,19 @@ toString (Duration parts) =
 -- INTERNAL
 
 
+{-| The most seconds a duration holds either way, protobuf's limit of about
+10,000 years.
+-}
+maxSeconds : Int
+maxSeconds =
+    315576000000
+
+
 {-| Seconds and nanoseconds of the same sign, if within protobuf's range.
 -}
 make : Int -> Int -> Maybe Duration
 make wholeSeconds nanos =
-    if abs wholeSeconds <= 315576000000 then
+    if abs wholeSeconds <= maxSeconds then
         Just (Duration { seconds = wholeSeconds, nanos = nanos })
 
     else

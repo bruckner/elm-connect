@@ -6,6 +6,7 @@ import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
 import Proto.Duration as Duration exposing (Duration)
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
+import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
@@ -56,12 +57,12 @@ note =
 
 written : Any -> String
 written any =
-    Json.Encode.encode 0 (Any.encodeJson any)
+    Json.Encode.encode 0 (Proto.Json.encodeAny any)
 
 
 read : String -> Result String Any
 read text =
-    Json.Decode.decodeString Any.jsonDecoder text
+    Json.Decode.decodeString Proto.Json.any text
         |> Result.mapError Json.Decode.errorToString
 
 
@@ -116,7 +117,7 @@ suite =
         , test "a well-known type unpacks after a round trip through JSON" <|
             \_ ->
                 roundTrip (Any.pack WellKnown.duration (Duration.fromMilliseconds 1500))
-                    |> Result.map (Any.unpack WellKnown.duration >> outcome >> Maybe.map (Result.map Duration.milliseconds))
+                    |> Result.map (Any.unpack WellKnown.duration >> outcome >> Maybe.map (Result.map Duration.toMilliseconds))
                     |> Expect.equal (Ok (Just (Ok 1500)))
         , test "an Any packs inside an Any" <|
             \_ ->

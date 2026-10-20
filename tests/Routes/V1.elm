@@ -332,53 +332,53 @@ encodeKind value =
 
 encodeGetMessageRequest : GetMessageRequest -> Json.Encode.Value
 encodeGetMessageRequest value =
-    Proto.Json.object
-        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
-        , ( "revision", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.revision )
+    Proto.Json.objectOfFields
+        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
+        , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
         , ( "sub", Maybe.map encodeGetMessageRequestSubMessage value.sub )
-        , ( "userId", Proto.Json.implicit "" Json.Encode.string value.userId )
-        , ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+        , ( "userId", Proto.Json.implicitField "" Json.Encode.string value.userId )
+        , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Json.Encode.Value
 encodeGetMessageRequestSubMessage value =
-    Proto.Json.object
-        [ ( "subfield", Proto.Json.implicit "" Json.Encode.string value.subfield )
+    Proto.Json.objectOfFields
+        [ ( "subfield", Proto.Json.implicitField "" Json.Encode.string value.subfield )
         ]
 
 
 encodeMessage : Message -> Json.Encode.Value
 encodeMessage value =
-    Proto.Json.object
-        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
-        , ( "text", Proto.Json.implicit "" Json.Encode.string value.text )
+    Proto.Json.objectOfFields
+        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
+        , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
         ]
 
 
 encodeUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
 encodeUpdateMessageRequest value =
-    Proto.Json.object
-        [ ( "messageId", Proto.Json.implicit "" Json.Encode.string value.messageId )
+    Proto.Json.objectOfFields
+        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
         , ( "message", Maybe.map encodeMessage value.message )
         ]
 
 
 encodeEverything : Everything -> Json.Encode.Value
 encodeEverything value =
-    Proto.Json.object
-        ([ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-         , ( "count", Proto.Json.implicit 0 Json.Encode.int value.count )
-         , ( "big", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.big )
-         , ( "ubig", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.ubig )
-         , ( "flag", Proto.Json.implicit False Json.Encode.bool value.flag )
-         , ( "ratio", Proto.Json.implicitFloat value.ratio )
-         , ( "scale", Proto.Json.implicitFloat value.scale )
-         , ( "data", Proto.Json.implicit "" Proto.Json.encodeBytes value.data )
-         , ( "kind", Proto.Json.implicit KindUnspecified encodeKind value.kind )
-         , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
-         , ( "kinds", Proto.Json.repeated encodeKind value.kinds )
-         , ( "numbers", Proto.Json.repeated Json.Encode.int value.numbers )
+    Proto.Json.objectOfFields
+        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+         , ( "count", Proto.Json.implicitField 0 Json.Encode.int value.count )
+         , ( "big", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.big )
+         , ( "ubig", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.ubig )
+         , ( "flag", Proto.Json.implicitField False Json.Encode.bool value.flag )
+         , ( "ratio", Proto.Json.implicitFloatField value.ratio )
+         , ( "scale", Proto.Json.implicitFloatField value.scale )
+         , ( "data", Proto.Json.implicitField "" Proto.Json.encodeBytes value.data )
+         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+         , ( "kinds", Proto.Json.repeatedField encodeKind value.kinds )
+         , ( "numbers", Proto.Json.repeatedField Json.Encode.int value.numbers )
          , ( "maybeCount", Maybe.map Json.Encode.int value.maybeCount )
          , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
          , ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
@@ -409,41 +409,41 @@ encodeEverythingChoice value =
 
 encodeInner : Inner -> Json.Encode.Value
 encodeInner value =
-    Proto.Json.object
-        [ ( "a", Proto.Json.implicit "" Json.Encode.string value.a )
+    Proto.Json.objectOfFields
+        [ ( "a", Proto.Json.implicitField "" Json.Encode.string value.a )
         , ( "deep", Maybe.map encodeDeep value.deep )
         ]
 
 
 encodeDeep : Deep -> Json.Encode.Value
 encodeDeep value =
-    Proto.Json.object
-        [ ( "b", Proto.Json.implicit 0 Json.Encode.int value.b )
-        , ( "c", Proto.Json.repeated Json.Encode.string value.c )
+    Proto.Json.objectOfFields
+        [ ( "b", Proto.Json.implicitField 0 Json.Encode.int value.b )
+        , ( "c", Proto.Json.repeatedField Json.Encode.string value.c )
         ]
 
 
 encodeFileRequest : FileRequest -> Json.Encode.Value
 encodeFileRequest value =
-    Proto.Json.object
-        [ ( "path", Proto.Json.implicit "" Json.Encode.string value.path )
+    Proto.Json.objectOfFields
+        [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
         ]
 
 
 encodeResource : Resource -> Json.Encode.Value
 encodeResource value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "displayName", Proto.Json.implicit "" Json.Encode.string value.displayName )
-        , ( "labels", Proto.Json.dict identity Json.Encode.string value.labels )
-        , ( "kinds", Proto.Json.dict identity encodeKind value.kinds )
-        , ( "weights", Proto.Json.boolDict Proto.Json.encodeFloat value.weights )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
+        , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
+        , ( "kinds", Proto.Json.dictField identity encodeKind value.kinds )
+        , ( "weights", Proto.Json.boolMapField Proto.Json.encodeFloat value.weights )
         ]
 
 
 encodeUpdateResourceRequest : UpdateResourceRequest -> Json.Encode.Value
 encodeUpdateResourceRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "resource", Maybe.map encodeResource value.resource )
         , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
         ]

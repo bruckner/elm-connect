@@ -259,8 +259,8 @@ rpc shared call =
 
 ### 3.1 Modules
 
-- **The runtime's modules** follow five rules. *(Decided,
-  2026-10-16; rules 4 and 5 2026-10-17.)* (1) A module per proto concept
+- **The runtime's modules** follow six rules. *(Decided,
+  2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19.)* (1) A module per proto concept
   holds whatever that concept has: its typed value if it has one, its
   descriptor, and the unions its descriptor holds. Several types to a
   module is the normal Elm shape (`Http`, `Html`). So `Proto.Message`
@@ -295,7 +295,26 @@ rpc shared call =
   of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
   functions that make them stay in `Rpc`, because they take a `Config`
   and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
-  reads an answer into the errors that keep a `Response`.
+  reads an answer into the errors that keep a `Response`. (6) The JSON
+  helpers (`Proto.Json`) are named by role: a decoder is a noun naming
+  what it reads (`int64`, `timestamp`, `boolMap`, `any`), a value's
+  encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`,
+  `encodeAny`), and a field's encoder, which gives `Nothing` to leave
+  the field out, ends in `Field` (`implicitField`, `repeatedField`,
+  `dictField`, `boolMapField`), with `objectOfFields` building a
+  message's object from them. So a decoder and its encoders share a
+  noun, and no helper shares a name with an elm/json function of
+  another type (`Json.Encode.object`, `Json.Encode.dict`), as `object`,
+  `dict` and `boolDict` did before. Every well-known type's codecs are
+  there, `Any`'s included.
+- **Generated codecs are `encodeX` and `decodeX`.** *(Decided,
+  2026-10-19.)* A package module's codecs for a message or enum are the
+  pair `encodeNote : Note -> Json.Encode.Value` and
+  `decodeNote : Json.Decode.Decoder Note`, so a type's two codecs sit
+  together in a search and the ENCODERS and DECODERS sections each read
+  as one prefix. The noun convention of rule 6 applies to the runtime,
+  whose decoders each read a kind; elm/json's spelling, `noteDecoder`,
+  was considered and not taken.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
@@ -458,7 +477,8 @@ rpc shared call =
   `String.fromInt` (32-bit) or as held (64-bit). Every integer key is
   validated and canonicalised like a value of its kind, by a decoder
   per kind: `Proto.Json.int32Dict` (−2^31 to 2^31 − 1), `uint32Dict`
-  (0 to 2^32 − 1), `int64Dict`, and `uint64Dict` (0 or more). Each reads
+  (0 to 2^32 − 1), `int64Dict` (−2^63 to 2^63 − 1), and `uint64Dict`
+  (0 to 2^64 − 1). Each reads
   a key as `Proto.Json.int64` reads a string, so `"07"`, `"-0"` and
   `"1e2"` are keys and `"+5"`, `"1.5"` and `"abc"` are not. A 64-bit key is held
   in the canonical decimal form `int64` gives (`"007"` is the key
@@ -471,7 +491,7 @@ rpc shared call =
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Proto.Json.boolDict`, through
+  most two entries. The encoder (`Proto.Json.boolMapField`, through
   `Proto.Json.encodeBoolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.boolMap`) reads one, fails on any key but exactly
@@ -608,14 +628,14 @@ rpc shared call =
 | `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | *(Decided 2026-10-19; see below.)* |
 
 Encoders leave out every field at its default. *(Decided, 2026-10-15.)*
-A message's encoder is `Proto.Json.object` over `( jsonName, Maybe
+A message's encoder is `Proto.Json.objectOfFields` over `( jsonName, Maybe
 Json.Encode.Value )` pairs, one per field, `Nothing` leaving the field
 out:
 
 - A field without presence (a plain scalar or enum) is left out at its
-  proto3 default (`Proto.Json.implicit zero encoder value`: `0`, `"0"`,
+  proto3 default (`Proto.Json.implicitField zero encoder value`: `0`, `"0"`,
   `""`, `False`, the zero enum value); a float only at `0`
-  (`Proto.Json.implicitFloat`), so `-0`, NaN and the infinities are
+  (`Proto.Json.implicitFloatField`), so `-0`, NaN and the infinities are
   written, `-0` as `0`: JavaScript's JSON writer has no negative zero,
   and a server reads `+0` either way.
 - A field with presence (`Maybe`: `optional`, a message, a wrapper,
@@ -627,8 +647,8 @@ out:
   Json.Encode.Value`).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
-- A repeated or map field is left out when empty (`Proto.Json.repeated`,
-  `Proto.Json.dict`, `Proto.Json.boolDict`).
+- A repeated or map field is left out when empty (`Proto.Json.repeatedField`,
+  `Proto.Json.dictField`, `Proto.Json.boolMapField`).
 - An `Empty` field always writes `{}` (§3.5).
 
 Why: request bodies shrink to what the message holds; protobuf-go's
@@ -646,6 +666,11 @@ just the form encoders write. *(Proposed; built.)*
   `sint32`, `sfixed32`) and `Proto.Json.uint32` (`uint32`, `fixed32`).
   A fractional value fails, and so does one outside the proto type's
   range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
+  A string is read as `Proto.Json.int64` reads one, then range-checked,
+  so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
+  for a 64-bit value and for every integer map key. *(Decided
+  2026-10-19; a string went through `String.toFloat` before, which
+  took `"+5"`, `"1.e3"` and `".5e1"`.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
   notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The
@@ -653,11 +678,21 @@ just the form encoders write. *(Proposed; built.)*
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
   found by moving the decimal point as text, never through a `Float`,
   so a string past 2^53 keeps every digit. A value that is not an
-  integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
-  past every 64-bit integer, which also bounds the text an exponent can
-  ask for. `Proto.Json.int64AsInt` reads the same forms within its
-  range. A 64-bit map key is validated and canonicalised the same way
-  (§3.2).
+  integer (`"1.5e0"`) fails, and so does one outside its type's range:
+  −2^63 to 2^63 − 1 for `Proto.Json.int64`, 0 to 2^64 − 1 for
+  `Proto.Json.uint64`, checked by comparing the canonical digits with
+  the bound's as text, by length and then digit by digit, so no `Int`
+  arithmetic rounds them. *(Decided 2026-10-19; before, any value of up
+  to 20 digits passed, `"99999999999999999999"` included.)* More than
+  20 digits fails before the digits are written out, which bounds the
+  text an exponent can ask for. A JSON number past 2^53 has been
+  rounded by the JSON parser before the decoder sees it, and is checked
+  as JavaScript writes it, so the bounds themselves fail as numbers
+  (`9223372036854775807` reads as `9223372036854776000`); proto3 JSON
+  writes 64-bit integers as strings, where every digit is kept.
+  `Proto.Json.int64AsInt` reads the same forms within its range. A
+  64-bit map key is validated, range-checked and canonicalised the same
+  way (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
@@ -730,8 +765,8 @@ just the form encoders write. *(Proposed; built.)*
   holding a `Bytes` field equals one differing only there, `Expect.equal`
   passes when it should fail, and a model's change check misses the
   change. Generated code does not use `==` on such a field: a singular
-  one is left out at its default by its width (`Proto.Json.implicitBytes`)
-  rather than through `Proto.Json.implicit`, which would leave out every
+  one is left out at its default by its width (`Proto.Json.implicitBytesField`)
+  rather than through `Proto.Json.implicitField`, which would leave out every
   value. The README's option row and `Proto.Bytes`'s documentation say
   this where a user meets `Bytes`.
 - Why `String` stays the default: the trap above. A record of `String`s
@@ -778,6 +813,17 @@ just the form encoders write. *(Proposed; built.)*
   (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit ones do; the
   encoders are the signed ones. *(Decided 2026-10-14; a negative
   `uint64` decoded before.)*
+- Rejected: an opaque `Proto.Int64.Int64`, as protoc-gen-elm has.
+  *(Decided, 2026-10-19.)* A 64-bit value a program mostly passes
+  through or displays, such as an ID, a revision or a count, gains
+  nothing from a wrapper it must unwrap to show or compare;
+  `int64=int` and `jstype` exist for arithmetic within 2^53; and
+  `Proto.Int64.toInt` and `fromInt` convert at the edge. The cost
+  accepted is that an `int64` field and a `string` field have the same
+  Elm type, so the compiler does not tell them apart. `bytes` is the
+  same choice for the same reasons: a base64 `String` by default, with
+  `bytes=bytes` as the typed escape and `Proto.Bytes` converting at the
+  edge, rather than an opaque wrapper (see **Bytes** above).
 
 ### 3.5 Well-known types
 
@@ -787,7 +833,7 @@ argument.)*
 | proto | Elm | notes |
 |---|---|---|
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
-| `google.protobuf.Duration` | `Proto.Duration` (opaque; `seconds : Float` accessor) | Elm has no duration type; `"1.5s"` on the wire |
+| `google.protobuf.Duration` | `Proto.Duration` (opaque; `toSeconds : Duration -> Float`) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
 | `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
@@ -851,12 +897,21 @@ Built as proposed, with these details *(each Proposed)*:
   `23:59:59` with its fraction.
 - `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
   nanoseconds like protobuf, rather than as a `Float` of seconds. The
-  `Float` views (`fromSeconds`, `seconds`) are exact to the nanosecond
+  `Float` views (`fromSeconds`, `toSeconds`) are exact to the nanosecond
   only below 2^53 ns (about 104 days); `fromMilliseconds` and
-  `milliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
+  `toMilliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
   digits, the fewest that keep every nanosecond, as protobuf does;
   `-0s` reads as zero and prints `0s`. The range is protobuf's,
-  ±315,576,000,000 s.
+  ±315,576,000,000 s. `fromString` refuses a duration past it;
+  `fromSeconds` and `fromMilliseconds` give the limit for one past it
+  (nanoseconds zero), and `fromSeconds` gives zero for NaN and the
+  infinities, so every `Duration` prints as text `fromString` reads.
+  *(Decided 2026-10-19; they built any span before, which `toString`
+  wrote and `fromString` refused.)* The readers are `toSeconds` and
+  `toMilliseconds`, as `Proto.Int64.toInt` and `Proto.Bytes.toBase64`
+  are, and not the nouns `seconds` and `milliseconds`: elm-units names
+  its constructor `Duration.seconds`, so the noun would read as the
+  opposite conversion. *(Decided 2026-10-19.)*
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
@@ -877,16 +932,20 @@ Built as proposed, with these details *(each Proposed)*:
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
-  <that form>}`. That list lives in `Proto.Any`. `jsonDecoder` fails
+  <that form>}`. The codecs are `Proto.Json.any` and
+  `Proto.Json.encodeAny`, beside every other well-known type's, and that
+  list lives with them. `Proto.Json.any` fails
   on an object without `"@type"`, except `{}`, which is the empty `Any`
   (no type URL; the typed value's default), as protojson reads it. A
-  binary-only `Any` has no proto3 JSON form; `encodeJson` writes it as
+  binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
-  `jsonDecoder` does not read back.
+  `Proto.Json.any` does not read back. *(Moved from
+  `Proto.Any.encodeJson` and `jsonDecoder` 2026-10-19, so that generated
+  code reaches every well-known type's codecs through `Proto.Json`.)*
 - A field of `Any` is a message field, so a singular one is a
   `Maybe Proto.Any.Any`; repeated it is `List Proto.Any.Any`, as a map
   value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
-  encoded and decoded with `Proto.Any.encodeJson` and `jsonDecoder`,
+  encoded and decoded with `Proto.Json.encodeAny` and `Proto.Json.any`,
   and its descriptor kind is `Message "google.protobuf.Any"`. A method
   taking or returning one uses those codecs too (`any_field` case). It was the `types::any` diagnostic until `Proto.Any` existed:
   decoding one needs the registry the descriptors give, and unpacking
@@ -916,7 +975,7 @@ Built *(Proposed in its details)*:
   proto.
 - The oneof's encoder gives the set member as a one-element list of
   `( jsonName, Just value )`, or `[]` when unset, and the message's
-  encoder appends it to its fields: `Proto.Json.object ([ ... ] ++
+  encoder appends it to its fields: `Proto.Json.objectOfFields ([ ... ] ++
   encodeNoteEventKind value.kind)`. The member is written at its
   default too: being set is what a oneof says (§3.4).
 - The oneof's decoder is `Proto.Json.members "kind"

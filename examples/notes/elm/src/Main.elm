@@ -16,6 +16,7 @@ import Json.Encode
 import Notes.V1 exposing (Note)
 import Notes.V1.NotesService as Notes
 import Proto.Any
+import Proto.Json
 import Rpc
 import Rpc.Body
 import Rpc.Code
@@ -383,7 +384,7 @@ viewError error =
 
 viewDetail : Proto.Any.Any -> Html msg
 viewDetail detail =
-    pre [] [ text (Json.Encode.encode 2 (Proto.Any.encodeJson detail)) ]
+    pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny detail)) ]
 
 
 sourceToString : Rpc.Error.Source -> String

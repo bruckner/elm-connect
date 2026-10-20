@@ -249,8 +249,8 @@ jsonTests =
             \_ -> decoded "1" |> Result.toMaybe |> Expect.equal Nothing
         , test "encodeBytesAsBytes writes padded standard base64" <|
             \_ -> Proto.Json.encodeBytesAsBytes (fromList [ 0xFB, 0xFF ]) |> Json.Encode.encode 0 |> Expect.equal "\"+/8=\""
-        , test "implicitBytes leaves out no bytes" <|
-            \_ -> Proto.Json.implicitBytes Proto.Bytes.empty |> Maybe.map (Json.Encode.encode 0) |> Expect.equal Nothing
-        , test "implicitBytes writes any bytes" <|
-            \_ -> Proto.Json.implicitBytes (fromList [ 0 ]) |> Maybe.map (Json.Encode.encode 0) |> Expect.equal (Just "\"AA==\"")
+        , test "implicitBytesField leaves out no bytes" <|
+            \_ -> Proto.Json.implicitBytesField Proto.Bytes.empty |> Maybe.map (Json.Encode.encode 0) |> Expect.equal Nothing
+        , test "implicitBytesField writes any bytes" <|
+            \_ -> Proto.Json.implicitBytesField (fromList [ 0 ]) |> Maybe.map (Json.Encode.encode 0) |> Expect.equal (Just "\"AA==\"")
         ]

@@ -155,16 +155,16 @@ encodeColor value =
 
 encodeCreated : Created -> Json.Encode.Value
 encodeCreated value =
-    Proto.Json.object
-        [ ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+    Proto.Json.objectOfFields
+        [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
         ]
 
 
 encodeNoteEvent : NoteEvent -> Json.Encode.Value
 encodeNoteEvent value =
-    Proto.Json.object
-        ([ ( "id", Proto.Json.implicit "" Json.Encode.string value.id )
-         , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
+    Proto.Json.objectOfFields
+        ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
          ]
             ++ encodeNoteEventKind value.kind
             ++ encodeNoteEventSource value.source
@@ -219,7 +219,7 @@ encodeNoteEventSource value =
 
 encodeChoice : Choice -> Json.Encode.Value
 encodeChoice value =
-    Proto.Json.object (encodeChoiceValue value.value)
+    Proto.Json.objectOfFields (encodeChoiceValue value.value)
 
 
 encodeChoiceValue : ChoiceValue -> List ( String, Maybe Json.Encode.Value )

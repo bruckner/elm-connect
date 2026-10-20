@@ -61,7 +61,7 @@ impl Emitter {
         }
     }
 
-    /// `encodeFoo : Foo -> Json.Encode.Value`: `Proto.Json.object` of every
+    /// `encodeFoo : Foo -> Json.Encode.Value`: `Proto.Json.objectOfFields` of every
     /// field under its JSON name, each as a `Maybe Json.Encode.Value` that
     /// is `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
@@ -110,7 +110,7 @@ impl Emitter {
         let object = if nothing {
             self.reference((JSON_ENCODE, "object"))
         } else {
-            self.reference((PROTO_JSON, "object"))
+            self.reference((PROTO_JSON, "objectOfFields"))
         };
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {

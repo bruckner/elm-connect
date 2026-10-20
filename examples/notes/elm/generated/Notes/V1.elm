@@ -265,18 +265,18 @@ encodeVisibility value =
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Proto.Json.object
-        ([ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-         , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
-         , ( "body", Proto.Json.implicit "" Json.Encode.string value.body )
-         , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
-         , ( "visibility", Proto.Json.implicit VisibilityUnspecified encodeVisibility value.visibility )
+    Proto.Json.objectOfFields
+        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+         , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+         , ( "body", Proto.Json.implicitField "" Json.Encode.string value.body )
+         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+         , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
          , ( "createTime", Maybe.map Proto.Json.encodeTimestamp value.createTime )
          , ( "updateTime", Maybe.map Proto.Json.encodeTimestamp value.updateTime )
          , ( "ttl", Maybe.map Proto.Json.encodeDuration value.ttl )
-         , ( "metadata", Proto.Json.dict identity Json.Encode.string value.metadata )
+         , ( "metadata", Proto.Json.dictField identity Json.Encode.string value.metadata )
          , ( "extra", Maybe.map Proto.Json.encodeStruct value.extra )
-         , ( "attachment", Maybe.map Proto.Any.encodeJson value.attachment )
+         , ( "attachment", Maybe.map Proto.Json.encodeAny value.attachment )
          , ( "revision", Maybe.map Proto.Json.encodeInt64 value.revision )
          ]
             ++ encodeNoteKind value.kind
@@ -300,39 +300,39 @@ encodeNoteKind value =
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
 encodeListNotesRequest value =
-    Proto.Json.object
-        [ ( "pageSize", Proto.Json.implicit 0 Json.Encode.int value.pageSize )
-        , ( "pageToken", Proto.Json.implicit "" Json.Encode.string value.pageToken )
-        , ( "filter", Proto.Json.implicit "" Json.Encode.string value.filter )
-        , ( "visibility", Proto.Json.implicit VisibilityUnspecified encodeVisibility value.visibility )
+    Proto.Json.objectOfFields
+        [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
+        , ( "pageToken", Proto.Json.implicitField "" Json.Encode.string value.pageToken )
+        , ( "filter", Proto.Json.implicitField "" Json.Encode.string value.filter )
+        , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
         ]
 
 
 encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
 encodeListNotesResponse value =
-    Proto.Json.object
-        [ ( "notes", Proto.Json.repeated encodeNote value.notes )
-        , ( "nextPageToken", Proto.Json.implicit "" Json.Encode.string value.nextPageToken )
+    Proto.Json.objectOfFields
+        [ ( "notes", Proto.Json.repeatedField encodeNote value.notes )
+        , ( "nextPageToken", Proto.Json.implicitField "" Json.Encode.string value.nextPageToken )
         ]
 
 
 encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "note", Maybe.map encodeNote value.note )
         ]
 
 
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "note", Maybe.map encodeNote value.note )
         , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
         ]
@@ -340,15 +340,15 @@ encodeUpdateNoteRequest value =
 
 encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
 encodeDeleteNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
@@ -380,7 +380,7 @@ decodeNote =
         |> Proto.Json.field "metadata" Dict.empty (Json.Decode.dict Json.Decode.string)
         |> Proto.Json.field "extra" Nothing (Json.Decode.map Just Proto.Json.struct)
         |> Proto.Json.oneof decodeNoteKind
-        |> Proto.Json.field "attachment" Nothing (Json.Decode.map Just Proto.Any.jsonDecoder)
+        |> Proto.Json.field "attachment" Nothing (Json.Decode.map Just Proto.Json.any)
         |> Proto.Json.field "revision" Nothing (Json.Decode.map Just Proto.Json.int64)
 
 

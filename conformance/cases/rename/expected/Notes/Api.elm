@@ -139,10 +139,10 @@ encodeAudience value =
 
 encodeMemo : Memo -> Json.Encode.Value
 encodeMemo value =
-    Proto.Json.object
-        ([ ( "title", Proto.Json.implicit "" Json.Encode.string value.heading )
-         , ( "visibility", Proto.Json.implicit AudienceUnspecified encodeAudience value.visibility )
-         , ( "revisions", Proto.Json.repeated encodeEdit value.revisions )
+    Proto.Json.objectOfFields
+        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
+         , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
+         , ( "revisions", Proto.Json.repeatedField encodeEdit value.revisions )
          ]
             ++ encodeMemoBody value.body
         )
@@ -165,15 +165,15 @@ encodeMemoBody value =
 
 encodeEdit : Edit -> Json.Encode.Value
 encodeEdit value =
-    Proto.Json.object
-        [ ( "number", Proto.Json.implicit 0 Json.Encode.int value.number )
+    Proto.Json.objectOfFields
+        [ ( "number", Proto.Json.implicitField 0 Json.Encode.int value.number )
         ]
 
 
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 

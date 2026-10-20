@@ -77,7 +77,7 @@ suite =
                     |> Expect.equal ( "google.protobuf.Value", "null" )
         , test "the defaults are the zero values" <|
             \_ ->
-                ( ( Time.posixToMillis (Message.default WellKnown.timestamp), Duration.milliseconds (Message.default WellKnown.duration) )
+                ( ( Time.posixToMillis (Message.default WellKnown.timestamp), Duration.toMilliseconds (Message.default WellKnown.duration) )
                 , ( Message.default WellKnown.int64Value, Dict.isEmpty (Message.default WellKnown.struct) )
                 )
                     |> Expect.equal ( ( 0, 0 ), ( "0", True ) )

@@ -134,7 +134,7 @@ registry =
 
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         ([ ( "createdAt", Maybe.map Proto.Json.encodeTimestamp value.createdAt )
          , ( "timeout", Maybe.map Proto.Json.encodeDuration value.timeout )
          , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
@@ -151,17 +151,17 @@ encodeEvent value =
          , ( "enabled", Maybe.map Json.Encode.bool value.enabled )
          , ( "nickname", Maybe.map Json.Encode.string value.nickname )
          , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
-         , ( "history", Proto.Json.repeated Proto.Json.encodeTimestamp value.history )
-         , ( "limits", Proto.Json.dict identity Proto.Json.encodeDuration value.limits )
-         , ( "values", Proto.Json.repeated identity value.values )
-         , ( "counts", Proto.Json.repeated Json.Encode.int value.counts )
+         , ( "history", Proto.Json.repeatedField Proto.Json.encodeTimestamp value.history )
+         , ( "limits", Proto.Json.dictField identity Proto.Json.encodeDuration value.limits )
+         , ( "values", Proto.Json.repeatedField identity value.values )
+         , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
          , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
-         , ( "pings", Proto.Json.repeated Proto.Json.encodeEmpty value.pings )
-         , ( "seen", Proto.Json.dict identity Proto.Json.encodeEmpty value.seen )
-         , ( "records", Proto.Json.repeated Proto.Json.encodeStruct value.records )
-         , ( "columns", Proto.Json.dict identity Proto.Json.encodeListValue value.columns )
+         , ( "pings", Proto.Json.repeatedField Proto.Json.encodeEmpty value.pings )
+         , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
+         , ( "records", Proto.Json.repeatedField Proto.Json.encodeStruct value.records )
+         , ( "columns", Proto.Json.dictField identity Proto.Json.encodeListValue value.columns )
          , ( "lastValue", value.lastValue )
-         , ( "settings", Proto.Json.dict identity identity value.settings )
+         , ( "settings", Proto.Json.dictField identity identity value.settings )
          ]
             ++ encodeEventWhen value.when
         )

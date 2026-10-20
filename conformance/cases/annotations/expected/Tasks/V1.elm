@@ -131,13 +131,13 @@ encodeState value =
 
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
-    Proto.Json.object
-        ([ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-         , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
-         , ( "state", Proto.Json.implicit StateUnspecified encodeState value.state )
-         , ( "labels", Proto.Json.repeated Json.Encode.string value.labels )
-         , ( "owner", Proto.Json.implicit "" Json.Encode.string value.owner )
-         , ( "notes", Proto.Json.implicit "" Json.Encode.string value.notes )
+    Proto.Json.objectOfFields
+        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+         , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+         , ( "state", Proto.Json.implicitField StateUnspecified encodeState value.state )
+         , ( "labels", Proto.Json.repeatedField Json.Encode.string value.labels )
+         , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
+         , ( "notes", Proto.Json.implicitField "" Json.Encode.string value.notes )
          ]
             ++ encodeTaskDue value.due
         )
@@ -160,8 +160,8 @@ encodeTaskDue value =
 
 encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
 encodeGetTaskRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 

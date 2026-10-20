@@ -437,7 +437,7 @@ durationProperties =
                     magnitude =
                         d.seconds * 1000 + d.nanos // 1000000
                 in
-                Proto.Duration.milliseconds d.value
+                Proto.Duration.toMilliseconds d.value
                     |> Expect.equal
                         (if d.negative then
                             negate magnitude
@@ -445,8 +445,8 @@ durationProperties =
                          else
                             magnitude
                         )
-        , fuzz (Fuzz.map (\ms -> ms // 1000) Fuzzers.safeInt) "fromMilliseconds and milliseconds round-trip" <|
-            \ms -> Proto.Duration.milliseconds (Proto.Duration.fromMilliseconds ms) |> Expect.equal ms
+        , fuzz (Fuzz.map (\ms -> ms // 1000) Fuzzers.safeInt) "fromMilliseconds and toMilliseconds round-trip" <|
+            \ms -> Proto.Duration.toMilliseconds (Proto.Duration.fromMilliseconds ms) |> Expect.equal ms
         , fuzz2 Fuzz.bool (Fuzz.intRange 1 1000000) "past ±315,576,000,000 s it is refused" <|
             \negative extra ->
                 Proto.Duration.fromString
@@ -557,7 +557,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict identity Proto.Json.encodeInt64 entries of
+                case Proto.Json.dictField identity Proto.Json.encodeInt64 entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -569,7 +569,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict String.fromInt Json.Encode.string entries of
+                case Proto.Json.dictField String.fromInt Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -581,7 +581,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict identity Json.Encode.string entries of
+                case Proto.Json.dictField identity Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -596,7 +596,7 @@ mapProperties =
                 Expect.all
                     [ roundTrips (Proto.Json.encodeBoolMap Json.Encode.string) (Proto.Json.boolMap Json.Decode.string)
                     , \_ ->
-                        Proto.Json.boolDict Json.Encode.string pairs
+                        Proto.Json.boolMapField Json.Encode.string pairs
                             |> Maybe.map (Json.Encode.encode 0)
                             |> Expect.equal
                                 (if List.isEmpty pairs then
@@ -619,7 +619,7 @@ repeatedProperties =
     describe "repeated fields"
         [ fuzz (Fuzz.list Fuzzers.awkwardString) "a list round-trips, and is left out when empty" <|
             \items ->
-                case Proto.Json.repeated Json.Encode.string items of
+                case Proto.Json.repeatedField Json.Encode.string items of
                     Nothing ->
                         items |> Expect.equal []
 

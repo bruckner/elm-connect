@@ -177,17 +177,17 @@ encodeChar value =
 
 encodeDict : Dict -> Json.Encode.Value
 encodeDict value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeResult : Result -> Json.Encode.Value
 encodeResult value =
-    Proto.Json.object
-        [ ( "ok", Proto.Json.implicit False Json.Encode.bool value.ok )
+    Proto.Json.objectOfFields
+        [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
         , ( "dict", Maybe.map encodeDict value.dict )
-        , ( "chars", Proto.Json.repeated encodeChar value.chars )
+        , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
         ]
 
 

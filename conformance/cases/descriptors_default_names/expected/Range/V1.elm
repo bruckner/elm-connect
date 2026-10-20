@@ -72,10 +72,10 @@ registry =
 
 encodeBounds : Bounds -> Json.Encode.Value
 encodeBounds value =
-    Proto.Json.object
-        [ ( "max", Proto.Json.implicit 0 Json.Encode.int value.max )
-        , ( "min", Proto.Json.implicit 0 Json.Encode.int value.min )
-        , ( "always", Proto.Json.implicit False Json.Encode.bool value.always )
+    Proto.Json.objectOfFields
+        [ ( "max", Proto.Json.implicitField 0 Json.Encode.int value.max )
+        , ( "min", Proto.Json.implicitField 0 Json.Encode.int value.min )
+        , ( "always", Proto.Json.implicitField False Json.Encode.bool value.always )
         ]
 
 
