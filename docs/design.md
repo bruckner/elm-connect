@@ -2660,6 +2660,13 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   header line read as a placeholder, `0.1.X` (§8.4); a second test runs
   `elm make` over all expected output against the runtime at the repo's
   version; a third runs `elm-format --validate`.
+- The plugin replays the corpus as protoc runs it
+  (`crates/protoc-gen-elm-connect/tests/plugin.rs`): the built binary is
+  sent each case's `CodeGeneratorRequest` on stdin, and its response must
+  carry the expected modules, or the problems in `error`, with warnings
+  on stderr. protoc sends no sources, so its rendering names the proto
+  elements; it is compared with the generator's own without sources and,
+  by problem code, with `diagnostics.txt` and `warnings.txt`.
 - Route fixtures: a JSON file of `(template, request) → (path, query,
   body)` expectations, checked against the generator's parser. The same
   file is intended to be consumable by a server-side implementation so
