@@ -23,7 +23,7 @@ node = "24.21.0"
 just = "1.58.0"
 # The live suite (`just live`, conformance/live/): the example server is Go,
 # and buf generates its stubs and the example's Elm.
-go = "1.27.2"
+go = "1.27.3"
 buf = "1.73.0"
 
 [settings]
