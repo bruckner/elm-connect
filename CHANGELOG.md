@@ -912,3 +912,8 @@ tag (design §8).
   `option (google.api.http)`, which is all `SourceCodeInfo` records. Where
   the literal is not found, or there is no source text, the whole option
   stays the site.
+- The plugin's diagnostics say where: with no source text from protoc to
+  draw a snippet from, each problem leads with its site as
+  `library/v1/library.proto:5:9`, from the request's `SourceCodeInfo`,
+  and one with several sites lists each with its label. The CLI's
+  rendering is unchanged.

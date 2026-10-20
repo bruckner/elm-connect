@@ -196,6 +196,9 @@ pub struct Problem {
     sites: Vec<Site>,
     /// Boxed, so a `Problem` stays small enough to return in a `Result`.
     attached: Option<Box<Attached>>,
+    /// Whether the problem names its sites' locations in its text, which
+    /// it does once [`Diagnostics::locate`] asks and no source is attached.
+    located: bool,
 }
 
 /// The source snippets of a problem, once its source text is known.
@@ -224,6 +227,7 @@ impl Problem {
             help: help.into(),
             sites,
             attached: None,
+            located: false,
         }
     }
 
@@ -1148,9 +1152,37 @@ fn join_words(words: &[String]) -> String {
     }
 }
 
+impl Site {
+    /// Where the site is, as compilers write it: `notes.proto:3:9`, line
+    /// and column from 1, or the file alone when no span was recorded.
+    pub fn location(&self) -> String {
+        match self.span {
+            Some(span) => format!(
+                "{}:{}:{}",
+                self.file,
+                u64::from(span.start_line) + 1,
+                u64::from(span.start_col) + 1
+            ),
+            None => self.file.clone(),
+        }
+    }
+}
+
 impl fmt::Display for Problem {
+    /// The message; once located without a source, after its first site's
+    /// location, and, when it has several sites, followed by each one's
+    /// location and label.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.message)
+        let Some(first) = self.sites.first().filter(|_| self.located) else {
+            return f.write_str(&self.message);
+        };
+        write!(f, "{}: {}", first.location(), self.message)?;
+        if self.sites.len() > 1 {
+            for site in &self.sites {
+                write!(f, "\n{}: {}", site.location(), site.label)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -1280,6 +1312,16 @@ impl Diagnostics {
             (true, true) => "the options",
             (true, false) => "the protos and the options",
             (false, _) => "the protos",
+        }
+    }
+
+    /// Has every problem without source text name its sites'
+    /// locations, `file:line:col`, in its text, so it can be found without
+    /// a snippet: what the protoc plugin, which is sent no source, renders.
+    /// A problem with a snippet is unchanged.
+    pub fn locate(&mut self) {
+        for problem in &mut self.problems {
+            problem.located = problem.attached.is_none();
         }
     }
 

@@ -2594,6 +2594,10 @@ two types shared one module, the helpers for `Code` prefixed.)
   A help that names an option writes it as the reader gave it: a flag
   under the CLI (`--streaming skip`), a parameter under the plugin
   (`streaming=skip`), from `Options::spelling`, which each binary sets.
+  The plugin has no proto sources, so no snippet: it names each site
+  as `path/to/file.proto:3:9` from the request's `SourceCodeInfo` before
+  the message, and lists the sites with their labels when there are
+  several; the CLI renders snippets.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.
