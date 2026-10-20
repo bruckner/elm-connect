@@ -89,3 +89,40 @@ fn other_syntax_errors_stay_protoxs() {
         .expect_err("a field without a type");
     assert!(!render(&report).contains("input::editions"));
 }
+
+#[test]
+fn a_missing_import_names_the_include_paths_searched() {
+    let dir = inputs(
+        "cli-missing-import",
+        &[(
+            "library.proto",
+            "syntax = \"proto3\";\npackage l.v1;\nimport \"users/v1/user.proto\";\nmessage M {}\n",
+        )],
+    );
+    let other = inputs("cli-missing-import-other", &[]);
+    let report = elm_connect::compile(
+        &[PathBuf::from("library.proto")],
+        &[dir.clone(), other.clone()],
+    )
+    .expect_err("the import is on no include path");
+    let rendered = render(&report);
+    assert!(
+        rendered.contains("import 'users/v1/user.proto' not found"),
+        "protox's own message stays: {rendered}"
+    );
+    assert!(rendered.contains("imported here"), "{rendered}");
+    let help = report.help().expect("a help").to_string();
+    assert!(
+        help.starts_with(&format!(
+            "The include paths searched were `{}`, `{}` (`-I`",
+            dir.display(),
+            other.display()
+        )),
+        "{help}"
+    );
+    assert!(help.contains("with `-I`"), "{help}");
+
+    let report = elm_connect::compile(&[PathBuf::from("absent.proto")], std::slice::from_ref(&dir))
+        .expect_err("no such file");
+    assert!(render(&report).contains("The include paths searched were"));
+}

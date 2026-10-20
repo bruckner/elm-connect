@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{Columns, Diagnostics, LineColSpan, Problem, Site};
 use elm_connect_gen::{Generated, GeneratedFile, Options};
-use miette::{IntoDiagnostic, Report, WrapErr};
+use miette::{Diagnostic, IntoDiagnostic, Report, WrapErr};
 use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
 
 /// What compiling the inputs gives the generator.
@@ -107,7 +107,16 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     ));
     compiler.include_source_info(true).include_imports(true);
     if let Err(error) = compiler.open_files(files) {
-        return Err(editions_problem(&error, &includes).unwrap_or_else(|| error.into()));
+        if let Some(report) = editions_problem(&error, &includes) {
+            return Err(report);
+        }
+        if error.is_file_not_found() {
+            return Err(Report::new(NotFound {
+                error,
+                includes: includes.clone(),
+            }));
+        }
+        return Err(error.into());
     }
     let mut inputs = Vec::new();
     let mut sources = HashMap::new();
@@ -126,6 +135,51 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
         imports: Vec::new(),
         sources,
     })
+}
+
+/// protox's error for a file or import found on no include path, as protox
+/// renders it, with a help naming the include paths it searched.
+#[derive(Debug)]
+struct NotFound {
+    error: protox::Error,
+    includes: Vec<PathBuf>,
+}
+
+impl std::fmt::Display for NotFound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.error, f)
+    }
+}
+
+impl std::error::Error for NotFound {}
+
+impl Diagnostic for NotFound {
+    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
+        self.error.code()
+    }
+
+    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
+        let searched: Vec<String> = self
+            .includes
+            .iter()
+            .map(|include| format!("`{}`", include.display()))
+            .collect();
+        Some(Box::new(format!(
+            "The include paths searched were {} (`-I`, `.` when none is given), then the \
+             `google/protobuf` files and the `google/api` annotations elm-connect bundles. \
+             Add the directory the file is under with `-I`, and name it relative to that \
+             directory.",
+            searched.join(", ")
+        )))
+    }
+
+    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
+        self.error.source_code()
+    }
+
+    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+        self.error.labels()
+    }
 }
 
 /// The `input::editions` problem for a parse `error` in a file that

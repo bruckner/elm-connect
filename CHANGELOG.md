@@ -921,3 +921,6 @@ tag (design §8).
   reads "renamed to `title` by `rename`" (`--rename` under the CLI), and
   the help points at that rename rather than at renaming the protos. The
   `rename_collision` conformance case pins it.
+- The CLI's "import not found" and "file not found" errors name the
+  include paths searched and say to add the file's directory with `-I`.
+  The error itself is still protox's.

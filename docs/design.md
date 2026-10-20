@@ -2600,6 +2600,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   as `path/to/file.proto:3:9` from the request's `SourceCodeInfo` before
   the message, and lists the sites with their labels when there are
   several; the CLI renders snippets.
+  The CLI's compile errors are protox's, rendered as protox renders them
+  and not in the catalogue; a file or import found on no include path
+  adds a help naming the include paths searched.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.
