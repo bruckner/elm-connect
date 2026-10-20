@@ -3192,6 +3192,18 @@ Within a major version:
   harness set to that release. Nothing the 0.19.2 output needs is refused
   by 0.19.0 or 0.19.1 so far. Decoders for messages with more than eight
   fields use the runtime's pipeline helpers rather than `map8` chunking.
+- The same job runs the runtime's and the notes example's Elm tests,
+  fuzz tests included, with elm-test-rs under that release
+  (`conformance/test-with.sh`, `just test-with`), the example from a
+  copy of its `elm.json` set to the release. Under 0.19.1 only:
+  elm-test-rs's runner package (`mpizenberg/elm-test-runner` 6) requires
+  Elm 0.19.1, so 0.19.0 cannot run the tests, and is held to the compile.
+- What CI checks, all told: `just check` on Linux and macOS (formatting,
+  clippy, the Rust tests with the corpus, the plugin's replay and the
+  lockstep test, the runtime's build and Elm tests, the README's
+  excerpts, zizmor, gitleaks, `cargo deny` and `cargo package`), with
+  the toolchain mise pins, which is the crates' `rust-version`; `just
+  live` on Linux (§7); and the job above per earlier Elm release.
 
 ### 8.7 Releasing
 

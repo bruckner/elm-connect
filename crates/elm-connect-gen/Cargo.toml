@@ -3,8 +3,12 @@ name = "elm-connect-gen"
 description = "Generate Elm clients for protobuf APIs: the library behind protoc-gen-elm-connect and elm-connect"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+# The integration tests run from the repository, reading its conformance
+# corpus and runtime outside the crate, so they are not published.
+exclude = ["tests/"]
 
 [dependencies]
 miette.workspace = true

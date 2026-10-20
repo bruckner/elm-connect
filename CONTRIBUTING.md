@@ -3,8 +3,9 @@
 ## Getting set up
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
-elm-format, elm-test-rs, node, just, zizmor and gitleaks, and Go and
-buf for the live suite. From the repository root:
+elm-format, elm-test-rs, node, just, zizmor, gitleaks and cargo-deny,
+and Go and buf for the live suite. The Rust it pins is also the
+workspace's minimum supported version (`rust-version`). From the repository root:
 
 ```sh
 mise install    # install the pinned toolchain
@@ -29,8 +30,13 @@ binaries there unlocked, and `just clean` empties it for every worktree.
 (the conformance corpus among them, see
 [`conformance/README.md`](conformance/README.md)), the runtime
 package's build and Elm tests, a [zizmor](https://docs.zizmor.sh)
-audit of the GitHub Actions workflows, and a
-[gitleaks](https://gitleaks.io) scan of the commit history for secrets.
+audit of the GitHub Actions workflows, a
+[gitleaks](https://gitleaks.io) scan of the commit history for secrets,
+[cargo-deny](https://embarkstudios.github.io/cargo-deny/) (`just deny`:
+security advisories, licenses, duplicate versions and sources of the
+Rust dependencies, under `deny.toml`), and `cargo package` (`just
+package`), which builds each crate from its packaged files alone. Cargo
+packages only committed crates, so run the gate after committing.
 CI runs the same recipe on
 Linux and macOS for every pull request and every push to `main`, so a
 green local `just check` is the bar for opening a PR. Formatting in the

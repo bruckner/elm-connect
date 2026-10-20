@@ -9,6 +9,10 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+# The minimum supported Rust version is the toolchain mise.toml pins: `just
+# check` builds and tests with exactly that one, locally and in CI, so it
+# needs no job of its own. tests/lockstep.rs keeps the two equal.
+rust-version = "1.99.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/bruckner/elm-connect"
 

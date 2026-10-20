@@ -490,7 +490,7 @@ in `conformance/live/known-divergent-gateway.json` and
 ## Developing
 
 ```sh
-mise install    # Rust, Elm, elm-format, elm-test-rs, node, just
+mise install    # Rust, Elm, elm-format, elm-test-rs, node, just, cargo-deny
 just check      # the gate CI runs
 ```
 

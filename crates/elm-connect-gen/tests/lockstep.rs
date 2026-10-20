@@ -1,7 +1,8 @@
 //! The version numbers that must move together (design §8.1, §8.2): the
 //! Cargo workspace's version, `elm.json`'s, the newest value of the
 //! runtime's `Proto.Version`, which generated code names
-//! (`elm_connect_gen::SENTINEL`), and the corpus's header placeholder.
+//! (`elm_connect_gen::SENTINEL`), and the corpus's header placeholder; and
+//! the workspace's `rust-version`, which is the toolchain mise pins.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -74,6 +75,57 @@ fn the_crates_and_the_package_share_one_version() {
         elm["version"].as_str(),
         Some(workspace.as_str()),
         "elm.json's version is the Cargo workspace's (design §8.1)"
+    );
+}
+
+/// The version of `tool` in mise.toml's `[tools]`, written either as
+/// `tool = "1.2.3"` or as `tool = { version = "1.2.3", ... }`.
+fn mise_version(path: &Path, tool: &str) -> String {
+    let text = read(path);
+    let mut inside = false;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            inside = line == "[tools]";
+            continue;
+        }
+        let Some((name, value)) = line.split_once('=') else {
+            continue;
+        };
+        if !inside || name.trim().trim_matches('"') != tool {
+            continue;
+        }
+        let value = value.trim();
+        let quoted = match value.strip_prefix('{') {
+            Some(table) => table
+                .split_once("version")
+                .and_then(|(_, rest)| rest.trim_start().strip_prefix('='))
+                .map(str::trim_start)
+                .unwrap_or_else(|| panic!("{}: {tool} has no version", path.display())),
+            None => value,
+        };
+        return quoted
+            .strip_prefix('"')
+            .and_then(|v| v.split_once('"'))
+            .map(|(v, _)| v.to_owned())
+            .unwrap_or_else(|| panic!("{}: {tool}'s version is not a string", path.display()));
+    }
+    panic!("{}: no {tool} under [tools]", path.display())
+}
+
+#[test]
+fn the_msrv_is_the_pinned_toolchain() {
+    let root = repo_root();
+    let msrv = toml_string(
+        &root.join("Cargo.toml"),
+        "workspace.package",
+        "rust-version",
+    );
+    let pinned = mise_version(&root.join("mise.toml"), "rust");
+    assert_eq!(
+        msrv, pinned,
+        "the workspace's rust-version is the Rust toolchain mise.toml pins, the one `just check` \
+         builds with"
     );
 }
 

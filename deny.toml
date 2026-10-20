@@ -1,0 +1,43 @@
+# cargo-deny's checks of the Rust dependencies (`just deny`, part of
+# `just check`): security advisories, licenses, duplicate and wildcard
+# versions, and where crates come from. A failure fails the gate.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+# A vulnerability fails. A yanked version warns, and so would an
+# unmaintained crate, but cargo-deny has no warning level for those: an
+# unmaintained crate the workspace depends on directly fails, since
+# replacing it is ours to do; one deeper in the tree is not reported.
+yanked = "warn"
+unmaintained = "workspace"
+
+[licenses]
+version = 2
+# Only what the tree needs, each license for the crates that require it
+# (a crate offering several is satisfied by any one listed here). Every
+# license must stay compatible with distributing the binaries under MIT
+# OR Apache-2.0.
+allow = [
+    # Most crates, alone or as one choice of several.
+    "MIT",
+    "Apache-2.0",
+    # The ICU4X crates under miette's text wrapping (icu_*, litemap,
+    # potential_utf, tinystr, writeable, yoke, zerofrom, zerotrie,
+    # zerovec), and unicode-ident's Unicode data.
+    "Unicode-3.0",
+    # is_ci, through miette's supports-color.
+    "ISC",
+]
+
+[bans]
+# Two versions of one crate cost build time but are not wrong.
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+# crates.io only: no other registry, no git dependency.
+unknown-registry = "deny"
+unknown-git = "deny"

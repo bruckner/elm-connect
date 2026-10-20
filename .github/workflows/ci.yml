@@ -28,6 +28,11 @@ jobs:
           fetch-depth: 0 # full history for `just gitleaks`
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Cache Elm's packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.elm
+          key: check-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
       - run: just check
         env:
           # For zizmor's online audits; the token has only `contents: read`.
@@ -79,7 +84,11 @@ jobs:
   elm-compat:
     # Design section 8: Elm 0.19.2 is the development target; every
     # earlier 0.19 release is checked here. The runtime package and every
-    # case's expected output must compile with each of them too.
+    # case's expected output must compile with each of them too, and the
+    # runtime's and the notes example's Elm tests must pass under each that
+    # can run them. 0.19.0 cannot: elm-test-rs's runner package
+    # (mpizenberg/elm-test-runner 6) requires Elm 0.19.1, so its tests are
+    # left out (`tests: false`).
     name: Elm ${{ matrix.elm.version }} (ubuntu-latest)
     runs-on: ubuntu-latest
     strategy:
@@ -88,8 +97,10 @@ jobs:
         elm:
           - version: 0.19.0
             sha256: d359adbee89823c641cda326938708d7227dc79aa1f162e0d8fe275f182f528a
+            tests: false
           - version: 0.19.1
             sha256: e44af52bb27f725a973478e589d990a6428e115fe1bb14f03833134d6c0f155c
+            tests: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -104,4 +115,16 @@ jobs:
           echo "$ELM_SHA256  $RUNNER_TEMP/elm.gz" | sha256sum --check
           gunzip "$RUNNER_TEMP/elm.gz"
           chmod +x "$RUNNER_TEMP/elm"
+      - name: Cache Elm's packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.elm
+          key: compat-elm-${{ matrix.elm.version }}-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
       - run: conformance/compile-with.sh "$RUNNER_TEMP/elm"
+      # elm-test-rs, and node to run its compiled tests, as mise pins them.
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        if: matrix.elm.tests
+        with:
+          install_args: node npm:elm-test-rs
+      - if: matrix.elm.tests
+        run: conformance/test-with.sh "$RUNNER_TEMP/elm"
