@@ -873,3 +873,9 @@ tag (design §8).
   parameter at once rather than the first. A run whose only problems are
   in the options says "a problem in the options", and the CLI prints one
   `Error:` per problem rather than another before the header.
+- `docs/diagnostics.md` lists every diagnostic code by family, with what
+  it reports and its escape in both the CLI's and the plugin's
+  spelling; a test holds the list to the generator's codes. Two codes
+  move to the `input::` family, which holds what the generator was
+  handed: `generate::unknown_file` is now `input::unknown_file` and
+  `generate::not_proto3` is now `input::not_proto3`.

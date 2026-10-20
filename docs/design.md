@@ -60,7 +60,8 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack.
 - gRPC-web.
-- proto2 syntax, and editions. A file that declares an edition
+- proto2 syntax, and editions. A proto2 file to generate is
+  `input::not_proto3`. A file that declares an edition
   (`edition = "2023";`) is `input::editions`, from either binary, before
   anything is generated, even where its features would reduce to proto3
   semantics: protox, under the CLI, does not parse editions, and the
@@ -2579,16 +2580,10 @@ two types shared one module, the helpers for `Code` prefixed.)
   The corpus cannot set it (`options.txt` is the plugin parameter), so
   `crates/elm-connect/tests/generate.rs` covers it.
 - Diagnostics carry spans from `SourceCodeInfo` and render in the style
-  of Elm's compiler. First catalogue: route variable names a field the
-  request does not have; route body names a non-message field; map key
-  of an unsupported type (dropped: every key proto allows has an Elm
-  form, `bool` an association list, §3.2); package
-  import cycle; name collision after casing; streaming
-  method; method value collision (§4); the `route::*` problems of
-  HTTP rules (§4); a method without a rule under
-  `unbound_methods=error` (§4). A recursive
-  message was listed as an informational diagnostic; it is dropped,
-  since the wrapper type in the output says the same (§3.2).
+  of Elm's compiler, each under a code. The codes, what each reports and
+  its escape are listed in [`diagnostics.md`](diagnostics.md), which a
+  test (`crates/elm-connect-gen/tests/catalogue.rs`) holds to the
+  generator's own list.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.

@@ -340,7 +340,7 @@ mod tests {
         let response = round_trip(request);
 
         let error = response.error.expect("an error");
-        assert!(error.starts_with("generate::unknown_file\n"), "{error}");
+        assert!(error.starts_with("input::unknown_file\n"), "{error}");
         assert!(error.contains("`missing.proto`"), "{error}");
         assert!(response.file.is_empty());
     }
