@@ -172,6 +172,7 @@ pub fn build_with_imports(
                         file: file.name().to_owned(),
                         span: None,
                         label: String::new(),
+                        within: Vec::new(),
                     };
                     builder.diagnostics.push(Problem::missing_package(site));
                 }
@@ -207,6 +208,79 @@ pub fn build_with_imports(
     } else {
         Err(errors)
     }
+}
+
+/// The label of a problem `error` in the binding `binding` (the rule
+/// itself at `index` 0, else its additional binding `index`), and the
+/// literals that find what it is about in the rule's text (see
+/// [`Site::within`]): the quoted path, `body`, `response_body` or custom
+/// kind, or the binding's block.
+fn route_literal(
+    index: usize,
+    binding: &HttpRule,
+    error: &route::RouteError,
+) -> (&'static str, Vec<String>) {
+    use route::RouteError as E;
+    // As the text format writes the string in double quotes, so that a
+    // value with escapes (`"GET\r\n"`) is found as written.
+    let quoted = |text: &str| {
+        let mut out = String::from("\"");
+        for c in text.chars() {
+            match c {
+                '\n' => out.push_str("\\n"),
+                '\r' => out.push_str("\\r"),
+                '\t' => out.push_str("\\t"),
+                '"' => out.push_str("\\\""),
+                '\\' => out.push_str("\\\\"),
+                c if c.is_control() => out.push_str(&format!("\\{:03o}", u32::from(c))),
+                c => out.push(c),
+            }
+        }
+        out.push('"');
+        out
+    };
+    let mut within = vec!["additional_bindings".to_owned(); index];
+    let label = match error {
+        E::NoPattern | E::QueryField { .. } => {
+            if index == 0 {
+                "in this rule"
+            } else {
+                "in this binding"
+            }
+        }
+        E::NestedBindings => {
+            within.push("additional_bindings".to_owned());
+            "nested here"
+        }
+        E::CustomKind { kind, .. } => {
+            within.extend(["kind".to_owned(), quoted(kind)]);
+            "this kind"
+        }
+        E::Syntax { .. }
+        | E::UnboundWildcard { .. }
+        | E::PathField { .. }
+        | E::PathFieldTwice { .. } => {
+            let key = match &binding.verb {
+                HttpVerb::Get => "get",
+                HttpVerb::Put => "put",
+                HttpVerb::Post => "post",
+                HttpVerb::Delete => "delete",
+                HttpVerb::Patch => "patch",
+                HttpVerb::Custom(_) => "path",
+            };
+            within.extend([key.to_owned(), quoted(&binding.template)]);
+            "this path"
+        }
+        E::BodyField { field, .. } => {
+            within.extend(["body".to_owned(), quoted(field)]);
+            "this body"
+        }
+        E::ResponseBodyField { field, .. } => {
+            within.extend(["response_body".to_owned(), quoted(field)]);
+            "this response body"
+        }
+    };
+    (label, within)
 }
 
 /// The files of every package to generate, by package name, each
@@ -458,6 +532,7 @@ impl Builder {
             file: file.name().to_owned(),
             span,
             label,
+            within: Vec::new(),
         }
     }
 
@@ -681,8 +756,16 @@ impl Builder {
                         0 => format!("The HTTP rule of `{full_name}`"),
                         n => format!("Additional binding {n} of `{full_name}`"),
                     };
+                    let binding = match index {
+                        0 => rule,
+                        n => &rule.additional_bindings[n - 1],
+                    };
                     for error in errors {
-                        let site = self.site_within(file, &path, "in this rule".into());
+                        let (label, within) = route_literal(index, binding, &error);
+                        let site = Site {
+                            within,
+                            ..self.site_within(file, &path, label.into())
+                        };
                         self.diagnostics.push(Problem::route(&what, &error, site));
                     }
                 }
@@ -739,6 +822,7 @@ impl Builder {
             file: file.name().to_owned(),
             span,
             label,
+            within: Vec::new(),
         }
     }
 

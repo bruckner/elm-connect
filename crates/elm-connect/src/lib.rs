@@ -145,6 +145,7 @@ fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Repor
         file: name.to_owned(),
         span: Some(span),
         label: "the edition".into(),
+        within: Vec::new(),
     };
     let mut diagnostics = Diagnostics::new();
     diagnostics.push(Problem::editions(name, Some(&edition), site));

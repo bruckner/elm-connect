@@ -166,6 +166,104 @@ fn byte_offset(source: &str, line: u32, col: u32, columns: Columns) -> Option<us
     (within <= line_text.len() && line_text.is_char_boundary(within)).then_some(line_start + within)
 }
 
+/// The keyword that opens an additional binding of an HTTP rule; as the
+/// last of [`narrow`]'s needles it stands for the whole binding.
+const ADDITIONAL_BINDINGS: &str = "additional_bindings";
+
+/// `span` of `source` narrowed to a literal inside it: each of `needles`
+/// is found after the one before it, and the last one found is the
+/// result. A needle in double quotes is found as written; any other is a
+/// keyword, found only where no identifier character touches it. A last
+/// needle of `additional_bindings` covers the `{ ... }` block after it
+/// too. Where any needle is not found, the whole `span`.
+///
+/// `SourceCodeInfo` records an option written as one aggregate
+/// (`option (google.api.http) = { ... }`) as a whole, so this finds the
+/// part a problem is about in the text instead.
+pub fn narrow(source: &str, span: SourceSpan, needles: &[String]) -> SourceSpan {
+    let start = span.offset();
+    let Some(region) = source.get(start..start + span.len()) else {
+        return span;
+    };
+    let mut at = 0;
+    let mut found = None;
+    for needle in needles {
+        let Some(index) = find_needle(region, at, needle) else {
+            return span;
+        };
+        at = index + needle.len();
+        found = Some((index, at));
+    }
+    let Some((from, mut to)) = found else {
+        return span;
+    };
+    if needles
+        .last()
+        .is_some_and(|last| last == ADDITIONAL_BINDINGS)
+    {
+        to = block_end(region, to).unwrap_or(to);
+    }
+    SourceSpan::new((start + from).into(), to - from)
+}
+
+/// The first index of `needle` in `text` at or after `from`, a keyword
+/// only where it stands alone.
+fn find_needle(text: &str, from: usize, needle: &str) -> Option<usize> {
+    let ident = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    let mut at = from;
+    loop {
+        let index = at + text.get(at..)?.find(needle)?;
+        let end = index + needle.len();
+        let alone = needle.starts_with('"')
+            || (!text[..index].ends_with(ident) && !text[end..].starts_with(ident));
+        if alone {
+            return Some(index);
+        }
+        at = end;
+    }
+}
+
+/// The index just past the `{ ... }` block that follows `from` in `text`,
+/// past spaces and a `:`, its quoted strings skipped; `None` if no block
+/// follows or it does not close.
+fn block_end(text: &str, from: usize) -> Option<usize> {
+    let rest = text.get(from..)?;
+    let trimmed = rest.trim_start();
+    let trimmed = trimmed.strip_prefix(':').unwrap_or(trimmed).trim_start();
+    if !trimmed.starts_with('{') {
+        return None;
+    }
+    let open = from + rest.len() - trimmed.len();
+    let mut depth = 0;
+    let mut quote = None;
+    let mut escaped = false;
+    for (offset, c) in text[open..].char_indices() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' => quote = Some(c),
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(open + offset + 1);
+                    }
+                }
+                _ => {}
+            },
+        }
+    }
+    None
+}
+
 /// The recorded spans of one file, by descriptor path.
 #[derive(Clone, Debug, Default)]
 pub struct Spans {
@@ -238,6 +336,40 @@ mod tests {
         );
         let protox = span(1, 7, 1, 9).byte_span(source, Columns::Bytes).unwrap();
         assert_eq!(protox, protoc);
+    }
+
+    fn narrowed<'a>(source: &'a str, needles: &[&str]) -> &'a str {
+        let whole = SourceSpan::new(0.into(), source.len());
+        let needles: Vec<String> = needles.iter().map(|&n| n.to_owned()).collect();
+        let s = narrow(source, whole, &needles);
+        &source[s.offset()..s.offset() + s.len()]
+    }
+
+    #[test]
+    fn narrowing_finds_a_literal_after_its_keyword() {
+        let rule = r#"option (google.api.http) = {
+      post: "/v1/body"
+      body: "note"
+      response_body: "body"
+      additional_bindings { post: "/v2/{x}" body: "note" }
+      additional_bindings: { get: "/v3" }
+    };"#;
+        assert_eq!(narrowed(rule, &["body", "\"note\""]), "\"note\"");
+        assert_eq!(narrowed(rule, &["response_body", "\"body\""]), "\"body\"");
+        assert_eq!(
+            narrowed(rule, &["additional_bindings", "body", "\"note\""]),
+            "\"note\""
+        );
+        assert_eq!(
+            narrowed(rule, &["additional_bindings"]),
+            "additional_bindings { post: \"/v2/{x}\" body: \"note\" }"
+        );
+        assert_eq!(
+            narrowed(rule, &["additional_bindings", "additional_bindings"]),
+            "additional_bindings: { get: \"/v3\" }"
+        );
+        assert_eq!(narrowed(rule, &["body", "\"missing\""]), rule, "not found");
+        assert_eq!(narrowed(rule, &[]), rule);
     }
 
     #[test]

@@ -70,6 +70,7 @@ fn editions(raw: &RawProtoFiles) -> Diagnostics {
             file: name.clone(),
             span: None,
             label: "the edition".into(),
+            within: Vec::new(),
         };
         diagnostics.push(Problem::editions(&name, edition, site));
     }

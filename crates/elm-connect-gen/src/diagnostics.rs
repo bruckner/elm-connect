@@ -179,6 +179,11 @@ pub struct Site {
     pub span: Option<LineColSpan>,
     /// What is at this place, shown beside the snippet.
     pub label: String,
+    /// What to underline within the span once the source text is known,
+    /// when the compiler recorded a span wider than what the problem is
+    /// about: needles found in turn, as [`spans::narrow`] takes them.
+    /// Empty for the whole span.
+    pub within: Vec<String>,
 }
 
 /// One problem in the user's protos.
@@ -1112,6 +1117,7 @@ impl Problem {
             .filter(|site| site.file == file)
             .filter_map(|site| {
                 let span = site.span?.byte_span(text, columns)?;
+                let span = spans::narrow(text, span, &site.within);
                 Some(LabeledSpan::new_with_span(Some(site.label.clone()), span))
             })
             .collect()

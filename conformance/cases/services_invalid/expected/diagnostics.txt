@@ -49,22 +49,14 @@ route::rule
 
   × Additional binding 1 of `jobs.v1.Jobs.Stop` has additional bindings of its
   │ own.
-    ╭─[jobs.proto:28:5]
- 27 │       rpc Stop(Job) returns (Job) {
- 28 │ ╭─▶     option (google.api.http) = {
- 29 │ │         post: "/v1/{name=jobs/*}:stop"
- 30 │ │         body: "*"
- 31 │ │         additional_bindings {
- 32 │ │           post: "/v1/{name=queues/*/jobs/*}:stop"
- 33 │ │           body: "*"
- 34 │ │           additional_bindings {
+    ╭─[jobs.proto:34:9]
+ 33 │             body: "*"
+ 34 │ ╭─▶         additional_bindings {
  35 │ │             post: "/v2/{name=jobs/*}:stop"
  36 │ │             body: "*"
- 37 │ │           }
- 38 │ │         }
- 39 │ ├─▶     };
-    · ╰──── in this rule
- 40 │       }
+ 37 │ ├─▶         }
+    · ╰──── nested here
+ 38 │           }
     ╰────
   help: `google/api/http.proto` allows additional bindings one level deep
         only. Move the nested bindings up into the rule's own

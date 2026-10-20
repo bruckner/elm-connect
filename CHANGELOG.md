@@ -906,3 +906,9 @@ tag (design §8).
   a `naming::constructor_collision` with the same sites.
   `naming::constructor_collision` remains for constructors whose types
   do not collide, such as an enum value beside a message of its name.
+- A `route::*` problem underlines what it is about: the quoted path,
+  `body`, `response_body` or custom kind, or the additional binding's
+  block, found in the rule's text, rather than the whole
+  `option (google.api.http)`, which is all `SourceCodeInfo` records. Where
+  the literal is not found, or there is no source text, the whole option
+  stays the site.

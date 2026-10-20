@@ -23,13 +23,12 @@ route::path_field
 
   × The HTTP rule of `library.v1.Library.GetBook` binds `{nme}` in its path,
   │ but `library.v1.GetBookRequest` has no field `nme`.
-    ╭─[library.proto:30:5]
- 29 │       rpc GetBook(GetBookRequest) returns (Book) {
- 30 │ ╭─▶     option (google.api.http) = {
- 31 │ │         get: "/v1/{nme=books/*}"
- 32 │ ├─▶     };
-    · ╰──── in this rule
- 33 │       }
+    ╭─[library.proto:31:12]
+ 30 │     option (google.api.http) = {
+ 31 │       get: "/v1/{nme=books/*}"
+    ·            ─────────┬─────────
+    ·                     ╰── this path
+ 32 │     };
     ╰────
   help: Did you mean `name`? A path variable names a non-repeated scalar or
         enum field of the request, possibly through singular message fields
@@ -39,14 +38,12 @@ route::body_field
 
   × The HTTP rule of `library.v1.Library.CreateBook` has `body: "Book"`, but
   │ `library.v1.CreateBookRequest` has no field `Book`.
-    ╭─[library.proto:36:5]
- 35 │       rpc CreateBook(CreateBookRequest) returns (Book) {
- 36 │ ╭─▶     option (google.api.http) = {
- 37 │ │         post: "/v1/{shelf=shelves/*}/books"
- 38 │ │         body: "Book"
- 39 │ ├─▶     };
-    · ╰──── in this rule
- 40 │       }
+    ╭─[library.proto:38:13]
+ 37 │       post: "/v1/{shelf=shelves/*}/books"
+ 38 │       body: "Book"
+    ·             ───┬──
+    ·                ╰── this body
+ 39 │     };
     ╰────
   help: Did you mean `book`? `body` is `*` for every field not in the path, or
         the name of a top-level singular message field of the request, or left
@@ -56,14 +53,12 @@ route::response_body
 
   × The HTTP rule of `library.v1.Library.ListBooks` has `response_body:
   │ "bokos"`, but the response has no such field.
-    ╭─[library.proto:43:5]
- 42 │       rpc ListBooks(GetBookRequest) returns (ListBooksResponse) {
- 43 │ ╭─▶     option (google.api.http) = {
- 44 │ │         get: "/v1/{name=shelves/*}/books"
- 45 │ │         response_body: "bokos"
- 46 │ ├─▶     };
-    · ╰──── in this rule
- 47 │       }
+    ╭─[library.proto:45:22]
+ 44 │       get: "/v1/{name=shelves/*}/books"
+ 45 │       response_body: "bokos"
+    ·                      ───┬───
+    ·                         ╰── this response body
+ 46 │     };
     ╰────
   help: Did you mean `books`? `response_body` names a top-level field of the
         response, a generated message, or is left out for the whole response.

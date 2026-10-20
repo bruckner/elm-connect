@@ -65,6 +65,7 @@ fn help_names_options_as_each_front_end_writes_them() {
             file: "chat.proto".into(),
             span: None,
             label: "streams here".into(),
+            within: Vec::new(),
         };
         let problem = Problem::streaming("chat.v1.Chat.Listen", "server", site, spelling);
         render_narrow(&Diagnostics::from(problem))
