@@ -2803,7 +2803,9 @@ body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `Transport Timeout`, the server never answering first), retries,
 Connect GET (with the config's and the call's headers) and `maxGetUrl`,
 percent-encoded path values, `viaBinding`
-in and out of range, and `sendTraced`, `send` and `task`.
+in and out of range, and `sendTraced`, `send`, `task` and
+`taskFromRequest` (a header rewritten between `Rpc.request` and it,
+seen on the wire on every retry).
 
 Built, the Connect conformance suite *(2026-10-15)*: `connectconformance`
 v1.0.6, fetched from its GitHub release with its SHA-256 pinned per

@@ -25,8 +25,9 @@ import Task
 
 
 {-| One call to make: the method, its request as proto3 JSON, the transport,
-the config, the binding, if one is chosen, the call's own headers, and the
-milliseconds after which to cancel it, if it is to be.
+the config, the binding, if one is chosen, the call's own headers, the
+headers `FromRequest` rewrites, and the milliseconds after which to cancel
+it, if it is to be.
 -}
 type alias Envelope =
     { id : String
@@ -37,6 +38,7 @@ type alias Envelope =
     , config : Rpc.Config
     , binding : Maybe Int
     , headers : List ( String, String )
+    , rewrite : List ( String, String )
     , sending : Sending
     , tracker : Maybe String
     , cancelAfter : Maybe Int
@@ -47,12 +49,15 @@ type alias Envelope =
 through the pure halves, as an application that needs the whole answer does:
 `Rpc.request`, `Http.request` with the answer kept whole, and `Rpc.response`.
 `Traced` gives the answer's status, headers and trailers in the trace.
+`FromRequest` builds the request with `Rpc.request`, rewrites it and sends
+it with `Rpc.taskFromRequest`, as an application refreshing a token does.
 -}
 type Sending
     = Traced
     | Plain
     | AsTask
     | Halves
+    | FromRequest
 
 
 {-| The transport a call goes over, as the envelope names it.
@@ -125,8 +130,8 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
 
 {-| The commands for a call. Only a call elm/http sends under a tracker can be
 aborted: one sent with `send` without a retry policy, or through the halves
-with the tracker on `Http.request`. `sendTraced`, `task` and `send` with a
-retry policy ignore the tracker, so a call sent so with `cancelAfter` is
+with the tracker on `Http.request`. `sendTraced`, `task`, `taskFromRequest`
+and `send` with a retry policy ignore the tracker, so a call sent so with `cancelAfter` is
 refused rather than reported cancelled while it runs on. A call to be
 cancelled without a tracker of its own gets its id as one.
 -}
@@ -213,6 +218,41 @@ sendWith envelope encodeResponse toMsg c =
                 (Sent (sendHalves envelope.config tracked tracker (\( answer, result ) -> reportWith Encode.null answer result))
                     cancelling
                 )
+
+        FromRequest ->
+            uncancellable "taskFromRequest"
+                |> Result.map
+                    (Sent
+                        (Rpc.request envelope.config tracked
+                            |> rewriteHeaders envelope.rewrite
+                            |> Rpc.taskFromRequest envelope.config tracked
+                            |> Task.attempt (report Encode.null)
+                        )
+                    )
+
+
+{-| A request with each of `rewrites` in place of the header of its name, in
+any case, where it has one, and after its headers where it has none.
+-}
+rewriteHeaders : List ( String, String ) -> Rpc.Request -> Rpc.Request
+rewriteHeaders rewrites sent =
+    let
+        rewriteOne ( name, value ) headers =
+            if List.any (\( n, _ ) -> String.toLower n == String.toLower name) headers then
+                List.map
+                    (\( n, v ) ->
+                        if String.toLower n == String.toLower name then
+                            ( n, value )
+
+                        else
+                            ( n, v )
+                    )
+                    headers
+
+            else
+                headers ++ [ ( name, value ) ]
+    in
+    { sent | headers = List.foldl rewriteOne sent.headers rewrites }
 
 
 {-| Send a call as `Rpc.request` describes it, with elm/http directly, and read
