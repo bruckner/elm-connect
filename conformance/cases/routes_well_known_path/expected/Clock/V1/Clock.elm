@@ -25,7 +25,8 @@ elmConnectVersion_ =
 -- CALLS
 
 
-{-| `rpc GetMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/GetMoment`.
+{-| `rpc GetMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/GetMoment`.
 Transcode: `GET /v1/at/{at}`.
 From [`Clock.V1.Moment`](Clock-V1#Moment) to [`Clock.V1.Moment`](Clock-V1#Moment), described by [`descriptorGetMoment`](#descriptorGetMoment).
 -}
@@ -38,7 +39,8 @@ getMoment =
         )
 
 
-{-| `rpc MaskMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/MaskMoment`.
+{-| `rpc MaskMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/MaskMoment`.
 Transcode: `GET /v1/at/{at}/mask/{mask}`.
 From [`Clock.V1.Moment`](Clock-V1#Moment) to [`Clock.V1.Moment`](Clock-V1#Moment), described by [`descriptorMaskMoment`](#descriptorMaskMoment).
 -}
@@ -51,7 +53,8 @@ maskMoment =
         )
 
 
-{-| `rpc CountMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/CountMoment`.
+{-| `rpc CountMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/CountMoment`.
 Transcode: `GET /v1/count/{count}/seen/{seen}`.
 From [`Clock.V1.Moment`](Clock-V1#Moment) to [`Clock.V1.Moment`](Clock-V1#Moment), described by [`descriptorCountMoment`](#descriptorCountMoment).
 -}
@@ -64,7 +67,8 @@ countMoment =
         )
 
 
-{-| `rpc WaitMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/WaitMoment`.
+{-| `rpc WaitMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/WaitMoment`.
 Transcode: `POST /v1/wait/{wait}` body `*`.
 From [`Clock.V1.Moment`](Clock-V1#Moment) to [`Clock.V1.Moment`](Clock-V1#Moment), described by [`descriptorWaitMoment`](#descriptorWaitMoment).
 -}

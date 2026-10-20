@@ -36,7 +36,8 @@ elmConnectVersion_ =
 
 {-| google/api/http.proto's GET examples, as one rule and its bindings.
 
-`rpc GetMessage(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/GetMessage`.
+`rpc GetMessage(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/GetMessage`.
 Transcode: `GET /v1/{name=messages/*}`; binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`; binding 2: `GET /v1/messages/{message_id}`; binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 From [`Routes.V1.GetMessageRequest`](Routes-V1#GetMessageRequest) to [`Routes.V1.Message`](Routes-V1#Message), described by [`descriptorGetMessage`](#descriptorGetMessage).
 
@@ -52,7 +53,8 @@ getMessage =
 
 {-| google/api/http.proto's body examples.
 
-`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/UpdateMessage`.
+`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/UpdateMessage`.
 Transcode: `PATCH /v1/messages/{message_id}` body `message`.
 From [`Routes.V1.UpdateMessageRequest`](Routes-V1#UpdateMessageRequest) to [`Routes.V1.Message`](Routes-V1#Message), described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 
@@ -66,7 +68,8 @@ updateMessage =
         )
 
 
-{-| `rpc UpdateMessageWhole(Message) returns (Message)`. Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
+{-| `rpc UpdateMessageWhole(Message) returns (Message)`.
+Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
 Transcode: `PATCH /v1/messages/{message_id}` body `*`.
 From [`Routes.V1.Message`](Routes-V1#Message) to [`Routes.V1.Message`](Routes-V1#Message), described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
 -}
@@ -79,7 +82,8 @@ updateMessageWhole =
         )
 
 
-{-| `rpc PostSub(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/PostSub`.
+{-| `rpc PostSub(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/PostSub`.
 Transcode: `POST /v1/subs/{sub.subfield}` body `*`.
 From [`Routes.V1.GetMessageRequest`](Routes-V1#GetMessageRequest) to [`Routes.V1.Message`](Routes-V1#Message), described by [`descriptorPostSub`](#descriptorPostSub).
 -}
@@ -92,7 +96,8 @@ postSub =
         )
 
 
-{-| `rpc Query(Everything) returns (Everything)`. Connect: `POST /routes.v1.Routes/Query`.
+{-| `rpc Query(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Query`.
 Transcode: `GET /v1/query`.
 From [`Routes.V1.Everything`](Routes-V1#Everything) to [`Routes.V1.Everything`](Routes-V1#Everything), described by [`descriptorQuery`](#descriptorQuery).
 -}
@@ -105,7 +110,8 @@ query =
         )
 
 
-{-| `rpc Single(Everything) returns (Everything)`. Connect: `POST /routes.v1.Routes/Single`.
+{-| `rpc Single(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Single`.
 Transcode: `GET /v1/single/{name}`.
 From [`Routes.V1.Everything`](Routes-V1#Everything) to [`Routes.V1.Everything`](Routes-V1#Everything), described by [`descriptorSingle`](#descriptorSingle).
 -}
@@ -118,7 +124,8 @@ single =
         )
 
 
-{-| `rpc Multi(Everything) returns (Everything)`. Connect: `POST /routes.v1.Routes/Multi`.
+{-| `rpc Multi(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Multi`.
 Transcode: `GET /v1/{name=things/*}`.
 From [`Routes.V1.Everything`](Routes-V1#Everything) to [`Routes.V1.Everything`](Routes-V1#Everything), described by [`descriptorMulti`](#descriptorMulti).
 -}
@@ -131,7 +138,8 @@ multi =
         )
 
 
-{-| `rpc Typed(Everything) returns (Everything)`. Connect: `POST /routes.v1.Routes/Typed`.
+{-| `rpc Typed(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Typed`.
 Transcode: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 From [`Routes.V1.Everything`](Routes-V1#Everything) to [`Routes.V1.Everything`](Routes-V1#Everything), described by [`descriptorTyped`](#descriptorTyped).
 -}
@@ -144,7 +152,8 @@ typed =
         )
 
 
-{-| `rpc Files(FileRequest) returns (FileRequest)`. Connect: `POST /routes.v1.Routes/Files`.
+{-| `rpc Files(FileRequest) returns (FileRequest)`.
+Connect: `POST /routes.v1.Routes/Files`.
 Transcode: `GET /v1/{path=files/**}`.
 From [`Routes.V1.FileRequest`](Routes-V1#FileRequest) to [`Routes.V1.FileRequest`](Routes-V1#FileRequest), described by [`descriptorFiles`](#descriptorFiles).
 -}
@@ -157,7 +166,8 @@ files =
         )
 
 
-{-| `rpc Cancel(Resource) returns (Resource)`. Connect: `POST /routes.v1.Routes/Cancel`.
+{-| `rpc Cancel(Resource) returns (Resource)`.
+Connect: `POST /routes.v1.Routes/Cancel`.
 Transcode: `POST /v1/{name=operations/*}:cancel` body `*`.
 From [`Routes.V1.Resource`](Routes-V1#Resource) to [`Routes.V1.Resource`](Routes-V1#Resource), described by [`descriptorCancel`](#descriptorCancel).
 -}
@@ -170,7 +180,8 @@ cancel =
         )
 
 
-{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`. Connect: `POST /routes.v1.Routes/UpdateResource`.
+{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`.
+Connect: `POST /routes.v1.Routes/UpdateResource`.
 Transcode: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 From [`Routes.V1.UpdateResourceRequest`](Routes-V1#UpdateResourceRequest) to [`Routes.V1.Resource`](Routes-V1#Resource), described by [`descriptorUpdateResource`](#descriptorUpdateResource).
 -}
@@ -183,7 +194,8 @@ updateResource =
         )
 
 
-{-| `rpc Head(FileRequest) returns (FileRequest)`. Connect: `POST /routes.v1.Routes/Head`.
+{-| `rpc Head(FileRequest) returns (FileRequest)`.
+Connect: `POST /routes.v1.Routes/Head`.
 Transcode: `HEAD /v1/{path=files/**}`.
 From [`Routes.V1.FileRequest`](Routes-V1#FileRequest) to [`Routes.V1.FileRequest`](Routes-V1#FileRequest), described by [`descriptorHead`](#descriptorHead).
 -}
@@ -200,8 +212,9 @@ head =
 request as its body, as grpc-gateway (generate\_unbound\_methods),
 Envoy's transcoder (auto\_mapping) and Vanguard serve it.
 
-`rpc Unbound(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/Unbound`.
-No HTTP rule: the Connect path.
+`rpc Unbound(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/Unbound`.
+Transcode: no HTTP rule, follows the Connect path.
 From [`Routes.V1.GetMessageRequest`](Routes-V1#GetMessageRequest) to [`Routes.V1.Message`](Routes-V1#Message), described by [`descriptorUnbound`](#descriptorUnbound).
 
 -}

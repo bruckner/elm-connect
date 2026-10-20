@@ -2205,8 +2205,9 @@ mod tests {
         "[`message notes.v1.Note`](Notes-V1-Note#descriptor)",
         "Describes [`Notes.V1.Note`](Notes-V1#Note).",
         "Encodes a [`Node_`](#Node_) as proto3 JSON.",
-        "`rpc Get(A) returns (B)`. Connect: `POST /s.v1.S/Get`.\n\
-         No HTTP rule: the Connect path.\n\
+        "`rpc Get(A) returns (B)`.\n\
+         Connect: `POST /s.v1.S/Get`.\n\
+         Transcode: no HTTP rule, follows the Connect path.\n\
          From [`S.V1.A`](S-V1#A) to [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
          bruckner/elm-connect/latest/Proto-Any#Any), described by [`descriptorGet`](#descriptorGet).",
         "[`message s.v1.M`](S-V1-M#descriptor)\n\n\

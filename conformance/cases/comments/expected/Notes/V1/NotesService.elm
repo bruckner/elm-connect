@@ -37,7 +37,8 @@ elmConnectVersion_ =
 
 {-| Gets a note by name.
 
-`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+`rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
 From [`Notes.V1.GetNoteRequest`](Notes-V1#GetNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
 
@@ -53,7 +54,8 @@ getNote =
 
 {-| Lists a user's notes; the response is the list alone.
 
-`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
+Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
 From [`Notes.V1.ListNotesRequest`](Notes-V1#ListNotesRequest) to [`Notes.V1.ListNotesResponse`](Notes-V1#ListNotesResponse), described by [`descriptorListNotes`](#descriptorListNotes).
 
@@ -69,7 +71,8 @@ listNotes =
 
 {-| Creates a note from the `note` field.
 
-`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+`rpc CreateNote(CreateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
 From [`Notes.V1.CreateNoteRequest`](Notes-V1#CreateNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorCreateNote`](#descriptorCreateNote).
 
@@ -87,7 +90,8 @@ createNote =
 
 Replaces a note: the body is the whole request.
 
-`rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
+`rpc ReplaceNote(Note) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
 From [`Notes.V1.Note`](Notes-V1#Note) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 
@@ -103,8 +107,9 @@ replaceNote =
 
 {-| Answers without an HTTP rule, over the Connect path.
 
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-No HTTP rule: the Connect path.
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/Ping`.
+Transcode: no HTTP rule, follows the Connect path.
 From `google.protobuf.Empty` to `google.protobuf.Empty`, described by [`descriptorPing`](#descriptorPing).
 
 -}

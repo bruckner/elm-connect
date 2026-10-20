@@ -47,7 +47,8 @@ elmConnectVersion_ =
 detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
 `name`).
 
-`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+`rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
 From [`Notes.V1.GetNoteRequest`](Notes-V1#GetNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
 
@@ -63,7 +64,8 @@ getNote =
 
 {-| Notes, a page at a time.
 
-`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
+Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/notes`.
 From [`Notes.V1.ListNotesRequest`](Notes-V1#ListNotesRequest) to [`Notes.V1.ListNotesResponse`](Notes-V1#ListNotesResponse), described by [`descriptorListNotes`](#descriptorListNotes).
 
@@ -81,7 +83,8 @@ listNotes =
 `google.rpc.BadRequest` detail holding one field violation, on `title`.
 A name already taken is ALREADY\_EXISTS.
 
-`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+`rpc CreateNote(CreateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
 From [`Notes.V1.CreateNoteRequest`](Notes-V1#CreateNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorCreateNote`](#descriptorCreateNote).
 
@@ -97,7 +100,8 @@ createNote =
 
 {-| Changes a note's fields. A missing note is NOT\_FOUND, as for GetNote.
 
-`rpc UpdateNote(UpdateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/UpdateNote`.
+`rpc UpdateNote(UpdateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
 From [`Notes.V1.UpdateNoteRequest`](Notes-V1#UpdateNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 
@@ -113,7 +117,8 @@ updateNote =
 
 {-| Deletes a note. A missing note is NOT\_FOUND, as for GetNote.
 
-`rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/DeleteNote`.
+`rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
 From [`Notes.V1.DeleteNoteRequest`](Notes-V1#DeleteNoteRequest) to `google.protobuf.Empty`, described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 
@@ -129,7 +134,8 @@ deleteNote =
 
 {-| Makes a note private and tags it `archived`: a custom method.
 
-`rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/ArchiveNote`.
+`rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
 From [`Notes.V1.ArchiveNoteRequest`](Notes-V1#ArchiveNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 
@@ -146,8 +152,9 @@ archiveNote =
 {-| Answers with nothing. It has no HTTP rule, so transcoding serves it on
 the implicit route, `POST /notes.v1.NotesService/Ping`.
 
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-No HTTP rule: the Connect path.
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/Ping`.
+Transcode: no HTTP rule, follows the Connect path.
 From `google.protobuf.Empty` to `google.protobuf.Empty`, described by [`descriptorPing`](#descriptorPing).
 
 -}

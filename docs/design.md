@@ -1654,7 +1654,8 @@ message's descriptor sits in a module apart from its type (§3.1). The
 -- CALLS
 
 
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
 From [`Notes.V1.GetNoteRequest`](Notes-V1#GetNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
 -}
@@ -1706,13 +1707,13 @@ keeps.
 
 - **A method's documentation shows its routes.** *(Decided,
   2026-10-20.)* A call's doc comment gives the method's comment
-  (§3.1), then its declaration line, its Connect path and its HTTP
+  (§3.1), then its declaration line, its Connect path on a line of its own and its HTTP
   bindings as its
   `google.api.http` rule writes them, the rule's own first and each
   additional binding numbered as `Rpc.Call.viaBinding` counts it, each
   with its `body` and `response_body` where set, then a line linking
   its request and response types and its descriptor;
-  `No HTTP rule: the Connect path.` for a method
+  `Transcode: no HTTP rule, follows the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the line are named as the service's
   package would write them, relative to it inside it and by full name

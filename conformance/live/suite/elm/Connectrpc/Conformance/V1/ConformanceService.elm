@@ -45,8 +45,9 @@ Servers should allow the response definition to be unset in the request and
 if it is, set no response headers or trailers and return no response data.
 The returned payload should only contain the request info.
 
-`rpc Unary(UnaryRequest) returns (UnaryResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
-No HTTP rule: the Connect path.
+`rpc Unary(UnaryRequest) returns (UnaryResponse)`.
+Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
+Transcode: no HTTP rule, follows the Connect path.
 From [`Connectrpc.Conformance.V1.UnaryRequest`](Connectrpc-Conformance-V1#UnaryRequest) to [`Connectrpc.Conformance.V1.UnaryResponse`](Connectrpc-Conformance-V1#UnaryResponse), described by [`descriptorUnary`](#descriptorUnary).
 
 -}
@@ -62,8 +63,9 @@ unary =
 {-| A unary endpoint that the server should not implement and should instead
 return an unimplemented error when invoked.
 
-`rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
-No HTTP rule: the Connect path.
+`rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`.
+Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
+Transcode: no HTTP rule, follows the Connect path.
 From [`Connectrpc.Conformance.V1.UnimplementedRequest`](Connectrpc-Conformance-V1#UnimplementedRequest) to [`Connectrpc.Conformance.V1.UnimplementedResponse`](Connectrpc-Conformance-V1#UnimplementedResponse), described by [`descriptorUnimplemented`](#descriptorUnimplemented).
 
 -}
@@ -80,8 +82,9 @@ unimplemented =
 Implementations should use an HTTP GET when invoking this endpoint and
 leverage query parameters to send data.
 
-`rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`. Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
-No HTTP rule: the Connect path.
+`rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`.
+Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
+Transcode: no HTTP rule, follows the Connect path.
 From [`Connectrpc.Conformance.V1.IdempotentUnaryRequest`](Connectrpc-Conformance-V1#IdempotentUnaryRequest) to [`Connectrpc.Conformance.V1.IdempotentUnaryResponse`](Connectrpc-Conformance-V1#IdempotentUnaryResponse), described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
 
 -}

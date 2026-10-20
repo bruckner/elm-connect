@@ -29,7 +29,8 @@ elmConnectVersion_ =
 -- CALLS
 
 
-{-| `rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.LegacyService/Clear`.
+{-| `rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.LegacyService/Clear`.
 Transcode: `PURGE /v1/notes`.
 From `google.protobuf.Empty` to `google.protobuf.Empty`, described by [`descriptorClear`](#descriptorClear).
 -}

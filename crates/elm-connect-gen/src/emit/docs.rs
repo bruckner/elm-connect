@@ -362,10 +362,10 @@ pub(super) fn method(service: &str, method: &Method, request: &str, response: &s
                 .collect::<Vec<_>>();
             format!("Transcode: {}.", bindings.join("; "))
         }
-        None => "No HTTP rule: the Connect path.".to_owned(),
+        None => "Transcode: no HTTP rule, follows the Connect path.".to_owned(),
     };
     let head = format!(
-        "{}. Connect: {}.\n{routes}\nFrom {request} to {response}, described by {}.",
+        "{}.\nConnect: {}.\n{routes}\nFrom {request} to {response}, described by {}.",
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
         local(&method.descriptor_name()),

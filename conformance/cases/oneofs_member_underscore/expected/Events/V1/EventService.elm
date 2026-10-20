@@ -28,7 +28,8 @@ elmConnectVersion_ =
 {-| `_legacy` is a query parameter, named by
 `Events.V1.ListEventsRequest.legacy`.
 
-`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
+`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`.
+Connect: `POST /events.v1.EventService/ListEvents`.
 Transcode: `GET /v1/{parent=feeds/*}/events`.
 From [`Events.V1.ListEventsRequest`](Events-V1#ListEventsRequest) to [`Events.V1.ListEventsResponse`](Events-V1#ListEventsResponse), described by [`descriptorListEvents`](#descriptorListEvents).
 
