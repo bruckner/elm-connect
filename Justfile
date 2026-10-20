@@ -49,11 +49,19 @@ test:
 # tests. Then run the browser example's tests, which test the README
 # excerpts that are more than a call (src/Snippets) against the example's
 # generated modules. The conformance harness is compiled by `cargo test`.
-elm-check:
+# The codec round trips' modules are generated first (codec-gen).
+elm-check: codec-gen
     -@elm make --output=/dev/null >/dev/null 2>&1
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
     cd examples/notes/elm && elm-test-rs
+
+# Write the codec round trips' Elm under tests/Generated (gitignored): the
+# modules generated from conformance/codec under each option set, the
+# samples and the codec table. The codec test writes them on every run, so
+# `test` does too; elm-check depends on this so it works on a fresh clone.
+codec-gen:
+    cargo test -p elm-connect-gen --test codec
 
 # Check that every tagged code block of the README and the notes example's
 # walkthrough is an excerpt of the file it names (examples/check-snippets.sh).
@@ -235,6 +243,6 @@ example-notes addr="127.0.0.1:8080": example-notes-build
 # Remove build output (the cargo build directory, shared or not).
 clean:
     cargo clean
-    rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff
+    rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
     rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist
