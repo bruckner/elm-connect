@@ -16,10 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
-
-`message notes.v1.Note`
-
+{-| `message notes.v1.Note`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -32,28 +29,28 @@ descriptor =
         ]
 
 
-{-| The field `title` of `notes.v1.Note`: `string title = 1;`
+{-| `string title = 1;`
 -}
 heading : Proto.Field.Descriptor
 heading =
     Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `visibility` of `notes.v1.Note`: `notes.v1.Visibility visibility = 2;`
+{-| `notes.v1.Visibility visibility = 2;`
 -}
 visibility : Proto.Field.Descriptor
 visibility =
     Proto.Field.descriptor "visibility" "visibility" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.Api.Audience.descriptor)
 
 
-{-| The field `revisions` of `notes.v1.Note`: `repeated notes.v1.Note.Revision revisions = 3;`
+{-| `repeated notes.v1.Note.Revision revisions = 3;`
 -}
 revisions : Proto.Field.Descriptor
 revisions =
     Proto.Field.descriptor "revisions" "revisions" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note.Revision")
 
 
-{-| The field `text` of `notes.v1.Note`, a member of the oneof `kind`: `string text = 4;`
+{-| `string text = 4;`, in oneof `kind`
 -}
 text : Proto.Field.Descriptor
 text =
@@ -61,7 +58,7 @@ text =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `link` of `notes.v1.Note`, a member of the oneof `kind`: `string link = 5;`
+{-| `string link = 5;`, in oneof `kind`
 -}
 link : Proto.Field.Descriptor
 link =

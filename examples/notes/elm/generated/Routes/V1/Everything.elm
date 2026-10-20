@@ -16,9 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.Everything`: its full name and its fields, in declaration order.
-
-A field of every kind a query parameter or path variable can hold.
+{-| A field of every kind a query parameter or path variable can hold.
 
 `message routes.v1.Everything`
 
@@ -51,147 +49,147 @@ descriptor =
         ]
 
 
-{-| The field `name` of `routes.v1.Everything`: `string name = 1;`
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `count` of `routes.v1.Everything`: `int32 count = 2;`
+{-| `int32 count = 2;`
 -}
 count : Proto.Field.Descriptor
 count =
     Proto.Field.descriptor "count" "count" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `big` of `routes.v1.Everything`: `int64 big = 3;`
+{-| `int64 big = 3;`
 -}
 big : Proto.Field.Descriptor
 big =
     Proto.Field.descriptor "big" "big" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `ubig` of `routes.v1.Everything`: `uint64 ubig = 4;`
+{-| `uint64 ubig = 4;`
 -}
 ubig : Proto.Field.Descriptor
 ubig =
     Proto.Field.descriptor "ubig" "ubig" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
 
 
-{-| The field `flag` of `routes.v1.Everything`: `bool flag = 5;`
+{-| `bool flag = 5;`
 -}
 flag : Proto.Field.Descriptor
 flag =
     Proto.Field.descriptor "flag" "flag" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `ratio` of `routes.v1.Everything`: `double ratio = 6;`
+{-| `double ratio = 6;`
 -}
 ratio : Proto.Field.Descriptor
 ratio =
     Proto.Field.descriptor "ratio" "ratio" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
 
 
-{-| The field `scale` of `routes.v1.Everything`: `float scale = 7;`
+{-| `float scale = 7;`
 -}
 scale : Proto.Field.Descriptor
 scale =
     Proto.Field.descriptor "scale" "scale" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
 
 
-{-| The field `data` of `routes.v1.Everything`: `bytes data = 8;`
+{-| `bytes data = 8;`
 -}
 data : Proto.Field.Descriptor
 data =
     Proto.Field.descriptor "data" "data" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `kind` of `routes.v1.Everything`: `routes.v1.Kind kind = 9;`
+{-| `routes.v1.Kind kind = 9;`
 -}
 kind : Proto.Field.Descriptor
 kind =
     Proto.Field.descriptor "kind" "kind" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Routes.V1.Kind.descriptor)
 
 
-{-| The field `tags` of `routes.v1.Everything`: `repeated string tags = 10;`
+{-| `repeated string tags = 10;`
 -}
 tags : Proto.Field.Descriptor
 tags =
     Proto.Field.descriptor "tags" "tags" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `kinds` of `routes.v1.Everything`: `repeated routes.v1.Kind kinds = 11;`
+{-| `repeated routes.v1.Kind kinds = 11;`
 -}
 kinds : Proto.Field.Descriptor
 kinds =
     Proto.Field.descriptor "kinds" "kinds" 11 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Routes.V1.Kind.descriptor)
 
 
-{-| The field `numbers` of `routes.v1.Everything`: `repeated int32 numbers = 12;`
+{-| `repeated int32 numbers = 12;`
 -}
 numbers : Proto.Field.Descriptor
 numbers =
     Proto.Field.descriptor "numbers" "numbers" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `maybe_count` of `routes.v1.Everything`: `optional int32 maybe_count = 13;`
+{-| `optional int32 maybe_count = 13;`
 -}
 maybeCount : Proto.Field.Descriptor
 maybeCount =
     Proto.Field.descriptor "maybe_count" "maybeCount" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `maybe_name` of `routes.v1.Everything`: `optional string maybe_name = 14;`
+{-| `optional string maybe_name = 14;`
 -}
 maybeName : Proto.Field.Descriptor
 maybeName =
     Proto.Field.descriptor "maybe_name" "maybeName" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `at` of `routes.v1.Everything`: `google.protobuf.Timestamp at = 15;`
+{-| `google.protobuf.Timestamp at = 15;`
 -}
 at : Proto.Field.Descriptor
 at =
     Proto.Field.descriptor "at" "at" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `wait` of `routes.v1.Everything`: `google.protobuf.Duration wait = 16;`
+{-| `google.protobuf.Duration wait = 16;`
 -}
 wait : Proto.Field.Descriptor
 wait =
     Proto.Field.descriptor "wait" "wait" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
 
 
-{-| The field `mask` of `routes.v1.Everything`: `google.protobuf.FieldMask mask = 17;`
+{-| `google.protobuf.FieldMask mask = 17;`
 -}
 mask : Proto.Field.Descriptor
 mask =
     Proto.Field.descriptor "mask" "mask" 17 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
 
 
-{-| The field `limit` of `routes.v1.Everything`: `google.protobuf.Int32Value limit = 18;`
+{-| `google.protobuf.Int32Value limit = 18;`
 -}
 limit : Proto.Field.Descriptor
 limit =
     Proto.Field.descriptor "limit" "limit" 18 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
 
 
-{-| The field `label` of `routes.v1.Everything`: `google.protobuf.StringValue label = 19;`
+{-| `google.protobuf.StringValue label = 19;`
 -}
 label : Proto.Field.Descriptor
 label =
     Proto.Field.descriptor "label" "label" 19 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
 
 
-{-| The field `inner` of `routes.v1.Everything`: `routes.v1.Inner inner = 20;`
+{-| `routes.v1.Inner inner = 20;`
 -}
 inner : Proto.Field.Descriptor
 inner =
     Proto.Field.descriptor "inner" "inner" 20 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Inner")
 
 
-{-| The field `text` of `routes.v1.Everything`, a member of the oneof `choice`: `string text = 21;`
+{-| `string text = 21;`, in oneof `choice`
 -}
 text : Proto.Field.Descriptor
 text =
@@ -199,7 +197,7 @@ text =
         |> Proto.Field.inOneof "choice"
 
 
-{-| The field `number` of `routes.v1.Everything`, a member of the oneof `choice`: `int32 number = 22;`
+{-| `int32 number = 22;`, in oneof `choice`
 -}
 number : Proto.Field.Descriptor
 number =

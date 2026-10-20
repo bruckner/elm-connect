@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.CreateNoteRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.CreateNoteRequest`
-
+{-| `message notes.v1.CreateNoteRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,14 +25,14 @@ descriptor =
         ]
 
 
-{-| The field `parent` of `notes.v1.CreateNoteRequest`: `string parent = 1;`
+{-| `string parent = 1;`
 -}
 parent : Proto.Field.Descriptor
 parent =
     Proto.Field.descriptor "parent" "parent" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `note` of `notes.v1.CreateNoteRequest`: `notes.v1.Note note = 2;`
+{-| `notes.v1.Note note = 2;`
 -}
 note : Proto.Field.Descriptor
 note =

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note.Edit`: its full name and its fields, in declaration order.
-
-An edit of a note.
+{-| An edit of a note.
 
 `message notes.v1.Note.Edit`
 
@@ -29,9 +27,9 @@ descriptor =
         ]
 
 
-{-| The field `author` of `notes.v1.Note.Edit`: `string author = 1;`
+{-| Who made it.
 
-Who made it.
+`string author = 1;`
 
 -}
 author : Proto.Field.Descriptor

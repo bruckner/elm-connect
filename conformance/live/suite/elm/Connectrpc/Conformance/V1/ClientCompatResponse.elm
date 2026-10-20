@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ClientCompatResponse`: its full name and its fields, in declaration order.
-
-The outcome of one ClientCompatRequest.
+{-| The outcome of one ClientCompatRequest.
 
 `message connectrpc.conformance.v1.ClientCompatResponse`
 
@@ -31,9 +29,9 @@ descriptor =
         ]
 
 
-{-| The field `test_name` of `connectrpc.conformance.v1.ClientCompatResponse`: `string test_name = 1;`
+{-| The test name that this response applies to.
 
-The test name that this response applies to.
+`string test_name = 1;`
 
 -}
 testName : Proto.Field.Descriptor
@@ -41,7 +39,7 @@ testName =
     Proto.Field.descriptor "test_name" "testName" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `response` of `connectrpc.conformance.v1.ClientCompatResponse`, a member of the oneof `result`: `connectrpc.conformance.v1.ClientResponseResult response = 2;`
+{-| `connectrpc.conformance.v1.ClientResponseResult response = 2;`, in oneof `result`
 -}
 response : Proto.Field.Descriptor
 response =
@@ -49,7 +47,7 @@ response =
         |> Proto.Field.inOneof "result"
 
 
-{-| The field `error` of `connectrpc.conformance.v1.ClientCompatResponse`, a member of the oneof `result`: `connectrpc.conformance.v1.ClientErrorResult error = 3;`
+{-| `connectrpc.conformance.v1.ClientErrorResult error = 3;`, in oneof `result`
 -}
 error : Proto.Field.Descriptor
 error =

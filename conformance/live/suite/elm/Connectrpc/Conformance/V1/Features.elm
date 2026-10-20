@@ -20,9 +20,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.Features`: its full name and its fields, in declaration order.
-
-Features define the feature set that a client or server supports. They are
+{-| Features define the feature set that a client or server supports. They are
 used to determine the server configurations and test cases that
 will be run. They are defined in YAML files and are specified as part of the
 --conf flag to the test runner.
@@ -51,10 +49,10 @@ descriptor =
         ]
 
 
-{-| The field `versions` of `connectrpc.conformance.v1.Features`: `repeated connectrpc.conformance.v1.HTTPVersion versions = 1;`
-
-Supported HTTP versions.
+{-| Supported HTTP versions.
 If empty, HTTP 1.1 and HTTP/2 are assumed.
+
+`repeated connectrpc.conformance.v1.HTTPVersion versions = 1;`
 
 -}
 versions : Proto.Field.Descriptor
@@ -62,10 +60,10 @@ versions =
     Proto.Field.descriptor "versions" "versions" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.HTTPVersion.descriptor)
 
 
-{-| The field `protocols` of `connectrpc.conformance.v1.Features`: `repeated connectrpc.conformance.v1.Protocol protocols = 2;`
-
-Supported protocols.
+{-| Supported protocols.
 If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
+
+`repeated connectrpc.conformance.v1.Protocol protocols = 2;`
 
 -}
 protocols : Proto.Field.Descriptor
@@ -73,10 +71,10 @@ protocols =
     Proto.Field.descriptor "protocols" "protocols" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Protocol.descriptor)
 
 
-{-| The field `codecs` of `connectrpc.conformance.v1.Features`: `repeated connectrpc.conformance.v1.Codec codecs = 3;`
-
-Supported codecs.
+{-| Supported codecs.
 If empty, "proto" and "json" are assumed.
+
+`repeated connectrpc.conformance.v1.Codec codecs = 3;`
 
 -}
 codecs : Proto.Field.Descriptor
@@ -84,10 +82,10 @@ codecs =
     Proto.Field.descriptor "codecs" "codecs" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Codec.descriptor)
 
 
-{-| The field `compressions` of `connectrpc.conformance.v1.Features`: `repeated connectrpc.conformance.v1.Compression compressions = 4;`
-
-Supported compression algorithms.
+{-| Supported compression algorithms.
 If empty, "identity" and "gzip" are assumed.
+
+`repeated connectrpc.conformance.v1.Compression compressions = 4;`
 
 -}
 compressions : Proto.Field.Descriptor
@@ -95,13 +93,13 @@ compressions =
     Proto.Field.descriptor "compressions" "compressions" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Compression.descriptor)
 
 
-{-| The field `stream_types` of `connectrpc.conformance.v1.Features`: `repeated connectrpc.conformance.v1.StreamType stream_types = 5;`
-
-Supported stream types.
+{-| Supported stream types.
 If empty, all stream types are assumed. This is usually for
 clients, since some client environments may not be able to
 support certain kinds of streaming operations, especially
 bidirectional streams.
+
+`repeated connectrpc.conformance.v1.StreamType stream_types = 5;`
 
 -}
 streamTypes : Proto.Field.Descriptor
@@ -109,10 +107,10 @@ streamTypes =
     Proto.Field.descriptor "stream_types" "streamTypes" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.StreamType.descriptor)
 
 
-{-| The field `supports_h2c` of `connectrpc.conformance.v1.Features`: `optional bool supports_h2c = 6;`
-
-Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
+{-| Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
 If absent, true is assumed.
+
+`optional bool supports_h2c = 6;`
 
 -}
 supportsH2c : Proto.Field.Descriptor
@@ -120,10 +118,10 @@ supportsH2c =
     Proto.Field.descriptor "supports_h2c" "supportsH2c" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_tls` of `connectrpc.conformance.v1.Features`: `optional bool supports_tls = 7;`
-
-Whether TLS is supported.
+{-| Whether TLS is supported.
 If absent, true is assumed.
+
+`optional bool supports_tls = 7;`
 
 -}
 supportsTls : Proto.Field.Descriptor
@@ -131,11 +129,11 @@ supportsTls =
     Proto.Field.descriptor "supports_tls" "supportsTls" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_tls_client_certs` of `connectrpc.conformance.v1.Features`: `optional bool supports_tls_client_certs = 8;`
-
-Whether the client supports TLS certificates.
+{-| Whether the client supports TLS certificates.
 If absent, false is assumed. This should not be set if
 supports\_tls is false.
+
+`optional bool supports_tls_client_certs = 8;`
 
 -}
 supportsTlsClientCerts : Proto.Field.Descriptor
@@ -143,10 +141,10 @@ supportsTlsClientCerts =
     Proto.Field.descriptor "supports_tls_client_certs" "supportsTlsClientCerts" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_trailers` of `connectrpc.conformance.v1.Features`: `optional bool supports_trailers = 9;`
-
-Whether trailers are supported.
+{-| Whether trailers are supported.
 If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
+
+`optional bool supports_trailers = 9;`
 
 -}
 supportsTrailers : Proto.Field.Descriptor
@@ -154,10 +152,10 @@ supportsTrailers =
     Proto.Field.descriptor "supports_trailers" "supportsTrailers" 9 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_half_duplex_bidi_over_http1` of `connectrpc.conformance.v1.Features`: `optional bool supports_half_duplex_bidi_over_http1 = 10;`
-
-Whether half duplex bidi streams are supported over HTTP/1.1.
+{-| Whether half duplex bidi streams are supported over HTTP/1.1.
 If absent, false is assumed.
+
+`optional bool supports_half_duplex_bidi_over_http1 = 10;`
 
 -}
 supportsHalfDuplexBidiOverHttp1 : Proto.Field.Descriptor
@@ -165,10 +163,10 @@ supportsHalfDuplexBidiOverHttp1 =
     Proto.Field.descriptor "supports_half_duplex_bidi_over_http1" "supportsHalfDuplexBidiOverHttp1" 10 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_connect_get` of `connectrpc.conformance.v1.Features`: `optional bool supports_connect_get = 11;`
-
-Whether Connect via GET is supported.
+{-| Whether Connect via GET is supported.
 If absent, true is assumed.
+
+`optional bool supports_connect_get = 11;`
 
 -}
 supportsConnectGet : Proto.Field.Descriptor
@@ -176,10 +174,10 @@ supportsConnectGet =
     Proto.Field.descriptor "supports_connect_get" "supportsConnectGet" 11 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `supports_message_receive_limit` of `connectrpc.conformance.v1.Features`: `optional bool supports_message_receive_limit = 12;`
-
-Whether a message receive limit is supported.
+{-| Whether a message receive limit is supported.
 If absent, true is assumed.
+
+`optional bool supports_message_receive_limit = 12;`
 
 -}
 supportsMessageReceiveLimit : Proto.Field.Descriptor

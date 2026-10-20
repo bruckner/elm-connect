@@ -26,19 +26,19 @@ elmConnectVersion_ =
 
 {-| `message int64_option.v1.Counters`
 
-  - `int64Value`: `int64 int64_value = 1;`
-  - `uint64Value`: `uint64 uint64_value = 2;`
-  - `sint64Value`: `sint64 sint64_value = 3;`
-  - `fixed64Value`: `fixed64 fixed64_value = 4;`
-  - `sfixed64Value`: `sfixed64 sfixed64_value = 5;`
-  - `exactId`: `int64 exact_id = 6 [jstype = JS_STRING];` JS\_STRING keeps a field a String under the option.
-  - `normal`: `int64 normal = 7 [jstype = JS_NORMAL];` JS\_NORMAL defers to the option.
-  - `maybeCount`: `optional int64 maybe_count = 8;`
-  - `samples`: `repeated int64 samples = 9;`
-  - `exactSamples`: `repeated uint64 exact_samples = 10 [jstype = JS_STRING];`
-  - `byId`: `map<int64, int64> by_id = 11;` Map keys stay strings, whatever the option; values follow it.
-  - `wrapped`: `google.protobuf.Int64Value wrapped = 12;`
-  - `limit`: `oneof limit` (`CountersLimit`)
+  - `int64Value`
+  - `uint64Value`
+  - `sint64Value`
+  - `fixed64Value`
+  - `sfixed64Value`
+  - `exactId`: JS\_STRING keeps a field a String under the option.
+  - `normal`: JS\_NORMAL defers to the option.
+  - `maybeCount`
+  - `samples`
+  - `exactSamples`
+  - `byId`: Map keys stay strings, whatever the option; values follow it.
+  - `wrapped`
+  - `limit`: See `CountersLimit`.
 
 -}
 type alias Counters =
@@ -61,8 +61,8 @@ type alias Counters =
 {-| `oneof limit` of `int64_option.v1.Counters`
 
   - `CountersLimitUnset`: none of the fields is set.
-  - `CountersLimitAtMost`: `int64 at_most = 13;`
-  - `CountersLimitExactly`: `int64 exactly = 14 [jstype = JS_STRING];`
+  - `CountersLimitAtMost`
+  - `CountersLimitExactly`
 
 -}
 type CountersLimit

@@ -27,9 +27,9 @@ elmConnectVersion_ =
 
 {-| `message notes.v1.Note`
 
-  - `name`: `string name = 1;`
-  - `author`: `users.v1.User author = 2;`
-  - `requiredRole`: `users.v1.Role required_role = 3;`
+  - `name`
+  - `author`
+  - `requiredRole`
 
 -}
 type alias Note =
@@ -41,7 +41,7 @@ type alias Note =
 
 {-| `message notes.v1.GetNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias GetNoteRequest =

@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.TestCase.ExpandedSize`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.TestCase.ExpandedSize`
-
+{-| `message connectrpc.conformance.v1.TestCase.ExpandedSize`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,12 +24,12 @@ descriptor =
         ]
 
 
-{-| The field `size_relative_to_limit` of `connectrpc.conformance.v1.TestCase.ExpandedSize`: `optional int32 size_relative_to_limit = 1;`
-
-The size, in bytes, relative to the limit. For example, to expand to a
+{-| The size, in bytes, relative to the limit. For example, to expand to a
 size that is exactly equal to the limit, this should be set to zero.
 Any value greater than zero indicates that the request size will be that
 many bytes over the limit.
+
+`optional int32 size_relative_to_limit = 1;`
 
 -}
 sizeRelativeToLimit : Proto.Field.Descriptor

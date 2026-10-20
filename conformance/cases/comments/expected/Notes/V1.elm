@@ -43,15 +43,9 @@ A second paragraph, with `code` and a list:
 
 `enum notes.v1.Visibility`
 
-  - `VisibilityUnspecified`: `VISIBILITY_UNSPECIFIED = 0;` Nobody said; read as private.
-
-  - `VisibilityPrivate`: `VISIBILITY_PRIVATE = 1;` Only the author.
-
-  - `VisibilityPublic`: `VISIBILITY_PUBLIC = 2 [deprecated = true];` Deprecated. Everyone.
-
-    Also `VISIBILITY_OPEN = 2;`.
-
-    The old name of VISIBILITY\_PUBLIC.
+  - `VisibilityUnspecified` (`VISIBILITY_UNSPECIFIED`): Nobody said; read as private.
+  - `VisibilityPrivate` (`VISIBILITY_PRIVATE`): Only the author.
+  - `VisibilityPublic` (`VISIBILITY_PUBLIC`, also `VISIBILITY_OPEN`): Everyone. Deprecated.
 
 -}
 type Visibility
@@ -66,7 +60,7 @@ Kept for older clients.
 
 `enum notes.v1.Legacy`
 
-  - `LegacyUnspecified`: `LEGACY_UNSPECIFIED = 0;`
+  - `LegacyUnspecified` (`LEGACY_UNSPECIFIED`)
 
 -}
 type Legacy
@@ -77,25 +71,27 @@ type Legacy
 
 `message notes.v1.Note`
 
-  - `name`: `string name = 1 [(google.api.field_behavior) = IDENTIFIER];` The resource name, `notes/{note}`.
+  - `name`: The resource name, `notes/{note}`. Identifier.
 
-  - `title`: `string title = 2 [json_name = "heading", (google.api.field_behavior) = REQUIRED];` The title, shown first.
+  - `title`: The title, shown first. Required.
 
-  - `visibility`: `notes.v1.Visibility visibility = 3;` Who may read it.
+  - `visibility`: Who may read it.
 
-  - `tags`: `repeated string tags = 4 [(google.api.field_behavior) = UNORDERED_LIST];` Labels.
+  - `tags`: Labels.
 
     In no order.
 
-  - `labels`: `map<string, string> labels = 5;`
+    Unordered.
 
-  - `pinned`: `optional bool pinned = 6;`
+  - `labels`
 
-  - `subject`: `string subject = 7 [deprecated = true];` Deprecated. Replaced by `title`.
+  - `pinned`
 
-  - `created`: `google.protobuf.Timestamp created = 8 [(google.api.field_behavior) = OUTPUT_ONLY];`
+  - `subject`: Deprecated. Replaced by `title`.
 
-  - `lastEvent`: `oneof last_event` (`NoteLastEvent`) What happened to the note last.
+  - `created`: Output only.
+
+  - `lastEvent`: What happened to the note last. See `NoteLastEvent`.
 
 -}
 type alias Note =
@@ -116,8 +112,8 @@ type alias Note =
 `oneof last_event` of `notes.v1.Note`
 
   - `NoteLastEventUnset`: none of the fields is set.
-  - `NoteLastEventArchived`: `google.protobuf.Timestamp archived = 9;` When it was archived.
-  - `NoteLastEventEdited`: `notes.v1.Note.Edit edited = 10;` The last edit.
+  - `NoteLastEventArchived`: When it was archived.
+  - `NoteLastEventEdited`: The last edit.
 
 -}
 type NoteLastEvent
@@ -130,7 +126,7 @@ type NoteLastEvent
 
 `message notes.v1.Note.Edit`
 
-  - `author`: `string author = 1;` Who made it.
+  - `author`: Who made it.
 
 -}
 type alias NoteEdit =
@@ -144,7 +140,7 @@ A note not yet saved.
 
 `message notes.v1.Draft`
 
-  - `text`: `string text = 1;`
+  - `text`
 
 -}
 type alias Draft =
@@ -154,7 +150,7 @@ type alias Draft =
 
 {-| `message notes.v1.GetNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias GetNoteRequest =
@@ -164,7 +160,7 @@ type alias GetNoteRequest =
 
 {-| `message notes.v1.ListNotesRequest`
 
-  - `parent`: `string parent = 1;`
+  - `parent`
 
 -}
 type alias ListNotesRequest =
@@ -174,7 +170,7 @@ type alias ListNotesRequest =
 
 {-| `message notes.v1.ListNotesResponse`
 
-  - `notes`: `repeated notes.v1.Note notes = 1;`
+  - `notes`
 
 -}
 type alias ListNotesResponse =
@@ -184,7 +180,7 @@ type alias ListNotesResponse =
 
 {-| `message notes.v1.CreateNoteRequest`
 
-  - `note`: `notes.v1.Note note = 1;`
+  - `note`
 
 -}
 type alias CreateNoteRequest =

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Node`: its full name and its fields, in declaration order.
-
-A message that refers to itself.
+{-| A message that refers to itself.
 
 `message nesting.v1.Node`
 
@@ -31,23 +29,23 @@ descriptor =
         ]
 
 
-{-| The field `label` of `nesting.v1.Node`: `string label = 1;`
+{-| `string label = 1;`
 -}
 label : Proto.Field.Descriptor
 label =
     Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `children` of `nesting.v1.Node`: `repeated nesting.v1.Node children = 2;`
+{-| `repeated nesting.v1.Node children = 2;`
 -}
 children : Proto.Field.Descriptor
 children =
     Proto.Field.descriptor "children" "children" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
 
 
-{-| The field `by_name` of `nesting.v1.Node`: `map<string, nesting.v1.Node> by_name = 3;`
+{-| A map value closes the cycle too.
 
-A map value closes the cycle too.
+`map<string, nesting.v1.Node> by_name = 3;`
 
 -}
 byName : Proto.Field.Descriptor

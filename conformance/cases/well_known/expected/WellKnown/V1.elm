@@ -28,37 +28,37 @@ elmConnectVersion_ =
 
 {-| `message well_known.v1.Event`
 
-  - `createdAt`: `google.protobuf.Timestamp created_at = 1;` Message types: a singular field has presence.
-  - `timeout`: `google.protobuf.Duration timeout = 2;`
-  - `updateMask`: `google.protobuf.FieldMask update_mask = 3;`
-  - `marker`: `google.protobuf.Empty marker = 4;` Empty carries nothing, presence included: (), never Maybe ().
-  - `metadata`: `google.protobuf.Struct metadata = 5;` Struct and ListValue are a Dict and a List of JSON values, with
+  - `createdAt`: Message types: a singular field has presence.
+  - `timeout`
+  - `updateMask`
+  - `marker`: Empty carries nothing, presence included: (), never Maybe ().
+  - `metadata`: Struct and ListValue are a Dict and a List of JSON values, with
     presence like any message. Value is any JSON, with presence too,
     `optional` or not: Nothing when absent, Just null when null.
-  - `payload`: `google.protobuf.Value payload = 6;`
-  - `items`: `google.protobuf.ListValue items = 7;`
-  - `ratio`: `google.protobuf.DoubleValue ratio = 8;` Wrappers: a Maybe of the scalar, never a Maybe of a record.
-  - `weight`: `google.protobuf.FloatValue weight = 9;`
-  - `bigCount`: `google.protobuf.Int64Value big_count = 10;`
-  - `bigTotal`: `google.protobuf.UInt64Value big_total = 11;`
-  - `count`: `google.protobuf.Int32Value count = 12;`
-  - `total`: `google.protobuf.UInt32Value total = 13;`
-  - `enabled`: `google.protobuf.BoolValue enabled = 14;`
-  - `nickname`: `google.protobuf.StringValue nickname = 15;`
-  - `avatar`: `google.protobuf.BytesValue avatar = 16;`
-  - `history`: `repeated google.protobuf.Timestamp history = 17;` Repeated and map values, and a oneof member.
-  - `limits`: `map<string, google.protobuf.Duration> limits = 18;`
-  - `values`: `repeated google.protobuf.Value values = 19;`
-  - `counts`: `repeated google.protobuf.Int32Value counts = 20;`
-  - `acked`: `optional google.protobuf.Empty acked = 24;`
-  - `pings`: `repeated google.protobuf.Empty pings = 25;`
-  - `seen`: `map<string, google.protobuf.Empty> seen = 26;`
-  - `records`: `repeated google.protobuf.Struct records = 27;`
-  - `columns`: `map<string, google.protobuf.ListValue> columns = 28;`
-  - `lastValue`: `optional google.protobuf.Value last_value = 31;` An optional Value is the same Maybe; its JSON name differs, so it
+  - `payload`
+  - `items`
+  - `ratio`: Wrappers: a Maybe of the scalar, never a Maybe of a record.
+  - `weight`
+  - `bigCount`
+  - `bigTotal`
+  - `count`
+  - `total`
+  - `enabled`
+  - `nickname`
+  - `avatar`
+  - `history`: Repeated and map values, and a oneof member.
+  - `limits`
+  - `values`
+  - `counts`
+  - `acked`
+  - `pings`
+  - `seen`
+  - `records`
+  - `columns`
+  - `lastValue`: An optional Value is the same Maybe; its JSON name differs, so it
     decodes with valueFieldEither. A map of Value holds it bare.
-  - `settings`: `map<string, google.protobuf.Value> settings = 32;`
-  - `when`: `oneof when` (`EventWhen`)
+  - `settings`
+  - `when`: See `EventWhen`.
 
 -}
 type alias Event =
@@ -96,11 +96,11 @@ type alias Event =
 {-| `oneof when` of `well_known.v1.Event`
 
   - `EventWhenUnset`: none of the fields is set.
-  - `EventWhenAt`: `google.protobuf.Timestamp at = 21;`
-  - `EventWhenAfter`: `google.protobuf.Duration after = 22;`
-  - `EventWhenWhenever`: `google.protobuf.Value whenever = 23;`
-  - `EventWhenSchedule`: `google.protobuf.Struct schedule = 29;`
-  - `EventWhenDates`: `google.protobuf.ListValue dates = 30;`
+  - `EventWhenAt`
+  - `EventWhenAfter`
+  - `EventWhenWhenever`
+  - `EventWhenSchedule`
+  - `EventWhenDates`
 
 -}
 type EventWhen

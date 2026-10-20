@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ClientCompatRequest.Cancel`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.ClientCompatRequest.Cancel`
-
+{-| `message connectrpc.conformance.v1.ClientCompatRequest.Cancel`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,13 +26,13 @@ descriptor =
         ]
 
 
-{-| The field `before_close_send` of `connectrpc.conformance.v1.ClientCompatRequest.Cancel`, a member of the oneof `cancel_timing`: `google.protobuf.Empty before_close_send = 1;`
-
-When present, the client should cancel _instead of_
+{-| When present, the client should cancel _instead of_
 closing the send side of the stream, after all requests
 have been sent.
 
 This applies only to client and bidi stream RPCs.
+
+`google.protobuf.Empty before_close_send = 1;`, in oneof `cancel_timing`
 
 -}
 beforeCloseSend : Proto.Field.Descriptor
@@ -44,9 +41,7 @@ beforeCloseSend =
         |> Proto.Field.inOneof "cancel_timing"
 
 
-{-| The field `after_close_send_ms` of `connectrpc.conformance.v1.ClientCompatRequest.Cancel`, a member of the oneof `cancel_timing`: `uint32 after_close_send_ms = 2;`
-
-When present, the client should delay for this many
+{-| When present, the client should delay for this many
 milliseconds after closing the send side of the stream
 and then cancel.
 
@@ -64,6 +59,8 @@ sent but before a response is received to cancel. So
 the client must arrange for the RPC to be canceled
 asynchronously before invoking the blocking unary call.
 
+`uint32 after_close_send_ms = 2;`, in oneof `cancel_timing`
+
 -}
 afterCloseSendMs : Proto.Field.Descriptor
 afterCloseSendMs =
@@ -71,13 +68,13 @@ afterCloseSendMs =
         |> Proto.Field.inOneof "cancel_timing"
 
 
-{-| The field `after_num_responses` of `connectrpc.conformance.v1.ClientCompatRequest.Cancel`, a member of the oneof `cancel_timing`: `uint32 after_num_responses = 3;`
-
-When present, the client should cancel right after
+{-| When present, the client should cancel right after
 reading this number of response messages from the stream.
 When present, this will be greater than zero.
 
 This applies only to server and bidi stream RPCs.
+
+`uint32 after_num_responses = 3;`, in oneof `cancel_timing`
 
 -}
 afterNumResponses : Proto.Field.Descriptor

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `notes.v1.Legacy`: its full name and its values, in declaration order.
-
-Deprecated.
+{-| Deprecated.
 
 Kept for older clients.
 

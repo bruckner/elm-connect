@@ -29,7 +29,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Clear` of `notes.v1.LegacyService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty)`
 -}
 descriptorClear : Proto.Method.Descriptor
 descriptorClear =

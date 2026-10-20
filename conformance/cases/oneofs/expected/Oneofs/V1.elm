@@ -29,8 +29,8 @@ elmConnectVersion_ =
 
 {-| `enum oneofs.v1.Color`
 
-  - `ColorUnspecified`: `COLOR_UNSPECIFIED = 0;`
-  - `ColorRed`: `COLOR_RED = 1;`
+  - `ColorUnspecified` (`COLOR_UNSPECIFIED`)
+  - `ColorRed` (`COLOR_RED`)
 
 -}
 type Color
@@ -40,7 +40,7 @@ type Color
 
 {-| `message oneofs.v1.Created`
 
-  - `title`: `string title = 1;`
+  - `title`
 
 -}
 type alias Created =
@@ -50,11 +50,11 @@ type alias Created =
 
 {-| `message oneofs.v1.NoteEvent`
 
-  - `id`: `string id = 1;`
-  - `kind`: `oneof kind` (`NoteEventKind`) Members of message, scalar and enum types; a multi-word member is
-    also read under its proto name.
-  - `source`: `oneof source` (`NoteEventSource`) A second oneof in the same message.
-  - `tags`: `repeated string tags = 8;`
+  - `id`
+  - `kind`: Members of message, scalar and enum types; a multi-word member is
+    also read under its proto name. See `NoteEventKind`.
+  - `source`: A second oneof in the same message. See `NoteEventSource`.
+  - `tags`
 
 -}
 type alias NoteEvent =
@@ -71,12 +71,12 @@ also read under its proto name.
 `oneof kind` of `oneofs.v1.NoteEvent`
 
   - `NoteEventKindUnset`: none of the fields is set.
-  - `NoteEventKindCreated`: `oneofs.v1.Created created = 2;`
-  - `NoteEventKindTitleChanged`: `string title_changed = 3;`
-  - `NoteEventKindRecolored`: `oneofs.v1.Color recolored = 4;`
-  - `NoteEventKindDeletedAt`: `int64 deleted_at = 5;`
-  - `NoteEventKindArchived`: `google.protobuf.Empty archived = 9;` Empty members carry nothing: constructors without an argument.
-  - `NoteEventKindClearedAll`: `google.protobuf.Empty cleared_all = 10;`
+  - `NoteEventKindCreated`
+  - `NoteEventKindTitleChanged`
+  - `NoteEventKindRecolored`
+  - `NoteEventKindDeletedAt`
+  - `NoteEventKindArchived`: Empty members carry nothing: constructors without an argument.
+  - `NoteEventKindClearedAll`
 
 -}
 type NoteEventKind
@@ -94,8 +94,8 @@ type NoteEventKind
 `oneof source` of `oneofs.v1.NoteEvent`
 
   - `NoteEventSourceUnset`: none of the fields is set.
-  - `NoteEventSourceUser`: `string user = 6;`
-  - `NoteEventSourceAutomated`: `bool automated = 7;`
+  - `NoteEventSourceUser`
+  - `NoteEventSourceAutomated`
 
 -}
 type NoteEventSource
@@ -108,7 +108,7 @@ type NoteEventSource
 
 `message oneofs.v1.Choice`
 
-  - `value`: `oneof value` (`ChoiceValue`)
+  - `value`: See `ChoiceValue`.
 
 -}
 type alias Choice =
@@ -119,8 +119,8 @@ type alias Choice =
 {-| `oneof value` of `oneofs.v1.Choice`
 
   - `ChoiceValueUnset`: none of the fields is set.
-  - `ChoiceValueNumber`: `double number = 1;`
-  - `ChoiceValueText`: `string text = 2 [json_name = "label"];`
+  - `ChoiceValueNumber`
+  - `ChoiceValueText`
 
 -}
 type ChoiceValue

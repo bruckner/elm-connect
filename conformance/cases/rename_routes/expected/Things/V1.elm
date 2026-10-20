@@ -27,7 +27,7 @@ elmConnectVersion_ =
 
 {-| `message things.v1.Thing`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias Thing =
@@ -40,7 +40,7 @@ type alias Thing =
 
 `message things.v1.Filter`
 
-  - `status`: `string state = 1;`
+  - `status`
 
 -}
 type alias Criteria =
@@ -53,9 +53,9 @@ type alias Criteria =
 
 `message things.v1.GetThingRequest`
 
-  - `resource`: `string name = 1;`
-  - `limit`: `int32 page_size = 2;`
-  - `filter`: `things.v1.Filter filter = 3;`
+  - `resource`
+  - `limit`
+  - `filter`
 
 -}
 type alias GetThingRequest =

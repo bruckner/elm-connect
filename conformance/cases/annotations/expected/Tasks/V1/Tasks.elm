@@ -23,7 +23,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetTask(GetTaskRequest) returns (Task)`
 -}
 descriptorGetTask : Proto.Method.Descriptor
 descriptorGetTask =
@@ -35,7 +35,7 @@ descriptorGetTask =
         []
 
 
-{-| What the proto says about the method `PutTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+{-| `rpc PutTask(Task) returns (Task)`
 -}
 descriptorPutTask : Proto.Method.Descriptor
 descriptorPutTask =
@@ -47,7 +47,7 @@ descriptorPutTask =
         []
 
 
-{-| What the proto says about the method `CloseTask` of `tasks.v1.Tasks`: its names, idempotency, types and HTTP bindings.
+{-| `rpc CloseTask(GetTaskRequest) returns (Task)`
 -}
 descriptorCloseTask : Proto.Method.Descriptor
 descriptorCloseTask =

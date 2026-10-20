@@ -32,8 +32,8 @@ elmConnectVersion_ =
 
 {-| `enum unused.v1.Char`
 
-  - `CharUnspecified`: `CHAR_UNSPECIFIED = 0;`
-  - `CharA`: `CHAR_A = 1;`
+  - `CharUnspecified` (`CHAR_UNSPECIFIED`)
+  - `CharA` (`CHAR_A`)
 
 -}
 type Char
@@ -47,7 +47,7 @@ not use unqualified: no field is a map, so `Dict` is free, and `Result`,
 
 `message unused.v1.Dict`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias Dict =
@@ -57,9 +57,9 @@ type alias Dict =
 
 {-| `message unused.v1.Result`
 
-  - `ok`: `bool ok = 1;`
-  - `dict`: `unused.v1.Dict dict = 2;`
-  - `chars`: `repeated unused.v1.Char chars = 3;`
+  - `ok`
+  - `dict`
+  - `chars`
 
 -}
 type alias Result =

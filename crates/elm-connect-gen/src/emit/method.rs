@@ -49,11 +49,7 @@ impl Emitter {
             ],
         );
         Decl::Value {
-            doc: Some(format!(
-                "What the proto says about the method `{}` of `{service}`: its names, \
-                 idempotency, types and HTTP bindings.",
-                method.proto_name
-            )),
+            doc: Some(docs::descriptor(&method.doc)),
             name: method.descriptor_name(),
             annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
             params: Vec::new(),

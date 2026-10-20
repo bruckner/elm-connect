@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `maps.v1.Role`: its full name and its values, in declaration order.
-
-`enum maps.v1.Role`
+{-| `enum maps.v1.Role`
 
   - `ROLE_UNSPECIFIED = 0;`
   - `ROLE_OWNER = 1;`

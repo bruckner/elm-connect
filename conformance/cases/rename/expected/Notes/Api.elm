@@ -29,8 +29,8 @@ elmConnectVersion_ =
 
 {-| `enum notes.v1.Visibility`
 
-  - `AudienceUnspecified`: `VISIBILITY_UNSPECIFIED = 0;`
-  - `Everyone`: `VISIBILITY_PUBLIC = 1;`
+  - `AudienceUnspecified` (`VISIBILITY_UNSPECIFIED`)
+  - `Everyone` (`VISIBILITY_PUBLIC`)
 
 -}
 type Audience
@@ -40,10 +40,10 @@ type Audience
 
 {-| `message notes.v1.Note`
 
-  - `heading`: `string title = 1;`
-  - `visibility`: `notes.v1.Visibility visibility = 2;`
-  - `revisions`: `repeated notes.v1.Note.Revision revisions = 3;`
-  - `body`: `oneof kind` (`MemoBody`)
+  - `heading`
+  - `visibility`
+  - `revisions`
+  - `body`: See `MemoBody`.
 
 -}
 type alias Memo =
@@ -57,8 +57,8 @@ type alias Memo =
 {-| `oneof kind` of `notes.v1.Note`
 
   - `MemoBodyUnset`: none of the fields is set.
-  - `MemoBodyText`: `string text = 4;`
-  - `BodyUrl`: `string link = 5;`
+  - `MemoBodyText`
+  - `BodyUrl`
 
 -}
 type MemoBody
@@ -69,7 +69,7 @@ type MemoBody
 
 {-| `message notes.v1.Note.Revision`
 
-  - `number`: `int32 number = 1;`
+  - `number`
 
 -}
 type alias Edit =
@@ -79,7 +79,7 @@ type alias Edit =
 
 {-| `message notes.v1.GetNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias GetNoteRequest =

@@ -26,7 +26,7 @@ elmConnectVersion_ =
 
 {-| `message clock.v1.Alarm`
 
-  - `at`: `google.protobuf.Timestamp at = 1;`
+  - `at`
 
 -}
 type alias Alarm =

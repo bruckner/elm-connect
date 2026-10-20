@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `field_order.v1.Mood`: its full name and its values, in declaration order.
-
-`enum field_order.v1.Mood`
+{-| `enum field_order.v1.Mood`
 
   - `MOOD_UNSPECIFIED = 0;`
   - `MOOD_CALM = 1;`

@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ReadFileRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.ReadFileRequest`
-
+{-| `message notes.v1.ReadFileRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `path` of `notes.v1.ReadFileRequest`: `string path = 1;`
+{-| `string path = 1;`
 -}
 path : Proto.Field.Descriptor
 path =

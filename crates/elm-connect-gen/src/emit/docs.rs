@@ -1,19 +1,20 @@
 //! The documentation of generated declarations (design §3): what the
 //! proto says about each element, on the declaration it becomes.
 //!
-//! The declaration an element becomes carries the proto's comment and the
-//! element's one-line declaration, and `Deprecated.` first when the proto
-//! deprecates it: a message's record alias lists its fields, an enum's
-//! custom type its constructors, a oneof's custom type its members, each
-//! with its own declaration line and comment. Descriptors keep their
-//! sentence and add the same. Codecs, defaults and typed values get one
-//! sentence naming their type. The text is Markdown, which the printer
+//! The declaration an element becomes carries the proto's comment, then
+//! the element's one-line declaration, and `Deprecated.` first when the
+//! proto deprecates it: a message's record alias lists its fields, an
+//! enum's custom type its constructors, a oneof's custom type its members,
+//! each with its comment and, for a field, its behaviors in words. A
+//! descriptor carries the comment and the declaration line alone, a
+//! field's descriptor value the field's full line. Codecs, defaults and
+//! typed values get one sentence naming their type. The text is Markdown, which the printer
 //! puts in elm-format's form ([`crate::elm::markdown`]); each comment is
 //! settled on its own first, so a construct it leaves open cannot take in
 //! the text after it.
 
 use crate::elm::markdown;
-use crate::ir::{Doc, Enum, HttpRule, Message, Method, Oneof, Service};
+use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Service};
 
 /// `text` as a Markdown code span.
 pub(super) fn code(text: &str) -> String {
@@ -104,13 +105,9 @@ fn list(items: Vec<String>) -> String {
 }
 
 /// The doc of a message's record alias: the proto's part, its
-/// declaration, then an item per record field (`fields`, each a head and
-/// the field's doc).
-pub(super) fn message(message: &Message, fields: &[(String, &Doc)]) -> String {
-    let items = fields
-        .iter()
-        .map(|(head, doc)| item(head, &item_rest(doc)))
-        .collect();
+/// declaration, then `items`, one per record field ([`field_item`],
+/// [`oneof_item`]).
+pub(super) fn message(message: &Message, items: Vec<String>) -> String {
     paragraphs(
         proto_part(&message.doc)
             .into_iter()
@@ -118,20 +115,76 @@ pub(super) fn message(message: &Message, fields: &[(String, &Doc)]) -> String {
     )
 }
 
-/// The head of a record field's item: `` `name`: `string name = 1;` ``.
-pub(super) fn field_head(elm_name: &str, doc: &Doc) -> String {
-    format!("{}: {}", code(elm_name), code(&doc.declaration))
+/// The item of a record field: its Elm name, then `Deprecated.`, its
+/// comment and its behaviors as words (`Required.`); the name alone when
+/// there is nothing else. The field's declaration is on its descriptor
+/// value.
+pub(super) fn field_item(elm_name: &str, doc: &Doc, behavior: &[FieldBehavior]) -> String {
+    let words = behavior_words(behavior);
+    named_item(&code(elm_name), with_sentence(item_rest(doc), &words))
 }
 
-/// The head of a oneof's item in its message's record:
-/// `` `kind`: `oneof kind` (`NoteEventKind`) ``.
-pub(super) fn oneof_head(oneof: &Oneof) -> String {
-    format!(
-        "{}: {} ({})",
-        code(&oneof.elm_field_name),
-        code(&oneof.doc.declaration),
-        code(&oneof.elm_type_name)
+/// The item of a oneof in its message's record: its Elm field name, its
+/// comment, and the name of its custom type.
+pub(super) fn oneof_item(oneof: &Oneof) -> String {
+    let pointer = format!("See {}.", code(&oneof.elm_type_name));
+    named_item(
+        &code(&oneof.elm_field_name),
+        with_sentence(item_rest(&oneof.doc), &pointer),
     )
+}
+
+/// An item of `head` followed by a colon and `rest`, or `head` alone
+/// when `rest` is empty.
+fn named_item(head: &str, rest: Vec<String>) -> String {
+    if rest.is_empty() {
+        item(head, &[])
+    } else {
+        item(&format!("{head}:"), &rest)
+    }
+}
+
+/// `parts` followed by `sentence`: on the same line when `parts` is one
+/// paragraph, as a paragraph of its own when it has several blocks, alone
+/// when it is empty. Nothing is added for an empty `sentence`.
+fn with_sentence(mut parts: Vec<String>, sentence: &str) -> Vec<String> {
+    if sentence.is_empty() {
+        return parts;
+    }
+    match parts.as_mut_slice() {
+        [] => parts.push(sentence.to_owned()),
+        [only] if is_one_paragraph(only) => {
+            only.push(' ');
+            only.push_str(sentence);
+        }
+        _ => parts.push(sentence.to_owned()),
+    }
+    parts
+}
+
+/// Whether `blocks`, in elm-format's form, is a single paragraph.
+fn is_one_paragraph(blocks: &str) -> bool {
+    markdown::starts_with_paragraph(blocks) && !blocks.contains("\n\n")
+}
+
+/// A field's `google.api.field_behavior` values as words, in the proto's
+/// order: `Required. Output only.` `OPTIONAL` says nothing a reader
+/// needs, and `NON_EMPTY_DEFAULT` concerns the server's defaults, so
+/// neither is written.
+fn behavior_words(behavior: &[FieldBehavior]) -> String {
+    behavior
+        .iter()
+        .filter_map(|behavior| match behavior {
+            FieldBehavior::Required => Some("Required."),
+            FieldBehavior::OutputOnly => Some("Output only."),
+            FieldBehavior::InputOnly => Some("Input only."),
+            FieldBehavior::Immutable => Some("Immutable."),
+            FieldBehavior::Identifier => Some("Identifier."),
+            FieldBehavior::UnorderedList => Some("Unordered."),
+            FieldBehavior::Optional | FieldBehavior::NonEmptyDefault => None,
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// An item's text after its head: `Deprecated.` and the comment, as one
@@ -149,25 +202,31 @@ fn item_rest(doc: &Doc) -> Vec<String> {
 }
 
 /// The doc of an enum's custom type: the proto's part, its declaration,
-/// then an item per constructor with the declaration and comment of the
-/// value it is named for, then those of the value's aliases.
+/// then an item per constructor: the constructor, the proto name of its
+/// value and of each alias, the value's comment, and `Deprecated.` when
+/// the value is. The number and each alias's own comment are on the
+/// enum's descriptor.
 pub(super) fn enumeration(enumeration: &Enum) -> String {
     let items = enumeration
         .values()
         .map(|value| {
+            let names = std::iter::once(code(&value.proto_name))
+                .chain(
+                    value
+                        .aliases
+                        .iter()
+                        .map(|alias| format!("also {}", code(alias))),
+                )
+                .collect::<Vec<_>>()
+                .join(", ");
+            let head = format!("{} ({names})", code(&value.elm_ctor));
             let doc = enumeration.value_doc(&value.proto_name);
-            let line = doc.map_or_else(String::new, |doc| doc.declaration.clone());
-            let head = format!("{}: {}", code(&value.elm_ctor), code(&line));
-            let mut rest = doc.map(item_rest).unwrap_or_default();
-            for alias in &value.aliases {
-                if let Some(doc) = enumeration.value_doc(alias) {
-                    rest.push(paragraphs(
-                        std::iter::once(format!("Also {}.", code(&doc.declaration)))
-                            .chain(item_rest(doc)),
-                    ));
-                }
-            }
-            item(&head, &rest)
+            let rest = doc.and_then(item_comment).into_iter().collect();
+            let deprecated = doc.is_some_and(|doc| doc.deprecated);
+            named_item(
+                &head,
+                with_sentence(rest, if deprecated { "Deprecated." } else { "" }),
+            )
         })
         .collect();
     paragraphs(
@@ -179,19 +238,18 @@ pub(super) fn enumeration(enumeration: &Enum) -> String {
 
 /// The doc of a oneof's custom type: the proto's part, its declaration
 /// with its message's name, then an item for the unset constructor and
-/// one per member.
+/// one per member, shaped as a record field's ([`field_item`]).
 pub(super) fn oneof(message: &str, oneof: &Oneof) -> String {
     let unset = item(
         &format!("{}: none of the fields is set.", code(&oneof.unset_ctor)),
         &[],
     );
     let members = oneof.variants.iter().map(|variant| {
-        let head = format!(
-            "{}: {}",
-            code(&variant.elm_ctor),
-            code(&variant.doc.declaration)
-        );
-        item(&head, &item_rest(&variant.doc))
+        field_item(
+            &variant.elm_ctor,
+            &variant.doc,
+            &variant.annotations.behavior,
+        )
     });
     paragraphs(proto_part(&oneof.doc).into_iter().chain([
         format!("{} of {}", code(&oneof.doc.declaration), code(message)),
@@ -199,42 +257,39 @@ pub(super) fn oneof(message: &str, oneof: &Oneof) -> String {
     ]))
 }
 
-/// The doc of a message's `descriptor`: `sentence`, then the proto's part
-/// and the declaration.
-pub(super) fn descriptor(sentence: String, doc: &Doc) -> String {
-    paragraphs(
-        std::iter::once(sentence)
-            .chain(proto_part(doc))
-            .chain([code(&doc.declaration)]),
-    )
+/// The doc of a message's `descriptor` or a method's: the proto's part,
+/// then the declaration.
+pub(super) fn descriptor(doc: &Doc) -> String {
+    paragraphs(proto_part(doc).into_iter().chain([code(&doc.declaration)]))
 }
 
-/// The doc of a field's descriptor value: `sentence` ending in the field's
-/// declaration, then the proto's part.
-pub(super) fn field_descriptor(sentence: &str, doc: &Doc) -> String {
-    paragraphs(
-        std::iter::once(format!("{sentence}: {}", code(&doc.declaration))).chain(proto_part(doc)),
-    )
+/// The doc of a field's descriptor value: the proto's part, then the
+/// field's declaration and the oneof it is a member of, if any.
+pub(super) fn field_descriptor(doc: &Doc, oneof: Option<&str>) -> String {
+    let line = match oneof {
+        Some(oneof) => format!("{}, in oneof {}", code(&doc.declaration), code(oneof)),
+        None => code(&doc.declaration),
+    };
+    paragraphs(proto_part(doc).into_iter().chain([line]))
 }
 
-/// The doc of an enum's `descriptor`: `sentence`, the proto's part and the
+/// The doc of an enum's `descriptor`: the proto's part and the
 /// declaration, then an item per declared value name, aliases included.
-pub(super) fn enum_descriptor(sentence: String, enumeration: &Enum) -> String {
+pub(super) fn enum_descriptor(enumeration: &Enum) -> String {
     let items = enumeration
         .declared()
         .filter_map(|(name, _)| enumeration.value_doc(name))
         .map(|doc| item(&code(&doc.declaration), &item_rest(doc)))
         .collect();
     paragraphs(
-        std::iter::once(sentence)
-            .chain(proto_part(&enumeration.doc))
+        proto_part(&enumeration.doc)
+            .into_iter()
             .chain([code(&enumeration.doc.declaration), list(items)]),
     )
 }
 
-/// The doc of a method's call: `Deprecated.` when it is, then its
-/// declaration, its Connect path and its HTTP bindings as its rule writes
-/// them, then its comment.
+/// The doc of a method's call: the proto's part, then its declaration,
+/// its Connect path and its HTTP bindings as its rule writes them.
 pub(super) fn method(service: &str, method: &Method) -> String {
     let routes = match &method.http {
         Some(rule) => {
@@ -255,13 +310,7 @@ pub(super) fn method(service: &str, method: &Method) -> String {
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
     );
-    let deprecated = method.doc.deprecated.then(|| "Deprecated.".to_owned());
-    paragraphs(
-        deprecated
-            .into_iter()
-            .chain([head])
-            .chain(comment(&method.doc)),
-    )
+    paragraphs(proto_part(&method.doc).into_iter().chain([head]))
 }
 
 /// One binding of an HTTP rule: `` `GET /v1/{name=notes/*}` ``, then its
@@ -333,5 +382,32 @@ mod tests {
             "  - `a`\n\n      - x\n      - y"
         );
         assert_eq!(item("`a`", &[]), "  - `a`");
+    }
+
+    #[test]
+    fn field_items_give_the_comment_then_the_behaviors() {
+        use FieldBehavior::*;
+        let doc = |comment: Option<&str>, deprecated| Doc {
+            comment: comment.map(str::to_owned),
+            declaration: "string a = 1;".into(),
+            deprecated,
+        };
+        assert_eq!(field_item("a", &doc(None, false), &[]), "  - `a`");
+        assert_eq!(
+            field_item("a", &doc(Some("The a."), false), &[Required, Optional]),
+            "  - `a`: The a. Required."
+        );
+        assert_eq!(
+            field_item("a", &doc(None, true), &[OutputOnly, UnorderedList]),
+            "  - `a`: Deprecated. Output only. Unordered."
+        );
+        assert_eq!(
+            field_item("a", &doc(Some("One.\n\nTwo."), false), &[Immutable]),
+            "  - `a`: One.\n\n    Two.\n\n    Immutable."
+        );
+        assert_eq!(
+            behavior_words(&[NonEmptyDefault, Identifier, InputOnly]),
+            "Identifier. Input only."
+        );
     }
 }

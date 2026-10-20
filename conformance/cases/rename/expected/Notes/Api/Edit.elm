@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note.Revision`: its full name and its fields, in declaration order.
-
-`message notes.v1.Note.Revision`
-
+{-| `message notes.v1.Note.Revision`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `number` of `notes.v1.Note.Revision`: `int32 number = 1;`
+{-| `int32 number = 1;`
 -}
 number : Proto.Field.Descriptor
 number =

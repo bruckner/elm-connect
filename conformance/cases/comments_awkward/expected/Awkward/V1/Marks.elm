@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `awkward.v1.Marks`: its full name and its values, in declaration order.
-
-Lines that start like Markdown inside an enum's values.
+{-| Lines that start like Markdown inside an enum's values.
 
 `enum awkward.v1.Marks`
 

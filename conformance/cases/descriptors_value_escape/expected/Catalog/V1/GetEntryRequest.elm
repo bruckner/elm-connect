@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `catalog.v1.GetEntryRequest`: its full name and its fields, in declaration order.
-
-`message catalog.v1.GetEntryRequest`
-
+{-| `message catalog.v1.GetEntryRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,21 +26,21 @@ descriptor =
         ]
 
 
-{-| The field `name` of `catalog.v1.GetEntryRequest`: `string name = 1;`
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `descriptor` of `catalog.v1.GetEntryRequest`: `string descriptor = 2;`
+{-| `string descriptor = 2;`
 -}
 descriptor_ : Proto.Field.Descriptor
 descriptor_ =
     Proto.Field.descriptor "descriptor" "descriptor" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `part` of `catalog.v1.GetEntryRequest`: `catalog.v1.Part part = 3;`
+{-| `catalog.v1.Part part = 3;`
 -}
 part : Proto.Field.Descriptor
 part =

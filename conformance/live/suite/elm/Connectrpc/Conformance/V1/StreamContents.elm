@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.StreamContents`: its full name and its fields, in declaration order.
-
-StreamContents represents a sequence of messages in a request body.
+{-| StreamContents represents a sequence of messages in a request body.
 
 `message connectrpc.conformance.v1.StreamContents`
 
@@ -29,9 +27,9 @@ descriptor =
         ]
 
 
-{-| The field `items` of `connectrpc.conformance.v1.StreamContents`: `repeated connectrpc.conformance.v1.StreamContents.StreamItem items = 1;`
+{-| The messages in the stream.
 
-The messages in the stream.
+`repeated connectrpc.conformance.v1.StreamContents.StreamItem items = 1;`
 
 -}
 items : Proto.Field.Descriptor

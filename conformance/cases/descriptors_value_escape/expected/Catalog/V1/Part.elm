@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `catalog.v1.Part`: its full name and its fields, in declaration order.
-
-A oneof member named `descriptor` takes `descriptor_` too.
+{-| A oneof member named `descriptor` takes `descriptor_` too.
 
 `message catalog.v1.Part`
 
@@ -30,7 +28,7 @@ descriptor =
         ]
 
 
-{-| The field `descriptor` of `catalog.v1.Part`, a member of the oneof `kind`: `string descriptor = 1;`
+{-| `string descriptor = 1;`, in oneof `kind`
 -}
 descriptor_ : Proto.Field.Descriptor
 descriptor_ =
@@ -38,7 +36,7 @@ descriptor_ =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `count` of `catalog.v1.Part`, a member of the oneof `kind`: `int32 count = 2;`
+{-| `int32 count = 2;`, in oneof `kind`
 -}
 count : Proto.Field.Descriptor
 count =

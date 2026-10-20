@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `awkward.v1.Docs`: its full name and its fields, in declaration order.
-
-`@docs` at the start.
+{-| `@docs` at the start.
 
 `message awkward.v1.Docs`
 
@@ -29,9 +27,9 @@ descriptor =
         ]
 
 
-{-| The field `field` of `awkward.v1.Docs`: `string field = 1;`
+{-| `@docs` field
 
-`@docs` field
+`string field = 1;`
 
 -}
 field : Proto.Field.Descriptor

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.Protocol`: its full name and its values, in declaration order.
-
-`enum connectrpc.conformance.v1.Protocol`
+{-| `enum connectrpc.conformance.v1.Protocol`
 
   - `PROTOCOL_UNSPECIFIED = 0;`
   - `PROTOCOL_CONNECT = 1;`

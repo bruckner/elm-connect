@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.BadRequest.FieldViolation`: its full name and its fields, in declaration order.
-
-A message type used to describe a single bad request field.
+{-| A message type used to describe a single bad request field.
 
 `message google.rpc.BadRequest.FieldViolation`
 
@@ -32,9 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `field` of `google.rpc.BadRequest.FieldViolation`: `string field = 1;`
-
-A path that leads to a field in the request body. The value will be a
+{-| A path that leads to a field in the request body. The value will be a
 sequence of dot-separated identifiers that identify a protocol buffer
 field.
 
@@ -74,15 +70,17 @@ In JSON, the same values are represented as:
   - `emailAddresses[2].type[1]` for a violation in the second `type`
     value in the third `emailAddresses` message.
 
+`string field = 1;`
+
 -}
 field : Proto.Field.Descriptor
 field =
     Proto.Field.descriptor "field" "field" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `description` of `google.rpc.BadRequest.FieldViolation`: `string description = 2;`
+{-| A description of why the request element is bad.
 
-A description of why the request element is bad.
+`string description = 2;`
 
 -}
 description : Proto.Field.Descriptor
@@ -90,14 +88,14 @@ description =
     Proto.Field.descriptor "description" "description" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `reason` of `google.rpc.BadRequest.FieldViolation`: `string reason = 3;`
-
-The reason of the field-level error. This is a constant value that
+{-| The reason of the field-level error. This is a constant value that
 identifies the proximate cause of the field-level error. It should
 uniquely identify the type of the FieldViolation within the scope of the
 google.rpc.ErrorInfo.domain. This should be at most 63
 characters and match a regular expression of `[A-Z][A-Z0-9_]+[A-Z0-9]`,
 which represents UPPER\_SNAKE\_CASE.
+
+`string reason = 3;`
 
 -}
 reason : Proto.Field.Descriptor
@@ -105,10 +103,10 @@ reason =
     Proto.Field.descriptor "reason" "reason" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `localized_message` of `google.rpc.BadRequest.FieldViolation`: `google.rpc.LocalizedMessage localized_message = 4;`
-
-Provides a localized error message for field-level errors that is safe to
+{-| Provides a localized error message for field-level errors that is safe to
 return to the API consumer.
+
+`google.rpc.LocalizedMessage localized_message = 4;`
 
 -}
 localizedMessage : Proto.Field.Descriptor

@@ -20,9 +20,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ConfigCase`: its full name and its fields, in declaration order.
-
-ConfigCase represents a single resolved configuration case. When tests are
+{-| ConfigCase represents a single resolved configuration case. When tests are
 run, the Config and the supported features therein are used to compute all
 of the cases relevant to the implementation under test. These configuration
 cases are then used to select which test cases are applicable.
@@ -47,9 +45,9 @@ descriptor =
         ]
 
 
-{-| The field `version` of `connectrpc.conformance.v1.ConfigCase`: `connectrpc.conformance.v1.HTTPVersion version = 1;`
+{-| If unspecified, indicates cases for all versions.
 
-If unspecified, indicates cases for all versions.
+`connectrpc.conformance.v1.HTTPVersion version = 1;`
 
 -}
 version : Proto.Field.Descriptor
@@ -57,9 +55,9 @@ version =
     Proto.Field.descriptor "version" "version" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.HTTPVersion.descriptor)
 
 
-{-| The field `protocol` of `connectrpc.conformance.v1.ConfigCase`: `connectrpc.conformance.v1.Protocol protocol = 2;`
+{-| If unspecified, indicates cases for all protocols.
 
-If unspecified, indicates cases for all protocols.
+`connectrpc.conformance.v1.Protocol protocol = 2;`
 
 -}
 protocol : Proto.Field.Descriptor
@@ -67,9 +65,9 @@ protocol =
     Proto.Field.descriptor "protocol" "protocol" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Protocol.descriptor)
 
 
-{-| The field `codec` of `connectrpc.conformance.v1.ConfigCase`: `connectrpc.conformance.v1.Codec codec = 3;`
+{-| If unspecified, indicates cases for all codecs.
 
-If unspecified, indicates cases for all codecs.
+`connectrpc.conformance.v1.Codec codec = 3;`
 
 -}
 codec : Proto.Field.Descriptor
@@ -77,9 +75,9 @@ codec =
     Proto.Field.descriptor "codec" "codec" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Codec.descriptor)
 
 
-{-| The field `compression` of `connectrpc.conformance.v1.ConfigCase`: `connectrpc.conformance.v1.Compression compression = 4;`
+{-| If unspecified, indicates cases for all compression algorithms.
 
-If unspecified, indicates cases for all compression algorithms.
+`connectrpc.conformance.v1.Compression compression = 4;`
 
 -}
 compression : Proto.Field.Descriptor
@@ -87,9 +85,9 @@ compression =
     Proto.Field.descriptor "compression" "compression" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Compression.descriptor)
 
 
-{-| The field `stream_type` of `connectrpc.conformance.v1.ConfigCase`: `connectrpc.conformance.v1.StreamType stream_type = 5;`
+{-| If unspecified, indicates cases for all stream types.
 
-If unspecified, indicates cases for all stream types.
+`connectrpc.conformance.v1.StreamType stream_type = 5;`
 
 -}
 streamType : Proto.Field.Descriptor
@@ -97,10 +95,10 @@ streamType =
     Proto.Field.descriptor "stream_type" "streamType" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.StreamType.descriptor)
 
 
-{-| The field `use_tls` of `connectrpc.conformance.v1.ConfigCase`: `optional bool use_tls = 6;`
-
-If absent, indicates cases for plaintext (no TLS) but also for
+{-| If absent, indicates cases for plaintext (no TLS) but also for
 TLS if features indicate that TLS is supported.
+
+`optional bool use_tls = 6;`
 
 -}
 useTls : Proto.Field.Descriptor
@@ -108,10 +106,10 @@ useTls =
     Proto.Field.descriptor "use_tls" "useTls" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `use_tls_client_certs` of `connectrpc.conformance.v1.ConfigCase`: `optional bool use_tls_client_certs = 7;`
-
-If absent, indicates cases without client certs but also cases
+{-| If absent, indicates cases without client certs but also cases
 that use client certs if features indicate they are supported.
+
+`optional bool use_tls_client_certs = 7;`
 
 -}
 useTlsClientCerts : Proto.Field.Descriptor
@@ -119,11 +117,11 @@ useTlsClientCerts =
     Proto.Field.descriptor "use_tls_client_certs" "useTlsClientCerts" 7 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `use_message_receive_limit` of `connectrpc.conformance.v1.ConfigCase`: `optional bool use_message_receive_limit = 8;`
-
-If absent, indicates cases that do not test message receive
+{-| If absent, indicates cases that do not test message receive
 limits but also cases that do test message receive limits if
 features indicate they are supported.
+
+`optional bool use_message_receive_limit = 8;`
 
 -}
 useMessageReceiveLimit : Proto.Field.Descriptor

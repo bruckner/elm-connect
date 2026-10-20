@@ -16,10 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
-
-`message notes.v1.Note`
-
+{-| `message notes.v1.Note`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -34,23 +31,23 @@ descriptor =
         ]
 
 
-{-| The field `title` of `notes.v1.Note`: `string title = 1;`
+{-| `string title = 1;`
 -}
 title : Proto.Field.Descriptor
 title =
     Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `author` of `notes.v1.Note`: `users.v1.User author = 2;`
+{-| `users.v1.User author = 2;`
 -}
 author : Proto.Field.Descriptor
 author =
     Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
 
 
-{-| The field `required_role` of `notes.v1.Note`: `users.v1.Role required_role = 3;`
+{-| A plain enum field reads absence as the other module's zero value.
 
-A plain enum field reads absence as the other module's zero value.
+`users.v1.Role required_role = 3;`
 
 -}
 requiredRole : Proto.Field.Descriptor
@@ -58,21 +55,21 @@ requiredRole =
     Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Users.V1.Role.descriptor)
 
 
-{-| The field `readers` of `notes.v1.Note`: `repeated users.v1.User readers = 4;`
+{-| `repeated users.v1.User readers = 4;`
 -}
 readers : Proto.Field.Descriptor
 readers =
     Proto.Field.descriptor "readers" "readers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "users.v1.User")
 
 
-{-| The field `roles` of `notes.v1.Note`: `map<string, users.v1.Role> roles = 5;`
+{-| `map<string, users.v1.Role> roles = 5;`
 -}
 roles : Proto.Field.Descriptor
 roles =
     Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum Users.V1.Role.descriptor)
 
 
-{-| The field `user` of `notes.v1.Note`, a member of the oneof `owner`: `users.v1.User user = 6;`
+{-| `users.v1.User user = 6;`, in oneof `owner`
 -}
 user : Proto.Field.Descriptor
 user =
@@ -80,7 +77,7 @@ user =
         |> Proto.Field.inOneof "owner"
 
 
-{-| The field `team` of `notes.v1.Note`, a member of the oneof `owner`: `string team = 7;`
+{-| `string team = 7;`, in oneof `owner`
 -}
 team : Proto.Field.Descriptor
 team =

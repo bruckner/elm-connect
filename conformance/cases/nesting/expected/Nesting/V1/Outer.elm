@@ -16,10 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Outer`: its full name and its fields, in declaration order.
-
-`message nesting.v1.Outer`
-
+{-| `message nesting.v1.Outer`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -30,21 +27,21 @@ descriptor =
         ]
 
 
-{-| The field `inner` of `nesting.v1.Outer`: `nesting.v1.Outer.Inner inner = 1;`
+{-| `nesting.v1.Outer.Inner inner = 1;`
 -}
 inner : Proto.Field.Descriptor
 inner =
     Proto.Field.descriptor "inner" "inner" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "nesting.v1.Outer.Inner")
 
 
-{-| The field `kind` of `nesting.v1.Outer`: `nesting.v1.Outer.Inner.Kind kind = 2;`
+{-| `nesting.v1.Outer.Inner.Kind kind = 2;`
 -}
 kind : Proto.Field.Descriptor
 kind =
     Proto.Field.descriptor "kind" "kind" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Nesting.V1.OuterInnerKind.descriptor)
 
 
-{-| The field `all` of `nesting.v1.Outer`: `repeated nesting.v1.Outer.Inner.Deepest all = 3;`
+{-| `repeated nesting.v1.Outer.Inner.Deepest all = 3;`
 -}
 all : Proto.Field.Descriptor
 all =

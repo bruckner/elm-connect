@@ -31,7 +31,16 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Ping` of `awkward.v1.AwkwardService`: its names, idempotency, types and HTTP bindings.
+{-|
+
+```text
+HEAD /v1/{name=*}
+
+An unclosed fence in a method's comment.
+```
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
+
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
@@ -58,14 +67,16 @@ descriptorPing =
 -- CALLS
 
 
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /awkward.v1.AwkwardService/Ping`.
-Transcode: `HEAD /v1/ping`.
+{-|
 
 ```text
 HEAD /v1/{name=*}
 
 An unclosed fence in a method's comment.
 ```
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /awkward.v1.AwkwardService/Ping`.
+Transcode: `HEAD /v1/ping`.
 
 -}
 ping : () -> Rpc.Call () ()

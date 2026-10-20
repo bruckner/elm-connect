@@ -34,7 +34,10 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetMessage` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| google/api/http.proto's GET examples, as one rule and its bindings.
+
+`rpc GetMessage(GetMessageRequest) returns (Message)`
+
 -}
 descriptorGetMessage : Proto.Method.Descriptor
 descriptorGetMessage =
@@ -132,7 +135,10 @@ descriptorGetMessage =
         ]
 
 
-{-| What the proto says about the method `UpdateMessage` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| google/api/http.proto's body examples.
+
+`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`
+
 -}
 descriptorUpdateMessage : Proto.Method.Descriptor
 descriptorUpdateMessage =
@@ -159,7 +165,7 @@ descriptorUpdateMessage =
         ]
 
 
-{-| What the proto says about the method `UpdateMessageWhole` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc UpdateMessageWhole(Message) returns (Message)`
 -}
 descriptorUpdateMessageWhole : Proto.Method.Descriptor
 descriptorUpdateMessageWhole =
@@ -186,7 +192,7 @@ descriptorUpdateMessageWhole =
         ]
 
 
-{-| What the proto says about the method `PostSub` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc PostSub(GetMessageRequest) returns (Message)`
 -}
 descriptorPostSub : Proto.Method.Descriptor
 descriptorPostSub =
@@ -213,7 +219,7 @@ descriptorPostSub =
         ]
 
 
-{-| What the proto says about the method `Query` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Query(Everything) returns (Everything)`
 -}
 descriptorQuery : Proto.Method.Descriptor
 descriptorQuery =
@@ -261,7 +267,7 @@ descriptorQuery =
         ]
 
 
-{-| What the proto says about the method `Single` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Single(Everything) returns (Everything)`
 -}
 descriptorSingle : Proto.Method.Descriptor
 descriptorSingle =
@@ -312,7 +318,7 @@ descriptorSingle =
         ]
 
 
-{-| What the proto says about the method `Multi` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Multi(Everything) returns (Everything)`
 -}
 descriptorMulti : Proto.Method.Descriptor
 descriptorMulti =
@@ -362,7 +368,7 @@ descriptorMulti =
         ]
 
 
-{-| What the proto says about the method `Typed` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Typed(Everything) returns (Everything)`
 -}
 descriptorTyped : Proto.Method.Descriptor
 descriptorTyped =
@@ -425,7 +431,7 @@ descriptorTyped =
         ]
 
 
-{-| What the proto says about the method `Files` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Files(FileRequest) returns (FileRequest)`
 -}
 descriptorFiles : Proto.Method.Descriptor
 descriptorFiles =
@@ -451,7 +457,7 @@ descriptorFiles =
         ]
 
 
-{-| What the proto says about the method `Cancel` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Cancel(Resource) returns (Resource)`
 -}
 descriptorCancel : Proto.Method.Descriptor
 descriptorCancel =
@@ -477,7 +483,7 @@ descriptorCancel =
         ]
 
 
-{-| What the proto says about the method `UpdateResource` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`
 -}
 descriptorUpdateResource : Proto.Method.Descriptor
 descriptorUpdateResource =
@@ -505,7 +511,7 @@ descriptorUpdateResource =
         ]
 
 
-{-| What the proto says about the method `Head` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Head(FileRequest) returns (FileRequest)`
 -}
 descriptorHead : Proto.Method.Descriptor
 descriptorHead =
@@ -531,7 +537,12 @@ descriptorHead =
         ]
 
 
-{-| What the proto says about the method `Unbound` of `routes.v1.Routes`: its names, idempotency, types and HTTP bindings.
+{-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
+request as its body, as grpc-gateway (generate\_unbound\_methods),
+Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+
+`rpc Unbound(GetMessageRequest) returns (Message)`
+
 -}
 descriptorUnbound : Proto.Method.Descriptor
 descriptorUnbound =
@@ -547,10 +558,10 @@ descriptorUnbound =
 -- CALLS
 
 
-{-| `rpc GetMessage(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/GetMessage`.
-Transcode: `GET /v1/{name=messages/*}`; binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`; binding 2: `GET /v1/messages/{message_id}`; binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
+{-| google/api/http.proto's GET examples, as one rule and its bindings.
 
-google/api/http.proto's GET examples, as one rule and its bindings.
+`rpc GetMessage(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/GetMessage`.
+Transcode: `GET /v1/{name=messages/*}`; binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`; binding 2: `GET /v1/messages/{message_id}`; binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 
 -}
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
@@ -562,10 +573,10 @@ getMessage =
         )
 
 
-{-| `rpc UpdateMessage(UpdateMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/UpdateMessage`.
-Transcode: `PATCH /v1/messages/{message_id}` body `message`.
+{-| google/api/http.proto's body examples.
 
-google/api/http.proto's body examples.
+`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/UpdateMessage`.
+Transcode: `PATCH /v1/messages/{message_id}` body `message`.
 
 -}
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
@@ -697,12 +708,12 @@ head =
         )
 
 
-{-| `rpc Unbound(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/Unbound`.
-No HTTP rule: the Connect path.
-
-No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
+{-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 request as its body, as grpc-gateway (generate\_unbound\_methods),
 Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+
+`rpc Unbound(GetMessageRequest) returns (Message)`. Connect: `POST /routes.v1.Routes/Unbound`.
+No HTTP rule: the Connect path.
 
 -}
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message

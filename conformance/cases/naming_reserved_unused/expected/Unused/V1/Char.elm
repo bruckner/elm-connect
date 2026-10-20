@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `unused.v1.Char`: its full name and its values, in declaration order.
-
-`enum unused.v1.Char`
+{-| `enum unused.v1.Char`
 
   - `CHAR_UNSPECIFIED = 0;`
   - `CHAR_A = 1;`

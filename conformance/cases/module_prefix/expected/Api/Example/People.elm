@@ -27,8 +27,8 @@ elmConnectVersion_ =
 
 {-| `enum users.v1.Role`
 
-  - `RoleUnspecified`: `ROLE_UNSPECIFIED = 0;`
-  - `RoleEditor`: `ROLE_EDITOR = 1;`
+  - `RoleUnspecified` (`ROLE_UNSPECIFIED`)
+  - `RoleEditor` (`ROLE_EDITOR`)
 
 -}
 type Role
@@ -38,8 +38,8 @@ type Role
 
 {-| `message users.v1.User`
 
-  - `name`: `string name = 1;`
-  - `role`: `users.v1.Role role = 2;`
+  - `name`
+  - `role`
 
 -}
 type alias User =

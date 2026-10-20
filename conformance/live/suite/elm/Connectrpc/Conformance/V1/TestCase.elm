@@ -16,10 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.TestCase`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.TestCase`
-
+{-| `message connectrpc.conformance.v1.TestCase`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -31,9 +28,7 @@ descriptor =
         ]
 
 
-{-| The field `request` of `connectrpc.conformance.v1.TestCase`: `connectrpc.conformance.v1.ClientCompatRequest request = 1;`
-
-Defines the RPC that the client should invoke. The first eight fields
+{-| Defines the RPC that the client should invoke. The first eight fields
 are not fully specified. Instead the first field, test\_name, must be
 present but is a prefix -- other characteristics that identify one
 permutation of the test case will be appended to this name. The next
@@ -42,15 +37,15 @@ and server\_tls\_cert) must not be present. They are all populated by
 the test harness based on the test environment (e.g. actual server and
 port to use) and characteristics of a single permutation.
 
+`connectrpc.conformance.v1.ClientCompatRequest request = 1;`
+
 -}
 request : Proto.Field.Descriptor
 request =
     Proto.Field.descriptor "request" "request" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest")
 
 
-{-| The field `expand_requests` of `connectrpc.conformance.v1.TestCase`: `repeated connectrpc.conformance.v1.TestCase.ExpandedSize expand_requests = 2;`
-
-To support extremely large messages, as well as very precisely-sized
+{-| To support extremely large messages, as well as very precisely-sized
 messages, without having to encode them fully or perfectly in YAML
 test cases, this value can be specified. When non-empty, this value
 should have no more entries than there are messages in the request
@@ -62,15 +57,15 @@ message size that the server will accept. That sum is the size of the
 the serialized message that will be sent, and the data field will be
 padded as needed to reach that size.
 
+`repeated connectrpc.conformance.v1.TestCase.ExpandedSize expand_requests = 2;`
+
 -}
 expandRequests : Proto.Field.Descriptor
 expandRequests =
     Proto.Field.descriptor "expand_requests" "expandRequests" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase.ExpandedSize")
 
 
-{-| The field `expected_response` of `connectrpc.conformance.v1.TestCase`: `connectrpc.conformance.v1.ClientResponseResult expected_response = 3;`
-
-Defines the expected response to the above RPC. The expected response for
+{-| Defines the expected response to the above RPC. The expected response for
 a test is auto-generated based on the request details. The conformance runner
 will determine what the response should be according to the values specified
 in the test suite and individual test cases.
@@ -90,19 +85,21 @@ message size limits are good examples of this.
 Specifying an expected response explicitly in test definitions will override
 the auto-generation of the test runner.
 
+`connectrpc.conformance.v1.ClientResponseResult expected_response = 3;`
+
 -}
 expectedResponse : Proto.Field.Descriptor
 expectedResponse =
     Proto.Field.descriptor "expected_response" "expectedResponse" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientResponseResult")
 
 
-{-| The field `other_allowed_error_codes` of `connectrpc.conformance.v1.TestCase`: `repeated connectrpc.conformance.v1.Code other_allowed_error_codes = 4;`
-
-When expected\_response indicates that an error is expected, in some cases, the
+{-| When expected\_response indicates that an error is expected, in some cases, the
 actual error code returned may be flexible. In that case, this field provides
 other acceptable error codes, in addition to the one indicated in the
 expected\_response. As long as the actual error's code matches any of these, the
 error is considered conformant, and the test case can pass.
+
+`repeated connectrpc.conformance.v1.Code other_allowed_error_codes = 4;`
 
 -}
 otherAllowedErrorCodes : Proto.Field.Descriptor

@@ -26,8 +26,8 @@ elmConnectVersion_ =
 
 {-| `message notes.v1.Note`
 
-  - `title`: `string title = 1;`
-  - `tags`: `repeated notes.v1.Tag tags = 2;`
+  - `title`
+  - `tags`
 
 -}
 type alias Note =
@@ -38,7 +38,7 @@ type alias Note =
 
 {-| `message notes.v1.Tag`
 
-  - `label`: `string label = 1;`
+  - `label`
 
 -}
 type alias Tag =

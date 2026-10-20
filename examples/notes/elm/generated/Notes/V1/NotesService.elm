@@ -43,7 +43,12 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| A note by name. A missing note is NOT\_FOUND with a `google.rpc.ErrorInfo`
+detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
+`name`).
+
+`rpc GetNote(GetNoteRequest) returns (Note)`
+
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
@@ -69,7 +74,10 @@ descriptorGetNote =
         ]
 
 
-{-| What the proto says about the method `ListNotes` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Notes, a page at a time.
+
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
+
 -}
 descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
@@ -97,7 +105,12 @@ descriptorListNotes =
         ]
 
 
-{-| What the proto says about the method `CreateNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| A new note. An empty title is INVALID\_ARGUMENT with a
+`google.rpc.BadRequest` detail holding one field violation, on `title`.
+A name already taken is ALREADY\_EXISTS.
+
+`rpc CreateNote(CreateNoteRequest) returns (Note)`
+
 -}
 descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
@@ -120,7 +133,10 @@ descriptorCreateNote =
         ]
 
 
-{-| What the proto says about the method `UpdateNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Changes a note's fields. A missing note is NOT\_FOUND, as for GetNote.
+
+`rpc UpdateNote(UpdateNoteRequest) returns (Note)`
+
 -}
 descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
@@ -148,7 +164,10 @@ descriptorUpdateNote =
         ]
 
 
-{-| What the proto says about the method `DeleteNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Deletes a note. A missing note is NOT\_FOUND, as for GetNote.
+
+`rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`
+
 -}
 descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
@@ -174,7 +193,10 @@ descriptorDeleteNote =
         ]
 
 
-{-| What the proto says about the method `ArchiveNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Makes a note private and tags it `archived`: a custom method.
+
+`rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`
+
 -}
 descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
@@ -200,7 +222,11 @@ descriptorArchiveNote =
         ]
 
 
-{-| What the proto says about the method `Ping` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Answers with nothing. It has no HTTP rule, so transcoding serves it on
+the implicit route, `POST /notes.v1.NotesService/Ping`.
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
+
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
@@ -216,12 +242,12 @@ descriptorPing =
 -- CALLS
 
 
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`.
-
-A note by name. A missing note is NOT\_FOUND with a `google.rpc.ErrorInfo`
+{-| A note by name. A missing note is NOT\_FOUND with a `google.rpc.ErrorInfo`
 detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
 `name`).
+
+`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`.
 
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
@@ -233,10 +259,10 @@ getNote =
         )
 
 
-{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
-Transcode: `GET /v1/notes`.
+{-| Notes, a page at a time.
 
-Notes, a page at a time.
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/notes`.
 
 -}
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
@@ -248,12 +274,12 @@ listNotes =
         )
 
 
-{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
-Transcode: `POST /v1/notes` body `note`.
-
-A new note. An empty title is INVALID\_ARGUMENT with a
+{-| A new note. An empty title is INVALID\_ARGUMENT with a
 `google.rpc.BadRequest` detail holding one field violation, on `title`.
 A name already taken is ALREADY\_EXISTS.
+
+`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/notes` body `note`.
 
 -}
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
@@ -265,10 +291,10 @@ createNote =
         )
 
 
-{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/UpdateNote`.
-Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
+{-| Changes a note's fields. A missing note is NOT\_FOUND, as for GetNote.
 
-Changes a note's fields. A missing note is NOT\_FOUND, as for GetNote.
+`rpc UpdateNote(UpdateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/UpdateNote`.
+Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
 
 -}
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
@@ -280,10 +306,10 @@ updateNote =
         )
 
 
-{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/DeleteNote`.
-Transcode: `DELETE /v1/{name=notes/*}`.
+{-| Deletes a note. A missing note is NOT\_FOUND, as for GetNote.
 
-Deletes a note. A missing note is NOT\_FOUND, as for GetNote.
+`rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/DeleteNote`.
+Transcode: `DELETE /v1/{name=notes/*}`.
 
 -}
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
@@ -295,10 +321,10 @@ deleteNote =
         )
 
 
-{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/ArchiveNote`.
-Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
+{-| Makes a note private and tags it `archived`: a custom method.
 
-Makes a note private and tags it `archived`: a custom method.
+`rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/ArchiveNote`.
+Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
 
 -}
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
@@ -310,11 +336,11 @@ archiveNote =
         )
 
 
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-No HTTP rule: the Connect path.
-
-Answers with nothing. It has no HTTP rule, so transcoding serves it on
+{-| Answers with nothing. It has no HTTP rule, so transcoding serves it on
 the implicit route, `POST /notes.v1.NotesService/Ping`.
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
+No HTTP rule: the Connect path.
 
 -}
 ping : () -> Rpc.Call () ()

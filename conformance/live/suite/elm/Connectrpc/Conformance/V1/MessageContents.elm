@@ -16,9 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.MessageContents`: its full name and its fields, in declaration order.
-
-MessageContents represents a message in a request body.
+{-| MessageContents represents a message in a request body.
 
 `message connectrpc.conformance.v1.MessageContents`
 
@@ -33,9 +31,9 @@ descriptor =
         ]
 
 
-{-| The field `binary` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`: `bytes binary = 1;`
+{-| Arbitrary bytes.
 
-Arbitrary bytes.
+`bytes binary = 1;`, in oneof `data`
 
 -}
 binary : Proto.Field.Descriptor
@@ -44,9 +42,9 @@ binary =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `text` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`: `string text = 2;`
+{-| Arbitrary text.
 
-Arbitrary text.
+`string text = 2;`, in oneof `data`
 
 -}
 text : Proto.Field.Descriptor
@@ -55,11 +53,11 @@ text =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `binary_message` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`: `google.protobuf.Any binary_message = 3;`
-
-An actual message. The message inside the Any will be
+{-| An actual message. The message inside the Any will be
 serialized to the protobuf binary formats, and the
 resulting bytes will be the contents.
+
+`google.protobuf.Any binary_message = 3;`, in oneof `data`
 
 -}
 binaryMessage : Proto.Field.Descriptor
@@ -68,10 +66,10 @@ binaryMessage =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `compression` of `connectrpc.conformance.v1.MessageContents`: `connectrpc.conformance.v1.Compression compression = 4;`
-
-If specified and not identity, the above data will be
+{-| If specified and not identity, the above data will be
 compressed using the given algorithm.
+
+`connectrpc.conformance.v1.Compression compression = 4;`
 
 -}
 compression : Proto.Field.Descriptor

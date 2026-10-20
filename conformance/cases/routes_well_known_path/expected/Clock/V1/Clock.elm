@@ -25,7 +25,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetMoment(Moment) returns (Moment)`
 -}
 descriptorGetMoment : Proto.Method.Descriptor
 descriptorGetMoment =
@@ -58,7 +58,7 @@ descriptorGetMoment =
         ]
 
 
-{-| What the proto says about the method `MaskMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc MaskMoment(Moment) returns (Moment)`
 -}
 descriptorMaskMoment : Proto.Method.Descriptor
 descriptorMaskMoment =
@@ -95,7 +95,7 @@ descriptorMaskMoment =
         ]
 
 
-{-| What the proto says about the method `CountMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc CountMoment(Moment) returns (Moment)`
 -}
 descriptorCountMoment : Proto.Method.Descriptor
 descriptorCountMoment =
@@ -132,7 +132,7 @@ descriptorCountMoment =
         ]
 
 
-{-| What the proto says about the method `WaitMoment` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc WaitMoment(Moment) returns (Moment)`
 -}
 descriptorWaitMoment : Proto.Method.Descriptor
 descriptorWaitMoment =

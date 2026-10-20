@@ -27,12 +27,12 @@ elmConnectVersion_ =
 
 {-| `message notes.v1.Note`
 
-  - `title`: `string title = 1;`
-  - `author`: `users.v1.User author = 2;`
-  - `requiredRole`: `users.v1.Role required_role = 3;` A plain enum field reads absence as the other module's zero value.
-  - `readers`: `repeated users.v1.User readers = 4;`
-  - `roles`: `map<string, users.v1.Role> roles = 5;`
-  - `owner`: `oneof owner` (`NoteOwner`)
+  - `title`
+  - `author`
+  - `requiredRole`: A plain enum field reads absence as the other module's zero value.
+  - `readers`
+  - `roles`
+  - `owner`: See `NoteOwner`.
 
 -}
 type alias Note =
@@ -48,8 +48,8 @@ type alias Note =
 {-| `oneof owner` of `notes.v1.Note`
 
   - `NoteOwnerUnset`: none of the fields is set.
-  - `NoteOwnerUser`: `users.v1.User user = 6;`
-  - `NoteOwnerTeam`: `string team = 7;`
+  - `NoteOwnerUser`
+  - `NoteOwnerTeam`
 
 -}
 type NoteOwner

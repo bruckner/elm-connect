@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.GetMessageRequest.SubMessage`: its full name and its fields, in declaration order.
-
-`message routes.v1.GetMessageRequest.SubMessage`
-
+{-| `message routes.v1.GetMessageRequest.SubMessage`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `subfield` of `routes.v1.GetMessageRequest.SubMessage`: `string subfield = 1;`
+{-| `string subfield = 1;`
 -}
 subfield : Proto.Field.Descriptor
 subfield =

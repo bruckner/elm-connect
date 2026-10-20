@@ -26,7 +26,7 @@ elmConnectVersion_ =
 
 {-| `message zones.v1.ZoneRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias ZoneRequest =
@@ -36,8 +36,8 @@ type alias ZoneRequest =
 
 {-| `message zones.v1.Zone`
 
-  - `name`: `string name = 1;`
-  - `offsetSeconds`: `int64 offset_seconds = 2;`
+  - `name`
+  - `offsetSeconds`
 
 -}
 type alias Zone =

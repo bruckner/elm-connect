@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.UpdateNoteRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.UpdateNoteRequest`
-
+{-| `message notes.v1.UpdateNoteRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,9 +25,9 @@ descriptor =
         ]
 
 
-{-| The field `note` of `notes.v1.UpdateNoteRequest`: `notes.v1.Note note = 1;`
+{-| The note to update, by `note.name`, and its new fields.
 
-The note to update, by `note.name`, and its new fields.
+`notes.v1.Note note = 1;`
 
 -}
 note : Proto.Field.Descriptor
@@ -38,10 +35,10 @@ note =
     Proto.Field.descriptor "note" "note" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note")
 
 
-{-| The field `update_mask` of `notes.v1.UpdateNoteRequest`: `google.protobuf.FieldMask update_mask = 2;`
-
-The fields of `note` to update, by proto name; empty updates every field
+{-| The fields of `note` to update, by proto name; empty updates every field
 the request sets.
+
+`google.protobuf.FieldMask update_mask = 2;`
 
 -}
 updateMask : Proto.Field.Descriptor

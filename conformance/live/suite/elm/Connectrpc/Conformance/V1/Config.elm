@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.Config`: its full name and its fields, in declaration order.
-
-Config defines the configuration for running conformance tests.
+{-| Config defines the configuration for running conformance tests.
 This enumerates all of the "flavors" of the test suite to run.
 
 `message connectrpc.conformance.v1.Config`
@@ -32,12 +30,12 @@ descriptor =
         ]
 
 
-{-| The field `features` of `connectrpc.conformance.v1.Config`: `connectrpc.conformance.v1.Features features = 1;`
-
-The features supported by the client or server under test.
+{-| The features supported by the client or server under test.
 This is used to filter the set of test cases that are run.
 If absent, an empty message is used. See Features for more
 on how empty/absent fields are interpreted.
+
+`connectrpc.conformance.v1.Features features = 1;`
 
 -}
 features : Proto.Field.Descriptor
@@ -45,10 +43,10 @@ features =
     Proto.Field.descriptor "features" "features" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Features")
 
 
-{-| The field `include_cases` of `connectrpc.conformance.v1.Config`: `repeated connectrpc.conformance.v1.ConfigCase include_cases = 2;`
-
-This can indicate additional permutations that are supported
+{-| This can indicate additional permutations that are supported
 that might otherwise be excluded based on the above features.
+
+`repeated connectrpc.conformance.v1.ConfigCase include_cases = 2;`
 
 -}
 includeCases : Proto.Field.Descriptor
@@ -56,10 +54,10 @@ includeCases =
     Proto.Field.descriptor "include_cases" "includeCases" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.ConfigCase")
 
 
-{-| The field `exclude_cases` of `connectrpc.conformance.v1.Config`: `repeated connectrpc.conformance.v1.ConfigCase exclude_cases = 3;`
-
-This can indicates permutations that are not supported even
+{-| This can indicates permutations that are not supported even
 though their support might be implied by the above features.
+
+`repeated connectrpc.conformance.v1.ConfigCase exclude_cases = 3;`
 
 -}
 excludeCases : Proto.Field.Descriptor

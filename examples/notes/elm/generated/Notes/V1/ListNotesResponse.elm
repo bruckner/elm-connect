@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ListNotesResponse`: its full name and its fields, in declaration order.
-
-`message notes.v1.ListNotesResponse`
-
+{-| `message notes.v1.ListNotesResponse`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,9 +25,9 @@ descriptor =
         ]
 
 
-{-| The field `notes` of `notes.v1.ListNotesResponse`: `repeated notes.v1.Note notes = 1;`
+{-| In name order.
 
-In name order.
+`repeated notes.v1.Note notes = 1;`
 
 -}
 notes : Proto.Field.Descriptor
@@ -38,9 +35,9 @@ notes =
     Proto.Field.descriptor "notes" "notes" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note")
 
 
-{-| The field `next_page_token` of `notes.v1.ListNotesResponse`: `string next_page_token = 2;`
+{-| Empty on the last page.
 
-Empty on the last page.
+`string next_page_token = 2;`
 
 -}
 nextPageToken : Proto.Field.Descriptor

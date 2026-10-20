@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.RawHTTPRequest`: its full name and its fields, in declaration order.
-
-RawHTTPRequest models a raw HTTP request. This can be used to craft
+{-| RawHTTPRequest models a raw HTTP request. This can be used to craft
 custom requests with odd properties (including certain kinds of
 malformed requests) to test edge cases in servers.
 
@@ -37,9 +35,9 @@ descriptor =
         ]
 
 
-{-| The field `verb` of `connectrpc.conformance.v1.RawHTTPRequest`: `string verb = 1;`
+{-| The HTTP verb (i.e. GET , POST).
 
-The HTTP verb (i.e. GET , POST).
+`string verb = 1;`
 
 -}
 verb : Proto.Field.Descriptor
@@ -47,9 +45,9 @@ verb =
     Proto.Field.descriptor "verb" "verb" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `uri` of `connectrpc.conformance.v1.RawHTTPRequest`: `string uri = 2;`
+{-| The URI to send the request to.
 
-The URI to send the request to.
+`string uri = 2;`
 
 -}
 uri : Proto.Field.Descriptor
@@ -57,9 +55,9 @@ uri =
     Proto.Field.descriptor "uri" "uri" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `headers` of `connectrpc.conformance.v1.RawHTTPRequest`: `repeated connectrpc.conformance.v1.Header headers = 3;`
+{-| Any headers to set on the request.
 
-Any headers to set on the request.
+`repeated connectrpc.conformance.v1.Header headers = 3;`
 
 -}
 headers : Proto.Field.Descriptor
@@ -67,10 +65,10 @@ headers =
     Proto.Field.descriptor "headers" "headers" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `raw_query_params` of `connectrpc.conformance.v1.RawHTTPRequest`: `repeated connectrpc.conformance.v1.Header raw_query_params = 4;`
-
-These query params will be encoded and added to the uri before
+{-| These query params will be encoded and added to the uri before
 the request is sent.
+
+`repeated connectrpc.conformance.v1.Header raw_query_params = 4;`
 
 -}
 rawQueryParams : Proto.Field.Descriptor
@@ -78,10 +76,10 @@ rawQueryParams =
     Proto.Field.descriptor "raw_query_params" "rawQueryParams" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `encoded_query_params` of `connectrpc.conformance.v1.RawHTTPRequest`: `repeated connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam encoded_query_params = 5;`
-
-This provides an easier way to define a complex binary query param
+{-| This provides an easier way to define a complex binary query param
 than having to write literal base64-encoded bytes in raw\_query\_params.
+
+`repeated connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam encoded_query_params = 5;`
 
 -}
 encodedQueryParams : Proto.Field.Descriptor
@@ -89,9 +87,9 @@ encodedQueryParams =
     Proto.Field.descriptor "encoded_query_params" "encodedQueryParams" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam")
 
 
-{-| The field `unary` of `connectrpc.conformance.v1.RawHTTPRequest`, a member of the oneof `body`: `connectrpc.conformance.v1.MessageContents unary = 6;`
+{-| The body is a single message.
 
-The body is a single message.
+`connectrpc.conformance.v1.MessageContents unary = 6;`, in oneof `body`
 
 -}
 unary : Proto.Field.Descriptor
@@ -100,10 +98,10 @@ unary =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `stream` of `connectrpc.conformance.v1.RawHTTPRequest`, a member of the oneof `body`: `connectrpc.conformance.v1.StreamContents stream = 7;`
-
-The body is a stream, encoded using a five-byte
+{-| The body is a stream, encoded using a five-byte
 prefix before each item in the stream.
+
+`connectrpc.conformance.v1.StreamContents stream = 7;`, in oneof `body`
 
 -}
 stream : Proto.Field.Descriptor

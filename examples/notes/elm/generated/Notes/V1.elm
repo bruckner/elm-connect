@@ -40,9 +40,9 @@ elmConnectVersion_ =
 
 `enum notes.v1.Visibility`
 
-  - `VisibilityUnspecified`: `VISIBILITY_UNSPECIFIED = 0;`
-  - `VisibilityPrivate`: `VISIBILITY_PRIVATE = 1;`
-  - `VisibilityPublic`: `VISIBILITY_PUBLIC = 2;`
+  - `VisibilityUnspecified` (`VISIBILITY_UNSPECIFIED`)
+  - `VisibilityPrivate` (`VISIBILITY_PRIVATE`)
+  - `VisibilityPublic` (`VISIBILITY_PUBLIC`)
 
 -}
 type Visibility
@@ -55,20 +55,20 @@ type Visibility
 
 `message notes.v1.Note`
 
-  - `name`: `string name = 1;` The note's resource name, `notes/<id>`. Set by the server on creation
+  - `name`: The note's resource name, `notes/<id>`. Set by the server on creation
     from the title unless given.
-  - `title`: `string title = 2;` Required: creating a note without one is INVALID\_ARGUMENT.
-  - `body`: `string body = 3;`
-  - `tags`: `repeated string tags = 4;`
-  - `visibility`: `notes.v1.Visibility visibility = 5;`
-  - `createTime`: `google.protobuf.Timestamp create_time = 6;` Set by the server.
-  - `updateTime`: `google.protobuf.Timestamp update_time = 7;` Set by the server on every update.
-  - `ttl`: `google.protobuf.Duration ttl = 8;` How long the note should be kept; stored, not enforced.
-  - `metadata`: `map<string, string> metadata = 9;`
-  - `extra`: `google.protobuf.Struct extra = 10;`
-  - `kind`: `oneof kind` (`NoteKind`) What the note is about.
-  - `attachment`: `google.protobuf.Any attachment = 13;`
-  - `revision`: `optional int64 revision = 14;` Incremented by the server on every update; unset until the first.
+  - `title`: Required: creating a note without one is INVALID\_ARGUMENT.
+  - `body`
+  - `tags`
+  - `visibility`
+  - `createTime`: Set by the server.
+  - `updateTime`: Set by the server on every update.
+  - `ttl`: How long the note should be kept; stored, not enforced.
+  - `metadata`
+  - `extra`
+  - `kind`: What the note is about. See `NoteKind`.
+  - `attachment`
+  - `revision`: Incremented by the server on every update; unset until the first.
 
 -}
 type alias Note =
@@ -93,8 +93,8 @@ type alias Note =
 `oneof kind` of `notes.v1.Note`
 
   - `NoteKindUnset`: none of the fields is set.
-  - `NoteKindText`: `string text = 11;`
-  - `NoteKindLink`: `string link = 12;`
+  - `NoteKindText`
+  - `NoteKindLink`
 
 -}
 type NoteKind
@@ -105,7 +105,7 @@ type NoteKind
 
 {-| `message notes.v1.GetNoteRequest`
 
-  - `name`: `string name = 1;` `notes/<id>`.
+  - `name`: `notes/<id>`.
 
 -}
 type alias GetNoteRequest =
@@ -115,10 +115,10 @@ type alias GetNoteRequest =
 
 {-| `message notes.v1.ListNotesRequest`
 
-  - `pageSize`: `int32 page_size = 1;` At most this many notes; 0 is the server's default, 50.
-  - `pageToken`: `string page_token = 2;` The `next_page_token` of the previous page.
-  - `filter`: `string filter = 3;` A substring the title must contain; empty matches every note.
-  - `visibility`: `notes.v1.Visibility visibility = 4;` Only notes with this visibility; unspecified matches every note.
+  - `pageSize`: At most this many notes; 0 is the server's default, 50.
+  - `pageToken`: The `next_page_token` of the previous page.
+  - `filter`: A substring the title must contain; empty matches every note.
+  - `visibility`: Only notes with this visibility; unspecified matches every note.
 
 -}
 type alias ListNotesRequest =
@@ -131,8 +131,8 @@ type alias ListNotesRequest =
 
 {-| `message notes.v1.ListNotesResponse`
 
-  - `notes`: `repeated notes.v1.Note notes = 1;` In name order.
-  - `nextPageToken`: `string next_page_token = 2;` Empty on the last page.
+  - `notes`: In name order.
+  - `nextPageToken`: Empty on the last page.
 
 -}
 type alias ListNotesResponse =
@@ -143,7 +143,7 @@ type alias ListNotesResponse =
 
 {-| `message notes.v1.CreateNoteRequest`
 
-  - `note`: `notes.v1.Note note = 1;`
+  - `note`
 
 -}
 type alias CreateNoteRequest =
@@ -153,8 +153,8 @@ type alias CreateNoteRequest =
 
 {-| `message notes.v1.UpdateNoteRequest`
 
-  - `note`: `notes.v1.Note note = 1;` The note to update, by `note.name`, and its new fields.
-  - `updateMask`: `google.protobuf.FieldMask update_mask = 2;` The fields of `note` to update, by proto name; empty updates every field
+  - `note`: The note to update, by `note.name`, and its new fields.
+  - `updateMask`: The fields of `note` to update, by proto name; empty updates every field
     the request sets.
 
 -}
@@ -166,7 +166,7 @@ type alias UpdateNoteRequest =
 
 {-| `message notes.v1.DeleteNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias DeleteNoteRequest =
@@ -176,7 +176,7 @@ type alias DeleteNoteRequest =
 
 {-| `message notes.v1.ArchiveNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias ArchiveNoteRequest =

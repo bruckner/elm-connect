@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.StreamType`: its full name and its values, in declaration order.
-
-`enum connectrpc.conformance.v1.StreamType`
+{-| `enum connectrpc.conformance.v1.StreamType`
 
   - `STREAM_TYPE_UNSPECIFIED = 0;`
   - `STREAM_TYPE_UNARY = 1;`

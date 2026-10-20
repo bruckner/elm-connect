@@ -28,9 +28,9 @@ elmConnectVersion_ =
 
 {-| `enum enums.v1.Status`
 
-  - `StatusUnspecified`: `STATUS_UNSPECIFIED = 0;`
-  - `StatusActive`: `STATUS_ACTIVE = 1;`
-  - `StatusArchived`: `STATUS_ARCHIVED = 2;`
+  - `StatusUnspecified` (`STATUS_UNSPECIFIED`)
+  - `StatusActive` (`STATUS_ACTIVE`)
+  - `StatusArchived` (`STATUS_ARCHIVED`)
 
 -}
 type Status
@@ -47,10 +47,10 @@ alias it claims no name, so the two do not collide.
 
 `enum enums.v1.Priority`
 
-  - `PriorityNone`: `NONE = 0;` Also `UNSET = 0;`.
-  - `PriorityLow`: `LOW = 1;` Also `PRIORITY_LOW = 1;`.
-  - `PriorityHigh`: `HIGH = 2;` Also `URGENT = 2;`.
-  - `PriorityBelowZero`: `BELOW_ZERO = -1;`
+  - `PriorityNone` (`NONE`, also `UNSET`)
+  - `PriorityLow` (`LOW`, also `PRIORITY_LOW`)
+  - `PriorityHigh` (`HIGH`, also `URGENT`)
+  - `PriorityBelowZero` (`BELOW_ZERO`)
 
 -}
 type Priority
@@ -62,10 +62,10 @@ type Priority
 
 {-| `message enums.v1.Task`
 
-  - `status`: `enums.v1.Status status = 1;` Without presence, an enum field reads absence as its zero value.
-  - `priority`: `optional enums.v1.Priority priority = 2;` With presence, it is a Maybe.
-  - `history`: `repeated enums.v1.Status history = 3;`
-  - `previousStatus`: `enums.v1.Status previous_status = 4;`
+  - `status`: Without presence, an enum field reads absence as its zero value.
+  - `priority`: With presence, it is a Maybe.
+  - `history`
+  - `previousStatus`
 
 -}
 type alias Task =

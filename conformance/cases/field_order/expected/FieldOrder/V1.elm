@@ -28,8 +28,8 @@ elmConnectVersion_ =
 
 {-| `enum field_order.v1.Mood`
 
-  - `MoodUnspecified`: `MOOD_UNSPECIFIED = 0;`
-  - `MoodCalm`: `MOOD_CALM = 1;`
+  - `MoodUnspecified` (`MOOD_UNSPECIFIED`)
+  - `MoodCalm` (`MOOD_CALM`)
 
 -}
 type Mood
@@ -39,12 +39,12 @@ type Mood
 
 {-| `message field_order.v1.Draft`
 
-  - `title`: `string title = 4;`
-  - `body`: `oneof body` (`DraftBody`) The oneof's record field sits where its first member is declared,
-    after `title`; by number, `blob` would put it first.
-  - `mood`: `field_order.v1.Mood mood = 6;`
-  - `margin`: `field_order.v1.Draft.Margin margin = 3;`
-  - `tags`: `repeated string tags = 2;`
+  - `title`
+  - `body`: The oneof's record field sits where its first member is declared,
+    after `title`; by number, `blob` would put it first. See `DraftBody`.
+  - `mood`
+  - `margin`
+  - `tags`
 
 -}
 type alias Draft =
@@ -62,8 +62,8 @@ after `title`; by number, `blob` would put it first.
 `oneof body` of `field_order.v1.Draft`
 
   - `DraftBodyUnset`: none of the fields is set.
-  - `DraftBodyText`: `string text = 8;`
-  - `DraftBodyBlob`: `bytes blob = 1;`
+  - `DraftBodyText`
+  - `DraftBodyBlob`
 
 -}
 type DraftBody
@@ -76,8 +76,8 @@ type DraftBody
 
 `message field_order.v1.Draft.Margin`
 
-  - `left`: `int32 left = 2;`
-  - `right`: `int32 right = 1;`
+  - `left`
+  - `right`
 
 -}
 type alias DraftMargin =

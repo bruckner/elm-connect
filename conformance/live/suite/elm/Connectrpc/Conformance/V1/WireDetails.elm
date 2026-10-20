@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.WireDetails`: its full name and its fields, in declaration order.
-
-Details about various values as observed on the wire. This message is used
+{-| Details about various values as observed on the wire. This message is used
 only by the reference client when reporting results and should not be populated
 by clients under test.
 
@@ -34,9 +32,9 @@ descriptor =
         ]
 
 
-{-| The field `actual_status_code` of `connectrpc.conformance.v1.WireDetails`: `int32 actual_status_code = 1;`
+{-| The HTTP status code of the response.
 
-The HTTP status code of the response.
+`int32 actual_status_code = 1;`
 
 -}
 actualStatusCode : Proto.Field.Descriptor
@@ -44,10 +42,10 @@ actualStatusCode =
     Proto.Field.descriptor "actual_status_code" "actualStatusCode" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `connect_error_raw` of `connectrpc.conformance.v1.WireDetails`: `google.protobuf.Struct connect_error_raw = 2;`
-
-When processing an error from a Connect server, this should contain
+{-| When processing an error from a Connect server, this should contain
 the actual JSON received on the wire.
+
+`google.protobuf.Struct connect_error_raw = 2;`
 
 -}
 connectErrorRaw : Proto.Field.Descriptor
@@ -55,11 +53,11 @@ connectErrorRaw =
     Proto.Field.descriptor "connect_error_raw" "connectErrorRaw" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
 
 
-{-| The field `actual_http_trailers` of `connectrpc.conformance.v1.WireDetails`: `repeated connectrpc.conformance.v1.Header actual_http_trailers = 3;`
-
-Any HTTP trailers observed after the response body. These do NOT
+{-| Any HTTP trailers observed after the response body. These do NOT
 include trailers that conveyed via the body, as done in the gRPC-Web
 and Connect streaming protocols.
+
+`repeated connectrpc.conformance.v1.Header actual_http_trailers = 3;`
 
 -}
 actualHttpTrailers : Proto.Field.Descriptor
@@ -67,15 +65,15 @@ actualHttpTrailers =
     Proto.Field.descriptor "actual_http_trailers" "actualHttpTrailers" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `actual_grpcweb_trailers` of `connectrpc.conformance.v1.WireDetails`: `optional string actual_grpcweb_trailers = 4;`
-
-Any trailers that were transmitted in the final message of the
+{-| Any trailers that were transmitted in the final message of the
 response body for a gRPC-Web response. This could differ from the
 ClientResponseResult.response\_trailers field since the RPC client
 library might canonicalize keys and it might choose to remove
 "grpc-status" et al from the set of metadata. This field will
 capture all of the entries and their exact on-the-wire spelling
 and formatting.
+
+`optional string actual_grpcweb_trailers = 4;`
 
 -}
 actualGrpcwebTrailers : Proto.Field.Descriptor

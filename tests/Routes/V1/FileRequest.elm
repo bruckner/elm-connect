@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.FileRequest`: its full name and its fields, in declaration order.
-
-`message routes.v1.FileRequest`
-
+{-| `message routes.v1.FileRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `path` of `routes.v1.FileRequest`: `string path = 1;`
+{-| `string path = 1;`
 -}
 path : Proto.Field.Descriptor
 path =

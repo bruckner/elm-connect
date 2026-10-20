@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Sum`: its full name and its fields, in declaration order.
-
-`message nesting.v1.Sum`
-
+{-| `message nesting.v1.Sum`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `terms` of `nesting.v1.Sum`: `repeated nesting.v1.Expr terms = 1;`
+{-| `repeated nesting.v1.Expr terms = 1;`
 -}
 terms : Proto.Field.Descriptor
 terms =

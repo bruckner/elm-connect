@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.UpdateResourceRequest`: its full name and its fields, in declaration order.
-
-`message routes.v1.UpdateResourceRequest`
-
+{-| `message routes.v1.UpdateResourceRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,14 +25,14 @@ descriptor =
         ]
 
 
-{-| The field `resource` of `routes.v1.UpdateResourceRequest`: `routes.v1.Resource resource = 1;`
+{-| `routes.v1.Resource resource = 1;`
 -}
 resource : Proto.Field.Descriptor
 resource =
     Proto.Field.descriptor "resource" "resource" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Resource")
 
 
-{-| The field `update_mask` of `routes.v1.UpdateResourceRequest`: `google.protobuf.FieldMask update_mask = 2;`
+{-| `google.protobuf.FieldMask update_mask = 2;`
 -}
 updateMask : Proto.Field.Descriptor
 updateMask =

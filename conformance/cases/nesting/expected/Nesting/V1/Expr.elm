@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Expr`: its full name and its fields, in declaration order.
-
-A cycle through a oneof needs no wrapper type, but its decoders read the
+{-| A cycle through a oneof needs no wrapper type, but its decoders read the
 member lazily.
 
 `message nesting.v1.Expr`
@@ -31,7 +29,7 @@ descriptor =
         ]
 
 
-{-| The field `number` of `nesting.v1.Expr`, a member of the oneof `value`: `int64 number = 1;`
+{-| `int64 number = 1;`, in oneof `value`
 -}
 number : Proto.Field.Descriptor
 number =
@@ -39,7 +37,7 @@ number =
         |> Proto.Field.inOneof "value"
 
 
-{-| The field `sum` of `nesting.v1.Expr`, a member of the oneof `value`: `nesting.v1.Sum sum = 2;`
+{-| `nesting.v1.Sum sum = 2;`, in oneof `value`
 -}
 sum : Proto.Field.Descriptor
 sum =

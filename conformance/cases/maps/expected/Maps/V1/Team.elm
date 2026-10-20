@@ -16,10 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `maps.v1.Team`: its full name and its fields, in declaration order.
-
-`message maps.v1.Team`
-
+{-| `message maps.v1.Team`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -41,44 +38,44 @@ descriptor =
         ]
 
 
-{-| The field `labels` of `maps.v1.Team`: `map<string, string> labels = 1;`
+{-| `map<string, string> labels = 1;`
 -}
 labels : Proto.Field.Descriptor
 labels =
     Proto.Field.descriptor "labels" "labels" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `by_seat` of `maps.v1.Team`: `map<int32, string> by_seat = 2;`
+{-| `map<int32, string> by_seat = 2;`
 -}
 bySeat : Proto.Field.Descriptor
 bySeat =
     Proto.Field.descriptor "by_seat" "bySeat" 2 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `scores` of `maps.v1.Team`: `map<uint32, double> scores = 3;`
+{-| `map<uint32, double> scores = 3;`
 -}
 scores : Proto.Field.Descriptor
 scores =
     Proto.Field.descriptor "scores" "scores" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarUint32) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
 
 
-{-| The field `flags` of `maps.v1.Team`: `map<sint32, bool> flags = 4;`
+{-| `map<sint32, bool> flags = 4;`
 -}
 flags : Proto.Field.Descriptor
 flags =
     Proto.Field.descriptor "flags" "flags" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarSint32) (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `totals` of `maps.v1.Team`: `map<fixed32, int64> totals = 5;`
+{-| `map<fixed32, int64> totals = 5;`
 -}
 totals : Proto.Field.Descriptor
 totals =
     Proto.Field.descriptor "totals" "totals" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed32) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `by_id` of `maps.v1.Team`: `map<int64, string> by_id = 6;`
+{-| 64-bit keys stay strings, like 64-bit values.
 
-64-bit keys stay strings, like 64-bit values.
+`map<int64, string> by_id = 6;`
 
 -}
 byId : Proto.Field.Descriptor
@@ -86,16 +83,16 @@ byId =
     Proto.Field.descriptor "by_id" "byId" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `counts` of `maps.v1.Team`: `map<uint64, int32> counts = 7;`
+{-| `map<uint64, int32> counts = 7;`
 -}
 counts : Proto.Field.Descriptor
 counts =
     Proto.Field.descriptor "counts" "counts" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarUint64) (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `members` of `maps.v1.Team`: `map<string, maps.v1.Member> members = 8;`
+{-| Message and enum values.
 
-Message and enum values.
+`map<string, maps.v1.Member> members = 8;`
 
 -}
 members : Proto.Field.Descriptor
@@ -103,16 +100,16 @@ members =
     Proto.Field.descriptor "members" "members" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "maps.v1.Member")
 
 
-{-| The field `roles` of `maps.v1.Team`: `map<int32, maps.v1.Role> roles = 9;`
+{-| `map<int32, maps.v1.Role> roles = 9;`
 -}
 roles : Proto.Field.Descriptor
 roles =
     Proto.Field.descriptor "roles" "roles" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindEnum Maps.V1.Role.descriptor)
 
 
-{-| The field `by_flag` of `maps.v1.Team`: `map<bool, string> by_flag = 10;`
+{-| Bool keys: an association list of at most two pairs.
 
-Bool keys: an association list of at most two pairs.
+`map<bool, string> by_flag = 10;`
 
 -}
 byFlag : Proto.Field.Descriptor
@@ -120,9 +117,9 @@ byFlag =
     Proto.Field.descriptor "by_flag" "byFlag" 10 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `by_offset` of `maps.v1.Team`: `map<sfixed32, string> by_offset = 11;`
+{-| The remaining key kinds.
 
-The remaining key kinds.
+`map<sfixed32, string> by_offset = 11;`
 
 -}
 byOffset : Proto.Field.Descriptor
@@ -130,21 +127,21 @@ byOffset =
     Proto.Field.descriptor "by_offset" "byOffset" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarSfixed32) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `deltas` of `maps.v1.Team`: `map<sint64, string> deltas = 12;`
+{-| `map<sint64, string> deltas = 12;`
 -}
 deltas : Proto.Field.Descriptor
 deltas =
     Proto.Field.descriptor "deltas" "deltas" 12 (Proto.Field.CardinalityMap Proto.Field.ScalarSint64) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `by_hash` of `maps.v1.Team`: `map<fixed64, string> by_hash = 13;`
+{-| `map<fixed64, string> by_hash = 13;`
 -}
 byHash : Proto.Field.Descriptor
 byHash =
     Proto.Field.descriptor "by_hash" "byHash" 13 (Proto.Field.CardinalityMap Proto.Field.ScalarFixed64) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `by_stamp` of `maps.v1.Team`: `map<sfixed64, string> by_stamp = 14;`
+{-| `map<sfixed64, string> by_stamp = 14;`
 -}
 byStamp : Proto.Field.Descriptor
 byStamp =

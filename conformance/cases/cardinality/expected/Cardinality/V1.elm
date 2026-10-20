@@ -26,7 +26,7 @@ elmConnectVersion_ =
 
 {-| `message cardinality.v1.Author`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias Author =
@@ -36,19 +36,19 @@ type alias Author =
 
 {-| `message cardinality.v1.Note`
 
-  - `subtitle`: `optional string subtitle = 1;` Scalars with explicit presence become `Maybe`.
-  - `stars`: `optional int32 stars = 2;`
-  - `score`: `optional double score = 3;`
-  - `views`: `optional int64 views = 4;`
-  - `author`: `cardinality.v1.Author author = 5;` A singular message field has presence too, `optional` or not.
-  - `editor`: `optional cardinality.v1.Author editor = 6;`
-  - `tags`: `repeated string tags = 7;` Repeated fields become lists.
-  - `counts`: `repeated int32 counts = 8;`
-  - `weights`: `repeated float weights = 9;`
-  - `reviewers`: `repeated cardinality.v1.Author reviewers = 10;`
-  - `relatedLinks`: `repeated string related_links = 12;` A JSON name that differs from the proto name: parsers accept both.
-  - `isDraft`: `optional bool is_draft = 13;`
-  - `title`: `string title = 11;` A one-word name: the JSON name is the proto name.
+  - `subtitle`: Scalars with explicit presence become `Maybe`.
+  - `stars`
+  - `score`
+  - `views`
+  - `author`: A singular message field has presence too, `optional` or not.
+  - `editor`
+  - `tags`: Repeated fields become lists.
+  - `counts`
+  - `weights`
+  - `reviewers`
+  - `relatedLinks`: A JSON name that differs from the proto name: parsers accept both.
+  - `isDraft`
+  - `title`: A one-word name: the JSON name is the proto name.
 
 -}
 type alias Note =

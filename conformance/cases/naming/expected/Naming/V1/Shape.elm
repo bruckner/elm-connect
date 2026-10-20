@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `naming.v1.Shape`: its full name and its values, in declaration order.
-
-Values with the conventional prefix lose it; values without it gain
+{-| Values with the conventional prefix lose it; values without it gain
 the enum's name; digits stay as written.
 
 `enum naming.v1.Shape`

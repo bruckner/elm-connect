@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `chat.v1.Line`: its full name and its fields, in declaration order.
-
-`message chat.v1.Line`
-
+{-| `message chat.v1.Line`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `text` of `chat.v1.Line`: `string text = 1;`
+{-| `string text = 1;`
 -}
 text : Proto.Field.Descriptor
 text =

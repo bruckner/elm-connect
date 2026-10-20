@@ -35,7 +35,10 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Gets a note by name.
+
+`rpc GetNote(GetNoteRequest) returns (Note)`
+
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
@@ -75,7 +78,10 @@ descriptorGetNote =
         ]
 
 
-{-| What the proto says about the method `ListNotes` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Lists a user's notes; the response is the list alone.
+
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
+
 -}
 descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
@@ -102,7 +108,10 @@ descriptorListNotes =
         ]
 
 
-{-| What the proto says about the method `CreateNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Creates a note from the `note` field.
+
+`rpc CreateNote(CreateNoteRequest) returns (Note)`
+
 -}
 descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
@@ -125,7 +134,12 @@ descriptorCreateNote =
         ]
 
 
-{-| What the proto says about the method `ReplaceNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Deprecated.
+
+Replaces a note: the body is the whole request.
+
+`rpc ReplaceNote(Note) returns (Note)`
+
 -}
 descriptorReplaceNote : Proto.Method.Descriptor
 descriptorReplaceNote =
@@ -151,7 +165,10 @@ descriptorReplaceNote =
         ]
 
 
-{-| What the proto says about the method `Ping` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| Answers without an HTTP rule, over the Connect path.
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
+
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
@@ -167,10 +184,10 @@ descriptorPing =
 -- CALLS
 
 
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+{-| Gets a note by name.
 
-Gets a note by name.
+`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
 
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
@@ -182,10 +199,10 @@ getNote =
         )
 
 
-{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
-Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+{-| Lists a user's notes; the response is the list alone.
 
-Lists a user's notes; the response is the list alone.
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
 
 -}
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
@@ -197,10 +214,10 @@ listNotes =
         )
 
 
-{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
-Transcode: `POST /v1/notes` body `note`.
+{-| Creates a note from the `note` field.
 
-Creates a note from the `note` field.
+`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/notes` body `note`.
 
 -}
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
@@ -214,10 +231,10 @@ createNote =
 
 {-| Deprecated.
 
+Replaces a note: the body is the whole request.
+
 `rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
-
-Replaces a note: the body is the whole request.
 
 -}
 replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
@@ -229,10 +246,10 @@ replaceNote =
         )
 
 
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-No HTTP rule: the Connect path.
+{-| Answers without an HTTP rule, over the Connect path.
 
-Answers without an HTTP rule, over the Connect path.
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
+No HTTP rule: the Connect path.
 
 -}
 ping : () -> Rpc.Call () ()

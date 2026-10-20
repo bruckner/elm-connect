@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `awkward.v1.Delimiters`: its full name and its fields, in declaration order.
-
-Closes and opens Elm comments: - } and { - and { -| and - }- }.
+{-| Closes and opens Elm comments: - } and { - and { -| and - }- }.
 `@docs` encode, decode
 Emphasis with _stars_ and _underscores_, **strong** and **strong**;
 snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
@@ -38,7 +36,7 @@ descriptor =
         ]
 
 
-{-| The field `lists` of `awkward.v1.Delimiters`: `string lists = 1;`
+{-|
 
   - a star item
 
@@ -55,13 +53,15 @@ descriptor =
 
 3.  third
 
+`string lists = 1;`
+
 -}
 lists : Proto.Field.Descriptor
 lists =
     Proto.Field.descriptor "lists" "lists" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `blocks` of `awkward.v1.Delimiters`: `string blocks = 2;`
+{-|
 
 
 # A heading
@@ -74,15 +74,15 @@ lists =
 > A quote
 > on two lines.
 
+`string blocks = 2;`
+
 -}
 blocks : Proto.Field.Descriptor
 blocks =
     Proto.Field.descriptor "blocks" "blocks" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `code` of `awkward.v1.Delimiters`: `string code = 3;`
-
-Indented code:
+{-| Indented code:
 
 ```text
 rpc Get(Request) returns (Response);
@@ -107,15 +107,15 @@ Fenced as proto:
 message M { int32 x = 1; }
 ```
 
+`string code = 3;`
+
 -}
 code : Proto.Field.Descriptor
 code =
     Proto.Field.descriptor "code" "code" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `inline` of `awkward.v1.Delimiters`: `string inline = 4;`
-
-| a | b |
+{-| | a | b |
 |---|---|
 | 1 | 2 |
 
@@ -125,18 +125,20 @@ A pipe | in text, <b>HTML</b> &amp; an entity, <div>a block</div>,
 
 [ref]: https://example.com "Title"
 
+`string inline = 4;`
+
 -}
 inline : Proto.Field.Descriptor
 inline =
     Proto.Field.descriptor "inline" "inline" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `text` of `awkward.v1.Delimiters`: `string text = 5;`
-
-Trailing spaces end this line
+{-| Trailing spaces end this line
 and a tab sits here.
 A line of two hundred characters, which elm-format leaves as it is rather than wrapping it, since it reflows no paragraph of a doc comment at all, however long it runs: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Non-ASCII: café, naïve, “quotes”, — and ✓.
+
+`string text = 5;`
 
 -}
 text : Proto.Field.Descriptor
@@ -144,18 +146,20 @@ text =
     Proto.Field.descriptor "text" "text" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `whitespace_only` of `awkward.v1.Delimiters`: `string whitespace_only = 6;`
+{-| `string whitespace_only = 6;`
 -}
 whitespaceOnly : Proto.Field.Descriptor
 whitespaceOnly =
     Proto.Field.descriptor "whitespace_only" "whitespaceOnly" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `unclosed` of `awkward.v1.Delimiters`: `string unclosed = 7;`
+{-|
 
 ```text
 A fence that never closes.
 ```
+
+`string unclosed = 7;`
 
 -}
 unclosed : Proto.Field.Descriptor

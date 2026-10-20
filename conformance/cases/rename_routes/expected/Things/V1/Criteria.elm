@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `things.v1.Filter`: its full name and its fields, in declaration order.
-
-Renamed to `Criteria` (options.txt), so its descriptor module is
+{-| Renamed to `Criteria` (options.txt), so its descriptor module is
 `Things.V1.Criteria`; `state` is renamed to `status`.
 
 `message things.v1.Filter`
@@ -30,7 +28,7 @@ descriptor =
         ]
 
 
-{-| The field `state` of `things.v1.Filter`: `string state = 1;`
+{-| `string state = 1;`
 -}
 status : Proto.Field.Descriptor
 status =

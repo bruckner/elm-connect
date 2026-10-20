@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `notes.v1.Visibility`: its full name and its values, in declaration order.
-
-Who may read a note.
+{-| Who may read a note.
 
 `enum notes.v1.Visibility`
 

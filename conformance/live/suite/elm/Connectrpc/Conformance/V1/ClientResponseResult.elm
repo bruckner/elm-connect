@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ClientResponseResult`: its full name and its fields, in declaration order.
-
-The result of a ClientCompatRequest, which may or may not be successful.
+{-| The result of a ClientCompatRequest, which may or may not be successful.
 The client will build this message and return it back to the test runner.
 
 `message connectrpc.conformance.v1.ClientResponseResult`
@@ -36,9 +34,9 @@ descriptor =
         ]
 
 
-{-| The field `response_headers` of `connectrpc.conformance.v1.ClientResponseResult`: `repeated connectrpc.conformance.v1.Header response_headers = 1;`
+{-| All response headers read from the response.
 
-All response headers read from the response.
+`repeated connectrpc.conformance.v1.Header response_headers = 1;`
 
 -}
 responseHeaders : Proto.Field.Descriptor
@@ -46,12 +44,12 @@ responseHeaders =
     Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `payloads` of `connectrpc.conformance.v1.ClientResponseResult`: `repeated connectrpc.conformance.v1.ConformancePayload payloads = 2;`
-
-Servers should echo back payloads that they received as part of the request.
+{-| Servers should echo back payloads that they received as part of the request.
 This field should contain all the payloads the server echoed back. Note that
 There will be zero-to-one for unary and client stream methods and
 zero-to-many for server and bidi stream methods.
+
+`repeated connectrpc.conformance.v1.ConformancePayload payloads = 2;`
 
 -}
 payloads : Proto.Field.Descriptor
@@ -59,11 +57,11 @@ payloads =
     Proto.Field.descriptor "payloads" "payloads" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.ConformancePayload")
 
 
-{-| The field `error` of `connectrpc.conformance.v1.ClientResponseResult`: `connectrpc.conformance.v1.Error error = 3;`
-
-The error received from the actual RPC invocation. Note this is not representative
+{-| The error received from the actual RPC invocation. Note this is not representative
 of a runtime error and should always be the proto equivalent of a Connect
 or gRPC error.
+
+`connectrpc.conformance.v1.Error error = 3;`
 
 -}
 error : Proto.Field.Descriptor
@@ -71,9 +69,9 @@ error =
     Proto.Field.descriptor "error" "error" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
 
 
-{-| The field `response_trailers` of `connectrpc.conformance.v1.ClientResponseResult`: `repeated connectrpc.conformance.v1.Header response_trailers = 4;`
+{-| All response headers read from the response.
 
-All response headers read from the response.
+`repeated connectrpc.conformance.v1.Header response_trailers = 4;`
 
 -}
 responseTrailers : Proto.Field.Descriptor
@@ -81,10 +79,10 @@ responseTrailers =
     Proto.Field.descriptor "response_trailers" "responseTrailers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `num_unsent_requests` of `connectrpc.conformance.v1.ClientResponseResult`: `int32 num_unsent_requests = 5;`
-
-The number of messages that were present in the request but that could not be
+{-| The number of messages that were present in the request but that could not be
 sent because an error occurred before finishing the upload.
+
+`int32 num_unsent_requests = 5;`
 
 -}
 numUnsentRequests : Proto.Field.Descriptor
@@ -92,12 +90,12 @@ numUnsentRequests =
     Proto.Field.descriptor "num_unsent_requests" "numUnsentRequests" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `http_status_code` of `connectrpc.conformance.v1.ClientResponseResult`: `optional int32 http_status_code = 6;`
-
-The following field is only set by the reference client. It communicates
+{-| The following field is only set by the reference client. It communicates
 the underlying HTTP status code of the server's response.
 If you are implementing a client-under-test, you should ignore this field
 and leave it unset.
+
+`optional int32 http_status_code = 6;`
 
 -}
 httpStatusCode : Proto.Field.Descriptor
@@ -105,14 +103,14 @@ httpStatusCode =
     Proto.Field.descriptor "http_status_code" "httpStatusCode" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `feedback` of `connectrpc.conformance.v1.ClientResponseResult`: `repeated string feedback = 7;`
-
-This field is used only by the reference client, and it can be used
+{-| This field is used only by the reference client, and it can be used
 to provide additional feedback about problems observed in the server
 response or in client processing of the response. If non-empty, the test
 case is considered failed even if the result above matches all expectations.
 If you are implementing a client-under-test, you should ignore this field
 and leave it unset.
+
+`repeated string feedback = 7;`
 
 -}
 feedback : Proto.Field.Descriptor

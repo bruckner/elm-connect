@@ -26,7 +26,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetThing` of `things.v1.ThingService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetThing(GetThingRequest) returns (Thing)`
 -}
 descriptorGetThing : Proto.Method.Descriptor
 descriptorGetThing =

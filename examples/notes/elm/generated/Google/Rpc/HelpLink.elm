@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.Help.Link`: its full name and its fields, in declaration order.
-
-Describes a URL link.
+{-| Describes a URL link.
 
 `message google.rpc.Help.Link`
 
@@ -30,9 +28,9 @@ descriptor =
         ]
 
 
-{-| The field `description` of `google.rpc.Help.Link`: `string description = 1;`
+{-| Describes what the link offers.
 
-Describes what the link offers.
+`string description = 1;`
 
 -}
 description : Proto.Field.Descriptor
@@ -40,9 +38,9 @@ description =
     Proto.Field.descriptor "description" "description" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `url` of `google.rpc.Help.Link`: `string url = 2;`
+{-| The URL of the link.
 
-The URL of the link.
+`string url = 2;`
 
 -}
 url : Proto.Field.Descriptor

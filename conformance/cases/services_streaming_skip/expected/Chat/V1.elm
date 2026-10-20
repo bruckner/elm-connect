@@ -25,7 +25,7 @@ elmConnectVersion_ =
 
 {-| `message chat.v1.Line`
 
-  - `text`: `string text = 1;`
+  - `text`
 
 -}
 type alias Line =

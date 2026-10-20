@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `naming.v1.HttpMethod`: its full name and its values, in declaration order.
-
-A multi-word enum name: its prefix is matched word by word.
+{-| A multi-word enum name: its prefix is matched word by word.
 
 `enum naming.v1.HttpMethod`
 

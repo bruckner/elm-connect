@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `envelope.v1.Envelope`: its full name and its fields, in declaration order.
-
-`message envelope.v1.Envelope`
-
+{-| `message envelope.v1.Envelope`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -32,35 +29,35 @@ descriptor =
         ]
 
 
-{-| The field `id` of `envelope.v1.Envelope`: `string id = 1;`
+{-| `string id = 1;`
 -}
 id : Proto.Field.Descriptor
 id =
     Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `payload` of `envelope.v1.Envelope`: `google.protobuf.Any payload = 2;`
+{-| `google.protobuf.Any payload = 2;`
 -}
 payload : Proto.Field.Descriptor
 payload =
     Proto.Field.descriptor "payload" "payload" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `attachments` of `envelope.v1.Envelope`: `repeated google.protobuf.Any attachments = 3;`
+{-| `repeated google.protobuf.Any attachments = 3;`
 -}
 attachments : Proto.Field.Descriptor
 attachments =
     Proto.Field.descriptor "attachments" "attachments" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `headers` of `envelope.v1.Envelope`: `map<string, google.protobuf.Any> headers = 4;`
+{-| `map<string, google.protobuf.Any> headers = 4;`
 -}
 headers : Proto.Field.Descriptor
 headers =
     Proto.Field.descriptor "headers" "headers" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `packed` of `envelope.v1.Envelope`, a member of the oneof `body`: `google.protobuf.Any packed = 5;`
+{-| `google.protobuf.Any packed = 5;`, in oneof `body`
 -}
 packed : Proto.Field.Descriptor
 packed =
@@ -68,7 +65,7 @@ packed =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `text` of `envelope.v1.Envelope`, a member of the oneof `body`: `string text = 6;`
+{-| `string text = 6;`, in oneof `body`
 -}
 text : Proto.Field.Descriptor
 text =

@@ -31,10 +31,10 @@ the enum's name; digits stay as written.
 
 `enum naming.v1.Shape`
 
-  - `ShapeUnspecified`: `SHAPE_UNSPECIFIED = 0;`
-  - `Shape2d`: `SHAPE_2D = 1;`
-  - `ShapeCube`: `CUBE = 2;`
-  - `ShapeV3Mesh`: `SHAPE_V3_MESH = 3;`
+  - `ShapeUnspecified` (`SHAPE_UNSPECIFIED`)
+  - `Shape2d` (`SHAPE_2D`)
+  - `ShapeCube` (`CUBE`)
+  - `ShapeV3Mesh` (`SHAPE_V3_MESH`)
 
 -}
 type Shape
@@ -48,9 +48,9 @@ type Shape
 
 `enum naming.v1.HttpMethod`
 
-  - `HttpMethodUnspecified`: `HTTP_METHOD_UNSPECIFIED = 0;`
-  - `HttpMethodGet`: `HTTP_METHOD_GET = 1;`
-  - `HttpMethodPost`: `POST = 2;`
+  - `HttpMethodUnspecified` (`HTTP_METHOD_UNSPECIFIED`)
+  - `HttpMethodGet` (`HTTP_METHOD_GET`)
+  - `HttpMethodPost` (`POST`)
 
 -}
 type HttpMethod
@@ -61,17 +61,17 @@ type HttpMethod
 
 {-| `message naming.v1.Tag`
 
-  - `type_`: `string type = 1;` Elm reserved words gain a trailing underscore; the wire keeps the
+  - `type_`: Elm reserved words gain a trailing underscore; the wire keeps the
     proto name.
-  - `if_`: `bool if = 2;`
-  - `port_`: `int32 port = 3;`
-  - `alias`: `string alias = 4;` A word Elm does not reserve keeps its name.
-  - `displayName`: `string display_name = 5 [json_name = "screenName"];` `json_name` changes the wire name only.
-  - `httpUrl`: `string http_url = 6;` Digits and acronyms are cased as written.
-  - `v2Count`: `int32 v2_count = 7;`
-  - `shape`: `naming.v1.Shape shape = 8;`
-  - `method`: `naming.v1.HttpMethod method = 9;`
-  - `case_`: `oneof case` (`TagCase`) A oneof named by a reserved word, with reserved-word members.
+  - `if_`
+  - `port_`
+  - `alias`: A word Elm does not reserve keeps its name.
+  - `displayName`: `json_name` changes the wire name only.
+  - `httpUrl`: Digits and acronyms are cased as written.
+  - `v2Count`
+  - `shape`
+  - `method`
+  - `case_`: A oneof named by a reserved word, with reserved-word members. See `TagCase`.
 
 -}
 type alias Tag =
@@ -93,8 +93,8 @@ type alias Tag =
 `oneof case` of `naming.v1.Tag`
 
   - `TagCaseUnset`: none of the fields is set.
-  - `TagCaseThen`: `string then = 10;`
-  - `TagCaseOf`: `int32 of = 11;`
+  - `TagCaseThen`
+  - `TagCaseOf`
 
 -}
 type TagCase

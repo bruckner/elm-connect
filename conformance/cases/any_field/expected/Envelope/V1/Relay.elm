@@ -25,7 +25,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Forward` of `envelope.v1.Relay`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`
 -}
 descriptorForward : Proto.Method.Descriptor
 descriptorForward =
@@ -37,7 +37,7 @@ descriptorForward =
         []
 
 
-{-| What the proto says about the method `Send` of `envelope.v1.Relay`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Send(Envelope) returns (Envelope)`
 -}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =

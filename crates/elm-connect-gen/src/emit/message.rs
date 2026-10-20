@@ -13,16 +13,16 @@ impl Emitter {
     /// oneof, in declaration order.
     pub(super) fn message_alias(&mut self, shape: &MessageShape) -> Decl {
         let record = shape.record();
-        let items: Vec<_> = record
+        let items = record
             .iter()
             .map(|field| match field {
                 RecordField::Field(field, _) => {
-                    (docs::field_head(&field.elm_name, &field.doc), &field.doc)
+                    docs::field_item(&field.elm_name, &field.doc, &field.annotations.behavior)
                 }
-                RecordField::Oneof(oneof) => (docs::oneof_head(oneof.oneof), &oneof.oneof.doc),
+                RecordField::Oneof(oneof) => docs::oneof_item(oneof.oneof),
             })
             .collect();
-        let doc = docs::message(shape.message, &items);
+        let doc = docs::message(shape.message, items);
         let body = record
             .iter()
             .map(|field| match field {

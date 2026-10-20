@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ConformancePayload`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.ConformancePayload`
-
+{-| `message connectrpc.conformance.v1.ConformancePayload`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,10 +25,10 @@ descriptor =
         ]
 
 
-{-| The field `data` of `connectrpc.conformance.v1.ConformancePayload`: `bytes data = 1;`
-
-Any response data specified in the response definition to the server should be
+{-| Any response data specified in the response definition to the server should be
 echoed back here.
+
+`bytes data = 1;`
 
 -}
 data : Proto.Field.Descriptor
@@ -39,9 +36,9 @@ data =
     Proto.Field.descriptor "data" "data" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `request_info` of `connectrpc.conformance.v1.ConformancePayload`: `connectrpc.conformance.v1.ConformancePayload.RequestInfo request_info = 2;`
+{-| Echoes back information about the request stream observed so far.
 
-Echoes back information about the request stream observed so far.
+`connectrpc.conformance.v1.ConformancePayload.RequestInfo request_info = 2;`
 
 -}
 requestInfo : Proto.Field.Descriptor

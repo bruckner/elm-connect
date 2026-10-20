@@ -31,8 +31,8 @@ elmConnectVersion_ =
 
 `message catalog.v1.Entry`
 
-  - `name`: `string name = 1;`
-  - `descriptor`: `string descriptor = 2;`
+  - `name`
+  - `descriptor`
 
 -}
 type alias Entry =
@@ -45,7 +45,7 @@ type alias Entry =
 
 `message catalog.v1.Part`
 
-  - `kind`: `oneof kind` (`PartKind`)
+  - `kind`: See `PartKind`.
 
 -}
 type alias Part =
@@ -56,8 +56,8 @@ type alias Part =
 {-| `oneof kind` of `catalog.v1.Part`
 
   - `PartKindUnset`: none of the fields is set.
-  - `PartKindDescriptor`: `string descriptor = 1;`
-  - `PartKindCount`: `int32 count = 2;`
+  - `PartKindDescriptor`
+  - `PartKindCount`
 
 -}
 type PartKind
@@ -68,9 +68,9 @@ type PartKind
 
 {-| `message catalog.v1.GetEntryRequest`
 
-  - `name`: `string name = 1;`
-  - `descriptor`: `string descriptor = 2;`
-  - `part`: `catalog.v1.Part part = 3;`
+  - `name`
+  - `descriptor`
+  - `part`
 
 -}
 type alias GetEntryRequest =

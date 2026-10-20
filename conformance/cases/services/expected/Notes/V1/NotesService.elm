@@ -35,7 +35,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
@@ -75,7 +75,7 @@ descriptorGetNote =
         ]
 
 
-{-| What the proto says about the method `ListNotes` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
 -}
 descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
@@ -110,7 +110,7 @@ descriptorListNotes =
         ]
 
 
-{-| What the proto says about the method `CreateNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`
 -}
 descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
@@ -137,7 +137,7 @@ descriptorCreateNote =
         ]
 
 
-{-| What the proto says about the method `UpdateNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`
 -}
 descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
@@ -165,7 +165,7 @@ descriptorUpdateNote =
         ]
 
 
-{-| What the proto says about the method `ReplaceNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc ReplaceNote(Note) returns (Note)`
 -}
 descriptorReplaceNote : Proto.Method.Descriptor
 descriptorReplaceNote =
@@ -191,7 +191,7 @@ descriptorReplaceNote =
         ]
 
 
-{-| What the proto says about the method `DeleteNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`
 -}
 descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
@@ -219,7 +219,7 @@ descriptorDeleteNote =
         ]
 
 
-{-| What the proto says about the method `ArchiveNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`
 -}
 descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
@@ -245,7 +245,7 @@ descriptorArchiveNote =
         ]
 
 
-{-| What the proto says about the method `ReadFile` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc ReadFile(ReadFileRequest) returns (Summary)`
 -}
 descriptorReadFile : Proto.Method.Descriptor
 descriptorReadFile =
@@ -271,7 +271,7 @@ descriptorReadFile =
         ]
 
 
-{-| What the proto says about the method `Ping` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
@@ -294,7 +294,10 @@ descriptorPing =
         ]
 
 
-{-| What the proto says about the method `Summarize` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| No HTTP rule: called over the implicit route.
+
+`rpc Summarize(GetNoteRequest) returns (Summary)`
+
 -}
 descriptorSummarize : Proto.Method.Descriptor
 descriptorSummarize =
@@ -418,10 +421,10 @@ ping =
         )
 
 
-{-| `rpc Summarize(GetNoteRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/Summarize`.
-No HTTP rule: the Connect path.
+{-| No HTTP rule: called over the implicit route.
 
-No HTTP rule: called over the implicit route.
+`rpc Summarize(GetNoteRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/Summarize`.
+No HTTP rule: the Connect path.
 
 -}
 summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary

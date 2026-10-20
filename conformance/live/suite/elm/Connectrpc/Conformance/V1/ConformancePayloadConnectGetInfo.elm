@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`
-
+{-| `message connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,9 +24,9 @@ descriptor =
         ]
 
 
-{-| The field `query_params` of `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`: `repeated connectrpc.conformance.v1.Header query_params = 1;`
+{-| The query params observed in the request URL.
 
-The query params observed in the request URL.
+`repeated connectrpc.conformance.v1.Header query_params = 1;`
 
 -}
 queryParams : Proto.Field.Descriptor

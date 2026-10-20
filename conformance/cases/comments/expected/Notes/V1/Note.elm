@@ -16,9 +16,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
-
-A note.
+{-| A note.
 
 `message notes.v1.Note`
 
@@ -39,9 +37,9 @@ descriptor =
         ]
 
 
-{-| The field `name` of `notes.v1.Note`: `string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
+{-| The resource name, `notes/{note}`.
 
-The resource name, `notes/{note}`.
+`string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
 
 -}
 name : Proto.Field.Descriptor
@@ -50,9 +48,9 @@ name =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
 
 
-{-| The field `title` of `notes.v1.Note`: `string title = 2 [json_name = "heading", (google.api.field_behavior) = REQUIRED];`
+{-| The title, shown first.
 
-The title, shown first.
+`string title = 2 [json_name = "heading", (google.api.field_behavior) = REQUIRED];`
 
 -}
 title : Proto.Field.Descriptor
@@ -61,9 +59,9 @@ title =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
 
 
-{-| The field `visibility` of `notes.v1.Note`: `notes.v1.Visibility visibility = 3;`
+{-| Who may read it.
 
-Who may read it.
+`notes.v1.Visibility visibility = 3;`
 
 -}
 visibility : Proto.Field.Descriptor
@@ -71,11 +69,11 @@ visibility =
     Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.V1.Visibility.descriptor)
 
 
-{-| The field `tags` of `notes.v1.Note`: `repeated string tags = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
-
-Labels.
+{-| Labels.
 
 In no order.
+
+`repeated string tags = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
 
 -}
 tags : Proto.Field.Descriptor
@@ -84,25 +82,25 @@ tags =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
 
 
-{-| The field `labels` of `notes.v1.Note`: `map<string, string> labels = 5;`
+{-| `map<string, string> labels = 5;`
 -}
 labels : Proto.Field.Descriptor
 labels =
     Proto.Field.descriptor "labels" "labels" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `pinned` of `notes.v1.Note`: `optional bool pinned = 6;`
+{-| `optional bool pinned = 6;`
 -}
 pinned : Proto.Field.Descriptor
 pinned =
     Proto.Field.descriptor "pinned" "pinned" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `subject` of `notes.v1.Note`: `string subject = 7 [deprecated = true];`
-
-Deprecated.
+{-| Deprecated.
 
 Replaced by `title`.
+
+`string subject = 7 [deprecated = true];`
 
 -}
 subject : Proto.Field.Descriptor
@@ -111,7 +109,7 @@ subject =
         |> Proto.Field.withDeprecated
 
 
-{-| The field `created` of `notes.v1.Note`: `google.protobuf.Timestamp created = 8 [(google.api.field_behavior) = OUTPUT_ONLY];`
+{-| `google.protobuf.Timestamp created = 8 [(google.api.field_behavior) = OUTPUT_ONLY];`
 -}
 created : Proto.Field.Descriptor
 created =
@@ -119,9 +117,9 @@ created =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
 
 
-{-| The field `archived` of `notes.v1.Note`, a member of the oneof `last_event`: `google.protobuf.Timestamp archived = 9;`
+{-| When it was archived.
 
-When it was archived.
+`google.protobuf.Timestamp archived = 9;`, in oneof `last_event`
 
 -}
 archived : Proto.Field.Descriptor
@@ -130,9 +128,9 @@ archived =
         |> Proto.Field.inOneof "last_event"
 
 
-{-| The field `edited` of `notes.v1.Note`, a member of the oneof `last_event`: `notes.v1.Note.Edit edited = 10;`
+{-| The last edit.
 
-The last edit.
+`notes.v1.Note.Edit edited = 10;`, in oneof `last_event`
 
 -}
 edited : Proto.Field.Descriptor

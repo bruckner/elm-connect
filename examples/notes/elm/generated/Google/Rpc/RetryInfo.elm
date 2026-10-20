@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.RetryInfo`: its full name and its fields, in declaration order.
-
-Describes when the clients can retry a failed request. Clients could ignore
+{-| Describes when the clients can retry a failed request. Clients could ignore
 the recommendation here or retry when this information is missing from error
 responses.
 
@@ -41,9 +39,9 @@ descriptor =
         ]
 
 
-{-| The field `retry_delay` of `google.rpc.RetryInfo`: `google.protobuf.Duration retry_delay = 1;`
+{-| Clients should wait at least this long between retrying the same request.
 
-Clients should wait at least this long between retrying the same request.
+`google.protobuf.Duration retry_delay = 1;`
 
 -}
 retryDelay : Proto.Field.Descriptor

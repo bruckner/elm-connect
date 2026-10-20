@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.PreconditionFailure`: its full name and its fields, in declaration order.
-
-Describes what preconditions have failed.
+{-| Describes what preconditions have failed.
 
 For example, if an RPC failed because it required the Terms of Service to be
 acknowledged, it could list the terms of service violation in the
@@ -33,9 +31,9 @@ descriptor =
         ]
 
 
-{-| The field `violations` of `google.rpc.PreconditionFailure`: `repeated google.rpc.PreconditionFailure.Violation violations = 1;`
+{-| Describes all precondition violations.
 
-Describes all precondition violations.
+`repeated google.rpc.PreconditionFailure.Violation violations = 1;`
 
 -}
 violations : Proto.Field.Descriptor

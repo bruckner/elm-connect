@@ -39,9 +39,9 @@ elmConnectVersion_ =
 
 {-| `enum routes.v1.Kind`
 
-  - `KindUnspecified`: `KIND_UNSPECIFIED = 0;`
-  - `KindText`: `KIND_TEXT = 1;`
-  - `KindImage`: `KIND_IMAGE = 2;`
+  - `KindUnspecified` (`KIND_UNSPECIFIED`)
+  - `KindText` (`KIND_TEXT`)
+  - `KindImage` (`KIND_IMAGE`)
 
 -}
 type Kind
@@ -54,11 +54,11 @@ type Kind
 
 `message routes.v1.GetMessageRequest`
 
-  - `messageId`: `string message_id = 1;`
-  - `revision`: `int64 revision = 2;`
-  - `sub`: `routes.v1.GetMessageRequest.SubMessage sub = 3;`
-  - `userId`: `string user_id = 4;`
-  - `name`: `string name = 5;`
+  - `messageId`
+  - `revision`
+  - `sub`
+  - `userId`
+  - `name`
 
 -}
 type alias GetMessageRequest =
@@ -72,7 +72,7 @@ type alias GetMessageRequest =
 
 {-| `message routes.v1.GetMessageRequest.SubMessage`
 
-  - `subfield`: `string subfield = 1;`
+  - `subfield`
 
 -}
 type alias GetMessageRequestSubMessage =
@@ -82,8 +82,8 @@ type alias GetMessageRequestSubMessage =
 
 {-| `message routes.v1.Message`
 
-  - `messageId`: `string message_id = 1;`
-  - `text`: `string text = 2;`
+  - `messageId`
+  - `text`
 
 -}
 type alias Message =
@@ -94,8 +94,8 @@ type alias Message =
 
 {-| `message routes.v1.UpdateMessageRequest`
 
-  - `messageId`: `string message_id = 1;`
-  - `message`: `routes.v1.Message message = 2;`
+  - `messageId`
+  - `message`
 
 -}
 type alias UpdateMessageRequest =
@@ -108,27 +108,27 @@ type alias UpdateMessageRequest =
 
 `message routes.v1.Everything`
 
-  - `name`: `string name = 1;`
-  - `count`: `int32 count = 2;`
-  - `big`: `int64 big = 3;`
-  - `ubig`: `uint64 ubig = 4;`
-  - `flag`: `bool flag = 5;`
-  - `ratio`: `double ratio = 6;`
-  - `scale`: `float scale = 7;`
-  - `data`: `bytes data = 8;`
-  - `kind`: `routes.v1.Kind kind = 9;`
-  - `tags`: `repeated string tags = 10;`
-  - `kinds`: `repeated routes.v1.Kind kinds = 11;`
-  - `numbers`: `repeated int32 numbers = 12;`
-  - `maybeCount`: `optional int32 maybe_count = 13;`
-  - `maybeName`: `optional string maybe_name = 14;`
-  - `at`: `google.protobuf.Timestamp at = 15;`
-  - `wait`: `google.protobuf.Duration wait = 16;`
-  - `mask`: `google.protobuf.FieldMask mask = 17;`
-  - `limit`: `google.protobuf.Int32Value limit = 18;`
-  - `label`: `google.protobuf.StringValue label = 19;`
-  - `inner`: `routes.v1.Inner inner = 20;`
-  - `choice`: `oneof choice` (`EverythingChoice`)
+  - `name`
+  - `count`
+  - `big`
+  - `ubig`
+  - `flag`
+  - `ratio`
+  - `scale`
+  - `data`
+  - `kind`
+  - `tags`
+  - `kinds`
+  - `numbers`
+  - `maybeCount`
+  - `maybeName`
+  - `at`
+  - `wait`
+  - `mask`
+  - `limit`
+  - `label`
+  - `inner`
+  - `choice`: See `EverythingChoice`.
 
 -}
 type alias Everything =
@@ -159,8 +159,8 @@ type alias Everything =
 {-| `oneof choice` of `routes.v1.Everything`
 
   - `EverythingChoiceUnset`: none of the fields is set.
-  - `EverythingChoiceText`: `string text = 21;`
-  - `EverythingChoiceNumber`: `int32 number = 22;`
+  - `EverythingChoiceText`
+  - `EverythingChoiceNumber`
 
 -}
 type EverythingChoice
@@ -171,8 +171,8 @@ type EverythingChoice
 
 {-| `message routes.v1.Inner`
 
-  - `a`: `string a = 1;`
-  - `deep`: `routes.v1.Deep deep = 2;`
+  - `a`
+  - `deep`
 
 -}
 type alias Inner =
@@ -183,8 +183,8 @@ type alias Inner =
 
 {-| `message routes.v1.Deep`
 
-  - `b`: `int32 b = 1;`
-  - `c`: `repeated string c = 2;`
+  - `b`
+  - `c`
 
 -}
 type alias Deep =
@@ -195,7 +195,7 @@ type alias Deep =
 
 {-| `message routes.v1.FileRequest`
 
-  - `path`: `string path = 1;`
+  - `path`
 
 -}
 type alias FileRequest =
@@ -207,11 +207,11 @@ type alias FileRequest =
 
 `message routes.v1.Resource`
 
-  - `name`: `string name = 1;`
-  - `displayName`: `string display_name = 2;`
-  - `labels`: `map<string, string> labels = 3;`
-  - `kinds`: `map<int64, routes.v1.Kind> kinds = 4;`
-  - `weights`: `map<bool, double> weights = 5;`
+  - `name`
+  - `displayName`
+  - `labels`
+  - `kinds`
+  - `weights`
 
 -}
 type alias Resource =
@@ -225,8 +225,8 @@ type alias Resource =
 
 {-| `message routes.v1.UpdateResourceRequest`
 
-  - `resource`: `routes.v1.Resource resource = 1;`
-  - `updateMask`: `google.protobuf.FieldMask update_mask = 2;`
+  - `resource`
+  - `updateMask`
 
 -}
 type alias UpdateResourceRequest =

@@ -26,17 +26,17 @@ elmConnectVersion_ =
 
 {-| `message first.v1.URLPath`
 
-  - `label`: `string Label = 1;`
-  - `id`: `string ID = 2;`
-  - `url`: `string URL = 3;`
-  - `urlPath`: `string URLPath = 4;`
-  - `httpRequest`: `string HTTPRequest = 5;`
-  - `xCoord`: `double XCoord = 6;`
-  - `abcDef`: `string ABCDef = 7;`
-  - `internal`: `string _internal = 8;`
-  - `displayName`: `string display_name = 10;`
-  - `type_`: `string Type = 11;`
-  - `iDs`: `repeated string IDs = 12;` `ID` + `s` reads as `I` + `Ds`.
+  - `label`
+  - `id`
+  - `url`
+  - `urlPath`
+  - `httpRequest`
+  - `xCoord`
+  - `abcDef`
+  - `internal`
+  - `displayName`
+  - `type_`
+  - `iDs`: `ID` + `s` reads as `I` + `Ds`.
 
 -}
 type alias URLPath =
@@ -61,8 +61,8 @@ value `url`.
 
 `message first.v1.Link`
 
-  - `label`: `string __Label = 9;`
-  - `target`: `oneof Target` (`LinkTarget`)
+  - `label`
+  - `target`: See `LinkTarget`.
 
 -}
 type alias Link =
@@ -74,8 +74,8 @@ type alias Link =
 {-| `oneof Target` of `first.v1.Link`
 
   - `LinkTargetUnset`: none of the fields is set.
-  - `LinkTargetURL`: `string URL = 1;`
-  - `LinkTargetCount`: `int32 Count = 2;`
+  - `LinkTargetURL`
+  - `LinkTargetCount`
 
 -}
 type LinkTarget

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.TestSuite.ConnectVersionMode`: its full name and its values, in declaration order.
-
-`enum connectrpc.conformance.v1.TestSuite.ConnectVersionMode`
+{-| `enum connectrpc.conformance.v1.TestSuite.ConnectVersionMode`
 
   - `CONNECT_VERSION_MODE_UNSPECIFIED = 0;` Used when the suite is agnostic to the server's validation
     behavior.

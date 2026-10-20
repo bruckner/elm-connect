@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.Inner`: its full name and its fields, in declaration order.
-
-`message routes.v1.Inner`
-
+{-| `message routes.v1.Inner`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,14 +25,14 @@ descriptor =
         ]
 
 
-{-| The field `a` of `routes.v1.Inner`: `string a = 1;`
+{-| `string a = 1;`
 -}
 a : Proto.Field.Descriptor
 a =
     Proto.Field.descriptor "a" "a" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `deep` of `routes.v1.Inner`: `routes.v1.Deep deep = 2;`
+{-| `routes.v1.Deep deep = 2;`
 -}
 deep : Proto.Field.Descriptor
 deep =

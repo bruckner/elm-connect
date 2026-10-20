@@ -28,9 +28,9 @@ elmConnectVersion_ =
 
 {-| `enum tasks.v1.State`
 
-  - `StateUnspecified`: `STATE_UNSPECIFIED = 0;`
-  - `StateOpen`: `STATE_OPEN = 1;`
-  - `StateStale`: `STATE_STALE = 2 [deprecated = true];` Deprecated.
+  - `StateUnspecified` (`STATE_UNSPECIFIED`)
+  - `StateOpen` (`STATE_OPEN`)
+  - `StateStale` (`STATE_STALE`): Deprecated.
 
 -}
 type State
@@ -41,13 +41,13 @@ type State
 
 {-| `message tasks.v1.Task`
 
-  - `name`: `string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
-  - `title`: `string title = 2 [(google.api.field_behavior) = REQUIRED];`
-  - `state`: `tasks.v1.State state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];`
-  - `labels`: `repeated string labels = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
-  - `owner`: `string owner = 5 [deprecated = true, (google.api.field_behavior) = OPTIONAL, (google.api.field_behavior) = IMMUTABLE];` Deprecated.
-  - `notes`: `string notes = 6;`
-  - `due`: `oneof due` (`TaskDue`)
+  - `name`: Identifier.
+  - `title`: Required.
+  - `state`: Output only.
+  - `labels`: Unordered.
+  - `owner`: Deprecated. Immutable.
+  - `notes`
+  - `due`: See `TaskDue`.
 
 -}
 type alias Task =
@@ -64,8 +64,8 @@ type alias Task =
 {-| `oneof due` of `tasks.v1.Task`
 
   - `TaskDueUnset`: none of the fields is set.
-  - `TaskDueDate`: `string date = 7 [(google.api.field_behavior) = INPUT_ONLY];`
-  - `TaskDueNever`: `string never = 8 [deprecated = true];` Deprecated.
+  - `TaskDueDate`: Input only.
+  - `TaskDueNever`: Deprecated.
 
 -}
 type TaskDue
@@ -76,7 +76,7 @@ type TaskDue
 
 {-| `message tasks.v1.GetTaskRequest`
 
-  - `name`: `string name = 1 [(google.api.field_behavior) = REQUIRED];`
+  - `name`: Required.
 
 -}
 type alias GetTaskRequest =

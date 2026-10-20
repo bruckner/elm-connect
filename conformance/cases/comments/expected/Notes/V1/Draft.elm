@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Draft`: its full name and its fields, in declaration order.
-
-Deprecated.
+{-| Deprecated.
 
 A note not yet saved.
 
@@ -31,7 +29,7 @@ descriptor =
         ]
 
 
-{-| The field `text` of `notes.v1.Draft`: `string text = 1;`
+{-| `string text = 1;`
 -}
 text : Proto.Field.Descriptor
 text =

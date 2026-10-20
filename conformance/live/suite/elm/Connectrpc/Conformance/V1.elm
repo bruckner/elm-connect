@@ -75,10 +75,10 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.HTTPVersion`
 
-  - `HTTPVersionUnspecified`: `HTTP_VERSION_UNSPECIFIED = 0;`
-  - `HTTPVersion1`: `HTTP_VERSION_1 = 1;`
-  - `HTTPVersion2`: `HTTP_VERSION_2 = 2;`
-  - `HTTPVersion3`: `HTTP_VERSION_3 = 3;`
+  - `HTTPVersionUnspecified` (`HTTP_VERSION_UNSPECIFIED`)
+  - `HTTPVersion1` (`HTTP_VERSION_1`)
+  - `HTTPVersion2` (`HTTP_VERSION_2`)
+  - `HTTPVersion3` (`HTTP_VERSION_3`)
 
 -}
 type HTTPVersion
@@ -90,10 +90,10 @@ type HTTPVersion
 
 {-| `enum connectrpc.conformance.v1.Protocol`
 
-  - `ProtocolUnspecified`: `PROTOCOL_UNSPECIFIED = 0;`
-  - `ProtocolConnect`: `PROTOCOL_CONNECT = 1;`
-  - `ProtocolGrpc`: `PROTOCOL_GRPC = 2;`
-  - `ProtocolGrpcWeb`: `PROTOCOL_GRPC_WEB = 3;` TODO: Support add'l protocols:
+  - `ProtocolUnspecified` (`PROTOCOL_UNSPECIFIED`)
+  - `ProtocolConnect` (`PROTOCOL_CONNECT`)
+  - `ProtocolGrpc` (`PROTOCOL_GRPC`)
+  - `ProtocolGrpcWeb` (`PROTOCOL_GRPC_WEB`): TODO: Support add'l protocols:
     PROTOCOL\_GRPC\_WEB\_TEXT = 4;
     PROTOCOL\_REST\_TRANSCODING = 5;
 
@@ -107,10 +107,10 @@ type Protocol
 
 {-| `enum connectrpc.conformance.v1.Codec`
 
-  - `CodecUnspecified`: `CODEC_UNSPECIFIED = 0;`
-  - `CodecProto`: `CODEC_PROTO = 1;`
-  - `CodecJson`: `CODEC_JSON = 2;`
-  - `CodecText`: `CODEC_TEXT = 3 [deprecated = true];` Deprecated. not used; will be ignored
+  - `CodecUnspecified` (`CODEC_UNSPECIFIED`)
+  - `CodecProto` (`CODEC_PROTO`)
+  - `CodecJson` (`CODEC_JSON`)
+  - `CodecText` (`CODEC_TEXT`): not used; will be ignored Deprecated.
 
 -}
 type Codec
@@ -122,13 +122,13 @@ type Codec
 
 {-| `enum connectrpc.conformance.v1.Compression`
 
-  - `CompressionUnspecified`: `COMPRESSION_UNSPECIFIED = 0;`
-  - `CompressionIdentity`: `COMPRESSION_IDENTITY = 1;`
-  - `CompressionGzip`: `COMPRESSION_GZIP = 2;`
-  - `CompressionBr`: `COMPRESSION_BR = 3;`
-  - `CompressionZstd`: `COMPRESSION_ZSTD = 4;`
-  - `CompressionDeflate`: `COMPRESSION_DEFLATE = 5;`
-  - `CompressionSnappy`: `COMPRESSION_SNAPPY = 6;`
+  - `CompressionUnspecified` (`COMPRESSION_UNSPECIFIED`)
+  - `CompressionIdentity` (`COMPRESSION_IDENTITY`)
+  - `CompressionGzip` (`COMPRESSION_GZIP`)
+  - `CompressionBr` (`COMPRESSION_BR`)
+  - `CompressionZstd` (`COMPRESSION_ZSTD`)
+  - `CompressionDeflate` (`COMPRESSION_DEFLATE`)
+  - `CompressionSnappy` (`COMPRESSION_SNAPPY`)
 
 -}
 type Compression
@@ -143,12 +143,12 @@ type Compression
 
 {-| `enum connectrpc.conformance.v1.StreamType`
 
-  - `StreamTypeUnspecified`: `STREAM_TYPE_UNSPECIFIED = 0;`
-  - `StreamTypeUnary`: `STREAM_TYPE_UNARY = 1;`
-  - `StreamTypeClientStream`: `STREAM_TYPE_CLIENT_STREAM = 2;`
-  - `StreamTypeServerStream`: `STREAM_TYPE_SERVER_STREAM = 3;`
-  - `StreamTypeHalfDuplexBidiStream`: `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4;`
-  - `StreamTypeFullDuplexBidiStream`: `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5;`
+  - `StreamTypeUnspecified` (`STREAM_TYPE_UNSPECIFIED`)
+  - `StreamTypeUnary` (`STREAM_TYPE_UNARY`)
+  - `StreamTypeClientStream` (`STREAM_TYPE_CLIENT_STREAM`)
+  - `StreamTypeServerStream` (`STREAM_TYPE_SERVER_STREAM`)
+  - `StreamTypeHalfDuplexBidiStream` (`STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`)
+  - `StreamTypeFullDuplexBidiStream` (`STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`)
 
 -}
 type StreamType
@@ -162,23 +162,23 @@ type StreamType
 
 {-| `enum connectrpc.conformance.v1.Code`
 
-  - `CodeUnspecified`: `CODE_UNSPECIFIED = 0;`
-  - `CodeCanceled`: `CODE_CANCELED = 1;`
-  - `CodeUnknown`: `CODE_UNKNOWN = 2;`
-  - `CodeInvalidArgument`: `CODE_INVALID_ARGUMENT = 3;`
-  - `CodeDeadlineExceeded`: `CODE_DEADLINE_EXCEEDED = 4;`
-  - `CodeNotFound`: `CODE_NOT_FOUND = 5;`
-  - `CodeAlreadyExists`: `CODE_ALREADY_EXISTS = 6;`
-  - `CodePermissionDenied`: `CODE_PERMISSION_DENIED = 7;`
-  - `CodeResourceExhausted`: `CODE_RESOURCE_EXHAUSTED = 8;`
-  - `CodeFailedPrecondition`: `CODE_FAILED_PRECONDITION = 9;`
-  - `CodeAborted`: `CODE_ABORTED = 10;`
-  - `CodeOutOfRange`: `CODE_OUT_OF_RANGE = 11;`
-  - `CodeUnimplemented`: `CODE_UNIMPLEMENTED = 12;`
-  - `CodeInternal`: `CODE_INTERNAL = 13;`
-  - `CodeUnavailable`: `CODE_UNAVAILABLE = 14;`
-  - `CodeDataLoss`: `CODE_DATA_LOSS = 15;`
-  - `CodeUnauthenticated`: `CODE_UNAUTHENTICATED = 16;`
+  - `CodeUnspecified` (`CODE_UNSPECIFIED`)
+  - `CodeCanceled` (`CODE_CANCELED`)
+  - `CodeUnknown` (`CODE_UNKNOWN`)
+  - `CodeInvalidArgument` (`CODE_INVALID_ARGUMENT`)
+  - `CodeDeadlineExceeded` (`CODE_DEADLINE_EXCEEDED`)
+  - `CodeNotFound` (`CODE_NOT_FOUND`)
+  - `CodeAlreadyExists` (`CODE_ALREADY_EXISTS`)
+  - `CodePermissionDenied` (`CODE_PERMISSION_DENIED`)
+  - `CodeResourceExhausted` (`CODE_RESOURCE_EXHAUSTED`)
+  - `CodeFailedPrecondition` (`CODE_FAILED_PRECONDITION`)
+  - `CodeAborted` (`CODE_ABORTED`)
+  - `CodeOutOfRange` (`CODE_OUT_OF_RANGE`)
+  - `CodeUnimplemented` (`CODE_UNIMPLEMENTED`)
+  - `CodeInternal` (`CODE_INTERNAL`)
+  - `CodeUnavailable` (`CODE_UNAVAILABLE`)
+  - `CodeDataLoss` (`CODE_DATA_LOSS`)
+  - `CodeUnauthenticated` (`CODE_UNAUTHENTICATED`)
 
 -}
 type Code
@@ -203,13 +203,13 @@ type Code
 
 {-| `enum connectrpc.conformance.v1.TestSuite.TestMode`
 
-  - `TestSuiteTestModeUnspecified`: `TEST_MODE_UNSPECIFIED = 0;` Used when the test suite does not apply to a particular mode. Such tests
+  - `TestSuiteTestModeUnspecified` (`TEST_MODE_UNSPECIFIED`): Used when the test suite does not apply to a particular mode. Such tests
     are run, regardless of the current test mode, to verify both clients and
     servers under test.
-  - `TestSuiteTestModeClient`: `TEST_MODE_CLIENT = 1;` Indicates tests that are intended to be used only for a client-under-test.
+  - `TestSuiteTestModeClient` (`TEST_MODE_CLIENT`): Indicates tests that are intended to be used only for a client-under-test.
     These cases can induce very particular and/or aberrant responses from the
     reference server, to verify how the client reacts to such responses.
-  - `TestSuiteTestModeServer`: `TEST_MODE_SERVER = 2;` Indicates tests that are intended to be used only for a server-under-test.
+  - `TestSuiteTestModeServer` (`TEST_MODE_SERVER`): Indicates tests that are intended to be used only for a server-under-test.
     These cases can induce very particular and/or aberrant requests from the
     reference client, to verify how the server reacts to such requests.
 
@@ -222,11 +222,11 @@ type TestSuiteTestMode
 
 {-| `enum connectrpc.conformance.v1.TestSuite.ConnectVersionMode`
 
-  - `TestSuiteConnectVersionModeUnspecified`: `CONNECT_VERSION_MODE_UNSPECIFIED = 0;` Used when the suite is agnostic to the server's validation
+  - `TestSuiteConnectVersionModeUnspecified` (`CONNECT_VERSION_MODE_UNSPECIFIED`): Used when the suite is agnostic to the server's validation
     behavior.
-  - `TestSuiteConnectVersionModeRequire`: `CONNECT_VERSION_MODE_REQUIRE = 1;` Used when the suite relies on the server validating the presence
+  - `TestSuiteConnectVersionModeRequire` (`CONNECT_VERSION_MODE_REQUIRE`): Used when the suite relies on the server validating the presence
     and correctness of the Connect version header or query param.
-  - `TestSuiteConnectVersionModeIgnore`: `CONNECT_VERSION_MODE_IGNORE = 2;` Used when the suite relies on the server ignore any Connect
+  - `TestSuiteConnectVersionModeIgnore` (`CONNECT_VERSION_MODE_IGNORE`): Used when the suite relies on the server ignore any Connect
     header or query param.
 
 -}
@@ -243,10 +243,10 @@ message) to stdout.
 
 `message connectrpc.conformance.v1.ClientCompatRequest`
 
-  - `testName`: `string test_name = 1;` The name of the test that this request is performing.
+  - `testName`: The name of the test that this request is performing.
     When writing test cases, this is a required field.
 
-  - `httpVersion`: `connectrpc.conformance.v1.HTTPVersion http_version = 2;` Test suite YAML definitions should NOT set values for these next
+  - `httpVersion`: Test suite YAML definitions should NOT set values for these next
     nine fields (fields 2 - 10). They are automatically populated by the test
     runner. If a test is specific to one of these values, it should instead be
     indicated in the test suite itself (where it defines the required
@@ -254,49 +254,49 @@ message) to stdout.
 
     The HTTP version to use for the test (i.e. HTTP/1.1, HTTP/2, HTTP/3).
 
-  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 3;` The protocol to use for the test (i.e. Connect, gRPC, gRPC-web).
+  - `protocol`: The protocol to use for the test (i.e. Connect, gRPC, gRPC-web).
 
-  - `codec`: `connectrpc.conformance.v1.Codec codec = 4;` The codec to use for the test (i.e. JSON, proto/binary).
+  - `codec`: The codec to use for the test (i.e. JSON, proto/binary).
 
-  - `compression`: `connectrpc.conformance.v1.Compression compression = 5;` The compression to use for the test (i.e. brotli, gzip, identity).
+  - `compression`: The compression to use for the test (i.e. brotli, gzip, identity).
 
-  - `host`: `string host = 6;` The server host that this request will be sent to.
+  - `host`: The server host that this request will be sent to.
 
-  - `port_`: `uint32 port = 7;` The server port that this request will be sent to.
+  - `port_`: The server port that this request will be sent to.
 
-  - `serverTlsCert`: `bytes server_tls_cert = 8;` If non-empty, the server is using TLS. The bytes are the
+  - `serverTlsCert`: If non-empty, the server is using TLS. The bytes are the
     server's PEM-encoded certificate, which the client should
     verify and trust.
 
-  - `clientTlsCreds`: `connectrpc.conformance.v1.TLSCreds client_tls_creds = 9;` If present, the client certificate credentials to use to
+  - `clientTlsCreds`: If present, the client certificate credentials to use to
     authenticate with the server. This will only be present
     when server\_tls\_cert is non-empty.
 
-  - `messageReceiveLimit`: `uint32 message_receive_limit = 10;` If non-zero, indicates the maximum size in bytes for a message.
+  - `messageReceiveLimit`: If non-zero, indicates the maximum size in bytes for a message.
     If the server sends anything larger, the client should reject it.
 
-  - `service`: `optional string service = 11;` The fully-qualified name of the service this test will interact with.
+  - `service`: The fully-qualified name of the service this test will interact with.
     If specified, method must also be specified.
     If not specified, defaults to "connectrpc.conformance.v1.ConformanceService".
 
-  - `method`: `optional string method = 12;` The method on `service` that will be called.
+  - `method`: The method on `service` that will be called.
     If specified, service must also be specified.
     If not specified, the test runner will auto-populate this field based on the stream\_type.
 
-  - `streamType`: `connectrpc.conformance.v1.StreamType stream_type = 13;` The stream type of `method` (i.e. unary, client stream, server stream, full-duplex bidi
+  - `streamType`: The stream type of `method` (i.e. unary, client stream, server stream, full-duplex bidi
     stream, or half-duplex bidi stream).
     When writing test cases, this is a required field.
 
-  - `useGetHttpMethod`: `bool use_get_http_method = 14;` If protocol indicates Connect and stream type indicates
+  - `useGetHttpMethod`: If protocol indicates Connect and stream type indicates
     Unary, this instructs the client to use a GET HTTP method
     when making the request.
 
-  - `requestHeaders`: `repeated connectrpc.conformance.v1.Header request_headers = 15;` Any request headers that should be sent as part of the request.
+  - `requestHeaders`: Any request headers that should be sent as part of the request.
     These include only custom header metadata. Headers that are
     part of the relevant protocol (such as "content-type", etc) should
     not be stated here.
 
-  - `requestMessages`: `repeated google.protobuf.Any request_messages = 16;` The actual request messages that will sent to the server.
+  - `requestMessages`: The actual request messages that will sent to the server.
     The type URL for all entries should be equal to the request type of the
     method.
     There must be exactly one for unary and server stream methods but
@@ -304,17 +304,17 @@ message) to stdout.
     For client and bidi stream methods, all entries will have the
     same type URL.
 
-  - `timeoutMs`: `optional uint32 timeout_ms = 17;` The timeout, in milliseconds, for the request. This is equivalent to a
+  - `timeoutMs`: The timeout, in milliseconds, for the request. This is equivalent to a
     deadline for the request. If unset, there will be no timeout.
 
-  - `requestDelayMs`: `uint32 request_delay_ms = 18;` Wait this many milliseconds before sending a request message.
+  - `requestDelayMs`: Wait this many milliseconds before sending a request message.
     For client or bidi stream methods, this delay should be
     applied before each request sent.
 
-  - `cancel`: `connectrpc.conformance.v1.ClientCompatRequest.Cancel cancel = 19;` If present, the client should cancel the RPC instead of
+  - `cancel`: If present, the client should cancel the RPC instead of
     allowing to complete normally.
 
-  - `rawRequest`: `connectrpc.conformance.v1.RawHTTPRequest raw_request = 20;` The following field is only used by the reference client. If
+  - `rawRequest`: The following field is only used by the reference client. If
     you are implementing a client under test, you may ignore it
     or respond with an error if the client receives a request where
     it is set.
@@ -351,11 +351,11 @@ type alias ClientCompatRequest =
 
 {-| `message connectrpc.conformance.v1.ClientCompatRequest.Cancel`
 
-  - `cancelTiming`: `oneof cancel_timing` (`ClientCompatRequestCancelCancelTiming`) These fields determine the timing of cancellation.
+  - `cancelTiming`: These fields determine the timing of cancellation.
     If none are present, the client should cancel immediately
     after all request messages are sent and the send side is
     closed (as if the after\_close\_send\_ms field were present
-    and zero).
+    and zero). See `ClientCompatRequestCancelCancelTiming`.
 
 -}
 type alias ClientCompatRequestCancel =
@@ -373,13 +373,13 @@ and zero).
 
   - `ClientCompatRequestCancelCancelTimingUnset`: none of the fields is set.
 
-  - `ClientCompatRequestCancelCancelTimingBeforeCloseSend`: `google.protobuf.Empty before_close_send = 1;` When present, the client should cancel _instead of_
+  - `ClientCompatRequestCancelCancelTimingBeforeCloseSend`: When present, the client should cancel _instead of_
     closing the send side of the stream, after all requests
     have been sent.
 
     This applies only to client and bidi stream RPCs.
 
-  - `ClientCompatRequestCancelCancelTimingAfterCloseSendMs`: `uint32 after_close_send_ms = 2;` When present, the client should delay for this many
+  - `ClientCompatRequestCancelCancelTimingAfterCloseSendMs`: When present, the client should delay for this many
     milliseconds after closing the send side of the stream
     and then cancel.
 
@@ -397,7 +397,7 @@ and zero).
     the client must arrange for the RPC to be canceled
     asynchronously before invoking the blocking unary call.
 
-  - `ClientCompatRequestCancelCancelTimingAfterNumResponses`: `uint32 after_num_responses = 3;` When present, the client should cancel right after
+  - `ClientCompatRequestCancelCancelTimingAfterNumResponses`: When present, the client should cancel right after
     reading this number of response messages from the stream.
     When present, this will be greater than zero.
 
@@ -415,9 +415,9 @@ type ClientCompatRequestCancelCancelTiming
 
 `message connectrpc.conformance.v1.ClientCompatResponse`
 
-  - `testName`: `string test_name = 1;` The test name that this response applies to.
+  - `testName`: The test name that this response applies to.
 
-  - `result`: `oneof result` (`ClientCompatResponseResult`) These fields determine the outcome of the request.
+  - `result`: These fields determine the outcome of the request.
 
     With regards to errors, any unexpected errors that prevent the client from
     issuing the RPC and following the instructions implied by the request can
@@ -426,6 +426,8 @@ type ClientCompatRequestCancelCancelTiming
     (e.g. a unary request that defines zero or multiple request messages).
 
     However, once the RPC is issued, any resulting error should instead be encoded in response.
+
+    See `ClientCompatResponseResult`.
 
 -}
 type alias ClientCompatResponse =
@@ -447,8 +449,8 @@ However, once the RPC is issued, any resulting error should instead be encoded i
 `oneof result` of `connectrpc.conformance.v1.ClientCompatResponse`
 
   - `ClientCompatResponseResultUnset`: none of the fields is set.
-  - `ClientCompatResponseResultResponse`: `connectrpc.conformance.v1.ClientResponseResult response = 2;`
-  - `ClientCompatResponseResultError`: `connectrpc.conformance.v1.ClientErrorResult error = 3;`
+  - `ClientCompatResponseResultResponse`
+  - `ClientCompatResponseResultError`
 
 -}
 type ClientCompatResponseResult
@@ -462,22 +464,22 @@ The client will build this message and return it back to the test runner.
 
 `message connectrpc.conformance.v1.ClientResponseResult`
 
-  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` All response headers read from the response.
-  - `payloads`: `repeated connectrpc.conformance.v1.ConformancePayload payloads = 2;` Servers should echo back payloads that they received as part of the request.
+  - `responseHeaders`: All response headers read from the response.
+  - `payloads`: Servers should echo back payloads that they received as part of the request.
     This field should contain all the payloads the server echoed back. Note that
     There will be zero-to-one for unary and client stream methods and
     zero-to-many for server and bidi stream methods.
-  - `error`: `connectrpc.conformance.v1.Error error = 3;` The error received from the actual RPC invocation. Note this is not representative
+  - `error`: The error received from the actual RPC invocation. Note this is not representative
     of a runtime error and should always be the proto equivalent of a Connect
     or gRPC error.
-  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 4;` All response headers read from the response.
-  - `numUnsentRequests`: `int32 num_unsent_requests = 5;` The number of messages that were present in the request but that could not be
+  - `responseTrailers`: All response headers read from the response.
+  - `numUnsentRequests`: The number of messages that were present in the request but that could not be
     sent because an error occurred before finishing the upload.
-  - `httpStatusCode`: `optional int32 http_status_code = 6;` The following field is only set by the reference client. It communicates
+  - `httpStatusCode`: The following field is only set by the reference client. It communicates
     the underlying HTTP status code of the server's response.
     If you are implementing a client-under-test, you should ignore this field
     and leave it unset.
-  - `feedback`: `repeated string feedback = 7;` This field is used only by the reference client, and it can be used
+  - `feedback`: This field is used only by the reference client, and it can be used
     to provide additional feedback about problems observed in the server
     response or in client processing of the response. If non-empty, the test
     case is considered failed even if the result above matches all expectations.
@@ -502,7 +504,7 @@ not being supported. This is completely independent of the actual RPC invocation
 
 `message connectrpc.conformance.v1.ClientErrorResult`
 
-  - `message`: `string message = 1;` A message describing the error that occurred. This string will be shown to
+  - `message`: A message describing the error that occurred. This string will be shown to
     users running conformance tests so it should include any relevant details
     that may help troubleshoot or remedy the error.
 
@@ -518,13 +520,13 @@ by clients under test.
 
 `message connectrpc.conformance.v1.WireDetails`
 
-  - `actualStatusCode`: `int32 actual_status_code = 1;` The HTTP status code of the response.
-  - `connectErrorRaw`: `google.protobuf.Struct connect_error_raw = 2;` When processing an error from a Connect server, this should contain
+  - `actualStatusCode`: The HTTP status code of the response.
+  - `connectErrorRaw`: When processing an error from a Connect server, this should contain
     the actual JSON received on the wire.
-  - `actualHttpTrailers`: `repeated connectrpc.conformance.v1.Header actual_http_trailers = 3;` Any HTTP trailers observed after the response body. These do NOT
+  - `actualHttpTrailers`: Any HTTP trailers observed after the response body. These do NOT
     include trailers that conveyed via the body, as done in the gRPC-Web
     and Connect streaming protocols.
-  - `actualGrpcwebTrailers`: `optional string actual_grpcweb_trailers = 4;` Any trailers that were transmitted in the final message of the
+  - `actualGrpcwebTrailers`: Any trailers that were transmitted in the final message of the
     response body for a gRPC-Web response. This could differ from the
     ClientResponseResult.response\_trailers field since the RPC client
     library might canonicalize keys and it might choose to remove
@@ -546,13 +548,13 @@ This enumerates all of the "flavors" of the test suite to run.
 
 `message connectrpc.conformance.v1.Config`
 
-  - `features`: `connectrpc.conformance.v1.Features features = 1;` The features supported by the client or server under test.
+  - `features`: The features supported by the client or server under test.
     This is used to filter the set of test cases that are run.
     If absent, an empty message is used. See Features for more
     on how empty/absent fields are interpreted.
-  - `includeCases`: `repeated connectrpc.conformance.v1.ConfigCase include_cases = 2;` This can indicate additional permutations that are supported
+  - `includeCases`: This can indicate additional permutations that are supported
     that might otherwise be excluded based on the above features.
-  - `excludeCases`: `repeated connectrpc.conformance.v1.ConfigCase exclude_cases = 3;` This can indicates permutations that are not supported even
+  - `excludeCases`: This can indicates permutations that are not supported even
     though their support might be implied by the above features.
 
 -}
@@ -573,33 +575,33 @@ invalid (i.e. conflicting/impossible) features using protovalidate rules
 
 `message connectrpc.conformance.v1.Features`
 
-  - `versions`: `repeated connectrpc.conformance.v1.HTTPVersion versions = 1;` Supported HTTP versions.
+  - `versions`: Supported HTTP versions.
     If empty, HTTP 1.1 and HTTP/2 are assumed.
-  - `protocols`: `repeated connectrpc.conformance.v1.Protocol protocols = 2;` Supported protocols.
+  - `protocols`: Supported protocols.
     If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
-  - `codecs`: `repeated connectrpc.conformance.v1.Codec codecs = 3;` Supported codecs.
+  - `codecs`: Supported codecs.
     If empty, "proto" and "json" are assumed.
-  - `compressions`: `repeated connectrpc.conformance.v1.Compression compressions = 4;` Supported compression algorithms.
+  - `compressions`: Supported compression algorithms.
     If empty, "identity" and "gzip" are assumed.
-  - `streamTypes`: `repeated connectrpc.conformance.v1.StreamType stream_types = 5;` Supported stream types.
+  - `streamTypes`: Supported stream types.
     If empty, all stream types are assumed. This is usually for
     clients, since some client environments may not be able to
     support certain kinds of streaming operations, especially
     bidirectional streams.
-  - `supportsH2c`: `optional bool supports_h2c = 6;` Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
+  - `supportsH2c`: Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
     If absent, true is assumed.
-  - `supportsTls`: `optional bool supports_tls = 7;` Whether TLS is supported.
+  - `supportsTls`: Whether TLS is supported.
     If absent, true is assumed.
-  - `supportsTlsClientCerts`: `optional bool supports_tls_client_certs = 8;` Whether the client supports TLS certificates.
+  - `supportsTlsClientCerts`: Whether the client supports TLS certificates.
     If absent, false is assumed. This should not be set if
     supports\_tls is false.
-  - `supportsTrailers`: `optional bool supports_trailers = 9;` Whether trailers are supported.
+  - `supportsTrailers`: Whether trailers are supported.
     If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
-  - `supportsHalfDuplexBidiOverHttp1`: `optional bool supports_half_duplex_bidi_over_http1 = 10;` Whether half duplex bidi streams are supported over HTTP/1.1.
+  - `supportsHalfDuplexBidiOverHttp1`: Whether half duplex bidi streams are supported over HTTP/1.1.
     If absent, false is assumed.
-  - `supportsConnectGet`: `optional bool supports_connect_get = 11;` Whether Connect via GET is supported.
+  - `supportsConnectGet`: Whether Connect via GET is supported.
     If absent, true is assumed.
-  - `supportsMessageReceiveLimit`: `optional bool supports_message_receive_limit = 12;` Whether a message receive limit is supported.
+  - `supportsMessageReceiveLimit`: Whether a message receive limit is supported.
     If absent, true is assumed.
 
 -}
@@ -629,16 +631,16 @@ vs. invalid config case using protovalidate rules
 
 `message connectrpc.conformance.v1.ConfigCase`
 
-  - `version`: `connectrpc.conformance.v1.HTTPVersion version = 1;` If unspecified, indicates cases for all versions.
-  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 2;` If unspecified, indicates cases for all protocols.
-  - `codec`: `connectrpc.conformance.v1.Codec codec = 3;` If unspecified, indicates cases for all codecs.
-  - `compression`: `connectrpc.conformance.v1.Compression compression = 4;` If unspecified, indicates cases for all compression algorithms.
-  - `streamType`: `connectrpc.conformance.v1.StreamType stream_type = 5;` If unspecified, indicates cases for all stream types.
-  - `useTls`: `optional bool use_tls = 6;` If absent, indicates cases for plaintext (no TLS) but also for
+  - `version`: If unspecified, indicates cases for all versions.
+  - `protocol`: If unspecified, indicates cases for all protocols.
+  - `codec`: If unspecified, indicates cases for all codecs.
+  - `compression`: If unspecified, indicates cases for all compression algorithms.
+  - `streamType`: If unspecified, indicates cases for all stream types.
+  - `useTls`: If absent, indicates cases for plaintext (no TLS) but also for
     TLS if features indicate that TLS is supported.
-  - `useTlsClientCerts`: `optional bool use_tls_client_certs = 7;` If absent, indicates cases without client certs but also cases
+  - `useTlsClientCerts`: If absent, indicates cases without client certs but also cases
     that use client certs if features indicate they are supported.
-  - `useMessageReceiveLimit`: `optional bool use_message_receive_limit = 8;` If absent, indicates cases that do not test message receive
+  - `useMessageReceiveLimit`: If absent, indicates cases that do not test message receive
     limits but also cases that do test message receive limits if
     features indicate they are supported.
 
@@ -661,8 +663,8 @@ in PEM format.
 
 `message connectrpc.conformance.v1.TLSCreds`
 
-  - `cert`: `bytes cert = 1;`
-  - `key`: `bytes key = 2;`
+  - `cert`
+  - `key`
 
 -}
 type alias TLSCreds =
@@ -688,17 +690,17 @@ will be started, each with different properties.
 
 `message connectrpc.conformance.v1.ServerCompatRequest`
 
-  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 1;` Signals to the server that it must support at least this protocol. Note
+  - `protocol`: Signals to the server that it must support at least this protocol. Note
     that it is fine to support others.
     For example if `PROTOCOL_CONNECT` is specified, the server _must_ support
     at least Connect, but _may_ also support gRPC or gRPC-web.
 
-  - `httpVersion`: `connectrpc.conformance.v1.HTTPVersion http_version = 2;` Signals to the server the minimum HTTP version to support. As with
+  - `httpVersion`: Signals to the server the minimum HTTP version to support. As with
     `protocol`, it is fine to support other versions. For example, if
     `HTTP_VERSION_2` is specified, the server _must_ support HTTP/2, but _may_ also
     support HTTP/1.1 or HTTP/3.
 
-  - `useTls`: `bool use_tls = 4;` If true, generate a certificate that clients will be configured to trust
+  - `useTls`: If true, generate a certificate that clients will be configured to trust
     when connecting and return it in the `pem_cert` field of the `ServerCompatResponse`.
     The certificate can be any TLS certificate where the subject matches the
     value sent back in the `host` field of the `ServerCompatResponse`.
@@ -706,7 +708,7 @@ will be started, each with different properties.
     If false, the server should not use TLS and instead use
     a plain-text/unencrypted socket.
 
-  - `clientTlsCert`: `bytes client_tls_cert = 5;` If non-empty, the clients will use certificates to authenticate
+  - `clientTlsCert`: If non-empty, the clients will use certificates to authenticate
     themselves. This value is a PEM-encoded cert that should be
     trusted by the server. When non-empty, the server should require
     that clients provide certificates and they should validate that
@@ -714,10 +716,10 @@ will be started, each with different properties.
 
     This will always be empty if use\_tls is false.
 
-  - `messageReceiveLimit`: `uint32 message_receive_limit = 6;` If non-zero, indicates the maximum size in bytes for a message.
+  - `messageReceiveLimit`: If non-zero, indicates the maximum size in bytes for a message.
     If the client sends anything larger, the server should reject it.
 
-  - `serverCreds`: `connectrpc.conformance.v1.TLSCreds server_creds = 7;` If use\_tls is true, this provides details for a self-signed TLS
+  - `serverCreds`: If use\_tls is true, this provides details for a self-signed TLS
     cert that the server may use.
 
     The provided certificate is only good for loopback communication:
@@ -749,11 +751,11 @@ type alias ServerCompatRequest =
 
 `message connectrpc.conformance.v1.ServerCompatResponse`
 
-  - `host`: `string host = 1;` The host where the server is running. This should usually be `127.0.0.1`,
+  - `host`: The host where the server is running. This should usually be `127.0.0.1`,
     unless your program actually starts a remote server to which the client
     should connect.
-  - `port_`: `uint32 port = 2;` The port where the server is listening.
-  - `pemCert`: `bytes pem_cert = 3;` The TLS certificate, in PEM format, if `use_tls` was set
+  - `port_`: The port where the server is listening.
+  - `pemCert`: The TLS certificate, in PEM format, if `use_tls` was set
     to `true`. Clients will verify this certificate when connecting via TLS.
     If `use_tls` was set to `false`, this should always be empty.
 
@@ -770,15 +772,15 @@ Can be used to define a response for unary or client-streaming calls.
 
 `message connectrpc.conformance.v1.UnaryResponseDefinition`
 
-  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` Response headers to send
+  - `responseHeaders`: Response headers to send
 
-  - `response`: `oneof response` (`UnaryResponseDefinitionResponse`)
+  - `response`: See `UnaryResponseDefinitionResponse`.
 
-  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 4;` Response trailers to send - together with the error if present
+  - `responseTrailers`: Response trailers to send - together with the error if present
 
-  - `responseDelayMs`: `uint32 response_delay_ms = 6;` Wait this many milliseconds before sending a response message
+  - `responseDelayMs`: Wait this many milliseconds before sending a response message
 
-  - `rawResponse`: `connectrpc.conformance.v1.RawHTTPResponse raw_response = 5;` This field is only used by the reference server. If you are implementing a
+  - `rawResponse`: This field is only used by the reference server. If you are implementing a
     server under test, you can ignore this field or respond with an error if the
     server receives a request where it is set.
 
@@ -797,8 +799,8 @@ type alias UnaryResponseDefinition =
 {-| `oneof response` of `connectrpc.conformance.v1.UnaryResponseDefinition`
 
   - `UnaryResponseDefinitionResponseUnset`: none of the fields is set.
-  - `UnaryResponseDefinitionResponseResponseData`: `bytes response_data = 2;` Response data to send
-  - `UnaryResponseDefinitionResponseError`: `connectrpc.conformance.v1.Error error = 3;` Error to raise instead of response message
+  - `UnaryResponseDefinitionResponseResponseData`: Response data to send
+  - `UnaryResponseDefinitionResponseError`: Error to raise instead of response message
     Servers should build a RequestInfo and append it to the details of the
     requested error.
 
@@ -814,21 +816,21 @@ Can be used to define responses for server-streaming or bidi-streaming calls.
 
 `message connectrpc.conformance.v1.StreamResponseDefinition`
 
-  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` Response headers to send
+  - `responseHeaders`: Response headers to send
 
-  - `responseData`: `repeated bytes response_data = 2;` Response data to send
+  - `responseData`: Response data to send
 
-  - `responseDelayMs`: `uint32 response_delay_ms = 3;` Wait this many milliseconds before sending each response message
+  - `responseDelayMs`: Wait this many milliseconds before sending each response message
 
-  - `error`: `connectrpc.conformance.v1.Error error = 4;` Optional error to raise, but only after sending any response messages.
+  - `error`: Optional error to raise, but only after sending any response messages.
     In the event an immediate error is thrown before any responses are sent,
     (i.e. the equivalent of a trailers-only response), then servers should
     build a RequestInfo message with available information and append that to
     the error details.
 
-  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 5;` Response trailers to send - together with the error if present
+  - `responseTrailers`: Response trailers to send - together with the error if present
 
-  - `rawResponse`: `connectrpc.conformance.v1.RawHTTPResponse raw_response = 6;` This field is only used by the reference server. If you are implementing a
+  - `rawResponse`: This field is only used by the reference server. If you are implementing a
     server under test, you can ignore this field or respond with an error if the
     server receives a request where it is set.
 
@@ -847,8 +849,8 @@ type alias StreamResponseDefinition =
 
 {-| `message connectrpc.conformance.v1.UnaryRequest`
 
-  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload
-  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+  - `responseDefinition`: The response definition which should be returned in the conformance payload
+  - `requestData`: Additional data. Only used to pad the request size to test large request messages.
 
 -}
 type alias UnaryRequest =
@@ -859,7 +861,7 @@ type alias UnaryRequest =
 
 {-| `message connectrpc.conformance.v1.UnaryResponse`
 
-  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with.
+  - `payload`: The conformance payload to respond with.
 
 -}
 type alias UnaryResponse =
@@ -869,8 +871,8 @@ type alias UnaryResponse =
 
 {-| `message connectrpc.conformance.v1.IdempotentUnaryRequest`
 
-  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload
-  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+  - `responseDefinition`: The response definition which should be returned in the conformance payload
+  - `requestData`: Additional data. Only used to pad the request size to test large request messages.
 
 -}
 type alias IdempotentUnaryRequest =
@@ -881,7 +883,7 @@ type alias IdempotentUnaryRequest =
 
 {-| `message connectrpc.conformance.v1.IdempotentUnaryResponse`
 
-  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with.
+  - `payload`: The conformance payload to respond with.
 
 -}
 type alias IdempotentUnaryResponse =
@@ -891,8 +893,8 @@ type alias IdempotentUnaryResponse =
 
 {-| `message connectrpc.conformance.v1.ServerStreamRequest`
 
-  - `responseDefinition`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload.
-  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+  - `responseDefinition`: The response definition which should be returned in the conformance payload.
+  - `requestData`: Additional data. Only used to pad the request size to test large request messages.
 
 -}
 type alias ServerStreamRequest =
@@ -903,7 +905,7 @@ type alias ServerStreamRequest =
 
 {-| `message connectrpc.conformance.v1.ServerStreamResponse`
 
-  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+  - `payload`: The conformance payload to respond with
 
 -}
 type alias ServerStreamResponse =
@@ -913,10 +915,10 @@ type alias ServerStreamResponse =
 
 {-| `message connectrpc.conformance.v1.ClientStreamRequest`
 
-  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` Tells the server how to reply once all client messages are
+  - `responseDefinition`: Tells the server how to reply once all client messages are
     complete. Required in the first message in the stream, but
     should be ignored in subsequent messages.
-  - `requestData`: `bytes request_data = 2;` Additional data for subsequent messages in the stream. Also
+  - `requestData`: Additional data for subsequent messages in the stream. Also
     used to pad the request size to test large request messages.
 
 -}
@@ -928,7 +930,7 @@ type alias ClientStreamRequest =
 
 {-| `message connectrpc.conformance.v1.ClientStreamResponse`
 
-  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+  - `payload`: The conformance payload to respond with
 
 -}
 type alias ClientStreamResponse =
@@ -938,10 +940,10 @@ type alias ClientStreamResponse =
 
 {-| `message connectrpc.conformance.v1.BidiStreamRequest`
 
-  - `responseDefinition`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;` Tells the server how to reply; required in the first message
+  - `responseDefinition`: Tells the server how to reply; required in the first message
     in the stream. Should be ignored in subsequent messages.
 
-  - `fullDuplex`: `bool full_duplex = 2;` Tells the server whether it should wait for each request
+  - `fullDuplex`: Tells the server whether it should wait for each request
     before sending a response.
 
     If true, it indicates the server should effectively interleave the
@@ -955,7 +957,7 @@ type alias ClientStreamResponse =
     This field is only relevant in the first message in the stream
     and should be ignored in subsequent messages.
 
-  - `requestData`: `bytes request_data = 3;` Additional data for subsequent messages in the stream. Also
+  - `requestData`: Additional data for subsequent messages in the stream. Also
     used to pad the request size to test large request messages.
 
 -}
@@ -968,7 +970,7 @@ type alias BidiStreamRequest =
 
 {-| `message connectrpc.conformance.v1.BidiStreamResponse`
 
-  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+  - `payload`: The conformance payload to respond with
 
 -}
 type alias BidiStreamResponse =
@@ -990,9 +992,9 @@ type alias UnimplementedResponse =
 
 {-| `message connectrpc.conformance.v1.ConformancePayload`
 
-  - `data`: `bytes data = 1;` Any response data specified in the response definition to the server should be
+  - `data`: Any response data specified in the response definition to the server should be
     echoed back here.
-  - `requestInfo`: `connectrpc.conformance.v1.ConformancePayload.RequestInfo request_info = 2;` Echoes back information about the request stream observed so far.
+  - `requestInfo`: Echoes back information about the request stream observed so far.
 
 -}
 type alias ConformancePayload =
@@ -1003,17 +1005,17 @@ type alias ConformancePayload =
 
 {-| `message connectrpc.conformance.v1.ConformancePayload.RequestInfo`
 
-  - `requestHeaders`: `repeated connectrpc.conformance.v1.Header request_headers = 1;` The server echos back the request headers it observed here.
-  - `timeoutMs`: `optional int64 timeout_ms = 2;` The timeout observed that was included in the request. Other timeouts use a
+  - `requestHeaders`: The server echos back the request headers it observed here.
+  - `timeoutMs`: The timeout observed that was included in the request. Other timeouts use a
     type of uint32, but we want to be lenient here to allow whatever value the RPC
     server observes, even if it's outside the range of uint32.
-  - `requests`: `repeated google.protobuf.Any requests = 3;` The server should echo back all requests received.
+  - `requests`: The server should echo back all requests received.
     For unary and server-streaming requests, this should always contain a single request
     For client-streaming and half-duplex bidi-streaming, this should contain
     all client requests in the order received and be present in each response.
     For full-duplex bidirectional-streaming, this should contain all requests in the order
     they were received since the last sent response.
-  - `connectGetInfo`: `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo connect_get_info = 4;` If present, the request used the Connect protocol and a GET method. This
+  - `connectGetInfo`: If present, the request used the Connect protocol and a GET method. This
     captures other relevant information about the request. If a server implementation
     is unable to populate this (due to the server framework not exposing all of these
     details to application code), it may be an empty message. This implies that the
@@ -1031,7 +1033,7 @@ type alias ConformancePayloadRequestInfo =
 
 {-| `message connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`
 
-  - `queryParams`: `repeated connectrpc.conformance.v1.Header query_params = 1;` The query params observed in the request URL.
+  - `queryParams`: The query params observed in the request URL.
 
 -}
 type alias ConformancePayloadConnectGetInfo =
@@ -1043,13 +1045,13 @@ type alias ConformancePayloadConnectGetInfo =
 
 `message connectrpc.conformance.v1.Error`
 
-  - `code`: `connectrpc.conformance.v1.Code code = 1;` The error code.
+  - `code`: The error code.
     For a list of Connect error codes see: <https://connectrpc.com/docs/protocol#error-codes>
-  - `message`: `optional string message = 2;` If this value is absent in a test case response definition, the contents of the
+  - `message`: If this value is absent in a test case response definition, the contents of the
     actual error message will not be checked. This is useful for certain kinds of
     error conditions where the exact message to be used is not specified, only the
     code.
-  - `details`: `repeated google.protobuf.Any details = 3;` Errors in Connect and gRPC protocols can have arbitrary messages
+  - `details`: Errors in Connect and gRPC protocols can have arbitrary messages
     attached to them, which are known as error details.
 
 -}
@@ -1064,8 +1066,8 @@ type alias Error =
 
 `message connectrpc.conformance.v1.Header`
 
-  - `name`: `string name = 1;` Header/trailer name (key).
-  - `value`: `repeated string value = 2;` Header/trailer value. This is repeated to explicitly support headers and
+  - `name`: Header/trailer name (key).
+  - `value`: Header/trailer value. This is repeated to explicitly support headers and
     trailers where a key is repeated. In such a case, these values must be in
     the same order as which values appeared in the header or trailer block.
 
@@ -1082,14 +1084,14 @@ malformed requests) to test edge cases in servers.
 
 `message connectrpc.conformance.v1.RawHTTPRequest`
 
-  - `verb`: `string verb = 1;` The HTTP verb (i.e. GET , POST).
-  - `uri`: `string uri = 2;` The URI to send the request to.
-  - `headers`: `repeated connectrpc.conformance.v1.Header headers = 3;` Any headers to set on the request.
-  - `rawQueryParams`: `repeated connectrpc.conformance.v1.Header raw_query_params = 4;` These query params will be encoded and added to the uri before
+  - `verb`: The HTTP verb (i.e. GET , POST).
+  - `uri`: The URI to send the request to.
+  - `headers`: Any headers to set on the request.
+  - `rawQueryParams`: These query params will be encoded and added to the uri before
     the request is sent.
-  - `encodedQueryParams`: `repeated connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam encoded_query_params = 5;` This provides an easier way to define a complex binary query param
+  - `encodedQueryParams`: This provides an easier way to define a complex binary query param
     than having to write literal base64-encoded bytes in raw\_query\_params.
-  - `body`: `oneof body` (`RawHTTPRequestBody`)
+  - `body`: See `RawHTTPRequestBody`.
 
 -}
 type alias RawHTTPRequest =
@@ -1105,8 +1107,8 @@ type alias RawHTTPRequest =
 {-| `oneof body` of `connectrpc.conformance.v1.RawHTTPRequest`
 
   - `RawHTTPRequestBodyUnset`: none of the fields is set.
-  - `RawHTTPRequestBodyUnary`: `connectrpc.conformance.v1.MessageContents unary = 6;` The body is a single message.
-  - `RawHTTPRequestBodyStream`: `connectrpc.conformance.v1.StreamContents stream = 7;` The body is a stream, encoded using a five-byte
+  - `RawHTTPRequestBodyUnary`: The body is a single message.
+  - `RawHTTPRequestBodyStream`: The body is a stream, encoded using a five-byte
     prefix before each item in the stream.
 
 -}
@@ -1118,9 +1120,9 @@ type RawHTTPRequestBody
 
 {-| `message connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`
 
-  - `name`: `string name = 1;` Query param name.
-  - `value`: `connectrpc.conformance.v1.MessageContents value = 2;` Query param value.
-  - `base64Encode`: `bool base64_encode = 3;` If true, the message contents will be base64-encoded and the
+  - `name`: Query param name.
+  - `value`: Query param value.
+  - `base64Encode`: If true, the message contents will be base64-encoded and the
     resulting string used as the query parameter value.
 
 -}
@@ -1135,8 +1137,8 @@ type alias RawHTTPRequestEncodedQueryParam =
 
 `message connectrpc.conformance.v1.MessageContents`
 
-  - `data`: `oneof data` (`MessageContentsData`) The message data can be defined in one of three ways.
-  - `compression`: `connectrpc.conformance.v1.Compression compression = 4;` If specified and not identity, the above data will be
+  - `data`: The message data can be defined in one of three ways. See `MessageContentsData`.
+  - `compression`: If specified and not identity, the above data will be
     compressed using the given algorithm.
 
 -}
@@ -1151,9 +1153,9 @@ type alias MessageContents =
 `oneof data` of `connectrpc.conformance.v1.MessageContents`
 
   - `MessageContentsDataUnset`: none of the fields is set.
-  - `MessageContentsDataBinary`: `bytes binary = 1;` Arbitrary bytes.
-  - `MessageContentsDataText`: `string text = 2;` Arbitrary text.
-  - `MessageContentsDataBinaryMessage`: `google.protobuf.Any binary_message = 3;` An actual message. The message inside the Any will be
+  - `MessageContentsDataBinary`: Arbitrary bytes.
+  - `MessageContentsDataText`: Arbitrary text.
+  - `MessageContentsDataBinaryMessage`: An actual message. The message inside the Any will be
     serialized to the protobuf binary formats, and the
     resulting bytes will be the contents.
 
@@ -1169,7 +1171,7 @@ type MessageContentsData
 
 `message connectrpc.conformance.v1.StreamContents`
 
-  - `items`: `repeated connectrpc.conformance.v1.StreamContents.StreamItem items = 1;` The messages in the stream.
+  - `items`: The messages in the stream.
 
 -}
 type alias StreamContents =
@@ -1179,9 +1181,9 @@ type alias StreamContents =
 
 {-| `message connectrpc.conformance.v1.StreamContents.StreamItem`
 
-  - `flags`: `uint32 flags = 1;` must be in the range 0 to 255.
-  - `length`: `optional uint32 length = 2;` if absent use actual length of payload
-  - `payload`: `connectrpc.conformance.v1.MessageContents payload = 3;`
+  - `flags`: must be in the range 0 to 255.
+  - `length`: if absent use actual length of payload
+  - `payload`
 
 -}
 type alias StreamContentsStreamItem =
@@ -1197,10 +1199,10 @@ malformed responses) to test edge cases in clients.
 
 `message connectrpc.conformance.v1.RawHTTPResponse`
 
-  - `statusCode`: `uint32 status_code = 1;` If status code is not specified, it will default to a 200 response code.
-  - `headers`: `repeated connectrpc.conformance.v1.Header headers = 2;` Headers to be set on the response.
-  - `body`: `oneof body` (`RawHTTPResponseBody`)
-  - `trailers`: `repeated connectrpc.conformance.v1.Header trailers = 5;` Trailers to be set on the response.
+  - `statusCode`: If status code is not specified, it will default to a 200 response code.
+  - `headers`: Headers to be set on the response.
+  - `body`: See `RawHTTPResponseBody`.
+  - `trailers`: Trailers to be set on the response.
 
 -}
 type alias RawHTTPResponse =
@@ -1214,8 +1216,8 @@ type alias RawHTTPResponse =
 {-| `oneof body` of `connectrpc.conformance.v1.RawHTTPResponse`
 
   - `RawHTTPResponseBodyUnset`: none of the fields is set.
-  - `RawHTTPResponseBodyUnary`: `connectrpc.conformance.v1.MessageContents unary = 3;` The body is a single message.
-  - `RawHTTPResponseBodyStream`: `connectrpc.conformance.v1.StreamContents stream = 4;` The body is a stream, encoded using a five-byte
+  - `RawHTTPResponseBodyUnary`: The body is a single message.
+  - `RawHTTPResponseBodyStream`: The body is a stream, encoded using a five-byte
     prefix before each item in the stream.
 
 -}
@@ -1233,30 +1235,30 @@ based on whether the client or server under test implements these features.
 
 `message connectrpc.conformance.v1.TestSuite`
 
-  - `name`: `string name = 1;` Test suite name. When writing test suites, this is a required field.
-  - `mode`: `connectrpc.conformance.v1.TestSuite.TestMode mode = 2;` The mode (client or server) that this test suite applies to. This is used
+  - `name`: Test suite name. When writing test suites, this is a required field.
+  - `mode`: The mode (client or server) that this test suite applies to. This is used
     in conjunction with the `--mode` flag passed to the conformance runner
     binary. If the mode on the suite is set to client, the tests will only be
     run if `--mode client` is set on the command to the test runner.
     Likewise if mode is server. If this is unset, the test case will be run in both modes.
-  - `testCases`: `repeated connectrpc.conformance.v1.TestCase test_cases = 3;` The actual test cases in the suite.
-  - `relevantProtocols`: `repeated connectrpc.conformance.v1.Protocol relevant_protocols = 4;` If non-empty, the protocols to which this suite applies. If empty,
+  - `testCases`: The actual test cases in the suite.
+  - `relevantProtocols`: If non-empty, the protocols to which this suite applies. If empty,
     this suite applies to all protocols.
-  - `relevantHttpVersions`: `repeated connectrpc.conformance.v1.HTTPVersion relevant_http_versions = 5;` If non-empty, the HTTP versions to which this suite applies. If empty,
+  - `relevantHttpVersions`: If non-empty, the HTTP versions to which this suite applies. If empty,
     this suite applies to all HTTP versions.
-  - `relevantCodecs`: `repeated connectrpc.conformance.v1.Codec relevant_codecs = 6;` If non-empty, the codecs to which this suite applies. If empty, this
+  - `relevantCodecs`: If non-empty, the codecs to which this suite applies. If empty, this
     suite applies to all codecs.
-  - `relevantCompressions`: `repeated connectrpc.conformance.v1.Compression relevant_compressions = 7;` If non-empty, the compression encodings to which this suite applies.
+  - `relevantCompressions`: If non-empty, the compression encodings to which this suite applies.
     If empty, this suite applies to all encodings.
-  - `connectVersionMode`: `connectrpc.conformance.v1.TestSuite.ConnectVersionMode connect_version_mode = 8;` Indicates the Connect version validation behavior that this suite
+  - `connectVersionMode`: Indicates the Connect version validation behavior that this suite
     relies on.
-  - `reliesOnTls`: `bool relies_on_tls = 9;` If true, the cases in this suite rely on TLS and will only be run against
+  - `reliesOnTls`: If true, the cases in this suite rely on TLS and will only be run against
     TLS server configurations.
-  - `reliesOnTlsClientCerts`: `bool relies_on_tls_client_certs = 10;` If true, the cases in this suite rely on the client using TLS
+  - `reliesOnTlsClientCerts`: If true, the cases in this suite rely on the client using TLS
     certificates to authenticate with the server. (Should only be
     true if relies\_on\_tls is also true.)
-  - `reliesOnConnectGet`: `bool relies_on_connect_get = 11;` If true, the cases in this suite rely on the Connect GET protocol.
-  - `reliesOnMessageReceiveLimit`: `bool relies_on_message_receive_limit = 12;` If true, the cases in this suite rely on support for limiting the
+  - `reliesOnConnectGet`: If true, the cases in this suite rely on the Connect GET protocol.
+  - `reliesOnMessageReceiveLimit`: If true, the cases in this suite rely on support for limiting the
     size of received messages. When true, mode should be set to indicate
     whether it is the client or the server that must support the limit.
 
@@ -1279,7 +1281,7 @@ type alias TestSuite =
 
 {-| `message connectrpc.conformance.v1.TestCase`
 
-  - `request`: `connectrpc.conformance.v1.ClientCompatRequest request = 1;` Defines the RPC that the client should invoke. The first eight fields
+  - `request`: Defines the RPC that the client should invoke. The first eight fields
     are not fully specified. Instead the first field, test\_name, must be
     present but is a prefix -- other characteristics that identify one
     permutation of the test case will be appended to this name. The next
@@ -1288,7 +1290,7 @@ type alias TestSuite =
     the test harness based on the test environment (e.g. actual server and
     port to use) and characteristics of a single permutation.
 
-  - `expandRequests`: `repeated connectrpc.conformance.v1.TestCase.ExpandedSize expand_requests = 2;` To support extremely large messages, as well as very precisely-sized
+  - `expandRequests`: To support extremely large messages, as well as very precisely-sized
     messages, without having to encode them fully or perfectly in YAML
     test cases, this value can be specified. When non-empty, this value
     should have no more entries than there are messages in the request
@@ -1300,7 +1302,7 @@ type alias TestSuite =
     the serialized message that will be sent, and the data field will be
     padded as needed to reach that size.
 
-  - `expectedResponse`: `connectrpc.conformance.v1.ClientResponseResult expected_response = 3;` Defines the expected response to the above RPC. The expected response for
+  - `expectedResponse`: Defines the expected response to the above RPC. The expected response for
     a test is auto-generated based on the request details. The conformance runner
     will determine what the response should be according to the values specified
     in the test suite and individual test cases.
@@ -1320,7 +1322,7 @@ type alias TestSuite =
     Specifying an expected response explicitly in test definitions will override
     the auto-generation of the test runner.
 
-  - `otherAllowedErrorCodes`: `repeated connectrpc.conformance.v1.Code other_allowed_error_codes = 4;` When expected\_response indicates that an error is expected, in some cases, the
+  - `otherAllowedErrorCodes`: When expected\_response indicates that an error is expected, in some cases, the
     actual error code returned may be flexible. In that case, this field provides
     other acceptable error codes, in addition to the one indicated in the
     expected\_response. As long as the actual error's code matches any of these, the
@@ -1337,7 +1339,7 @@ type alias TestCase =
 
 {-| `message connectrpc.conformance.v1.TestCase.ExpandedSize`
 
-  - `sizeRelativeToLimit`: `optional int32 size_relative_to_limit = 1;` The size, in bytes, relative to the limit. For example, to expand to a
+  - `sizeRelativeToLimit`: The size, in bytes, relative to the limit. For example, to expand to a
     size that is exactly equal to the limit, this should be set to zero.
     Any value greater than zero indicates that the request size will be that
     many bytes over the limit.

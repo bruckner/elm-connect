@@ -26,24 +26,24 @@ elmConnectVersion_ =
 
 {-| `message scalars.v1.Scalars`
 
-  - `doubleValue`: `double double_value = 1;`
-  - `floatValue`: `float float_value = 2;`
-  - `int32Value`: `int32 int32_value = 3;`
-  - `int64Value`: `int64 int64_value = 4;`
-  - `uint32Value`: `uint32 uint32_value = 5;`
-  - `uint64Value`: `uint64 uint64_value = 6;`
-  - `sint32Value`: `sint32 sint32_value = 7;`
-  - `sint64Value`: `sint64 sint64_value = 8;`
-  - `fixed32Value`: `fixed32 fixed32_value = 9;`
-  - `fixed64Value`: `fixed64 fixed64_value = 10;`
-  - `sfixed32Value`: `sfixed32 sfixed32_value = 11;`
-  - `sfixed64Value`: `sfixed64 sfixed64_value = 12;`
-  - `boolValue`: `bool bool_value = 13;`
-  - `stringValue`: `string string_value = 14 [json_name = "text"];` An explicit json\_name changes the wire name, never the Elm name.
-  - `bytesValue`: `bytes bytes_value = 15;`
-  - `smallCount`: `int64 small_count = 16 [jstype = JS_NUMBER];` jstype overrides the int64 option per field: JS\_NUMBER makes an Int
+  - `doubleValue`
+  - `floatValue`
+  - `int32Value`
+  - `int64Value`
+  - `uint32Value`
+  - `uint64Value`
+  - `sint32Value`
+  - `sint64Value`
+  - `fixed32Value`
+  - `fixed64Value`
+  - `sfixed32Value`
+  - `sfixed64Value`
+  - `boolValue`
+  - `stringValue`: An explicit json\_name changes the wire name, never the Elm name.
+  - `bytesValue`
+  - `smallCount`: jstype overrides the int64 option per field: JS\_NUMBER makes an Int
     decoded within ±(2^53 − 1), JS\_STRING (the default here) a String.
-  - `exactTotal`: `uint64 exact_total = 17 [jstype = JS_STRING];`
+  - `exactTotal`
 
 -}
 type alias Scalars =

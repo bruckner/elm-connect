@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.DeleteNoteRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.DeleteNoteRequest`
-
+{-| `message notes.v1.DeleteNoteRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,14 +25,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `notes.v1.DeleteNoteRequest`: `string name = 1;`
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `force` of `notes.v1.DeleteNoteRequest`: `bool force = 2;`
+{-| `bool force = 2;`
 -}
 force : Proto.Field.Descriptor
 force =

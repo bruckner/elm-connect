@@ -23,7 +23,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetNote(URLPath) returns (URLPath)`
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
@@ -35,7 +35,7 @@ descriptorGetNote =
         []
 
 
-{-| What the proto says about the method `HTTPGet` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`
 -}
 descriptorHttpGet : Proto.Method.Descriptor
 descriptorHttpGet =
@@ -47,7 +47,7 @@ descriptorHttpGet =
         []
 
 
-{-| What the proto says about the method `_Ping` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+{-| `rpc _Ping(URLPath) returns (URLPath)`
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
@@ -59,7 +59,7 @@ descriptorPing =
         []
 
 
-{-| What the proto says about the method `Type` of `first.v1.Fetcher`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Type(URLPath) returns (URLPath)`
 -}
 descriptorType_ : Proto.Method.Descriptor
 descriptorType_ =

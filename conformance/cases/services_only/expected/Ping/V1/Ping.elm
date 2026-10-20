@@ -24,7 +24,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Ping` of `ping.v1.Ping`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =

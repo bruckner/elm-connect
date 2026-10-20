@@ -27,12 +27,12 @@ elmConnectVersion_ =
 
 {-| `message clock.v1.Moment`
 
-  - `at`: `google.protobuf.Timestamp at = 1;`
-  - `mask`: `google.protobuf.FieldMask mask = 2;`
-  - `count`: `google.protobuf.Int32Value count = 3;`
-  - `seen`: `google.protobuf.BoolValue seen = 4;`
-  - `wait`: `google.protobuf.Duration wait = 5;`
-  - `note`: `string note = 6;`
+  - `at`
+  - `mask`
+  - `count`
+  - `seen`
+  - `wait`
+  - `note`
 
 -}
 type alias Moment =

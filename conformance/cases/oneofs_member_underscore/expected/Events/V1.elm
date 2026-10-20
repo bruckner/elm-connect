@@ -30,8 +30,8 @@ elmConnectVersion_ =
 
 `message events.v1.Event`
 
-  - `name`: `string name = 1;`
-  - `kind`: `oneof kind` (`EventKind`)
+  - `name`
+  - `kind`: See `EventKind`.
 
 -}
 type alias Event =
@@ -43,8 +43,8 @@ type alias Event =
 {-| `oneof kind` of `events.v1.Event`
 
   - `EventKindUnset`: none of the fields is set.
-  - `EventKindLegacy`: `string _legacy = 2;`
-  - `EventKindCount`: `int32 count = 3;`
+  - `EventKindLegacy`
+  - `EventKindCount`
 
 -}
 type EventKind
@@ -55,8 +55,8 @@ type EventKind
 
 {-| `message events.v1.ListEventsRequest`
 
-  - `parent`: `string parent = 1;`
-  - `filter`: `oneof filter` (`ListEventsRequestFilter`)
+  - `parent`
+  - `filter`: See `ListEventsRequestFilter`.
 
 -}
 type alias ListEventsRequest =
@@ -68,7 +68,7 @@ type alias ListEventsRequest =
 {-| `oneof filter` of `events.v1.ListEventsRequest`
 
   - `ListEventsRequestFilterUnset`: none of the fields is set.
-  - `ListEventsRequestFilterLegacy`: `string _legacy = 2;`
+  - `ListEventsRequestFilterLegacy`
 
 -}
 type ListEventsRequestFilter
@@ -78,7 +78,7 @@ type ListEventsRequestFilter
 
 {-| `message events.v1.ListEventsResponse`
 
-  - `events`: `repeated events.v1.Event events = 1;`
+  - `events`
 
 -}
 type alias ListEventsResponse =

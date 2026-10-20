@@ -28,14 +28,14 @@ elmConnectVersion_ =
 
 {-| `message bytes_option.v1.Blob`
 
-  - `data`: `bytes data = 1;`
-  - `maybeData`: `optional bytes maybe_data = 2;`
-  - `chunks`: `repeated bytes chunks = 3;`
-  - `byName`: `map<string, bytes> by_name = 4;` Map keys cannot be bytes; values follow the option.
-  - `wrapped`: `google.protobuf.BytesValue wrapped = 5;`
-  - `wrappedChunks`: `repeated google.protobuf.BytesValue wrapped_chunks = 6;`
-  - `source`: `oneof source` (`BlobSource`)
-  - `name`: `string name = 9;` Other scalars are unchanged.
+  - `data`
+  - `maybeData`
+  - `chunks`
+  - `byName`: Map keys cannot be bytes; values follow the option.
+  - `wrapped`
+  - `wrappedChunks`
+  - `source`: See `BlobSource`.
+  - `name`: Other scalars are unchanged.
 
 -}
 type alias Blob =
@@ -53,8 +53,8 @@ type alias Blob =
 {-| `oneof source` of `bytes_option.v1.Blob`
 
   - `BlobSourceUnset`: none of the fields is set.
-  - `BlobSourceInline`: `bytes inline = 7;`
-  - `BlobSourceUrl`: `string url = 8;`
+  - `BlobSourceInline`
+  - `BlobSourceUrl`
 
 -}
 type BlobSource

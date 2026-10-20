@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `field_order.v1.Draft.Margin`: its full name and its fields, in declaration order.
-
-A nested message, declared before the fields that use it.
+{-| A nested message, declared before the fields that use it.
 
 `message field_order.v1.Draft.Margin`
 
@@ -30,14 +28,14 @@ descriptor =
         ]
 
 
-{-| The field `left` of `field_order.v1.Draft.Margin`: `int32 left = 2;`
+{-| `int32 left = 2;`
 -}
 left : Proto.Field.Descriptor
 left =
     Proto.Field.descriptor "left" "left" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `right` of `field_order.v1.Draft.Margin`: `int32 right = 1;`
+{-| `int32 right = 1;`
 -}
 right : Proto.Field.Descriptor
 right =

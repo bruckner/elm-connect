@@ -30,9 +30,9 @@ shadow a default import.
 
 `message range.v1.Bounds`
 
-  - `max`: `int32 max = 1;`
-  - `min`: `int32 min = 2;`
-  - `always`: `bool always = 3;`
+  - `max`
+  - `min`
+  - `always`
 
 -}
 type alias Bounds =

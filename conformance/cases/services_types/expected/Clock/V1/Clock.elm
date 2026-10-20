@@ -30,7 +30,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Now` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
 -}
 descriptorNow : Proto.Method.Descriptor
 descriptorNow =
@@ -42,7 +42,7 @@ descriptorNow =
         []
 
 
-{-| What the proto says about the method `Sleep` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty)`
 -}
 descriptorSleep : Proto.Method.Descriptor
 descriptorSleep =
@@ -54,7 +54,7 @@ descriptorSleep =
         []
 
 
-{-| What the proto says about the method `Mask` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct)`
 -}
 descriptorMask : Proto.Method.Descriptor
 descriptorMask =
@@ -66,7 +66,7 @@ descriptorMask =
         []
 
 
-{-| What the proto says about the method `Echo` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue)`
 -}
 descriptorEcho : Proto.Method.Descriptor
 descriptorEcho =
@@ -78,7 +78,7 @@ descriptorEcho =
         []
 
 
-{-| What the proto says about the method `Ticks` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value)`
 -}
 descriptorTicks : Proto.Method.Descriptor
 descriptorTicks =
@@ -90,7 +90,7 @@ descriptorTicks =
         []
 
 
-{-| What the proto says about the method `Count` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value)`
 -}
 descriptorCount : Proto.Method.Descriptor
 descriptorCount =
@@ -102,7 +102,7 @@ descriptorCount =
         []
 
 
-{-| What the proto says about the method `Ratio` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue)`
 -}
 descriptorRatio : Proto.Method.Descriptor
 descriptorRatio =
@@ -114,7 +114,7 @@ descriptorRatio =
         []
 
 
-{-| What the proto says about the method `Name` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue)`
 -}
 descriptorName : Proto.Method.Descriptor
 descriptorName =
@@ -126,7 +126,7 @@ descriptorName =
         []
 
 
-{-| What the proto says about the method `Raw` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue)`
 -}
 descriptorRaw : Proto.Method.Descriptor
 descriptorRaw =
@@ -138,7 +138,7 @@ descriptorRaw =
         []
 
 
-{-| What the proto says about the method `Zone` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone)`
 -}
 descriptorZone : Proto.Method.Descriptor
 descriptorZone =
@@ -150,7 +150,7 @@ descriptorZone =
         []
 
 
-{-| What the proto says about the method `Set` of `clock.v1.Clock`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Set(Alarm) returns (Alarm)`
 -}
 descriptorSet : Proto.Method.Descriptor
 descriptorSet =

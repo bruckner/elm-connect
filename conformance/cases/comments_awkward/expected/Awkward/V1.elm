@@ -30,13 +30,13 @@ elmConnectVersion_ =
 
 `enum awkward.v1.Marks`
 
-  - `MarksUnspecified`: `MARKS_UNSPECIFIED = 0;` **not a heading in proto**
+  - `MarksUnspecified` (`MARKS_UNSPECIFIED`): **not a heading in proto**
 
-  - `MarksList`: `MARKS_LIST = 1;`
+  - `MarksList` (`MARKS_LIST`):
     1.  one
     2.  two
 
-  - `MarksDelimited`: `MARKS_DELIMITED = 2;` Trailing: - } { -
+  - `MarksDelimited` (`MARKS_DELIMITED`): Trailing: - } { -
 
 -}
 type Marks
@@ -52,7 +52,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
 `message awkward.v1.Delimiters`
 
-  - `lists`: `string lists = 1;`
+  - `lists`:
 
       - a star item
 
@@ -69,7 +69,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
     3.  third
 
-  - `blocks`: `string blocks = 2;` **A heading**
+  - `blocks`: **A heading**
 
     **Setext heading**
 
@@ -78,7 +78,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
     > A quote
     > on two lines.
 
-  - `code`: `string code = 3;` Indented code:
+  - `code`: Indented code:
 
     ```text
     rpc Get(Request) returns (Response);
@@ -103,7 +103,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
     message M { int32 x = 1; }
     ```
 
-  - `inline`: `string inline = 4;` | a | b |
+  - `inline`: | a | b |
     |---|---|
     | 1 | 2 |
 
@@ -113,14 +113,14 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
     [ref]: https://example.com "Title"
 
-  - `text`: `string text = 5;` Trailing spaces end this line
+  - `text`: Trailing spaces end this line
     and a tab sits here.
     A line of two hundred characters, which elm-format leaves as it is rather than wrapping it, since it reflows no paragraph of a doc comment at all, however long it runs: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     Non-ASCII: café, naïve, “quotes”, — and ✓.
 
-  - `whitespaceOnly`: `string whitespace_only = 6;`
+  - `whitespaceOnly`
 
-  - `unclosed`: `string unclosed = 7;`
+  - `unclosed`:
 
     ```text
     A fence that never closes.
@@ -142,7 +142,7 @@ type alias Delimiters =
 
 `message awkward.v1.Docs`
 
-  - `field`: `string field = 1;` `@docs` field
+  - `field`: `@docs` field
 
 -}
 type alias Docs =

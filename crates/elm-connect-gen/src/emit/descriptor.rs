@@ -58,30 +58,15 @@ impl Emitter {
                 list(fields.iter().map(|field| var(field.elm_name.clone()))),
             ],
         );
-        let sentence = format!(
-            "What the proto says about the message `{}`: its full name and its fields, in \
-             declaration order.",
-            message.proto_full_name
-        );
         let mut decls = vec![Decl::Value {
-            doc: Some(docs::descriptor(sentence, &message.doc)),
+            doc: Some(docs::descriptor(&message.doc)),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_MESSAGE, "Descriptor", []),
             params: Vec::new(),
             body,
         }];
         for field in &fields {
-            let sentence = match field.oneof {
-                Some(oneof) => format!(
-                    "The field `{}` of `{}`, a member of the oneof `{oneof}`",
-                    field.proto_name, message.proto_full_name
-                ),
-                None => format!(
-                    "The field `{}` of `{}`",
-                    field.proto_name, message.proto_full_name
-                ),
-            };
-            let doc = docs::field_descriptor(&sentence, field.doc);
+            let doc = docs::field_descriptor(field.doc, field.oneof);
             let body = self.field_descriptor(field);
             decls.push(Decl::Value {
                 doc: Some(doc),
@@ -148,13 +133,8 @@ impl Emitter {
             builder,
             [string(enumeration.proto_full_name.clone()), list(values)],
         );
-        let sentence = format!(
-            "What the proto says about the enum `{}`: its full name and its values, in \
-             declaration order.",
-            enumeration.proto_full_name
-        );
         vec![Decl::Value {
-            doc: Some(docs::enum_descriptor(sentence, enumeration)),
+            doc: Some(docs::enum_descriptor(enumeration)),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_ENUM, "Descriptor", []),
             params: Vec::new(),

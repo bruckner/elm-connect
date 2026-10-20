@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.ResourceInfo`: its full name and its fields, in declaration order.
-
-Describes the resource that is being accessed.
+{-| Describes the resource that is being accessed.
 
 `message google.rpc.ResourceInfo`
 
@@ -32,11 +30,11 @@ descriptor =
         ]
 
 
-{-| The field `resource_type` of `google.rpc.ResourceInfo`: `string resource_type = 1;`
-
-A name for the type of resource being accessed, e.g. "sql table",
+{-| A name for the type of resource being accessed, e.g. "sql table",
 "cloud storage bucket", "file", "Google calendar"; or the type URL
 of the resource: e.g. "type.googleapis.com/google.pubsub.v1.Topic".
+
+`string resource_type = 1;`
 
 -}
 resourceType : Proto.Field.Descriptor
@@ -44,12 +42,12 @@ resourceType =
     Proto.Field.descriptor "resource_type" "resourceType" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `resource_name` of `google.rpc.ResourceInfo`: `string resource_name = 2;`
-
-The name of the resource being accessed. For example, a shared calendar
+{-| The name of the resource being accessed. For example, a shared calendar
 name: "example.com\_4fghdhgsrgh@group.calendar.google.com", if the current
 error is
 [google.rpc.Code.PERMISSION\_DENIED][google.rpc.Code.PERMISSION_DENIED].
+
+`string resource_name = 2;`
 
 -}
 resourceName : Proto.Field.Descriptor
@@ -57,11 +55,11 @@ resourceName =
     Proto.Field.descriptor "resource_name" "resourceName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `owner` of `google.rpc.ResourceInfo`: `string owner = 3;`
-
-The owner of the resource (optional).
+{-| The owner of the resource (optional).
 For example, "user:<owner email>" or "project:<Google developer project
 id>".
+
+`string owner = 3;`
 
 -}
 owner : Proto.Field.Descriptor
@@ -69,11 +67,11 @@ owner =
     Proto.Field.descriptor "owner" "owner" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `description` of `google.rpc.ResourceInfo`: `string description = 4;`
-
-Describes what error is encountered when accessing this resource.
+{-| Describes what error is encountered when accessing this resource.
 For example, updating a cloud project may require the `writer` permission
 on the developer console project.
+
+`string description = 4;`
 
 -}
 description : Proto.Field.Descriptor

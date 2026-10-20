@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `events.v1.ListEventsRequest`: its full name and its fields, in declaration order.
-
-`message events.v1.ListEventsRequest`
-
+{-| `message events.v1.ListEventsRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,14 +25,14 @@ descriptor =
         ]
 
 
-{-| The field `parent` of `events.v1.ListEventsRequest`: `string parent = 1;`
+{-| `string parent = 1;`
 -}
 parent : Proto.Field.Descriptor
 parent =
     Proto.Field.descriptor "parent" "parent" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `_legacy` of `events.v1.ListEventsRequest`, a member of the oneof `filter`: `string _legacy = 2;`
+{-| `string _legacy = 2;`, in oneof `filter`
 -}
 legacy : Proto.Field.Descriptor
 legacy =

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.Compression`: its full name and its values, in declaration order.
-
-`enum connectrpc.conformance.v1.Compression`
+{-| `enum connectrpc.conformance.v1.Compression`
 
   - `COMPRESSION_UNSPECIFIED = 0;`
   - `COMPRESSION_IDENTITY = 1;`

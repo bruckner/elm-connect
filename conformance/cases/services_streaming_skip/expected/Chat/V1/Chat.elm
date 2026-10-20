@@ -23,7 +23,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `Send` of `chat.v1.Chat`: its names, idempotency, types and HTTP bindings.
+{-| `rpc Send(Line) returns (Line)`
 -}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =

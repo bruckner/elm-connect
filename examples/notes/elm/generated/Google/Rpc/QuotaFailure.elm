@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.QuotaFailure`: its full name and its fields, in declaration order.
-
-Describes how a quota check failed.
+{-| Describes how a quota check failed.
 
 For example if a daily limit was exceeded for the calling project,
 a service could respond with a QuotaFailure detail containing the project
@@ -39,9 +37,9 @@ descriptor =
         ]
 
 
-{-| The field `violations` of `google.rpc.QuotaFailure`: `repeated google.rpc.QuotaFailure.Violation violations = 1;`
+{-| Describes all quota violations.
 
-Describes all quota violations.
+`repeated google.rpc.QuotaFailure.Violation violations = 1;`
 
 -}
 violations : Proto.Field.Descriptor

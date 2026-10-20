@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.StreamResponseDefinition`: its full name and its fields, in declaration order.
-
-A definition of responses to be sent from a streaming endpoint.
+{-| A definition of responses to be sent from a streaming endpoint.
 Can be used to define responses for server-streaming or bidi-streaming calls.
 
 `message connectrpc.conformance.v1.StreamResponseDefinition`
@@ -35,9 +33,9 @@ descriptor =
         ]
 
 
-{-| The field `response_headers` of `connectrpc.conformance.v1.StreamResponseDefinition`: `repeated connectrpc.conformance.v1.Header response_headers = 1;`
+{-| Response headers to send
 
-Response headers to send
+`repeated connectrpc.conformance.v1.Header response_headers = 1;`
 
 -}
 responseHeaders : Proto.Field.Descriptor
@@ -45,9 +43,9 @@ responseHeaders =
     Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `response_data` of `connectrpc.conformance.v1.StreamResponseDefinition`: `repeated bytes response_data = 2;`
+{-| Response data to send
 
-Response data to send
+`repeated bytes response_data = 2;`
 
 -}
 responseData : Proto.Field.Descriptor
@@ -55,9 +53,9 @@ responseData =
     Proto.Field.descriptor "response_data" "responseData" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `response_delay_ms` of `connectrpc.conformance.v1.StreamResponseDefinition`: `uint32 response_delay_ms = 3;`
+{-| Wait this many milliseconds before sending each response message
 
-Wait this many milliseconds before sending each response message
+`uint32 response_delay_ms = 3;`
 
 -}
 responseDelayMs : Proto.Field.Descriptor
@@ -65,13 +63,13 @@ responseDelayMs =
     Proto.Field.descriptor "response_delay_ms" "responseDelayMs" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `error` of `connectrpc.conformance.v1.StreamResponseDefinition`: `connectrpc.conformance.v1.Error error = 4;`
-
-Optional error to raise, but only after sending any response messages.
+{-| Optional error to raise, but only after sending any response messages.
 In the event an immediate error is thrown before any responses are sent,
 (i.e. the equivalent of a trailers-only response), then servers should
 build a RequestInfo message with available information and append that to
 the error details.
+
+`connectrpc.conformance.v1.Error error = 4;`
 
 -}
 error : Proto.Field.Descriptor
@@ -79,9 +77,9 @@ error =
     Proto.Field.descriptor "error" "error" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.Error")
 
 
-{-| The field `response_trailers` of `connectrpc.conformance.v1.StreamResponseDefinition`: `repeated connectrpc.conformance.v1.Header response_trailers = 5;`
+{-| Response trailers to send - together with the error if present
 
-Response trailers to send - together with the error if present
+`repeated connectrpc.conformance.v1.Header response_trailers = 5;`
 
 -}
 responseTrailers : Proto.Field.Descriptor
@@ -89,13 +87,13 @@ responseTrailers =
     Proto.Field.descriptor "response_trailers" "responseTrailers" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `raw_response` of `connectrpc.conformance.v1.StreamResponseDefinition`: `connectrpc.conformance.v1.RawHTTPResponse raw_response = 6;`
-
-This field is only used by the reference server. If you are implementing a
+{-| This field is only used by the reference server. If you are implementing a
 server under test, you can ignore this field or respond with an error if the
 server receives a request where it is set.
 
 For test definitions, this field should be used instead of the above fields.
+
+`connectrpc.conformance.v1.RawHTTPResponse raw_response = 6;`
 
 -}
 rawResponse : Proto.Field.Descriptor

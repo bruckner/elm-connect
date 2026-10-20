@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ServerStreamRequest`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.ServerStreamRequest`
-
+{-| `message connectrpc.conformance.v1.ServerStreamRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,9 +25,9 @@ descriptor =
         ]
 
 
-{-| The field `response_definition` of `connectrpc.conformance.v1.ServerStreamRequest`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;`
+{-| The response definition which should be returned in the conformance payload.
 
-The response definition which should be returned in the conformance payload.
+`connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;`
 
 -}
 responseDefinition : Proto.Field.Descriptor
@@ -38,9 +35,9 @@ responseDefinition =
     Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamResponseDefinition")
 
 
-{-| The field `request_data` of `connectrpc.conformance.v1.ServerStreamRequest`: `bytes request_data = 2;`
+{-| Additional data. Only used to pad the request size to test large request messages.
 
-Additional data. Only used to pad the request size to test large request messages.
+`bytes request_data = 2;`
 
 -}
 requestData : Proto.Field.Descriptor

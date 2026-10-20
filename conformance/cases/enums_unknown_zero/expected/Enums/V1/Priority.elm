@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `enums.v1.Priority`: its full name and its values, in declaration order.
-
-Values without the conventional prefix, a negative number, and
+{-| Values without the conventional prefix, a negative number, and
 aliases: names sharing a number are one constructor, named for the
 first declared, which the encoder writes; the decoder reads them all.
 PRIORITY\_LOW would be the constructor PriorityLow, like LOW; as an

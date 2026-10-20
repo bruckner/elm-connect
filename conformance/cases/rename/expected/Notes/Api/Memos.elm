@@ -23,7 +23,7 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`
 -}
 descriptorFetchMemo : Proto.Method.Descriptor
 descriptorFetchMemo =

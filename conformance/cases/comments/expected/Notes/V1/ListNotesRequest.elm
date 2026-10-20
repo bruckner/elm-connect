@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ListNotesRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.ListNotesRequest`
-
+{-| `message notes.v1.ListNotesRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `parent` of `notes.v1.ListNotesRequest`: `string parent = 1;`
+{-| `string parent = 1;`
 -}
 parent : Proto.Field.Descriptor
 parent =

@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.RawHTTPResponse`: its full name and its fields, in declaration order.
-
-RawHTTPResponse models a raw HTTP response. This can be used to craft
+{-| RawHTTPResponse models a raw HTTP response. This can be used to craft
 custom responses with odd properties (including certain kinds of
 malformed responses) to test edge cases in clients.
 
@@ -35,9 +33,9 @@ descriptor =
         ]
 
 
-{-| The field `status_code` of `connectrpc.conformance.v1.RawHTTPResponse`: `uint32 status_code = 1;`
+{-| If status code is not specified, it will default to a 200 response code.
 
-If status code is not specified, it will default to a 200 response code.
+`uint32 status_code = 1;`
 
 -}
 statusCode : Proto.Field.Descriptor
@@ -45,9 +43,9 @@ statusCode =
     Proto.Field.descriptor "status_code" "statusCode" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `headers` of `connectrpc.conformance.v1.RawHTTPResponse`: `repeated connectrpc.conformance.v1.Header headers = 2;`
+{-| Headers to be set on the response.
 
-Headers to be set on the response.
+`repeated connectrpc.conformance.v1.Header headers = 2;`
 
 -}
 headers : Proto.Field.Descriptor
@@ -55,9 +53,9 @@ headers =
     Proto.Field.descriptor "headers" "headers" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `unary` of `connectrpc.conformance.v1.RawHTTPResponse`, a member of the oneof `body`: `connectrpc.conformance.v1.MessageContents unary = 3;`
+{-| The body is a single message.
 
-The body is a single message.
+`connectrpc.conformance.v1.MessageContents unary = 3;`, in oneof `body`
 
 -}
 unary : Proto.Field.Descriptor
@@ -66,10 +64,10 @@ unary =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `stream` of `connectrpc.conformance.v1.RawHTTPResponse`, a member of the oneof `body`: `connectrpc.conformance.v1.StreamContents stream = 4;`
-
-The body is a stream, encoded using a five-byte
+{-| The body is a stream, encoded using a five-byte
 prefix before each item in the stream.
+
+`connectrpc.conformance.v1.StreamContents stream = 4;`, in oneof `body`
 
 -}
 stream : Proto.Field.Descriptor
@@ -78,9 +76,9 @@ stream =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `trailers` of `connectrpc.conformance.v1.RawHTTPResponse`: `repeated connectrpc.conformance.v1.Header trailers = 5;`
+{-| Trailers to be set on the response.
 
-Trailers to be set on the response.
+`repeated connectrpc.conformance.v1.Header trailers = 5;`
 
 -}
 trailers : Proto.Field.Descriptor

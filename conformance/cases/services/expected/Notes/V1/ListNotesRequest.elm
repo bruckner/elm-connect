@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ListNotesRequest`: its full name and its fields, in declaration order.
-
-`message notes.v1.ListNotesRequest`
-
+{-| `message notes.v1.ListNotesRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -33,49 +30,49 @@ descriptor =
         ]
 
 
-{-| The field `parent` of `notes.v1.ListNotesRequest`: `string parent = 1;`
+{-| `string parent = 1;`
 -}
 parent : Proto.Field.Descriptor
 parent =
     Proto.Field.descriptor "parent" "parent" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `page_size` of `notes.v1.ListNotesRequest`: `int32 page_size = 2;`
+{-| `int32 page_size = 2;`
 -}
 pageSize : Proto.Field.Descriptor
 pageSize =
     Proto.Field.descriptor "page_size" "pageSize" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `page_token` of `notes.v1.ListNotesRequest`: `string page_token = 3;`
+{-| `string page_token = 3;`
 -}
 pageToken : Proto.Field.Descriptor
 pageToken =
     Proto.Field.descriptor "page_token" "pageToken" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `filter` of `notes.v1.ListNotesRequest`: `notes.v1.ListNotesRequest.Filter filter = 4;`
+{-| `notes.v1.ListNotesRequest.Filter filter = 4;`
 -}
 filter : Proto.Field.Descriptor
 filter =
     Proto.Field.descriptor "filter" "filter" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.ListNotesRequest.Filter")
 
 
-{-| The field `tags` of `notes.v1.ListNotesRequest`: `repeated string tags = 5;`
+{-| `repeated string tags = 5;`
 -}
 tags : Proto.Field.Descriptor
 tags =
     Proto.Field.descriptor "tags" "tags" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `archived` of `notes.v1.ListNotesRequest`: `optional bool archived = 6;`
+{-| `optional bool archived = 6;`
 -}
 archived : Proto.Field.Descriptor
 archived =
     Proto.Field.descriptor "archived" "archived" 6 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `revision` of `notes.v1.ListNotesRequest`: `int64 revision = 7;`
+{-| `int64 revision = 7;`
 -}
 revision : Proto.Field.Descriptor
 revision =

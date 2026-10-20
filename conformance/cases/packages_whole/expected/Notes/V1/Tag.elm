@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Tag`: its full name and its fields, in declaration order.
-
-`message notes.v1.Tag`
-
+{-| `message notes.v1.Tag`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `label` of `notes.v1.Tag`: `string label = 1;`
+{-| `string label = 1;`
 -}
 label : Proto.Field.Descriptor
 label =

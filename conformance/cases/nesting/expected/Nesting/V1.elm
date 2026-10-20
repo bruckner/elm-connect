@@ -36,8 +36,8 @@ elmConnectVersion_ =
 
 {-| `enum nesting.v1.Outer.Inner.Kind`
 
-  - `OuterInnerKindUnspecified`: `KIND_UNSPECIFIED = 0;`
-  - `OuterInnerKindDraft`: `KIND_DRAFT = 1;`
+  - `OuterInnerKindUnspecified` (`KIND_UNSPECIFIED`)
+  - `OuterInnerKindDraft` (`KIND_DRAFT`)
 
 -}
 type OuterInnerKind
@@ -47,9 +47,9 @@ type OuterInnerKind
 
 {-| `message nesting.v1.Outer`
 
-  - `inner`: `nesting.v1.Outer.Inner inner = 1;`
-  - `kind`: `nesting.v1.Outer.Inner.Kind kind = 2;`
-  - `all`: `repeated nesting.v1.Outer.Inner.Deepest all = 3;`
+  - `inner`
+  - `kind`
+  - `all`
 
 -}
 type alias Outer =
@@ -61,7 +61,7 @@ type alias Outer =
 
 {-| `message nesting.v1.Outer.Inner`
 
-  - `deepest`: `nesting.v1.Outer.Inner.Deepest deepest = 1;`
+  - `deepest`
 
 -}
 type alias OuterInner =
@@ -71,7 +71,7 @@ type alias OuterInner =
 
 {-| `message nesting.v1.Outer.Inner.Deepest`
 
-  - `kind`: `nesting.v1.Outer.Inner.Kind kind = 1;`
+  - `kind`
 
 -}
 type alias OuterInnerDeepest =
@@ -83,9 +83,9 @@ type alias OuterInnerDeepest =
 
 `message nesting.v1.Node`
 
-  - `label`: `string label = 1;`
-  - `children`: `repeated nesting.v1.Node children = 2;`
-  - `byName`: `map<string, nesting.v1.Node> by_name = 3;` A map value closes the cycle too.
+  - `label`
+  - `children`
+  - `byName`: A map value closes the cycle too.
 
 -}
 type alias Node =
@@ -105,8 +105,8 @@ type Node_
 
 `message nesting.v1.Person`
 
-  - `name`: `string name = 1;`
-  - `employer`: `optional nesting.v1.Company employer = 2;`
+  - `name`
+  - `employer`
 
 -}
 type alias Person =
@@ -123,8 +123,8 @@ type Person_
 
 {-| `message nesting.v1.Company`
 
-  - `name`: `string name = 1;`
-  - `staff`: `repeated nesting.v1.Person staff = 2;`
+  - `name`
+  - `staff`
 
 -}
 type alias Company =
@@ -143,7 +143,7 @@ type Company_
 
 `message nesting.v1.Forest`
 
-  - `trees`: `repeated nesting.v1.Node trees = 1;`
+  - `trees`
 
 -}
 type alias Forest =
@@ -156,7 +156,7 @@ member lazily.
 
 `message nesting.v1.Expr`
 
-  - `value`: `oneof value` (`ExprValue`)
+  - `value`: See `ExprValue`.
 
 -}
 type alias Expr =
@@ -167,8 +167,8 @@ type alias Expr =
 {-| `oneof value` of `nesting.v1.Expr`
 
   - `ExprValueUnset`: none of the fields is set.
-  - `ExprValueNumber`: `int64 number = 1;`
-  - `ExprValueSum`: `nesting.v1.Sum sum = 2;`
+  - `ExprValueNumber`
+  - `ExprValueSum`
 
 -}
 type ExprValue
@@ -179,7 +179,7 @@ type ExprValue
 
 {-| `message nesting.v1.Sum`
 
-  - `terms`: `repeated nesting.v1.Expr terms = 1;`
+  - `terms`
 
 -}
 type alias Sum =

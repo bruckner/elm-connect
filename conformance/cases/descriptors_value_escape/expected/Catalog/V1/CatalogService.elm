@@ -26,7 +26,12 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetEntry` of `catalog.v1.CatalogService`: its names, idempotency, types and HTTP bindings.
+{-| `descriptor` and `part.descriptor` are query parameters, named by
+`Catalog.V1.GetEntryRequest.descriptor_` and
+`Catalog.V1.Part.descriptor_`.
+
+`rpc GetEntry(GetEntryRequest) returns (Entry)`
+
 -}
 descriptorGetEntry : Proto.Method.Descriptor
 descriptorGetEntry =
@@ -60,12 +65,12 @@ descriptorGetEntry =
 -- CALLS
 
 
-{-| `rpc GetEntry(GetEntryRequest) returns (Entry)`. Connect: `POST /catalog.v1.CatalogService/GetEntry`.
-Transcode: `GET /v1/{name=entries/*}`.
-
-`descriptor` and `part.descriptor` are query parameters, named by
+{-| `descriptor` and `part.descriptor` are query parameters, named by
 `Catalog.V1.GetEntryRequest.descriptor_` and
 `Catalog.V1.Part.descriptor_`.
+
+`rpc GetEntry(GetEntryRequest) returns (Entry)`. Connect: `POST /catalog.v1.CatalogService/GetEntry`.
+Transcode: `GET /v1/{name=entries/*}`.
 
 -}
 getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Catalog.V1.GetEntryRequest Catalog.V1.Entry

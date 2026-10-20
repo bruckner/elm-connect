@@ -29,8 +29,8 @@ elmConnectVersion_ =
 
 {-| `enum maps.v1.Role`
 
-  - `RoleUnspecified`: `ROLE_UNSPECIFIED = 0;`
-  - `RoleOwner`: `ROLE_OWNER = 1;`
+  - `RoleUnspecified` (`ROLE_UNSPECIFIED`)
+  - `RoleOwner` (`ROLE_OWNER`)
 
 -}
 type Role
@@ -40,7 +40,7 @@ type Role
 
 {-| `message maps.v1.Member`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias Member =
@@ -50,20 +50,20 @@ type alias Member =
 
 {-| `message maps.v1.Team`
 
-  - `labels`: `map<string, string> labels = 1;`
-  - `bySeat`: `map<int32, string> by_seat = 2;`
-  - `scores`: `map<uint32, double> scores = 3;`
-  - `flags`: `map<sint32, bool> flags = 4;`
-  - `totals`: `map<fixed32, int64> totals = 5;`
-  - `byId`: `map<int64, string> by_id = 6;` 64-bit keys stay strings, like 64-bit values.
-  - `counts`: `map<uint64, int32> counts = 7;`
-  - `members`: `map<string, maps.v1.Member> members = 8;` Message and enum values.
-  - `roles`: `map<int32, maps.v1.Role> roles = 9;`
-  - `byFlag`: `map<bool, string> by_flag = 10;` Bool keys: an association list of at most two pairs.
-  - `byOffset`: `map<sfixed32, string> by_offset = 11;` The remaining key kinds.
-  - `deltas`: `map<sint64, string> deltas = 12;`
-  - `byHash`: `map<fixed64, string> by_hash = 13;`
-  - `byStamp`: `map<sfixed64, string> by_stamp = 14;`
+  - `labels`
+  - `bySeat`
+  - `scores`
+  - `flags`
+  - `totals`
+  - `byId`: 64-bit keys stay strings, like 64-bit values.
+  - `counts`
+  - `members`: Message and enum values.
+  - `roles`
+  - `byFlag`: Bool keys: an association list of at most two pairs.
+  - `byOffset`: The remaining key kinds.
+  - `deltas`
+  - `byHash`
+  - `byStamp`
 
 -}
 type alias Team =

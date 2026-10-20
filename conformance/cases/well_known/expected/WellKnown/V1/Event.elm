@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `well_known.v1.Event`: its full name and its fields, in declaration order.
-
-`message well_known.v1.Event`
-
+{-| `message well_known.v1.Event`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -58,9 +55,9 @@ descriptor =
         ]
 
 
-{-| The field `created_at` of `well_known.v1.Event`: `google.protobuf.Timestamp created_at = 1;`
+{-| Message types: a singular field has presence.
 
-Message types: a singular field has presence.
+`google.protobuf.Timestamp created_at = 1;`
 
 -}
 createdAt : Proto.Field.Descriptor
@@ -68,23 +65,23 @@ createdAt =
     Proto.Field.descriptor "created_at" "createdAt" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `timeout` of `well_known.v1.Event`: `google.protobuf.Duration timeout = 2;`
+{-| `google.protobuf.Duration timeout = 2;`
 -}
 timeout : Proto.Field.Descriptor
 timeout =
     Proto.Field.descriptor "timeout" "timeout" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
 
 
-{-| The field `update_mask` of `well_known.v1.Event`: `google.protobuf.FieldMask update_mask = 3;`
+{-| `google.protobuf.FieldMask update_mask = 3;`
 -}
 updateMask : Proto.Field.Descriptor
 updateMask =
     Proto.Field.descriptor "update_mask" "updateMask" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
 
 
-{-| The field `marker` of `well_known.v1.Event`: `google.protobuf.Empty marker = 4;`
+{-| Empty carries nothing, presence included: (), never Maybe ().
 
-Empty carries nothing, presence included: (), never Maybe ().
+`google.protobuf.Empty marker = 4;`
 
 -}
 marker : Proto.Field.Descriptor
@@ -92,11 +89,11 @@ marker =
     Proto.Field.descriptor "marker" "marker" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
 
 
-{-| The field `metadata` of `well_known.v1.Event`: `google.protobuf.Struct metadata = 5;`
-
-Struct and ListValue are a Dict and a List of JSON values, with
+{-| Struct and ListValue are a Dict and a List of JSON values, with
 presence like any message. Value is any JSON, with presence too,
 `optional` or not: Nothing when absent, Just null when null.
+
+`google.protobuf.Struct metadata = 5;`
 
 -}
 metadata : Proto.Field.Descriptor
@@ -104,23 +101,23 @@ metadata =
     Proto.Field.descriptor "metadata" "metadata" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
 
 
-{-| The field `payload` of `well_known.v1.Event`: `google.protobuf.Value payload = 6;`
+{-| `google.protobuf.Value payload = 6;`
 -}
 payload : Proto.Field.Descriptor
 payload =
     Proto.Field.descriptor "payload" "payload" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
 
 
-{-| The field `items` of `well_known.v1.Event`: `google.protobuf.ListValue items = 7;`
+{-| `google.protobuf.ListValue items = 7;`
 -}
 items : Proto.Field.Descriptor
 items =
     Proto.Field.descriptor "items" "items" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
 
 
-{-| The field `ratio` of `well_known.v1.Event`: `google.protobuf.DoubleValue ratio = 8;`
+{-| Wrappers: a Maybe of the scalar, never a Maybe of a record.
 
-Wrappers: a Maybe of the scalar, never a Maybe of a record.
+`google.protobuf.DoubleValue ratio = 8;`
 
 -}
 ratio : Proto.Field.Descriptor
@@ -128,65 +125,65 @@ ratio =
     Proto.Field.descriptor "ratio" "ratio" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.DoubleValue")
 
 
-{-| The field `weight` of `well_known.v1.Event`: `google.protobuf.FloatValue weight = 9;`
+{-| `google.protobuf.FloatValue weight = 9;`
 -}
 weight : Proto.Field.Descriptor
 weight =
     Proto.Field.descriptor "weight" "weight" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FloatValue")
 
 
-{-| The field `big_count` of `well_known.v1.Event`: `google.protobuf.Int64Value big_count = 10;`
+{-| `google.protobuf.Int64Value big_count = 10;`
 -}
 bigCount : Proto.Field.Descriptor
 bigCount =
     Proto.Field.descriptor "big_count" "bigCount" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int64Value")
 
 
-{-| The field `big_total` of `well_known.v1.Event`: `google.protobuf.UInt64Value big_total = 11;`
+{-| `google.protobuf.UInt64Value big_total = 11;`
 -}
 bigTotal : Proto.Field.Descriptor
 bigTotal =
     Proto.Field.descriptor "big_total" "bigTotal" 11 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt64Value")
 
 
-{-| The field `count` of `well_known.v1.Event`: `google.protobuf.Int32Value count = 12;`
+{-| `google.protobuf.Int32Value count = 12;`
 -}
 count : Proto.Field.Descriptor
 count =
     Proto.Field.descriptor "count" "count" 12 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
 
 
-{-| The field `total` of `well_known.v1.Event`: `google.protobuf.UInt32Value total = 13;`
+{-| `google.protobuf.UInt32Value total = 13;`
 -}
 total : Proto.Field.Descriptor
 total =
     Proto.Field.descriptor "total" "total" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.UInt32Value")
 
 
-{-| The field `enabled` of `well_known.v1.Event`: `google.protobuf.BoolValue enabled = 14;`
+{-| `google.protobuf.BoolValue enabled = 14;`
 -}
 enabled : Proto.Field.Descriptor
 enabled =
     Proto.Field.descriptor "enabled" "enabled" 14 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BoolValue")
 
 
-{-| The field `nickname` of `well_known.v1.Event`: `google.protobuf.StringValue nickname = 15;`
+{-| `google.protobuf.StringValue nickname = 15;`
 -}
 nickname : Proto.Field.Descriptor
 nickname =
     Proto.Field.descriptor "nickname" "nickname" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
 
 
-{-| The field `avatar` of `well_known.v1.Event`: `google.protobuf.BytesValue avatar = 16;`
+{-| `google.protobuf.BytesValue avatar = 16;`
 -}
 avatar : Proto.Field.Descriptor
 avatar =
     Proto.Field.descriptor "avatar" "avatar" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BytesValue")
 
 
-{-| The field `history` of `well_known.v1.Event`: `repeated google.protobuf.Timestamp history = 17;`
+{-| Repeated and map values, and a oneof member.
 
-Repeated and map values, and a oneof member.
+`repeated google.protobuf.Timestamp history = 17;`
 
 -}
 history : Proto.Field.Descriptor
@@ -194,66 +191,66 @@ history =
     Proto.Field.descriptor "history" "history" 17 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `limits` of `well_known.v1.Event`: `map<string, google.protobuf.Duration> limits = 18;`
+{-| `map<string, google.protobuf.Duration> limits = 18;`
 -}
 limits : Proto.Field.Descriptor
 limits =
     Proto.Field.descriptor "limits" "limits" 18 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Duration")
 
 
-{-| The field `values` of `well_known.v1.Event`: `repeated google.protobuf.Value values = 19;`
+{-| `repeated google.protobuf.Value values = 19;`
 -}
 values : Proto.Field.Descriptor
 values =
     Proto.Field.descriptor "values" "values" 19 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Value")
 
 
-{-| The field `counts` of `well_known.v1.Event`: `repeated google.protobuf.Int32Value counts = 20;`
+{-| `repeated google.protobuf.Int32Value counts = 20;`
 -}
 counts : Proto.Field.Descriptor
 counts =
     Proto.Field.descriptor "counts" "counts" 20 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Int32Value")
 
 
-{-| The field `acked` of `well_known.v1.Event`: `optional google.protobuf.Empty acked = 24;`
+{-| `optional google.protobuf.Empty acked = 24;`
 -}
 acked : Proto.Field.Descriptor
 acked =
     Proto.Field.descriptor "acked" "acked" 24 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Empty")
 
 
-{-| The field `pings` of `well_known.v1.Event`: `repeated google.protobuf.Empty pings = 25;`
+{-| `repeated google.protobuf.Empty pings = 25;`
 -}
 pings : Proto.Field.Descriptor
 pings =
     Proto.Field.descriptor "pings" "pings" 25 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Empty")
 
 
-{-| The field `seen` of `well_known.v1.Event`: `map<string, google.protobuf.Empty> seen = 26;`
+{-| `map<string, google.protobuf.Empty> seen = 26;`
 -}
 seen : Proto.Field.Descriptor
 seen =
     Proto.Field.descriptor "seen" "seen" 26 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Empty")
 
 
-{-| The field `records` of `well_known.v1.Event`: `repeated google.protobuf.Struct records = 27;`
+{-| `repeated google.protobuf.Struct records = 27;`
 -}
 records : Proto.Field.Descriptor
 records =
     Proto.Field.descriptor "records" "records" 27 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Struct")
 
 
-{-| The field `columns` of `well_known.v1.Event`: `map<string, google.protobuf.ListValue> columns = 28;`
+{-| `map<string, google.protobuf.ListValue> columns = 28;`
 -}
 columns : Proto.Field.Descriptor
 columns =
     Proto.Field.descriptor "columns" "columns" 28 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
 
 
-{-| The field `last_value` of `well_known.v1.Event`: `optional google.protobuf.Value last_value = 31;`
-
-An optional Value is the same Maybe; its JSON name differs, so it
+{-| An optional Value is the same Maybe; its JSON name differs, so it
 decodes with valueFieldEither. A map of Value holds it bare.
+
+`optional google.protobuf.Value last_value = 31;`
 
 -}
 lastValue : Proto.Field.Descriptor
@@ -261,14 +258,14 @@ lastValue =
     Proto.Field.descriptor "last_value" "lastValue" 31 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "google.protobuf.Value")
 
 
-{-| The field `settings` of `well_known.v1.Event`: `map<string, google.protobuf.Value> settings = 32;`
+{-| `map<string, google.protobuf.Value> settings = 32;`
 -}
 settings : Proto.Field.Descriptor
 settings =
     Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
 
 
-{-| The field `at` of `well_known.v1.Event`, a member of the oneof `when`: `google.protobuf.Timestamp at = 21;`
+{-| `google.protobuf.Timestamp at = 21;`, in oneof `when`
 -}
 at : Proto.Field.Descriptor
 at =
@@ -276,7 +273,7 @@ at =
         |> Proto.Field.inOneof "when"
 
 
-{-| The field `after` of `well_known.v1.Event`, a member of the oneof `when`: `google.protobuf.Duration after = 22;`
+{-| `google.protobuf.Duration after = 22;`, in oneof `when`
 -}
 after : Proto.Field.Descriptor
 after =
@@ -284,7 +281,7 @@ after =
         |> Proto.Field.inOneof "when"
 
 
-{-| The field `whenever` of `well_known.v1.Event`, a member of the oneof `when`: `google.protobuf.Value whenever = 23;`
+{-| `google.protobuf.Value whenever = 23;`, in oneof `when`
 -}
 whenever : Proto.Field.Descriptor
 whenever =
@@ -292,7 +289,7 @@ whenever =
         |> Proto.Field.inOneof "when"
 
 
-{-| The field `schedule` of `well_known.v1.Event`, a member of the oneof `when`: `google.protobuf.Struct schedule = 29;`
+{-| `google.protobuf.Struct schedule = 29;`, in oneof `when`
 -}
 schedule : Proto.Field.Descriptor
 schedule =
@@ -300,7 +297,7 @@ schedule =
         |> Proto.Field.inOneof "when"
 
 
-{-| The field `dates` of `well_known.v1.Event`, a member of the oneof `when`: `google.protobuf.ListValue dates = 30;`
+{-| `google.protobuf.ListValue dates = 30;`, in oneof `when`
 -}
 dates : Proto.Field.Descriptor
 dates =

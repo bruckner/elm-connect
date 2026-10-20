@@ -38,9 +38,9 @@ elmConnectVersion_ =
 
 {-| `enum notes.v1.Visibility`
 
-  - `VisibilityUnspecified`: `VISIBILITY_UNSPECIFIED = 0;`
-  - `VisibilityPrivate`: `VISIBILITY_PRIVATE = 1;`
-  - `VisibilityPublic`: `VISIBILITY_PUBLIC = 2;`
+  - `VisibilityUnspecified` (`VISIBILITY_UNSPECIFIED`)
+  - `VisibilityPrivate` (`VISIBILITY_PRIVATE`)
+  - `VisibilityPublic` (`VISIBILITY_PUBLIC`)
 
 -}
 type Visibility
@@ -51,10 +51,10 @@ type Visibility
 
 {-| `message notes.v1.Note`
 
-  - `name`: `string name = 1;`
-  - `title`: `string title = 2;`
-  - `visibility`: `notes.v1.Visibility visibility = 3;`
-  - `tags`: `repeated string tags = 4;`
+  - `name`
+  - `title`
+  - `visibility`
+  - `tags`
 
 -}
 type alias Note =
@@ -67,7 +67,7 @@ type alias Note =
 
 {-| `message notes.v1.GetNoteRequest`
 
-  - `name`: `string name = 1;`
+  - `name`
 
 -}
 type alias GetNoteRequest =
@@ -77,13 +77,13 @@ type alias GetNoteRequest =
 
 {-| `message notes.v1.ListNotesRequest`
 
-  - `parent`: `string parent = 1;`
-  - `pageSize`: `int32 page_size = 2;`
-  - `pageToken`: `string page_token = 3;`
-  - `filter`: `notes.v1.ListNotesRequest.Filter filter = 4;`
-  - `tags`: `repeated string tags = 5;`
-  - `archived`: `optional bool archived = 6;`
-  - `revision`: `int64 revision = 7;`
+  - `parent`
+  - `pageSize`
+  - `pageToken`
+  - `filter`
+  - `tags`
+  - `archived`
+  - `revision`
 
 -}
 type alias ListNotesRequest =
@@ -99,8 +99,8 @@ type alias ListNotesRequest =
 
 {-| `message notes.v1.ListNotesRequest.Filter`
 
-  - `visibility`: `notes.v1.Visibility visibility = 1;`
-  - `since`: `google.protobuf.Timestamp since = 2;`
+  - `visibility`
+  - `since`
 
 -}
 type alias ListNotesRequestFilter =
@@ -111,8 +111,8 @@ type alias ListNotesRequestFilter =
 
 {-| `message notes.v1.ListNotesResponse`
 
-  - `notes`: `repeated notes.v1.Note notes = 1;`
-  - `nextPageToken`: `string next_page_token = 2;`
+  - `notes`
+  - `nextPageToken`
 
 -}
 type alias ListNotesResponse =
@@ -123,8 +123,8 @@ type alias ListNotesResponse =
 
 {-| `message notes.v1.CreateNoteRequest`
 
-  - `parent`: `string parent = 1;`
-  - `note`: `notes.v1.Note note = 2;`
+  - `parent`
+  - `note`
 
 -}
 type alias CreateNoteRequest =
@@ -135,8 +135,8 @@ type alias CreateNoteRequest =
 
 {-| `message notes.v1.UpdateNoteRequest`
 
-  - `note`: `notes.v1.Note note = 1;`
-  - `updateMask`: `google.protobuf.FieldMask update_mask = 2;`
+  - `note`
+  - `updateMask`
 
 -}
 type alias UpdateNoteRequest =
@@ -147,8 +147,8 @@ type alias UpdateNoteRequest =
 
 {-| `message notes.v1.DeleteNoteRequest`
 
-  - `name`: `string name = 1;`
-  - `force`: `bool force = 2;`
+  - `name`
+  - `force`
 
 -}
 type alias DeleteNoteRequest =
@@ -159,8 +159,8 @@ type alias DeleteNoteRequest =
 
 {-| `message notes.v1.ArchiveNoteRequest`
 
-  - `name`: `string name = 1;`
-  - `reason`: `string reason = 2;`
+  - `name`
+  - `reason`
 
 -}
 type alias ArchiveNoteRequest =
@@ -171,7 +171,7 @@ type alias ArchiveNoteRequest =
 
 {-| `message notes.v1.ReadFileRequest`
 
-  - `path`: `string path = 1;`
+  - `path`
 
 -}
 type alias ReadFileRequest =
@@ -181,7 +181,7 @@ type alias ReadFileRequest =
 
 {-| `message notes.v1.Summary`
 
-  - `text`: `string text = 1;`
+  - `text`
 
 -}
 type alias Summary =

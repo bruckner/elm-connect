@@ -27,11 +27,11 @@ elmConnectVersion_ =
 
 {-| `message envelope.v1.Envelope`
 
-  - `id`: `string id = 1;`
-  - `payload`: `google.protobuf.Any payload = 2;`
-  - `attachments`: `repeated google.protobuf.Any attachments = 3;`
-  - `headers`: `map<string, google.protobuf.Any> headers = 4;`
-  - `body`: `oneof body` (`EnvelopeBody`)
+  - `id`
+  - `payload`
+  - `attachments`
+  - `headers`
+  - `body`: See `EnvelopeBody`.
 
 -}
 type alias Envelope =
@@ -46,8 +46,8 @@ type alias Envelope =
 {-| `oneof body` of `envelope.v1.Envelope`
 
   - `EnvelopeBodyUnset`: none of the fields is set.
-  - `EnvelopeBodyPacked`: `google.protobuf.Any packed = 5;`
-  - `EnvelopeBodyText`: `string text = 6;`
+  - `EnvelopeBodyPacked`
+  - `EnvelopeBodyText`
 
 -}
 type EnvelopeBody

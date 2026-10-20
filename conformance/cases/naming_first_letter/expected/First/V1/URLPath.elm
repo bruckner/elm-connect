@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `first.v1.URLPath`: its full name and its fields, in declaration order.
-
-`message first.v1.URLPath`
-
+{-| `message first.v1.URLPath`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -37,79 +34,79 @@ descriptor =
         ]
 
 
-{-| The field `Label` of `first.v1.URLPath`: `string Label = 1;`
+{-| `string Label = 1;`
 -}
 label : Proto.Field.Descriptor
 label =
     Proto.Field.descriptor "Label" "Label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `ID` of `first.v1.URLPath`: `string ID = 2;`
+{-| `string ID = 2;`
 -}
 id : Proto.Field.Descriptor
 id =
     Proto.Field.descriptor "ID" "ID" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `URL` of `first.v1.URLPath`: `string URL = 3;`
+{-| `string URL = 3;`
 -}
 url : Proto.Field.Descriptor
 url =
     Proto.Field.descriptor "URL" "URL" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `URLPath` of `first.v1.URLPath`: `string URLPath = 4;`
+{-| `string URLPath = 4;`
 -}
 urlPath : Proto.Field.Descriptor
 urlPath =
     Proto.Field.descriptor "URLPath" "URLPath" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `HTTPRequest` of `first.v1.URLPath`: `string HTTPRequest = 5;`
+{-| `string HTTPRequest = 5;`
 -}
 httpRequest : Proto.Field.Descriptor
 httpRequest =
     Proto.Field.descriptor "HTTPRequest" "HTTPRequest" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `XCoord` of `first.v1.URLPath`: `double XCoord = 6;`
+{-| `double XCoord = 6;`
 -}
 xCoord : Proto.Field.Descriptor
 xCoord =
     Proto.Field.descriptor "XCoord" "XCoord" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
 
 
-{-| The field `ABCDef` of `first.v1.URLPath`: `string ABCDef = 7;`
+{-| `string ABCDef = 7;`
 -}
 abcDef : Proto.Field.Descriptor
 abcDef =
     Proto.Field.descriptor "ABCDef" "ABCDef" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `_internal` of `first.v1.URLPath`: `string _internal = 8;`
+{-| `string _internal = 8;`
 -}
 internal : Proto.Field.Descriptor
 internal =
     Proto.Field.descriptor "_internal" "Internal" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `display_name` of `first.v1.URLPath`: `string display_name = 10;`
+{-| `string display_name = 10;`
 -}
 displayName : Proto.Field.Descriptor
 displayName =
     Proto.Field.descriptor "display_name" "displayName" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `Type` of `first.v1.URLPath`: `string Type = 11;`
+{-| `string Type = 11;`
 -}
 type_ : Proto.Field.Descriptor
 type_ =
     Proto.Field.descriptor "Type" "Type" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `IDs` of `first.v1.URLPath`: `repeated string IDs = 12;`
+{-| `ID` + `s` reads as `I` + `Ds`.
 
-`ID` + `s` reads as `I` + `Ds`.
+`repeated string IDs = 12;`
 
 -}
 iDs : Proto.Field.Descriptor

@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.StreamContents.StreamItem`: its full name and its fields, in declaration order.
-
-`message connectrpc.conformance.v1.StreamContents.StreamItem`
-
+{-| `message connectrpc.conformance.v1.StreamContents.StreamItem`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,9 +26,9 @@ descriptor =
         ]
 
 
-{-| The field `flags` of `connectrpc.conformance.v1.StreamContents.StreamItem`: `uint32 flags = 1;`
+{-| must be in the range 0 to 255.
 
-must be in the range 0 to 255.
+`uint32 flags = 1;`
 
 -}
 flags : Proto.Field.Descriptor
@@ -39,9 +36,9 @@ flags =
     Proto.Field.descriptor "flags" "flags" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `length` of `connectrpc.conformance.v1.StreamContents.StreamItem`: `optional uint32 length = 2;`
+{-| if absent use actual length of payload
 
-if absent use actual length of payload
+`optional uint32 length = 2;`
 
 -}
 length : Proto.Field.Descriptor
@@ -49,7 +46,7 @@ length =
     Proto.Field.descriptor "length" "length" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `payload` of `connectrpc.conformance.v1.StreamContents.StreamItem`: `connectrpc.conformance.v1.MessageContents payload = 3;`
+{-| `connectrpc.conformance.v1.MessageContents payload = 3;`
 -}
 payload : Proto.Field.Descriptor
 payload =

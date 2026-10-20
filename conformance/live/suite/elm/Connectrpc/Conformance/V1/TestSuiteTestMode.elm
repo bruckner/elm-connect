@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.TestSuite.TestMode`: its full name and its values, in declaration order.
-
-`enum connectrpc.conformance.v1.TestSuite.TestMode`
+{-| `enum connectrpc.conformance.v1.TestSuite.TestMode`
 
   - `TEST_MODE_UNSPECIFIED = 0;` Used when the test suite does not apply to a particular mode. Such tests
     are run, regardless of the current test mode, to verify both clients and

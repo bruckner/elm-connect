@@ -15,10 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `tasks.v1.GetTaskRequest`: its full name and its fields, in declaration order.
-
-`message tasks.v1.GetTaskRequest`
-
+{-| `message tasks.v1.GetTaskRequest`
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,7 +24,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `tasks.v1.GetTaskRequest`: `string name = 1 [(google.api.field_behavior) = REQUIRED];`
+{-| `string name = 1 [(google.api.field_behavior) = REQUIRED];`
 -}
 name : Proto.Field.Descriptor
 name =

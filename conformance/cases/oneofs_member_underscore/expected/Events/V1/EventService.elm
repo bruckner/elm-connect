@@ -25,7 +25,11 @@ elmConnectVersion_ =
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `ListEvents` of `events.v1.EventService`: its names, idempotency, types and HTTP bindings.
+{-| `_legacy` is a query parameter, named by
+`Events.V1.ListEventsRequest.legacy`.
+
+`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`
+
 -}
 descriptorListEvents : Proto.Method.Descriptor
 descriptorListEvents =
@@ -58,11 +62,11 @@ descriptorListEvents =
 -- CALLS
 
 
-{-| `rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
-Transcode: `GET /v1/{parent=feeds/*}/events`.
-
-`_legacy` is a query parameter, named by
+{-| `_legacy` is a query parameter, named by
 `Events.V1.ListEventsRequest.legacy`.
+
+`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
+Transcode: `GET /v1/{parent=feeds/*}/events`.
 
 -}
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse

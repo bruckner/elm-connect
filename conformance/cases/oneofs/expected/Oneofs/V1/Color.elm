@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `oneofs.v1.Color`: its full name and its values, in declaration order.
-
-`enum oneofs.v1.Color`
+{-| `enum oneofs.v1.Color`
 
   - `COLOR_UNSPECIFIED = 0;`
   - `COLOR_RED = 1;`

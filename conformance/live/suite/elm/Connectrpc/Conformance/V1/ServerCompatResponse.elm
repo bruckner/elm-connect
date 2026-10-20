@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ServerCompatResponse`: its full name and its fields, in declaration order.
-
-The outcome of one ServerCompatRequest.
+{-| The outcome of one ServerCompatRequest.
 
 `message connectrpc.conformance.v1.ServerCompatResponse`
 
@@ -31,11 +29,11 @@ descriptor =
         ]
 
 
-{-| The field `host` of `connectrpc.conformance.v1.ServerCompatResponse`: `string host = 1;`
-
-The host where the server is running. This should usually be `127.0.0.1`,
+{-| The host where the server is running. This should usually be `127.0.0.1`,
 unless your program actually starts a remote server to which the client
 should connect.
+
+`string host = 1;`
 
 -}
 host : Proto.Field.Descriptor
@@ -43,9 +41,9 @@ host =
     Proto.Field.descriptor "host" "host" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `port` of `connectrpc.conformance.v1.ServerCompatResponse`: `uint32 port = 2;`
+{-| The port where the server is listening.
 
-The port where the server is listening.
+`uint32 port = 2;`
 
 -}
 port_ : Proto.Field.Descriptor
@@ -53,11 +51,11 @@ port_ =
     Proto.Field.descriptor "port" "port" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `pem_cert` of `connectrpc.conformance.v1.ServerCompatResponse`: `bytes pem_cert = 3;`
-
-The TLS certificate, in PEM format, if `use_tls` was set
+{-| The TLS certificate, in PEM format, if `use_tls` was set
 to `true`. Clients will verify this certificate when connecting via TLS.
 If `use_tls` was set to `false`, this should always be empty.
+
+`bytes pem_cert = 3;`
 
 -}
 pemCert : Proto.Field.Descriptor

@@ -450,19 +450,31 @@ rpc shared call =
   declaration a proto element becomes is documented with the proto's
   comment for it and the element's one-line declaration, as a reader of
   Java's, C++'s or protobuf-es's generated code finds them (a method's
-  and a service's: §4). A message's
-  record alias carries its comment, `` `message notes.v1.Note` `` and an
-  item per record field, `` `name`: `string name = 1;` `` and the
-  field's comment, a oneof's item naming its custom type; an enum's
-  custom type its comment, `` `enum notes.v1.Visibility` `` and an item
-  per constructor with its value's line and comment, an alias's after it
-  (values are not broken out of their enum's doc); a oneof's custom type
-  its comment, `` `oneof kind` of `notes.v1.NoteEvent` `` and an item
-  per constructor. A descriptor keeps its sentence and adds the
-  comment and the line, a field's value its own (so a field's comment
-  is in both places); codecs, defaults and typed values get one sentence
-  naming their type, and no proto text. A deprecated element's doc
-  starts with `Deprecated.`, an item's sentence with it.
+  and a service's: §4). Every doc gives the comment first and the
+  declaration after it. A message's record alias carries its comment,
+  `` `message notes.v1.Note` `` and an item per record field: the Elm
+  name, the field's comment, then its `google.api.field_behavior` as
+  words (`` `title`: The title, shown first. Required. ``; `Output
+  only.`, `Input only.`, `Immutable.`, `Identifier.`, `Unordered.`;
+  `OPTIONAL` and `NON_EMPTY_DEFAULT` are not written), a oneof's item
+  its comment and its custom type's name. The field's full declaration
+  is on its descriptor value, so the list stays readable. An enum's
+  custom type carries its comment, `` `enum notes.v1.Visibility` `` and
+  an item per constructor with its value's proto name and its aliases'
+  (`` `VisibilityPublic` (`VISIBILITY_PUBLIC`, also `VISIBILITY_OPEN`) ``),
+  the value's comment and `Deprecated.` if it is (values are not broken
+  out of their enum's doc; the numbers are on the descriptor); a oneof's
+  custom type its comment, `` `oneof kind` of `notes.v1.NoteEvent` ``
+  and an item per constructor, shaped as a field's. A descriptor's doc
+  is the comment and the declaration line, nothing more: the module
+  name says whose it is. A field's descriptor value carries the field's
+  comment and line, `, in oneof kind` for a member (so a field's comment
+  is in both places), and an enum's descriptor every declared name with
+  its line and comment; codecs, defaults and typed values get one
+  sentence naming their type, and no proto text. A deprecated element's
+  doc starts with `Deprecated.`, a field's item with it. A comment of
+  several paragraphs stays whole in its item, which makes the list
+  loose (blank lines between items), as Markdown does.
   The comment is the leading comment, then the trailing one as a
   paragraph of its own; detached comments are left out, as
   protoc-gen-go and Java leave them out. Each line loses the space
@@ -1626,7 +1638,7 @@ section with one function per method from its request to an
 -- DESCRIPTORS
 
 
-{-| What the proto says about the method `GetNote` of `notes.v1.NotesService`: its names, idempotency, types and HTTP bindings.
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
@@ -1676,18 +1688,20 @@ keeps.
 *(Decided, 2026-10-16.)*
 
 - **A method's documentation shows its routes.** *(Decided,
-  2026-10-20.)* A call's doc comment gives the method's declaration
-  line, its Connect path and its HTTP bindings as its
+  2026-10-20.)* A call's doc comment gives the method's comment
+  (§3.1), then its declaration line, its Connect path and its HTTP
+  bindings as its
   `google.api.http` rule writes them, the rule's own first and each
   additional binding numbered as `Rpc.Call.viaBinding` counts it, each
-  with its `body` and `response_body` where set, then the method's
-  comment (§3.1); `No HTTP rule: the Connect path.` for a method
+  with its `body` and `response_body` where set;
+  `No HTTP rule: the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the line are named as the service's
   package would write them, relative to it inside it and by full name
   outside (`returns (google.protobuf.Empty)`). Why: the call is the
   value a program uses, and the routes it may take were visible only as
-  `Proto.Http` data in its descriptor. The descriptor gets one sentence.
+  `Proto.Http` data in its descriptor. The descriptor carries the
+  comment and the declaration line.
   A service has no declaration of its own, so its module's
   documentation carries its comment and `` `service
   notes.v1.NotesService` ``.

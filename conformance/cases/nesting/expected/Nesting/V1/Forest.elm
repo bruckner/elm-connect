@@ -15,9 +15,7 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Forest`: its full name and its fields, in declaration order.
-
-Off any cycle, referring to a recursive message: no wrapper needed.
+{-| Off any cycle, referring to a recursive message: no wrapper needed.
 
 `message nesting.v1.Forest`
 
@@ -29,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `trees` of `nesting.v1.Forest`: `repeated nesting.v1.Node trees = 1;`
+{-| `repeated nesting.v1.Node trees = 1;`
 -}
 trees : Proto.Field.Descriptor
 trees =
