@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
+
+`message notes.v1.Note`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +28,14 @@ descriptor =
         ]
 
 
-{-| The field `title` of `notes.v1.Note`.
+{-| The field `title` of `notes.v1.Note`: `string title = 1;`
 -}
 title : Proto.Field.Descriptor
 title =
     Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `tags` of `notes.v1.Note`.
+{-| The field `tags` of `notes.v1.Note`: `repeated notes.v1.Tag tags = 2;`
 -}
 tags : Proto.Field.Descriptor
 tags =

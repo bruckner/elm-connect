@@ -16,6 +16,14 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `connectrpc.conformance.v1.Codec`: its full name and its values, in declaration order.
+
+`enum connectrpc.conformance.v1.Codec`
+
+  - `CODEC_UNSPECIFIED = 0;`
+  - `CODEC_PROTO = 1;`
+  - `CODEC_JSON = 2;`
+  - `CODEC_TEXT = 3 [deprecated = true];` Deprecated. not used; will be ignored
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

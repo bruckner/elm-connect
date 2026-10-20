@@ -27,16 +27,45 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `enum maps.v1.Role`
+
+  - `RoleUnspecified`: `ROLE_UNSPECIFIED = 0;`
+  - `RoleOwner`: `ROLE_OWNER = 1;`
+
+-}
 type Role
     = RoleUnspecified
     | RoleOwner
 
 
+{-| `message maps.v1.Member`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias Member =
     { name : String
     }
 
 
+{-| `message maps.v1.Team`
+
+  - `labels`: `map<string, string> labels = 1;`
+  - `bySeat`: `map<int32, string> by_seat = 2;`
+  - `scores`: `map<uint32, double> scores = 3;`
+  - `flags`: `map<sint32, bool> flags = 4;`
+  - `totals`: `map<fixed32, int64> totals = 5;`
+  - `byId`: `map<int64, string> by_id = 6;` 64-bit keys stay strings, like 64-bit values.
+  - `counts`: `map<uint64, int32> counts = 7;`
+  - `members`: `map<string, maps.v1.Member> members = 8;` Message and enum values.
+  - `roles`: `map<int32, maps.v1.Role> roles = 9;`
+  - `byFlag`: `map<bool, string> by_flag = 10;` Bool keys: an association list of at most two pairs.
+  - `byOffset`: `map<sfixed32, string> by_offset = 11;` The remaining key kinds.
+  - `deltas`: `map<sint64, string> deltas = 12;`
+  - `byHash`: `map<fixed64, string> by_hash = 13;`
+  - `byStamp`: `map<sfixed64, string> by_stamp = 14;`
+
+-}
 type alias Team =
     { labels : Dict String String
     , bySeat : Dict Int String
@@ -59,12 +88,16 @@ type alias Team =
 -- DEFAULTS
 
 
+{-| A `Member` with every field at its default and every oneof unset.
+-}
 defaultMember : Member
 defaultMember =
     { name = ""
     }
 
 
+{-| A `Team` with every field at its default and every oneof unset.
+-}
 defaultTeam : Team
 defaultTeam =
     { labels = Dict.empty
@@ -88,16 +121,22 @@ defaultTeam =
 -- TYPED VALUES
 
 
+{-| The typed value of `Role`: its codecs, zero value and descriptor together.
+-}
 enumRole : Proto.Enum.Enum Role
 enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Maps.V1.Role.descriptor
 
 
+{-| The typed value of `Member`: its codecs, default and descriptor together.
+-}
 messageMember : Proto.Message.Message Member
 messageMember =
     Proto.Message.message encodeMember decodeMember defaultMember Maps.V1.Member.descriptor
 
 
+{-| The typed value of `Team`: its codecs, default and descriptor together.
+-}
 messageTeam : Proto.Message.Message Team
 messageTeam =
     Proto.Message.message encodeTeam decodeTeam defaultTeam Maps.V1.Team.descriptor
@@ -124,6 +163,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Role` as proto3 JSON.
+-}
 encodeRole : Role -> Json.Encode.Value
 encodeRole value =
     case value of
@@ -134,6 +175,8 @@ encodeRole value =
             Json.Encode.string "ROLE_OWNER"
 
 
+{-| Encodes a `Member` as proto3 JSON.
+-}
 encodeMember : Member -> Json.Encode.Value
 encodeMember value =
     Proto.Json.objectOfFields
@@ -141,6 +184,8 @@ encodeMember value =
         ]
 
 
+{-| Encodes a `Team` as proto3 JSON.
+-}
 encodeTeam : Team -> Json.Encode.Value
 encodeTeam value =
     Proto.Json.objectOfFields
@@ -165,6 +210,8 @@ encodeTeam value =
 -- DECODERS
 
 
+{-| Decodes a `Role` from proto3 JSON.
+-}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
     Proto.Json.enum "Role"
@@ -174,12 +221,16 @@ decodeRole =
         ]
 
 
+{-| Decodes a `Member` from proto3 JSON.
+-}
 decodeMember : Json.Decode.Decoder Member
 decodeMember =
     Json.Decode.succeed Member
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `Team` from proto3 JSON.
+-}
 decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
     Json.Decode.succeed Team

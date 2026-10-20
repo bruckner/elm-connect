@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `zones.v1.ZoneRequest`: its full name and its fields, in declaration order.
+
+`message zones.v1.ZoneRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `zones.v1.ZoneRequest`.
+{-| The field `name` of `zones.v1.ZoneRequest`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

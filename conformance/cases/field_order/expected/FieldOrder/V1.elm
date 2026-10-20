@@ -26,11 +26,27 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `enum field_order.v1.Mood`
+
+  - `MoodUnspecified`: `MOOD_UNSPECIFIED = 0;`
+  - `MoodCalm`: `MOOD_CALM = 1;`
+
+-}
 type Mood
     = MoodUnspecified
     | MoodCalm
 
 
+{-| `message field_order.v1.Draft`
+
+  - `title`: `string title = 4;`
+  - `body`: `oneof body` (`DraftBody`) The oneof's record field sits where its first member is declared,
+    after `title`; by number, `blob` would put it first.
+  - `mood`: `field_order.v1.Mood mood = 6;`
+  - `margin`: `field_order.v1.Draft.Margin margin = 3;`
+  - `tags`: `repeated string tags = 2;`
+
+-}
 type alias Draft =
     { title : String
     , body : DraftBody
@@ -40,12 +56,30 @@ type alias Draft =
     }
 
 
+{-| The oneof's record field sits where its first member is declared,
+after `title`; by number, `blob` would put it first.
+
+`oneof body` of `field_order.v1.Draft`
+
+  - `DraftBodyUnset`: none of the fields is set.
+  - `DraftBodyText`: `string text = 8;`
+  - `DraftBodyBlob`: `bytes blob = 1;`
+
+-}
 type DraftBody
     = DraftBodyUnset
     | DraftBodyText String
     | DraftBodyBlob String
 
 
+{-| A nested message, declared before the fields that use it.
+
+`message field_order.v1.Draft.Margin`
+
+  - `left`: `int32 left = 2;`
+  - `right`: `int32 right = 1;`
+
+-}
 type alias DraftMargin =
     { left : Int
     , right : Int
@@ -56,6 +90,8 @@ type alias DraftMargin =
 -- DEFAULTS
 
 
+{-| A `Draft` with every field at its default and every oneof unset.
+-}
 defaultDraft : Draft
 defaultDraft =
     { title = ""
@@ -66,6 +102,8 @@ defaultDraft =
     }
 
 
+{-| A `DraftMargin` with every field at its default and every oneof unset.
+-}
 defaultDraftMargin : DraftMargin
 defaultDraftMargin =
     { left = 0
@@ -77,16 +115,22 @@ defaultDraftMargin =
 -- TYPED VALUES
 
 
+{-| The typed value of `Mood`: its codecs, zero value and descriptor together.
+-}
 enumMood : Proto.Enum.Enum Mood
 enumMood =
     Proto.Enum.enum encodeMood decodeMood MoodUnspecified FieldOrder.V1.Mood.descriptor
 
 
+{-| The typed value of `Draft`: its codecs, default and descriptor together.
+-}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
     Proto.Message.message encodeDraft decodeDraft defaultDraft FieldOrder.V1.Draft.descriptor
 
 
+{-| The typed value of `DraftMargin`: its codecs, default and descriptor together.
+-}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =
     Proto.Message.message encodeDraftMargin decodeDraftMargin defaultDraftMargin FieldOrder.V1.DraftMargin.descriptor
@@ -113,6 +157,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Mood` as proto3 JSON.
+-}
 encodeMood : Mood -> Json.Encode.Value
 encodeMood value =
     case value of
@@ -123,6 +169,8 @@ encodeMood value =
             Json.Encode.string "MOOD_CALM"
 
 
+{-| Encodes a `Draft` as proto3 JSON.
+-}
 encodeDraft : Draft -> Json.Encode.Value
 encodeDraft value =
     Proto.Json.objectOfFields
@@ -135,6 +183,8 @@ encodeDraft value =
         )
 
 
+{-| Encodes a `DraftBody` as the members of its message's JSON object.
+-}
 encodeDraftBody : DraftBody -> List ( String, Maybe Json.Encode.Value )
 encodeDraftBody value =
     case value of
@@ -150,6 +200,8 @@ encodeDraftBody value =
             ]
 
 
+{-| Encodes a `DraftMargin` as proto3 JSON.
+-}
 encodeDraftMargin : DraftMargin -> Json.Encode.Value
 encodeDraftMargin value =
     Proto.Json.objectOfFields
@@ -162,6 +214,8 @@ encodeDraftMargin value =
 -- DECODERS
 
 
+{-| Decodes a `Mood` from proto3 JSON.
+-}
 decodeMood : Json.Decode.Decoder Mood
 decodeMood =
     Proto.Json.enum "Mood"
@@ -171,6 +225,8 @@ decodeMood =
         ]
 
 
+{-| Decodes a `Draft` from proto3 JSON.
+-}
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Json.Decode.succeed Draft
@@ -181,6 +237,8 @@ decodeDraft =
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
+{-| Decodes a `DraftBody` from the members of its message's JSON object.
+-}
 decodeDraftBody : Json.Decode.Decoder DraftBody
 decodeDraftBody =
     Proto.Json.members "body"
@@ -190,6 +248,8 @@ decodeDraftBody =
         ]
 
 
+{-| Decodes a `DraftMargin` from proto3 JSON.
+-}
 decodeDraftMargin : Json.Decode.Decoder DraftMargin
 decodeDraftMargin =
     Json.Decode.succeed DraftMargin

@@ -73,6 +73,14 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `enum connectrpc.conformance.v1.HTTPVersion`
+
+  - `HTTPVersionUnspecified`: `HTTP_VERSION_UNSPECIFIED = 0;`
+  - `HTTPVersion1`: `HTTP_VERSION_1 = 1;`
+  - `HTTPVersion2`: `HTTP_VERSION_2 = 2;`
+  - `HTTPVersion3`: `HTTP_VERSION_3 = 3;`
+
+-}
 type HTTPVersion
     = HTTPVersionUnspecified
     | HTTPVersion1
@@ -80,6 +88,16 @@ type HTTPVersion
     | HTTPVersion3
 
 
+{-| `enum connectrpc.conformance.v1.Protocol`
+
+  - `ProtocolUnspecified`: `PROTOCOL_UNSPECIFIED = 0;`
+  - `ProtocolConnect`: `PROTOCOL_CONNECT = 1;`
+  - `ProtocolGrpc`: `PROTOCOL_GRPC = 2;`
+  - `ProtocolGrpcWeb`: `PROTOCOL_GRPC_WEB = 3;` TODO: Support add'l protocols:
+    PROTOCOL\_GRPC\_WEB\_TEXT = 4;
+    PROTOCOL\_REST\_TRANSCODING = 5;
+
+-}
 type Protocol
     = ProtocolUnspecified
     | ProtocolConnect
@@ -87,6 +105,14 @@ type Protocol
     | ProtocolGrpcWeb
 
 
+{-| `enum connectrpc.conformance.v1.Codec`
+
+  - `CodecUnspecified`: `CODEC_UNSPECIFIED = 0;`
+  - `CodecProto`: `CODEC_PROTO = 1;`
+  - `CodecJson`: `CODEC_JSON = 2;`
+  - `CodecText`: `CODEC_TEXT = 3 [deprecated = true];` Deprecated. not used; will be ignored
+
+-}
 type Codec
     = CodecUnspecified
     | CodecProto
@@ -94,6 +120,17 @@ type Codec
     | CodecText
 
 
+{-| `enum connectrpc.conformance.v1.Compression`
+
+  - `CompressionUnspecified`: `COMPRESSION_UNSPECIFIED = 0;`
+  - `CompressionIdentity`: `COMPRESSION_IDENTITY = 1;`
+  - `CompressionGzip`: `COMPRESSION_GZIP = 2;`
+  - `CompressionBr`: `COMPRESSION_BR = 3;`
+  - `CompressionZstd`: `COMPRESSION_ZSTD = 4;`
+  - `CompressionDeflate`: `COMPRESSION_DEFLATE = 5;`
+  - `CompressionSnappy`: `COMPRESSION_SNAPPY = 6;`
+
+-}
 type Compression
     = CompressionUnspecified
     | CompressionIdentity
@@ -104,6 +141,16 @@ type Compression
     | CompressionSnappy
 
 
+{-| `enum connectrpc.conformance.v1.StreamType`
+
+  - `StreamTypeUnspecified`: `STREAM_TYPE_UNSPECIFIED = 0;`
+  - `StreamTypeUnary`: `STREAM_TYPE_UNARY = 1;`
+  - `StreamTypeClientStream`: `STREAM_TYPE_CLIENT_STREAM = 2;`
+  - `StreamTypeServerStream`: `STREAM_TYPE_SERVER_STREAM = 3;`
+  - `StreamTypeHalfDuplexBidiStream`: `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4;`
+  - `StreamTypeFullDuplexBidiStream`: `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5;`
+
+-}
 type StreamType
     = StreamTypeUnspecified
     | StreamTypeUnary
@@ -113,6 +160,27 @@ type StreamType
     | StreamTypeFullDuplexBidiStream
 
 
+{-| `enum connectrpc.conformance.v1.Code`
+
+  - `CodeUnspecified`: `CODE_UNSPECIFIED = 0;`
+  - `CodeCanceled`: `CODE_CANCELED = 1;`
+  - `CodeUnknown`: `CODE_UNKNOWN = 2;`
+  - `CodeInvalidArgument`: `CODE_INVALID_ARGUMENT = 3;`
+  - `CodeDeadlineExceeded`: `CODE_DEADLINE_EXCEEDED = 4;`
+  - `CodeNotFound`: `CODE_NOT_FOUND = 5;`
+  - `CodeAlreadyExists`: `CODE_ALREADY_EXISTS = 6;`
+  - `CodePermissionDenied`: `CODE_PERMISSION_DENIED = 7;`
+  - `CodeResourceExhausted`: `CODE_RESOURCE_EXHAUSTED = 8;`
+  - `CodeFailedPrecondition`: `CODE_FAILED_PRECONDITION = 9;`
+  - `CodeAborted`: `CODE_ABORTED = 10;`
+  - `CodeOutOfRange`: `CODE_OUT_OF_RANGE = 11;`
+  - `CodeUnimplemented`: `CODE_UNIMPLEMENTED = 12;`
+  - `CodeInternal`: `CODE_INTERNAL = 13;`
+  - `CodeUnavailable`: `CODE_UNAVAILABLE = 14;`
+  - `CodeDataLoss`: `CODE_DATA_LOSS = 15;`
+  - `CodeUnauthenticated`: `CODE_UNAUTHENTICATED = 16;`
+
+-}
 type Code
     = CodeUnspecified
     | CodeCanceled
@@ -133,18 +201,130 @@ type Code
     | CodeUnauthenticated
 
 
+{-| `enum connectrpc.conformance.v1.TestSuite.TestMode`
+
+  - `TestSuiteTestModeUnspecified`: `TEST_MODE_UNSPECIFIED = 0;` Used when the test suite does not apply to a particular mode. Such tests
+    are run, regardless of the current test mode, to verify both clients and
+    servers under test.
+  - `TestSuiteTestModeClient`: `TEST_MODE_CLIENT = 1;` Indicates tests that are intended to be used only for a client-under-test.
+    These cases can induce very particular and/or aberrant responses from the
+    reference server, to verify how the client reacts to such responses.
+  - `TestSuiteTestModeServer`: `TEST_MODE_SERVER = 2;` Indicates tests that are intended to be used only for a server-under-test.
+    These cases can induce very particular and/or aberrant requests from the
+    reference client, to verify how the server reacts to such requests.
+
+-}
 type TestSuiteTestMode
     = TestSuiteTestModeUnspecified
     | TestSuiteTestModeClient
     | TestSuiteTestModeServer
 
 
+{-| `enum connectrpc.conformance.v1.TestSuite.ConnectVersionMode`
+
+  - `TestSuiteConnectVersionModeUnspecified`: `CONNECT_VERSION_MODE_UNSPECIFIED = 0;` Used when the suite is agnostic to the server's validation
+    behavior.
+  - `TestSuiteConnectVersionModeRequire`: `CONNECT_VERSION_MODE_REQUIRE = 1;` Used when the suite relies on the server validating the presence
+    and correctness of the Connect version header or query param.
+  - `TestSuiteConnectVersionModeIgnore`: `CONNECT_VERSION_MODE_IGNORE = 2;` Used when the suite relies on the server ignore any Connect
+    header or query param.
+
+-}
 type TestSuiteConnectVersionMode
     = TestSuiteConnectVersionModeUnspecified
     | TestSuiteConnectVersionModeRequire
     | TestSuiteConnectVersionModeIgnore
 
 
+{-| Describes one call the client should make. The client reads
+these from stdin and, for each one, invokes an RPC as directed
+and writes the results (in the form of a ClientCompatResponse
+message) to stdout.
+
+`message connectrpc.conformance.v1.ClientCompatRequest`
+
+  - `testName`: `string test_name = 1;` The name of the test that this request is performing.
+    When writing test cases, this is a required field.
+
+  - `httpVersion`: `connectrpc.conformance.v1.HTTPVersion http_version = 2;` Test suite YAML definitions should NOT set values for these next
+    nine fields (fields 2 - 10). They are automatically populated by the test
+    runner. If a test is specific to one of these values, it should instead be
+    indicated in the test suite itself (where it defines the required
+    features and relevant values for these fields).
+
+    The HTTP version to use for the test (i.e. HTTP/1.1, HTTP/2, HTTP/3).
+
+  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 3;` The protocol to use for the test (i.e. Connect, gRPC, gRPC-web).
+
+  - `codec`: `connectrpc.conformance.v1.Codec codec = 4;` The codec to use for the test (i.e. JSON, proto/binary).
+
+  - `compression`: `connectrpc.conformance.v1.Compression compression = 5;` The compression to use for the test (i.e. brotli, gzip, identity).
+
+  - `host`: `string host = 6;` The server host that this request will be sent to.
+
+  - `port_`: `uint32 port = 7;` The server port that this request will be sent to.
+
+  - `serverTlsCert`: `bytes server_tls_cert = 8;` If non-empty, the server is using TLS. The bytes are the
+    server's PEM-encoded certificate, which the client should
+    verify and trust.
+
+  - `clientTlsCreds`: `connectrpc.conformance.v1.TLSCreds client_tls_creds = 9;` If present, the client certificate credentials to use to
+    authenticate with the server. This will only be present
+    when server\_tls\_cert is non-empty.
+
+  - `messageReceiveLimit`: `uint32 message_receive_limit = 10;` If non-zero, indicates the maximum size in bytes for a message.
+    If the server sends anything larger, the client should reject it.
+
+  - `service`: `optional string service = 11;` The fully-qualified name of the service this test will interact with.
+    If specified, method must also be specified.
+    If not specified, defaults to "connectrpc.conformance.v1.ConformanceService".
+
+  - `method`: `optional string method = 12;` The method on `service` that will be called.
+    If specified, service must also be specified.
+    If not specified, the test runner will auto-populate this field based on the stream\_type.
+
+  - `streamType`: `connectrpc.conformance.v1.StreamType stream_type = 13;` The stream type of `method` (i.e. unary, client stream, server stream, full-duplex bidi
+    stream, or half-duplex bidi stream).
+    When writing test cases, this is a required field.
+
+  - `useGetHttpMethod`: `bool use_get_http_method = 14;` If protocol indicates Connect and stream type indicates
+    Unary, this instructs the client to use a GET HTTP method
+    when making the request.
+
+  - `requestHeaders`: `repeated connectrpc.conformance.v1.Header request_headers = 15;` Any request headers that should be sent as part of the request.
+    These include only custom header metadata. Headers that are
+    part of the relevant protocol (such as "content-type", etc) should
+    not be stated here.
+
+  - `requestMessages`: `repeated google.protobuf.Any request_messages = 16;` The actual request messages that will sent to the server.
+    The type URL for all entries should be equal to the request type of the
+    method.
+    There must be exactly one for unary and server stream methods but
+    can be zero or more for client and bidi stream methods.
+    For client and bidi stream methods, all entries will have the
+    same type URL.
+
+  - `timeoutMs`: `optional uint32 timeout_ms = 17;` The timeout, in milliseconds, for the request. This is equivalent to a
+    deadline for the request. If unset, there will be no timeout.
+
+  - `requestDelayMs`: `uint32 request_delay_ms = 18;` Wait this many milliseconds before sending a request message.
+    For client or bidi stream methods, this delay should be
+    applied before each request sent.
+
+  - `cancel`: `connectrpc.conformance.v1.ClientCompatRequest.Cancel cancel = 19;` If present, the client should cancel the RPC instead of
+    allowing to complete normally.
+
+  - `rawRequest`: `connectrpc.conformance.v1.RawHTTPRequest raw_request = 20;` The following field is only used by the reference client. If
+    you are implementing a client under test, you may ignore it
+    or respond with an error if the client receives a request where
+    it is set.
+
+    When this field is present, it defines the actual HTTP request
+    that will be sent. The above group of fields must still be
+    provided and valid so that the reference client knows how it
+    should try to interpret the server's response.
+
+-}
 type alias ClientCompatRequest =
     { testName : String
     , httpVersion : HTTPVersion
@@ -169,11 +349,61 @@ type alias ClientCompatRequest =
     }
 
 
+{-| `message connectrpc.conformance.v1.ClientCompatRequest.Cancel`
+
+  - `cancelTiming`: `oneof cancel_timing` (`ClientCompatRequestCancelCancelTiming`) These fields determine the timing of cancellation.
+    If none are present, the client should cancel immediately
+    after all request messages are sent and the send side is
+    closed (as if the after\_close\_send\_ms field were present
+    and zero).
+
+-}
 type alias ClientCompatRequestCancel =
     { cancelTiming : ClientCompatRequestCancelCancelTiming
     }
 
 
+{-| These fields determine the timing of cancellation.
+If none are present, the client should cancel immediately
+after all request messages are sent and the send side is
+closed (as if the after\_close\_send\_ms field were present
+and zero).
+
+`oneof cancel_timing` of `connectrpc.conformance.v1.ClientCompatRequest.Cancel`
+
+  - `ClientCompatRequestCancelCancelTimingUnset`: none of the fields is set.
+
+  - `ClientCompatRequestCancelCancelTimingBeforeCloseSend`: `google.protobuf.Empty before_close_send = 1;` When present, the client should cancel _instead of_
+    closing the send side of the stream, after all requests
+    have been sent.
+
+    This applies only to client and bidi stream RPCs.
+
+  - `ClientCompatRequestCancelCancelTimingAfterCloseSendMs`: `uint32 after_close_send_ms = 2;` When present, the client should delay for this many
+    milliseconds after closing the send side of the stream
+    and then cancel.
+
+    This applies to all types of RPCs.
+
+    For unary and server stream RPCs, where the API usually
+    does not allow explicitly closing the send side, the
+    cancellation should be done immediately after invoking
+    the RPC (which should implicitly send the one-and-only
+    request and then close the send-side).
+
+    For APIs where unary RPCs block until the response
+    is received, there is no point after the request is
+    sent but before a response is received to cancel. So
+    the client must arrange for the RPC to be canceled
+    asynchronously before invoking the blocking unary call.
+
+  - `ClientCompatRequestCancelCancelTimingAfterNumResponses`: `uint32 after_num_responses = 3;` When present, the client should cancel right after
+    reading this number of response messages from the stream.
+    When present, this will be greater than zero.
+
+    This applies only to server and bidi stream RPCs.
+
+-}
 type ClientCompatRequestCancelCancelTiming
     = ClientCompatRequestCancelCancelTimingUnset
     | ClientCompatRequestCancelCancelTimingBeforeCloseSend
@@ -181,18 +411,80 @@ type ClientCompatRequestCancelCancelTiming
     | ClientCompatRequestCancelCancelTimingAfterNumResponses Int
 
 
+{-| The outcome of one ClientCompatRequest.
+
+`message connectrpc.conformance.v1.ClientCompatResponse`
+
+  - `testName`: `string test_name = 1;` The test name that this response applies to.
+
+  - `result`: `oneof result` (`ClientCompatResponseResult`) These fields determine the outcome of the request.
+
+    With regards to errors, any unexpected errors that prevent the client from
+    issuing the RPC and following the instructions implied by the request can
+    be reported as an error. These would be errors creating an RPC client from
+    the request parameters or unsupported/illegal values in the request
+    (e.g. a unary request that defines zero or multiple request messages).
+
+    However, once the RPC is issued, any resulting error should instead be encoded in response.
+
+-}
 type alias ClientCompatResponse =
     { testName : String
     , result : ClientCompatResponseResult
     }
 
 
+{-| These fields determine the outcome of the request.
+
+With regards to errors, any unexpected errors that prevent the client from
+issuing the RPC and following the instructions implied by the request can
+be reported as an error. These would be errors creating an RPC client from
+the request parameters or unsupported/illegal values in the request
+(e.g. a unary request that defines zero or multiple request messages).
+
+However, once the RPC is issued, any resulting error should instead be encoded in response.
+
+`oneof result` of `connectrpc.conformance.v1.ClientCompatResponse`
+
+  - `ClientCompatResponseResultUnset`: none of the fields is set.
+  - `ClientCompatResponseResultResponse`: `connectrpc.conformance.v1.ClientResponseResult response = 2;`
+  - `ClientCompatResponseResultError`: `connectrpc.conformance.v1.ClientErrorResult error = 3;`
+
+-}
 type ClientCompatResponseResult
     = ClientCompatResponseResultUnset
     | ClientCompatResponseResultResponse ClientResponseResult
     | ClientCompatResponseResultError ClientErrorResult
 
 
+{-| The result of a ClientCompatRequest, which may or may not be successful.
+The client will build this message and return it back to the test runner.
+
+`message connectrpc.conformance.v1.ClientResponseResult`
+
+  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` All response headers read from the response.
+  - `payloads`: `repeated connectrpc.conformance.v1.ConformancePayload payloads = 2;` Servers should echo back payloads that they received as part of the request.
+    This field should contain all the payloads the server echoed back. Note that
+    There will be zero-to-one for unary and client stream methods and
+    zero-to-many for server and bidi stream methods.
+  - `error`: `connectrpc.conformance.v1.Error error = 3;` The error received from the actual RPC invocation. Note this is not representative
+    of a runtime error and should always be the proto equivalent of a Connect
+    or gRPC error.
+  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 4;` All response headers read from the response.
+  - `numUnsentRequests`: `int32 num_unsent_requests = 5;` The number of messages that were present in the request but that could not be
+    sent because an error occurred before finishing the upload.
+  - `httpStatusCode`: `optional int32 http_status_code = 6;` The following field is only set by the reference client. It communicates
+    the underlying HTTP status code of the server's response.
+    If you are implementing a client-under-test, you should ignore this field
+    and leave it unset.
+  - `feedback`: `repeated string feedback = 7;` This field is used only by the reference client, and it can be used
+    to provide additional feedback about problems observed in the server
+    response or in client processing of the response. If non-empty, the test
+    case is considered failed even if the result above matches all expectations.
+    If you are implementing a client-under-test, you should ignore this field
+    and leave it unset.
+
+-}
 type alias ClientResponseResult =
     { responseHeaders : List Header
     , payloads : List ConformancePayload
@@ -204,11 +496,43 @@ type alias ClientResponseResult =
     }
 
 
+{-| The client is not able to fulfill the ClientCompatRequest. This may be due
+to a runtime error or an unexpected internal error such as the requested protocol
+not being supported. This is completely independent of the actual RPC invocation.
+
+`message connectrpc.conformance.v1.ClientErrorResult`
+
+  - `message`: `string message = 1;` A message describing the error that occurred. This string will be shown to
+    users running conformance tests so it should include any relevant details
+    that may help troubleshoot or remedy the error.
+
+-}
 type alias ClientErrorResult =
     { message : String
     }
 
 
+{-| Details about various values as observed on the wire. This message is used
+only by the reference client when reporting results and should not be populated
+by clients under test.
+
+`message connectrpc.conformance.v1.WireDetails`
+
+  - `actualStatusCode`: `int32 actual_status_code = 1;` The HTTP status code of the response.
+  - `connectErrorRaw`: `google.protobuf.Struct connect_error_raw = 2;` When processing an error from a Connect server, this should contain
+    the actual JSON received on the wire.
+  - `actualHttpTrailers`: `repeated connectrpc.conformance.v1.Header actual_http_trailers = 3;` Any HTTP trailers observed after the response body. These do NOT
+    include trailers that conveyed via the body, as done in the gRPC-Web
+    and Connect streaming protocols.
+  - `actualGrpcwebTrailers`: `optional string actual_grpcweb_trailers = 4;` Any trailers that were transmitted in the final message of the
+    response body for a gRPC-Web response. This could differ from the
+    ClientResponseResult.response\_trailers field since the RPC client
+    library might canonicalize keys and it might choose to remove
+    "grpc-status" et al from the set of metadata. This field will
+    capture all of the entries and their exact on-the-wire spelling
+    and formatting.
+
+-}
 type alias WireDetails =
     { actualStatusCode : Int
     , connectErrorRaw : Maybe (Dict String Json.Encode.Value)
@@ -217,6 +541,21 @@ type alias WireDetails =
     }
 
 
+{-| Config defines the configuration for running conformance tests.
+This enumerates all of the "flavors" of the test suite to run.
+
+`message connectrpc.conformance.v1.Config`
+
+  - `features`: `connectrpc.conformance.v1.Features features = 1;` The features supported by the client or server under test.
+    This is used to filter the set of test cases that are run.
+    If absent, an empty message is used. See Features for more
+    on how empty/absent fields are interpreted.
+  - `includeCases`: `repeated connectrpc.conformance.v1.ConfigCase include_cases = 2;` This can indicate additional permutations that are supported
+    that might otherwise be excluded based on the above features.
+  - `excludeCases`: `repeated connectrpc.conformance.v1.ConfigCase exclude_cases = 3;` This can indicates permutations that are not supported even
+    though their support might be implied by the above features.
+
+-}
 type alias Config =
     { features : Maybe Features
     , includeCases : List ConfigCase
@@ -224,6 +563,46 @@ type alias Config =
     }
 
 
+{-| Features define the feature set that a client or server supports. They are
+used to determine the server configurations and test cases that
+will be run. They are defined in YAML files and are specified as part of the
+--conf flag to the test runner.
+
+TODO: we could probably model some of the constraints on what are valid vs.
+invalid (i.e. conflicting/impossible) features using protovalidate rules
+
+`message connectrpc.conformance.v1.Features`
+
+  - `versions`: `repeated connectrpc.conformance.v1.HTTPVersion versions = 1;` Supported HTTP versions.
+    If empty, HTTP 1.1 and HTTP/2 are assumed.
+  - `protocols`: `repeated connectrpc.conformance.v1.Protocol protocols = 2;` Supported protocols.
+    If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
+  - `codecs`: `repeated connectrpc.conformance.v1.Codec codecs = 3;` Supported codecs.
+    If empty, "proto" and "json" are assumed.
+  - `compressions`: `repeated connectrpc.conformance.v1.Compression compressions = 4;` Supported compression algorithms.
+    If empty, "identity" and "gzip" are assumed.
+  - `streamTypes`: `repeated connectrpc.conformance.v1.StreamType stream_types = 5;` Supported stream types.
+    If empty, all stream types are assumed. This is usually for
+    clients, since some client environments may not be able to
+    support certain kinds of streaming operations, especially
+    bidirectional streams.
+  - `supportsH2c`: `optional bool supports_h2c = 6;` Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
+    If absent, true is assumed.
+  - `supportsTls`: `optional bool supports_tls = 7;` Whether TLS is supported.
+    If absent, true is assumed.
+  - `supportsTlsClientCerts`: `optional bool supports_tls_client_certs = 8;` Whether the client supports TLS certificates.
+    If absent, false is assumed. This should not be set if
+    supports\_tls is false.
+  - `supportsTrailers`: `optional bool supports_trailers = 9;` Whether trailers are supported.
+    If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
+  - `supportsHalfDuplexBidiOverHttp1`: `optional bool supports_half_duplex_bidi_over_http1 = 10;` Whether half duplex bidi streams are supported over HTTP/1.1.
+    If absent, false is assumed.
+  - `supportsConnectGet`: `optional bool supports_connect_get = 11;` Whether Connect via GET is supported.
+    If absent, true is assumed.
+  - `supportsMessageReceiveLimit`: `optional bool supports_message_receive_limit = 12;` Whether a message receive limit is supported.
+    If absent, true is assumed.
+
+-}
 type alias Features =
     { versions : List HTTPVersion
     , protocols : List Protocol
@@ -240,6 +619,30 @@ type alias Features =
     }
 
 
+{-| ConfigCase represents a single resolved configuration case. When tests are
+run, the Config and the supported features therein are used to compute all
+of the cases relevant to the implementation under test. These configuration
+cases are then used to select which test cases are applicable.
+
+TODO: we could probably model some of the constraints on what is a valid
+vs. invalid config case using protovalidate rules
+
+`message connectrpc.conformance.v1.ConfigCase`
+
+  - `version`: `connectrpc.conformance.v1.HTTPVersion version = 1;` If unspecified, indicates cases for all versions.
+  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 2;` If unspecified, indicates cases for all protocols.
+  - `codec`: `connectrpc.conformance.v1.Codec codec = 3;` If unspecified, indicates cases for all codecs.
+  - `compression`: `connectrpc.conformance.v1.Compression compression = 4;` If unspecified, indicates cases for all compression algorithms.
+  - `streamType`: `connectrpc.conformance.v1.StreamType stream_type = 5;` If unspecified, indicates cases for all stream types.
+  - `useTls`: `optional bool use_tls = 6;` If absent, indicates cases for plaintext (no TLS) but also for
+    TLS if features indicate that TLS is supported.
+  - `useTlsClientCerts`: `optional bool use_tls_client_certs = 7;` If absent, indicates cases without client certs but also cases
+    that use client certs if features indicate they are supported.
+  - `useMessageReceiveLimit`: `optional bool use_message_receive_limit = 8;` If absent, indicates cases that do not test message receive
+    limits but also cases that do test message receive limits if
+    features indicate they are supported.
+
+-}
 type alias ConfigCase =
     { version : HTTPVersion
     , protocol : Protocol
@@ -252,12 +655,86 @@ type alias ConfigCase =
     }
 
 
+{-| TLSCreds represents credentials for TLS. It includes both a
+certificate and corresponding private key. Both are encoded
+in PEM format.
+
+`message connectrpc.conformance.v1.TLSCreds`
+
+  - `cert`: `bytes cert = 1;`
+  - `key`: `bytes key = 2;`
+
+-}
 type alias TLSCreds =
     { cert : String
     , key : String
     }
 
 
+{-| Describes one configuration for an RPC server. The server is
+expected to expose the connectrpc.conformance.v1.ConformanceService
+RPC service. The configuration does not include a port. The
+process should pick an available port, which is typically
+done by using port zero (0) when creating a network listener
+so that the OS selects an available ephemeral port.
+
+These properties are read from stdin. Once the server is
+listening, details about the server, in the form of a
+ServerCompatResponse, are written to stdout.
+
+Each test process is expected to start only one RPC server.
+When testing multiple configurations, multiple test processes
+will be started, each with different properties.
+
+`message connectrpc.conformance.v1.ServerCompatRequest`
+
+  - `protocol`: `connectrpc.conformance.v1.Protocol protocol = 1;` Signals to the server that it must support at least this protocol. Note
+    that it is fine to support others.
+    For example if `PROTOCOL_CONNECT` is specified, the server _must_ support
+    at least Connect, but _may_ also support gRPC or gRPC-web.
+
+  - `httpVersion`: `connectrpc.conformance.v1.HTTPVersion http_version = 2;` Signals to the server the minimum HTTP version to support. As with
+    `protocol`, it is fine to support other versions. For example, if
+    `HTTP_VERSION_2` is specified, the server _must_ support HTTP/2, but _may_ also
+    support HTTP/1.1 or HTTP/3.
+
+  - `useTls`: `bool use_tls = 4;` If true, generate a certificate that clients will be configured to trust
+    when connecting and return it in the `pem_cert` field of the `ServerCompatResponse`.
+    The certificate can be any TLS certificate where the subject matches the
+    value sent back in the `host` field of the `ServerCompatResponse`.
+    Self-signed certificates (and `localhost` as the subject) are allowed.
+    If false, the server should not use TLS and instead use
+    a plain-text/unencrypted socket.
+
+  - `clientTlsCert`: `bytes client_tls_cert = 5;` If non-empty, the clients will use certificates to authenticate
+    themselves. This value is a PEM-encoded cert that should be
+    trusted by the server. When non-empty, the server should require
+    that clients provide certificates and they should validate that
+    the certificate presented is valid.
+
+    This will always be empty if use\_tls is false.
+
+  - `messageReceiveLimit`: `uint32 message_receive_limit = 6;` If non-zero, indicates the maximum size in bytes for a message.
+    If the client sends anything larger, the server should reject it.
+
+  - `serverCreds`: `connectrpc.conformance.v1.TLSCreds server_creds = 7;` If use\_tls is true, this provides details for a self-signed TLS
+    cert that the server may use.
+
+    The provided certificate is only good for loopback communication:
+    it uses "localhost" and "127.0.0.1" as the IP and DNS names in
+    the certificate's subject. If the server needs a different subject
+    or the client is in an environment where configuring trust of a
+    self-signed certificate is difficult or infeasible.
+
+    If the server implementation chooses to use these credentials,
+    it must echo back the certificate in the ServerCompatResponse and
+    should also leave the host field empty or explicitly set to
+    "127.0.0.1".
+
+    If it chooses to use a different certificate and key, it must send
+    back the corresponding certificate in the ServerCompatResponse.
+
+-}
 type alias ServerCompatRequest =
     { protocol : Protocol
     , httpVersion : HTTPVersion
@@ -268,6 +745,19 @@ type alias ServerCompatRequest =
     }
 
 
+{-| The outcome of one ServerCompatRequest.
+
+`message connectrpc.conformance.v1.ServerCompatResponse`
+
+  - `host`: `string host = 1;` The host where the server is running. This should usually be `127.0.0.1`,
+    unless your program actually starts a remote server to which the client
+    should connect.
+  - `port_`: `uint32 port = 2;` The port where the server is listening.
+  - `pemCert`: `bytes pem_cert = 3;` The TLS certificate, in PEM format, if `use_tls` was set
+    to `true`. Clients will verify this certificate when connecting via TLS.
+    If `use_tls` was set to `false`, this should always be empty.
+
+-}
 type alias ServerCompatResponse =
     { host : String
     , port_ : Int
@@ -275,6 +765,26 @@ type alias ServerCompatResponse =
     }
 
 
+{-| A definition of a response to be sent from a single-response endpoint.
+Can be used to define a response for unary or client-streaming calls.
+
+`message connectrpc.conformance.v1.UnaryResponseDefinition`
+
+  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` Response headers to send
+
+  - `response`: `oneof response` (`UnaryResponseDefinitionResponse`)
+
+  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 4;` Response trailers to send - together with the error if present
+
+  - `responseDelayMs`: `uint32 response_delay_ms = 6;` Wait this many milliseconds before sending a response message
+
+  - `rawResponse`: `connectrpc.conformance.v1.RawHTTPResponse raw_response = 5;` This field is only used by the reference server. If you are implementing a
+    server under test, you can ignore this field or respond with an error if the
+    server receives a request where it is set.
+
+    For test definitions, this field should be used instead of the above fields.
+
+-}
 type alias UnaryResponseDefinition =
     { responseHeaders : List Header
     , response : UnaryResponseDefinitionResponse
@@ -284,12 +794,47 @@ type alias UnaryResponseDefinition =
     }
 
 
+{-| `oneof response` of `connectrpc.conformance.v1.UnaryResponseDefinition`
+
+  - `UnaryResponseDefinitionResponseUnset`: none of the fields is set.
+  - `UnaryResponseDefinitionResponseResponseData`: `bytes response_data = 2;` Response data to send
+  - `UnaryResponseDefinitionResponseError`: `connectrpc.conformance.v1.Error error = 3;` Error to raise instead of response message
+    Servers should build a RequestInfo and append it to the details of the
+    requested error.
+
+-}
 type UnaryResponseDefinitionResponse
     = UnaryResponseDefinitionResponseUnset
     | UnaryResponseDefinitionResponseResponseData String
     | UnaryResponseDefinitionResponseError Error
 
 
+{-| A definition of responses to be sent from a streaming endpoint.
+Can be used to define responses for server-streaming or bidi-streaming calls.
+
+`message connectrpc.conformance.v1.StreamResponseDefinition`
+
+  - `responseHeaders`: `repeated connectrpc.conformance.v1.Header response_headers = 1;` Response headers to send
+
+  - `responseData`: `repeated bytes response_data = 2;` Response data to send
+
+  - `responseDelayMs`: `uint32 response_delay_ms = 3;` Wait this many milliseconds before sending each response message
+
+  - `error`: `connectrpc.conformance.v1.Error error = 4;` Optional error to raise, but only after sending any response messages.
+    In the event an immediate error is thrown before any responses are sent,
+    (i.e. the equivalent of a trailers-only response), then servers should
+    build a RequestInfo message with available information and append that to
+    the error details.
+
+  - `responseTrailers`: `repeated connectrpc.conformance.v1.Header response_trailers = 5;` Response trailers to send - together with the error if present
+
+  - `rawResponse`: `connectrpc.conformance.v1.RawHTTPResponse raw_response = 6;` This field is only used by the reference server. If you are implementing a
+    server under test, you can ignore this field or respond with an error if the
+    server receives a request where it is set.
+
+    For test definitions, this field should be used instead of the above fields.
+
+-}
 type alias StreamResponseDefinition =
     { responseHeaders : List Header
     , responseData : List String
@@ -300,50 +845,120 @@ type alias StreamResponseDefinition =
     }
 
 
+{-| `message connectrpc.conformance.v1.UnaryRequest`
+
+  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload
+  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+
+-}
 type alias UnaryRequest =
     { responseDefinition : Maybe UnaryResponseDefinition
     , requestData : String
     }
 
 
+{-| `message connectrpc.conformance.v1.UnaryResponse`
+
+  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with.
+
+-}
 type alias UnaryResponse =
     { payload : Maybe ConformancePayload
     }
 
 
+{-| `message connectrpc.conformance.v1.IdempotentUnaryRequest`
+
+  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload
+  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+
+-}
 type alias IdempotentUnaryRequest =
     { responseDefinition : Maybe UnaryResponseDefinition
     , requestData : String
     }
 
 
+{-| `message connectrpc.conformance.v1.IdempotentUnaryResponse`
+
+  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with.
+
+-}
 type alias IdempotentUnaryResponse =
     { payload : Maybe ConformancePayload
     }
 
 
+{-| `message connectrpc.conformance.v1.ServerStreamRequest`
+
+  - `responseDefinition`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;` The response definition which should be returned in the conformance payload.
+  - `requestData`: `bytes request_data = 2;` Additional data. Only used to pad the request size to test large request messages.
+
+-}
 type alias ServerStreamRequest =
     { responseDefinition : Maybe StreamResponseDefinition
     , requestData : String
     }
 
 
+{-| `message connectrpc.conformance.v1.ServerStreamResponse`
+
+  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+
+-}
 type alias ServerStreamResponse =
     { payload : Maybe ConformancePayload
     }
 
 
+{-| `message connectrpc.conformance.v1.ClientStreamRequest`
+
+  - `responseDefinition`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;` Tells the server how to reply once all client messages are
+    complete. Required in the first message in the stream, but
+    should be ignored in subsequent messages.
+  - `requestData`: `bytes request_data = 2;` Additional data for subsequent messages in the stream. Also
+    used to pad the request size to test large request messages.
+
+-}
 type alias ClientStreamRequest =
     { responseDefinition : Maybe UnaryResponseDefinition
     , requestData : String
     }
 
 
+{-| `message connectrpc.conformance.v1.ClientStreamResponse`
+
+  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+
+-}
 type alias ClientStreamResponse =
     { payload : Maybe ConformancePayload
     }
 
 
+{-| `message connectrpc.conformance.v1.BidiStreamRequest`
+
+  - `responseDefinition`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;` Tells the server how to reply; required in the first message
+    in the stream. Should be ignored in subsequent messages.
+
+  - `fullDuplex`: `bool full_duplex = 2;` Tells the server whether it should wait for each request
+    before sending a response.
+
+    If true, it indicates the server should effectively interleave the
+    stream so messages are sent in request->response pairs.
+
+    If false, then the response stream will be sent once all request messages
+    are finished sending with the only delays between messages
+    being the optional fixed milliseconds defined in the response
+    definition.
+
+    This field is only relevant in the first message in the stream
+    and should be ignored in subsequent messages.
+
+  - `requestData`: `bytes request_data = 3;` Additional data for subsequent messages in the stream. Also
+    used to pad the request size to test large request messages.
+
+-}
 type alias BidiStreamRequest =
     { responseDefinition : Maybe StreamResponseDefinition
     , fullDuplex : Bool
@@ -351,25 +966,61 @@ type alias BidiStreamRequest =
     }
 
 
+{-| `message connectrpc.conformance.v1.BidiStreamResponse`
+
+  - `payload`: `connectrpc.conformance.v1.ConformancePayload payload = 1;` The conformance payload to respond with
+
+-}
 type alias BidiStreamResponse =
     { payload : Maybe ConformancePayload
     }
 
 
+{-| `message connectrpc.conformance.v1.UnimplementedRequest`
+-}
 type alias UnimplementedRequest =
     {}
 
 
+{-| `message connectrpc.conformance.v1.UnimplementedResponse`
+-}
 type alias UnimplementedResponse =
     {}
 
 
+{-| `message connectrpc.conformance.v1.ConformancePayload`
+
+  - `data`: `bytes data = 1;` Any response data specified in the response definition to the server should be
+    echoed back here.
+  - `requestInfo`: `connectrpc.conformance.v1.ConformancePayload.RequestInfo request_info = 2;` Echoes back information about the request stream observed so far.
+
+-}
 type alias ConformancePayload =
     { data : String
     , requestInfo : Maybe ConformancePayloadRequestInfo
     }
 
 
+{-| `message connectrpc.conformance.v1.ConformancePayload.RequestInfo`
+
+  - `requestHeaders`: `repeated connectrpc.conformance.v1.Header request_headers = 1;` The server echos back the request headers it observed here.
+  - `timeoutMs`: `optional int64 timeout_ms = 2;` The timeout observed that was included in the request. Other timeouts use a
+    type of uint32, but we want to be lenient here to allow whatever value the RPC
+    server observes, even if it's outside the range of uint32.
+  - `requests`: `repeated google.protobuf.Any requests = 3;` The server should echo back all requests received.
+    For unary and server-streaming requests, this should always contain a single request
+    For client-streaming and half-duplex bidi-streaming, this should contain
+    all client requests in the order received and be present in each response.
+    For full-duplex bidirectional-streaming, this should contain all requests in the order
+    they were received since the last sent response.
+  - `connectGetInfo`: `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo connect_get_info = 4;` If present, the request used the Connect protocol and a GET method. This
+    captures other relevant information about the request. If a server implementation
+    is unable to populate this (due to the server framework not exposing all of these
+    details to application code), it may be an empty message. This implies that the
+    server framework, at a minimum, at least expose to application code whether the
+    request used GET vs. POST.
+
+-}
 type alias ConformancePayloadRequestInfo =
     { requestHeaders : List Header
     , timeoutMs : Maybe String
@@ -378,11 +1029,30 @@ type alias ConformancePayloadRequestInfo =
     }
 
 
+{-| `message connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`
+
+  - `queryParams`: `repeated connectrpc.conformance.v1.Header query_params = 1;` The query params observed in the request URL.
+
+-}
 type alias ConformancePayloadConnectGetInfo =
     { queryParams : List Header
     }
 
 
+{-| An error definition used for specifying a desired error response
+
+`message connectrpc.conformance.v1.Error`
+
+  - `code`: `connectrpc.conformance.v1.Code code = 1;` The error code.
+    For a list of Connect error codes see: <https://connectrpc.com/docs/protocol#error-codes>
+  - `message`: `optional string message = 2;` If this value is absent in a test case response definition, the contents of the
+    actual error message will not be checked. This is useful for certain kinds of
+    error conditions where the exact message to be used is not specified, only the
+    code.
+  - `details`: `repeated google.protobuf.Any details = 3;` Errors in Connect and gRPC protocols can have arbitrary messages
+    attached to them, which are known as error details.
+
+-}
 type alias Error =
     { code : Code
     , message : Maybe String
@@ -390,12 +1060,38 @@ type alias Error =
     }
 
 
+{-| A tuple of name and values (ASCII) for a header or trailer entry.
+
+`message connectrpc.conformance.v1.Header`
+
+  - `name`: `string name = 1;` Header/trailer name (key).
+  - `value`: `repeated string value = 2;` Header/trailer value. This is repeated to explicitly support headers and
+    trailers where a key is repeated. In such a case, these values must be in
+    the same order as which values appeared in the header or trailer block.
+
+-}
 type alias Header =
     { name : String
     , value : List String
     }
 
 
+{-| RawHTTPRequest models a raw HTTP request. This can be used to craft
+custom requests with odd properties (including certain kinds of
+malformed requests) to test edge cases in servers.
+
+`message connectrpc.conformance.v1.RawHTTPRequest`
+
+  - `verb`: `string verb = 1;` The HTTP verb (i.e. GET , POST).
+  - `uri`: `string uri = 2;` The URI to send the request to.
+  - `headers`: `repeated connectrpc.conformance.v1.Header headers = 3;` Any headers to set on the request.
+  - `rawQueryParams`: `repeated connectrpc.conformance.v1.Header raw_query_params = 4;` These query params will be encoded and added to the uri before
+    the request is sent.
+  - `encodedQueryParams`: `repeated connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam encoded_query_params = 5;` This provides an easier way to define a complex binary query param
+    than having to write literal base64-encoded bytes in raw\_query\_params.
+  - `body`: `oneof body` (`RawHTTPRequestBody`)
+
+-}
 type alias RawHTTPRequest =
     { verb : String
     , uri : String
@@ -406,12 +1102,28 @@ type alias RawHTTPRequest =
     }
 
 
+{-| `oneof body` of `connectrpc.conformance.v1.RawHTTPRequest`
+
+  - `RawHTTPRequestBodyUnset`: none of the fields is set.
+  - `RawHTTPRequestBodyUnary`: `connectrpc.conformance.v1.MessageContents unary = 6;` The body is a single message.
+  - `RawHTTPRequestBodyStream`: `connectrpc.conformance.v1.StreamContents stream = 7;` The body is a stream, encoded using a five-byte
+    prefix before each item in the stream.
+
+-}
 type RawHTTPRequestBody
     = RawHTTPRequestBodyUnset
     | RawHTTPRequestBodyUnary MessageContents
     | RawHTTPRequestBodyStream StreamContents
 
 
+{-| `message connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`
+
+  - `name`: `string name = 1;` Query param name.
+  - `value`: `connectrpc.conformance.v1.MessageContents value = 2;` Query param value.
+  - `base64Encode`: `bool base64_encode = 3;` If true, the message contents will be base64-encoded and the
+    resulting string used as the query parameter value.
+
+-}
 type alias RawHTTPRequestEncodedQueryParam =
     { name : String
     , value : Maybe MessageContents
@@ -419,12 +1131,33 @@ type alias RawHTTPRequestEncodedQueryParam =
     }
 
 
+{-| MessageContents represents a message in a request body.
+
+`message connectrpc.conformance.v1.MessageContents`
+
+  - `data`: `oneof data` (`MessageContentsData`) The message data can be defined in one of three ways.
+  - `compression`: `connectrpc.conformance.v1.Compression compression = 4;` If specified and not identity, the above data will be
+    compressed using the given algorithm.
+
+-}
 type alias MessageContents =
     { data : MessageContentsData
     , compression : Compression
     }
 
 
+{-| The message data can be defined in one of three ways.
+
+`oneof data` of `connectrpc.conformance.v1.MessageContents`
+
+  - `MessageContentsDataUnset`: none of the fields is set.
+  - `MessageContentsDataBinary`: `bytes binary = 1;` Arbitrary bytes.
+  - `MessageContentsDataText`: `string text = 2;` Arbitrary text.
+  - `MessageContentsDataBinaryMessage`: `google.protobuf.Any binary_message = 3;` An actual message. The message inside the Any will be
+    serialized to the protobuf binary formats, and the
+    resulting bytes will be the contents.
+
+-}
 type MessageContentsData
     = MessageContentsDataUnset
     | MessageContentsDataBinary String
@@ -432,11 +1165,25 @@ type MessageContentsData
     | MessageContentsDataBinaryMessage Proto.Any.Any
 
 
+{-| StreamContents represents a sequence of messages in a request body.
+
+`message connectrpc.conformance.v1.StreamContents`
+
+  - `items`: `repeated connectrpc.conformance.v1.StreamContents.StreamItem items = 1;` The messages in the stream.
+
+-}
 type alias StreamContents =
     { items : List StreamContentsStreamItem
     }
 
 
+{-| `message connectrpc.conformance.v1.StreamContents.StreamItem`
+
+  - `flags`: `uint32 flags = 1;` must be in the range 0 to 255.
+  - `length`: `optional uint32 length = 2;` if absent use actual length of payload
+  - `payload`: `connectrpc.conformance.v1.MessageContents payload = 3;`
+
+-}
 type alias StreamContentsStreamItem =
     { flags : Int
     , length : Maybe Int
@@ -444,6 +1191,18 @@ type alias StreamContentsStreamItem =
     }
 
 
+{-| RawHTTPResponse models a raw HTTP response. This can be used to craft
+custom responses with odd properties (including certain kinds of
+malformed responses) to test edge cases in clients.
+
+`message connectrpc.conformance.v1.RawHTTPResponse`
+
+  - `statusCode`: `uint32 status_code = 1;` If status code is not specified, it will default to a 200 response code.
+  - `headers`: `repeated connectrpc.conformance.v1.Header headers = 2;` Headers to be set on the response.
+  - `body`: `oneof body` (`RawHTTPResponseBody`)
+  - `trailers`: `repeated connectrpc.conformance.v1.Header trailers = 5;` Trailers to be set on the response.
+
+-}
 type alias RawHTTPResponse =
     { statusCode : Int
     , headers : List Header
@@ -452,12 +1211,56 @@ type alias RawHTTPResponse =
     }
 
 
+{-| `oneof body` of `connectrpc.conformance.v1.RawHTTPResponse`
+
+  - `RawHTTPResponseBodyUnset`: none of the fields is set.
+  - `RawHTTPResponseBodyUnary`: `connectrpc.conformance.v1.MessageContents unary = 3;` The body is a single message.
+  - `RawHTTPResponseBodyStream`: `connectrpc.conformance.v1.StreamContents stream = 4;` The body is a stream, encoded using a five-byte
+    prefix before each item in the stream.
+
+-}
 type RawHTTPResponseBody
     = RawHTTPResponseBodyUnset
     | RawHTTPResponseBodyUnary MessageContents
     | RawHTTPResponseBodyStream StreamContents
 
 
+{-| TestSuite represents a set of conformance test cases. This is also the schema
+used for the structure of a YAML test file. Each YAML file represents a test
+suite, which can contain numerous cases. Each test suite has various properties
+that indicate the kinds of features that are tested. Test suites may be skipped
+based on whether the client or server under test implements these features.
+
+`message connectrpc.conformance.v1.TestSuite`
+
+  - `name`: `string name = 1;` Test suite name. When writing test suites, this is a required field.
+  - `mode`: `connectrpc.conformance.v1.TestSuite.TestMode mode = 2;` The mode (client or server) that this test suite applies to. This is used
+    in conjunction with the `--mode` flag passed to the conformance runner
+    binary. If the mode on the suite is set to client, the tests will only be
+    run if `--mode client` is set on the command to the test runner.
+    Likewise if mode is server. If this is unset, the test case will be run in both modes.
+  - `testCases`: `repeated connectrpc.conformance.v1.TestCase test_cases = 3;` The actual test cases in the suite.
+  - `relevantProtocols`: `repeated connectrpc.conformance.v1.Protocol relevant_protocols = 4;` If non-empty, the protocols to which this suite applies. If empty,
+    this suite applies to all protocols.
+  - `relevantHttpVersions`: `repeated connectrpc.conformance.v1.HTTPVersion relevant_http_versions = 5;` If non-empty, the HTTP versions to which this suite applies. If empty,
+    this suite applies to all HTTP versions.
+  - `relevantCodecs`: `repeated connectrpc.conformance.v1.Codec relevant_codecs = 6;` If non-empty, the codecs to which this suite applies. If empty, this
+    suite applies to all codecs.
+  - `relevantCompressions`: `repeated connectrpc.conformance.v1.Compression relevant_compressions = 7;` If non-empty, the compression encodings to which this suite applies.
+    If empty, this suite applies to all encodings.
+  - `connectVersionMode`: `connectrpc.conformance.v1.TestSuite.ConnectVersionMode connect_version_mode = 8;` Indicates the Connect version validation behavior that this suite
+    relies on.
+  - `reliesOnTls`: `bool relies_on_tls = 9;` If true, the cases in this suite rely on TLS and will only be run against
+    TLS server configurations.
+  - `reliesOnTlsClientCerts`: `bool relies_on_tls_client_certs = 10;` If true, the cases in this suite rely on the client using TLS
+    certificates to authenticate with the server. (Should only be
+    true if relies\_on\_tls is also true.)
+  - `reliesOnConnectGet`: `bool relies_on_connect_get = 11;` If true, the cases in this suite rely on the Connect GET protocol.
+  - `reliesOnMessageReceiveLimit`: `bool relies_on_message_receive_limit = 12;` If true, the cases in this suite rely on support for limiting the
+    size of received messages. When true, mode should be set to indicate
+    whether it is the client or the server that must support the limit.
+
+-}
 type alias TestSuite =
     { name : String
     , mode : TestSuiteTestMode
@@ -474,6 +1277,56 @@ type alias TestSuite =
     }
 
 
+{-| `message connectrpc.conformance.v1.TestCase`
+
+  - `request`: `connectrpc.conformance.v1.ClientCompatRequest request = 1;` Defines the RPC that the client should invoke. The first eight fields
+    are not fully specified. Instead the first field, test\_name, must be
+    present but is a prefix -- other characteristics that identify one
+    permutation of the test case will be appended to this name. The next
+    seven fields (http\_version, protocol, codec, compression, host, port,
+    and server\_tls\_cert) must not be present. They are all populated by
+    the test harness based on the test environment (e.g. actual server and
+    port to use) and characteristics of a single permutation.
+
+  - `expandRequests`: `repeated connectrpc.conformance.v1.TestCase.ExpandedSize expand_requests = 2;` To support extremely large messages, as well as very precisely-sized
+    messages, without having to encode them fully or perfectly in YAML
+    test cases, this value can be specified. When non-empty, this value
+    should have no more entries than there are messages in the request
+    stream. The first value is applied to the first request message, and
+    so on. For each entry, if the size is present, it is used to expand
+    the data field in the request (which is actually part of the response
+    definition). The specified size is added to the current limit on
+    message size that the server will accept. That sum is the size of the
+    the serialized message that will be sent, and the data field will be
+    padded as needed to reach that size.
+
+  - `expectedResponse`: `connectrpc.conformance.v1.ClientResponseResult expected_response = 3;` Defines the expected response to the above RPC. The expected response for
+    a test is auto-generated based on the request details. The conformance runner
+    will determine what the response should be according to the values specified
+    in the test suite and individual test cases.
+
+    This value can also be specified explicitly in the test case YAML. However,
+    this is typically only needed for exception test cases. If the expected
+    response is mostly re-stating the response definition that appears in the
+    requests, test cases should rely on the auto-generation if possible.
+    Otherwise, specifying an expected response can make the test YAML overly
+    verbose and harder to read, write, and maintain.
+
+    If the test induces behavior that prevents the server from sending or client
+    from receiving the full response definition, it will be necessary to define
+    the expected response explicitly. Timeouts, cancellations, and exceeding
+    message size limits are good examples of this.
+
+    Specifying an expected response explicitly in test definitions will override
+    the auto-generation of the test runner.
+
+  - `otherAllowedErrorCodes`: `repeated connectrpc.conformance.v1.Code other_allowed_error_codes = 4;` When expected\_response indicates that an error is expected, in some cases, the
+    actual error code returned may be flexible. In that case, this field provides
+    other acceptable error codes, in addition to the one indicated in the
+    expected\_response. As long as the actual error's code matches any of these, the
+    error is considered conformant, and the test case can pass.
+
+-}
 type alias TestCase =
     { request : Maybe ClientCompatRequest
     , expandRequests : List TestCaseExpandedSize
@@ -482,6 +1335,14 @@ type alias TestCase =
     }
 
 
+{-| `message connectrpc.conformance.v1.TestCase.ExpandedSize`
+
+  - `sizeRelativeToLimit`: `optional int32 size_relative_to_limit = 1;` The size, in bytes, relative to the limit. For example, to expand to a
+    size that is exactly equal to the limit, this should be set to zero.
+    Any value greater than zero indicates that the request size will be that
+    many bytes over the limit.
+
+-}
 type alias TestCaseExpandedSize =
     { sizeRelativeToLimit : Maybe Int
     }
@@ -491,6 +1352,8 @@ type alias TestCaseExpandedSize =
 -- DEFAULTS
 
 
+{-| A `ClientCompatRequest` with every field at its default and every oneof unset.
+-}
 defaultClientCompatRequest : ClientCompatRequest
 defaultClientCompatRequest =
     { testName = ""
@@ -516,12 +1379,16 @@ defaultClientCompatRequest =
     }
 
 
+{-| A `ClientCompatRequestCancel` with every field at its default and every oneof unset.
+-}
 defaultClientCompatRequestCancel : ClientCompatRequestCancel
 defaultClientCompatRequestCancel =
     { cancelTiming = ClientCompatRequestCancelCancelTimingUnset
     }
 
 
+{-| A `ClientCompatResponse` with every field at its default and every oneof unset.
+-}
 defaultClientCompatResponse : ClientCompatResponse
 defaultClientCompatResponse =
     { testName = ""
@@ -529,6 +1396,8 @@ defaultClientCompatResponse =
     }
 
 
+{-| A `ClientResponseResult` with every field at its default and every oneof unset.
+-}
 defaultClientResponseResult : ClientResponseResult
 defaultClientResponseResult =
     { responseHeaders = []
@@ -541,12 +1410,16 @@ defaultClientResponseResult =
     }
 
 
+{-| A `ClientErrorResult` with every field at its default and every oneof unset.
+-}
 defaultClientErrorResult : ClientErrorResult
 defaultClientErrorResult =
     { message = ""
     }
 
 
+{-| A `WireDetails` with every field at its default and every oneof unset.
+-}
 defaultWireDetails : WireDetails
 defaultWireDetails =
     { actualStatusCode = 0
@@ -556,6 +1429,8 @@ defaultWireDetails =
     }
 
 
+{-| A `Config` with every field at its default and every oneof unset.
+-}
 defaultConfig : Config
 defaultConfig =
     { features = Nothing
@@ -564,6 +1439,8 @@ defaultConfig =
     }
 
 
+{-| A `Features` with every field at its default and every oneof unset.
+-}
 defaultFeatures : Features
 defaultFeatures =
     { versions = []
@@ -581,6 +1458,8 @@ defaultFeatures =
     }
 
 
+{-| A `ConfigCase` with every field at its default and every oneof unset.
+-}
 defaultConfigCase : ConfigCase
 defaultConfigCase =
     { version = HTTPVersionUnspecified
@@ -594,6 +1473,8 @@ defaultConfigCase =
     }
 
 
+{-| A `TLSCreds` with every field at its default and every oneof unset.
+-}
 defaultTLSCreds : TLSCreds
 defaultTLSCreds =
     { cert = ""
@@ -601,6 +1482,8 @@ defaultTLSCreds =
     }
 
 
+{-| A `ServerCompatRequest` with every field at its default and every oneof unset.
+-}
 defaultServerCompatRequest : ServerCompatRequest
 defaultServerCompatRequest =
     { protocol = ProtocolUnspecified
@@ -612,6 +1495,8 @@ defaultServerCompatRequest =
     }
 
 
+{-| A `ServerCompatResponse` with every field at its default and every oneof unset.
+-}
 defaultServerCompatResponse : ServerCompatResponse
 defaultServerCompatResponse =
     { host = ""
@@ -620,6 +1505,8 @@ defaultServerCompatResponse =
     }
 
 
+{-| A `UnaryResponseDefinition` with every field at its default and every oneof unset.
+-}
 defaultUnaryResponseDefinition : UnaryResponseDefinition
 defaultUnaryResponseDefinition =
     { responseHeaders = []
@@ -630,6 +1517,8 @@ defaultUnaryResponseDefinition =
     }
 
 
+{-| A `StreamResponseDefinition` with every field at its default and every oneof unset.
+-}
 defaultStreamResponseDefinition : StreamResponseDefinition
 defaultStreamResponseDefinition =
     { responseHeaders = []
@@ -641,6 +1530,8 @@ defaultStreamResponseDefinition =
     }
 
 
+{-| A `UnaryRequest` with every field at its default and every oneof unset.
+-}
 defaultUnaryRequest : UnaryRequest
 defaultUnaryRequest =
     { responseDefinition = Nothing
@@ -648,12 +1539,16 @@ defaultUnaryRequest =
     }
 
 
+{-| A `UnaryResponse` with every field at its default and every oneof unset.
+-}
 defaultUnaryResponse : UnaryResponse
 defaultUnaryResponse =
     { payload = Nothing
     }
 
 
+{-| A `IdempotentUnaryRequest` with every field at its default and every oneof unset.
+-}
 defaultIdempotentUnaryRequest : IdempotentUnaryRequest
 defaultIdempotentUnaryRequest =
     { responseDefinition = Nothing
@@ -661,12 +1556,16 @@ defaultIdempotentUnaryRequest =
     }
 
 
+{-| A `IdempotentUnaryResponse` with every field at its default and every oneof unset.
+-}
 defaultIdempotentUnaryResponse : IdempotentUnaryResponse
 defaultIdempotentUnaryResponse =
     { payload = Nothing
     }
 
 
+{-| A `ServerStreamRequest` with every field at its default and every oneof unset.
+-}
 defaultServerStreamRequest : ServerStreamRequest
 defaultServerStreamRequest =
     { responseDefinition = Nothing
@@ -674,12 +1573,16 @@ defaultServerStreamRequest =
     }
 
 
+{-| A `ServerStreamResponse` with every field at its default and every oneof unset.
+-}
 defaultServerStreamResponse : ServerStreamResponse
 defaultServerStreamResponse =
     { payload = Nothing
     }
 
 
+{-| A `ClientStreamRequest` with every field at its default and every oneof unset.
+-}
 defaultClientStreamRequest : ClientStreamRequest
 defaultClientStreamRequest =
     { responseDefinition = Nothing
@@ -687,12 +1590,16 @@ defaultClientStreamRequest =
     }
 
 
+{-| A `ClientStreamResponse` with every field at its default and every oneof unset.
+-}
 defaultClientStreamResponse : ClientStreamResponse
 defaultClientStreamResponse =
     { payload = Nothing
     }
 
 
+{-| A `BidiStreamRequest` with every field at its default and every oneof unset.
+-}
 defaultBidiStreamRequest : BidiStreamRequest
 defaultBidiStreamRequest =
     { responseDefinition = Nothing
@@ -701,22 +1608,30 @@ defaultBidiStreamRequest =
     }
 
 
+{-| A `BidiStreamResponse` with every field at its default and every oneof unset.
+-}
 defaultBidiStreamResponse : BidiStreamResponse
 defaultBidiStreamResponse =
     { payload = Nothing
     }
 
 
+{-| A `UnimplementedRequest` with every field at its default and every oneof unset.
+-}
 defaultUnimplementedRequest : UnimplementedRequest
 defaultUnimplementedRequest =
     {}
 
 
+{-| A `UnimplementedResponse` with every field at its default and every oneof unset.
+-}
 defaultUnimplementedResponse : UnimplementedResponse
 defaultUnimplementedResponse =
     {}
 
 
+{-| A `ConformancePayload` with every field at its default and every oneof unset.
+-}
 defaultConformancePayload : ConformancePayload
 defaultConformancePayload =
     { data = ""
@@ -724,6 +1639,8 @@ defaultConformancePayload =
     }
 
 
+{-| A `ConformancePayloadRequestInfo` with every field at its default and every oneof unset.
+-}
 defaultConformancePayloadRequestInfo : ConformancePayloadRequestInfo
 defaultConformancePayloadRequestInfo =
     { requestHeaders = []
@@ -733,12 +1650,16 @@ defaultConformancePayloadRequestInfo =
     }
 
 
+{-| A `ConformancePayloadConnectGetInfo` with every field at its default and every oneof unset.
+-}
 defaultConformancePayloadConnectGetInfo : ConformancePayloadConnectGetInfo
 defaultConformancePayloadConnectGetInfo =
     { queryParams = []
     }
 
 
+{-| A `Error` with every field at its default and every oneof unset.
+-}
 defaultError : Error
 defaultError =
     { code = CodeUnspecified
@@ -747,6 +1668,8 @@ defaultError =
     }
 
 
+{-| A `Header` with every field at its default and every oneof unset.
+-}
 defaultHeader : Header
 defaultHeader =
     { name = ""
@@ -754,6 +1677,8 @@ defaultHeader =
     }
 
 
+{-| A `RawHTTPRequest` with every field at its default and every oneof unset.
+-}
 defaultRawHTTPRequest : RawHTTPRequest
 defaultRawHTTPRequest =
     { verb = ""
@@ -765,6 +1690,8 @@ defaultRawHTTPRequest =
     }
 
 
+{-| A `RawHTTPRequestEncodedQueryParam` with every field at its default and every oneof unset.
+-}
 defaultRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam
 defaultRawHTTPRequestEncodedQueryParam =
     { name = ""
@@ -773,6 +1700,8 @@ defaultRawHTTPRequestEncodedQueryParam =
     }
 
 
+{-| A `MessageContents` with every field at its default and every oneof unset.
+-}
 defaultMessageContents : MessageContents
 defaultMessageContents =
     { data = MessageContentsDataUnset
@@ -780,12 +1709,16 @@ defaultMessageContents =
     }
 
 
+{-| A `StreamContents` with every field at its default and every oneof unset.
+-}
 defaultStreamContents : StreamContents
 defaultStreamContents =
     { items = []
     }
 
 
+{-| A `StreamContentsStreamItem` with every field at its default and every oneof unset.
+-}
 defaultStreamContentsStreamItem : StreamContentsStreamItem
 defaultStreamContentsStreamItem =
     { flags = 0
@@ -794,6 +1727,8 @@ defaultStreamContentsStreamItem =
     }
 
 
+{-| A `RawHTTPResponse` with every field at its default and every oneof unset.
+-}
 defaultRawHTTPResponse : RawHTTPResponse
 defaultRawHTTPResponse =
     { statusCode = 0
@@ -803,6 +1738,8 @@ defaultRawHTTPResponse =
     }
 
 
+{-| A `TestSuite` with every field at its default and every oneof unset.
+-}
 defaultTestSuite : TestSuite
 defaultTestSuite =
     { name = ""
@@ -820,6 +1757,8 @@ defaultTestSuite =
     }
 
 
+{-| A `TestCase` with every field at its default and every oneof unset.
+-}
 defaultTestCase : TestCase
 defaultTestCase =
     { request = Nothing
@@ -829,6 +1768,8 @@ defaultTestCase =
     }
 
 
+{-| A `TestCaseExpandedSize` with every field at its default and every oneof unset.
+-}
 defaultTestCaseExpandedSize : TestCaseExpandedSize
 defaultTestCaseExpandedSize =
     { sizeRelativeToLimit = Nothing
@@ -839,241 +1780,337 @@ defaultTestCaseExpandedSize =
 -- TYPED VALUES
 
 
+{-| The typed value of `HTTPVersion`: its codecs, zero value and descriptor together.
+-}
 enumHTTPVersion : Proto.Enum.Enum HTTPVersion
 enumHTTPVersion =
     Proto.Enum.enum encodeHTTPVersion decodeHTTPVersion HTTPVersionUnspecified Connectrpc.Conformance.V1.HTTPVersion.descriptor
 
 
+{-| The typed value of `Protocol`: its codecs, zero value and descriptor together.
+-}
 enumProtocol : Proto.Enum.Enum Protocol
 enumProtocol =
     Proto.Enum.enum encodeProtocol decodeProtocol ProtocolUnspecified Connectrpc.Conformance.V1.Protocol.descriptor
 
 
+{-| The typed value of `Codec`: its codecs, zero value and descriptor together.
+-}
 enumCodec : Proto.Enum.Enum Codec
 enumCodec =
     Proto.Enum.enum encodeCodec decodeCodec CodecUnspecified Connectrpc.Conformance.V1.Codec.descriptor
 
 
+{-| The typed value of `Compression`: its codecs, zero value and descriptor together.
+-}
 enumCompression : Proto.Enum.Enum Compression
 enumCompression =
     Proto.Enum.enum encodeCompression decodeCompression CompressionUnspecified Connectrpc.Conformance.V1.Compression.descriptor
 
 
+{-| The typed value of `StreamType`: its codecs, zero value and descriptor together.
+-}
 enumStreamType : Proto.Enum.Enum StreamType
 enumStreamType =
     Proto.Enum.enum encodeStreamType decodeStreamType StreamTypeUnspecified Connectrpc.Conformance.V1.StreamType.descriptor
 
 
+{-| The typed value of `Code`: its codecs, zero value and descriptor together.
+-}
 enumCode : Proto.Enum.Enum Code
 enumCode =
     Proto.Enum.enum encodeCode decodeCode CodeUnspecified Connectrpc.Conformance.V1.Code.descriptor
 
 
+{-| The typed value of `TestSuiteTestMode`: its codecs, zero value and descriptor together.
+-}
 enumTestSuiteTestMode : Proto.Enum.Enum TestSuiteTestMode
 enumTestSuiteTestMode =
     Proto.Enum.enum encodeTestSuiteTestMode decodeTestSuiteTestMode TestSuiteTestModeUnspecified Connectrpc.Conformance.V1.TestSuiteTestMode.descriptor
 
 
+{-| The typed value of `TestSuiteConnectVersionMode`: its codecs, zero value and descriptor together.
+-}
 enumTestSuiteConnectVersionMode : Proto.Enum.Enum TestSuiteConnectVersionMode
 enumTestSuiteConnectVersionMode =
     Proto.Enum.enum encodeTestSuiteConnectVersionMode decodeTestSuiteConnectVersionMode TestSuiteConnectVersionModeUnspecified Connectrpc.Conformance.V1.TestSuiteConnectVersionMode.descriptor
 
 
+{-| The typed value of `ClientCompatRequest`: its codecs, default and descriptor together.
+-}
 messageClientCompatRequest : Proto.Message.Message ClientCompatRequest
 messageClientCompatRequest =
     Proto.Message.message encodeClientCompatRequest decodeClientCompatRequest defaultClientCompatRequest Connectrpc.Conformance.V1.ClientCompatRequest.descriptor
 
 
+{-| The typed value of `ClientCompatRequestCancel`: its codecs, default and descriptor together.
+-}
 messageClientCompatRequestCancel : Proto.Message.Message ClientCompatRequestCancel
 messageClientCompatRequestCancel =
     Proto.Message.message encodeClientCompatRequestCancel decodeClientCompatRequestCancel defaultClientCompatRequestCancel Connectrpc.Conformance.V1.ClientCompatRequestCancel.descriptor
 
 
+{-| The typed value of `ClientCompatResponse`: its codecs, default and descriptor together.
+-}
 messageClientCompatResponse : Proto.Message.Message ClientCompatResponse
 messageClientCompatResponse =
     Proto.Message.message encodeClientCompatResponse decodeClientCompatResponse defaultClientCompatResponse Connectrpc.Conformance.V1.ClientCompatResponse.descriptor
 
 
+{-| The typed value of `ClientResponseResult`: its codecs, default and descriptor together.
+-}
 messageClientResponseResult : Proto.Message.Message ClientResponseResult
 messageClientResponseResult =
     Proto.Message.message encodeClientResponseResult decodeClientResponseResult defaultClientResponseResult Connectrpc.Conformance.V1.ClientResponseResult.descriptor
 
 
+{-| The typed value of `ClientErrorResult`: its codecs, default and descriptor together.
+-}
 messageClientErrorResult : Proto.Message.Message ClientErrorResult
 messageClientErrorResult =
     Proto.Message.message encodeClientErrorResult decodeClientErrorResult defaultClientErrorResult Connectrpc.Conformance.V1.ClientErrorResult.descriptor
 
 
+{-| The typed value of `WireDetails`: its codecs, default and descriptor together.
+-}
 messageWireDetails : Proto.Message.Message WireDetails
 messageWireDetails =
     Proto.Message.message encodeWireDetails decodeWireDetails defaultWireDetails Connectrpc.Conformance.V1.WireDetails.descriptor
 
 
+{-| The typed value of `Config`: its codecs, default and descriptor together.
+-}
 messageConfig : Proto.Message.Message Config
 messageConfig =
     Proto.Message.message encodeConfig decodeConfig defaultConfig Connectrpc.Conformance.V1.Config.descriptor
 
 
+{-| The typed value of `Features`: its codecs, default and descriptor together.
+-}
 messageFeatures : Proto.Message.Message Features
 messageFeatures =
     Proto.Message.message encodeFeatures decodeFeatures defaultFeatures Connectrpc.Conformance.V1.Features.descriptor
 
 
+{-| The typed value of `ConfigCase`: its codecs, default and descriptor together.
+-}
 messageConfigCase : Proto.Message.Message ConfigCase
 messageConfigCase =
     Proto.Message.message encodeConfigCase decodeConfigCase defaultConfigCase Connectrpc.Conformance.V1.ConfigCase.descriptor
 
 
+{-| The typed value of `TLSCreds`: its codecs, default and descriptor together.
+-}
 messageTLSCreds : Proto.Message.Message TLSCreds
 messageTLSCreds =
     Proto.Message.message encodeTLSCreds decodeTLSCreds defaultTLSCreds Connectrpc.Conformance.V1.TLSCreds.descriptor
 
 
+{-| The typed value of `ServerCompatRequest`: its codecs, default and descriptor together.
+-}
 messageServerCompatRequest : Proto.Message.Message ServerCompatRequest
 messageServerCompatRequest =
     Proto.Message.message encodeServerCompatRequest decodeServerCompatRequest defaultServerCompatRequest Connectrpc.Conformance.V1.ServerCompatRequest.descriptor
 
 
+{-| The typed value of `ServerCompatResponse`: its codecs, default and descriptor together.
+-}
 messageServerCompatResponse : Proto.Message.Message ServerCompatResponse
 messageServerCompatResponse =
     Proto.Message.message encodeServerCompatResponse decodeServerCompatResponse defaultServerCompatResponse Connectrpc.Conformance.V1.ServerCompatResponse.descriptor
 
 
+{-| The typed value of `UnaryResponseDefinition`: its codecs, default and descriptor together.
+-}
 messageUnaryResponseDefinition : Proto.Message.Message UnaryResponseDefinition
 messageUnaryResponseDefinition =
     Proto.Message.message encodeUnaryResponseDefinition decodeUnaryResponseDefinition defaultUnaryResponseDefinition Connectrpc.Conformance.V1.UnaryResponseDefinition.descriptor
 
 
+{-| The typed value of `StreamResponseDefinition`: its codecs, default and descriptor together.
+-}
 messageStreamResponseDefinition : Proto.Message.Message StreamResponseDefinition
 messageStreamResponseDefinition =
     Proto.Message.message encodeStreamResponseDefinition decodeStreamResponseDefinition defaultStreamResponseDefinition Connectrpc.Conformance.V1.StreamResponseDefinition.descriptor
 
 
+{-| The typed value of `UnaryRequest`: its codecs, default and descriptor together.
+-}
 messageUnaryRequest : Proto.Message.Message UnaryRequest
 messageUnaryRequest =
     Proto.Message.message encodeUnaryRequest decodeUnaryRequest defaultUnaryRequest Connectrpc.Conformance.V1.UnaryRequest.descriptor
 
 
+{-| The typed value of `UnaryResponse`: its codecs, default and descriptor together.
+-}
 messageUnaryResponse : Proto.Message.Message UnaryResponse
 messageUnaryResponse =
     Proto.Message.message encodeUnaryResponse decodeUnaryResponse defaultUnaryResponse Connectrpc.Conformance.V1.UnaryResponse.descriptor
 
 
+{-| The typed value of `IdempotentUnaryRequest`: its codecs, default and descriptor together.
+-}
 messageIdempotentUnaryRequest : Proto.Message.Message IdempotentUnaryRequest
 messageIdempotentUnaryRequest =
     Proto.Message.message encodeIdempotentUnaryRequest decodeIdempotentUnaryRequest defaultIdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryRequest.descriptor
 
 
+{-| The typed value of `IdempotentUnaryResponse`: its codecs, default and descriptor together.
+-}
 messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
 messageIdempotentUnaryResponse =
     Proto.Message.message encodeIdempotentUnaryResponse decodeIdempotentUnaryResponse defaultIdempotentUnaryResponse Connectrpc.Conformance.V1.IdempotentUnaryResponse.descriptor
 
 
+{-| The typed value of `ServerStreamRequest`: its codecs, default and descriptor together.
+-}
 messageServerStreamRequest : Proto.Message.Message ServerStreamRequest
 messageServerStreamRequest =
     Proto.Message.message encodeServerStreamRequest decodeServerStreamRequest defaultServerStreamRequest Connectrpc.Conformance.V1.ServerStreamRequest.descriptor
 
 
+{-| The typed value of `ServerStreamResponse`: its codecs, default and descriptor together.
+-}
 messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
 messageServerStreamResponse =
     Proto.Message.message encodeServerStreamResponse decodeServerStreamResponse defaultServerStreamResponse Connectrpc.Conformance.V1.ServerStreamResponse.descriptor
 
 
+{-| The typed value of `ClientStreamRequest`: its codecs, default and descriptor together.
+-}
 messageClientStreamRequest : Proto.Message.Message ClientStreamRequest
 messageClientStreamRequest =
     Proto.Message.message encodeClientStreamRequest decodeClientStreamRequest defaultClientStreamRequest Connectrpc.Conformance.V1.ClientStreamRequest.descriptor
 
 
+{-| The typed value of `ClientStreamResponse`: its codecs, default and descriptor together.
+-}
 messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
 messageClientStreamResponse =
     Proto.Message.message encodeClientStreamResponse decodeClientStreamResponse defaultClientStreamResponse Connectrpc.Conformance.V1.ClientStreamResponse.descriptor
 
 
+{-| The typed value of `BidiStreamRequest`: its codecs, default and descriptor together.
+-}
 messageBidiStreamRequest : Proto.Message.Message BidiStreamRequest
 messageBidiStreamRequest =
     Proto.Message.message encodeBidiStreamRequest decodeBidiStreamRequest defaultBidiStreamRequest Connectrpc.Conformance.V1.BidiStreamRequest.descriptor
 
 
+{-| The typed value of `BidiStreamResponse`: its codecs, default and descriptor together.
+-}
 messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
 messageBidiStreamResponse =
     Proto.Message.message encodeBidiStreamResponse decodeBidiStreamResponse defaultBidiStreamResponse Connectrpc.Conformance.V1.BidiStreamResponse.descriptor
 
 
+{-| The typed value of `UnimplementedRequest`: its codecs, default and descriptor together.
+-}
 messageUnimplementedRequest : Proto.Message.Message UnimplementedRequest
 messageUnimplementedRequest =
     Proto.Message.message encodeUnimplementedRequest decodeUnimplementedRequest defaultUnimplementedRequest Connectrpc.Conformance.V1.UnimplementedRequest.descriptor
 
 
+{-| The typed value of `UnimplementedResponse`: its codecs, default and descriptor together.
+-}
 messageUnimplementedResponse : Proto.Message.Message UnimplementedResponse
 messageUnimplementedResponse =
     Proto.Message.message encodeUnimplementedResponse decodeUnimplementedResponse defaultUnimplementedResponse Connectrpc.Conformance.V1.UnimplementedResponse.descriptor
 
 
+{-| The typed value of `ConformancePayload`: its codecs, default and descriptor together.
+-}
 messageConformancePayload : Proto.Message.Message ConformancePayload
 messageConformancePayload =
     Proto.Message.message encodeConformancePayload decodeConformancePayload defaultConformancePayload Connectrpc.Conformance.V1.ConformancePayload.descriptor
 
 
+{-| The typed value of `ConformancePayloadRequestInfo`: its codecs, default and descriptor together.
+-}
 messageConformancePayloadRequestInfo : Proto.Message.Message ConformancePayloadRequestInfo
 messageConformancePayloadRequestInfo =
     Proto.Message.message encodeConformancePayloadRequestInfo decodeConformancePayloadRequestInfo defaultConformancePayloadRequestInfo Connectrpc.Conformance.V1.ConformancePayloadRequestInfo.descriptor
 
 
+{-| The typed value of `ConformancePayloadConnectGetInfo`: its codecs, default and descriptor together.
+-}
 messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
 messageConformancePayloadConnectGetInfo =
     Proto.Message.message encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo defaultConformancePayloadConnectGetInfo Connectrpc.Conformance.V1.ConformancePayloadConnectGetInfo.descriptor
 
 
+{-| The typed value of `Error`: its codecs, default and descriptor together.
+-}
 messageError : Proto.Message.Message Error
 messageError =
     Proto.Message.message encodeError decodeError defaultError Connectrpc.Conformance.V1.Error.descriptor
 
 
+{-| The typed value of `Header`: its codecs, default and descriptor together.
+-}
 messageHeader : Proto.Message.Message Header
 messageHeader =
     Proto.Message.message encodeHeader decodeHeader defaultHeader Connectrpc.Conformance.V1.Header.descriptor
 
 
+{-| The typed value of `RawHTTPRequest`: its codecs, default and descriptor together.
+-}
 messageRawHTTPRequest : Proto.Message.Message RawHTTPRequest
 messageRawHTTPRequest =
     Proto.Message.message encodeRawHTTPRequest decodeRawHTTPRequest defaultRawHTTPRequest Connectrpc.Conformance.V1.RawHTTPRequest.descriptor
 
 
+{-| The typed value of `RawHTTPRequestEncodedQueryParam`: its codecs, default and descriptor together.
+-}
 messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message RawHTTPRequestEncodedQueryParam
 messageRawHTTPRequestEncodedQueryParam =
     Proto.Message.message encodeRawHTTPRequestEncodedQueryParam decodeRawHTTPRequestEncodedQueryParam defaultRawHTTPRequestEncodedQueryParam Connectrpc.Conformance.V1.RawHTTPRequestEncodedQueryParam.descriptor
 
 
+{-| The typed value of `MessageContents`: its codecs, default and descriptor together.
+-}
 messageMessageContents : Proto.Message.Message MessageContents
 messageMessageContents =
     Proto.Message.message encodeMessageContents decodeMessageContents defaultMessageContents Connectrpc.Conformance.V1.MessageContents.descriptor
 
 
+{-| The typed value of `StreamContents`: its codecs, default and descriptor together.
+-}
 messageStreamContents : Proto.Message.Message StreamContents
 messageStreamContents =
     Proto.Message.message encodeStreamContents decodeStreamContents defaultStreamContents Connectrpc.Conformance.V1.StreamContents.descriptor
 
 
+{-| The typed value of `StreamContentsStreamItem`: its codecs, default and descriptor together.
+-}
 messageStreamContentsStreamItem : Proto.Message.Message StreamContentsStreamItem
 messageStreamContentsStreamItem =
     Proto.Message.message encodeStreamContentsStreamItem decodeStreamContentsStreamItem defaultStreamContentsStreamItem Connectrpc.Conformance.V1.StreamContentsStreamItem.descriptor
 
 
+{-| The typed value of `RawHTTPResponse`: its codecs, default and descriptor together.
+-}
 messageRawHTTPResponse : Proto.Message.Message RawHTTPResponse
 messageRawHTTPResponse =
     Proto.Message.message encodeRawHTTPResponse decodeRawHTTPResponse defaultRawHTTPResponse Connectrpc.Conformance.V1.RawHTTPResponse.descriptor
 
 
+{-| The typed value of `TestSuite`: its codecs, default and descriptor together.
+-}
 messageTestSuite : Proto.Message.Message TestSuite
 messageTestSuite =
     Proto.Message.message encodeTestSuite decodeTestSuite defaultTestSuite Connectrpc.Conformance.V1.TestSuite.descriptor
 
 
+{-| The typed value of `TestCase`: its codecs, default and descriptor together.
+-}
 messageTestCase : Proto.Message.Message TestCase
 messageTestCase =
     Proto.Message.message encodeTestCase decodeTestCase defaultTestCase Connectrpc.Conformance.V1.TestCase.descriptor
 
 
+{-| The typed value of `TestCaseExpandedSize`: its codecs, default and descriptor together.
+-}
 messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
 messageTestCaseExpandedSize =
     Proto.Message.message encodeTestCaseExpandedSize decodeTestCaseExpandedSize defaultTestCaseExpandedSize Connectrpc.Conformance.V1.TestCaseExpandedSize.descriptor
@@ -1145,6 +2182,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `HTTPVersion` as proto3 JSON.
+-}
 encodeHTTPVersion : HTTPVersion -> Json.Encode.Value
 encodeHTTPVersion value =
     case value of
@@ -1161,6 +2200,8 @@ encodeHTTPVersion value =
             Json.Encode.string "HTTP_VERSION_3"
 
 
+{-| Encodes a `Protocol` as proto3 JSON.
+-}
 encodeProtocol : Protocol -> Json.Encode.Value
 encodeProtocol value =
     case value of
@@ -1177,6 +2218,8 @@ encodeProtocol value =
             Json.Encode.string "PROTOCOL_GRPC_WEB"
 
 
+{-| Encodes a `Codec` as proto3 JSON.
+-}
 encodeCodec : Codec -> Json.Encode.Value
 encodeCodec value =
     case value of
@@ -1193,6 +2236,8 @@ encodeCodec value =
             Json.Encode.string "CODEC_TEXT"
 
 
+{-| Encodes a `Compression` as proto3 JSON.
+-}
 encodeCompression : Compression -> Json.Encode.Value
 encodeCompression value =
     case value of
@@ -1218,6 +2263,8 @@ encodeCompression value =
             Json.Encode.string "COMPRESSION_SNAPPY"
 
 
+{-| Encodes a `StreamType` as proto3 JSON.
+-}
 encodeStreamType : StreamType -> Json.Encode.Value
 encodeStreamType value =
     case value of
@@ -1240,6 +2287,8 @@ encodeStreamType value =
             Json.Encode.string "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM"
 
 
+{-| Encodes a `Code` as proto3 JSON.
+-}
 encodeCode : Code -> Json.Encode.Value
 encodeCode value =
     case value of
@@ -1295,6 +2344,8 @@ encodeCode value =
             Json.Encode.string "CODE_UNAUTHENTICATED"
 
 
+{-| Encodes a `TestSuiteTestMode` as proto3 JSON.
+-}
 encodeTestSuiteTestMode : TestSuiteTestMode -> Json.Encode.Value
 encodeTestSuiteTestMode value =
     case value of
@@ -1308,6 +2359,8 @@ encodeTestSuiteTestMode value =
             Json.Encode.string "TEST_MODE_SERVER"
 
 
+{-| Encodes a `TestSuiteConnectVersionMode` as proto3 JSON.
+-}
 encodeTestSuiteConnectVersionMode : TestSuiteConnectVersionMode -> Json.Encode.Value
 encodeTestSuiteConnectVersionMode value =
     case value of
@@ -1321,6 +2374,8 @@ encodeTestSuiteConnectVersionMode value =
             Json.Encode.string "CONNECT_VERSION_MODE_IGNORE"
 
 
+{-| Encodes a `ClientCompatRequest` as proto3 JSON.
+-}
 encodeClientCompatRequest : ClientCompatRequest -> Json.Encode.Value
 encodeClientCompatRequest value =
     Proto.Json.objectOfFields
@@ -1347,11 +2402,15 @@ encodeClientCompatRequest value =
         ]
 
 
+{-| Encodes a `ClientCompatRequestCancel` as proto3 JSON.
+-}
 encodeClientCompatRequestCancel : ClientCompatRequestCancel -> Json.Encode.Value
 encodeClientCompatRequestCancel value =
     Proto.Json.objectOfFields (encodeClientCompatRequestCancelCancelTiming value.cancelTiming)
 
 
+{-| Encodes a `ClientCompatRequestCancelCancelTiming` as the members of its message's JSON object.
+-}
 encodeClientCompatRequestCancelCancelTiming : ClientCompatRequestCancelCancelTiming -> List ( String, Maybe Json.Encode.Value )
 encodeClientCompatRequestCancelCancelTiming value =
     case value of
@@ -1371,6 +2430,8 @@ encodeClientCompatRequestCancelCancelTiming value =
             ]
 
 
+{-| Encodes a `ClientCompatResponse` as proto3 JSON.
+-}
 encodeClientCompatResponse : ClientCompatResponse -> Json.Encode.Value
 encodeClientCompatResponse value =
     Proto.Json.objectOfFields
@@ -1380,6 +2441,8 @@ encodeClientCompatResponse value =
         )
 
 
+{-| Encodes a `ClientCompatResponseResult` as the members of its message's JSON object.
+-}
 encodeClientCompatResponseResult : ClientCompatResponseResult -> List ( String, Maybe Json.Encode.Value )
 encodeClientCompatResponseResult value =
     case value of
@@ -1395,6 +2458,8 @@ encodeClientCompatResponseResult value =
             ]
 
 
+{-| Encodes a `ClientResponseResult` as proto3 JSON.
+-}
 encodeClientResponseResult : ClientResponseResult -> Json.Encode.Value
 encodeClientResponseResult value =
     Proto.Json.objectOfFields
@@ -1408,6 +2473,8 @@ encodeClientResponseResult value =
         ]
 
 
+{-| Encodes a `ClientErrorResult` as proto3 JSON.
+-}
 encodeClientErrorResult : ClientErrorResult -> Json.Encode.Value
 encodeClientErrorResult value =
     Proto.Json.objectOfFields
@@ -1415,6 +2482,8 @@ encodeClientErrorResult value =
         ]
 
 
+{-| Encodes a `WireDetails` as proto3 JSON.
+-}
 encodeWireDetails : WireDetails -> Json.Encode.Value
 encodeWireDetails value =
     Proto.Json.objectOfFields
@@ -1425,6 +2494,8 @@ encodeWireDetails value =
         ]
 
 
+{-| Encodes a `Config` as proto3 JSON.
+-}
 encodeConfig : Config -> Json.Encode.Value
 encodeConfig value =
     Proto.Json.objectOfFields
@@ -1434,6 +2505,8 @@ encodeConfig value =
         ]
 
 
+{-| Encodes a `Features` as proto3 JSON.
+-}
 encodeFeatures : Features -> Json.Encode.Value
 encodeFeatures value =
     Proto.Json.objectOfFields
@@ -1452,6 +2525,8 @@ encodeFeatures value =
         ]
 
 
+{-| Encodes a `ConfigCase` as proto3 JSON.
+-}
 encodeConfigCase : ConfigCase -> Json.Encode.Value
 encodeConfigCase value =
     Proto.Json.objectOfFields
@@ -1466,6 +2541,8 @@ encodeConfigCase value =
         ]
 
 
+{-| Encodes a `TLSCreds` as proto3 JSON.
+-}
 encodeTLSCreds : TLSCreds -> Json.Encode.Value
 encodeTLSCreds value =
     Proto.Json.objectOfFields
@@ -1474,6 +2551,8 @@ encodeTLSCreds value =
         ]
 
 
+{-| Encodes a `ServerCompatRequest` as proto3 JSON.
+-}
 encodeServerCompatRequest : ServerCompatRequest -> Json.Encode.Value
 encodeServerCompatRequest value =
     Proto.Json.objectOfFields
@@ -1486,6 +2565,8 @@ encodeServerCompatRequest value =
         ]
 
 
+{-| Encodes a `ServerCompatResponse` as proto3 JSON.
+-}
 encodeServerCompatResponse : ServerCompatResponse -> Json.Encode.Value
 encodeServerCompatResponse value =
     Proto.Json.objectOfFields
@@ -1495,6 +2576,8 @@ encodeServerCompatResponse value =
         ]
 
 
+{-| Encodes a `UnaryResponseDefinition` as proto3 JSON.
+-}
 encodeUnaryResponseDefinition : UnaryResponseDefinition -> Json.Encode.Value
 encodeUnaryResponseDefinition value =
     Proto.Json.objectOfFields
@@ -1507,6 +2590,8 @@ encodeUnaryResponseDefinition value =
         )
 
 
+{-| Encodes a `UnaryResponseDefinitionResponse` as the members of its message's JSON object.
+-}
 encodeUnaryResponseDefinitionResponse : UnaryResponseDefinitionResponse -> List ( String, Maybe Json.Encode.Value )
 encodeUnaryResponseDefinitionResponse value =
     case value of
@@ -1522,6 +2607,8 @@ encodeUnaryResponseDefinitionResponse value =
             ]
 
 
+{-| Encodes a `StreamResponseDefinition` as proto3 JSON.
+-}
 encodeStreamResponseDefinition : StreamResponseDefinition -> Json.Encode.Value
 encodeStreamResponseDefinition value =
     Proto.Json.objectOfFields
@@ -1534,6 +2621,8 @@ encodeStreamResponseDefinition value =
         ]
 
 
+{-| Encodes a `UnaryRequest` as proto3 JSON.
+-}
 encodeUnaryRequest : UnaryRequest -> Json.Encode.Value
 encodeUnaryRequest value =
     Proto.Json.objectOfFields
@@ -1542,6 +2631,8 @@ encodeUnaryRequest value =
         ]
 
 
+{-| Encodes a `UnaryResponse` as proto3 JSON.
+-}
 encodeUnaryResponse : UnaryResponse -> Json.Encode.Value
 encodeUnaryResponse value =
     Proto.Json.objectOfFields
@@ -1549,6 +2640,8 @@ encodeUnaryResponse value =
         ]
 
 
+{-| Encodes a `IdempotentUnaryRequest` as proto3 JSON.
+-}
 encodeIdempotentUnaryRequest : IdempotentUnaryRequest -> Json.Encode.Value
 encodeIdempotentUnaryRequest value =
     Proto.Json.objectOfFields
@@ -1557,6 +2650,8 @@ encodeIdempotentUnaryRequest value =
         ]
 
 
+{-| Encodes a `IdempotentUnaryResponse` as proto3 JSON.
+-}
 encodeIdempotentUnaryResponse : IdempotentUnaryResponse -> Json.Encode.Value
 encodeIdempotentUnaryResponse value =
     Proto.Json.objectOfFields
@@ -1564,6 +2659,8 @@ encodeIdempotentUnaryResponse value =
         ]
 
 
+{-| Encodes a `ServerStreamRequest` as proto3 JSON.
+-}
 encodeServerStreamRequest : ServerStreamRequest -> Json.Encode.Value
 encodeServerStreamRequest value =
     Proto.Json.objectOfFields
@@ -1572,6 +2669,8 @@ encodeServerStreamRequest value =
         ]
 
 
+{-| Encodes a `ServerStreamResponse` as proto3 JSON.
+-}
 encodeServerStreamResponse : ServerStreamResponse -> Json.Encode.Value
 encodeServerStreamResponse value =
     Proto.Json.objectOfFields
@@ -1579,6 +2678,8 @@ encodeServerStreamResponse value =
         ]
 
 
+{-| Encodes a `ClientStreamRequest` as proto3 JSON.
+-}
 encodeClientStreamRequest : ClientStreamRequest -> Json.Encode.Value
 encodeClientStreamRequest value =
     Proto.Json.objectOfFields
@@ -1587,6 +2688,8 @@ encodeClientStreamRequest value =
         ]
 
 
+{-| Encodes a `ClientStreamResponse` as proto3 JSON.
+-}
 encodeClientStreamResponse : ClientStreamResponse -> Json.Encode.Value
 encodeClientStreamResponse value =
     Proto.Json.objectOfFields
@@ -1594,6 +2697,8 @@ encodeClientStreamResponse value =
         ]
 
 
+{-| Encodes a `BidiStreamRequest` as proto3 JSON.
+-}
 encodeBidiStreamRequest : BidiStreamRequest -> Json.Encode.Value
 encodeBidiStreamRequest value =
     Proto.Json.objectOfFields
@@ -1603,6 +2708,8 @@ encodeBidiStreamRequest value =
         ]
 
 
+{-| Encodes a `BidiStreamResponse` as proto3 JSON.
+-}
 encodeBidiStreamResponse : BidiStreamResponse -> Json.Encode.Value
 encodeBidiStreamResponse value =
     Proto.Json.objectOfFields
@@ -1610,16 +2717,22 @@ encodeBidiStreamResponse value =
         ]
 
 
+{-| Encodes a `UnimplementedRequest` as proto3 JSON.
+-}
 encodeUnimplementedRequest : UnimplementedRequest -> Json.Encode.Value
 encodeUnimplementedRequest _ =
     Json.Encode.object []
 
 
+{-| Encodes a `UnimplementedResponse` as proto3 JSON.
+-}
 encodeUnimplementedResponse : UnimplementedResponse -> Json.Encode.Value
 encodeUnimplementedResponse _ =
     Json.Encode.object []
 
 
+{-| Encodes a `ConformancePayload` as proto3 JSON.
+-}
 encodeConformancePayload : ConformancePayload -> Json.Encode.Value
 encodeConformancePayload value =
     Proto.Json.objectOfFields
@@ -1628,6 +2741,8 @@ encodeConformancePayload value =
         ]
 
 
+{-| Encodes a `ConformancePayloadRequestInfo` as proto3 JSON.
+-}
 encodeConformancePayloadRequestInfo : ConformancePayloadRequestInfo -> Json.Encode.Value
 encodeConformancePayloadRequestInfo value =
     Proto.Json.objectOfFields
@@ -1638,6 +2753,8 @@ encodeConformancePayloadRequestInfo value =
         ]
 
 
+{-| Encodes a `ConformancePayloadConnectGetInfo` as proto3 JSON.
+-}
 encodeConformancePayloadConnectGetInfo : ConformancePayloadConnectGetInfo -> Json.Encode.Value
 encodeConformancePayloadConnectGetInfo value =
     Proto.Json.objectOfFields
@@ -1645,6 +2762,8 @@ encodeConformancePayloadConnectGetInfo value =
         ]
 
 
+{-| Encodes a `Error` as proto3 JSON.
+-}
 encodeError : Error -> Json.Encode.Value
 encodeError value =
     Proto.Json.objectOfFields
@@ -1654,6 +2773,8 @@ encodeError value =
         ]
 
 
+{-| Encodes a `Header` as proto3 JSON.
+-}
 encodeHeader : Header -> Json.Encode.Value
 encodeHeader value =
     Proto.Json.objectOfFields
@@ -1662,6 +2783,8 @@ encodeHeader value =
         ]
 
 
+{-| Encodes a `RawHTTPRequest` as proto3 JSON.
+-}
 encodeRawHTTPRequest : RawHTTPRequest -> Json.Encode.Value
 encodeRawHTTPRequest value =
     Proto.Json.objectOfFields
@@ -1675,6 +2798,8 @@ encodeRawHTTPRequest value =
         )
 
 
+{-| Encodes a `RawHTTPRequestBody` as the members of its message's JSON object.
+-}
 encodeRawHTTPRequestBody : RawHTTPRequestBody -> List ( String, Maybe Json.Encode.Value )
 encodeRawHTTPRequestBody value =
     case value of
@@ -1690,6 +2815,8 @@ encodeRawHTTPRequestBody value =
             ]
 
 
+{-| Encodes a `RawHTTPRequestEncodedQueryParam` as proto3 JSON.
+-}
 encodeRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam -> Json.Encode.Value
 encodeRawHTTPRequestEncodedQueryParam value =
     Proto.Json.objectOfFields
@@ -1699,6 +2826,8 @@ encodeRawHTTPRequestEncodedQueryParam value =
         ]
 
 
+{-| Encodes a `MessageContents` as proto3 JSON.
+-}
 encodeMessageContents : MessageContents -> Json.Encode.Value
 encodeMessageContents value =
     Proto.Json.objectOfFields
@@ -1708,6 +2837,8 @@ encodeMessageContents value =
         )
 
 
+{-| Encodes a `MessageContentsData` as the members of its message's JSON object.
+-}
 encodeMessageContentsData : MessageContentsData -> List ( String, Maybe Json.Encode.Value )
 encodeMessageContentsData value =
     case value of
@@ -1727,6 +2858,8 @@ encodeMessageContentsData value =
             ]
 
 
+{-| Encodes a `StreamContents` as proto3 JSON.
+-}
 encodeStreamContents : StreamContents -> Json.Encode.Value
 encodeStreamContents value =
     Proto.Json.objectOfFields
@@ -1734,6 +2867,8 @@ encodeStreamContents value =
         ]
 
 
+{-| Encodes a `StreamContentsStreamItem` as proto3 JSON.
+-}
 encodeStreamContentsStreamItem : StreamContentsStreamItem -> Json.Encode.Value
 encodeStreamContentsStreamItem value =
     Proto.Json.objectOfFields
@@ -1743,6 +2878,8 @@ encodeStreamContentsStreamItem value =
         ]
 
 
+{-| Encodes a `RawHTTPResponse` as proto3 JSON.
+-}
 encodeRawHTTPResponse : RawHTTPResponse -> Json.Encode.Value
 encodeRawHTTPResponse value =
     Proto.Json.objectOfFields
@@ -1754,6 +2891,8 @@ encodeRawHTTPResponse value =
         )
 
 
+{-| Encodes a `RawHTTPResponseBody` as the members of its message's JSON object.
+-}
 encodeRawHTTPResponseBody : RawHTTPResponseBody -> List ( String, Maybe Json.Encode.Value )
 encodeRawHTTPResponseBody value =
     case value of
@@ -1769,6 +2908,8 @@ encodeRawHTTPResponseBody value =
             ]
 
 
+{-| Encodes a `TestSuite` as proto3 JSON.
+-}
 encodeTestSuite : TestSuite -> Json.Encode.Value
 encodeTestSuite value =
     Proto.Json.objectOfFields
@@ -1787,6 +2928,8 @@ encodeTestSuite value =
         ]
 
 
+{-| Encodes a `TestCase` as proto3 JSON.
+-}
 encodeTestCase : TestCase -> Json.Encode.Value
 encodeTestCase value =
     Proto.Json.objectOfFields
@@ -1797,6 +2940,8 @@ encodeTestCase value =
         ]
 
 
+{-| Encodes a `TestCaseExpandedSize` as proto3 JSON.
+-}
 encodeTestCaseExpandedSize : TestCaseExpandedSize -> Json.Encode.Value
 encodeTestCaseExpandedSize value =
     Proto.Json.objectOfFields
@@ -1808,6 +2953,8 @@ encodeTestCaseExpandedSize value =
 -- DECODERS
 
 
+{-| Decodes a `HTTPVersion` from proto3 JSON.
+-}
 decodeHTTPVersion : Json.Decode.Decoder HTTPVersion
 decodeHTTPVersion =
     Proto.Json.enum "HTTPVersion"
@@ -1819,6 +2966,8 @@ decodeHTTPVersion =
         ]
 
 
+{-| Decodes a `Protocol` from proto3 JSON.
+-}
 decodeProtocol : Json.Decode.Decoder Protocol
 decodeProtocol =
     Proto.Json.enum "Protocol"
@@ -1830,6 +2979,8 @@ decodeProtocol =
         ]
 
 
+{-| Decodes a `Codec` from proto3 JSON.
+-}
 decodeCodec : Json.Decode.Decoder Codec
 decodeCodec =
     Proto.Json.enum "Codec"
@@ -1841,6 +2992,8 @@ decodeCodec =
         ]
 
 
+{-| Decodes a `Compression` from proto3 JSON.
+-}
 decodeCompression : Json.Decode.Decoder Compression
 decodeCompression =
     Proto.Json.enum "Compression"
@@ -1855,6 +3008,8 @@ decodeCompression =
         ]
 
 
+{-| Decodes a `StreamType` from proto3 JSON.
+-}
 decodeStreamType : Json.Decode.Decoder StreamType
 decodeStreamType =
     Proto.Json.enum "StreamType"
@@ -1868,6 +3023,8 @@ decodeStreamType =
         ]
 
 
+{-| Decodes a `Code` from proto3 JSON.
+-}
 decodeCode : Json.Decode.Decoder Code
 decodeCode =
     Proto.Json.enum "Code"
@@ -1892,6 +3049,8 @@ decodeCode =
         ]
 
 
+{-| Decodes a `TestSuiteTestMode` from proto3 JSON.
+-}
 decodeTestSuiteTestMode : Json.Decode.Decoder TestSuiteTestMode
 decodeTestSuiteTestMode =
     Proto.Json.enum "TestSuite.TestMode"
@@ -1902,6 +3061,8 @@ decodeTestSuiteTestMode =
         ]
 
 
+{-| Decodes a `TestSuiteConnectVersionMode` from proto3 JSON.
+-}
 decodeTestSuiteConnectVersionMode : Json.Decode.Decoder TestSuiteConnectVersionMode
 decodeTestSuiteConnectVersionMode =
     Proto.Json.enum "TestSuite.ConnectVersionMode"
@@ -1912,6 +3073,8 @@ decodeTestSuiteConnectVersionMode =
         ]
 
 
+{-| Decodes a `ClientCompatRequest` from proto3 JSON.
+-}
 decodeClientCompatRequest : Json.Decode.Decoder ClientCompatRequest
 decodeClientCompatRequest =
     Json.Decode.succeed ClientCompatRequest
@@ -1937,12 +3100,16 @@ decodeClientCompatRequest =
         |> Proto.Json.fieldEither "rawRequest" "raw_request" Nothing (Json.Decode.map Just decodeRawHTTPRequest)
 
 
+{-| Decodes a `ClientCompatRequestCancel` from proto3 JSON.
+-}
 decodeClientCompatRequestCancel : Json.Decode.Decoder ClientCompatRequestCancel
 decodeClientCompatRequestCancel =
     Json.Decode.succeed ClientCompatRequestCancel
         |> Proto.Json.oneof decodeClientCompatRequestCancelCancelTiming
 
 
+{-| Decodes a `ClientCompatRequestCancelCancelTiming` from the members of its message's JSON object.
+-}
 decodeClientCompatRequestCancelCancelTiming : Json.Decode.Decoder ClientCompatRequestCancelCancelTiming
 decodeClientCompatRequestCancelCancelTiming =
     Proto.Json.members "cancel_timing"
@@ -1953,6 +3120,8 @@ decodeClientCompatRequestCancelCancelTiming =
         ]
 
 
+{-| Decodes a `ClientCompatResponse` from proto3 JSON.
+-}
 decodeClientCompatResponse : Json.Decode.Decoder ClientCompatResponse
 decodeClientCompatResponse =
     Json.Decode.succeed ClientCompatResponse
@@ -1960,6 +3129,8 @@ decodeClientCompatResponse =
         |> Proto.Json.oneof decodeClientCompatResponseResult
 
 
+{-| Decodes a `ClientCompatResponseResult` from the members of its message's JSON object.
+-}
 decodeClientCompatResponseResult : Json.Decode.Decoder ClientCompatResponseResult
 decodeClientCompatResponseResult =
     Proto.Json.members "result"
@@ -1969,6 +3140,8 @@ decodeClientCompatResponseResult =
         ]
 
 
+{-| Decodes a `ClientResponseResult` from proto3 JSON.
+-}
 decodeClientResponseResult : Json.Decode.Decoder ClientResponseResult
 decodeClientResponseResult =
     Json.Decode.succeed ClientResponseResult
@@ -1981,12 +3154,16 @@ decodeClientResponseResult =
         |> Proto.Json.field "feedback" [] (Json.Decode.list Json.Decode.string)
 
 
+{-| Decodes a `ClientErrorResult` from proto3 JSON.
+-}
 decodeClientErrorResult : Json.Decode.Decoder ClientErrorResult
 decodeClientErrorResult =
     Json.Decode.succeed ClientErrorResult
         |> Proto.Json.field "message" "" Json.Decode.string
 
 
+{-| Decodes a `WireDetails` from proto3 JSON.
+-}
 decodeWireDetails : Json.Decode.Decoder WireDetails
 decodeWireDetails =
     Json.Decode.succeed WireDetails
@@ -1996,6 +3173,8 @@ decodeWireDetails =
         |> Proto.Json.fieldEither "actualGrpcwebTrailers" "actual_grpcweb_trailers" Nothing (Json.Decode.map Just Json.Decode.string)
 
 
+{-| Decodes a `Config` from proto3 JSON.
+-}
 decodeConfig : Json.Decode.Decoder Config
 decodeConfig =
     Json.Decode.succeed Config
@@ -2004,6 +3183,8 @@ decodeConfig =
         |> Proto.Json.fieldEither "excludeCases" "exclude_cases" [] (Json.Decode.list decodeConfigCase)
 
 
+{-| Decodes a `Features` from proto3 JSON.
+-}
 decodeFeatures : Json.Decode.Decoder Features
 decodeFeatures =
     Json.Decode.succeed Features
@@ -2021,6 +3202,8 @@ decodeFeatures =
         |> Proto.Json.fieldEither "supportsMessageReceiveLimit" "supports_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
 
 
+{-| Decodes a `ConfigCase` from proto3 JSON.
+-}
 decodeConfigCase : Json.Decode.Decoder ConfigCase
 decodeConfigCase =
     Json.Decode.succeed ConfigCase
@@ -2034,6 +3217,8 @@ decodeConfigCase =
         |> Proto.Json.fieldEither "useMessageReceiveLimit" "use_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
 
 
+{-| Decodes a `TLSCreds` from proto3 JSON.
+-}
 decodeTLSCreds : Json.Decode.Decoder TLSCreds
 decodeTLSCreds =
     Json.Decode.succeed TLSCreds
@@ -2041,6 +3226,8 @@ decodeTLSCreds =
         |> Proto.Json.field "key" "" Proto.Json.bytes
 
 
+{-| Decodes a `ServerCompatRequest` from proto3 JSON.
+-}
 decodeServerCompatRequest : Json.Decode.Decoder ServerCompatRequest
 decodeServerCompatRequest =
     Json.Decode.succeed ServerCompatRequest
@@ -2052,6 +3239,8 @@ decodeServerCompatRequest =
         |> Proto.Json.fieldEither "serverCreds" "server_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
 
 
+{-| Decodes a `ServerCompatResponse` from proto3 JSON.
+-}
 decodeServerCompatResponse : Json.Decode.Decoder ServerCompatResponse
 decodeServerCompatResponse =
     Json.Decode.succeed ServerCompatResponse
@@ -2060,6 +3249,8 @@ decodeServerCompatResponse =
         |> Proto.Json.fieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
 
 
+{-| Decodes a `UnaryResponseDefinition` from proto3 JSON.
+-}
 decodeUnaryResponseDefinition : Json.Decode.Decoder UnaryResponseDefinition
 decodeUnaryResponseDefinition =
     Json.Decode.succeed UnaryResponseDefinition
@@ -2070,6 +3261,8 @@ decodeUnaryResponseDefinition =
         |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
 
 
+{-| Decodes a `UnaryResponseDefinitionResponse` from the members of its message's JSON object.
+-}
 decodeUnaryResponseDefinitionResponse : Json.Decode.Decoder UnaryResponseDefinitionResponse
 decodeUnaryResponseDefinitionResponse =
     Proto.Json.members "response"
@@ -2079,6 +3272,8 @@ decodeUnaryResponseDefinitionResponse =
         ]
 
 
+{-| Decodes a `StreamResponseDefinition` from proto3 JSON.
+-}
 decodeStreamResponseDefinition : Json.Decode.Decoder StreamResponseDefinition
 decodeStreamResponseDefinition =
     Json.Decode.succeed StreamResponseDefinition
@@ -2090,6 +3285,8 @@ decodeStreamResponseDefinition =
         |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
 
 
+{-| Decodes a `UnaryRequest` from proto3 JSON.
+-}
 decodeUnaryRequest : Json.Decode.Decoder UnaryRequest
 decodeUnaryRequest =
     Json.Decode.succeed UnaryRequest
@@ -2097,12 +3294,16 @@ decodeUnaryRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
+{-| Decodes a `UnaryResponse` from proto3 JSON.
+-}
 decodeUnaryResponse : Json.Decode.Decoder UnaryResponse
 decodeUnaryResponse =
     Json.Decode.succeed UnaryResponse
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
+{-| Decodes a `IdempotentUnaryRequest` from proto3 JSON.
+-}
 decodeIdempotentUnaryRequest : Json.Decode.Decoder IdempotentUnaryRequest
 decodeIdempotentUnaryRequest =
     Json.Decode.succeed IdempotentUnaryRequest
@@ -2110,12 +3311,16 @@ decodeIdempotentUnaryRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
+{-| Decodes a `IdempotentUnaryResponse` from proto3 JSON.
+-}
 decodeIdempotentUnaryResponse : Json.Decode.Decoder IdempotentUnaryResponse
 decodeIdempotentUnaryResponse =
     Json.Decode.succeed IdempotentUnaryResponse
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
+{-| Decodes a `ServerStreamRequest` from proto3 JSON.
+-}
 decodeServerStreamRequest : Json.Decode.Decoder ServerStreamRequest
 decodeServerStreamRequest =
     Json.Decode.succeed ServerStreamRequest
@@ -2123,12 +3328,16 @@ decodeServerStreamRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
+{-| Decodes a `ServerStreamResponse` from proto3 JSON.
+-}
 decodeServerStreamResponse : Json.Decode.Decoder ServerStreamResponse
 decodeServerStreamResponse =
     Json.Decode.succeed ServerStreamResponse
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
+{-| Decodes a `ClientStreamRequest` from proto3 JSON.
+-}
 decodeClientStreamRequest : Json.Decode.Decoder ClientStreamRequest
 decodeClientStreamRequest =
     Json.Decode.succeed ClientStreamRequest
@@ -2136,12 +3345,16 @@ decodeClientStreamRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
+{-| Decodes a `ClientStreamResponse` from proto3 JSON.
+-}
 decodeClientStreamResponse : Json.Decode.Decoder ClientStreamResponse
 decodeClientStreamResponse =
     Json.Decode.succeed ClientStreamResponse
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
+{-| Decodes a `BidiStreamRequest` from proto3 JSON.
+-}
 decodeBidiStreamRequest : Json.Decode.Decoder BidiStreamRequest
 decodeBidiStreamRequest =
     Json.Decode.succeed BidiStreamRequest
@@ -2150,22 +3363,30 @@ decodeBidiStreamRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
+{-| Decodes a `BidiStreamResponse` from proto3 JSON.
+-}
 decodeBidiStreamResponse : Json.Decode.Decoder BidiStreamResponse
 decodeBidiStreamResponse =
     Json.Decode.succeed BidiStreamResponse
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
+{-| Decodes a `UnimplementedRequest` from proto3 JSON.
+-}
 decodeUnimplementedRequest : Json.Decode.Decoder UnimplementedRequest
 decodeUnimplementedRequest =
     Proto.Json.emptyMessage
 
 
+{-| Decodes a `UnimplementedResponse` from proto3 JSON.
+-}
 decodeUnimplementedResponse : Json.Decode.Decoder UnimplementedResponse
 decodeUnimplementedResponse =
     Proto.Json.emptyMessage
 
 
+{-| Decodes a `ConformancePayload` from proto3 JSON.
+-}
 decodeConformancePayload : Json.Decode.Decoder ConformancePayload
 decodeConformancePayload =
     Json.Decode.succeed ConformancePayload
@@ -2173,6 +3394,8 @@ decodeConformancePayload =
         |> Proto.Json.fieldEither "requestInfo" "request_info" Nothing (Json.Decode.map Just decodeConformancePayloadRequestInfo)
 
 
+{-| Decodes a `ConformancePayloadRequestInfo` from proto3 JSON.
+-}
 decodeConformancePayloadRequestInfo : Json.Decode.Decoder ConformancePayloadRequestInfo
 decodeConformancePayloadRequestInfo =
     Json.Decode.succeed ConformancePayloadRequestInfo
@@ -2182,12 +3405,16 @@ decodeConformancePayloadRequestInfo =
         |> Proto.Json.fieldEither "connectGetInfo" "connect_get_info" Nothing (Json.Decode.map Just decodeConformancePayloadConnectGetInfo)
 
 
+{-| Decodes a `ConformancePayloadConnectGetInfo` from proto3 JSON.
+-}
 decodeConformancePayloadConnectGetInfo : Json.Decode.Decoder ConformancePayloadConnectGetInfo
 decodeConformancePayloadConnectGetInfo =
     Json.Decode.succeed ConformancePayloadConnectGetInfo
         |> Proto.Json.fieldEither "queryParams" "query_params" [] (Json.Decode.list decodeHeader)
 
 
+{-| Decodes a `Error` from proto3 JSON.
+-}
 decodeError : Json.Decode.Decoder Error
 decodeError =
     Json.Decode.succeed Error
@@ -2196,6 +3423,8 @@ decodeError =
         |> Proto.Json.field "details" [] (Json.Decode.list Proto.Json.any)
 
 
+{-| Decodes a `Header` from proto3 JSON.
+-}
 decodeHeader : Json.Decode.Decoder Header
 decodeHeader =
     Json.Decode.succeed Header
@@ -2203,6 +3432,8 @@ decodeHeader =
         |> Proto.Json.field "value" [] (Json.Decode.list Json.Decode.string)
 
 
+{-| Decodes a `RawHTTPRequest` from proto3 JSON.
+-}
 decodeRawHTTPRequest : Json.Decode.Decoder RawHTTPRequest
 decodeRawHTTPRequest =
     Json.Decode.succeed RawHTTPRequest
@@ -2214,6 +3445,8 @@ decodeRawHTTPRequest =
         |> Proto.Json.oneof decodeRawHTTPRequestBody
 
 
+{-| Decodes a `RawHTTPRequestBody` from the members of its message's JSON object.
+-}
 decodeRawHTTPRequestBody : Json.Decode.Decoder RawHTTPRequestBody
 decodeRawHTTPRequestBody =
     Proto.Json.members "body"
@@ -2223,6 +3456,8 @@ decodeRawHTTPRequestBody =
         ]
 
 
+{-| Decodes a `RawHTTPRequestEncodedQueryParam` from proto3 JSON.
+-}
 decodeRawHTTPRequestEncodedQueryParam : Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
 decodeRawHTTPRequestEncodedQueryParam =
     Json.Decode.succeed RawHTTPRequestEncodedQueryParam
@@ -2231,6 +3466,8 @@ decodeRawHTTPRequestEncodedQueryParam =
         |> Proto.Json.fieldEither "base64Encode" "base64_encode" False Json.Decode.bool
 
 
+{-| Decodes a `MessageContents` from proto3 JSON.
+-}
 decodeMessageContents : Json.Decode.Decoder MessageContents
 decodeMessageContents =
     Json.Decode.succeed MessageContents
@@ -2238,6 +3475,8 @@ decodeMessageContents =
         |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
 
 
+{-| Decodes a `MessageContentsData` from the members of its message's JSON object.
+-}
 decodeMessageContentsData : Json.Decode.Decoder MessageContentsData
 decodeMessageContentsData =
     Proto.Json.members "data"
@@ -2248,12 +3487,16 @@ decodeMessageContentsData =
         ]
 
 
+{-| Decodes a `StreamContents` from proto3 JSON.
+-}
 decodeStreamContents : Json.Decode.Decoder StreamContents
 decodeStreamContents =
     Json.Decode.succeed StreamContents
         |> Proto.Json.field "items" [] (Json.Decode.list decodeStreamContentsStreamItem)
 
 
+{-| Decodes a `StreamContentsStreamItem` from proto3 JSON.
+-}
 decodeStreamContentsStreamItem : Json.Decode.Decoder StreamContentsStreamItem
 decodeStreamContentsStreamItem =
     Json.Decode.succeed StreamContentsStreamItem
@@ -2262,6 +3505,8 @@ decodeStreamContentsStreamItem =
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeMessageContents)
 
 
+{-| Decodes a `RawHTTPResponse` from proto3 JSON.
+-}
 decodeRawHTTPResponse : Json.Decode.Decoder RawHTTPResponse
 decodeRawHTTPResponse =
     Json.Decode.succeed RawHTTPResponse
@@ -2271,6 +3516,8 @@ decodeRawHTTPResponse =
         |> Proto.Json.field "trailers" [] (Json.Decode.list decodeHeader)
 
 
+{-| Decodes a `RawHTTPResponseBody` from the members of its message's JSON object.
+-}
 decodeRawHTTPResponseBody : Json.Decode.Decoder RawHTTPResponseBody
 decodeRawHTTPResponseBody =
     Proto.Json.members "body"
@@ -2280,6 +3527,8 @@ decodeRawHTTPResponseBody =
         ]
 
 
+{-| Decodes a `TestSuite` from proto3 JSON.
+-}
 decodeTestSuite : Json.Decode.Decoder TestSuite
 decodeTestSuite =
     Json.Decode.succeed TestSuite
@@ -2297,6 +3546,8 @@ decodeTestSuite =
         |> Proto.Json.fieldEither "reliesOnMessageReceiveLimit" "relies_on_message_receive_limit" False Json.Decode.bool
 
 
+{-| Decodes a `TestCase` from proto3 JSON.
+-}
 decodeTestCase : Json.Decode.Decoder TestCase
 decodeTestCase =
     Json.Decode.succeed TestCase
@@ -2306,6 +3557,8 @@ decodeTestCase =
         |> Proto.Json.fieldEither "otherAllowedErrorCodes" "other_allowed_error_codes" [] (Json.Decode.list decodeCode)
 
 
+{-| Decodes a `TestCaseExpandedSize` from proto3 JSON.
+-}
 decodeTestCaseExpandedSize : Json.Decode.Decoder TestCaseExpandedSize
 decodeTestCaseExpandedSize =
     Json.Decode.succeed TestCaseExpandedSize

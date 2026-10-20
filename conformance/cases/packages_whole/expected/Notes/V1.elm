@@ -24,12 +24,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message notes.v1.Note`
+
+  - `title`: `string title = 1;`
+  - `tags`: `repeated notes.v1.Tag tags = 2;`
+
+-}
 type alias Note =
     { title : String
     , tags : List Tag
     }
 
 
+{-| `message notes.v1.Tag`
+
+  - `label`: `string label = 1;`
+
+-}
 type alias Tag =
     { label : String
     }
@@ -39,6 +50,8 @@ type alias Tag =
 -- DEFAULTS
 
 
+{-| A `Note` with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { title = ""
@@ -46,6 +59,8 @@ defaultNote =
     }
 
 
+{-| A `Tag` with every field at its default and every oneof unset.
+-}
 defaultTag : Tag
 defaultTag =
     { label = ""
@@ -56,11 +71,15 @@ defaultTag =
 -- TYPED VALUES
 
 
+{-| The typed value of `Note`: its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
+{-| The typed value of `Tag`: its codecs, default and descriptor together.
+-}
 messageTag : Proto.Message.Message Tag
 messageTag =
     Proto.Message.message encodeTag decodeTag defaultTag Notes.V1.Tag.descriptor
@@ -86,6 +105,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Note` as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -94,6 +115,8 @@ encodeNote value =
         ]
 
 
+{-| Encodes a `Tag` as proto3 JSON.
+-}
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
     Proto.Json.objectOfFields
@@ -105,6 +128,8 @@ encodeTag value =
 -- DECODERS
 
 
+{-| Decodes a `Note` from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -112,6 +137,8 @@ decodeNote =
         |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
 
 
+{-| Decodes a `Tag` from proto3 JSON.
+-}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag

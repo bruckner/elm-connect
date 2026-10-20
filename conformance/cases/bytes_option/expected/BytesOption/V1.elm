@@ -26,6 +26,18 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message bytes_option.v1.Blob`
+
+  - `data`: `bytes data = 1;`
+  - `maybeData`: `optional bytes maybe_data = 2;`
+  - `chunks`: `repeated bytes chunks = 3;`
+  - `byName`: `map<string, bytes> by_name = 4;` Map keys cannot be bytes; values follow the option.
+  - `wrapped`: `google.protobuf.BytesValue wrapped = 5;`
+  - `wrappedChunks`: `repeated google.protobuf.BytesValue wrapped_chunks = 6;`
+  - `source`: `oneof source` (`BlobSource`)
+  - `name`: `string name = 9;` Other scalars are unchanged.
+
+-}
 type alias Blob =
     { data : Bytes.Bytes
     , maybeData : Maybe Bytes.Bytes
@@ -38,6 +50,13 @@ type alias Blob =
     }
 
 
+{-| `oneof source` of `bytes_option.v1.Blob`
+
+  - `BlobSourceUnset`: none of the fields is set.
+  - `BlobSourceInline`: `bytes inline = 7;`
+  - `BlobSourceUrl`: `string url = 8;`
+
+-}
 type BlobSource
     = BlobSourceUnset
     | BlobSourceInline Bytes.Bytes
@@ -48,6 +67,8 @@ type BlobSource
 -- DEFAULTS
 
 
+{-| A `Blob` with every field at its default and every oneof unset.
+-}
 defaultBlob : Blob
 defaultBlob =
     { data = Proto.Bytes.empty
@@ -65,6 +86,8 @@ defaultBlob =
 -- TYPED VALUES
 
 
+{-| The typed value of `Blob`: its codecs, default and descriptor together.
+-}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
     Proto.Message.message encodeBlob decodeBlob defaultBlob BytesOption.V1.Blob.descriptor
@@ -89,6 +112,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Blob` as proto3 JSON.
+-}
 encodeBlob : Blob -> Json.Encode.Value
 encodeBlob value =
     Proto.Json.objectOfFields
@@ -104,6 +129,8 @@ encodeBlob value =
         )
 
 
+{-| Encodes a `BlobSource` as the members of its message's JSON object.
+-}
 encodeBlobSource : BlobSource -> List ( String, Maybe Json.Encode.Value )
 encodeBlobSource value =
     case value of
@@ -123,6 +150,8 @@ encodeBlobSource value =
 -- DECODERS
 
 
+{-| Decodes a `Blob` from proto3 JSON.
+-}
 decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
     Json.Decode.succeed Blob
@@ -136,6 +165,8 @@ decodeBlob =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `BlobSource` from the members of its message's JSON object.
+-}
 decodeBlobSource : Json.Decode.Decoder BlobSource
 decodeBlobSource =
     Proto.Json.members "source"

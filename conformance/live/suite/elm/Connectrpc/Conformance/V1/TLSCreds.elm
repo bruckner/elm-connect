@@ -16,6 +16,13 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.TLSCreds`: its full name and its fields, in declaration order.
+
+TLSCreds represents credentials for TLS. It includes both a
+certificate and corresponding private key. Both are encoded
+in PEM format.
+
+`message connectrpc.conformance.v1.TLSCreds`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +32,14 @@ descriptor =
         ]
 
 
-{-| The field `cert` of `connectrpc.conformance.v1.TLSCreds`.
+{-| The field `cert` of `connectrpc.conformance.v1.TLSCreds`: `bytes cert = 1;`
 -}
 cert : Proto.Field.Descriptor
 cert =
     Proto.Field.descriptor "cert" "cert" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `key` of `connectrpc.conformance.v1.TLSCreds`.
+{-| The field `key` of `connectrpc.conformance.v1.TLSCreds`: `bytes key = 2;`
 -}
 key : Proto.Field.Descriptor
 key =

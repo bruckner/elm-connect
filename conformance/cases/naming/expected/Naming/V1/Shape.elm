@@ -16,6 +16,17 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `naming.v1.Shape`: its full name and its values, in declaration order.
+
+Values with the conventional prefix lose it; values without it gain
+the enum's name; digits stay as written.
+
+`enum naming.v1.Shape`
+
+  - `SHAPE_UNSPECIFIED = 0;`
+  - `SHAPE_2D = 1;`
+  - `CUBE = 2;`
+  - `SHAPE_V3_MESH = 3;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

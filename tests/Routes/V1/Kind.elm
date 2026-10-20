@@ -16,6 +16,13 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `routes.v1.Kind`: its full name and its values, in declaration order.
+
+`enum routes.v1.Kind`
+
+  - `KIND_UNSPECIFIED = 0;`
+  - `KIND_TEXT = 1;`
+  - `KIND_IMAGE = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

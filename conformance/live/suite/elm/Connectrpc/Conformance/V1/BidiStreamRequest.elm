@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.BidiStreamRequest`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.BidiStreamRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +29,44 @@ descriptor =
         ]
 
 
-{-| The field `response_definition` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| The field `response_definition` of `connectrpc.conformance.v1.BidiStreamRequest`: `connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;`
+
+Tells the server how to reply; required in the first message
+in the stream. Should be ignored in subsequent messages.
+
 -}
 responseDefinition : Proto.Field.Descriptor
 responseDefinition =
     Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamResponseDefinition")
 
 
-{-| The field `full_duplex` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| The field `full_duplex` of `connectrpc.conformance.v1.BidiStreamRequest`: `bool full_duplex = 2;`
+
+Tells the server whether it should wait for each request
+before sending a response.
+
+If true, it indicates the server should effectively interleave the
+stream so messages are sent in request->response pairs.
+
+If false, then the response stream will be sent once all request messages
+are finished sending with the only delays between messages
+being the optional fixed milliseconds defined in the response
+definition.
+
+This field is only relevant in the first message in the stream
+and should be ignored in subsequent messages.
+
 -}
 fullDuplex : Proto.Field.Descriptor
 fullDuplex =
     Proto.Field.descriptor "full_duplex" "fullDuplex" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `request_data` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| The field `request_data` of `connectrpc.conformance.v1.BidiStreamRequest`: `bytes request_data = 3;`
+
+Additional data for subsequent messages in the stream. Also
+used to pad the request size to test large request messages.
+
 -}
 requestData : Proto.Field.Descriptor
 requestData =

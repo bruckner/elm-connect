@@ -15,6 +15,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `scalars.v1.Empty`: its full name and its fields, in declaration order.
+
+`message scalars.v1.Empty`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

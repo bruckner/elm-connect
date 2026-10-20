@@ -25,6 +25,15 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message envelope.v1.Envelope`
+
+  - `id`: `string id = 1;`
+  - `payload`: `google.protobuf.Any payload = 2;`
+  - `attachments`: `repeated google.protobuf.Any attachments = 3;`
+  - `headers`: `map<string, google.protobuf.Any> headers = 4;`
+  - `body`: `oneof body` (`EnvelopeBody`)
+
+-}
 type alias Envelope =
     { id : String
     , payload : Maybe Proto.Any.Any
@@ -34,6 +43,13 @@ type alias Envelope =
     }
 
 
+{-| `oneof body` of `envelope.v1.Envelope`
+
+  - `EnvelopeBodyUnset`: none of the fields is set.
+  - `EnvelopeBodyPacked`: `google.protobuf.Any packed = 5;`
+  - `EnvelopeBodyText`: `string text = 6;`
+
+-}
 type EnvelopeBody
     = EnvelopeBodyUnset
     | EnvelopeBodyPacked Proto.Any.Any
@@ -44,6 +60,8 @@ type EnvelopeBody
 -- DEFAULTS
 
 
+{-| A `Envelope` with every field at its default and every oneof unset.
+-}
 defaultEnvelope : Envelope
 defaultEnvelope =
     { id = ""
@@ -58,6 +76,8 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
+{-| The typed value of `Envelope`: its codecs, default and descriptor together.
+-}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
     Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope Envelope.V1.Envelope.descriptor
@@ -82,6 +102,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Envelope` as proto3 JSON.
+-}
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
     Proto.Json.objectOfFields
@@ -94,6 +116,8 @@ encodeEnvelope value =
         )
 
 
+{-| Encodes a `EnvelopeBody` as the members of its message's JSON object.
+-}
 encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
 encodeEnvelopeBody value =
     case value of
@@ -113,6 +137,8 @@ encodeEnvelopeBody value =
 -- DECODERS
 
 
+{-| Decodes a `Envelope` from proto3 JSON.
+-}
 decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
     Json.Decode.succeed Envelope
@@ -123,6 +149,8 @@ decodeEnvelope =
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
+{-| Decodes a `EnvelopeBody` from the members of its message's JSON object.
+-}
 decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBody =
     Proto.Json.members "body"

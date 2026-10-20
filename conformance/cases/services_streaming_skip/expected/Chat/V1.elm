@@ -23,6 +23,11 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message chat.v1.Line`
+
+  - `text`: `string text = 1;`
+
+-}
 type alias Line =
     { text : String
     }
@@ -32,6 +37,8 @@ type alias Line =
 -- DEFAULTS
 
 
+{-| A `Line` with every field at its default and every oneof unset.
+-}
 defaultLine : Line
 defaultLine =
     { text = ""
@@ -42,6 +49,8 @@ defaultLine =
 -- TYPED VALUES
 
 
+{-| The typed value of `Line`: its codecs, default and descriptor together.
+-}
 messageLine : Proto.Message.Message Line
 messageLine =
     Proto.Message.message encodeLine decodeLine defaultLine Chat.V1.Line.descriptor
@@ -66,6 +75,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Line` as proto3 JSON.
+-}
 encodeLine : Line -> Json.Encode.Value
 encodeLine value =
     Proto.Json.objectOfFields
@@ -77,6 +88,8 @@ encodeLine value =
 -- DECODERS
 
 
+{-| Decodes a `Line` from proto3 JSON.
+-}
 decodeLine : Json.Decode.Decoder Line
 decodeLine =
     Json.Decode.succeed Line

@@ -16,6 +16,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `nesting.v1.Person`: its full name and its fields, in declaration order.
+
+Two messages that refer to each other.
+
+`message nesting.v1.Person`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +30,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `nesting.v1.Person`.
+{-| The field `name` of `nesting.v1.Person`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `employer` of `nesting.v1.Person`.
+{-| The field `employer` of `nesting.v1.Person`: `optional nesting.v1.Company employer = 2;`
 -}
 employer : Proto.Field.Descriptor
 employer =

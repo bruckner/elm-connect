@@ -16,6 +16,12 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `events.v1.Event`: its full name and its fields, in declaration order.
+
+A oneof member with a leading underscore: its constructor is
+`EventKindLegacy`, and its descriptor `Events.V1.Event.legacy`.
+
+`message events.v1.Event`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,14 +32,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `events.v1.Event`.
+{-| The field `name` of `events.v1.Event`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `_legacy` of `events.v1.Event`, a member of the oneof `kind`.
+{-| The field `_legacy` of `events.v1.Event`, a member of the oneof `kind`: `string _legacy = 2;`
 -}
 legacy : Proto.Field.Descriptor
 legacy =
@@ -41,7 +47,7 @@ legacy =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `count` of `events.v1.Event`, a member of the oneof `kind`.
+{-| The field `count` of `events.v1.Event`, a member of the oneof `kind`: `int32 count = 3;`
 -}
 count : Proto.Field.Descriptor
 count =

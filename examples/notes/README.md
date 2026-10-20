@@ -73,8 +73,9 @@ elm-connect gen -I proto notes/v1/notes.proto --out elm/generated
 
 Either writes `elm/generated/Notes/V1.elm` (the types and their JSON
 codecs) and `elm/generated/Notes/V1/NotesService.elm` (one function per
-method), and the two write the same files. googleapis reaches buf's
-plugins as imports only, so nothing is generated for it. The application
+method), each declaration documented with the proto's comment and its
+one-line declaration, and the two write the same files. googleapis
+reaches buf's plugins as imports only, so nothing is generated for it. The application
 also reads `google.rpc` error details, so `buf.gen.google-rpc.yaml`
 generates `google/rpc/error_details.proto` from the vendored googleapis
 module into `Google.Rpc`:

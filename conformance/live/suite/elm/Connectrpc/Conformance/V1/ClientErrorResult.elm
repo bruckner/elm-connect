@@ -16,6 +16,13 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.ClientErrorResult`: its full name and its fields, in declaration order.
+
+The client is not able to fulfill the ClientCompatRequest. This may be due
+to a runtime error or an unexpected internal error such as the requested protocol
+not being supported. This is completely independent of the actual RPC invocation.
+
+`message connectrpc.conformance.v1.ClientErrorResult`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +31,12 @@ descriptor =
         ]
 
 
-{-| The field `message` of `connectrpc.conformance.v1.ClientErrorResult`.
+{-| The field `message` of `connectrpc.conformance.v1.ClientErrorResult`: `string message = 1;`
+
+A message describing the error that occurred. This string will be shown to
+users running conformance tests so it should include any relevant details
+that may help troubleshoot or remedy the error.
+
 -}
 message : Proto.Field.Descriptor
 message =

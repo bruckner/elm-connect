@@ -25,6 +25,13 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message notes.v1.Note`
+
+  - `name`: `string name = 1;`
+  - `author`: `users.v1.User author = 2;`
+  - `requiredRole`: `users.v1.Role required_role = 3;`
+
+-}
 type alias Note =
     { name : String
     , author : Maybe Api.Example.People.User
@@ -32,6 +39,11 @@ type alias Note =
     }
 
 
+{-| `message notes.v1.GetNoteRequest`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias GetNoteRequest =
     { name : String
     }
@@ -41,6 +53,8 @@ type alias GetNoteRequest =
 -- DEFAULTS
 
 
+{-| A `Note` with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { name = ""
@@ -49,6 +63,8 @@ defaultNote =
     }
 
 
+{-| A `GetNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
     { name = ""
@@ -59,11 +75,15 @@ defaultGetNoteRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of `Note`: its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Api.Example.Notes.V1.Note.descriptor
 
 
+{-| The typed value of `GetNoteRequest`: its codecs, default and descriptor together.
+-}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
     Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Api.Example.Notes.V1.GetNoteRequest.descriptor
@@ -89,6 +109,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Note` as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -98,6 +120,8 @@ encodeNote value =
         ]
 
 
+{-| Encodes a `GetNoteRequest` as proto3 JSON.
+-}
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
     Proto.Json.objectOfFields
@@ -109,6 +133,8 @@ encodeGetNoteRequest value =
 -- DECODERS
 
 
+{-| Decodes a `Note` from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -117,6 +143,8 @@ decodeNote =
         |> Proto.Json.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
 
 
+{-| Decodes a `GetNoteRequest` from proto3 JSON.
+-}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest

@@ -16,6 +16,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.Header`: its full name and its fields, in declaration order.
+
+A tuple of name and values (ASCII) for a header or trailer entry.
+
+`message connectrpc.conformance.v1.Header`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +30,22 @@ descriptor =
         ]
 
 
-{-| The field `name` of `connectrpc.conformance.v1.Header`.
+{-| The field `name` of `connectrpc.conformance.v1.Header`: `string name = 1;`
+
+Header/trailer name (key).
+
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `value` of `connectrpc.conformance.v1.Header`.
+{-| The field `value` of `connectrpc.conformance.v1.Header`: `repeated string value = 2;`
+
+Header/trailer value. This is repeated to explicitly support headers and
+trailers where a key is repeated. In such a case, these values must be in
+the same order as which values appeared in the header or trailer block.
+
 -}
 value : Proto.Field.Descriptor
 value =

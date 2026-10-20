@@ -16,6 +16,12 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `users.v1.Role`: its full name and its values, in declaration order.
+
+`enum users.v1.Role`
+
+  - `ROLE_UNSPECIFIED = 0;`
+  - `ROLE_EDITOR = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

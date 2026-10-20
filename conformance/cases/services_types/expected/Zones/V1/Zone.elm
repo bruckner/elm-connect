@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `zones.v1.Zone`: its full name and its fields, in declaration order.
+
+`message zones.v1.Zone`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +28,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `zones.v1.Zone`.
+{-| The field `name` of `zones.v1.Zone`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `offset_seconds` of `zones.v1.Zone`.
+{-| The field `offset_seconds` of `zones.v1.Zone`: `int64 offset_seconds = 2;`
 -}
 offsetSeconds : Proto.Field.Descriptor
 offsetSeconds =

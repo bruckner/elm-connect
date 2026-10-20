@@ -25,11 +25,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `enum users.v1.Role`
+
+  - `RoleUnspecified`: `ROLE_UNSPECIFIED = 0;`
+  - `RoleEditor`: `ROLE_EDITOR = 1;`
+
+-}
 type Role
     = RoleUnspecified
     | RoleEditor
 
 
+{-| `message users.v1.User`
+
+  - `name`: `string name = 1;`
+  - `role`: `users.v1.Role role = 2;`
+
+-}
 type alias User =
     { name : String
     , role : Role
@@ -40,6 +52,8 @@ type alias User =
 -- DEFAULTS
 
 
+{-| A `User` with every field at its default and every oneof unset.
+-}
 defaultUser : User
 defaultUser =
     { name = ""
@@ -51,11 +65,15 @@ defaultUser =
 -- TYPED VALUES
 
 
+{-| The typed value of `Role`: its codecs, zero value and descriptor together.
+-}
 enumRole : Proto.Enum.Enum Role
 enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Users.V1.Role.descriptor
 
 
+{-| The typed value of `User`: its codecs, default and descriptor together.
+-}
 messageUser : Proto.Message.Message User
 messageUser =
     Proto.Message.message encodeUser decodeUser defaultUser Users.V1.User.descriptor
@@ -81,6 +99,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Role` as proto3 JSON.
+-}
 encodeRole : Role -> Json.Encode.Value
 encodeRole value =
     case value of
@@ -91,6 +111,8 @@ encodeRole value =
             Json.Encode.string "ROLE_EDITOR"
 
 
+{-| Encodes a `User` as proto3 JSON.
+-}
 encodeUser : User -> Json.Encode.Value
 encodeUser value =
     Proto.Json.objectOfFields
@@ -103,6 +125,8 @@ encodeUser value =
 -- DECODERS
 
 
+{-| Decodes a `Role` from proto3 JSON.
+-}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
     Proto.Json.enum "Role"
@@ -112,6 +136,8 @@ decodeRole =
         ]
 
 
+{-| Decodes a `User` from proto3 JSON.
+-}
 decodeUser : Json.Decode.Decoder User
 decodeUser =
     Json.Decode.succeed User

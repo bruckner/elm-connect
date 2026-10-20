@@ -209,6 +209,9 @@ getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.N
 ping : () -> Rpc.Call () ()
 ```
 
+Each type and descriptor is documented with the proto's comment for it
+and its one-line declaration, such as `` `string name = 1;` ``.
+
 A call is data: the method, its request, and its HTTP bindings. A
 config, also data, says where to send it and how; `Rpc.task` and
 `Rpc.send` send a call with a config:

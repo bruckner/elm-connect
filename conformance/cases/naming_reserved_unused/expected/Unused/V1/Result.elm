@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `unused.v1.Result`: its full name and its fields, in declaration order.
+
+`message unused.v1.Result`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,21 +30,21 @@ descriptor =
         ]
 
 
-{-| The field `ok` of `unused.v1.Result`.
+{-| The field `ok` of `unused.v1.Result`: `bool ok = 1;`
 -}
 ok : Proto.Field.Descriptor
 ok =
     Proto.Field.descriptor "ok" "ok" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `dict` of `unused.v1.Result`.
+{-| The field `dict` of `unused.v1.Result`: `unused.v1.Dict dict = 2;`
 -}
 dict : Proto.Field.Descriptor
 dict =
     Proto.Field.descriptor "dict" "dict" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "unused.v1.Dict")
 
 
-{-| The field `chars` of `unused.v1.Result`.
+{-| The field `chars` of `unused.v1.Result`: `repeated unused.v1.Char chars = 3;`
 -}
 chars : Proto.Field.Descriptor
 chars =

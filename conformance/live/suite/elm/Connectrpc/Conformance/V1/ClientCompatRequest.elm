@@ -21,6 +21,14 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.ClientCompatRequest`: its full name and its fields, in declaration order.
+
+Describes one call the client should make. The client reads
+these from stdin and, for each one, invokes an RPC as directed
+and writes the results (in the form of a ClientCompatResponse
+message) to stdout.
+
+`message connectrpc.conformance.v1.ClientCompatRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -48,140 +56,241 @@ descriptor =
         ]
 
 
-{-| The field `test_name` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `test_name` of `connectrpc.conformance.v1.ClientCompatRequest`: `string test_name = 1;`
+
+The name of the test that this request is performing.
+When writing test cases, this is a required field.
+
 -}
 testName : Proto.Field.Descriptor
 testName =
     Proto.Field.descriptor "test_name" "testName" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `http_version` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `http_version` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.HTTPVersion http_version = 2;`
+
+Test suite YAML definitions should NOT set values for these next
+nine fields (fields 2 - 10). They are automatically populated by the test
+runner. If a test is specific to one of these values, it should instead be
+indicated in the test suite itself (where it defines the required
+features and relevant values for these fields).
+
+The HTTP version to use for the test (i.e. HTTP/1.1, HTTP/2, HTTP/3).
+
 -}
 httpVersion : Proto.Field.Descriptor
 httpVersion =
     Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.HTTPVersion.descriptor)
 
 
-{-| The field `protocol` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `protocol` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.Protocol protocol = 3;`
+
+The protocol to use for the test (i.e. Connect, gRPC, gRPC-web).
+
 -}
 protocol : Proto.Field.Descriptor
 protocol =
     Proto.Field.descriptor "protocol" "protocol" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Protocol.descriptor)
 
 
-{-| The field `codec` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `codec` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.Codec codec = 4;`
+
+The codec to use for the test (i.e. JSON, proto/binary).
+
 -}
 codec : Proto.Field.Descriptor
 codec =
     Proto.Field.descriptor "codec" "codec" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Codec.descriptor)
 
 
-{-| The field `compression` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `compression` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.Compression compression = 5;`
+
+The compression to use for the test (i.e. brotli, gzip, identity).
+
 -}
 compression : Proto.Field.Descriptor
 compression =
     Proto.Field.descriptor "compression" "compression" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Compression.descriptor)
 
 
-{-| The field `host` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `host` of `connectrpc.conformance.v1.ClientCompatRequest`: `string host = 6;`
+
+The server host that this request will be sent to.
+
 -}
 host : Proto.Field.Descriptor
 host =
     Proto.Field.descriptor "host" "host" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `port` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `port` of `connectrpc.conformance.v1.ClientCompatRequest`: `uint32 port = 7;`
+
+The server port that this request will be sent to.
+
 -}
 port_ : Proto.Field.Descriptor
 port_ =
     Proto.Field.descriptor "port" "port" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `server_tls_cert` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `server_tls_cert` of `connectrpc.conformance.v1.ClientCompatRequest`: `bytes server_tls_cert = 8;`
+
+If non-empty, the server is using TLS. The bytes are the
+server's PEM-encoded certificate, which the client should
+verify and trust.
+
 -}
 serverTlsCert : Proto.Field.Descriptor
 serverTlsCert =
     Proto.Field.descriptor "server_tls_cert" "serverTlsCert" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `client_tls_creds` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `client_tls_creds` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.TLSCreds client_tls_creds = 9;`
+
+If present, the client certificate credentials to use to
+authenticate with the server. This will only be present
+when server\_tls\_cert is non-empty.
+
 -}
 clientTlsCreds : Proto.Field.Descriptor
 clientTlsCreds =
     Proto.Field.descriptor "client_tls_creds" "clientTlsCreds" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.TLSCreds")
 
 
-{-| The field `message_receive_limit` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `message_receive_limit` of `connectrpc.conformance.v1.ClientCompatRequest`: `uint32 message_receive_limit = 10;`
+
+If non-zero, indicates the maximum size in bytes for a message.
+If the server sends anything larger, the client should reject it.
+
 -}
 messageReceiveLimit : Proto.Field.Descriptor
 messageReceiveLimit =
     Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `service` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `service` of `connectrpc.conformance.v1.ClientCompatRequest`: `optional string service = 11;`
+
+The fully-qualified name of the service this test will interact with.
+If specified, method must also be specified.
+If not specified, defaults to "connectrpc.conformance.v1.ConformanceService".
+
 -}
 service : Proto.Field.Descriptor
 service =
     Proto.Field.descriptor "service" "service" 11 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `method` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `method` of `connectrpc.conformance.v1.ClientCompatRequest`: `optional string method = 12;`
+
+The method on `service` that will be called.
+If specified, service must also be specified.
+If not specified, the test runner will auto-populate this field based on the stream\_type.
+
 -}
 method : Proto.Field.Descriptor
 method =
     Proto.Field.descriptor "method" "method" 12 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `stream_type` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `stream_type` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.StreamType stream_type = 13;`
+
+The stream type of `method` (i.e. unary, client stream, server stream, full-duplex bidi
+stream, or half-duplex bidi stream).
+When writing test cases, this is a required field.
+
 -}
 streamType : Proto.Field.Descriptor
 streamType =
     Proto.Field.descriptor "stream_type" "streamType" 13 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.StreamType.descriptor)
 
 
-{-| The field `use_get_http_method` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `use_get_http_method` of `connectrpc.conformance.v1.ClientCompatRequest`: `bool use_get_http_method = 14;`
+
+If protocol indicates Connect and stream type indicates
+Unary, this instructs the client to use a GET HTTP method
+when making the request.
+
 -}
 useGetHttpMethod : Proto.Field.Descriptor
 useGetHttpMethod =
     Proto.Field.descriptor "use_get_http_method" "useGetHttpMethod" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `request_headers` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `request_headers` of `connectrpc.conformance.v1.ClientCompatRequest`: `repeated connectrpc.conformance.v1.Header request_headers = 15;`
+
+Any request headers that should be sent as part of the request.
+These include only custom header metadata. Headers that are
+part of the relevant protocol (such as "content-type", etc) should
+not be stated here.
+
 -}
 requestHeaders : Proto.Field.Descriptor
 requestHeaders =
     Proto.Field.descriptor "request_headers" "requestHeaders" 15 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `request_messages` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `request_messages` of `connectrpc.conformance.v1.ClientCompatRequest`: `repeated google.protobuf.Any request_messages = 16;`
+
+The actual request messages that will sent to the server.
+The type URL for all entries should be equal to the request type of the
+method.
+There must be exactly one for unary and server stream methods but
+can be zero or more for client and bidi stream methods.
+For client and bidi stream methods, all entries will have the
+same type URL.
+
 -}
 requestMessages : Proto.Field.Descriptor
 requestMessages =
     Proto.Field.descriptor "request_messages" "requestMessages" 16 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `timeout_ms` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `timeout_ms` of `connectrpc.conformance.v1.ClientCompatRequest`: `optional uint32 timeout_ms = 17;`
+
+The timeout, in milliseconds, for the request. This is equivalent to a
+deadline for the request. If unset, there will be no timeout.
+
 -}
 timeoutMs : Proto.Field.Descriptor
 timeoutMs =
     Proto.Field.descriptor "timeout_ms" "timeoutMs" 17 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `request_delay_ms` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `request_delay_ms` of `connectrpc.conformance.v1.ClientCompatRequest`: `uint32 request_delay_ms = 18;`
+
+Wait this many milliseconds before sending a request message.
+For client or bidi stream methods, this delay should be
+applied before each request sent.
+
 -}
 requestDelayMs : Proto.Field.Descriptor
 requestDelayMs =
     Proto.Field.descriptor "request_delay_ms" "requestDelayMs" 18 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `cancel` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `cancel` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.ClientCompatRequest.Cancel cancel = 19;`
+
+If present, the client should cancel the RPC instead of
+allowing to complete normally.
+
 -}
 cancel : Proto.Field.Descriptor
 cancel =
     Proto.Field.descriptor "cancel" "cancel" 19 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest.Cancel")
 
 
-{-| The field `raw_request` of `connectrpc.conformance.v1.ClientCompatRequest`.
+{-| The field `raw_request` of `connectrpc.conformance.v1.ClientCompatRequest`: `connectrpc.conformance.v1.RawHTTPRequest raw_request = 20;`
+
+The following field is only used by the reference client. If
+you are implementing a client under test, you may ignore it
+or respond with an error if the client receives a request where
+it is set.
+
+When this field is present, it defines the actual HTTP request
+that will be sent. The above group of fields must still be
+provided and valid so that the reference client knows how it
+should try to interpret the server's response.
+
 -}
 rawRequest : Proto.Field.Descriptor
 rawRequest =

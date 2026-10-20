@@ -15,12 +15,13 @@ use std::collections::BTreeSet;
 
 use super::{
     Emitter, MessageShape, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD, PROTO_MESSAGE,
-    PROTO_REGISTRY, RecordField,
+    PROTO_REGISTRY, RecordField, docs,
 };
 use crate::elm::ast::{Decl, Expr};
 use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
 use crate::ir::{
-    Annotations, Cardinality, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind, TypeRef,
+    Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
+    TypeRef,
 };
 use crate::naming::{DESCRIPTOR_VALUE, REGISTRY};
 
@@ -37,6 +38,7 @@ struct FieldValue<'m> {
     /// The proto name of the oneof it is a member of.
     oneof: Option<&'m str>,
     annotations: &'m Annotations,
+    doc: &'m Doc,
 }
 
 impl Emitter {
@@ -56,28 +58,30 @@ impl Emitter {
                 list(fields.iter().map(|field| var(field.elm_name.clone()))),
             ],
         );
+        let sentence = format!(
+            "What the proto says about the message `{}`: its full name and its fields, in \
+             declaration order.",
+            message.proto_full_name
+        );
         let mut decls = vec![Decl::Value {
-            doc: Some(format!(
-                "What the proto says about the message `{}`: its full name and its fields, \
-                 in declaration order.",
-                message.proto_full_name
-            )),
+            doc: Some(docs::descriptor(sentence, &message.doc)),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_MESSAGE, "Descriptor", []),
             params: Vec::new(),
             body,
         }];
         for field in &fields {
-            let doc = match field.oneof {
+            let sentence = match field.oneof {
                 Some(oneof) => format!(
-                    "The field `{}` of `{}`, a member of the oneof `{oneof}`.",
+                    "The field `{}` of `{}`, a member of the oneof `{oneof}`",
                     field.proto_name, message.proto_full_name
                 ),
                 None => format!(
-                    "The field `{}` of `{}`.",
+                    "The field `{}` of `{}`",
                     field.proto_name, message.proto_full_name
                 ),
             };
+            let doc = docs::field_descriptor(&sentence, field.doc);
             let body = self.field_descriptor(field);
             decls.push(Decl::Value {
                 doc: Some(doc),
@@ -103,7 +107,10 @@ impl Emitter {
             DESCRIPTOR_VALUE.to_owned(),
         );
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "The typed value of {}: its codecs, default and descriptor together.",
+                docs::code(&message.elm_name)
+            )),
             name: message.value_name(),
             annotation,
             params: Vec::new(),
@@ -141,12 +148,13 @@ impl Emitter {
             builder,
             [string(enumeration.proto_full_name.clone()), list(values)],
         );
+        let sentence = format!(
+            "What the proto says about the enum `{}`: its full name and its values, in \
+             declaration order.",
+            enumeration.proto_full_name
+        );
         vec![Decl::Value {
-            doc: Some(format!(
-                "What the proto says about the enum `{}`: its full name and its values, in \
-                 declaration order.",
-                enumeration.proto_full_name
-            )),
+            doc: Some(docs::enum_descriptor(sentence, enumeration)),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_ENUM, "Descriptor", []),
             params: Vec::new(),
@@ -165,7 +173,10 @@ impl Emitter {
             DESCRIPTOR_VALUE.to_owned(),
         );
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "The typed value of {}: its codecs, zero value and descriptor together.",
+                docs::code(&enumeration.elm_name)
+            )),
             name: enumeration.value_name(),
             annotation,
             params: Vec::new(),
@@ -346,6 +357,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
                 ty: &field.ty,
                 oneof: None,
                 annotations: &field.annotations,
+                doc: &field.doc,
             }),
             RecordField::Oneof(oneof) => {
                 for (variant, _) in &oneof.variants {
@@ -358,6 +370,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
                         ty: &variant.ty,
                         oneof: Some(&oneof.oneof.proto_name),
                         annotations: &variant.annotations,
+                        doc: &variant.doc,
                     });
                 }
             }

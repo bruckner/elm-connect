@@ -24,11 +24,22 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message zones.v1.ZoneRequest`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias ZoneRequest =
     { name : String
     }
 
 
+{-| `message zones.v1.Zone`
+
+  - `name`: `string name = 1;`
+  - `offsetSeconds`: `int64 offset_seconds = 2;`
+
+-}
 type alias Zone =
     { name : String
     , offsetSeconds : Int
@@ -39,12 +50,16 @@ type alias Zone =
 -- DEFAULTS
 
 
+{-| A `ZoneRequest` with every field at its default and every oneof unset.
+-}
 defaultZoneRequest : ZoneRequest
 defaultZoneRequest =
     { name = ""
     }
 
 
+{-| A `Zone` with every field at its default and every oneof unset.
+-}
 defaultZone : Zone
 defaultZone =
     { name = ""
@@ -56,11 +71,15 @@ defaultZone =
 -- TYPED VALUES
 
 
+{-| The typed value of `ZoneRequest`: its codecs, default and descriptor together.
+-}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
     Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
 
 
+{-| The typed value of `Zone`: its codecs, default and descriptor together.
+-}
 messageZone : Proto.Message.Message Zone
 messageZone =
     Proto.Message.message encodeZone decodeZone defaultZone Zones.V1.Zone.descriptor
@@ -86,6 +105,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `ZoneRequest` as proto3 JSON.
+-}
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
     Proto.Json.objectOfFields
@@ -93,6 +114,8 @@ encodeZoneRequest value =
         ]
 
 
+{-| Encodes a `Zone` as proto3 JSON.
+-}
 encodeZone : Zone -> Json.Encode.Value
 encodeZone value =
     Proto.Json.objectOfFields
@@ -105,12 +128,16 @@ encodeZone value =
 -- DECODERS
 
 
+{-| Decodes a `ZoneRequest` from proto3 JSON.
+-}
 decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
     Json.Decode.succeed ZoneRequest
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `Zone` from proto3 JSON.
+-}
 decodeZone : Json.Decode.Decoder Zone
 decodeZone =
     Json.Decode.succeed Zone

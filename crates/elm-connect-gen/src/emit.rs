@@ -72,6 +72,10 @@
 //!   descriptor modules' values, so a program using it keeps no codecs),
 //!   then the registries of the packages its module imports and the
 //!   well-known types', so it is transitive.
+//! - A declaration a proto element becomes is documented with what the
+//!   proto says about it: its comment and its one-line declaration, as
+//!   [`docs`] lays them out; codecs, defaults and typed values with one
+//!   sentence naming their type.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -137,6 +141,7 @@
 //!   through `Json.Decode.lazy` too (design §3.2).
 
 mod descriptor;
+mod docs;
 mod enumeration;
 mod field;
 mod message;
@@ -470,7 +475,7 @@ impl Emitter {
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
-                types.push(self.oneof_type(oneof));
+                types.push(self.oneof_type(&shape.message.proto_full_name, oneof));
                 encoders.push(self.oneof_encoder(oneof));
                 decoders.push(self.oneof_decoder(oneof));
             }

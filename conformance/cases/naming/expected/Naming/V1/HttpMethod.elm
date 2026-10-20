@@ -16,6 +16,15 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `naming.v1.HttpMethod`: its full name and its values, in declaration order.
+
+A multi-word enum name: its prefix is matched word by word.
+
+`enum naming.v1.HttpMethod`
+
+  - `HTTP_METHOD_UNSPECIFIED = 0;`
+  - `HTTP_METHOD_GET = 1;`
+  - `POST = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

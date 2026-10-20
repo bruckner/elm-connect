@@ -17,6 +17,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.Error`: its full name and its fields, in declaration order.
+
+An error definition used for specifying a desired error response
+
+`message connectrpc.conformance.v1.Error`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,21 +32,35 @@ descriptor =
         ]
 
 
-{-| The field `code` of `connectrpc.conformance.v1.Error`.
+{-| The field `code` of `connectrpc.conformance.v1.Error`: `connectrpc.conformance.v1.Code code = 1;`
+
+The error code.
+For a list of Connect error codes see: <https://connectrpc.com/docs/protocol#error-codes>
+
 -}
 code : Proto.Field.Descriptor
 code =
     Proto.Field.descriptor "code" "code" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Code.descriptor)
 
 
-{-| The field `message` of `connectrpc.conformance.v1.Error`.
+{-| The field `message` of `connectrpc.conformance.v1.Error`: `optional string message = 2;`
+
+If this value is absent in a test case response definition, the contents of the
+actual error message will not be checked. This is useful for certain kinds of
+error conditions where the exact message to be used is not specified, only the
+code.
+
 -}
 message : Proto.Field.Descriptor
 message =
     Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `details` of `connectrpc.conformance.v1.Error`.
+{-| The field `details` of `connectrpc.conformance.v1.Error`: `repeated google.protobuf.Any details = 3;`
+
+Errors in Connect and gRPC protocols can have arbitrary messages
+attached to them, which are known as error details.
+
 -}
 details : Proto.Field.Descriptor
 details =

@@ -26,12 +26,30 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `enum tasks.v1.State`
+
+  - `StateUnspecified`: `STATE_UNSPECIFIED = 0;`
+  - `StateOpen`: `STATE_OPEN = 1;`
+  - `StateStale`: `STATE_STALE = 2 [deprecated = true];` Deprecated.
+
+-}
 type State
     = StateUnspecified
     | StateOpen
     | StateStale
 
 
+{-| `message tasks.v1.Task`
+
+  - `name`: `string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
+  - `title`: `string title = 2 [(google.api.field_behavior) = REQUIRED];`
+  - `state`: `tasks.v1.State state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];`
+  - `labels`: `repeated string labels = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
+  - `owner`: `string owner = 5 [deprecated = true, (google.api.field_behavior) = OPTIONAL, (google.api.field_behavior) = IMMUTABLE];` Deprecated.
+  - `notes`: `string notes = 6;`
+  - `due`: `oneof due` (`TaskDue`)
+
+-}
 type alias Task =
     { name : String
     , title : String
@@ -43,12 +61,24 @@ type alias Task =
     }
 
 
+{-| `oneof due` of `tasks.v1.Task`
+
+  - `TaskDueUnset`: none of the fields is set.
+  - `TaskDueDate`: `string date = 7 [(google.api.field_behavior) = INPUT_ONLY];`
+  - `TaskDueNever`: `string never = 8 [deprecated = true];` Deprecated.
+
+-}
 type TaskDue
     = TaskDueUnset
     | TaskDueDate String
     | TaskDueNever String
 
 
+{-| `message tasks.v1.GetTaskRequest`
+
+  - `name`: `string name = 1 [(google.api.field_behavior) = REQUIRED];`
+
+-}
 type alias GetTaskRequest =
     { name : String
     }
@@ -58,6 +88,8 @@ type alias GetTaskRequest =
 -- DEFAULTS
 
 
+{-| A `Task` with every field at its default and every oneof unset.
+-}
 defaultTask : Task
 defaultTask =
     { name = ""
@@ -70,6 +102,8 @@ defaultTask =
     }
 
 
+{-| A `GetTaskRequest` with every field at its default and every oneof unset.
+-}
 defaultGetTaskRequest : GetTaskRequest
 defaultGetTaskRequest =
     { name = ""
@@ -80,16 +114,22 @@ defaultGetTaskRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of `State`: its codecs, zero value and descriptor together.
+-}
 enumState : Proto.Enum.Enum State
 enumState =
     Proto.Enum.enum encodeState decodeState StateUnspecified Tasks.V1.State.descriptor
 
 
+{-| The typed value of `Task`: its codecs, default and descriptor together.
+-}
 messageTask : Proto.Message.Message Task
 messageTask =
     Proto.Message.message encodeTask decodeTask defaultTask Tasks.V1.Task.descriptor
 
 
+{-| The typed value of `GetTaskRequest`: its codecs, default and descriptor together.
+-}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =
     Proto.Message.message encodeGetTaskRequest decodeGetTaskRequest defaultGetTaskRequest Tasks.V1.GetTaskRequest.descriptor
@@ -116,6 +156,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `State` as proto3 JSON.
+-}
 encodeState : State -> Json.Encode.Value
 encodeState value =
     case value of
@@ -129,6 +171,8 @@ encodeState value =
             Json.Encode.string "STATE_STALE"
 
 
+{-| Encodes a `Task` as proto3 JSON.
+-}
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
     Proto.Json.objectOfFields
@@ -143,6 +187,8 @@ encodeTask value =
         )
 
 
+{-| Encodes a `TaskDue` as the members of its message's JSON object.
+-}
 encodeTaskDue : TaskDue -> List ( String, Maybe Json.Encode.Value )
 encodeTaskDue value =
     case value of
@@ -158,6 +204,8 @@ encodeTaskDue value =
             ]
 
 
+{-| Encodes a `GetTaskRequest` as proto3 JSON.
+-}
 encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
 encodeGetTaskRequest value =
     Proto.Json.objectOfFields
@@ -169,6 +217,8 @@ encodeGetTaskRequest value =
 -- DECODERS
 
 
+{-| Decodes a `State` from proto3 JSON.
+-}
 decodeState : Json.Decode.Decoder State
 decodeState =
     Proto.Json.enum "State"
@@ -179,6 +229,8 @@ decodeState =
         ]
 
 
+{-| Decodes a `Task` from proto3 JSON.
+-}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Json.Decode.succeed Task
@@ -191,6 +243,8 @@ decodeTask =
         |> Proto.Json.oneof decodeTaskDue
 
 
+{-| Decodes a `TaskDue` from the members of its message's JSON object.
+-}
 decodeTaskDue : Json.Decode.Decoder TaskDue
 decodeTaskDue =
     Proto.Json.members "due"
@@ -200,6 +254,8 @@ decodeTaskDue =
         ]
 
 
+{-| Decodes a `GetTaskRequest` from proto3 JSON.
+-}
 decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
     Json.Decode.succeed GetTaskRequest

@@ -25,29 +25,62 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| A oneof member with a leading underscore: its constructor is
+`EventKindLegacy`, and its descriptor `Events.V1.Event.legacy`.
+
+`message events.v1.Event`
+
+  - `name`: `string name = 1;`
+  - `kind`: `oneof kind` (`EventKind`)
+
+-}
 type alias Event =
     { name : String
     , kind : EventKind
     }
 
 
+{-| `oneof kind` of `events.v1.Event`
+
+  - `EventKindUnset`: none of the fields is set.
+  - `EventKindLegacy`: `string _legacy = 2;`
+  - `EventKindCount`: `int32 count = 3;`
+
+-}
 type EventKind
     = EventKindUnset
     | EventKindLegacy String
     | EventKindCount Int
 
 
+{-| `message events.v1.ListEventsRequest`
+
+  - `parent`: `string parent = 1;`
+  - `filter`: `oneof filter` (`ListEventsRequestFilter`)
+
+-}
 type alias ListEventsRequest =
     { parent : String
     , filter : ListEventsRequestFilter
     }
 
 
+{-| `oneof filter` of `events.v1.ListEventsRequest`
+
+  - `ListEventsRequestFilterUnset`: none of the fields is set.
+  - `ListEventsRequestFilterLegacy`: `string _legacy = 2;`
+
+-}
 type ListEventsRequestFilter
     = ListEventsRequestFilterUnset
     | ListEventsRequestFilterLegacy String
 
 
+{-| `message events.v1.ListEventsResponse`
+
+  - `events`: `repeated events.v1.Event events = 1;`
+
+-}
 type alias ListEventsResponse =
     { events : List Event
     }
@@ -57,6 +90,8 @@ type alias ListEventsResponse =
 -- DEFAULTS
 
 
+{-| A `Event` with every field at its default and every oneof unset.
+-}
 defaultEvent : Event
 defaultEvent =
     { name = ""
@@ -64,6 +99,8 @@ defaultEvent =
     }
 
 
+{-| A `ListEventsRequest` with every field at its default and every oneof unset.
+-}
 defaultListEventsRequest : ListEventsRequest
 defaultListEventsRequest =
     { parent = ""
@@ -71,6 +108,8 @@ defaultListEventsRequest =
     }
 
 
+{-| A `ListEventsResponse` with every field at its default and every oneof unset.
+-}
 defaultListEventsResponse : ListEventsResponse
 defaultListEventsResponse =
     { events = []
@@ -81,16 +120,22 @@ defaultListEventsResponse =
 -- TYPED VALUES
 
 
+{-| The typed value of `Event`: its codecs, default and descriptor together.
+-}
 messageEvent : Proto.Message.Message Event
 messageEvent =
     Proto.Message.message encodeEvent decodeEvent defaultEvent Events.V1.Event.descriptor
 
 
+{-| The typed value of `ListEventsRequest`: its codecs, default and descriptor together.
+-}
 messageListEventsRequest : Proto.Message.Message ListEventsRequest
 messageListEventsRequest =
     Proto.Message.message encodeListEventsRequest decodeListEventsRequest defaultListEventsRequest Events.V1.ListEventsRequest.descriptor
 
 
+{-| The typed value of `ListEventsResponse`: its codecs, default and descriptor together.
+-}
 messageListEventsResponse : Proto.Message.Message ListEventsResponse
 messageListEventsResponse =
     Proto.Message.message encodeListEventsResponse decodeListEventsResponse defaultListEventsResponse Events.V1.ListEventsResponse.descriptor
@@ -117,6 +162,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Event` as proto3 JSON.
+-}
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
     Proto.Json.objectOfFields
@@ -126,6 +173,8 @@ encodeEvent value =
         )
 
 
+{-| Encodes a `EventKind` as the members of its message's JSON object.
+-}
 encodeEventKind : EventKind -> List ( String, Maybe Json.Encode.Value )
 encodeEventKind value =
     case value of
@@ -141,6 +190,8 @@ encodeEventKind value =
             ]
 
 
+{-| Encodes a `ListEventsRequest` as proto3 JSON.
+-}
 encodeListEventsRequest : ListEventsRequest -> Json.Encode.Value
 encodeListEventsRequest value =
     Proto.Json.objectOfFields
@@ -150,6 +201,8 @@ encodeListEventsRequest value =
         )
 
 
+{-| Encodes a `ListEventsRequestFilter` as the members of its message's JSON object.
+-}
 encodeListEventsRequestFilter : ListEventsRequestFilter -> List ( String, Maybe Json.Encode.Value )
 encodeListEventsRequestFilter value =
     case value of
@@ -161,6 +214,8 @@ encodeListEventsRequestFilter value =
             ]
 
 
+{-| Encodes a `ListEventsResponse` as proto3 JSON.
+-}
 encodeListEventsResponse : ListEventsResponse -> Json.Encode.Value
 encodeListEventsResponse value =
     Proto.Json.objectOfFields
@@ -172,6 +227,8 @@ encodeListEventsResponse value =
 -- DECODERS
 
 
+{-| Decodes a `Event` from proto3 JSON.
+-}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Json.Decode.succeed Event
@@ -179,6 +236,8 @@ decodeEvent =
         |> Proto.Json.oneof decodeEventKind
 
 
+{-| Decodes a `EventKind` from the members of its message's JSON object.
+-}
 decodeEventKind : Json.Decode.Decoder EventKind
 decodeEventKind =
     Proto.Json.members "kind"
@@ -188,6 +247,8 @@ decodeEventKind =
         ]
 
 
+{-| Decodes a `ListEventsRequest` from proto3 JSON.
+-}
 decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
     Json.Decode.succeed ListEventsRequest
@@ -195,6 +256,8 @@ decodeListEventsRequest =
         |> Proto.Json.oneof decodeListEventsRequestFilter
 
 
+{-| Decodes a `ListEventsRequestFilter` from the members of its message's JSON object.
+-}
 decodeListEventsRequestFilter : Json.Decode.Decoder ListEventsRequestFilter
 decodeListEventsRequestFilter =
     Proto.Json.members "filter"
@@ -203,6 +266,8 @@ decodeListEventsRequestFilter =
         ]
 
 
+{-| Decodes a `ListEventsResponse` from proto3 JSON.
+-}
 decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
     Json.Decode.succeed ListEventsResponse

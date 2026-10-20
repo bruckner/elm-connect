@@ -17,6 +17,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
+
+A note.
+
+`message notes.v1.Note`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -38,77 +43,93 @@ descriptor =
         ]
 
 
-{-| The field `name` of `notes.v1.Note`.
+{-| The field `name` of `notes.v1.Note`: `string name = 1;`
+
+The note's resource name, `notes/<id>`. Set by the server on creation
+from the title unless given.
+
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `title` of `notes.v1.Note`.
+{-| The field `title` of `notes.v1.Note`: `string title = 2;`
+
+Required: creating a note without one is INVALID\_ARGUMENT.
+
 -}
 title : Proto.Field.Descriptor
 title =
     Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `body` of `notes.v1.Note`.
+{-| The field `body` of `notes.v1.Note`: `string body = 3;`
 -}
 body : Proto.Field.Descriptor
 body =
     Proto.Field.descriptor "body" "body" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `tags` of `notes.v1.Note`.
+{-| The field `tags` of `notes.v1.Note`: `repeated string tags = 4;`
 -}
 tags : Proto.Field.Descriptor
 tags =
     Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `visibility` of `notes.v1.Note`.
+{-| The field `visibility` of `notes.v1.Note`: `notes.v1.Visibility visibility = 5;`
 -}
 visibility : Proto.Field.Descriptor
 visibility =
     Proto.Field.descriptor "visibility" "visibility" 5 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.V1.Visibility.descriptor)
 
 
-{-| The field `create_time` of `notes.v1.Note`.
+{-| The field `create_time` of `notes.v1.Note`: `google.protobuf.Timestamp create_time = 6;`
+
+Set by the server.
+
 -}
 createTime : Proto.Field.Descriptor
 createTime =
     Proto.Field.descriptor "create_time" "createTime" 6 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `update_time` of `notes.v1.Note`.
+{-| The field `update_time` of `notes.v1.Note`: `google.protobuf.Timestamp update_time = 7;`
+
+Set by the server on every update.
+
 -}
 updateTime : Proto.Field.Descriptor
 updateTime =
     Proto.Field.descriptor "update_time" "updateTime" 7 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `ttl` of `notes.v1.Note`.
+{-| The field `ttl` of `notes.v1.Note`: `google.protobuf.Duration ttl = 8;`
+
+How long the note should be kept; stored, not enforced.
+
 -}
 ttl : Proto.Field.Descriptor
 ttl =
     Proto.Field.descriptor "ttl" "ttl" 8 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
 
 
-{-| The field `metadata` of `notes.v1.Note`.
+{-| The field `metadata` of `notes.v1.Note`: `map<string, string> metadata = 9;`
 -}
 metadata : Proto.Field.Descriptor
 metadata =
     Proto.Field.descriptor "metadata" "metadata" 9 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `extra` of `notes.v1.Note`.
+{-| The field `extra` of `notes.v1.Note`: `google.protobuf.Struct extra = 10;`
 -}
 extra : Proto.Field.Descriptor
 extra =
     Proto.Field.descriptor "extra" "extra" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
 
 
-{-| The field `text` of `notes.v1.Note`, a member of the oneof `kind`.
+{-| The field `text` of `notes.v1.Note`, a member of the oneof `kind`: `string text = 11;`
 -}
 text : Proto.Field.Descriptor
 text =
@@ -116,7 +137,7 @@ text =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `link` of `notes.v1.Note`, a member of the oneof `kind`.
+{-| The field `link` of `notes.v1.Note`, a member of the oneof `kind`: `string link = 12;`
 -}
 link : Proto.Field.Descriptor
 link =
@@ -124,14 +145,17 @@ link =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `attachment` of `notes.v1.Note`.
+{-| The field `attachment` of `notes.v1.Note`: `google.protobuf.Any attachment = 13;`
 -}
 attachment : Proto.Field.Descriptor
 attachment =
     Proto.Field.descriptor "attachment" "attachment" 13 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `revision` of `notes.v1.Note`.
+{-| The field `revision` of `notes.v1.Note`: `optional int64 revision = 14;`
+
+Incremented by the server on every update; unset until the first.
+
 -}
 revision : Proto.Field.Descriptor
 revision =

@@ -1,7 +1,7 @@
 //! An enum's three declarations: its custom type, its encoder and its
 //! decoder (design §3.3).
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, int, list, pctor, pvar, string, ty, var};
 use crate::ir::Enum;
@@ -13,7 +13,7 @@ impl Emitter {
     /// the zero value first.
     pub(super) fn enum_type(&mut self, enumeration: &Enum) -> Decl {
         Decl::CustomType {
-            doc: None,
+            doc: Some(docs::enumeration(enumeration)),
             name: enumeration.elm_name.clone(),
             type_params: Vec::new(),
             variants: enumeration
@@ -42,7 +42,10 @@ impl Emitter {
             .collect();
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Encodes a {} as proto3 JSON.",
+                docs::code(&enumeration.elm_name)
+            )),
             name: enumeration.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(enumeration.elm_name.clone(), [])),
@@ -89,7 +92,10 @@ impl Emitter {
             [ty(enumeration.elm_name.clone(), [])],
         );
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Decodes a {} from proto3 JSON.",
+                docs::code(&enumeration.elm_name)
+            )),
             name: enumeration.decoder_name(),
             annotation,
             params: Vec::new(),

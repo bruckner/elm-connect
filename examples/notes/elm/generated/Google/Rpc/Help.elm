@@ -16,6 +16,15 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `google.rpc.Help`: its full name and its fields, in declaration order.
+
+Provides links to documentation or for performing an out of band action.
+
+For example, if a quota check failed with an error indicating the calling
+project hasn't enabled the accessed service, this can contain a URL pointing
+directly to the right place in the developer console to flip the bit.
+
+`message google.rpc.Help`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +33,10 @@ descriptor =
         ]
 
 
-{-| The field `links` of `google.rpc.Help`.
+{-| The field `links` of `google.rpc.Help`: `repeated google.rpc.Help.Link links = 1;`
+
+URL(s) pointing to additional information on handling the current error.
+
 -}
 links : Proto.Field.Descriptor
 links =

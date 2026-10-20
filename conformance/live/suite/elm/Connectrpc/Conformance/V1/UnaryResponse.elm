@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.UnaryResponse`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.UnaryResponse`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,10 @@ descriptor =
         ]
 
 
-{-| The field `payload` of `connectrpc.conformance.v1.UnaryResponse`.
+{-| The field `payload` of `connectrpc.conformance.v1.UnaryResponse`: `connectrpc.conformance.v1.ConformancePayload payload = 1;`
+
+The conformance payload to respond with.
+
 -}
 payload : Proto.Field.Descriptor
 payload =

@@ -16,6 +16,12 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `nesting.v1.Outer.Inner.Kind`: its full name and its values, in declaration order.
+
+`enum nesting.v1.Outer.Inner.Kind`
+
+  - `KIND_UNSPECIFIED = 0;`
+  - `KIND_DRAFT = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

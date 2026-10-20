@@ -24,6 +24,28 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message scalars.v1.Scalars`
+
+  - `doubleValue`: `double double_value = 1;`
+  - `floatValue`: `float float_value = 2;`
+  - `int32Value`: `int32 int32_value = 3;`
+  - `int64Value`: `int64 int64_value = 4;`
+  - `uint32Value`: `uint32 uint32_value = 5;`
+  - `uint64Value`: `uint64 uint64_value = 6;`
+  - `sint32Value`: `sint32 sint32_value = 7;`
+  - `sint64Value`: `sint64 sint64_value = 8;`
+  - `fixed32Value`: `fixed32 fixed32_value = 9;`
+  - `fixed64Value`: `fixed64 fixed64_value = 10;`
+  - `sfixed32Value`: `sfixed32 sfixed32_value = 11;`
+  - `sfixed64Value`: `sfixed64 sfixed64_value = 12;`
+  - `boolValue`: `bool bool_value = 13;`
+  - `stringValue`: `string string_value = 14 [json_name = "text"];` An explicit json\_name changes the wire name, never the Elm name.
+  - `bytesValue`: `bytes bytes_value = 15;`
+  - `smallCount`: `int64 small_count = 16 [jstype = JS_NUMBER];` jstype overrides the int64 option per field: JS\_NUMBER makes an Int
+    decoded within ±(2^53 − 1), JS\_STRING (the default here) a String.
+  - `exactTotal`: `uint64 exact_total = 17 [jstype = JS_STRING];`
+
+-}
 type alias Scalars =
     { doubleValue : Float
     , floatValue : Float
@@ -45,6 +67,8 @@ type alias Scalars =
     }
 
 
+{-| `message scalars.v1.Empty`
+-}
 type alias Empty =
     {}
 
@@ -53,6 +77,8 @@ type alias Empty =
 -- DEFAULTS
 
 
+{-| A `Scalars` with every field at its default and every oneof unset.
+-}
 defaultScalars : Scalars
 defaultScalars =
     { doubleValue = 0.0
@@ -75,6 +101,8 @@ defaultScalars =
     }
 
 
+{-| A `Empty` with every field at its default and every oneof unset.
+-}
 defaultEmpty : Empty
 defaultEmpty =
     {}
@@ -84,11 +112,15 @@ defaultEmpty =
 -- TYPED VALUES
 
 
+{-| The typed value of `Scalars`: its codecs, default and descriptor together.
+-}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
     Proto.Message.message encodeScalars decodeScalars defaultScalars Scalars.V1.Scalars.descriptor
 
 
+{-| The typed value of `Empty`: its codecs, default and descriptor together.
+-}
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
     Proto.Message.message encodeEmpty decodeEmpty defaultEmpty Scalars.V1.Empty.descriptor
@@ -114,6 +146,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Scalars` as proto3 JSON.
+-}
 encodeScalars : Scalars -> Json.Encode.Value
 encodeScalars value =
     Proto.Json.objectOfFields
@@ -137,6 +171,8 @@ encodeScalars value =
         ]
 
 
+{-| Encodes a `Empty` as proto3 JSON.
+-}
 encodeEmpty : Empty -> Json.Encode.Value
 encodeEmpty _ =
     Json.Encode.object []
@@ -146,6 +182,8 @@ encodeEmpty _ =
 -- DECODERS
 
 
+{-| Decodes a `Scalars` from proto3 JSON.
+-}
 decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Json.Decode.succeed Scalars
@@ -168,6 +206,8 @@ decodeScalars =
         |> Proto.Json.fieldEither "exactTotal" "exact_total" "0" Proto.Json.uint64
 
 
+{-| Decodes a `Empty` from proto3 JSON.
+-}
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =
     Proto.Json.emptyMessage

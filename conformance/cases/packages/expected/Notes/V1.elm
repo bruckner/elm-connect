@@ -25,6 +25,16 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message notes.v1.Note`
+
+  - `title`: `string title = 1;`
+  - `author`: `users.v1.User author = 2;`
+  - `requiredRole`: `users.v1.Role required_role = 3;` A plain enum field reads absence as the other module's zero value.
+  - `readers`: `repeated users.v1.User readers = 4;`
+  - `roles`: `map<string, users.v1.Role> roles = 5;`
+  - `owner`: `oneof owner` (`NoteOwner`)
+
+-}
 type alias Note =
     { title : String
     , author : Maybe Users.V1.User
@@ -35,6 +45,13 @@ type alias Note =
     }
 
 
+{-| `oneof owner` of `notes.v1.Note`
+
+  - `NoteOwnerUnset`: none of the fields is set.
+  - `NoteOwnerUser`: `users.v1.User user = 6;`
+  - `NoteOwnerTeam`: `string team = 7;`
+
+-}
 type NoteOwner
     = NoteOwnerUnset
     | NoteOwnerUser Users.V1.User
@@ -45,6 +62,8 @@ type NoteOwner
 -- DEFAULTS
 
 
+{-| A `Note` with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { title = ""
@@ -60,6 +79,8 @@ defaultNote =
 -- TYPED VALUES
 
 
+{-| The typed value of `Note`: its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
@@ -84,6 +105,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Note` as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -97,6 +120,8 @@ encodeNote value =
         )
 
 
+{-| Encodes a `NoteOwner` as the members of its message's JSON object.
+-}
 encodeNoteOwner : NoteOwner -> List ( String, Maybe Json.Encode.Value )
 encodeNoteOwner value =
     case value of
@@ -116,6 +141,8 @@ encodeNoteOwner value =
 -- DECODERS
 
 
+{-| Decodes a `Note` from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -127,6 +154,8 @@ decodeNote =
         |> Proto.Json.oneof decodeNoteOwner
 
 
+{-| Decodes a `NoteOwner` from the members of its message's JSON object.
+-}
 decodeNoteOwner : Json.Decode.Decoder NoteOwner
 decodeNoteOwner =
     Proto.Json.members "owner"

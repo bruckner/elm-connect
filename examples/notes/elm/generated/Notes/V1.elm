@@ -36,12 +36,41 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| Who may read a note.
+
+`enum notes.v1.Visibility`
+
+  - `VisibilityUnspecified`: `VISIBILITY_UNSPECIFIED = 0;`
+  - `VisibilityPrivate`: `VISIBILITY_PRIVATE = 1;`
+  - `VisibilityPublic`: `VISIBILITY_PUBLIC = 2;`
+
+-}
 type Visibility
     = VisibilityUnspecified
     | VisibilityPrivate
     | VisibilityPublic
 
 
+{-| A note.
+
+`message notes.v1.Note`
+
+  - `name`: `string name = 1;` The note's resource name, `notes/<id>`. Set by the server on creation
+    from the title unless given.
+  - `title`: `string title = 2;` Required: creating a note without one is INVALID\_ARGUMENT.
+  - `body`: `string body = 3;`
+  - `tags`: `repeated string tags = 4;`
+  - `visibility`: `notes.v1.Visibility visibility = 5;`
+  - `createTime`: `google.protobuf.Timestamp create_time = 6;` Set by the server.
+  - `updateTime`: `google.protobuf.Timestamp update_time = 7;` Set by the server on every update.
+  - `ttl`: `google.protobuf.Duration ttl = 8;` How long the note should be kept; stored, not enforced.
+  - `metadata`: `map<string, string> metadata = 9;`
+  - `extra`: `google.protobuf.Struct extra = 10;`
+  - `kind`: `oneof kind` (`NoteKind`) What the note is about.
+  - `attachment`: `google.protobuf.Any attachment = 13;`
+  - `revision`: `optional int64 revision = 14;` Incremented by the server on every update; unset until the first.
+
+-}
 type alias Note =
     { name : String
     , title : String
@@ -59,17 +88,39 @@ type alias Note =
     }
 
 
+{-| What the note is about.
+
+`oneof kind` of `notes.v1.Note`
+
+  - `NoteKindUnset`: none of the fields is set.
+  - `NoteKindText`: `string text = 11;`
+  - `NoteKindLink`: `string link = 12;`
+
+-}
 type NoteKind
     = NoteKindUnset
     | NoteKindText String
     | NoteKindLink String
 
 
+{-| `message notes.v1.GetNoteRequest`
+
+  - `name`: `string name = 1;` `notes/<id>`.
+
+-}
 type alias GetNoteRequest =
     { name : String
     }
 
 
+{-| `message notes.v1.ListNotesRequest`
+
+  - `pageSize`: `int32 page_size = 1;` At most this many notes; 0 is the server's default, 50.
+  - `pageToken`: `string page_token = 2;` The `next_page_token` of the previous page.
+  - `filter`: `string filter = 3;` A substring the title must contain; empty matches every note.
+  - `visibility`: `notes.v1.Visibility visibility = 4;` Only notes with this visibility; unspecified matches every note.
+
+-}
 type alias ListNotesRequest =
     { pageSize : Int
     , pageToken : String
@@ -78,28 +129,56 @@ type alias ListNotesRequest =
     }
 
 
+{-| `message notes.v1.ListNotesResponse`
+
+  - `notes`: `repeated notes.v1.Note notes = 1;` In name order.
+  - `nextPageToken`: `string next_page_token = 2;` Empty on the last page.
+
+-}
 type alias ListNotesResponse =
     { notes : List Note
     , nextPageToken : String
     }
 
 
+{-| `message notes.v1.CreateNoteRequest`
+
+  - `note`: `notes.v1.Note note = 1;`
+
+-}
 type alias CreateNoteRequest =
     { note : Maybe Note
     }
 
 
+{-| `message notes.v1.UpdateNoteRequest`
+
+  - `note`: `notes.v1.Note note = 1;` The note to update, by `note.name`, and its new fields.
+  - `updateMask`: `google.protobuf.FieldMask update_mask = 2;` The fields of `note` to update, by proto name; empty updates every field
+    the request sets.
+
+-}
 type alias UpdateNoteRequest =
     { note : Maybe Note
     , updateMask : Maybe (List String)
     }
 
 
+{-| `message notes.v1.DeleteNoteRequest`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias DeleteNoteRequest =
     { name : String
     }
 
 
+{-| `message notes.v1.ArchiveNoteRequest`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias ArchiveNoteRequest =
     { name : String
     }
@@ -109,6 +188,8 @@ type alias ArchiveNoteRequest =
 -- DEFAULTS
 
 
+{-| A `Note` with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { name = ""
@@ -127,12 +208,16 @@ defaultNote =
     }
 
 
+{-| A `GetNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
     { name = ""
     }
 
 
+{-| A `ListNotesRequest` with every field at its default and every oneof unset.
+-}
 defaultListNotesRequest : ListNotesRequest
 defaultListNotesRequest =
     { pageSize = 0
@@ -142,6 +227,8 @@ defaultListNotesRequest =
     }
 
 
+{-| A `ListNotesResponse` with every field at its default and every oneof unset.
+-}
 defaultListNotesResponse : ListNotesResponse
 defaultListNotesResponse =
     { notes = []
@@ -149,12 +236,16 @@ defaultListNotesResponse =
     }
 
 
+{-| A `CreateNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultCreateNoteRequest : CreateNoteRequest
 defaultCreateNoteRequest =
     { note = Nothing
     }
 
 
+{-| A `UpdateNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultUpdateNoteRequest : UpdateNoteRequest
 defaultUpdateNoteRequest =
     { note = Nothing
@@ -162,12 +253,16 @@ defaultUpdateNoteRequest =
     }
 
 
+{-| A `DeleteNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultDeleteNoteRequest : DeleteNoteRequest
 defaultDeleteNoteRequest =
     { name = ""
     }
 
 
+{-| A `ArchiveNoteRequest` with every field at its default and every oneof unset.
+-}
 defaultArchiveNoteRequest : ArchiveNoteRequest
 defaultArchiveNoteRequest =
     { name = ""
@@ -178,46 +273,64 @@ defaultArchiveNoteRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of `Visibility`: its codecs, zero value and descriptor together.
+-}
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
     Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified Notes.V1.Visibility.descriptor
 
 
+{-| The typed value of `Note`: its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
+{-| The typed value of `GetNoteRequest`: its codecs, default and descriptor together.
+-}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
     Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.V1.GetNoteRequest.descriptor
 
 
+{-| The typed value of `ListNotesRequest`: its codecs, default and descriptor together.
+-}
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
     Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest Notes.V1.ListNotesRequest.descriptor
 
 
+{-| The typed value of `ListNotesResponse`: its codecs, default and descriptor together.
+-}
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
     Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse Notes.V1.ListNotesResponse.descriptor
 
 
+{-| The typed value of `CreateNoteRequest`: its codecs, default and descriptor together.
+-}
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
     Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest Notes.V1.CreateNoteRequest.descriptor
 
 
+{-| The typed value of `UpdateNoteRequest`: its codecs, default and descriptor together.
+-}
 messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
 messageUpdateNoteRequest =
     Proto.Message.message encodeUpdateNoteRequest decodeUpdateNoteRequest defaultUpdateNoteRequest Notes.V1.UpdateNoteRequest.descriptor
 
 
+{-| The typed value of `DeleteNoteRequest`: its codecs, default and descriptor together.
+-}
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
 messageDeleteNoteRequest =
     Proto.Message.message encodeDeleteNoteRequest decodeDeleteNoteRequest defaultDeleteNoteRequest Notes.V1.DeleteNoteRequest.descriptor
 
 
+{-| The typed value of `ArchiveNoteRequest`: its codecs, default and descriptor together.
+-}
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
 messageArchiveNoteRequest =
     Proto.Message.message encodeArchiveNoteRequest decodeArchiveNoteRequest defaultArchiveNoteRequest Notes.V1.ArchiveNoteRequest.descriptor
@@ -250,6 +363,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Visibility` as proto3 JSON.
+-}
 encodeVisibility : Visibility -> Json.Encode.Value
 encodeVisibility value =
     case value of
@@ -263,6 +378,8 @@ encodeVisibility value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
+{-| Encodes a `Note` as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -283,6 +400,8 @@ encodeNote value =
         )
 
 
+{-| Encodes a `NoteKind` as the members of its message's JSON object.
+-}
 encodeNoteKind : NoteKind -> List ( String, Maybe Json.Encode.Value )
 encodeNoteKind value =
     case value of
@@ -298,6 +417,8 @@ encodeNoteKind value =
             ]
 
 
+{-| Encodes a `GetNoteRequest` as proto3 JSON.
+-}
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
     Proto.Json.objectOfFields
@@ -305,6 +426,8 @@ encodeGetNoteRequest value =
         ]
 
 
+{-| Encodes a `ListNotesRequest` as proto3 JSON.
+-}
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
 encodeListNotesRequest value =
     Proto.Json.objectOfFields
@@ -315,6 +438,8 @@ encodeListNotesRequest value =
         ]
 
 
+{-| Encodes a `ListNotesResponse` as proto3 JSON.
+-}
 encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
 encodeListNotesResponse value =
     Proto.Json.objectOfFields
@@ -323,6 +448,8 @@ encodeListNotesResponse value =
         ]
 
 
+{-| Encodes a `CreateNoteRequest` as proto3 JSON.
+-}
 encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
     Proto.Json.objectOfFields
@@ -330,6 +457,8 @@ encodeCreateNoteRequest value =
         ]
 
 
+{-| Encodes a `UpdateNoteRequest` as proto3 JSON.
+-}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
     Proto.Json.objectOfFields
@@ -338,6 +467,8 @@ encodeUpdateNoteRequest value =
         ]
 
 
+{-| Encodes a `DeleteNoteRequest` as proto3 JSON.
+-}
 encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
 encodeDeleteNoteRequest value =
     Proto.Json.objectOfFields
@@ -345,6 +476,8 @@ encodeDeleteNoteRequest value =
         ]
 
 
+{-| Encodes a `ArchiveNoteRequest` as proto3 JSON.
+-}
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
     Proto.Json.objectOfFields
@@ -356,6 +489,8 @@ encodeArchiveNoteRequest value =
 -- DECODERS
 
 
+{-| Decodes a `Visibility` from proto3 JSON.
+-}
 decodeVisibility : Json.Decode.Decoder Visibility
 decodeVisibility =
     Proto.Json.enum "Visibility"
@@ -366,6 +501,8 @@ decodeVisibility =
         ]
 
 
+{-| Decodes a `Note` from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -384,6 +521,8 @@ decodeNote =
         |> Proto.Json.field "revision" Nothing (Json.Decode.map Just Proto.Json.int64)
 
 
+{-| Decodes a `NoteKind` from the members of its message's JSON object.
+-}
 decodeNoteKind : Json.Decode.Decoder NoteKind
 decodeNoteKind =
     Proto.Json.members "kind"
@@ -393,12 +532,16 @@ decodeNoteKind =
         ]
 
 
+{-| Decodes a `GetNoteRequest` from proto3 JSON.
+-}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `ListNotesRequest` from proto3 JSON.
+-}
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Json.Decode.succeed ListNotesRequest
@@ -408,6 +551,8 @@ decodeListNotesRequest =
         |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
 
 
+{-| Decodes a `ListNotesResponse` from proto3 JSON.
+-}
 decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
     Json.Decode.succeed ListNotesResponse
@@ -415,12 +560,16 @@ decodeListNotesResponse =
         |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Json.Decode.string
 
 
+{-| Decodes a `CreateNoteRequest` from proto3 JSON.
+-}
 decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
     Json.Decode.succeed CreateNoteRequest
         |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
 
 
+{-| Decodes a `UpdateNoteRequest` from proto3 JSON.
+-}
 decodeUpdateNoteRequest : Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequest =
     Json.Decode.succeed UpdateNoteRequest
@@ -428,12 +577,16 @@ decodeUpdateNoteRequest =
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
 
 
+{-| Decodes a `DeleteNoteRequest` from proto3 JSON.
+-}
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
     Json.Decode.succeed DeleteNoteRequest
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `ArchiveNoteRequest` from proto3 JSON.
+-}
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest

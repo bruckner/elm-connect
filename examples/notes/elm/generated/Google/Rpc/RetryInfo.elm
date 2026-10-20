@@ -16,6 +16,23 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `google.rpc.RetryInfo`: its full name and its fields, in declaration order.
+
+Describes when the clients can retry a failed request. Clients could ignore
+the recommendation here or retry when this information is missing from error
+responses.
+
+It's always recommended that clients should use exponential backoff when
+retrying.
+
+Clients should wait until `retry_delay` amount of time has passed since
+receiving the error response before retrying. If retrying requests also
+fail, clients should use an exponential backoff scheme to gradually increase
+the delay between retries based on `retry_delay`, until either a maximum
+number of retries have been reached or a maximum retry delay cap has been
+reached.
+
+`message google.rpc.RetryInfo`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +41,10 @@ descriptor =
         ]
 
 
-{-| The field `retry_delay` of `google.rpc.RetryInfo`.
+{-| The field `retry_delay` of `google.rpc.RetryInfo`: `google.protobuf.Duration retry_delay = 1;`
+
+Clients should wait at least this long between retrying the same request.
+
 -}
 retryDelay : Proto.Field.Descriptor
 retryDelay =

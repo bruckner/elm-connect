@@ -16,6 +16,14 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `connectrpc.conformance.v1.HTTPVersion`: its full name and its values, in declaration order.
+
+`enum connectrpc.conformance.v1.HTTPVersion`
+
+  - `HTTP_VERSION_UNSPECIFIED = 0;`
+  - `HTTP_VERSION_1 = 1;`
+  - `HTTP_VERSION_2 = 2;`
+  - `HTTP_VERSION_3 = 3;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

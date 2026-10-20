@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `notes.v1.ListNotesRequest`: its full name and its fields, in declaration order.
+
+`message notes.v1.ListNotesRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,28 +31,40 @@ descriptor =
         ]
 
 
-{-| The field `page_size` of `notes.v1.ListNotesRequest`.
+{-| The field `page_size` of `notes.v1.ListNotesRequest`: `int32 page_size = 1;`
+
+At most this many notes; 0 is the server's default, 50.
+
 -}
 pageSize : Proto.Field.Descriptor
 pageSize =
     Proto.Field.descriptor "page_size" "pageSize" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `page_token` of `notes.v1.ListNotesRequest`.
+{-| The field `page_token` of `notes.v1.ListNotesRequest`: `string page_token = 2;`
+
+The `next_page_token` of the previous page.
+
 -}
 pageToken : Proto.Field.Descriptor
 pageToken =
     Proto.Field.descriptor "page_token" "pageToken" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `filter` of `notes.v1.ListNotesRequest`.
+{-| The field `filter` of `notes.v1.ListNotesRequest`: `string filter = 3;`
+
+A substring the title must contain; empty matches every note.
+
 -}
 filter : Proto.Field.Descriptor
 filter =
     Proto.Field.descriptor "filter" "filter" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `visibility` of `notes.v1.ListNotesRequest`.
+{-| The field `visibility` of `notes.v1.ListNotesRequest`: `notes.v1.Visibility visibility = 4;`
+
+Only notes with this visibility; unspecified matches every note.
+
 -}
 visibility : Proto.Field.Descriptor
 visibility =

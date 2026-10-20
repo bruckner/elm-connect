@@ -16,6 +16,16 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `connectrpc.conformance.v1.Protocol`: its full name and its values, in declaration order.
+
+`enum connectrpc.conformance.v1.Protocol`
+
+  - `PROTOCOL_UNSPECIFIED = 0;`
+  - `PROTOCOL_CONNECT = 1;`
+  - `PROTOCOL_GRPC = 2;`
+  - `PROTOCOL_GRPC_WEB = 3;` TODO: Support add'l protocols:
+    PROTOCOL\_GRPC\_WEB\_TEXT = 4;
+    PROTOCOL\_REST\_TRANSCODING = 5;
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

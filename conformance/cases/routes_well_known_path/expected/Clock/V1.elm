@@ -25,6 +25,16 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message clock.v1.Moment`
+
+  - `at`: `google.protobuf.Timestamp at = 1;`
+  - `mask`: `google.protobuf.FieldMask mask = 2;`
+  - `count`: `google.protobuf.Int32Value count = 3;`
+  - `seen`: `google.protobuf.BoolValue seen = 4;`
+  - `wait`: `google.protobuf.Duration wait = 5;`
+  - `note`: `string note = 6;`
+
+-}
 type alias Moment =
     { at : Maybe Time.Posix
     , mask : Maybe (List String)
@@ -39,6 +49,8 @@ type alias Moment =
 -- DEFAULTS
 
 
+{-| A `Moment` with every field at its default and every oneof unset.
+-}
 defaultMoment : Moment
 defaultMoment =
     { at = Nothing
@@ -54,6 +66,8 @@ defaultMoment =
 -- TYPED VALUES
 
 
+{-| The typed value of `Moment`: its codecs, default and descriptor together.
+-}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
     Proto.Message.message encodeMoment decodeMoment defaultMoment Clock.V1.Moment.descriptor
@@ -78,6 +92,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Moment` as proto3 JSON.
+-}
 encodeMoment : Moment -> Json.Encode.Value
 encodeMoment value =
     Proto.Json.objectOfFields
@@ -94,6 +110,8 @@ encodeMoment value =
 -- DECODERS
 
 
+{-| Decodes a `Moment` from proto3 JSON.
+-}
 decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
     Json.Decode.succeed Moment

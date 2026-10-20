@@ -24,6 +24,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message int64_option.v1.Counters`
+
+  - `int64Value`: `int64 int64_value = 1;`
+  - `uint64Value`: `uint64 uint64_value = 2;`
+  - `sint64Value`: `sint64 sint64_value = 3;`
+  - `fixed64Value`: `fixed64 fixed64_value = 4;`
+  - `sfixed64Value`: `sfixed64 sfixed64_value = 5;`
+  - `exactId`: `int64 exact_id = 6 [jstype = JS_STRING];` JS\_STRING keeps a field a String under the option.
+  - `normal`: `int64 normal = 7 [jstype = JS_NORMAL];` JS\_NORMAL defers to the option.
+  - `maybeCount`: `optional int64 maybe_count = 8;`
+  - `samples`: `repeated int64 samples = 9;`
+  - `exactSamples`: `repeated uint64 exact_samples = 10 [jstype = JS_STRING];`
+  - `byId`: `map<int64, int64> by_id = 11;` Map keys stay strings, whatever the option; values follow it.
+  - `wrapped`: `google.protobuf.Int64Value wrapped = 12;`
+  - `limit`: `oneof limit` (`CountersLimit`)
+
+-}
 type alias Counters =
     { int64Value : Int
     , uint64Value : Int
@@ -41,6 +58,13 @@ type alias Counters =
     }
 
 
+{-| `oneof limit` of `int64_option.v1.Counters`
+
+  - `CountersLimitUnset`: none of the fields is set.
+  - `CountersLimitAtMost`: `int64 at_most = 13;`
+  - `CountersLimitExactly`: `int64 exactly = 14 [jstype = JS_STRING];`
+
+-}
 type CountersLimit
     = CountersLimitUnset
     | CountersLimitAtMost Int
@@ -51,6 +75,8 @@ type CountersLimit
 -- DEFAULTS
 
 
+{-| A `Counters` with every field at its default and every oneof unset.
+-}
 defaultCounters : Counters
 defaultCounters =
     { int64Value = 0
@@ -73,6 +99,8 @@ defaultCounters =
 -- TYPED VALUES
 
 
+{-| The typed value of `Counters`: its codecs, default and descriptor together.
+-}
 messageCounters : Proto.Message.Message Counters
 messageCounters =
     Proto.Message.message encodeCounters decodeCounters defaultCounters Int64Option.V1.Counters.descriptor
@@ -97,6 +125,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Counters` as proto3 JSON.
+-}
 encodeCounters : Counters -> Json.Encode.Value
 encodeCounters value =
     Proto.Json.objectOfFields
@@ -117,6 +147,8 @@ encodeCounters value =
         )
 
 
+{-| Encodes a `CountersLimit` as the members of its message's JSON object.
+-}
 encodeCountersLimit : CountersLimit -> List ( String, Maybe Json.Encode.Value )
 encodeCountersLimit value =
     case value of
@@ -136,6 +168,8 @@ encodeCountersLimit value =
 -- DECODERS
 
 
+{-| Decodes a `Counters` from proto3 JSON.
+-}
 decodeCounters : Json.Decode.Decoder Counters
 decodeCounters =
     Json.Decode.succeed Counters
@@ -154,6 +188,8 @@ decodeCounters =
         |> Proto.Json.oneof decodeCountersLimit
 
 
+{-| Decodes a `CountersLimit` from the members of its message's JSON object.
+-}
 decodeCountersLimit : Json.Decode.Decoder CountersLimit
 decodeCountersLimit =
     Proto.Json.members "limit"

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `nesting.v1.Outer.Inner`: its full name and its fields, in declaration order.
+
+`message nesting.v1.Outer.Inner`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `deepest` of `nesting.v1.Outer.Inner`.
+{-| The field `deepest` of `nesting.v1.Outer.Inner`: `nesting.v1.Outer.Inner.Deepest deepest = 1;`
 -}
 deepest : Proto.Field.Descriptor
 deepest =

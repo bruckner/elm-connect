@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `maps.v1.Member`: its full name and its fields, in declaration order.
+
+`message maps.v1.Member`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `maps.v1.Member`.
+{-| The field `name` of `maps.v1.Member`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

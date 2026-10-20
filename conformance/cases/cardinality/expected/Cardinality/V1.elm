@@ -24,11 +24,33 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message cardinality.v1.Author`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias Author =
     { name : String
     }
 
 
+{-| `message cardinality.v1.Note`
+
+  - `subtitle`: `optional string subtitle = 1;` Scalars with explicit presence become `Maybe`.
+  - `stars`: `optional int32 stars = 2;`
+  - `score`: `optional double score = 3;`
+  - `views`: `optional int64 views = 4;`
+  - `author`: `cardinality.v1.Author author = 5;` A singular message field has presence too, `optional` or not.
+  - `editor`: `optional cardinality.v1.Author editor = 6;`
+  - `tags`: `repeated string tags = 7;` Repeated fields become lists.
+  - `counts`: `repeated int32 counts = 8;`
+  - `weights`: `repeated float weights = 9;`
+  - `reviewers`: `repeated cardinality.v1.Author reviewers = 10;`
+  - `relatedLinks`: `repeated string related_links = 12;` A JSON name that differs from the proto name: parsers accept both.
+  - `isDraft`: `optional bool is_draft = 13;`
+  - `title`: `string title = 11;` A one-word name: the JSON name is the proto name.
+
+-}
 type alias Note =
     { subtitle : Maybe String
     , stars : Maybe Int
@@ -50,12 +72,16 @@ type alias Note =
 -- DEFAULTS
 
 
+{-| A `Author` with every field at its default and every oneof unset.
+-}
 defaultAuthor : Author
 defaultAuthor =
     { name = ""
     }
 
 
+{-| A `Note` with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { subtitle = Nothing
@@ -78,11 +104,15 @@ defaultNote =
 -- TYPED VALUES
 
 
+{-| The typed value of `Author`: its codecs, default and descriptor together.
+-}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
     Proto.Message.message encodeAuthor decodeAuthor defaultAuthor Cardinality.V1.Author.descriptor
 
 
+{-| The typed value of `Note`: its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Cardinality.V1.Note.descriptor
@@ -108,6 +138,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Author` as proto3 JSON.
+-}
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
     Proto.Json.objectOfFields
@@ -115,6 +147,8 @@ encodeAuthor value =
         ]
 
 
+{-| Encodes a `Note` as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -138,12 +172,16 @@ encodeNote value =
 -- DECODERS
 
 
+{-| Decodes a `Author` from proto3 JSON.
+-}
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
     Json.Decode.succeed Author
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `Note` from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note

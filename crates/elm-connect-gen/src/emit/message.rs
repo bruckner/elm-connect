@@ -1,7 +1,7 @@
 //! A message's four declarations: its record type alias, its default
 //! value, its encoder and its decoder.
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, RecordField, call};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, RecordField, call, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
     access, apply, binop, list, pipeline, pvar, record, string, tuple2, ty, var,
@@ -12,12 +12,22 @@ impl Emitter {
     /// `type alias Foo = { ... }`, one record field per proto field and per
     /// oneof, in declaration order.
     pub(super) fn message_alias(&mut self, shape: &MessageShape) -> Decl {
-        let body = shape
-            .record()
-            .into_iter()
+        let record = shape.record();
+        let items: Vec<_> = record
+            .iter()
+            .map(|field| match field {
+                RecordField::Field(field, _) => {
+                    (docs::field_head(&field.elm_name, &field.doc), &field.doc)
+                }
+                RecordField::Oneof(oneof) => (docs::oneof_head(oneof.oneof), &oneof.oneof.doc),
+            })
+            .collect();
+        let doc = docs::message(shape.message, &items);
+        let body = record
+            .iter()
             .map(|field| match field {
                 RecordField::Field(field, value) => {
-                    (field.elm_name.clone(), self.field_type(value))
+                    (field.elm_name.clone(), self.field_type(*value))
                 }
                 RecordField::Oneof(oneof) => (
                     oneof.oneof.elm_field_name.clone(),
@@ -26,7 +36,7 @@ impl Emitter {
             })
             .collect();
         Decl::TypeAlias {
-            doc: None,
+            doc: Some(doc),
             name: shape.message.elm_name.clone(),
             type_params: Vec::new(),
             body: Type::Record(body),
@@ -53,7 +63,10 @@ impl Emitter {
             })
             .collect();
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "A {} with every field at its default and every oneof unset.",
+                docs::code(&shape.message.elm_name)
+            )),
             name: shape.message.default_name(),
             annotation: ty(shape.message.elm_name.clone(), []),
             params: Vec::new(),
@@ -114,7 +127,10 @@ impl Emitter {
         };
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Encodes a {} as proto3 JSON.",
+                docs::code(&shape.message.elm_name)
+            )),
             name: shape.message.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(shape.message.elm_name.clone(), [])),
@@ -190,7 +206,10 @@ impl Emitter {
         };
         let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Decodes a {} from proto3 JSON.",
+                docs::code(&shape.message.elm_name)
+            )),
             name: shape.message.decoder_name(),
             annotation,
             params: Vec::new(),

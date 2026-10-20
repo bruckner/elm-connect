@@ -16,6 +16,15 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `notes.v1.Visibility`: its full name and its values, in declaration order.
+
+Who may read a note.
+
+`enum notes.v1.Visibility`
+
+  - `VISIBILITY_UNSPECIFIED = 0;`
+  - `VISIBILITY_PRIVATE = 1;`
+  - `VISIBILITY_PUBLIC = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

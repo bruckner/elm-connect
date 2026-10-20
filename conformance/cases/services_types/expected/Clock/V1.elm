@@ -24,6 +24,11 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message clock.v1.Alarm`
+
+  - `at`: `google.protobuf.Timestamp at = 1;`
+
+-}
 type alias Alarm =
     { at : Maybe Time.Posix
     }
@@ -33,6 +38,8 @@ type alias Alarm =
 -- DEFAULTS
 
 
+{-| A `Alarm` with every field at its default and every oneof unset.
+-}
 defaultAlarm : Alarm
 defaultAlarm =
     { at = Nothing
@@ -43,6 +50,8 @@ defaultAlarm =
 -- TYPED VALUES
 
 
+{-| The typed value of `Alarm`: its codecs, default and descriptor together.
+-}
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
     Proto.Message.message encodeAlarm decodeAlarm defaultAlarm Clock.V1.Alarm.descriptor
@@ -67,6 +76,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Alarm` as proto3 JSON.
+-}
 encodeAlarm : Alarm -> Json.Encode.Value
 encodeAlarm value =
     Proto.Json.objectOfFields
@@ -78,6 +89,8 @@ encodeAlarm value =
 -- DECODERS
 
 
+{-| Decodes a `Alarm` from proto3 JSON.
+-}
 decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =
     Json.Decode.succeed Alarm

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.ConformancePayload.RequestInfo`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.ConformancePayload.RequestInfo`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,28 +30,52 @@ descriptor =
         ]
 
 
-{-| The field `request_headers` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`.
+{-| The field `request_headers` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`: `repeated connectrpc.conformance.v1.Header request_headers = 1;`
+
+The server echos back the request headers it observed here.
+
 -}
 requestHeaders : Proto.Field.Descriptor
 requestHeaders =
     Proto.Field.descriptor "request_headers" "requestHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `timeout_ms` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`.
+{-| The field `timeout_ms` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`: `optional int64 timeout_ms = 2;`
+
+The timeout observed that was included in the request. Other timeouts use a
+type of uint32, but we want to be lenient here to allow whatever value the RPC
+server observes, even if it's outside the range of uint32.
+
 -}
 timeoutMs : Proto.Field.Descriptor
 timeoutMs =
     Proto.Field.descriptor "timeout_ms" "timeoutMs" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `requests` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`.
+{-| The field `requests` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`: `repeated google.protobuf.Any requests = 3;`
+
+The server should echo back all requests received.
+For unary and server-streaming requests, this should always contain a single request
+For client-streaming and half-duplex bidi-streaming, this should contain
+all client requests in the order received and be present in each response.
+For full-duplex bidirectional-streaming, this should contain all requests in the order
+they were received since the last sent response.
+
 -}
 requests : Proto.Field.Descriptor
 requests =
     Proto.Field.descriptor "requests" "requests" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
 
 
-{-| The field `connect_get_info` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`.
+{-| The field `connect_get_info` of `connectrpc.conformance.v1.ConformancePayload.RequestInfo`: `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo connect_get_info = 4;`
+
+If present, the request used the Connect protocol and a GET method. This
+captures other relevant information about the request. If a server implementation
+is unable to populate this (due to the server framework not exposing all of these
+details to application code), it may be an empty message. This implies that the
+server framework, at a minimum, at least expose to application code whether the
+request used GET vs. POST.
+
 -}
 connectGetInfo : Proto.Field.Descriptor
 connectGetInfo =

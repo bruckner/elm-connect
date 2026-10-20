@@ -16,6 +16,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `google.rpc.DebugInfo`: its full name and its fields, in declaration order.
+
+Describes additional debugging info.
+
+`message google.rpc.DebugInfo`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +30,20 @@ descriptor =
         ]
 
 
-{-| The field `stack_entries` of `google.rpc.DebugInfo`.
+{-| The field `stack_entries` of `google.rpc.DebugInfo`: `repeated string stack_entries = 1;`
+
+The stack trace entries indicating where the error occurred.
+
 -}
 stackEntries : Proto.Field.Descriptor
 stackEntries =
     Proto.Field.descriptor "stack_entries" "stackEntries" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `detail` of `google.rpc.DebugInfo`.
+{-| The field `detail` of `google.rpc.DebugInfo`: `string detail = 2;`
+
+Additional debugging information provided by the server.
+
 -}
 detail : Proto.Field.Descriptor
 detail =

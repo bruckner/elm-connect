@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `routes.v1.Message`: its full name and its fields, in declaration order.
+
+`message routes.v1.Message`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +28,14 @@ descriptor =
         ]
 
 
-{-| The field `message_id` of `routes.v1.Message`.
+{-| The field `message_id` of `routes.v1.Message`: `string message_id = 1;`
 -}
 messageId : Proto.Field.Descriptor
 messageId =
     Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `text` of `routes.v1.Message`.
+{-| The field `text` of `routes.v1.Message`: `string text = 2;`
 -}
 text : Proto.Field.Descriptor
 text =

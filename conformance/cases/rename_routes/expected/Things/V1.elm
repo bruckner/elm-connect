@@ -25,16 +25,39 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| `message things.v1.Thing`
+
+  - `name`: `string name = 1;`
+
+-}
 type alias Thing =
     { name : String
     }
 
 
+{-| Renamed to `Criteria` (options.txt), so its descriptor module is
+`Things.V1.Criteria`; `state` is renamed to `status`.
+
+`message things.v1.Filter`
+
+  - `status`: `string state = 1;`
+
+-}
 type alias Criteria =
     { status : String
     }
 
 
+{-| `name` is renamed to `resource` and `page_size` to `limit`
+(options.txt): the route names their descriptors by the new names.
+
+`message things.v1.GetThingRequest`
+
+  - `resource`: `string name = 1;`
+  - `limit`: `int32 page_size = 2;`
+  - `filter`: `things.v1.Filter filter = 3;`
+
+-}
 type alias GetThingRequest =
     { resource : String
     , limit : Int
@@ -46,18 +69,24 @@ type alias GetThingRequest =
 -- DEFAULTS
 
 
+{-| A `Thing` with every field at its default and every oneof unset.
+-}
 defaultThing : Thing
 defaultThing =
     { name = ""
     }
 
 
+{-| A `Criteria` with every field at its default and every oneof unset.
+-}
 defaultCriteria : Criteria
 defaultCriteria =
     { status = ""
     }
 
 
+{-| A `GetThingRequest` with every field at its default and every oneof unset.
+-}
 defaultGetThingRequest : GetThingRequest
 defaultGetThingRequest =
     { resource = ""
@@ -70,16 +99,22 @@ defaultGetThingRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of `Thing`: its codecs, default and descriptor together.
+-}
 messageThing : Proto.Message.Message Thing
 messageThing =
     Proto.Message.message encodeThing decodeThing defaultThing Things.V1.Thing.descriptor
 
 
+{-| The typed value of `Criteria`: its codecs, default and descriptor together.
+-}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
     Proto.Message.message encodeCriteria decodeCriteria defaultCriteria Things.V1.Criteria.descriptor
 
 
+{-| The typed value of `GetThingRequest`: its codecs, default and descriptor together.
+-}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =
     Proto.Message.message encodeGetThingRequest decodeGetThingRequest defaultGetThingRequest Things.V1.GetThingRequest.descriptor
@@ -106,6 +141,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a `Thing` as proto3 JSON.
+-}
 encodeThing : Thing -> Json.Encode.Value
 encodeThing value =
     Proto.Json.objectOfFields
@@ -113,6 +150,8 @@ encodeThing value =
         ]
 
 
+{-| Encodes a `Criteria` as proto3 JSON.
+-}
 encodeCriteria : Criteria -> Json.Encode.Value
 encodeCriteria value =
     Proto.Json.objectOfFields
@@ -120,6 +159,8 @@ encodeCriteria value =
         ]
 
 
+{-| Encodes a `GetThingRequest` as proto3 JSON.
+-}
 encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
 encodeGetThingRequest value =
     Proto.Json.objectOfFields
@@ -133,18 +174,24 @@ encodeGetThingRequest value =
 -- DECODERS
 
 
+{-| Decodes a `Thing` from proto3 JSON.
+-}
 decodeThing : Json.Decode.Decoder Thing
 decodeThing =
     Json.Decode.succeed Thing
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a `Criteria` from proto3 JSON.
+-}
 decodeCriteria : Json.Decode.Decoder Criteria
 decodeCriteria =
     Json.Decode.succeed Criteria
         |> Proto.Json.field "state" "" Json.Decode.string
 
 
+{-| Decodes a `GetThingRequest` from proto3 JSON.
+-}
 decodeGetThingRequest : Json.Decode.Decoder GetThingRequest
 decodeGetThingRequest =
     Json.Decode.succeed GetThingRequest

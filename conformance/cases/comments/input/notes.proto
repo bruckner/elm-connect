@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+// Proto comments become the documentation of what each element becomes,
+// beside its one-line declaration: messages and nested messages, fields
+// with options, `json_name` and deprecation, enums and their values with
+// an alias, oneofs and their members. A leading comment and a trailing
+// one are both kept; a detached comment is left out.
+package notes.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Detached: a blank line separates it from Visibility.
+
+// Who may read a note.
+//
+// A second paragraph, with `code` and a list:
+//
+// * the author
+// * everyone
+enum Visibility {
+  option allow_alias = true;
+  // Nobody said; read as private.
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PRIVATE = 1; // Only the author.
+  // Everyone.
+  VISIBILITY_PUBLIC = 2 [deprecated = true];
+  // The old name of VISIBILITY_PUBLIC.
+  VISIBILITY_OPEN = 2;
+}
+
+// A note.
+message Note {
+  // The resource name, `notes/{note}`.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  // The title, shown first.
+  string title = 2 [json_name = "heading", (google.api.field_behavior) = REQUIRED];
+  Visibility visibility = 3; // Who may read it.
+  // Labels.
+  //
+  // In no order.
+  repeated string tags = 4 [(google.api.field_behavior) = UNORDERED_LIST];
+  map<string, string> labels = 5;
+  optional bool pinned = 6;
+  // Replaced by `title`.
+  string subject = 7 [deprecated = true];
+  google.protobuf.Timestamp created = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // What happened to the note last.
+  oneof last_event {
+    // When it was archived.
+    google.protobuf.Timestamp archived = 9;
+    Edit edited = 10; // The last edit.
+  }
+
+  // An edit of a note.
+  message Edit {
+    // Who made it.
+    string author = 1;
+  }
+}
+
+// A note not yet saved.
+message Draft {
+  option deprecated = true;
+
+  string text = 1;
+}
+
+// Kept for older clients.
+enum Legacy {
+  option deprecated = true;
+
+  LEGACY_UNSPECIFIED = 0;
+}

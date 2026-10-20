@@ -22,6 +22,15 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.TestSuite`: its full name and its fields, in declaration order.
+
+TestSuite represents a set of conformance test cases. This is also the schema
+used for the structure of a YAML test file. Each YAML file represents a test
+suite, which can contain numerous cases. Each test suite has various properties
+that indicate the kinds of features that are tested. Test suites may be skipped
+based on whether the client or server under test implements these features.
+
+`message connectrpc.conformance.v1.TestSuite`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -41,84 +50,134 @@ descriptor =
         ]
 
 
-{-| The field `name` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `name` of `connectrpc.conformance.v1.TestSuite`: `string name = 1;`
+
+Test suite name. When writing test suites, this is a required field.
+
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `mode` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `mode` of `connectrpc.conformance.v1.TestSuite`: `connectrpc.conformance.v1.TestSuite.TestMode mode = 2;`
+
+The mode (client or server) that this test suite applies to. This is used
+in conjunction with the `--mode` flag passed to the conformance runner
+binary. If the mode on the suite is set to client, the tests will only be
+run if `--mode client` is set on the command to the test runner.
+Likewise if mode is server. If this is unset, the test case will be run in both modes.
+
 -}
 mode : Proto.Field.Descriptor
 mode =
     Proto.Field.descriptor "mode" "mode" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.TestSuiteTestMode.descriptor)
 
 
-{-| The field `test_cases` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `test_cases` of `connectrpc.conformance.v1.TestSuite`: `repeated connectrpc.conformance.v1.TestCase test_cases = 3;`
+
+The actual test cases in the suite.
+
 -}
 testCases : Proto.Field.Descriptor
 testCases =
     Proto.Field.descriptor "test_cases" "testCases" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase")
 
 
-{-| The field `relevant_protocols` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relevant_protocols` of `connectrpc.conformance.v1.TestSuite`: `repeated connectrpc.conformance.v1.Protocol relevant_protocols = 4;`
+
+If non-empty, the protocols to which this suite applies. If empty,
+this suite applies to all protocols.
+
 -}
 relevantProtocols : Proto.Field.Descriptor
 relevantProtocols =
     Proto.Field.descriptor "relevant_protocols" "relevantProtocols" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Protocol.descriptor)
 
 
-{-| The field `relevant_http_versions` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relevant_http_versions` of `connectrpc.conformance.v1.TestSuite`: `repeated connectrpc.conformance.v1.HTTPVersion relevant_http_versions = 5;`
+
+If non-empty, the HTTP versions to which this suite applies. If empty,
+this suite applies to all HTTP versions.
+
 -}
 relevantHttpVersions : Proto.Field.Descriptor
 relevantHttpVersions =
     Proto.Field.descriptor "relevant_http_versions" "relevantHttpVersions" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.HTTPVersion.descriptor)
 
 
-{-| The field `relevant_codecs` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relevant_codecs` of `connectrpc.conformance.v1.TestSuite`: `repeated connectrpc.conformance.v1.Codec relevant_codecs = 6;`
+
+If non-empty, the codecs to which this suite applies. If empty, this
+suite applies to all codecs.
+
 -}
 relevantCodecs : Proto.Field.Descriptor
 relevantCodecs =
     Proto.Field.descriptor "relevant_codecs" "relevantCodecs" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Codec.descriptor)
 
 
-{-| The field `relevant_compressions` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relevant_compressions` of `connectrpc.conformance.v1.TestSuite`: `repeated connectrpc.conformance.v1.Compression relevant_compressions = 7;`
+
+If non-empty, the compression encodings to which this suite applies.
+If empty, this suite applies to all encodings.
+
 -}
 relevantCompressions : Proto.Field.Descriptor
 relevantCompressions =
     Proto.Field.descriptor "relevant_compressions" "relevantCompressions" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Connectrpc.Conformance.V1.Compression.descriptor)
 
 
-{-| The field `connect_version_mode` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `connect_version_mode` of `connectrpc.conformance.v1.TestSuite`: `connectrpc.conformance.v1.TestSuite.ConnectVersionMode connect_version_mode = 8;`
+
+Indicates the Connect version validation behavior that this suite
+relies on.
+
 -}
 connectVersionMode : Proto.Field.Descriptor
 connectVersionMode =
     Proto.Field.descriptor "connect_version_mode" "connectVersionMode" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.TestSuiteConnectVersionMode.descriptor)
 
 
-{-| The field `relies_on_tls` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relies_on_tls` of `connectrpc.conformance.v1.TestSuite`: `bool relies_on_tls = 9;`
+
+If true, the cases in this suite rely on TLS and will only be run against
+TLS server configurations.
+
 -}
 reliesOnTls : Proto.Field.Descriptor
 reliesOnTls =
     Proto.Field.descriptor "relies_on_tls" "reliesOnTls" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `relies_on_tls_client_certs` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relies_on_tls_client_certs` of `connectrpc.conformance.v1.TestSuite`: `bool relies_on_tls_client_certs = 10;`
+
+If true, the cases in this suite rely on the client using TLS
+certificates to authenticate with the server. (Should only be
+true if relies\_on\_tls is also true.)
+
 -}
 reliesOnTlsClientCerts : Proto.Field.Descriptor
 reliesOnTlsClientCerts =
     Proto.Field.descriptor "relies_on_tls_client_certs" "reliesOnTlsClientCerts" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `relies_on_connect_get` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relies_on_connect_get` of `connectrpc.conformance.v1.TestSuite`: `bool relies_on_connect_get = 11;`
+
+If true, the cases in this suite rely on the Connect GET protocol.
+
 -}
 reliesOnConnectGet : Proto.Field.Descriptor
 reliesOnConnectGet =
     Proto.Field.descriptor "relies_on_connect_get" "reliesOnConnectGet" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `relies_on_message_receive_limit` of `connectrpc.conformance.v1.TestSuite`.
+{-| The field `relies_on_message_receive_limit` of `connectrpc.conformance.v1.TestSuite`: `bool relies_on_message_receive_limit = 12;`
+
+If true, the cases in this suite rely on support for limiting the
+size of received messages. When true, mode should be set to indicate
+whether it is the client or the server that must support the limit.
+
 -}
 reliesOnMessageReceiveLimit : Proto.Field.Descriptor
 reliesOnMessageReceiveLimit =

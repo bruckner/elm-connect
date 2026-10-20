@@ -16,6 +16,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `oneofs.v1.Choice`: its full name and its fields, in declaration order.
+
+A message whose only content is a oneof.
+
+`message oneofs.v1.Choice`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `number` of `oneofs.v1.Choice`, a member of the oneof `value`.
+{-| The field `number` of `oneofs.v1.Choice`, a member of the oneof `value`: `double number = 1;`
 -}
 number : Proto.Field.Descriptor
 number =
@@ -33,7 +38,7 @@ number =
         |> Proto.Field.inOneof "value"
 
 
-{-| The field `text` of `oneofs.v1.Choice`, a member of the oneof `value`.
+{-| The field `text` of `oneofs.v1.Choice`, a member of the oneof `value`: `string text = 2 [json_name = "label"];`
 -}
 text : Proto.Field.Descriptor
 text =

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `clock.v1.Alarm`: its full name and its fields, in declaration order.
+
+`message clock.v1.Alarm`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `at` of `clock.v1.Alarm`.
+{-| The field `at` of `clock.v1.Alarm`: `google.protobuf.Timestamp at = 1;`
 -}
 at : Proto.Field.Descriptor
 at =

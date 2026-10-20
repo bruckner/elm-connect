@@ -16,6 +16,13 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `tasks.v1.State`: its full name and its values, in declaration order.
+
+`enum tasks.v1.State`
+
+  - `STATE_UNSPECIFIED = 0;`
+  - `STATE_OPEN = 1;`
+  - `STATE_STALE = 2 [deprecated = true];` Deprecated.
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

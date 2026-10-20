@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.TestCase`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.TestCase`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,28 +31,79 @@ descriptor =
         ]
 
 
-{-| The field `request` of `connectrpc.conformance.v1.TestCase`.
+{-| The field `request` of `connectrpc.conformance.v1.TestCase`: `connectrpc.conformance.v1.ClientCompatRequest request = 1;`
+
+Defines the RPC that the client should invoke. The first eight fields
+are not fully specified. Instead the first field, test\_name, must be
+present but is a prefix -- other characteristics that identify one
+permutation of the test case will be appended to this name. The next
+seven fields (http\_version, protocol, codec, compression, host, port,
+and server\_tls\_cert) must not be present. They are all populated by
+the test harness based on the test environment (e.g. actual server and
+port to use) and characteristics of a single permutation.
+
 -}
 request : Proto.Field.Descriptor
 request =
     Proto.Field.descriptor "request" "request" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientCompatRequest")
 
 
-{-| The field `expand_requests` of `connectrpc.conformance.v1.TestCase`.
+{-| The field `expand_requests` of `connectrpc.conformance.v1.TestCase`: `repeated connectrpc.conformance.v1.TestCase.ExpandedSize expand_requests = 2;`
+
+To support extremely large messages, as well as very precisely-sized
+messages, without having to encode them fully or perfectly in YAML
+test cases, this value can be specified. When non-empty, this value
+should have no more entries than there are messages in the request
+stream. The first value is applied to the first request message, and
+so on. For each entry, if the size is present, it is used to expand
+the data field in the request (which is actually part of the response
+definition). The specified size is added to the current limit on
+message size that the server will accept. That sum is the size of the
+the serialized message that will be sent, and the data field will be
+padded as needed to reach that size.
+
 -}
 expandRequests : Proto.Field.Descriptor
 expandRequests =
     Proto.Field.descriptor "expand_requests" "expandRequests" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.TestCase.ExpandedSize")
 
 
-{-| The field `expected_response` of `connectrpc.conformance.v1.TestCase`.
+{-| The field `expected_response` of `connectrpc.conformance.v1.TestCase`: `connectrpc.conformance.v1.ClientResponseResult expected_response = 3;`
+
+Defines the expected response to the above RPC. The expected response for
+a test is auto-generated based on the request details. The conformance runner
+will determine what the response should be according to the values specified
+in the test suite and individual test cases.
+
+This value can also be specified explicitly in the test case YAML. However,
+this is typically only needed for exception test cases. If the expected
+response is mostly re-stating the response definition that appears in the
+requests, test cases should rely on the auto-generation if possible.
+Otherwise, specifying an expected response can make the test YAML overly
+verbose and harder to read, write, and maintain.
+
+If the test induces behavior that prevents the server from sending or client
+from receiving the full response definition, it will be necessary to define
+the expected response explicitly. Timeouts, cancellations, and exceeding
+message size limits are good examples of this.
+
+Specifying an expected response explicitly in test definitions will override
+the auto-generation of the test runner.
+
 -}
 expectedResponse : Proto.Field.Descriptor
 expectedResponse =
     Proto.Field.descriptor "expected_response" "expectedResponse" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.ClientResponseResult")
 
 
-{-| The field `other_allowed_error_codes` of `connectrpc.conformance.v1.TestCase`.
+{-| The field `other_allowed_error_codes` of `connectrpc.conformance.v1.TestCase`: `repeated connectrpc.conformance.v1.Code other_allowed_error_codes = 4;`
+
+When expected\_response indicates that an error is expected, in some cases, the
+actual error code returned may be flexible. In that case, this field provides
+other acceptable error codes, in addition to the one indicated in the
+expected\_response. As long as the actual error's code matches any of these, the
+error is considered conformant, and the test case can pass.
+
 -}
 otherAllowedErrorCodes : Proto.Field.Descriptor
 otherAllowedErrorCodes =

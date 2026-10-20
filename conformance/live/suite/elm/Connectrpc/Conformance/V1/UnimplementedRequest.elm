@@ -15,6 +15,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.UnimplementedRequest`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.UnimplementedRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

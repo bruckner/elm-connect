@@ -16,6 +16,13 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `enums.v1.Status`: its full name and its values, in declaration order.
+
+`enum enums.v1.Status`
+
+  - `STATUS_UNSPECIFIED = 0;`
+  - `STATUS_ACTIVE = 1;`
+  - `STATUS_ARCHIVED = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

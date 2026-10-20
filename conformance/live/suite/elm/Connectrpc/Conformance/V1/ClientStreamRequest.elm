@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `connectrpc.conformance.v1.ClientStreamRequest`: its full name and its fields, in declaration order.
+
+`message connectrpc.conformance.v1.ClientStreamRequest`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +28,23 @@ descriptor =
         ]
 
 
-{-| The field `response_definition` of `connectrpc.conformance.v1.ClientStreamRequest`.
+{-| The field `response_definition` of `connectrpc.conformance.v1.ClientStreamRequest`: `connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;`
+
+Tells the server how to reply once all client messages are
+complete. Required in the first message in the stream, but
+should be ignored in subsequent messages.
+
 -}
 responseDefinition : Proto.Field.Descriptor
 responseDefinition =
     Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.UnaryResponseDefinition")
 
 
-{-| The field `request_data` of `connectrpc.conformance.v1.ClientStreamRequest`.
+{-| The field `request_data` of `connectrpc.conformance.v1.ClientStreamRequest`: `bytes request_data = 2;`
+
+Additional data for subsequent messages in the stream. Also
+used to pad the request size to test large request messages.
+
 -}
 requestData : Proto.Field.Descriptor
 requestData =

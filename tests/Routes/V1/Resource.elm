@@ -17,6 +17,11 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `routes.v1.Resource`: its full name and its fields, in declaration order.
+
+Sent only as a body, so it may hold maps, which have no query form.
+
+`message routes.v1.Resource`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,35 +34,35 @@ descriptor =
         ]
 
 
-{-| The field `name` of `routes.v1.Resource`.
+{-| The field `name` of `routes.v1.Resource`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `display_name` of `routes.v1.Resource`.
+{-| The field `display_name` of `routes.v1.Resource`: `string display_name = 2;`
 -}
 displayName : Proto.Field.Descriptor
 displayName =
     Proto.Field.descriptor "display_name" "displayName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `labels` of `routes.v1.Resource`.
+{-| The field `labels` of `routes.v1.Resource`: `map<string, string> labels = 3;`
 -}
 labels : Proto.Field.Descriptor
 labels =
     Proto.Field.descriptor "labels" "labels" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `kinds` of `routes.v1.Resource`.
+{-| The field `kinds` of `routes.v1.Resource`: `map<int64, routes.v1.Kind> kinds = 4;`
 -}
 kinds : Proto.Field.Descriptor
 kinds =
     Proto.Field.descriptor "kinds" "kinds" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindEnum Routes.V1.Kind.descriptor)
 
 
-{-| The field `weights` of `routes.v1.Resource`.
+{-| The field `weights` of `routes.v1.Resource`: `map<bool, double> weights = 5;`
 -}
 weights : Proto.Field.Descriptor
 weights =

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `cardinality.v1.Author`: its full name and its fields, in declaration order.
+
+`message cardinality.v1.Author`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +27,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `cardinality.v1.Author`.
+{-| The field `name` of `cardinality.v1.Author`: `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

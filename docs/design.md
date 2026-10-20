@@ -446,6 +446,58 @@ rpc shared call =
   A reference to another generated package is qualified with its module
   (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
   plainly, without an alias or an exposing list (`packages` case).
+- **Comments and declaration lines.** *(Decided, 2026-10-20.)* The
+  declaration a proto element becomes is documented with the proto's
+  comment for it and the element's one-line declaration, as a reader of
+  Java's, C++'s or protobuf-es's generated code finds them. A message's
+  record alias carries its comment, `` `message notes.v1.Note` `` and an
+  item per record field, `` `name`: `string name = 1;` `` and the
+  field's comment, a oneof's item naming its custom type; an enum's
+  custom type its comment, `` `enum notes.v1.Visibility` `` and an item
+  per constructor with its value's line and comment, an alias's after it
+  (values are not broken out of their enum's doc); a oneof's custom type
+  its comment, `` `oneof kind` of `notes.v1.NoteEvent` `` and an item
+  per constructor. A descriptor keeps its sentence and adds the
+  comment and the line, a field's value its own (so a field's comment
+  is in both places); codecs, defaults and typed values get one sentence
+  naming their type, and no proto text. A deprecated element's doc
+  starts with `Deprecated.`, an item's sentence with it.
+  The comment is the leading comment, then the trailing one as a
+  paragraph of its own; detached comments are left out, as
+  protoc-gen-go and Java leave them out. Each line loses the space
+  after `//` and trailing whitespace, and blank lines stay as paragraph
+  breaks. A declaration line is rebuilt from the descriptor in canonical
+  spacing, never copied from the source and never a body: the type by
+  keyword or full name, `map<K, V>`, `optional` only for a proto3
+  optional field, and the options in brackets as a proto writes them,
+  `json_name` (when set) first and custom options in parentheses
+  (`[json_name = "heading", (google.api.field_behavior) = REQUIRED]`),
+  each value in protobuf's text format on one line. Why the line: it
+  says what the Elm type does not (the field number, the proto type
+  behind an `Int` or a `String`, the options), in one line rather than
+  the body Java and C++ print for a message. Elm comments nest, so
+  `{-` and `-}` in a comment are written `{ -` and `- }`. elm-format
+  re-renders a doc comment's Markdown, and generated code must be in
+  its form (`elm-format --validate`, §7), so the printer puts every doc
+  comment there: it ports the Markdown parser elm-format 0.8.8 vendors
+  and its printer (`elm::markdown`), and repeats them until the text
+  stops changing. Lists become `  - ` and `1.  `, emphasis `_` and
+  `**`, setext headings `#`, a bare URL `<url>`; `\`, `` ` ``, `_` and
+  `*` in text are escaped; tabs become spaces; lines are never
+  reflowed. Where elm-format would lose text, the printer keeps it
+  instead in a form elm-format leaves alone: code elm-format would
+  format as Elm (indented, or fenced without a language or as `elm`) is
+  fenced as `text`, since a proto comment's code is not Elm and
+  formatting it as Elm rewrites it (`GET /v1/notes` becomes
+  `GET / v1 / notes`); a line starting `@docs`, which elm-format would
+  read as a list of names, sets `@docs` as code; a heading after the
+  first block of a list item, which elm-format would move out of the
+  list, becomes strong text; a link reference definition it cannot
+  read back is kept as code; an empty code block, on which elm-format
+  fails, is dropped. Each comment is settled on its own before it is
+  placed among the declaration's items, so a fence it leaves open
+  cannot take in what follows (`comments` and `comments_awkward`
+  cases).
 
 ### 3.2 Messages
 
@@ -1467,8 +1519,9 @@ registry =
   registry keeps every tree in it, and every program pays for the
   trees' source size, so a property joins the trees only when a use
   needs it: behavior for update masks and forms, deprecation for
-  tooling. Comments, proto2 default values, extensions in general and
-  a method's streaming kind are not in them.
+  tooling. Comments (which are in the documentation, §3.1), proto2
+  default values, extensions in general and a method's streaming kind
+  are not in them.
 - `Proto.Enum` derives names and numbers (`toName`, `fromName`,
   `toNumber`, `fromNumber`) from the descriptor and the codecs: the
   encoder writes a value's name, the decoder reads every declared name
@@ -3301,6 +3354,11 @@ the pre-1.0 work.
 Streaming (both transports), binary protobuf, gRPC-web, proto2,
 interceptors (§9), server generation. Each has a sentence above
 saying why; none is a permanent no.
+
+Leaving comments out *(Recorded 2026-10-20; not built)*: a
+`comments=off` option, for an API whose proto comments are internal,
+would generate the declaration lines and sentences without the proto's
+comments. It is additive (§8.3), so it waits for someone to need it.
 
 Emitting the runtime *(Proposed; not built)*: an option for the
 generator to write the runtime's own modules (`Proto.*`, `Rpc`,

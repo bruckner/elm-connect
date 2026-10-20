@@ -16,6 +16,12 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the message `google.rpc.LocalizedMessage`: its full name and its fields, in declaration order.
+
+Provides a localized error message that is safe to return to the user
+which can be attached to an RPC error.
+
+`message google.rpc.LocalizedMessage`
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,22 @@ descriptor =
         ]
 
 
-{-| The field `locale` of `google.rpc.LocalizedMessage`.
+{-| The field `locale` of `google.rpc.LocalizedMessage`: `string locale = 1;`
+
+The locale used following the specification defined at
+<https://www.rfc-editor.org/rfc/bcp/bcp47.txt>.
+Examples are: "en-US", "fr-CH", "es-MX"
+
 -}
 locale : Proto.Field.Descriptor
 locale =
     Proto.Field.descriptor "locale" "locale" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `message` of `google.rpc.LocalizedMessage`.
+{-| The field `message` of `google.rpc.LocalizedMessage`: `string message = 2;`
+
+The localized error message in the above locale.
+
 -}
 message : Proto.Field.Descriptor
 message =

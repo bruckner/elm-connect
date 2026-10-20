@@ -16,6 +16,27 @@ elmConnectVersion_ =
 
 
 {-| What the proto says about the enum `connectrpc.conformance.v1.Code`: its full name and its values, in declaration order.
+
+`enum connectrpc.conformance.v1.Code`
+
+  - `CODE_UNSPECIFIED = 0;`
+  - `CODE_CANCELED = 1;`
+  - `CODE_UNKNOWN = 2;`
+  - `CODE_INVALID_ARGUMENT = 3;`
+  - `CODE_DEADLINE_EXCEEDED = 4;`
+  - `CODE_NOT_FOUND = 5;`
+  - `CODE_ALREADY_EXISTS = 6;`
+  - `CODE_PERMISSION_DENIED = 7;`
+  - `CODE_RESOURCE_EXHAUSTED = 8;`
+  - `CODE_FAILED_PRECONDITION = 9;`
+  - `CODE_ABORTED = 10;`
+  - `CODE_OUT_OF_RANGE = 11;`
+  - `CODE_UNIMPLEMENTED = 12;`
+  - `CODE_INTERNAL = 13;`
+  - `CODE_UNAVAILABLE = 14;`
+  - `CODE_DATA_LOSS = 15;`
+  - `CODE_UNAUTHENTICATED = 16;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =
