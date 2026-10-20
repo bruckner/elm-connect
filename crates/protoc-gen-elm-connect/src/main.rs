@@ -70,6 +70,7 @@ fn editions(raw: &RawProtoFiles) -> Diagnostics {
             file: name.clone(),
             span: None,
             label: "the edition".into(),
+            within: Vec::new(),
         };
         diagnostics.push(Problem::editions(&name, edition, site));
     }
@@ -92,7 +93,8 @@ fn pool(raw: &RawProtoFiles) -> Result<DescriptorPool, String> {
 /// error.
 ///
 /// protoc sends no proto sources, so problems render without snippets,
-/// naming the proto elements instead.
+/// naming the proto elements, and each site as `file:line:col` from the
+/// request's `SourceCodeInfo`.
 fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     let request = match CodeGeneratorRequest::decode(bytes) {
         Ok(request) => request,
@@ -123,8 +125,9 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
             return (response(Some(error), Vec::new()), String::new());
         }
     };
-    let unsupported = editions(&raw);
+    let mut unsupported = editions(&raw);
     if !unsupported.is_empty() {
+        unsupported.locate();
         let error = render_narrow(&unsupported);
         return (response(Some(error), Vec::new()), String::new());
     }
@@ -156,17 +159,22 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
                     ..File::default()
                 })
                 .collect();
-            let warnings = if generated.warnings.is_empty() {
+            let mut warnings = generated.warnings;
+            warnings.locate();
+            let warnings = if warnings.is_empty() {
                 String::new()
             } else {
-                render_narrow(&generated.warnings)
+                render_narrow(&warnings)
             };
             (response(None, files), warnings)
         }
-        Err(diagnostics) => (
-            response(Some(render_narrow(&diagnostics)), Vec::new()),
-            String::new(),
-        ),
+        Err(mut diagnostics) => {
+            diagnostics.locate();
+            (
+                response(Some(render_narrow(&diagnostics)), Vec::new()),
+                String::new(),
+            )
+        }
     }
 }
 
@@ -723,6 +731,43 @@ service Uploads {
             response.supported_features,
             Some(Feature::Proto3Optional as u64),
             "editions are not claimed"
+        );
+    }
+
+    #[test]
+    fn problems_name_their_sites_by_file_line_and_column() {
+        let dir = std::env::temp_dir().join("protoc-gen-elm-connect-located");
+        let source =
+            "syntax = \"proto3\";\n\npackage library.v1;\n\nmessage Book {}\nmessage book {}\n";
+        std::fs::create_dir_all(dir.join("library/v1")).expect("create");
+        std::fs::write(dir.join("library/v1/library.proto"), source).expect("write");
+        let mut compiler = protox::Compiler::new([dir]).expect("an include path");
+        // protoc sends `source_code_info` for the files to generate.
+        compiler.include_source_info(true).include_imports(true);
+        compiler
+            .open_file("library/v1/library.proto")
+            .expect("compiles");
+        let request = CodeGeneratorRequest {
+            file_to_generate: vec!["library/v1/library.proto".into()],
+            proto_file: compiler.file_descriptor_set().file,
+            ..CodeGeneratorRequest::default()
+        };
+        let error = round_trip(request).error.expect("an error");
+        assert_eq!(
+            error,
+            "naming::type_collision
+
+  × library/v1/library.proto:5:9: The package `library.v1` has two messages
+  │ that both become the Elm type and record constructor `Book`.
+  │ library/v1/library.proto:5:9: message `library.v1.Book` becomes `Book`
+  │ library/v1/library.proto:6:9: and so does message `library.v1.book`
+  help: Every message, enum and oneof of a package becomes a type in one Elm
+        module, nested names joined (`Outer.Inner` becomes `OuterInner`), and
+        a module cannot define two types with one name. A message's record
+        constructor takes its type's name, so the two collide as constructors
+        too, and one rename parts both. Rename one of them in the proto, or
+        rename one with `rename=library.v1.book:<Elm name>`.
+"
         );
     }
 

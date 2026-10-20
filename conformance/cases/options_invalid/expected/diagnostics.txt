@@ -26,8 +26,8 @@ options::duplicate_option
 options::duplicate_option
 
   × The options rename `notes.v1.Note` more than once.
-  help: A proto element has one Elm name, so it takes one `rename`. Keep the
-        one you mean.
+  help: A proto element has one Elm name, so it takes one rename. Keep the one
+        you mean.
 
 options::invalid_rename
 
@@ -39,6 +39,6 @@ options::invalid_rename
 options::invalid_module_prefix
 
   × The module prefix `api` is not an Elm module name.
-  help: `module_prefix` is dot-separated Elm module segments, such as
+  help: A module prefix is dot-separated Elm module segments, such as
         `Api.Notes`, each an uppercase letter followed by letters, digits or
         underscores.

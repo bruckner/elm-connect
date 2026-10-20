@@ -2,13 +2,12 @@ route::path_field
 
   × The HTTP rule of `library.v1.Library.GetBook` binds `{book_name}` in its
   │ path, but `library.v1.GetBookRequest` has no field `book_name`.
-    ╭─[library.proto:20:5]
- 19 │       rpc GetBook(GetBookRequest) returns (Book) {
- 20 │ ╭─▶     option (google.api.http) = {
- 21 │ │         get: "/v1/{book_name=shelves/*/books/*}"
- 22 │ ├─▶     };
-    · ╰──── in this rule
- 23 │       }
+    ╭─[library.proto:21:12]
+ 20 │     option (google.api.http) = {
+ 21 │       get: "/v1/{book_name=shelves/*/books/*}"
+    ·            ─────────────────┬─────────────────
+    ·                             ╰── this path
+ 22 │     };
     ╰────
   help: A path variable names a non-repeated scalar or enum field of the
         request, possibly through singular message fields (`{book.name}`).
@@ -17,14 +16,12 @@ route::body_field
 
   × The HTTP rule of `library.v1.Library.CreateBook` has `body: "name"`, but
   │ `name` is not a message.
-    ╭─[library.proto:26:5]
- 25 │       rpc CreateBook(Book) returns (Book) {
- 26 │ ╭─▶     option (google.api.http) = {
- 27 │ │         post: "/v1/books"
- 28 │ │         body: "name"
- 29 │ ├─▶     };
-    · ╰──── in this rule
- 30 │       }
+    ╭─[library.proto:28:13]
+ 27 │       post: "/v1/books"
+ 28 │       body: "name"
+    ·             ───┬──
+    ·                ╰── this body
+ 29 │     };
     ╰────
   help: `body` is `*` for every field not in the path, or the name of a top-
         level singular message field of the request, or left out for no body.
@@ -50,17 +47,12 @@ route::template
 
   × The HTTP rule of `library.v1.Library.ListBooks` has the path `/v1/*/
   │ books`, with a wildcard outside a variable.
-    ╭─[library.proto:39:5]
- 38 │       rpc ListBooks(GetBookRequest) returns (Book) {
- 39 │ ╭─▶     option (google.api.http) = {
- 40 │ │         get: "/v1/*/books"
- 41 │ │         additional_bindings {
- 42 │ │           get: "/v1/books"
- 43 │ │           response_body: "title"
- 44 │ │         }
- 45 │ ├─▶     };
-    · ╰──── in this rule
- 46 │       }
+    ╭─[library.proto:40:12]
+ 39 │     option (google.api.http) = {
+ 40 │       get: "/v1/*/books"
+    ·            ──────┬──────
+    ·                  ╰── this path
+ 41 │       additional_bindings {
     ╰────
   help: A client fills each path segment from a request field, and a bare `*`
         or `**` names none. Bind it to a field, like `{name=*}`.
@@ -69,17 +61,12 @@ route::response_body
 
   × Additional binding 1 of `library.v1.Library.ListBooks` has `response_body:
   │ "title"`, but the response has no such field.
-    ╭─[library.proto:39:5]
- 38 │       rpc ListBooks(GetBookRequest) returns (Book) {
- 39 │ ╭─▶     option (google.api.http) = {
- 40 │ │         get: "/v1/*/books"
- 41 │ │         additional_bindings {
- 42 │ │           get: "/v1/books"
- 43 │ │           response_body: "title"
- 44 │ │         }
- 45 │ ├─▶     };
-    · ╰──── in this rule
- 46 │       }
+    ╭─[library.proto:43:24]
+ 42 │         get: "/v1/books"
+ 43 │         response_body: "title"
+    ·                        ───┬───
+    ·                           ╰── this response body
+ 44 │       }
     ╰────
   help: `response_body` names a top-level field of the response, a generated
         message, or is left out for the whole response.

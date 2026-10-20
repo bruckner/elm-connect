@@ -1128,9 +1128,15 @@ lowercase letter followed by letters, digits or underscores, and not a
 reserved word. An enum value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
-`options::unknown_rename`. Names that collide after renaming are the
+`options::unknown_rename`, which suggests the closest full name they
+have (`suggestions` case). Names that collide after renaming are the
 `naming::*_collision` diagnostics, as before, and each `naming::*` help
-text names the escape (`rename` and `rename_invalid` cases).
+text names the escape, the `rename` of the element at fault by its proto
+full name (of a collision's second claimant, when renaming it would part
+them), with a placeholder for the Elm name (`rename` and
+`rename_invalid` cases). When a rename gave one of them the name, its
+site says so ("renamed to `title` by `rename`") and the help points at
+that rename instead (`rename_collision` case).
 
 ### 3.8 Dead ends
 
@@ -1173,8 +1179,10 @@ Refused (each a diagnostic, pinned in the conformance corpus where a
 case names it):
 
 - **Names that collide in Elm**: two types after nested-message
-  flattening (`naming::type_collision`), two constructors in one module,
-  such as enum values or oneof members (`naming::constructor_collision`),
+  flattening (`naming::type_collision`, one problem for two messages,
+  whose record constructors collide with their types), two constructors
+  in one module, such as enum values or oneof members
+  (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
   `naming_collision` and `naming_type_collision` cases). Escape: rename one of them with `rename=`
   (§3.7).
@@ -2585,6 +2593,16 @@ two types shared one module, the helpers for `Code` prefixed.)
   its escape are listed in [`diagnostics.md`](diagnostics.md), which a
   test (`crates/elm-connect-gen/tests/catalogue.rs`) holds to the
   generator's own list.
+  A help that names an option writes it as the reader gave it: a flag
+  under the CLI (`--streaming skip`), a parameter under the plugin
+  (`streaming=skip`), from `Options::spelling`, which each binary sets.
+  The plugin has no proto sources, so no snippet: it names each site
+  as `path/to/file.proto:3:9` from the request's `SourceCodeInfo` before
+  the message, and lists the sites with their labels when there are
+  several; the CLI renders snippets.
+  The CLI's compile errors are protox's, rendered as protox renders them
+  and not in the catalogue; a file or import found on no include path
+  adds a help naming the include paths searched.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.

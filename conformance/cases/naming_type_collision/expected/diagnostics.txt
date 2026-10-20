@@ -1,7 +1,7 @@
 naming::type_collision
 
-  × The package `library.v1` has two definitions that both become the Elm type
-  │ `Book`.
+  × The package `library.v1` has two messages that both become the Elm type
+  │ and record constructor `Book`.
     ╭─[library.proto:8:9]
   7 │
   8 │ message Book {
@@ -17,30 +17,10 @@ naming::type_collision
     ╰────
   help: Every message, enum and oneof of a package becomes a type in one Elm
         module, nested names joined (`Outer.Inner` becomes `OuterInner`), and
-        a module cannot define two types with one name. Rename one of them in
-        the proto, or rename one with `rename=<proto full name>:<Elm name>`.
-
-naming::constructor_collision
-
-  × The package `library.v1` has two definitions that both become the Elm
-  │ constructor `Book`.
-    ╭─[library.proto:8:9]
-  7 │
-  8 │ message Book {
-    ·         ──┬─
-    ·           ╰── message `library.v1.Book` becomes `Book`
-  9 │   string title = 1;
- 10 │ }
- 11 │
- 12 │ message book {
-    ·         ──┬─
-    ·           ╰── and so does message `library.v1.book`
- 13 │   string title = 1;
-    ╰────
-  help: Enum values, oneof cases and the record constructor of every message
-        all share one constructor namespace in an Elm module, so these cannot
-        both keep this name. Rename one of them in the proto, or rename one
-        with `rename=<proto full name>:<Elm name>`.
+        a module cannot define two types with one name. A message's record
+        constructor takes its type's name, so the two collide as constructors
+        too, and one rename parts both. Rename one of them in the proto, or
+        rename one with `rename=library.v1.book:<Elm name>`.
 
 naming::constructor_collision
 
@@ -60,4 +40,4 @@ naming::constructor_collision
   help: Enum values, oneof cases and the record constructor of every message
         all share one constructor namespace in an Elm module, so these cannot
         both keep this name. Rename one of them in the proto, or rename one
-        with `rename=<proto full name>:<Elm name>`.
+        with `rename=library.v1.StatusActive:<Elm name>`.

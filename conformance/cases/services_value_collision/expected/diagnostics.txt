@@ -17,7 +17,8 @@ naming::value_collision
         first letter lowercased and underscores dropped, so names that differ
         only in those ways end up the same, and a module cannot define two
         values with one name. Rename one of the methods in the proto, or
-        rename one with `rename=<proto full name>:<Elm name>`.
+        rename one with `rename=settings.v1.SettingsService.Get_Settings:<Elm
+        name>`.
 
 naming::value_collision
 
@@ -33,7 +34,7 @@ naming::value_collision
   help: Every generated module defines `elmConnectVersion_`, which names the
         release of the generator it came from, so no method or field can take
         that name in the module that defines it. Give it another name in its
-        `rename=<proto full name>:<Elm name>`.
+        `rename=settings.v1.SettingsService.Version:<Elm name>`.
 
 naming::value_collision
 
@@ -65,5 +66,6 @@ naming::value_collision
         letter uppercased. So a method named for another's descriptor
         (`DescriptorGetNote` beside `GetNote`) takes that descriptor's name,
         and a module cannot define two values with one name. Rename one of the
-        methods in the proto, or rename one with `rename=<proto full
-        name>:<Elm name>`.
+        methods in the proto, or rename one with
+        `rename=settings.v1.SettingsService.DescriptorDefaultSettings:<Elm
+        name>`.

@@ -6,7 +6,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use elm_connect_gen::Options;
+use elm_connect_gen::{Options, Spelling};
 use miette::{GraphicalReportHandler, GraphicalTheme};
 
 fn scalars_case() -> PathBuf {
@@ -64,13 +64,10 @@ fn problems_render_against_the_proto_source() {
          oneof displayName {\n    string text = 2;\n  }\n}\n",
     )
     .expect("write the input");
-    let report = elm_connect::generate(
-        &[PathBuf::from("clash.proto")],
-        &[dir],
-        false,
-        &Options::default(),
-    )
-    .expect_err("two fields become `displayName`");
+    let mut options = Options::default();
+    options.spelling = Spelling::Flags;
+    let report = elm_connect::generate(&[PathBuf::from("clash.proto")], &[dir], false, &options)
+        .expect_err("two fields become `displayName`");
     let mut rendered = String::new();
     GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor())
         .with_width(80)
@@ -80,6 +77,12 @@ fn problems_render_against_the_proto_source() {
     assert!(rendered.contains("naming::field_collision"), "{rendered}");
     assert!(rendered.contains("╭─[clash.proto:6:10]"), "{rendered}");
     assert!(rendered.contains("string display_name = 1;"), "{rendered}");
+    assert!(rendered.contains("`--rename"), "{rendered}");
+    assert!(
+        rendered.contains("clash.v1.Note.displayName:<Elm"),
+        "{rendered}"
+    );
+    assert!(!rendered.contains("`rename="), "{rendered}");
 }
 
 #[test]

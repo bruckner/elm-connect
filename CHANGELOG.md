@@ -885,3 +885,42 @@ tag (design §8).
   `input::unknown_file`, `input::editions` and `input::file_name`
   cannot come from the corpus and stay covered by the crates' tests, as
   `docs/diagnostics.md` says.
+- Every diagnostic help that names an option writes it as the front end
+  takes it: `--rename`, `--streaming skip` and `--unbound-methods
+  implicit` under the CLI, `rename=`, `streaming=skip` and
+  `unbound_methods=implicit` under the plugin. Only `naming::reserved_*`
+  did before.
+- A diagnostic's `rename` escape names the element at fault by its proto
+  full name, `rename=notes.v1.Note.title:<Elm name>`, rather than
+  `<proto full name>`: a collision's second claimant, or the first when a
+  rename of the second would not part them.
+- Did-you-mean hints: `options::unknown_rename` suggests the closest
+  proto full name the generated packages have, and its help says that a
+  rename takes proto names (`page_count`, not `pageCount`);
+  `route::path_field`, `route::body_field` and `route::response_body`
+  suggest the closest field when the one named does not exist. A
+  suggestion differs only in case and underscores, or is within three
+  edits. The `suggestions` conformance case pins them.
+- Two messages whose Elm types collide are one `naming::type_collision`,
+  which says their record constructors collide too, rather than that and
+  a `naming::constructor_collision` with the same sites.
+  `naming::constructor_collision` remains for constructors whose types
+  do not collide, such as an enum value beside a message of its name.
+- A `route::*` problem underlines what it is about: the quoted path,
+  `body`, `response_body` or custom kind, or the additional binding's
+  block, found in the rule's text, rather than the whole
+  `option (google.api.http)`, which is all `SourceCodeInfo` records. Where
+  the literal is not found, or there is no source text, the whole option
+  stays the site.
+- The plugin's diagnostics say where: with no source text from protoc to
+  draw a snippet from, each problem leads with its site as
+  `library/v1/library.proto:5:9`, from the request's `SourceCodeInfo`,
+  and one with several sites lists each with its label. The CLI's
+  rendering is unchanged.
+- A collision that a rename caused says so: the renamed side's label
+  reads "renamed to `title` by `rename`" (`--rename` under the CLI), and
+  the help points at that rename rather than at renaming the protos. The
+  `rename_collision` conformance case pins it.
+- The CLI's "import not found" and "file not found" errors name the
+  include paths searched and say to add the file's directory with `-I`.
+  The error itself is still protox's.

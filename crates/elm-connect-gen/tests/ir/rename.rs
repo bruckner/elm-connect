@@ -50,9 +50,37 @@ fn a_nested_type_follows_its_renamed_parent() {
 #[test]
 fn a_rename_can_collide() {
     let diagnostics = build(&["notes.v1.Outer:Note"]).expect_err("two types `Note`");
+    // Two messages' record constructors collide with their types, which
+    // is the one problem.
+    assert_eq!(codes(&diagnostics), [Code::TypeCollision]);
+}
+
+#[test]
+fn a_collision_a_rename_causes_points_at_the_rename() {
+    let mut options = Options::default();
+    options.spelling = elm_connect_gen::Spelling::Flags;
+    options.add_rename("notes.v1.Outer:Note").expect("a rename");
+    let diagnostics = ir::build_with(&pool(&[("notes.proto", NOTES)]), &["notes.proto"], &options)
+        .expect_err("two types `Note`");
+    let problem = diagnostics.iter().next().expect("a problem");
+    let labels: Vec<&str> = problem
+        .sites()
+        .iter()
+        .map(|site| site.label.as_str())
+        .collect();
     assert_eq!(
-        codes(&diagnostics),
-        [Code::TypeCollision, Code::ConstructorCollision]
+        labels,
+        [
+            "message `notes.v1.Outer` is renamed to `Note` by `--rename`",
+            "and so does message `notes.v1.Note`"
+        ]
+    );
+    assert!(
+        problem
+            .help_text()
+            .ends_with("That name comes from `--rename notes.v1.Outer:Note`: give it another there, or rename the other one in the proto."),
+        "{}",
+        problem.help_text()
     );
 }
 

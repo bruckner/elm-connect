@@ -6,7 +6,7 @@ naming::value_collision
   7 │   // descriptor is called too.
   8 │   string display_name = 1;
     ·          ──────┬─────
-    ·                ╰── field `display_name` becomes `nickname`
+    ·                ╰── field `display_name` is renamed to `nickname` by `rename`
   9 │   oneof alias {
  10 │     string nickname = 2;
     ·            ────┬───
@@ -17,8 +17,9 @@ naming::value_collision
         defines `descriptor`, the message's descriptor, and one value per
         field, named as its record field is (a oneof member's for the end of
         its constructor; a field named `descriptor` takes `descriptor_`), so
-        two fields whose values meet cannot both be defined. Rename the field
-        in the proto, or rename it with `rename=<proto full name>:<Elm name>`.
+        two fields whose values meet cannot both be defined. That name comes
+        from `rename=profile.v1.Profile.display_name:nickname`: give it
+        another there, or rename the other one in the proto.
 
 naming::value_collision
 
@@ -34,4 +35,4 @@ naming::value_collision
   help: Every generated module defines `elmConnectVersion_`, which names the
         release of the generator it came from, so no method or field can take
         that name in the module that defines it. Give it another name in its
-        `rename=<proto full name>:<Elm name>`.
+        `rename=profile.v1.Profile.version:<Elm name>`.

@@ -20,6 +20,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
+use crate::options::Spelling;
 use miette::{
     Diagnostic, GraphicalReportHandler, GraphicalTheme, LabeledSpan, NamedSource, Severity,
     SourceCode,
@@ -178,6 +179,11 @@ pub struct Site {
     pub span: Option<LineColSpan>,
     /// What is at this place, shown beside the snippet.
     pub label: String,
+    /// What to underline within the span once the source text is known,
+    /// when the compiler recorded a span wider than what the problem is
+    /// about: needles found in turn, as [`spans::narrow`] takes them.
+    /// Empty for the whole span.
+    pub within: Vec<String>,
 }
 
 /// One problem in the user's protos.
@@ -190,6 +196,9 @@ pub struct Problem {
     sites: Vec<Site>,
     /// Boxed, so a `Problem` stays small enough to return in a `Result`.
     attached: Option<Box<Attached>>,
+    /// Whether the problem names its sites' locations in its text, which
+    /// it does once [`Diagnostics::locate`] asks and no source is attached.
+    located: bool,
 }
 
 /// The source snippets of a problem, once its source text is known.
@@ -218,6 +227,7 @@ impl Problem {
             help: help.into(),
             sites,
             attached: None,
+            located: false,
         }
     }
 
@@ -256,47 +266,96 @@ impl Problem {
     }
 
     /// Two fields of `message` become the same Elm record field `elm_name`.
-    pub fn field_collision(message: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    pub fn field_collision(
+        message: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::FieldCollision,
             format!("The message `{message}` has two fields that both become `{elm_name}` in Elm."),
-            "Elm record fields are the proto field names in lowerCamelCase, so names that \
-             differ only in underscores or reserved-word escaping end up the same, and a record \
-             cannot have two fields with one name. Rename one of them in the proto, or \
-             rename one with `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Elm record fields are the proto field names in lowerCamelCase, so names that \
+                 differ only in underscores or reserved-word escaping end up the same, and a \
+                 record cannot have two fields with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
 
-    /// Two definitions of `package` become the same Elm type `elm_name`.
-    pub fn type_collision(package: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    /// Two definitions of `package` become the same Elm type `elm_name`;
+    /// with `records`, both are messages, and so their record
+    /// constructors are the same too.
+    pub fn type_collision(
+        package: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        records: bool,
+        renamed: Option<&str>,
+    ) -> Self {
+        let (definitions, becomes, constructors) = if records {
+            (
+                "messages",
+                "the Elm type and record constructor",
+                " A message's record constructor takes its type's name, so the two collide as \
+                 constructors too, and one rename parts both.",
+            )
+        } else {
+            ("definitions", "the Elm type", "")
+        };
         Problem::new(
             Code::TypeCollision,
             format!(
-                "The package `{package}` has two definitions that both become the Elm type \
+                "The package `{package}` has two {definitions} that both become {becomes} \
                  `{elm_name}`."
             ),
-            "Every message, enum and oneof of a package becomes a type in one Elm module, \
-             nested names joined (`Outer.Inner` becomes `OuterInner`), and a module cannot \
-             define two types with one name. Rename one of them in the proto, or rename one \
-             with `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Every message, enum and oneof of a package becomes a type in one Elm module, \
+                 nested names joined (`Outer.Inner` becomes `OuterInner`), and a module cannot \
+                 define two types with one name.{constructors} {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
 
     /// Two definitions of `package` become the same Elm constructor
     /// `elm_name`.
-    pub fn constructor_collision(package: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    pub fn constructor_collision(
+        package: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ConstructorCollision,
             format!(
                 "The package `{package}` has two definitions that both become the Elm \
                  constructor `{elm_name}`."
             ),
-            "Enum values, oneof cases and the record constructor of every message all share \
-             one constructor namespace in an Elm module, so these cannot both keep this name. \
-             Rename one of them in the proto, or rename one with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Enum values, oneof cases and the record constructor of every message all share \
+                 one constructor namespace in an Elm module, so these cannot both keep this name. \
+                 {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
@@ -314,50 +373,62 @@ impl Problem {
     }
 
     /// `package` has a `segment` that does not start with a letter.
-    pub fn invalid_module(package: &str, segment: &str, site: Site) -> Self {
+    pub fn invalid_module(package: &str, segment: &str, site: Site, rename: &str) -> Self {
         Problem::new(
             Code::InvalidModule,
             format!(
                 "The package `{package}` cannot become an Elm module name: its segment \
                  `{segment}` does not start with a letter."
             ),
-            "Each package segment becomes a segment of the Elm module name in PascalCase \
-             (`notes.v1` becomes `Notes.V1`), and an Elm module segment must start with a \
-             letter. Rename the package, or rename it with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Each package segment becomes a segment of the Elm module name in PascalCase \
+                 (`notes.v1` becomes `Notes.V1`), and an Elm module segment must start with a \
+                 letter. Rename the package, or rename it with \
+                 {rename}."
+            ),
             vec![site],
         )
     }
 
     /// The type `proto_name` becomes `converted`, which is not an Elm type
     /// name.
-    pub fn invalid_type(proto_name: &str, converted: &str, site: Site) -> Self {
+    pub fn invalid_type(proto_name: &str, converted: &str, site: Site, rename: &str) -> Self {
         Problem::new(
             Code::InvalidType,
             format!(
                 "The type `{proto_name}` becomes `{converted}` in Elm, which is not a valid Elm \
                  type name."
             ),
-            "Elm type names must start with an uppercase letter. Rename the proto type so its \
-             PascalCase form starts with one, or rename it with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Elm type names must start with an uppercase letter. Rename the proto type so its \
+                 PascalCase form starts with one, or rename it with \
+                 {rename}."
+            ),
             vec![site],
         )
     }
 
     /// The field (or oneof) `proto_name` of `message` becomes `converted`,
     /// which is not an Elm record field name.
-    pub fn invalid_field(message: &str, proto_name: &str, converted: &str, site: Site) -> Self {
+    pub fn invalid_field(
+        message: &str,
+        proto_name: &str,
+        converted: &str,
+        site: Site,
+        rename: &str,
+    ) -> Self {
         Problem::new(
             Code::InvalidField,
             format!(
                 "The field `{proto_name}` of `{message}` becomes `{converted}` in Elm, which is \
                  not a valid record field name."
             ),
-            "Elm record fields must start with a lowercase letter. elm-connect converts proto \
-             field names to lowerCamelCase without changing their first letter, so the proto \
-             name should be lower_snake_case, starting with a letter. Rename it in the \
-             proto, or rename it with `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Elm record fields must start with a lowercase letter. elm-connect converts proto \
+                 field names to lowerCamelCase without changing their first letter, so the proto \
+                 name should be lower_snake_case, starting with a letter. Rename it in the \
+                 proto, or rename it with {rename}."
+            ),
             vec![site],
         )
     }
@@ -429,88 +500,121 @@ impl Problem {
     }
 
     /// The method `method` streams (`which`: "client", "server" or
-    /// "bidirectional").
-    pub fn streaming(method: &str, which: &str, site: Site) -> Self {
+    /// "bidirectional"). `spelling` writes the option that skips it.
+    pub fn streaming(method: &str, which: &str, site: Site, spelling: Spelling) -> Self {
         Problem::new(
             Code::Streaming,
             format!(
                 "The method `{method}` is {which} streaming, and streaming methods are not \
                  supported."
             ),
-            "elm-connect generates unary calls only: Connect streaming and the transcoders' \
-             streaming each frame messages differently, and neither has an Elm design yet. \
-             Pass `streaming=skip` to leave streaming methods out and generate the rest.",
+            format!(
+                "elm-connect generates unary calls only: Connect streaming and the transcoders' \
+                 streaming each frame messages differently, and neither has an Elm design yet. \
+                 Pass {} to leave streaming methods out and generate the rest.",
+                spelling.option("streaming", "skip")
+            ),
             vec![site],
         )
     }
 
     /// The method `method` streams (`which`, as for [`Problem::streaming`])
-    /// and `streaming=skip` leaves it out of its service's module: a
-    /// warning.
-    pub fn streaming_skipped(method: &str, which: &str, site: Site) -> Self {
+    /// and `streaming=skip`, written as `spelling` writes it, leaves it out
+    /// of its service's module: a warning.
+    pub fn streaming_skipped(method: &str, which: &str, site: Site, spelling: Spelling) -> Self {
         Problem::new(
             Code::Streaming,
             format!(
                 "The method `{method}` is {which} streaming, so it is left out of the \
                  generated code."
             ),
-            "elm-connect generates unary calls only, and `streaming=skip` leaves each \
-             streaming method out of its service's module rather than failing. Calls to this \
-             method are not generated; drop the option to make it an error again.",
+            format!(
+                "elm-connect generates unary calls only, and {} leaves each streaming method \
+                 out of its service's module rather than failing. Calls to this method are not \
+                 generated; drop the option to make it an error again.",
+                spelling.option("streaming", "skip")
+            ),
             vec![site],
         )
         .warning()
     }
 
     /// The method `method` has no `google.api.http` rule, and
-    /// `unbound_methods=error` makes that a problem.
-    pub fn unbound_method(method: &str, site: Site) -> Self {
+    /// `unbound_methods=error`, written as `spelling` writes it, makes that
+    /// a problem.
+    pub fn unbound_method(method: &str, site: Site, spelling: Spelling) -> Self {
         Problem::new(
             Code::UnboundMethod,
             format!("The method `{method}` has no `google.api.http` rule."),
-            "With `unbound_methods=error`, every method needs a rule. Without one, a call over \
-             transcoding takes the implicit route, `POST /<package>.<Service>/<Method>` with \
-             the request as its body, which grpc-gateway serves with \
-             `generate_unbound_methods`, Envoy's transcoder with `auto_mapping`, and Vanguard \
-             always. Add a rule to the method, or set `unbound_methods=implicit` (the \
-             default) if the server serves that route.",
+            format!(
+                "With {}, every method needs a rule. Without one, a call over transcoding takes \
+                 the implicit route, `POST /<package>.<Service>/<Method>` with the request as \
+                 its body, which grpc-gateway serves with `generate_unbound_methods`, Envoy's \
+                 transcoder with `auto_mapping`, and Vanguard always. Add a rule to the method, \
+                 or set {} (the default) if the server serves that route.",
+                spelling.option("unbound_methods", "error"),
+                spelling.option("unbound_methods", "implicit")
+            ),
             vec![site],
         )
     }
 
     /// Two methods of `service` become the same Elm value `elm_name`.
-    pub fn value_collision(service: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    pub fn value_collision(
+        service: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
                 "The service `{service}` has two methods that both become the Elm value \
                  `{elm_name}`."
             ),
-            "A service's module defines one value per method, its name with the first letter \
-             lowercased and underscores dropped, so names that differ only in those ways end \
-             up the same, and a module cannot define two values with one name. Rename one of \
-             the methods in the proto, or rename one with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "A service's module defines one value per method, its name with the first letter \
+                 lowercased and underscores dropped, so names that differ only in those ways end \
+                 up the same, and a module cannot define two values with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
 
     /// A method of `service` and another method's descriptor become the
     /// same Elm value `elm_name`.
-    pub fn descriptor_collision(service: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    pub fn descriptor_collision(
+        service: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
                 "The service `{service}` has a method that becomes the Elm value \
                  `{elm_name}`, which is another method's descriptor."
             ),
-            "A service's module defines two values per method: its call, its name with the \
-             first letter lowercased and underscores dropped, and its descriptor, \
-             `descriptor` followed by the call's name with the first letter uppercased. So a \
-             method named for another's descriptor (`DescriptorGetNote` beside `GetNote`) \
-             takes that descriptor's name, and a module cannot define two values with one \
-             name. Rename one of the methods in the proto, or rename one with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "A service's module defines two values per method: its call, its name with the \
+                 first letter lowercased and underscores dropped, and its descriptor, \
+                 `descriptor` followed by the call's name with the first letter uppercased. So a \
+                 method named for another's descriptor (`DescriptorGetNote` beside `GetNote`) \
+                 takes that descriptor's name, and a module cannot define two values with one \
+                 name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
@@ -519,36 +623,50 @@ impl Problem {
     /// "field `title`") the name `elm_name`, the value every generated
     /// module defines to name the release it was generated for. No proto
     /// name derives to it.
-    pub fn reserved_value(what: &str, elm_name: &str, site: Site) -> Self {
+    pub fn reserved_value(what: &str, elm_name: &str, site: Site, rename: &str) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
                 "The {what} is renamed to the Elm value `{elm_name}`, which every generated \
                  module defines already."
             ),
-            "Every generated module defines `elmConnectVersion_`, which names the release of \
-             the generator it came from, so no method or field can take that name in the \
-             module that defines it. Give it another name in its \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Every generated module defines `elmConnectVersion_`, which names the release of \
+                 the generator it came from, so no method or field can take that name in the \
+                 module that defines it. Give it another name in its \
+                 {rename}."
+            ),
             vec![site],
         )
     }
 
     /// Two fields or oneof members of `message` become the same Elm value
     /// `elm_name` in the message's descriptor module.
-    pub fn field_value_collision(message: &str, elm_name: &str, first: Site, second: Site) -> Self {
+    pub fn field_value_collision(
+        message: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
                 "The descriptor module of `{message}` would define the Elm value \
                  `{elm_name}` twice."
             ),
-            "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
-             `descriptor`, the message's descriptor, and one value per field, named as its \
-             record field is (a oneof member's for the end of its constructor; a field \
-             named `descriptor` takes `descriptor_`), so two fields whose values meet cannot \
-             both be defined. Rename the field in the proto, or rename it with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
+                 `descriptor`, the message's descriptor, and one value per field, named as its \
+                 record field is (a oneof member's for the end of its constructor; a field \
+                 named `descriptor` takes `descriptor_`), so two fields whose values meet cannot \
+                 both be defined. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename the field in the proto, or rename it with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
@@ -556,17 +674,28 @@ impl Problem {
     /// Two generated modules, each a package's, a service's or a message's
     /// or enum's descriptor module, become the same Elm module
     /// `elm_module`.
-    pub fn module_collision(elm_module: &str, first: Site, second: Site) -> Self {
+    pub fn module_collision(
+        elm_module: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ModuleCollision,
             format!("Two generated modules both become the Elm module `{elm_module}`."),
-            "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
-             service, message and enum becomes a module inside its package's \
-             (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
-             `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
-             take the name of another or of a package nested in its own, and names that \
-             differ only in case or underscores end up the same. Rename one of them in the \
-             proto, or rename one with `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
+                 service, message and enum becomes a module inside its package's \
+                 (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
+                 `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
+                 take the name of another or of a package nested in its own, and names that \
+                 differ only in case or underscores end up the same. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
             vec![first, second],
         )
     }
@@ -640,17 +769,19 @@ impl Problem {
 
     /// The service `service`'s name does not start with a letter once
     /// converted to PascalCase.
-    pub fn invalid_service(service: &str, site: Site) -> Self {
+    pub fn invalid_service(service: &str, site: Site, rename: &str) -> Self {
         Problem::new(
             Code::InvalidService,
             format!(
                 "The service `{service}` cannot become an Elm module name: its name does not \
                  start with a letter."
             ),
-            "Each service becomes an Elm module inside its package's, named for the service \
-             in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and an Elm module \
-             segment must start with a letter. Rename the service, or rename it with \
-             `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "Each service becomes an Elm module inside its package's, named for the service \
+                 in PascalCase (`notes.v1.Notes` becomes `Notes.V1.Notes`), and an Elm module \
+                 segment must start with a letter. Rename the service, or rename it with \
+                 {rename}."
+            ),
             vec![site],
         )
     }
@@ -659,12 +790,13 @@ impl Problem {
     /// does not resolve, for `error`.
     pub fn route(binding: &str, error: &crate::route::RouteError, site: Site) -> Self {
         use crate::route::RouteError as E;
-        let (code, message, help): (Code, String, &str) = match error {
+        let (code, message, help): (Code, String, String) = match error {
             E::NoPattern => (
                 Code::RouteRule,
                 format!("{binding} has no path."),
                 "A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path \
-                 template, or `custom` to a kind and a path.",
+                 template, or `custom` to a kind and a path."
+                    .into(),
             ),
             E::CustomKind { kind, reason } => (
                 Code::RouteRule,
@@ -674,49 +806,74 @@ impl Problem {
                 ),
                 "A `custom` rule's kind is the request's HTTP method: a token of letters, \
                  digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`, `TRACE` or \
-                 `TRACK`, which browsers refuse.",
+                 `TRACK`, which browsers refuse."
+                    .into(),
             ),
             E::NestedBindings => (
                 Code::RouteRule,
                 format!("{binding} has additional bindings of its own."),
                 "`google/api/http.proto` allows additional bindings one level deep only. Move \
-                 the nested bindings up into the rule's own `additional_bindings`.",
+                 the nested bindings up into the rule's own `additional_bindings`."
+                    .into(),
             ),
             E::Syntax { template, error } => (
                 Code::RouteTemplate,
                 format!("{binding} has the path `{template}`, which does not parse: {error}."),
                 "A path template is `/` and segments separated by `/`, each a literal, `*`, \
                  `**` (last only) or a variable like `{name}` or `{name=messages/*}`, \
-                 optionally followed by a custom verb like `:cancel`.",
+                 optionally followed by a custom verb like `:cancel`."
+                    .into(),
             ),
             E::UnboundWildcard { template } => (
                 Code::RouteTemplate,
                 format!("{binding} has the path `{template}`, with a wildcard outside a variable."),
                 "A client fills each path segment from a request field, and a bare `*` or `**` \
-                 names none. Bind it to a field, like `{name=*}`.",
+                 names none. Bind it to a field, like `{name=*}`."
+                    .into(),
             ),
-            E::PathField { field, reason } => (
+            E::PathField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RoutePathField,
                 format!("{binding} binds `{{{field}}}` in its path, but {reason}."),
-                "A path variable names a non-repeated scalar or enum field of the request, \
-                 possibly through singular message fields (`{book.name}`).",
+                format!(
+                    "{}A path variable names a non-repeated scalar or enum field of the \
+                     request, possibly through singular message fields (`{{book.name}}`).",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
             E::PathFieldTwice { field } => (
                 Code::RoutePathField,
                 format!("{binding} binds `{{{field}}}` in its path twice."),
-                "Each field can fill one path variable. Remove one of them.",
+                "Each field can fill one path variable. Remove one of them.".into(),
             ),
-            E::BodyField { field, reason } => (
+            E::BodyField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RouteBodyField,
                 format!("{binding} has `body: \"{field}\"`, but {reason}."),
-                "`body` is `*` for every field not in the path, or the name of a top-level \
-                 singular message field of the request, or left out for no body.",
+                format!(
+                    "{}`body` is `*` for every field not in the path, or the name of a \
+                     top-level singular message field of the request, or left out for no body.",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
-            E::ResponseBodyField { field, reason } => (
+            E::ResponseBodyField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RouteResponseBody,
                 format!("{binding} has `response_body: \"{field}\"`, but {reason}."),
-                "`response_body` names a top-level field of the response, a generated message, \
-                 or is left out for the whole response.",
+                format!(
+                    "{}`response_body` names a top-level field of the response, a generated \
+                     message, or is left out for the whole response.",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
             E::QueryField { field, reason } => (
                 Code::RouteQueryField,
@@ -727,7 +884,8 @@ impl Problem {
                 "Every request field outside the path and the body is a query parameter, and \
                  a parameter holds scalars, enums and well-known types with a string form. \
                  Send the field in the body (`body: \"*\"`, or a body field holding it), or \
-                 move it out of the request.",
+                 move it out of the request."
+                    .into(),
             ),
         };
         Problem::new(code, message, help, vec![site])
@@ -735,16 +893,18 @@ impl Problem {
 
     /// The method `method`'s name becomes `converted`, which is not an Elm
     /// value name.
-    pub fn invalid_method(method: &str, converted: &str, site: Site) -> Self {
+    pub fn invalid_method(method: &str, converted: &str, site: Site, rename: &str) -> Self {
         Problem::new(
             Code::InvalidMethod,
             format!(
                 "The method `{method}` becomes `{converted}` in Elm, which is not a valid Elm \
                  value name."
             ),
-            "A method's Elm value is its name with the first letter lowercased and \
-             underscores dropped, and must start with a letter. Rename the method, or rename \
-             it with `rename=<proto full name>:<Elm name>`.",
+            format!(
+                "A method's Elm value is its name with the first letter lowercased and \
+                 underscores dropped, and must start with a letter. Rename the method, or rename \
+                 it with {rename}."
+            ),
             vec![site],
         )
     }
@@ -802,15 +962,21 @@ impl Problem {
         )
     }
 
-    /// The `rename` of `proto` names nothing that is generated.
-    pub fn unknown_rename(proto: &str) -> Self {
+    /// The `rename` of `proto` names nothing that is generated;
+    /// `suggestion` is the generated element's full name it most likely
+    /// meant, if any is close.
+    pub fn unknown_rename(proto: &str, suggestion: Option<&str>) -> Self {
         Problem::new(
             Code::UnknownRename,
             format!("The rename of `{proto}` names nothing elm-connect generates."),
-            "A rename names a package, service, method, message, enum, field, oneof or enum \
-             value of a generated package by its proto full name: nested names dotted \
-             (`notes.v1.Note.Revision`, `notes.v1.Note.title`), an enum value under its enum \
-             (`notes.v1.Visibility.VISIBILITY_PUBLIC`). Check the name against the protos.",
+            format!(
+                "{}A rename names a package, service, method, message, enum, field, oneof or \
+                 enum value of a generated package by its proto full name, as the proto \
+                 declares it (`notes.v1.Note.page_count`, not `pageCount`): nested names \
+                 dotted (`notes.v1.Note.Revision`), an enum value under its enum \
+                 (`notes.v1.Visibility.VISIBILITY_PUBLIC`).",
+                did_you_mean(suggestion)
+            ),
             Vec::new(),
         )
     }
@@ -867,8 +1033,7 @@ impl Problem {
         Problem::new(
             Code::DuplicateOption,
             format!("The options rename `{proto}` more than once."),
-            "A proto element has one Elm name, so it takes one `rename`. Keep the one you \
-             mean.",
+            "A proto element has one Elm name, so it takes one rename. Keep the one you mean.",
             Vec::new(),
         )
     }
@@ -890,7 +1055,7 @@ impl Problem {
         Problem::new(
             Code::InvalidModulePrefix,
             format!("The module prefix `{value}` is not an Elm module name."),
-            "`module_prefix` is dot-separated Elm module segments, such as `Api.Notes`, each \
+            "A module prefix is dot-separated Elm module segments, such as `Api.Notes`, each \
              an uppercase letter followed by letters, digits or underscores.",
             Vec::new(),
         )
@@ -988,9 +1153,23 @@ impl Problem {
             .filter(|site| site.file == file)
             .filter_map(|site| {
                 let span = site.span?.byte_span(text, columns)?;
+                let span = spans::narrow(text, span, &site.within);
                 Some(LabeledSpan::new_with_span(Some(site.label.clone()), span))
             })
             .collect()
+    }
+}
+
+/// The end of a collision's help: `default`, which names the escape, or,
+/// when `renamed` is the option (written with its Elm name) that gave one
+/// claimant the name, a pointer at that option instead.
+fn rename_escape(renamed: Option<&str>, default: String) -> String {
+    match renamed {
+        Some(option) => format!(
+            "That name comes from {option}: give it another there, or rename the other one in \
+             the proto."
+        ),
+        None => default,
     }
 }
 
@@ -1018,9 +1197,37 @@ fn join_words(words: &[String]) -> String {
     }
 }
 
+impl Site {
+    /// Where the site is, as compilers write it: `notes.proto:3:9`, line
+    /// and column from 1, or the file alone when no span was recorded.
+    pub fn location(&self) -> String {
+        match self.span {
+            Some(span) => format!(
+                "{}:{}:{}",
+                self.file,
+                u64::from(span.start_line) + 1,
+                u64::from(span.start_col) + 1
+            ),
+            None => self.file.clone(),
+        }
+    }
+}
+
 impl fmt::Display for Problem {
+    /// The message; once located without a source, after its first site's
+    /// location, and, when it has several sites, followed by each one's
+    /// location and label.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.message)
+        let Some(first) = self.sites.first().filter(|_| self.located) else {
+            return f.write_str(&self.message);
+        };
+        write!(f, "{}: {}", first.location(), self.message)?;
+        if self.sites.len() > 1 {
+            for site in &self.sites {
+                write!(f, "\n{}: {}", site.location(), site.label)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -1153,6 +1360,16 @@ impl Diagnostics {
         }
     }
 
+    /// Has every problem without source text name its sites'
+    /// locations, `file:line:col`, in its text, so it can be found without
+    /// a snippet: what the protoc plugin, which is sent no source, renders.
+    /// A problem with a snippet is unchanged.
+    pub fn locate(&mut self) {
+        for problem in &mut self.problems {
+            problem.located = problem.attached.is_none();
+        }
+    }
+
     /// Gives every problem the source text of its files, so it renders
     /// with snippets. `sources` maps proto file names to their text;
     /// `columns` says how the compiler counted columns. A file missing from
@@ -1218,6 +1435,58 @@ impl Diagnostic for Diagnostics {
                 .map(|problem| problem as &dyn Diagnostic),
         ))
     }
+}
+
+/// The candidate a name was most likely meant to be, for a "did you
+/// mean" hint: one that differs from `name` only in case and underscores,
+/// or else the nearest within three single-character edits, the first in
+/// `candidates`' order on a tie. `None` when nothing is that close, or
+/// when `name` is itself a candidate.
+pub fn closest<'a>(name: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<String> {
+    const MAX_EDITS: usize = 3;
+    let folded = |text: &str| -> String {
+        text.chars()
+            .filter(|c| *c != '_')
+            .flat_map(char::to_lowercase)
+            .collect()
+    };
+    let target = folded(name);
+    let mut best: Option<(usize, &str)> = None;
+    for candidate in candidates {
+        if candidate == name {
+            return None;
+        }
+        let distance = if folded(candidate) == target {
+            0
+        } else {
+            edit_distance(name, candidate)
+        };
+        if distance <= MAX_EDITS && best.is_none_or(|(least, _)| distance < least) {
+            best = Some((distance, candidate));
+        }
+    }
+    best.map(|(_, candidate)| candidate.to_owned())
+}
+
+/// The Levenshtein distance between `a` and `b`, by characters.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut previous: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.chars().enumerate() {
+        let mut current = vec![i + 1];
+        for (j, cb) in b.iter().enumerate() {
+            let substitute = previous[j] + usize::from(ca != *cb);
+            current.push(substitute.min(previous[j + 1] + 1).min(current[j] + 1));
+        }
+        previous = current;
+    }
+    previous[b.len()]
+}
+
+/// "Did you mean `x`? ", the start of a help, for a suggestion; empty for
+/// none.
+fn did_you_mean(suggestion: Option<&str>) -> String {
+    suggestion.map_or_else(String::new, |s| format!("Did you mean `{s}`? "))
 }
 
 /// The width [`render_narrow`] wraps at.

@@ -507,6 +507,9 @@ pub enum RouteError {
         field: String,
         /// Why, as a phrase.
         reason: String,
+        /// The field path most likely meant, when a field on the way does
+        /// not exist and one of its message's is close to it.
+        suggestion: Option<String>,
     },
     /// Two path variables name one field.
     PathFieldTwice {
@@ -519,6 +522,9 @@ pub enum RouteError {
         field: String,
         /// Why, as a phrase.
         reason: String,
+        /// The request field most likely meant, when the named one does
+        /// not exist and one is close to it.
+        suggestion: Option<String>,
     },
     /// `response_body` names no field of the response it can read.
     ResponseBodyField {
@@ -526,6 +532,9 @@ pub enum RouteError {
         field: String,
         /// Why, as a phrase.
         reason: String,
+        /// The response field most likely meant, when the named one does
+        /// not exist and one is close to it.
+        suggestion: Option<String>,
     },
     /// A field that would be a query parameter has no query form.
     QueryField {
@@ -620,6 +629,7 @@ pub fn resolve(
                 Err(reason) => errors.push(RouteError::PathField {
                     field: field.join("."),
                     reason,
+                    suggestion: closest_path(request, &field),
                 }),
             },
         }
@@ -642,6 +652,7 @@ pub fn resolve(
                 errors.push(RouteError::BodyField {
                     field: body.to_owned(),
                     reason,
+                    suggestion: closest_path(request, &[body.to_owned()]),
                 });
                 None
             }
@@ -660,6 +671,7 @@ pub fn resolve(
                 errors.push(RouteError::ResponseBodyField {
                     field: body.to_owned(),
                     reason,
+                    suggestion: closest_path(response, &[body.to_owned()]),
                 });
                 None
             }
@@ -801,6 +813,31 @@ fn path_field(
         }
     }
     unreachable!("a path variable names at least one field")
+}
+
+/// The dotted field path `names` was most likely meant to be, when a
+/// field along it does not exist in its message: the path with that
+/// field replaced by the message's closest
+/// ([`crate::diagnostics::closest`]). `None` when every field exists, or
+/// none is close.
+fn closest_path(message: &MessageDescriptor, names: &[String]) -> Option<String> {
+    let mut message = message.clone();
+    for (index, name) in names.iter().enumerate() {
+        match message.get_field_by_name(name) {
+            Some(field) => match field.kind() {
+                Kind::Message(inner) => message = inner,
+                _ => return None,
+            },
+            None => {
+                let fields: Vec<String> = message.fields().map(|f| f.name().to_owned()).collect();
+                let closest = crate::diagnostics::closest(name, fields.iter().map(String::as_str))?;
+                let mut path = names.to_vec();
+                path[index] = closest;
+                return Some(path.join("."));
+            }
+        }
+    }
+    None
 }
 
 /// The top-level singular message field `name` of the request, of a

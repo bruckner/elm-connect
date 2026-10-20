@@ -375,7 +375,7 @@ mod tests {
             assert!(
                 error
                     .to_string()
-                    .contains("`module_prefix` is dot-separated Elm module segments"),
+                    .contains("A module prefix is dot-separated Elm module segments"),
                 "{invalid}: {error}"
             );
         }

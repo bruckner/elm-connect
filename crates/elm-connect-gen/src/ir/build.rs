@@ -15,10 +15,13 @@ use super::{
     Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant, Package,
     ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
-use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
+use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
+
+/// What a rename's help names in place of the proto element's full name.
+const RENAME_PLACEHOLDER: &str = "<proto full name>";
 
 /// The package whose types are well-known types, never generated.
 const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
@@ -144,15 +147,24 @@ pub fn build_with_imports(
         match module {
             Ok(module) => {
                 let what = format!("package `{package}`");
-                let origin = builder.origin(&files[0], &[], tag::FILE_PACKAGE, what);
+                let origin = builder.origin(
+                    &files[0],
+                    &[],
+                    tag::FILE_PACKAGE,
+                    what,
+                    Some(package.as_str()),
+                );
                 builder.claim_module(&module, origin, package);
                 builder.modules.insert(package.clone(), module);
             }
             Err(NameError::InvalidSegment { segment }) => {
                 let site = builder.site(&files[0], &[tag::FILE_PACKAGE], "this package".into());
-                builder
-                    .diagnostics
-                    .push(Problem::invalid_module(package, &segment, site));
+                builder.diagnostics.push(Problem::invalid_module(
+                    package,
+                    &segment,
+                    site,
+                    &builder.spelling.rename(package),
+                ));
             }
             Err(_) => {
                 for file in files {
@@ -160,6 +172,7 @@ pub fn build_with_imports(
                         file: file.name().to_owned(),
                         span: None,
                         label: String::new(),
+                        within: Vec::new(),
                     };
                     builder.diagnostics.push(Problem::missing_package(site));
                 }
@@ -195,6 +208,79 @@ pub fn build_with_imports(
     } else {
         Err(errors)
     }
+}
+
+/// The label of a problem `error` in the binding `binding` (the rule
+/// itself at `index` 0, else its additional binding `index`), and the
+/// literals that find what it is about in the rule's text (see
+/// [`Site::within`]): the quoted path, `body`, `response_body` or custom
+/// kind, or the binding's block.
+fn route_literal(
+    index: usize,
+    binding: &HttpRule,
+    error: &route::RouteError,
+) -> (&'static str, Vec<String>) {
+    use route::RouteError as E;
+    // As the text format writes the string in double quotes, so that a
+    // value with escapes (`"GET\r\n"`) is found as written.
+    let quoted = |text: &str| {
+        let mut out = String::from("\"");
+        for c in text.chars() {
+            match c {
+                '\n' => out.push_str("\\n"),
+                '\r' => out.push_str("\\r"),
+                '\t' => out.push_str("\\t"),
+                '"' => out.push_str("\\\""),
+                '\\' => out.push_str("\\\\"),
+                c if c.is_control() => out.push_str(&format!("\\{:03o}", u32::from(c))),
+                c => out.push(c),
+            }
+        }
+        out.push('"');
+        out
+    };
+    let mut within = vec!["additional_bindings".to_owned(); index];
+    let label = match error {
+        E::NoPattern | E::QueryField { .. } => {
+            if index == 0 {
+                "in this rule"
+            } else {
+                "in this binding"
+            }
+        }
+        E::NestedBindings => {
+            within.push("additional_bindings".to_owned());
+            "nested here"
+        }
+        E::CustomKind { kind, .. } => {
+            within.extend(["kind".to_owned(), quoted(kind)]);
+            "this kind"
+        }
+        E::Syntax { .. }
+        | E::UnboundWildcard { .. }
+        | E::PathField { .. }
+        | E::PathFieldTwice { .. } => {
+            let key = match &binding.verb {
+                HttpVerb::Get => "get",
+                HttpVerb::Put => "put",
+                HttpVerb::Post => "post",
+                HttpVerb::Delete => "delete",
+                HttpVerb::Patch => "patch",
+                HttpVerb::Custom(_) => "path",
+            };
+            within.extend([key.to_owned(), quoted(&binding.template)]);
+            "this path"
+        }
+        E::BodyField { field, .. } => {
+            within.extend(["body".to_owned(), quoted(field)]);
+            "this body"
+        }
+        E::ResponseBodyField { field, .. } => {
+            within.extend(["response_body".to_owned(), quoted(field)]);
+            "this response body"
+        }
+    };
+    (label, within)
 }
 
 /// The files of every package to generate, by package name, each
@@ -233,8 +319,15 @@ fn whole_packages(
 /// A `services::unbound_method` problem for every method of `packages`
 /// (built from `pool`) without a `google.api.http` rule, at the method's
 /// name: what `unbound_methods=error` reports (design §4).
-pub fn unbound_methods(pool: &DescriptorPool, packages: &[Package]) -> Diagnostics {
-    let mut builder = Builder::default();
+pub fn unbound_methods(
+    pool: &DescriptorPool,
+    packages: &[Package],
+    spelling: Spelling,
+) -> Diagnostics {
+    let mut builder = Builder {
+        spelling,
+        ..Builder::default()
+    };
     for service in packages.iter().flat_map(|package| &package.services) {
         let Some(descriptor) = pool.get_service_by_name(&service.proto_full_name) else {
             continue;
@@ -248,20 +341,71 @@ pub fn unbound_methods(pool: &DescriptorPool, packages: &[Package]) -> Diagnosti
             if built.is_some_and(|built| built.http.is_none()) {
                 let path = [method.path(), &[tag::METHOD_NAME]].concat();
                 let site = builder.site(&file, &path, "no `google.api.http` rule".into());
-                builder
-                    .diagnostics
-                    .push(Problem::unbound_method(method.full_name(), site));
+                builder.diagnostics.push(Problem::unbound_method(
+                    method.full_name(),
+                    site,
+                    builder.spelling,
+                ));
             }
         }
     }
     builder.diagnostics
 }
 
-/// A proto element that claims an Elm name: what it is, for labels, and
-/// where its name is.
+/// A proto element that claims an Elm name: what it is, for labels,
+/// where its name is, and the proto full name a `rename` of which would
+/// change the name it claims, if one would.
 struct Origin {
     what: String,
     site: Site,
+    proto: Option<String>,
+    /// Whether this is a message's claim of its type or its record
+    /// constructor, which share one name.
+    record: bool,
+    /// The Elm name the rename map gives `proto`, if it gives one, and the
+    /// `rename` option's name as the reader writes it.
+    given: Option<(String, &'static str)>,
+}
+
+impl Origin {
+    /// Whether `name`, which this claims, is the one its rename gives:
+    /// the name itself, or the last segments of a module name.
+    fn renamed_to(&self, name: &str) -> bool {
+        self.given.as_ref().is_some_and(|(given, _)| {
+            name == given
+                || name
+                    .strip_suffix(given.as_str())
+                    .is_some_and(|rest| rest.ends_with('.'))
+        })
+    }
+
+    /// The label of this claim of `name`: "message `a.B` becomes `B`",
+    /// or, when its rename gives the name, "... is renamed to `B` by
+    /// `rename`". `and` labels the second claim of a clash.
+    fn label(&self, name: &str, and: bool) -> String {
+        match (&self.given, and) {
+            (Some((_, option)), false) if self.renamed_to(name) => {
+                format!("{} is renamed to `{name}` by {option}", self.what)
+            }
+            (Some((_, option)), true) if self.renamed_to(name) => {
+                format!("and {} is renamed to it by {option}", self.what)
+            }
+            (_, false) => format!("{} becomes `{name}`", self.what),
+            (_, true) => format!("and so does {}", self.what),
+        }
+    }
+}
+
+/// Two claims of one name: the first claimant's site and the new one's,
+/// labelled, and the proto full name whose `rename` would part them, the
+/// new one's if a rename of it would.
+struct Clash {
+    first: Site,
+    second: Site,
+    rename: Option<String>,
+    /// The proto full name and Elm name of a claimant whose rename gave
+    /// it the name, the new one's first.
+    renamed: Option<(String, String)>,
 }
 
 /// The names claimed in one Elm namespace, and by whom first.
@@ -271,20 +415,27 @@ struct Namespace {
 }
 
 impl Namespace {
-    /// Claims `name` for `origin`; on a clash, the first claimant's site
-    /// and the new one's, labelled.
-    fn claim(&mut self, name: &str, origin: Origin) -> Option<(Site, Site)> {
+    /// Claims `name` for `origin`; `None` unless it clashes.
+    fn claim(&mut self, name: &str, origin: Origin) -> Option<Clash> {
         match self.claimed.get(name) {
-            Some(first) => Some((
-                Site {
-                    label: format!("{} becomes `{name}`", first.what),
-                    ..first.site.clone()
-                },
-                Site {
-                    label: format!("and so does {}", origin.what),
-                    ..origin.site
-                },
-            )),
+            Some(first) => {
+                let renamed = [&origin, first]
+                    .into_iter()
+                    .find(|claim| claim.renamed_to(name))
+                    .and_then(|claim| Some((claim.proto.clone()?, claim.given.clone()?.0)));
+                Some(Clash {
+                    first: Site {
+                        label: first.label(name, false),
+                        ..first.site.clone()
+                    },
+                    second: Site {
+                        label: origin.label(name, true),
+                        ..origin.site
+                    },
+                    rename: origin.proto.or_else(|| first.proto.clone()),
+                    renamed,
+                })
+            }
             None => {
                 self.claimed.insert(name.to_owned(), origin);
                 None
@@ -347,11 +498,18 @@ impl Builder {
         renames: &BTreeMap<String, String>,
         by_package: &BTreeMap<String, Vec<FileDescriptor>>,
     ) {
+        // The names a rename could take, gathered once a rename names
+        // nothing, for its suggestion.
+        let mut known: Option<Vec<String>> = None;
         for (proto, elm) in renames {
             let Some(target) = rename::resolve(pool, proto)
                 .filter(|target| by_package.contains_key(&target.package))
             else {
-                self.diagnostics.push(Problem::unknown_rename(proto));
+                let known =
+                    known.get_or_insert_with(|| rename::names(by_package.values().flatten()));
+                let suggestion = closest(proto, known.iter().map(String::as_str));
+                self.diagnostics
+                    .push(Problem::unknown_rename(proto, suggestion.as_deref()));
                 continue;
             };
             let what = target.role.what();
@@ -416,6 +574,7 @@ impl Builder {
             file: file.name().to_owned(),
             span,
             label,
+            within: Vec::new(),
         }
     }
 
@@ -425,10 +584,32 @@ impl Builder {
         element: &[i32],
         name_tag: i32,
         what: String,
+        proto: Option<&str>,
     ) -> Origin {
         let path = [element, &[name_tag]].concat();
         let site = self.site(file, &path, String::new());
-        Origin { what, site }
+        Origin {
+            what,
+            site,
+            proto: proto.map(str::to_owned),
+            record: false,
+            given: proto
+                .and_then(|proto| self.renames.get(proto))
+                .map(|given| (given.clone(), self.spelling.rename_key())),
+        }
+    }
+
+    /// The `rename` option for `proto`, written as the options are, with a
+    /// placeholder for the Elm name; a placeholder for the proto name too
+    /// when no proto element's rename would help.
+    fn rename_of(&self, proto: Option<&str>) -> String {
+        self.spelling.rename(proto.unwrap_or(RENAME_PLACEHOLDER))
+    }
+
+    /// The rename option that gave a clash's claimant its name, written
+    /// as the reader wrote it, if one did.
+    fn renamed_by(&self, renamed: Option<&(String, String)>) -> Option<String> {
+        renamed.map(|(proto, elm)| self.spelling.rename_to(proto, elm))
     }
 
     /// Names every message and enum of `file`, so references can resolve
@@ -472,9 +653,12 @@ impl Builder {
                     };
                     let path = [path, &[name_tag]].concat();
                     let site = builder.site(file, &path, "this name".into());
-                    builder
-                        .diagnostics
-                        .push(Problem::invalid_type(full_name, &converted, site));
+                    builder.diagnostics.push(Problem::invalid_type(
+                        full_name,
+                        &converted,
+                        site,
+                        &builder.spelling.rename(full_name),
+                    ));
                 }
             }
         };
@@ -531,15 +715,24 @@ impl Builder {
                 let service_module = match service_module {
                     Ok(service_module) => {
                         let what = format!("service `{full_name}`");
-                        let origin = self.origin(file, service.path(), tag::SERVICE_NAME, what);
+                        let origin = self.origin(
+                            file,
+                            service.path(),
+                            tag::SERVICE_NAME,
+                            what,
+                            Some(full_name),
+                        );
                         self.claim_module(&service_module, origin, full_name);
                         Some(service_module)
                     }
                     Err(_) => {
                         let path = [service.path(), &[tag::SERVICE_NAME]].concat();
                         let site = self.site(file, &path, "this name".into());
-                        self.diagnostics
-                            .push(Problem::invalid_service(full_name, site));
+                        self.diagnostics.push(Problem::invalid_service(
+                            full_name,
+                            site,
+                            &self.spelling.rename(full_name),
+                        ));
                         None
                     }
                 };
@@ -614,8 +807,16 @@ impl Builder {
                         0 => format!("The HTTP rule of `{full_name}`"),
                         n => format!("Additional binding {n} of `{full_name}`"),
                     };
+                    let binding = match index {
+                        0 => rule,
+                        n => &rule.additional_bindings[n - 1],
+                    };
                     for error in errors {
-                        let site = self.site_within(file, &path, "in this rule".into());
+                        let (label, within) = route_literal(index, binding, &error);
+                        let site = Site {
+                            within,
+                            ..self.site_within(file, &path, label.into())
+                        };
                         self.diagnostics.push(Problem::route(&what, &error, site));
                     }
                 }
@@ -672,6 +873,7 @@ impl Builder {
             file: file.name().to_owned(),
             span,
             label,
+            within: Vec::new(),
         }
     }
 
@@ -696,8 +898,10 @@ impl Builder {
         if let Some((which, stream_tag)) = streaming {
             let site = self.site(file, &[path, &[stream_tag]].concat(), "streams here".into());
             self.diagnostics.push(match self.streaming {
-                Streaming::Error => Problem::streaming(full_name, which, site),
-                Streaming::Skip => Problem::streaming_skipped(full_name, which, site),
+                Streaming::Error => Problem::streaming(full_name, which, site, self.spelling),
+                Streaming::Skip => {
+                    Problem::streaming_skipped(full_name, which, site, self.spelling)
+                }
             });
             return None;
         }
@@ -731,8 +935,12 @@ impl Builder {
                     &[path, &[tag::METHOD_NAME]].concat(),
                     "this name".into(),
                 );
-                self.diagnostics
-                    .push(Problem::invalid_method(full_name, &converted, site));
+                self.diagnostics.push(Problem::invalid_method(
+                    full_name,
+                    &converted,
+                    site,
+                    &self.spelling.rename(full_name),
+                ));
                 return None;
             }
         };
@@ -761,31 +969,52 @@ impl Builder {
                 &format!("method `{full_name}`"),
                 &built.elm_name,
                 site,
+                &self.spelling.rename(full_name),
             ));
         }
         let service = method.parent_service();
         let what = format!("method `{full_name}`");
-        let origin = self.origin(file, path, tag::METHOD_NAME, what);
-        if let Some((first, second)) = values.names.claim(&built.elm_name, origin) {
+        let origin = self.origin(file, path, tag::METHOD_NAME, what, Some(full_name));
+        if let Some(Clash {
+            first,
+            second,
+            rename,
+            renamed,
+        }) = values.names.claim(&built.elm_name, origin)
+        {
             let problem = if values.descriptors.contains(&built.elm_name) {
                 Problem::descriptor_collision
             } else {
                 Problem::value_collision
             };
-            self.diagnostics
-                .push(problem(service.full_name(), &built.elm_name, first, second));
+            self.diagnostics.push(problem(
+                service.full_name(),
+                &built.elm_name,
+                first,
+                second,
+                &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
         } else {
             // A call that clashes with another call has a descriptor that
             // clashes with the other's too; that is one problem, reported.
             let descriptor = built.descriptor_name();
             let what = format!("the descriptor of method `{full_name}`");
-            let origin = self.origin(file, path, tag::METHOD_NAME, what);
-            if let Some((first, second)) = values.names.claim(&descriptor, origin) {
+            let origin = self.origin(file, path, tag::METHOD_NAME, what, Some(full_name));
+            if let Some(Clash {
+                first,
+                second,
+                rename,
+                renamed,
+            }) = values.names.claim(&descriptor, origin)
+            {
                 self.diagnostics.push(Problem::descriptor_collision(
                     service.full_name(),
                     &descriptor,
                     first,
                     second,
+                    &self.rename_of(rename.as_deref()),
+                    self.renamed_by(renamed.as_ref()).as_deref(),
                 ));
             }
             values.descriptors.insert(descriptor);
@@ -844,9 +1073,20 @@ impl Builder {
         self.module_cases
             .entry(folded)
             .or_insert((name.clone(), site));
-        if let Some((first, second)) = self.module_names.claim(&name, origin) {
-            self.diagnostics
-                .push(Problem::module_collision(&name, first, second));
+        if let Some(Clash {
+            first,
+            second,
+            rename,
+            renamed,
+        }) = self.module_names.claim(&name, origin)
+        {
+            self.diagnostics.push(Problem::module_collision(
+                &name,
+                first,
+                second,
+                &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
         }
     }
 
@@ -859,9 +1099,26 @@ impl Builder {
         name: &str,
         origin: Origin,
     ) -> bool {
-        if let Some((first, second)) = types.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::type_collision(package, name, first, second));
+        // Two messages clash as record constructors too, which is the same
+        // mistake: this problem says so, and [`Builder::message`] leaves
+        // the constructors' clash unreported.
+        let records = origin.record && types.claimed.get(name).is_some_and(|first| first.record);
+        if let Some(Clash {
+            first,
+            second,
+            rename,
+            renamed,
+        }) = types.claim(name, origin)
+        {
+            self.diagnostics.push(Problem::type_collision(
+                package,
+                name,
+                first,
+                second,
+                &self.rename_of(rename.as_deref()),
+                records,
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
             return false;
         }
         true
@@ -894,13 +1151,29 @@ impl Builder {
                 label: format!("{} is renamed to `{name}`", origin.what),
                 ..origin.site
             };
-            self.diagnostics
-                .push(Problem::reserved_value(&origin.what, name, site));
+            self.diagnostics.push(Problem::reserved_value(
+                &origin.what,
+                name,
+                site,
+                &self.rename_of(origin.proto.as_deref()),
+            ));
             return;
         }
-        if let Some((first, second)) = values.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::field_value_collision(message, name, first, second));
+        if let Some(Clash {
+            first,
+            second,
+            rename,
+            renamed,
+        }) = values.claim(name, origin)
+        {
+            self.diagnostics.push(Problem::field_value_collision(
+                message,
+                name,
+                first,
+                second,
+                &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
         }
     }
 
@@ -911,9 +1184,21 @@ impl Builder {
         name: &str,
         origin: Origin,
     ) {
-        if let Some((first, second)) = constructors.claim(name, origin) {
-            self.diagnostics
-                .push(Problem::constructor_collision(package, name, first, second));
+        if let Some(Clash {
+            first,
+            second,
+            rename,
+            renamed,
+        }) = constructors.claim(name, origin)
+        {
+            self.diagnostics.push(Problem::constructor_collision(
+                package,
+                name,
+                first,
+                second,
+                &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
         }
     }
 
@@ -927,9 +1212,21 @@ impl Builder {
         let elm_name = self.types.get(enumeration.full_name())?.name.clone();
         let package = file.package_name();
         let what = format!("enum `{}`", enumeration.full_name());
-        let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what.clone());
+        let origin = self.origin(
+            file,
+            enumeration.path(),
+            tag::ENUM_NAME,
+            what.clone(),
+            Some(enumeration.full_name()),
+        );
         if self.claim_type(types, package, &elm_name, origin) {
-            let origin = self.origin(file, enumeration.path(), tag::ENUM_NAME, what);
+            let origin = self.origin(
+                file,
+                enumeration.path(),
+                tag::ENUM_NAME,
+                what,
+                Some(enumeration.full_name()),
+            );
             self.claim_descriptor_module(enumeration.full_name(), &elm_name, origin);
         }
 
@@ -955,7 +1252,13 @@ impl Builder {
                 value.name(),
             );
             let what = format!("enum value `{}`", value.name());
-            let origin = self.origin(file, value.path(), tag::ENUM_VALUE_NAME, what);
+            let origin = self.origin(
+                file,
+                value.path(),
+                tag::ENUM_VALUE_NAME,
+                what,
+                Some(&format!("{}.{}", enumeration.full_name(), value.name())),
+            );
             self.claim_constructor(constructors, package, &elm_ctor, origin);
             values.push(EnumValue {
                 proto_name: value.name().to_owned(),
@@ -996,13 +1299,47 @@ impl Builder {
         let package = file.package_name();
         let full_name = message.full_name();
         let what = format!("message `{full_name}`");
-        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what.clone());
-        if self.claim_type(types, package, &elm_name, origin) {
-            let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what.clone());
+        let origin = Origin {
+            record: true,
+            ..self.origin(
+                file,
+                message.path(),
+                tag::MESSAGE_NAME,
+                what.clone(),
+                Some(full_name),
+            )
+        };
+        let typed = self.claim_type(types, package, &elm_name, origin);
+        if typed {
+            let origin = self.origin(
+                file,
+                message.path(),
+                tag::MESSAGE_NAME,
+                what.clone(),
+                Some(full_name),
+            );
             self.claim_descriptor_module(full_name, &elm_name, origin);
         }
-        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
-        self.claim_constructor(constructors, package, &elm_name, origin);
+        let origin = Origin {
+            record: true,
+            ..self.origin(
+                file,
+                message.path(),
+                tag::MESSAGE_NAME,
+                what,
+                Some(full_name),
+            )
+        };
+        let partner = constructors
+            .claimed
+            .get(&elm_name)
+            .is_some_and(|first| first.record);
+        if !typed && partner {
+            // The other message's: the type's problem reported it.
+            constructors.claim(&elm_name, origin);
+        } else {
+            self.claim_constructor(constructors, package, &elm_name, origin);
+        }
 
         // The values of the message's descriptor module: its descriptor,
         // then one per field and oneof member. No field's value can be
@@ -1010,7 +1347,7 @@ impl Builder {
         // that checked.
         let mut values = Namespace::default();
         let what = format!("the descriptor of message `{full_name}`");
-        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what);
+        let origin = self.origin(file, message.path(), tag::MESSAGE_NAME, what, None);
         values.claim(naming::DESCRIPTOR_VALUE, origin);
 
         let mut record = Namespace::default();
@@ -1032,13 +1369,27 @@ impl Builder {
                     continue;
                 };
                 let what = format!("oneof `{}`", oneof.name());
-                let origin = self.origin(file, oneof.path(), tag::ONEOF_NAME, what);
-                if let Some((first, second)) = record.claim(&elm_field_name, origin) {
+                let origin = self.origin(
+                    file,
+                    oneof.path(),
+                    tag::ONEOF_NAME,
+                    what,
+                    Some(oneof.full_name()),
+                );
+                if let Some(Clash {
+                    first,
+                    second,
+                    rename,
+                    renamed,
+                }) = record.claim(&elm_field_name, origin)
+                {
                     self.diagnostics.push(Problem::field_collision(
                         full_name,
                         &elm_field_name,
                         first,
                         second,
+                        &self.rename_of(rename.as_deref()),
+                        self.renamed_by(renamed.as_ref()).as_deref(),
                     ));
                 }
 
@@ -1050,13 +1401,20 @@ impl Builder {
                 let elm_type_name = naming::oneof_type_name(&elm_name, type_from);
                 let unset_ctor = naming::oneof_unset_constructor(&elm_type_name);
                 let what = format!("oneof `{}` of `{full_name}`", oneof.name());
-                let origin = self.origin(file, oneof.path(), tag::ONEOF_NAME, what.clone());
+                let origin = self.origin(
+                    file,
+                    oneof.path(),
+                    tag::ONEOF_NAME,
+                    what.clone(),
+                    Some(oneof.full_name()),
+                );
                 self.claim_type(types, package, &elm_type_name, origin);
                 let origin = self.origin(
                     file,
                     oneof.path(),
                     tag::ONEOF_NAME,
                     format!("the unset case of {what}"),
+                    Some(oneof.full_name()),
                 );
                 self.claim_constructor(constructors, package, &unset_ctor, origin);
 
@@ -1069,7 +1427,13 @@ impl Builder {
                         None => naming::oneof_variant_constructor(&elm_type_name, member.name()),
                     };
                     let what = format!("oneof field `{}` of `{full_name}`", member.name());
-                    let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
+                    let origin = self.origin(
+                        file,
+                        member.path(),
+                        tag::FIELD_NAME,
+                        what,
+                        Some(member.full_name()),
+                    );
                     self.claim_constructor(constructors, package, &elm_ctor, origin);
                     let elm_name = match self.field_value(&member) {
                         Ok(name) => name,
@@ -1090,7 +1454,7 @@ impl Builder {
                         }
                     };
                     let what = format!("oneof field `{}`", member.name());
-                    let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
+                    let origin = self.origin(file, member.path(), tag::FIELD_NAME, what, None);
                     self.claim_field_value(&mut values, full_name, &elm_name, origin);
                     if let Some(ty) = self.resolve(file, message, &member, member.kind()) {
                         variants.push(OneofVariant {
@@ -1123,20 +1487,40 @@ impl Builder {
                 continue;
             };
             let what = format!("field `{}`", field.name());
-            let origin = self.origin(file, field.path(), tag::FIELD_NAME, what.clone());
-            if let Some((first, second)) = record.claim(&elm_field_name, origin) {
+            let origin = self.origin(
+                file,
+                field.path(),
+                tag::FIELD_NAME,
+                what.clone(),
+                Some(field.full_name()),
+            );
+            if let Some(Clash {
+                first,
+                second,
+                rename,
+                renamed,
+            }) = record.claim(&elm_field_name, origin)
+            {
                 self.diagnostics.push(Problem::field_collision(
                     full_name,
                     &elm_field_name,
                     first,
                     second,
+                    &self.rename_of(rename.as_deref()),
+                    self.renamed_by(renamed.as_ref()).as_deref(),
                 ));
             } else {
                 // Two record fields of one name were reported as such; their
                 // descriptor values clash too, which is the same problem.
                 // The record field's name was found, so its value is too.
                 if let Ok(value) = self.field_value(&field) {
-                    let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
+                    let origin = self.origin(
+                        file,
+                        field.path(),
+                        tag::FIELD_NAME,
+                        what,
+                        Some(field.full_name()),
+                    );
                     self.claim_field_value(&mut values, full_name, &value, origin);
                 }
             }
@@ -1195,6 +1579,9 @@ impl Builder {
                     proto_name,
                     &converted,
                     site,
+                    &self
+                        .spelling
+                        .rename(&format!("{}.{proto_name}", message.full_name())),
                 ));
                 None
             }

@@ -582,16 +582,28 @@ message Thing { string name = 1; }
 }
 
 #[test]
-fn a_route_problem_points_at_the_rule() {
+fn a_route_problem_points_at_its_literal_in_the_rule() {
     let rendered = route_problems(
         r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{missing}" body: "*" }; }"#,
     );
-    assert!(rendered.contains("╭─[t.proto:19:36]"), "{rendered}");
-    assert!(rendered.contains("in this rule"), "{rendered}");
+    assert!(rendered.contains("╭─[t.proto:19:70]"), "{rendered}");
+    assert!(rendered.contains("this path"), "{rendered}");
     assert!(
         rendered.contains("The HTTP rule of `t.v1.S.Get` binds `{missing}`"),
         "{rendered}"
     );
+}
+
+#[test]
+fn a_binding_problem_points_at_the_binding() {
+    // An additional binding without a pattern: the binding's block, not
+    // the rule's, is underlined.
+    let rendered = route_problems(
+        r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { post: "/v1/things" body: "*" additional_bindings { body: "*" } }; }"#,
+    );
+    assert!(rendered.contains("\nroute::rule\n"), "{rendered}");
+    assert!(rendered.contains("╭─[t.proto:19:94]"), "{rendered}");
+    assert!(rendered.contains("in this binding"), "{rendered}");
 }
 
 #[test]

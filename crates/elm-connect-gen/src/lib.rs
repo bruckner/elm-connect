@@ -112,7 +112,7 @@ pub fn generate_with_imports(
     let ir::Built { packages, warnings } =
         ir::build_with_imports(pool, generate, imports, options)?;
     if options.unbound_methods == UnboundMethods::Error {
-        let unbound = ir::unbound_methods(pool, &packages);
+        let unbound = ir::unbound_methods(pool, &packages, options.spelling);
         if !unbound.is_empty() {
             return Err(unbound);
         }
