@@ -75,7 +75,7 @@ is the empty `Any`, with no type URL, written `{}`.
 -}
 any : Message Any
 any =
-    message Proto.Any.encodeJson Proto.Any.jsonDecoder (Proto.Internal.Any.Any "" (Proto.Internal.Any.InBinary "")) Descriptors.any
+    message Proto.Json.encodeAny Proto.Json.any (Proto.Internal.Any.Any "" (Proto.Internal.Any.InBinary "")) Descriptors.any
 
 
 {-| `google.protobuf.Struct`: a JSON object.

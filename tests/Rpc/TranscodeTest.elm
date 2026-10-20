@@ -5,11 +5,11 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode exposing (Value)
-import Proto.Any
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
+import Proto.Json
 import Proto.Method exposing (Idempotency(..), Method)
 import Rpc
 import Rpc.Body
@@ -459,7 +459,7 @@ errors =
                         (\error ->
                             case error of
                                 RpcStatus r _ ->
-                                    Just ( ( r.code, r.source ), r.message, List.map (Proto.Any.encodeJson >> Json.Encode.encode 0) r.details )
+                                    Just ( ( r.code, r.source ), r.message, List.map (Proto.Json.encodeAny >> Json.Encode.encode 0) r.details )
 
                                 _ ->
                                     Nothing

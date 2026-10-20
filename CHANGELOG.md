@@ -835,3 +835,13 @@ tag (design §8).
   name. A path variable, body field or response body of a well-known
   request or response type is `route::path_field`, `route::body_field`
   or `route::response_body`.
+- `Proto.Json`'s field encoders end in `Field`: `implicit`,
+  `implicitFloat`, `implicitBytes`, `repeated`, `dict` and `boolDict` are
+  `implicitField`, `implicitFloatField`, `implicitBytesField`,
+  `repeatedField`, `dictField` and `boolMapField`, and `object` is
+  `objectOfFields`, so no helper is named like an elm/json function of
+  another type. `Proto.Any.encodeJson` and `jsonDecoder` are
+  `Proto.Json.encodeAny` and `Proto.Json.any`, beside the other
+  well-known types' codecs. Generated code calls the new names (design
+  §3.1, which also records why generated codecs stay `encodeX` and
+  `decodeX`).

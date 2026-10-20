@@ -91,14 +91,14 @@ registry =
 
 encodeBlob : Blob -> Json.Encode.Value
 encodeBlob value =
-    Proto.Json.object
-        ([ ( "data", Proto.Json.implicitBytes value.data )
+    Proto.Json.objectOfFields
+        ([ ( "data", Proto.Json.implicitBytesField value.data )
          , ( "maybeData", Maybe.map Proto.Json.encodeBytesAsBytes value.maybeData )
-         , ( "chunks", Proto.Json.repeated Proto.Json.encodeBytesAsBytes value.chunks )
-         , ( "byName", Proto.Json.dict identity Proto.Json.encodeBytesAsBytes value.byName )
+         , ( "chunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.chunks )
+         , ( "byName", Proto.Json.dictField identity Proto.Json.encodeBytesAsBytes value.byName )
          , ( "wrapped", Maybe.map Proto.Json.encodeBytesAsBytes value.wrapped )
-         , ( "wrappedChunks", Proto.Json.repeated Proto.Json.encodeBytesAsBytes value.wrappedChunks )
-         , ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+         , ( "wrappedChunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.wrappedChunks )
+         , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
          ]
             ++ encodeBlobSource value.source
         )

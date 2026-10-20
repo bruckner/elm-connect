@@ -8,6 +8,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Duration
 import Proto.Http
+import Proto.Json
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
 import Proto.WellKnown
@@ -440,7 +441,7 @@ responses =
                         (\error ->
                             case error of
                                 RpcStatus r _ ->
-                                    ( r.code, r.message, List.map (\detail -> ( Proto.Any.typeUrl detail, Json.Encode.encode 0 (Proto.Any.encodeJson detail) )) r.details )
+                                    ( r.code, r.message, List.map (\detail -> ( Proto.Any.typeUrl detail, Json.Encode.encode 0 (Proto.Json.encodeAny detail) )) r.details )
 
                                 _ ->
                                     ( Internal, "not a status", [] )
@@ -465,7 +466,7 @@ responses =
                                         (\detail ->
                                             ( Proto.Any.typeName detail
                                             , Proto.Any.unpack title detail |> Maybe.map (Result.mapError problemWord)
-                                            , Json.Encode.encode 0 (Proto.Any.encodeJson detail)
+                                            , Json.Encode.encode 0 (Proto.Json.encodeAny detail)
                                             )
                                         )
                                         r.details

@@ -13,6 +13,7 @@ import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
+import Proto.Json
 import Proto.Method as Method
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
@@ -190,7 +191,7 @@ rather than losing the error's code and message with it.
 -}
 detailList : Decoder (List Any)
 detailList =
-    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Any.jsonDecoder, connectDetail ]))
+    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Json.any, connectDetail ]))
         |> Json.Decode.map (List.filterMap identity)
 
 

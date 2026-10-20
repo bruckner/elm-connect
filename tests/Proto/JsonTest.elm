@@ -170,8 +170,8 @@ valueFieldTests =
         , test "Nothing leaves the field out, Just null writes null" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (Proto.Json.object [ ( "value", Nothing ) ]) "{}"
-                    , \_ -> encodesTo (Proto.Json.object [ ( "value", Just Json.Encode.null ) ]) """{"value":null}"""
+                    [ \_ -> encodesTo (Proto.Json.objectOfFields [ ( "value", Nothing ) ]) "{}"
+                    , \_ -> encodesTo (Proto.Json.objectOfFields [ ( "value", Just Json.Encode.null ) ]) """{"value":null}"""
                     ]
                     ()
         ]
@@ -338,56 +338,56 @@ encodingTests : Test
 encodingTests =
     let
         object fields =
-            Proto.Json.object [ ( "f", fields ) ]
+            Proto.Json.objectOfFields [ ( "f", fields ) ]
     in
     describe "encoding fields"
-        [ test "object leaves out the fields given Nothing, in order otherwise" <|
+        [ test "objectOfFields leaves out the fields given Nothing, in order otherwise" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.object
+                    (Proto.Json.objectOfFields
                         [ ( "a", Just (Json.Encode.int 1) )
                         , ( "b", Nothing )
                         , ( "c", Just Json.Encode.null )
                         ]
                     )
                     """{"a":1,"c":null}"""
-        , test "implicit leaves out the default" <|
+        , test "implicitField leaves out the default" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (object (Proto.Json.implicit "" Json.Encode.string "")) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.implicit 0 Json.Encode.int 0)) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.implicit "0" Proto.Json.encodeInt64 "0")) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.implicit False Json.Encode.bool False)) "{}"
+                    [ \_ -> encodesTo (object (Proto.Json.implicitField "" Json.Encode.string "")) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicitField 0 Json.Encode.int 0)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicitField "0" Proto.Json.encodeInt64 "0")) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicitField False Json.Encode.bool False)) "{}"
                     ]
                     ()
-        , test "implicit writes any other value" <|
+        , test "implicitField writes any other value" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (object (Proto.Json.implicit "" Json.Encode.string " ")) """{"f":" "}"""
-                    , \_ -> encodesTo (object (Proto.Json.implicit 0 Json.Encode.int -1)) """{"f":-1}"""
-                    , \_ -> encodesTo (object (Proto.Json.implicit "0" Proto.Json.encodeInt64 "9007199254740993")) """{"f":"9007199254740993"}"""
-                    , \_ -> encodesTo (object (Proto.Json.implicit False Json.Encode.bool True)) """{"f":true}"""
+                    [ \_ -> encodesTo (object (Proto.Json.implicitField "" Json.Encode.string " ")) """{"f":" "}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicitField 0 Json.Encode.int -1)) """{"f":-1}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicitField "0" Proto.Json.encodeInt64 "9007199254740993")) """{"f":"9007199254740993"}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicitField False Json.Encode.bool True)) """{"f":true}"""
                     ]
                     ()
-        , test "implicitFloat leaves out only 0" <|
+        , test "implicitFloatField leaves out only 0" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (object (Proto.Json.implicitFloat 0)) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.implicitFloat 1.5)) """{"f":1.5}"""
-                    , \_ -> Expect.notEqual Nothing (Proto.Json.implicitFloat (0 * -1))
-                    , \_ -> encodesTo (object (Proto.Json.implicitFloat (0 / 0))) """{"f":"NaN"}"""
-                    , \_ -> encodesTo (object (Proto.Json.implicitFloat (-1 / 0))) """{"f":"-Infinity"}"""
+                    [ \_ -> encodesTo (object (Proto.Json.implicitFloatField 0)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloatField 1.5)) """{"f":1.5}"""
+                    , \_ -> Expect.notEqual Nothing (Proto.Json.implicitFloatField (0 * -1))
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloatField (0 / 0))) """{"f":"NaN"}"""
+                    , \_ -> encodesTo (object (Proto.Json.implicitFloatField (-1 / 0))) """{"f":"-Infinity"}"""
                     ]
                     ()
-        , test "repeated, dict and boolDict leave out the empty" <|
+        , test "repeatedField, dictField and boolMapField leave out the empty" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (object (Proto.Json.repeated Json.Encode.int [])) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.repeated Json.Encode.int [ 0 ])) """{"f":[0]}"""
-                    , \_ -> encodesTo (object (Proto.Json.dict String.fromInt Json.Encode.int Dict.empty)) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.dict String.fromInt Json.Encode.int (Dict.singleton 1 0))) """{"f":{"1":0}}"""
-                    , \_ -> encodesTo (object (Proto.Json.boolDict Json.Encode.int [])) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.boolDict Json.Encode.int [ ( True, 0 ) ])) """{"f":{"true":0}}"""
+                    [ \_ -> encodesTo (object (Proto.Json.repeatedField Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.repeatedField Json.Encode.int [ 0 ])) """{"f":[0]}"""
+                    , \_ -> encodesTo (object (Proto.Json.dictField String.fromInt Json.Encode.int Dict.empty)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.dictField String.fromInt Json.Encode.int (Dict.singleton 1 0))) """{"f":{"1":0}}"""
+                    , \_ -> encodesTo (object (Proto.Json.boolMapField Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.boolMapField Json.Encode.int [ ( True, 0 ) ])) """{"f":{"true":0}}"""
                     ]
                     ()
         ]
@@ -1206,7 +1206,7 @@ protoKeyTests =
     describe "a __proto__ key"
         [ test "is written by dict" <|
             \_ ->
-                Proto.Json.dict identity Json.Encode.string pairs
+                Proto.Json.dictField identity Json.Encode.string pairs
                     |> written
                     |> Expect.equal (Just "{\"__proto__\":\"x\",\"a\":\"b\"}")
         , test "is written by encodeStruct" <|
@@ -1217,12 +1217,12 @@ protoKeyTests =
                     |> Expect.equal "{\"__proto__\":\"x\",\"a\":\"b\"}"
         , test "is written by object" <|
             \_ ->
-                Proto.Json.object [ ( "__proto__", Just (Json.Encode.string "x") ), ( "a", Nothing ) ]
+                Proto.Json.objectOfFields [ ( "__proto__", Just (Json.Encode.string "x") ), ( "a", Nothing ) ]
                     |> Json.Encode.encode 0
                     |> Expect.equal "{\"__proto__\":\"x\"}"
         , test "round-trips through dict" <|
             \_ ->
-                Proto.Json.dict identity Json.Encode.string pairs
+                Proto.Json.dictField identity Json.Encode.string pairs
                     |> Maybe.andThen (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) >> Result.toMaybe)
                     |> Expect.equal (Just pairs)
         ]

@@ -5,6 +5,7 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
+import Proto.Json
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -48,8 +49,8 @@ descriptorSend =
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        (Proto.Method.method Proto.Any.encodeJson
-            Proto.Any.jsonDecoder
+        (Proto.Method.method Proto.Json.encodeAny
+            Proto.Json.any
             descriptorForward
         )
 

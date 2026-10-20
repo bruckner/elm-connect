@@ -346,120 +346,120 @@ registry =
 
 encodeErrorInfo : ErrorInfo -> Json.Encode.Value
 encodeErrorInfo value =
-    Proto.Json.object
-        [ ( "reason", Proto.Json.implicit "" Json.Encode.string value.reason )
-        , ( "domain", Proto.Json.implicit "" Json.Encode.string value.domain )
-        , ( "metadata", Proto.Json.dict identity Json.Encode.string value.metadata )
+    Proto.Json.objectOfFields
+        [ ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
+        , ( "domain", Proto.Json.implicitField "" Json.Encode.string value.domain )
+        , ( "metadata", Proto.Json.dictField identity Json.Encode.string value.metadata )
         ]
 
 
 encodeRetryInfo : RetryInfo -> Json.Encode.Value
 encodeRetryInfo value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay )
         ]
 
 
 encodeDebugInfo : DebugInfo -> Json.Encode.Value
 encodeDebugInfo value =
-    Proto.Json.object
-        [ ( "stackEntries", Proto.Json.repeated Json.Encode.string value.stackEntries )
-        , ( "detail", Proto.Json.implicit "" Json.Encode.string value.detail )
+    Proto.Json.objectOfFields
+        [ ( "stackEntries", Proto.Json.repeatedField Json.Encode.string value.stackEntries )
+        , ( "detail", Proto.Json.implicitField "" Json.Encode.string value.detail )
         ]
 
 
 encodeQuotaFailure : QuotaFailure -> Json.Encode.Value
 encodeQuotaFailure value =
-    Proto.Json.object
-        [ ( "violations", Proto.Json.repeated encodeQuotaFailureViolation value.violations )
+    Proto.Json.objectOfFields
+        [ ( "violations", Proto.Json.repeatedField encodeQuotaFailureViolation value.violations )
         ]
 
 
 encodeQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
 encodeQuotaFailureViolation value =
-    Proto.Json.object
-        [ ( "subject", Proto.Json.implicit "" Json.Encode.string value.subject )
-        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
-        , ( "apiService", Proto.Json.implicit "" Json.Encode.string value.apiService )
-        , ( "quotaMetric", Proto.Json.implicit "" Json.Encode.string value.quotaMetric )
-        , ( "quotaId", Proto.Json.implicit "" Json.Encode.string value.quotaId )
-        , ( "quotaDimensions", Proto.Json.dict identity Json.Encode.string value.quotaDimensions )
-        , ( "quotaValue", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.quotaValue )
+    Proto.Json.objectOfFields
+        [ ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
+        , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
+        , ( "apiService", Proto.Json.implicitField "" Json.Encode.string value.apiService )
+        , ( "quotaMetric", Proto.Json.implicitField "" Json.Encode.string value.quotaMetric )
+        , ( "quotaId", Proto.Json.implicitField "" Json.Encode.string value.quotaId )
+        , ( "quotaDimensions", Proto.Json.dictField identity Json.Encode.string value.quotaDimensions )
+        , ( "quotaValue", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.quotaValue )
         , ( "futureQuotaValue", Maybe.map Proto.Json.encodeInt64 value.futureQuotaValue )
         ]
 
 
 encodePreconditionFailure : PreconditionFailure -> Json.Encode.Value
 encodePreconditionFailure value =
-    Proto.Json.object
-        [ ( "violations", Proto.Json.repeated encodePreconditionFailureViolation value.violations )
+    Proto.Json.objectOfFields
+        [ ( "violations", Proto.Json.repeatedField encodePreconditionFailureViolation value.violations )
         ]
 
 
 encodePreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
 encodePreconditionFailureViolation value =
-    Proto.Json.object
-        [ ( "type", Proto.Json.implicit "" Json.Encode.string value.type_ )
-        , ( "subject", Proto.Json.implicit "" Json.Encode.string value.subject )
-        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
+    Proto.Json.objectOfFields
+        [ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
+        , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
+        , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         ]
 
 
 encodeBadRequest : BadRequest -> Json.Encode.Value
 encodeBadRequest value =
-    Proto.Json.object
-        [ ( "fieldViolations", Proto.Json.repeated encodeBadRequestFieldViolation value.fieldViolations )
+    Proto.Json.objectOfFields
+        [ ( "fieldViolations", Proto.Json.repeatedField encodeBadRequestFieldViolation value.fieldViolations )
         ]
 
 
 encodeBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
 encodeBadRequestFieldViolation value =
-    Proto.Json.object
-        [ ( "field", Proto.Json.implicit "" Json.Encode.string value.field )
-        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
-        , ( "reason", Proto.Json.implicit "" Json.Encode.string value.reason )
+    Proto.Json.objectOfFields
+        [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
+        , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
+        , ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
         , ( "localizedMessage", Maybe.map encodeLocalizedMessage value.localizedMessage )
         ]
 
 
 encodeRequestInfo : RequestInfo -> Json.Encode.Value
 encodeRequestInfo value =
-    Proto.Json.object
-        [ ( "requestId", Proto.Json.implicit "" Json.Encode.string value.requestId )
-        , ( "servingData", Proto.Json.implicit "" Json.Encode.string value.servingData )
+    Proto.Json.objectOfFields
+        [ ( "requestId", Proto.Json.implicitField "" Json.Encode.string value.requestId )
+        , ( "servingData", Proto.Json.implicitField "" Json.Encode.string value.servingData )
         ]
 
 
 encodeResourceInfo : ResourceInfo -> Json.Encode.Value
 encodeResourceInfo value =
-    Proto.Json.object
-        [ ( "resourceType", Proto.Json.implicit "" Json.Encode.string value.resourceType )
-        , ( "resourceName", Proto.Json.implicit "" Json.Encode.string value.resourceName )
-        , ( "owner", Proto.Json.implicit "" Json.Encode.string value.owner )
-        , ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
+    Proto.Json.objectOfFields
+        [ ( "resourceType", Proto.Json.implicitField "" Json.Encode.string value.resourceType )
+        , ( "resourceName", Proto.Json.implicitField "" Json.Encode.string value.resourceName )
+        , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
+        , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         ]
 
 
 encodeHelp : Help -> Json.Encode.Value
 encodeHelp value =
-    Proto.Json.object
-        [ ( "links", Proto.Json.repeated encodeHelpLink value.links )
+    Proto.Json.objectOfFields
+        [ ( "links", Proto.Json.repeatedField encodeHelpLink value.links )
         ]
 
 
 encodeHelpLink : HelpLink -> Json.Encode.Value
 encodeHelpLink value =
-    Proto.Json.object
-        [ ( "description", Proto.Json.implicit "" Json.Encode.string value.description )
-        , ( "url", Proto.Json.implicit "" Json.Encode.string value.url )
+    Proto.Json.objectOfFields
+        [ ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
+        , ( "url", Proto.Json.implicitField "" Json.Encode.string value.url )
         ]
 
 
 encodeLocalizedMessage : LocalizedMessage -> Json.Encode.Value
 encodeLocalizedMessage value =
-    Proto.Json.object
-        [ ( "locale", Proto.Json.implicit "" Json.Encode.string value.locale )
-        , ( "message", Proto.Json.implicit "" Json.Encode.string value.message )
+    Proto.Json.objectOfFields
+        [ ( "locale", Proto.Json.implicitField "" Json.Encode.string value.locale )
+        , ( "message", Proto.Json.implicitField "" Json.Encode.string value.message )
         ]
 
 

@@ -259,8 +259,8 @@ rpc shared call =
 
 ### 3.1 Modules
 
-- **The runtime's modules** follow five rules. *(Decided,
-  2026-10-16; rules 4 and 5 2026-10-17.)* (1) A module per proto concept
+- **The runtime's modules** follow six rules. *(Decided,
+  2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19.)* (1) A module per proto concept
   holds whatever that concept has: its typed value if it has one, its
   descriptor, and the unions its descriptor holds. Several types to a
   module is the normal Elm shape (`Http`, `Html`). So `Proto.Message`
@@ -295,7 +295,26 @@ rpc shared call =
   of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
   functions that make them stay in `Rpc`, because they take a `Config`
   and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
-  reads an answer into the errors that keep a `Response`.
+  reads an answer into the errors that keep a `Response`. (6) The JSON
+  helpers (`Proto.Json`) are named by role: a decoder is a noun naming
+  what it reads (`int64`, `timestamp`, `boolMap`, `any`), a value's
+  encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`,
+  `encodeAny`), and a field's encoder, which gives `Nothing` to leave
+  the field out, ends in `Field` (`implicitField`, `repeatedField`,
+  `dictField`, `boolMapField`), with `objectOfFields` building a
+  message's object from them. So a decoder and its encoders share a
+  noun, and no helper shares a name with an elm/json function of
+  another type (`Json.Encode.object`, `Json.Encode.dict`), as `object`,
+  `dict` and `boolDict` did before. Every well-known type's codecs are
+  there, `Any`'s included.
+- **Generated codecs are `encodeX` and `decodeX`.** *(Decided,
+  2026-10-19.)* A package module's codecs for a message or enum are the
+  pair `encodeNote : Note -> Json.Encode.Value` and
+  `decodeNote : Json.Decode.Decoder Note`, so a type's two codecs sit
+  together in a search and the ENCODERS and DECODERS sections each read
+  as one prefix. The noun convention of rule 6 applies to the runtime,
+  whose decoders each read a kind; elm/json's spelling, `noteDecoder`,
+  was considered and not taken.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   *(Decided.)* Per-file modules leak the server's file layout into the
   client and make cross-file references within a package awkward.
@@ -471,7 +490,7 @@ rpc shared call =
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Proto.Json.boolDict`, through
+  most two entries. The encoder (`Proto.Json.boolMapField`, through
   `Proto.Json.encodeBoolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.boolMap`) reads one, fails on any key but exactly
@@ -608,14 +627,14 @@ rpc shared call =
 | `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | *(Decided 2026-10-19; see below.)* |
 
 Encoders leave out every field at its default. *(Decided, 2026-10-15.)*
-A message's encoder is `Proto.Json.object` over `( jsonName, Maybe
+A message's encoder is `Proto.Json.objectOfFields` over `( jsonName, Maybe
 Json.Encode.Value )` pairs, one per field, `Nothing` leaving the field
 out:
 
 - A field without presence (a plain scalar or enum) is left out at its
-  proto3 default (`Proto.Json.implicit zero encoder value`: `0`, `"0"`,
+  proto3 default (`Proto.Json.implicitField zero encoder value`: `0`, `"0"`,
   `""`, `False`, the zero enum value); a float only at `0`
-  (`Proto.Json.implicitFloat`), so `-0`, NaN and the infinities are
+  (`Proto.Json.implicitFloatField`), so `-0`, NaN and the infinities are
   written, `-0` as `0`: JavaScript's JSON writer has no negative zero,
   and a server reads `+0` either way.
 - A field with presence (`Maybe`: `optional`, a message, a wrapper,
@@ -627,8 +646,8 @@ out:
   Json.Encode.Value`).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
-- A repeated or map field is left out when empty (`Proto.Json.repeated`,
-  `Proto.Json.dict`, `Proto.Json.boolDict`).
+- A repeated or map field is left out when empty (`Proto.Json.repeatedField`,
+  `Proto.Json.dictField`, `Proto.Json.boolMapField`).
 - An `Empty` field always writes `{}` (§3.5).
 
 Why: request bodies shrink to what the message holds; protobuf-go's
@@ -730,8 +749,8 @@ just the form encoders write. *(Proposed; built.)*
   holding a `Bytes` field equals one differing only there, `Expect.equal`
   passes when it should fail, and a model's change check misses the
   change. Generated code does not use `==` on such a field: a singular
-  one is left out at its default by its width (`Proto.Json.implicitBytes`)
-  rather than through `Proto.Json.implicit`, which would leave out every
+  one is left out at its default by its width (`Proto.Json.implicitBytesField`)
+  rather than through `Proto.Json.implicitField`, which would leave out every
   value. The README's option row and `Proto.Bytes`'s documentation say
   this where a user meets `Bytes`.
 - Why `String` stays the default: the trap above. A record of `String`s
@@ -877,16 +896,20 @@ Built as proposed, with these details *(each Proposed)*:
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
-  <that form>}`. That list lives in `Proto.Any`. `jsonDecoder` fails
+  <that form>}`. The codecs are `Proto.Json.any` and
+  `Proto.Json.encodeAny`, beside every other well-known type's, and that
+  list lives with them. `Proto.Json.any` fails
   on an object without `"@type"`, except `{}`, which is the empty `Any`
   (no type URL; the typed value's default), as protojson reads it. A
-  binary-only `Any` has no proto3 JSON form; `encodeJson` writes it as
+  binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
-  `jsonDecoder` does not read back.
+  `Proto.Json.any` does not read back. *(Moved from
+  `Proto.Any.encodeJson` and `jsonDecoder` 2026-10-19, so that generated
+  code reaches every well-known type's codecs through `Proto.Json`.)*
 - A field of `Any` is a message field, so a singular one is a
   `Maybe Proto.Any.Any`; repeated it is `List Proto.Any.Any`, as a map
   value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
-  encoded and decoded with `Proto.Any.encodeJson` and `jsonDecoder`,
+  encoded and decoded with `Proto.Json.encodeAny` and `Proto.Json.any`,
   and its descriptor kind is `Message "google.protobuf.Any"`. A method
   taking or returning one uses those codecs too (`any_field` case). It was the `types::any` diagnostic until `Proto.Any` existed:
   decoding one needs the registry the descriptors give, and unpacking
@@ -916,7 +939,7 @@ Built *(Proposed in its details)*:
   proto.
 - The oneof's encoder gives the set member as a one-element list of
   `( jsonName, Just value )`, or `[]` when unset, and the message's
-  encoder appends it to its fields: `Proto.Json.object ([ ... ] ++
+  encoder appends it to its fields: `Proto.Json.objectOfFields ([ ... ] ++
   encodeNoteEventKind value.kind)`. The member is written at its
   default too: being set is what a oneof says (§3.4).
 - The oneof's decoder is `Proto.Json.members "kind"

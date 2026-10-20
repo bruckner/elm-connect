@@ -149,16 +149,16 @@ encodeHttpMethod value =
 
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
-    Proto.Json.object
-        ([ ( "type", Proto.Json.implicit "" Json.Encode.string value.type_ )
-         , ( "if", Proto.Json.implicit False Json.Encode.bool value.if_ )
-         , ( "port", Proto.Json.implicit 0 Json.Encode.int value.port_ )
-         , ( "alias", Proto.Json.implicit "" Json.Encode.string value.alias )
-         , ( "screenName", Proto.Json.implicit "" Json.Encode.string value.displayName )
-         , ( "httpUrl", Proto.Json.implicit "" Json.Encode.string value.httpUrl )
-         , ( "v2Count", Proto.Json.implicit 0 Json.Encode.int value.v2Count )
-         , ( "shape", Proto.Json.implicit ShapeUnspecified encodeShape value.shape )
-         , ( "method", Proto.Json.implicit HttpMethodUnspecified encodeHttpMethod value.method )
+    Proto.Json.objectOfFields
+        ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
+         , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )
+         , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
+         , ( "alias", Proto.Json.implicitField "" Json.Encode.string value.alias )
+         , ( "screenName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
+         , ( "httpUrl", Proto.Json.implicitField "" Json.Encode.string value.httpUrl )
+         , ( "v2Count", Proto.Json.implicitField 0 Json.Encode.int value.v2Count )
+         , ( "shape", Proto.Json.implicitField ShapeUnspecified encodeShape value.shape )
+         , ( "method", Proto.Json.implicitField HttpMethodUnspecified encodeHttpMethod value.method )
          ]
             ++ encodeTagCase value.case_
         )

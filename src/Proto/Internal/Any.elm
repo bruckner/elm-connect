@@ -1,4 +1,4 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..))
+module Proto.Internal.Any exposing (Any(..), Payload(..), nameOf)
 
 {-| The `Any` type, defined here so that `Rpc` can build one from a Connect
 error detail, which `Proto.Any` exposes only opaquely.
@@ -20,3 +20,13 @@ its protobuf binary, base64-encoded, when nothing gave its JSON.
 type Payload
     = InJson Json.Encode.Value
     | InBinary String
+
+
+{-| A message's full name from its type URL: the URL after its last `/`.
+-}
+nameOf : String -> String
+nameOf url =
+    String.split "/" url
+        |> List.reverse
+        |> List.head
+        |> Maybe.withDefault url

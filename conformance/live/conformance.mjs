@@ -183,7 +183,7 @@ function codeOf(name) {
   return code === undefined ? Code.UNKNOWN : code;
 }
 
-// An error detail as the runtime gives it (Proto.Any.encodeJson): proto3 JSON
+// An error detail as the runtime gives it (Proto.Json.encodeAny): proto3 JSON
 // with "@type", or {"type", "value"} for a detail that arrived as protobuf
 // binary only, whose base64 value is the Any's bytes as they came.
 function detail(json) {

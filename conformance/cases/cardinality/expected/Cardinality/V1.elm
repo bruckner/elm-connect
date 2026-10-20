@@ -110,27 +110,27 @@ registry =
 
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
-    Proto.Json.object
+    Proto.Json.objectOfFields
         [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
         , ( "stars", Maybe.map Json.Encode.int value.stars )
         , ( "score", Maybe.map Proto.Json.encodeFloat value.score )
         , ( "views", Maybe.map Proto.Json.encodeInt64 value.views )
         , ( "author", Maybe.map encodeAuthor value.author )
         , ( "editor", Maybe.map encodeAuthor value.editor )
-        , ( "tags", Proto.Json.repeated Json.Encode.string value.tags )
-        , ( "counts", Proto.Json.repeated Json.Encode.int value.counts )
-        , ( "weights", Proto.Json.repeated Proto.Json.encodeFloat value.weights )
-        , ( "reviewers", Proto.Json.repeated encodeAuthor value.reviewers )
-        , ( "relatedLinks", Proto.Json.repeated Json.Encode.string value.relatedLinks )
+        , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+        , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
+        , ( "weights", Proto.Json.repeatedField Proto.Json.encodeFloat value.weights )
+        , ( "reviewers", Proto.Json.repeatedField encodeAuthor value.reviewers )
+        , ( "relatedLinks", Proto.Json.repeatedField Json.Encode.string value.relatedLinks )
         , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
-        , ( "title", Proto.Json.implicit "" Json.Encode.string value.title )
+        , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
         ]
 
 

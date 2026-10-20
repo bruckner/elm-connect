@@ -99,18 +99,18 @@ registry =
 
 encodeCounters : Counters -> Json.Encode.Value
 encodeCounters value =
-    Proto.Json.object
-        ([ ( "int64Value", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.int64Value )
-         , ( "uint64Value", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.uint64Value )
-         , ( "sint64Value", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.sint64Value )
-         , ( "fixed64Value", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.fixed64Value )
-         , ( "sfixed64Value", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.sfixed64Value )
-         , ( "exactId", Proto.Json.implicit "0" Proto.Json.encodeInt64 value.exactId )
-         , ( "normal", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.normal )
+    Proto.Json.objectOfFields
+        ([ ( "int64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.int64Value )
+         , ( "uint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.uint64Value )
+         , ( "sint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sint64Value )
+         , ( "fixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.fixed64Value )
+         , ( "sfixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sfixed64Value )
+         , ( "exactId", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.exactId )
+         , ( "normal", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.normal )
          , ( "maybeCount", Maybe.map Proto.Json.encodeInt64AsInt value.maybeCount )
-         , ( "samples", Proto.Json.repeated Proto.Json.encodeInt64AsInt value.samples )
-         , ( "exactSamples", Proto.Json.repeated Proto.Json.encodeInt64 value.exactSamples )
-         , ( "byId", Proto.Json.dict identity Proto.Json.encodeInt64AsInt value.byId )
+         , ( "samples", Proto.Json.repeatedField Proto.Json.encodeInt64AsInt value.samples )
+         , ( "exactSamples", Proto.Json.repeatedField Proto.Json.encodeInt64 value.exactSamples )
+         , ( "byId", Proto.Json.dictField identity Proto.Json.encodeInt64AsInt value.byId )
          , ( "wrapped", Maybe.map Proto.Json.encodeInt64AsInt value.wrapped )
          ]
             ++ encodeCountersLimit value.limit

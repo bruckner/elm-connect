@@ -557,7 +557,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict identity Proto.Json.encodeInt64 entries of
+                case Proto.Json.dictField identity Proto.Json.encodeInt64 entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -569,7 +569,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict String.fromInt Json.Encode.string entries of
+                case Proto.Json.dictField String.fromInt Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -581,7 +581,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.dict identity Json.Encode.string entries of
+                case Proto.Json.dictField identity Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -596,7 +596,7 @@ mapProperties =
                 Expect.all
                     [ roundTrips (Proto.Json.encodeBoolMap Json.Encode.string) (Proto.Json.boolMap Json.Decode.string)
                     , \_ ->
-                        Proto.Json.boolDict Json.Encode.string pairs
+                        Proto.Json.boolMapField Json.Encode.string pairs
                             |> Maybe.map (Json.Encode.encode 0)
                             |> Expect.equal
                                 (if List.isEmpty pairs then
@@ -619,7 +619,7 @@ repeatedProperties =
     describe "repeated fields"
         [ fuzz (Fuzz.list Fuzzers.awkwardString) "a list round-trips, and is left out when empty" <|
             \items ->
-                case Proto.Json.repeated Json.Encode.string items of
+                case Proto.Json.repeatedField Json.Encode.string items of
                     Nothing ->
                         items |> Expect.equal []
 

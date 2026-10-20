@@ -131,11 +131,11 @@ encodePriority value =
 
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
-    Proto.Json.object
-        [ ( "status", Proto.Json.implicit StatusUnspecified encodeStatus value.status )
+    Proto.Json.objectOfFields
+        [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
         , ( "priority", Maybe.map encodePriority value.priority )
-        , ( "history", Proto.Json.repeated encodeStatus value.history )
-        , ( "previousStatus", Proto.Json.implicit StatusUnspecified encodeStatus value.previousStatus )
+        , ( "history", Proto.Json.repeatedField encodeStatus value.history )
+        , ( "previousStatus", Proto.Json.implicitField StatusUnspecified encodeStatus value.previousStatus )
         ]
 
 

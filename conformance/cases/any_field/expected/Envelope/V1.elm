@@ -84,11 +84,11 @@ registry =
 
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
-    Proto.Json.object
-        ([ ( "id", Proto.Json.implicit "" Json.Encode.string value.id )
-         , ( "payload", Maybe.map Proto.Any.encodeJson value.payload )
-         , ( "attachments", Proto.Json.repeated Proto.Any.encodeJson value.attachments )
-         , ( "headers", Proto.Json.dict identity Proto.Any.encodeJson value.headers )
+    Proto.Json.objectOfFields
+        ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+         , ( "payload", Maybe.map Proto.Json.encodeAny value.payload )
+         , ( "attachments", Proto.Json.repeatedField Proto.Json.encodeAny value.attachments )
+         , ( "headers", Proto.Json.dictField identity Proto.Json.encodeAny value.headers )
          ]
             ++ encodeEnvelopeBody value.body
         )
@@ -101,7 +101,7 @@ encodeEnvelopeBody value =
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Just (Proto.Any.encodeJson member) )
+            [ ( "packed", Just (Proto.Json.encodeAny member) )
             ]
 
         EnvelopeBodyText member ->
@@ -117,9 +117,9 @@ decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
     Json.Decode.succeed Envelope
         |> Proto.Json.field "id" "" Json.Decode.string
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just Proto.Any.jsonDecoder)
-        |> Proto.Json.field "attachments" [] (Json.Decode.list Proto.Any.jsonDecoder)
-        |> Proto.Json.field "headers" Dict.empty (Json.Decode.dict Proto.Any.jsonDecoder)
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just Proto.Json.any)
+        |> Proto.Json.field "attachments" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.field "headers" Dict.empty (Json.Decode.dict Proto.Json.any)
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
@@ -127,6 +127,6 @@ decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBody =
     Proto.Json.members "body"
         EnvelopeBodyUnset
-        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked Proto.Any.jsonDecoder)
+        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked Proto.Json.any)
         , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Json.Decode.string)
         ]

@@ -88,16 +88,16 @@ registry =
 
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeZone : Zone -> Json.Encode.Value
 encodeZone value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
-        , ( "offsetSeconds", Proto.Json.implicit 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "offsetSeconds", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
         ]
 
 

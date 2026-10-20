@@ -314,7 +314,7 @@ A **result**, what comes back:
 
 `result` is one of `{"ok": <response as proto3 JSON>}`, `{"error":
 {"code", "message", "details", "source", "response"}}` (the code as
-Connect names it, each detail as `Proto.Any.encodeJson` writes it, the
+Connect names it, each detail as `Proto.Json.encodeAny` writes it, the
 source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
 for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`),

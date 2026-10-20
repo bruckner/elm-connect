@@ -108,23 +108,23 @@ registry =
 
 encodeThing : Thing -> Json.Encode.Value
 encodeThing value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.name )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
 encodeCriteria : Criteria -> Json.Encode.Value
 encodeCriteria value =
-    Proto.Json.object
-        [ ( "state", Proto.Json.implicit "" Json.Encode.string value.status )
+    Proto.Json.objectOfFields
+        [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
         ]
 
 
 encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
 encodeGetThingRequest value =
-    Proto.Json.object
-        [ ( "name", Proto.Json.implicit "" Json.Encode.string value.resource )
-        , ( "pageSize", Proto.Json.implicit 0 Json.Encode.int value.limit )
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
+        , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
         , ( "filter", Maybe.map encodeCriteria value.filter )
         ]
 
