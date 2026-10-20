@@ -32,6 +32,87 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| Gets a note by name.
+
+`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+{-| Lists a user's notes; the response is the list alone.
+
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+
+-}
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+        )
+
+
+{-| Creates a note from the `note` field.
+
+`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/notes` body `note`.
+
+-}
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+        )
+
+
+{-| Deprecated.
+
+Replaces a note: the body is the whole request.
+
+`rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
+Transcode: `PUT /v1/{name=notes/*}` body `*`.
+
+-}
+replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeNote
+            Notes.V1.decodeNote
+            descriptorReplaceNote
+        )
+
+
+{-| Answers without an HTTP rule, over the Connect path.
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
+No HTTP rule: the Connect path.
+
+-}
+ping : () -> Rpc.Call () ()
+ping =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -178,84 +259,3 @@ descriptorPing =
         "google.protobuf.Empty"
         "google.protobuf.Empty"
         []
-
-
-
--- CALLS
-
-
-{-| Gets a note by name.
-
-`rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
-
--}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-{-| Lists a user's notes; the response is the list alone.
-
-`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
-Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
-
--}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
-listNotes =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            descriptorListNotes
-        )
-
-
-{-| Creates a note from the `note` field.
-
-`rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
-Transcode: `POST /v1/notes` body `note`.
-
--}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
-createNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            descriptorCreateNote
-        )
-
-
-{-| Deprecated.
-
-Replaces a note: the body is the whole request.
-
-`rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
-Transcode: `PUT /v1/{name=notes/*}` body `*`.
-
--}
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
-replaceNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            descriptorReplaceNote
-        )
-
-
-{-| Answers without an HTTP rule, over the Connect path.
-
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-No HTTP rule: the Connect path.
-
--}
-ping : () -> Rpc.Call () ()
-ping =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
-        )

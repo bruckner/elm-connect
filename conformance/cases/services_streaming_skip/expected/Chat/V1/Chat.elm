@@ -20,22 +20,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc Send(Line) returns (Line)`
--}
-descriptorSend : Proto.Method.Descriptor
-descriptorSend =
-    Proto.Method.descriptor "chat.v1.Chat"
-        "Send"
-        Proto.Method.IdempotencyUnknown
-        "chat.v1.Line"
-        "chat.v1.Line"
-        []
-
-
-
 -- CALLS
 
 
@@ -49,3 +33,19 @@ send =
             Chat.V1.decodeLine
             descriptorSend
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc Send(Line) returns (Line)`
+-}
+descriptorSend : Proto.Method.Descriptor
+descriptorSend =
+    Proto.Method.descriptor "chat.v1.Chat"
+        "Send"
+        Proto.Method.IdempotencyUnknown
+        "chat.v1.Line"
+        "chat.v1.Line"
+        []

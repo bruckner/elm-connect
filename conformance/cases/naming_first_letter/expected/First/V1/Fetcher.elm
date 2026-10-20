@@ -20,58 +20,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc GetNote(URLPath) returns (URLPath)`
--}
-descriptorGetNote : Proto.Method.Descriptor
-descriptorGetNote =
-    Proto.Method.descriptor "first.v1.Fetcher"
-        "GetNote"
-        Proto.Method.IdempotencyUnknown
-        "first.v1.URLPath"
-        "first.v1.URLPath"
-        []
-
-
-{-| `rpc HTTPGet(URLPath) returns (URLPath)`
--}
-descriptorHttpGet : Proto.Method.Descriptor
-descriptorHttpGet =
-    Proto.Method.descriptor "first.v1.Fetcher"
-        "HTTPGet"
-        Proto.Method.IdempotencyUnknown
-        "first.v1.URLPath"
-        "first.v1.URLPath"
-        []
-
-
-{-| `rpc _Ping(URLPath) returns (URLPath)`
--}
-descriptorPing : Proto.Method.Descriptor
-descriptorPing =
-    Proto.Method.descriptor "first.v1.Fetcher"
-        "_Ping"
-        Proto.Method.IdempotencyUnknown
-        "first.v1.URLPath"
-        "first.v1.URLPath"
-        []
-
-
-{-| `rpc Type(URLPath) returns (URLPath)`
--}
-descriptorType_ : Proto.Method.Descriptor
-descriptorType_ =
-    Proto.Method.descriptor "first.v1.Fetcher"
-        "Type"
-        Proto.Method.IdempotencyUnknown
-        "first.v1.URLPath"
-        "first.v1.URLPath"
-        []
-
-
-
 -- CALLS
 
 
@@ -121,3 +69,55 @@ type_ =
             First.V1.decodeURLPath
             descriptorType_
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc GetNote(URLPath) returns (URLPath)`
+-}
+descriptorGetNote : Proto.Method.Descriptor
+descriptorGetNote =
+    Proto.Method.descriptor "first.v1.Fetcher"
+        "GetNote"
+        Proto.Method.IdempotencyUnknown
+        "first.v1.URLPath"
+        "first.v1.URLPath"
+        []
+
+
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`
+-}
+descriptorHttpGet : Proto.Method.Descriptor
+descriptorHttpGet =
+    Proto.Method.descriptor "first.v1.Fetcher"
+        "HTTPGet"
+        Proto.Method.IdempotencyUnknown
+        "first.v1.URLPath"
+        "first.v1.URLPath"
+        []
+
+
+{-| `rpc _Ping(URLPath) returns (URLPath)`
+-}
+descriptorPing : Proto.Method.Descriptor
+descriptorPing =
+    Proto.Method.descriptor "first.v1.Fetcher"
+        "_Ping"
+        Proto.Method.IdempotencyUnknown
+        "first.v1.URLPath"
+        "first.v1.URLPath"
+        []
+
+
+{-| `rpc Type(URLPath) returns (URLPath)`
+-}
+descriptorType_ : Proto.Method.Descriptor
+descriptorType_ =
+    Proto.Method.descriptor "first.v1.Fetcher"
+        "Type"
+        Proto.Method.IdempotencyUnknown
+        "first.v1.URLPath"
+        "first.v1.URLPath"
+        []

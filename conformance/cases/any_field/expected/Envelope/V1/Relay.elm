@@ -22,34 +22,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`
--}
-descriptorForward : Proto.Method.Descriptor
-descriptorForward =
-    Proto.Method.descriptor "envelope.v1.Relay"
-        "Forward"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Any"
-        "google.protobuf.Any"
-        []
-
-
-{-| `rpc Send(Envelope) returns (Envelope)`
--}
-descriptorSend : Proto.Method.Descriptor
-descriptorSend =
-    Proto.Method.descriptor "envelope.v1.Relay"
-        "Send"
-        Proto.Method.IdempotencyUnknown
-        "envelope.v1.Envelope"
-        "envelope.v1.Envelope"
-        []
-
-
-
 -- CALLS
 
 
@@ -75,3 +47,31 @@ send =
             Envelope.V1.decodeEnvelope
             descriptorSend
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`
+-}
+descriptorForward : Proto.Method.Descriptor
+descriptorForward =
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Forward"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Any"
+        "google.protobuf.Any"
+        []
+
+
+{-| `rpc Send(Envelope) returns (Envelope)`
+-}
+descriptorSend : Proto.Method.Descriptor
+descriptorSend =
+    Proto.Method.descriptor "envelope.v1.Relay"
+        "Send"
+        Proto.Method.IdempotencyUnknown
+        "envelope.v1.Envelope"
+        "envelope.v1.Envelope"
+        []

@@ -32,6 +32,133 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+-}
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+        )
+
+
+{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
+-}
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+        )
+
+
+{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/UpdateNote`.
+Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
+-}
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
+            descriptorUpdateNote
+        )
+
+
+{-| `rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
+Transcode: `PUT /v1/{name=notes/*}` body `*`.
+-}
+replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeNote
+            Notes.V1.decodeNote
+            descriptorReplaceNote
+        )
+
+
+{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/DeleteNote`.
+Transcode: `DELETE /v1/{name=notes/*}`.
+-}
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
+deleteNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
+            descriptorDeleteNote
+        )
+
+
+{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/ArchiveNote`.
+Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
+-}
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
+            descriptorArchiveNote
+        )
+
+
+{-| `rpc ReadFile(ReadFileRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/ReadFile`.
+Transcode: `HEAD /v1/{path=files/**}`.
+-}
+readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
+readFile =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeReadFileRequest
+            Notes.V1.decodeSummary
+            descriptorReadFile
+        )
+
+
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
+Transcode: `GET /v1/ping`.
+-}
+ping : () -> Rpc.Call () ()
+ping =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+        )
+
+
+{-| No HTTP rule: called over the implicit route.
+
+`rpc Summarize(GetNoteRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/Summarize`.
+No HTTP rule: the Connect path.
+
+-}
+summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -307,130 +434,3 @@ descriptorSummarize =
         "notes.v1.GetNoteRequest"
         "notes.v1.Summary"
         []
-
-
-
--- CALLS
-
-
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
--}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`. Connect: `POST /notes.v1.NotesService/ListNotes`.
-Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
--}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
-listNotes =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            descriptorListNotes
-        )
-
-
-{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/CreateNote`.
-Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
--}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
-createNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            descriptorCreateNote
-        )
-
-
-{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/UpdateNote`.
-Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
--}
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
-updateNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            descriptorUpdateNote
-        )
-
-
-{-| `rpc ReplaceNote(Note) returns (Note)`. Connect: `POST /notes.v1.NotesService/ReplaceNote`.
-Transcode: `PUT /v1/{name=notes/*}` body `*`.
--}
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
-replaceNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            descriptorReplaceNote
-        )
-
-
-{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/DeleteNote`.
-Transcode: `DELETE /v1/{name=notes/*}`.
--}
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
-deleteNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
-            descriptorDeleteNote
-        )
-
-
-{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/ArchiveNote`.
-Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
--}
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
-archiveNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
-            descriptorArchiveNote
-        )
-
-
-{-| `rpc ReadFile(ReadFileRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/ReadFile`.
-Transcode: `HEAD /v1/{path=files/**}`.
--}
-readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
-readFile =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeReadFileRequest
-            Notes.V1.decodeSummary
-            descriptorReadFile
-        )
-
-
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /notes.v1.NotesService/Ping`.
-Transcode: `GET /v1/ping`.
--}
-ping : () -> Rpc.Call () ()
-ping =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
-        )
-
-
-{-| No HTTP rule: called over the implicit route.
-
-`rpc Summarize(GetNoteRequest) returns (Summary)`. Connect: `POST /notes.v1.NotesService/Summarize`.
-No HTTP rule: the Connect path.
-
--}
-summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )

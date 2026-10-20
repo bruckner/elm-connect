@@ -162,6 +162,28 @@ import Rpc
 
 
 
+-- CALLS
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -195,28 +217,6 @@ descriptorSummarize =
         "Summarize"
         …
         []   -- no rule: the implicit route
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeSummarizeRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )
 ```
 
 Application code applies a method to its request and sends the call
@@ -471,7 +471,8 @@ rpc shared call =
   comment and line, `, in oneof kind` for a member (so a field's comment
   is in both places), and an enum's descriptor every declared name with
   its line and comment; codecs, defaults and typed values get one
-  sentence naming their type, and no proto text. A deprecated element's
+  sentence naming their type, and no proto text, and `registry` two
+  saying what it holds and resolves. A deprecated element's
   doc starts with `Deprecated.`, a field's item with it. A comment of
   several paragraphs stays whole in its item, which makes the list
   loose (blank lines between items), as Markdown does.
@@ -1629,12 +1630,30 @@ registry =
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding a descriptors section with
-each method's `Proto.Method.Descriptor` and then a calls
-section with one function per method from its request to an
-`Rpc.Call` (§5.2). The `services` conformance case pins the output:
+beside the package's `Notes.V1`, holding a calls section with one
+function per method from its request to an `Rpc.Call` (§5.2) and then
+a descriptors section with each method's `Proto.Method.Descriptor`:
+what a program uses comes first and its description after, as a
+message's descriptor sits in a module apart from its type (§3.1). The
+`services` conformance case pins the output:
 
 ```elm
+-- CALLS
+
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -1663,22 +1682,6 @@ descriptorGetNote =
             }
         , Proto.Http.binding { … }   -- the additional binding
         ]
-
-
-
--- CALLS
-
-
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
--}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
 ```
 
 Both applications put one argument per line however short their

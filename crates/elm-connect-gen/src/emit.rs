@@ -286,19 +286,20 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
         .collect()
 }
 
-/// The Elm module of `service`, one of `package`'s: a descriptor and a
-/// call per method, in two sections.
+/// The Elm module of `service`, one of `package`'s: a call and a
+/// descriptor per method, in two sections, the calls a program uses
+/// first.
 pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
-        decls.push(Decl::Comment("DESCRIPTORS".into()));
-        for method in &service.methods {
-            decls.push(emitter.method_descriptor(&service.proto_full_name, method));
-        }
         decls.push(Decl::Comment("CALLS".into()));
         for method in &service.methods {
             decls.push(emitter.method(&service.proto_full_name, method));
+        }
+        decls.push(Decl::Comment("DESCRIPTORS".into()));
+        for method in &service.methods {
+            decls.push(emitter.method_descriptor(&service.proto_full_name, method));
         }
     }
     let mut module = emitter.module(package, decls);
@@ -1043,7 +1044,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(sections, ["DESCRIPTORS", "CALLS"]);
+        assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",

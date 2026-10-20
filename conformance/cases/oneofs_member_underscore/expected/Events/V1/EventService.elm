@@ -22,6 +22,26 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `_legacy` is a query parameter, named by
+`Events.V1.ListEventsRequest.legacy`.
+
+`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
+Transcode: `GET /v1/{parent=feeds/*}/events`.
+
+-}
+listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
+listEvents =
+    Rpc.call
+        (Proto.Method.method Events.V1.encodeListEventsRequest
+            Events.V1.decodeListEventsResponse
+            descriptorListEvents
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -56,23 +76,3 @@ descriptorListEvents =
                 ]
             }
         ]
-
-
-
--- CALLS
-
-
-{-| `_legacy` is a query parameter, named by
-`Events.V1.ListEventsRequest.legacy`.
-
-`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
-Transcode: `GET /v1/{parent=feeds/*}/events`.
-
--}
-listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
-listEvents =
-    Rpc.call
-        (Proto.Method.method Events.V1.encodeListEventsRequest
-            Events.V1.decodeListEventsResponse
-            descriptorListEvents
-        )

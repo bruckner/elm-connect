@@ -28,6 +28,31 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-|
+
+```text
+HEAD /v1/{name=*}
+
+An unclosed fence in a method's comment.
+```
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /awkward.v1.AwkwardService/Ping`.
+Transcode: `HEAD /v1/ping`.
+
+-}
+ping : () -> Rpc.Call () ()
+ping =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -61,28 +86,3 @@ descriptorPing =
             , query = []
             }
         ]
-
-
-
--- CALLS
-
-
-{-|
-
-```text
-HEAD /v1/{name=*}
-
-An unclosed fence in a method's comment.
-```
-
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /awkward.v1.AwkwardService/Ping`.
-Transcode: `HEAD /v1/ping`.
-
--}
-ping : () -> Rpc.Call () ()
-ping =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
-        )

@@ -967,6 +967,8 @@ tag (design §8).
   (`` `string name = 1;` ``); a call its comment, then its declaration,
   Connect path and HTTP bindings
   (`` `GET /v1/{name=notes/*}` ``); a service's module with its comment.
-  Codecs, defaults and typed values get one sentence. Doc comments are
-  printed in elm-format's Markdown, so `elm-format --validate` still
-  accepts generated code (design §3.1, §4).
+  Codecs, defaults, typed values and `registry` get a sentence or two.
+  Doc comments are printed in elm-format's Markdown, so
+  `elm-format --validate` still accepts generated code (design §3.1,
+  §4).
+- A service module's calls come before its method descriptors.

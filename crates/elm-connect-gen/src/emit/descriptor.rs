@@ -215,7 +215,12 @@ impl Emitter {
             .reduce(|right, left| apply(union.clone(), [left, right]))
             .expect("at least the well-known types");
         Decl::Value {
-            doc: None,
+            doc: Some(
+                "The descriptors of this package's types, of the packages it imports and of \
+                 the well-known types, by full name. It resolves the message types a \
+                 descriptor names, and the type of an `Any`."
+                    .to_owned(),
+            ),
             name: REGISTRY.to_owned(),
             annotation: self.library_type(PROTO_REGISTRY, "Registry", []),
             params: Vec::new(),

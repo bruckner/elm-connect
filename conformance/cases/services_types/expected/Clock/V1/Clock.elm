@@ -27,142 +27,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
--}
-descriptorNow : Proto.Method.Descriptor
-descriptorNow =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Now"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Empty"
-        "google.protobuf.Timestamp"
-        []
-
-
-{-| `rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty)`
--}
-descriptorSleep : Proto.Method.Descriptor
-descriptorSleep =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Sleep"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Duration"
-        "google.protobuf.Empty"
-        []
-
-
-{-| `rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct)`
--}
-descriptorMask : Proto.Method.Descriptor
-descriptorMask =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Mask"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.FieldMask"
-        "google.protobuf.Struct"
-        []
-
-
-{-| `rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue)`
--}
-descriptorEcho : Proto.Method.Descriptor
-descriptorEcho =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Echo"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Value"
-        "google.protobuf.ListValue"
-        []
-
-
-{-| `rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value)`
--}
-descriptorTicks : Proto.Method.Descriptor
-descriptorTicks =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Ticks"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Int64Value"
-        "google.protobuf.UInt64Value"
-        []
-
-
-{-| `rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value)`
--}
-descriptorCount : Proto.Method.Descriptor
-descriptorCount =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Count"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Int32Value"
-        "google.protobuf.UInt32Value"
-        []
-
-
-{-| `rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue)`
--}
-descriptorRatio : Proto.Method.Descriptor
-descriptorRatio =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Ratio"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.DoubleValue"
-        "google.protobuf.FloatValue"
-        []
-
-
-{-| `rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue)`
--}
-descriptorName : Proto.Method.Descriptor
-descriptorName =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Name"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.StringValue"
-        "google.protobuf.BoolValue"
-        []
-
-
-{-| `rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue)`
--}
-descriptorRaw : Proto.Method.Descriptor
-descriptorRaw =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Raw"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.BytesValue"
-        "google.protobuf.BytesValue"
-        []
-
-
-{-| `rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone)`
--}
-descriptorZone : Proto.Method.Descriptor
-descriptorZone =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Zone"
-        Proto.Method.IdempotencyUnknown
-        "zones.v1.ZoneRequest"
-        "zones.v1.Zone"
-        []
-
-
-{-| `rpc Set(Alarm) returns (Alarm)`
--}
-descriptorSet : Proto.Method.Descriptor
-descriptorSet =
-    Proto.Method.descriptor "clock.v1.Clock"
-        "Set"
-        Proto.Method.IdempotencyUnknown
-        "clock.v1.Alarm"
-        "clock.v1.Alarm"
-        []
-
-
-
 -- CALLS
 
 
@@ -296,3 +160,139 @@ set =
             Clock.V1.decodeAlarm
             descriptorSet
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
+-}
+descriptorNow : Proto.Method.Descriptor
+descriptorNow =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Now"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []
+
+
+{-| `rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty)`
+-}
+descriptorSleep : Proto.Method.Descriptor
+descriptorSleep =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Sleep"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Duration"
+        "google.protobuf.Empty"
+        []
+
+
+{-| `rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct)`
+-}
+descriptorMask : Proto.Method.Descriptor
+descriptorMask =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Mask"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.FieldMask"
+        "google.protobuf.Struct"
+        []
+
+
+{-| `rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue)`
+-}
+descriptorEcho : Proto.Method.Descriptor
+descriptorEcho =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Echo"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Value"
+        "google.protobuf.ListValue"
+        []
+
+
+{-| `rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value)`
+-}
+descriptorTicks : Proto.Method.Descriptor
+descriptorTicks =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Ticks"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Int64Value"
+        "google.protobuf.UInt64Value"
+        []
+
+
+{-| `rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value)`
+-}
+descriptorCount : Proto.Method.Descriptor
+descriptorCount =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Count"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Int32Value"
+        "google.protobuf.UInt32Value"
+        []
+
+
+{-| `rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue)`
+-}
+descriptorRatio : Proto.Method.Descriptor
+descriptorRatio =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Ratio"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.DoubleValue"
+        "google.protobuf.FloatValue"
+        []
+
+
+{-| `rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue)`
+-}
+descriptorName : Proto.Method.Descriptor
+descriptorName =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Name"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.StringValue"
+        "google.protobuf.BoolValue"
+        []
+
+
+{-| `rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue)`
+-}
+descriptorRaw : Proto.Method.Descriptor
+descriptorRaw =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Raw"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.BytesValue"
+        "google.protobuf.BytesValue"
+        []
+
+
+{-| `rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone)`
+-}
+descriptorZone : Proto.Method.Descriptor
+descriptorZone =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Zone"
+        Proto.Method.IdempotencyUnknown
+        "zones.v1.ZoneRequest"
+        "zones.v1.Zone"
+        []
+
+
+{-| `rpc Set(Alarm) returns (Alarm)`
+-}
+descriptorSet : Proto.Method.Descriptor
+descriptorSet =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "Set"
+        Proto.Method.IdempotencyUnknown
+        "clock.v1.Alarm"
+        "clock.v1.Alarm"
+        []

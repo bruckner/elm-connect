@@ -110,6 +110,8 @@ messageCounters =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union

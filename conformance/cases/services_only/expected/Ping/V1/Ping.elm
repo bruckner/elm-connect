@@ -21,22 +21,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
--}
-descriptorPing : Proto.Method.Descriptor
-descriptorPing =
-    Proto.Method.descriptor "ping.v1.Ping"
-        "Ping"
-        Proto.Method.IdempotencyUnknown
-        "google.protobuf.Empty"
-        "google.protobuf.Timestamp"
-        []
-
-
-
 -- CALLS
 
 
@@ -50,3 +34,19 @@ ping =
             Proto.Json.timestamp
             descriptorPing
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`
+-}
+descriptorPing : Proto.Method.Descriptor
+descriptorPing =
+    Proto.Method.descriptor "ping.v1.Ping"
+        "Ping"
+        Proto.Method.IdempotencyUnknown
+        "google.protobuf.Empty"
+        "google.protobuf.Timestamp"
+        []

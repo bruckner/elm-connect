@@ -22,6 +22,58 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/GetMoment`.
+Transcode: `GET /v1/at/{at}`.
+-}
+getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+getMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorGetMoment
+        )
+
+
+{-| `rpc MaskMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/MaskMoment`.
+Transcode: `GET /v1/at/{at}/mask/{mask}`.
+-}
+maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+maskMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorMaskMoment
+        )
+
+
+{-| `rpc CountMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/CountMoment`.
+Transcode: `GET /v1/count/{count}/seen/{seen}`.
+-}
+countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+countMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorCountMoment
+        )
+
+
+{-| `rpc WaitMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/WaitMoment`.
+Transcode: `POST /v1/wait/{wait}` body `*`.
+-}
+waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+waitMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorWaitMoment
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -157,55 +209,3 @@ descriptorWaitMoment =
             , query = []
             }
         ]
-
-
-
--- CALLS
-
-
-{-| `rpc GetMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/GetMoment`.
-Transcode: `GET /v1/at/{at}`.
--}
-getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-getMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorGetMoment
-        )
-
-
-{-| `rpc MaskMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/MaskMoment`.
-Transcode: `GET /v1/at/{at}/mask/{mask}`.
--}
-maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-maskMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorMaskMoment
-        )
-
-
-{-| `rpc CountMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/CountMoment`.
-Transcode: `GET /v1/count/{count}/seen/{seen}`.
--}
-countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-countMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorCountMoment
-        )
-
-
-{-| `rpc WaitMoment(Moment) returns (Moment)`. Connect: `POST /clock.v1.Clock/WaitMoment`.
-Transcode: `POST /v1/wait/{wait}` body `*`.
--}
-waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-waitMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorWaitMoment
-        )

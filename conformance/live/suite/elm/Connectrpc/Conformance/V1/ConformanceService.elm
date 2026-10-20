@@ -27,71 +27,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| A unary operation. The request indicates the response headers and trailers
-and also indicates either a response message or an error to send back.
-
-Response message data is specified as bytes. The service should echo back
-request properties in the ConformancePayload and then include the message
-data in the data field.
-
-If the response\_delay\_ms duration is specified, the server should wait the
-given duration after reading the request before sending the corresponding
-response.
-
-Servers should allow the response definition to be unset in the request and
-if it is, set no response headers or trailers and return no response data.
-The returned payload should only contain the request info.
-
-`rpc Unary(UnaryRequest) returns (UnaryResponse)`
-
--}
-descriptorUnary : Proto.Method.Descriptor
-descriptorUnary =
-    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
-        "Unary"
-        Proto.Method.IdempotencyUnknown
-        "connectrpc.conformance.v1.UnaryRequest"
-        "connectrpc.conformance.v1.UnaryResponse"
-        []
-
-
-{-| A unary endpoint that the server should not implement and should instead
-return an unimplemented error when invoked.
-
-`rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`
-
--}
-descriptorUnimplemented : Proto.Method.Descriptor
-descriptorUnimplemented =
-    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
-        "Unimplemented"
-        Proto.Method.IdempotencyUnknown
-        "connectrpc.conformance.v1.UnimplementedRequest"
-        "connectrpc.conformance.v1.UnimplementedResponse"
-        []
-
-
-{-| A unary endpoint denoted as having no side effects (i.e. idempotent).
-Implementations should use an HTTP GET when invoking this endpoint and
-leverage query parameters to send data.
-
-`rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`
-
--}
-descriptorIdempotentUnary : Proto.Method.Descriptor
-descriptorIdempotentUnary =
-    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
-        "IdempotentUnary"
-        Proto.Method.IdempotencyNoSideEffects
-        "connectrpc.conformance.v1.IdempotentUnaryRequest"
-        "connectrpc.conformance.v1.IdempotentUnaryResponse"
-        []
-
-
-
 -- CALLS
 
 
@@ -154,3 +89,68 @@ idempotentUnary =
             Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
             descriptorIdempotentUnary
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| A unary operation. The request indicates the response headers and trailers
+and also indicates either a response message or an error to send back.
+
+Response message data is specified as bytes. The service should echo back
+request properties in the ConformancePayload and then include the message
+data in the data field.
+
+If the response\_delay\_ms duration is specified, the server should wait the
+given duration after reading the request before sending the corresponding
+response.
+
+Servers should allow the response definition to be unset in the request and
+if it is, set no response headers or trailers and return no response data.
+The returned payload should only contain the request info.
+
+`rpc Unary(UnaryRequest) returns (UnaryResponse)`
+
+-}
+descriptorUnary : Proto.Method.Descriptor
+descriptorUnary =
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "Unary"
+        Proto.Method.IdempotencyUnknown
+        "connectrpc.conformance.v1.UnaryRequest"
+        "connectrpc.conformance.v1.UnaryResponse"
+        []
+
+
+{-| A unary endpoint that the server should not implement and should instead
+return an unimplemented error when invoked.
+
+`rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`
+
+-}
+descriptorUnimplemented : Proto.Method.Descriptor
+descriptorUnimplemented =
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "Unimplemented"
+        Proto.Method.IdempotencyUnknown
+        "connectrpc.conformance.v1.UnimplementedRequest"
+        "connectrpc.conformance.v1.UnimplementedResponse"
+        []
+
+
+{-| A unary endpoint denoted as having no side effects (i.e. idempotent).
+Implementations should use an HTTP GET when invoking this endpoint and
+leverage query parameters to send data.
+
+`rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`
+
+-}
+descriptorIdempotentUnary : Proto.Method.Descriptor
+descriptorIdempotentUnary =
+    Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
+        "IdempotentUnary"
+        Proto.Method.IdempotencyNoSideEffects
+        "connectrpc.conformance.v1.IdempotentUnaryRequest"
+        "connectrpc.conformance.v1.IdempotentUnaryResponse"
+        []

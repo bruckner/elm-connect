@@ -22,6 +22,22 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: `GET /v1/{name=notes/*}`.
+-}
+getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
+            Api.Example.Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -49,19 +65,3 @@ descriptorGetNote =
             , query = []
             }
         ]
-
-
-
--- CALLS
-
-
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`.
--}
-getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
-            Api.Example.Notes.V1.decodeNote
-            descriptorGetNote
-        )

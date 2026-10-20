@@ -23,6 +23,22 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetThing(GetThingRequest) returns (Thing)`. Connect: `POST /things.v1.ThingService/GetThing`.
+Transcode: `GET /v1/{name=things/*}`.
+-}
+getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
+getThing =
+    Rpc.call
+        (Proto.Method.method Things.V1.encodeGetThingRequest
+            Things.V1.decodeThing
+            descriptorGetThing
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -53,19 +69,3 @@ descriptorGetThing =
                 ]
             }
         ]
-
-
-
--- CALLS
-
-
-{-| `rpc GetThing(GetThingRequest) returns (Thing)`. Connect: `POST /things.v1.ThingService/GetThing`.
-Transcode: `GET /v1/{name=things/*}`.
--}
-getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
-getThing =
-    Rpc.call
-        (Proto.Method.method Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
-            descriptorGetThing
-        )

@@ -20,46 +20,6 @@ elmConnectVersion_ =
 
 
 
--- DESCRIPTORS
-
-
-{-| `rpc GetTask(GetTaskRequest) returns (Task)`
--}
-descriptorGetTask : Proto.Method.Descriptor
-descriptorGetTask =
-    Proto.Method.descriptor "tasks.v1.Tasks"
-        "GetTask"
-        Proto.Method.IdempotencyNoSideEffects
-        "tasks.v1.GetTaskRequest"
-        "tasks.v1.Task"
-        []
-
-
-{-| `rpc PutTask(Task) returns (Task)`
--}
-descriptorPutTask : Proto.Method.Descriptor
-descriptorPutTask =
-    Proto.Method.descriptor "tasks.v1.Tasks"
-        "PutTask"
-        Proto.Method.IdempotencyIdempotent
-        "tasks.v1.Task"
-        "tasks.v1.Task"
-        []
-
-
-{-| `rpc CloseTask(GetTaskRequest) returns (Task)`
--}
-descriptorCloseTask : Proto.Method.Descriptor
-descriptorCloseTask =
-    Proto.Method.descriptor "tasks.v1.Tasks"
-        "CloseTask"
-        Proto.Method.IdempotencyUnknown
-        "tasks.v1.GetTaskRequest"
-        "tasks.v1.Task"
-        []
-
-
-
 -- CALLS
 
 
@@ -97,3 +57,43 @@ closeTask =
             Tasks.V1.decodeTask
             descriptorCloseTask
         )
+
+
+
+-- DESCRIPTORS
+
+
+{-| `rpc GetTask(GetTaskRequest) returns (Task)`
+-}
+descriptorGetTask : Proto.Method.Descriptor
+descriptorGetTask =
+    Proto.Method.descriptor "tasks.v1.Tasks"
+        "GetTask"
+        Proto.Method.IdempotencyNoSideEffects
+        "tasks.v1.GetTaskRequest"
+        "tasks.v1.Task"
+        []
+
+
+{-| `rpc PutTask(Task) returns (Task)`
+-}
+descriptorPutTask : Proto.Method.Descriptor
+descriptorPutTask =
+    Proto.Method.descriptor "tasks.v1.Tasks"
+        "PutTask"
+        Proto.Method.IdempotencyIdempotent
+        "tasks.v1.Task"
+        "tasks.v1.Task"
+        []
+
+
+{-| `rpc CloseTask(GetTaskRequest) returns (Task)`
+-}
+descriptorCloseTask : Proto.Method.Descriptor
+descriptorCloseTask =
+    Proto.Method.descriptor "tasks.v1.Tasks"
+        "CloseTask"
+        Proto.Method.IdempotencyUnknown
+        "tasks.v1.GetTaskRequest"
+        "tasks.v1.Task"
+        []
