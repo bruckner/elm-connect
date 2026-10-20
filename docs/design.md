@@ -1177,8 +1177,10 @@ Refused (each a diagnostic, pinned in the conformance corpus where a
 case names it):
 
 - **Names that collide in Elm**: two types after nested-message
-  flattening (`naming::type_collision`), two constructors in one module,
-  such as enum values or oneof members (`naming::constructor_collision`),
+  flattening (`naming::type_collision`, one problem for two messages,
+  whose record constructors collide with their types), two constructors
+  in one module, such as enum values or oneof members
+  (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
   `naming_collision` and `naming_type_collision` cases). Escape: rename one of them with `rename=`
   (§3.7).

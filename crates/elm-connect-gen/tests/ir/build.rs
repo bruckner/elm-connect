@@ -685,10 +685,16 @@ message Outer { message Inner {} }
 message OuterInner {}
 "#;
     let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
-    // The record constructors collide along with the types.
-    assert_eq!(
-        codes(&diagnostics),
-        [Code::TypeCollision, Code::ConstructorCollision]
+    // The record constructors collide along with the types, and the
+    // type's problem says so: one mistake, one problem.
+    assert_eq!(codes(&diagnostics), [Code::TypeCollision]);
+    let problem = diagnostics.iter().next().unwrap();
+    assert!(
+        problem
+            .message()
+            .contains("two messages that both become the Elm type and record constructor"),
+        "{}",
+        problem.message()
     );
 }
 

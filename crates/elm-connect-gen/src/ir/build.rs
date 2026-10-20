@@ -285,6 +285,9 @@ struct Origin {
     what: String,
     site: Site,
     proto: Option<String>,
+    /// Whether this is a message's claim of its type or its record
+    /// constructor, which share one name.
+    record: bool,
 }
 
 /// Two claims of one name: the first claimant's site and the new one's,
@@ -472,6 +475,7 @@ impl Builder {
             what,
             site,
             proto: proto.map(str::to_owned),
+            record: false,
         }
     }
 
@@ -954,6 +958,10 @@ impl Builder {
         name: &str,
         origin: Origin,
     ) -> bool {
+        // Two messages clash as record constructors too, which is the same
+        // mistake: this problem says so, and [`Builder::message`] leaves
+        // the constructors' clash unreported.
+        let records = origin.record && types.claimed.get(name).is_some_and(|first| first.record);
         if let Some(Clash {
             first,
             second,
@@ -966,6 +974,7 @@ impl Builder {
                 first,
                 second,
                 &self.rename_of(rename.as_deref()),
+                records,
             ));
             return false;
         }
@@ -1143,14 +1152,18 @@ impl Builder {
         let package = file.package_name();
         let full_name = message.full_name();
         let what = format!("message `{full_name}`");
-        let origin = self.origin(
-            file,
-            message.path(),
-            tag::MESSAGE_NAME,
-            what.clone(),
-            Some(full_name),
-        );
-        if self.claim_type(types, package, &elm_name, origin) {
+        let origin = Origin {
+            record: true,
+            ..self.origin(
+                file,
+                message.path(),
+                tag::MESSAGE_NAME,
+                what.clone(),
+                Some(full_name),
+            )
+        };
+        let typed = self.claim_type(types, package, &elm_name, origin);
+        if typed {
             let origin = self.origin(
                 file,
                 message.path(),
@@ -1160,14 +1173,26 @@ impl Builder {
             );
             self.claim_descriptor_module(full_name, &elm_name, origin);
         }
-        let origin = self.origin(
-            file,
-            message.path(),
-            tag::MESSAGE_NAME,
-            what,
-            Some(full_name),
-        );
-        self.claim_constructor(constructors, package, &elm_name, origin);
+        let origin = Origin {
+            record: true,
+            ..self.origin(
+                file,
+                message.path(),
+                tag::MESSAGE_NAME,
+                what,
+                Some(full_name),
+            )
+        };
+        let partner = constructors
+            .claimed
+            .get(&elm_name)
+            .is_some_and(|first| first.record);
+        if !typed && partner {
+            // The other message's: the type's problem reported it.
+            constructors.claim(&elm_name, origin);
+        } else {
+            self.claim_constructor(constructors, package, &elm_name, origin);
+        }
 
         // The values of the message's descriptor module: its descriptor,
         // then one per field and oneof member. No field's value can be

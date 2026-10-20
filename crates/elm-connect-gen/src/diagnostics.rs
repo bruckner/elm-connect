@@ -277,25 +277,38 @@ impl Problem {
         )
     }
 
-    /// Two definitions of `package` become the same Elm type `elm_name`.
+    /// Two definitions of `package` become the same Elm type `elm_name`;
+    /// with `records`, both are messages, and so their record
+    /// constructors are the same too.
     pub fn type_collision(
         package: &str,
         elm_name: &str,
         first: Site,
         second: Site,
         rename: &str,
+        records: bool,
     ) -> Self {
+        let (definitions, becomes, constructors) = if records {
+            (
+                "messages",
+                "the Elm type and record constructor",
+                " A message's record constructor takes its type's name, so the two collide as \
+                 constructors too, and one rename parts both.",
+            )
+        } else {
+            ("definitions", "the Elm type", "")
+        };
         Problem::new(
             Code::TypeCollision,
             format!(
-                "The package `{package}` has two definitions that both become the Elm type \
+                "The package `{package}` has two {definitions} that both become {becomes} \
                  `{elm_name}`."
             ),
             format!(
                 "Every message, enum and oneof of a package becomes a type in one Elm module, \
                  nested names joined (`Outer.Inner` becomes `OuterInner`), and a module cannot \
-                 define two types with one name. Rename one of them in the proto, or rename one \
-                 with {rename}."
+                 define two types with one name.{constructors} Rename one of them in the proto, \
+                 or rename one with {rename}."
             ),
             vec![first, second],
         )

@@ -901,3 +901,8 @@ tag (design §8).
   suggest the closest field when the one named does not exist. A
   suggestion differs only in case and underscores, or is within three
   edits. The `suggestions` conformance case pins them.
+- Two messages whose Elm types collide are one `naming::type_collision`,
+  which says their record constructors collide too, rather than that and
+  a `naming::constructor_collision` with the same sites.
+  `naming::constructor_collision` remains for constructors whose types
+  do not collide, such as an enum value beside a message of its name.
