@@ -180,6 +180,61 @@ generated codecs of `routes.proto` leaving out defaults) and
 fuzzers in `tests/Fuzzers.elm`; `just check` runs them with the other
 Elm tests.
 
+## Codec round trips
+
+The corpus's expected modules are compiled and diffed but never run; the
+codec round trips run them. `codec/codec.proto`, with `codec/other.proto`
+for a reference across packages, declares one small message per construct
+the generated proto3 JSON codecs handle and one that nests them all.
+`crates/elm-connect-gen/tests/codec.rs`:
+
+- samples every message from a fixed seed, with the route properties'
+  sampler (`tests/common/sample.rs`), and adds a sample per oneof member
+  and ten of the scalars and wrappers at their bounds and special values;
+- has prost-reflect write each sample in three forms: canonical
+  (defaults left out), with every default written, and under proto names
+  with an unknown field added to every message object; another test
+  checks that prost-reflect reads each form back as the sample, and
+  another that the samples hold every construct the layer is for;
+- writes the samples as Elm data, with what the generated encoders must
+  write back after decoding each form (`Generated.Codec.Data`, and
+  `Generated.Codec.DataInt64Int` with 64-bit values within ±(2^53 − 1)
+  for `int64=int`), the modules generated from the protos under the
+  default options, `int64=int`, `enum_unknown=zero` and `bytes=bytes`
+  (module prefix `Generated.Codec.<Set>`), and a table of each set's
+  codecs (`Generated.Codec.Codecs`), all under `tests/Generated/Codec/`.
+
+That tree is gitignored and generated at test time, as the harness's
+`generated/` is: the test writes it on every run, `just codec-gen` runs
+just that test, and `just elm-check` depends on it. There is nothing to
+bless. The generator's output already shows in review through the
+corpus, and the fixed seed makes the samples the same each run; the
+hand-written Elm (`tests/Codec/RoundTrip.elm` and `RoundTripTest.elm`)
+is all that is committed under `tests/Codec/`.
+
+`tests/Codec/RoundTripTest.elm` decodes every form with the generated
+decoder of each option set, re-encodes it with the generated encoder, and
+compares the JSON with the expected structurally, numbers by value; then
+it checks what each option changes. What the encoders must write is
+prost-reflect's canonical form but for the differences the design allows,
+listed in `allowed_differences` in the Rust test: a float without
+presence received as `-0` is written as `0`, and a singular `Empty` field
+is always written as `{}`. An `Any`'s packed message is written back as it
+arrived.
+
+For a deeper run, set the number of samples per message (8 by default)
+when generating, then run the Elm tests; the next plain run writes the
+default samples back:
+
+```sh
+ELM_CONNECT_CODEC_SAMPLES=50 cargo test -p elm-connect-gen --test codec
+elm-test-rs
+```
+
+A sample that fails is a finding. prost-reflect cannot write a
+`DoubleValue` or `FloatValue` holding NaN or an infinity (it writes
+`null`) or an `Any` without a type URL, so those are not sampled.
+
 ## Live verification
 
 The corpus and the fixtures pin what is generated and what request a
