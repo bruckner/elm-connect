@@ -3,6 +3,7 @@
 
 mod build;
 mod common;
+mod docs;
 mod module_prefix;
 mod rename;
 mod render;

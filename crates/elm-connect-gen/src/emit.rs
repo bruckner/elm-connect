@@ -661,6 +661,7 @@ mod tests {
             fields,
             oneofs: Vec::new(),
             wrapper: None,
+            doc: crate::ir::Doc::default(),
         }
     }
 
@@ -675,6 +676,7 @@ mod tests {
             cyclic: false,
             jstype: crate::ir::JsType::Normal,
             annotations: crate::ir::Annotations::default(),
+            doc: crate::ir::Doc::default(),
         }
     }
 
@@ -711,6 +713,7 @@ mod tests {
             proto_full_name: "t.v1.S".into(),
             module: IrModule::new(vec!["T".into(), "V1".into(), "S".into()]).expect("valid"),
             methods: Vec::new(),
+            doc: crate::ir::Doc::default(),
         };
         let module = emit_service(&package(Vec::new()), &service, &Options::default());
         assert!(matches!(
@@ -982,6 +985,7 @@ mod tests {
             idempotency: crate::ir::Idempotency::Unknown,
             http: None,
             routes: Vec::new(),
+            doc: crate::ir::Doc::default(),
         };
         let service = Service {
             proto_full_name: "t.v1.S".into(),
@@ -1003,6 +1007,7 @@ mod tests {
                     TypeRef::WellKnown(WellKnown::Any),
                 ),
             ],
+            doc: crate::ir::Doc::default(),
         };
         let options = Options {
             int64: Int64::Int,

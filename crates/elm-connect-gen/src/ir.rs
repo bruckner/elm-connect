@@ -32,8 +32,14 @@
 //!   and the packages' references to each other form no cycle.
 //! - `google.protobuf` is never a package; its supported types appear as
 //!   [`TypeRef::WellKnown`].
+//! - Every message, field, oneof and member, enum and enum value, service
+//!   and method carries its [`Doc`]: its comment, its one-line declaration
+//!   and whether it is deprecated, for the documentation of what it
+//!   becomes in Elm.
 
 mod build;
+pub mod comments;
+pub mod declaration;
 mod graph;
 mod rename;
 
@@ -63,6 +69,21 @@ pub struct Package {
     pub services: Vec<Service>,
 }
 
+/// What the proto says about an element for the documentation of what it
+/// becomes: its comment, its declaration and its deprecation.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Doc {
+    /// The element's leading comment, then its trailing one as a paragraph,
+    /// each line without the space after `//` and without trailing
+    /// whitespace ([`comments::comment`]); `None` when it has neither.
+    pub comment: Option<String>,
+    /// The element's one-line declaration, such as `string name = 1;`
+    /// ([`declaration`]).
+    pub declaration: String,
+    /// Whether the element sets the standard `deprecated` option.
+    pub deprecated: bool,
+}
+
 /// A service: a group of methods, and an Elm module of its own holding
 /// one value per method. Its full name is part of each method's Connect
 /// path.
@@ -70,6 +91,8 @@ pub struct Package {
 pub struct Service {
     /// The fully-qualified proto name, such as `notes.v1.Notes`.
     pub proto_full_name: String,
+    /// What the proto says about the service.
+    pub doc: Doc,
     /// The Elm module of its methods, inside its package's, such as
     /// `Notes.V1.Notes`. No other service's or package's module has this
     /// name.
@@ -101,6 +124,8 @@ pub struct Method {
     /// One route per HTTP binding: the rule's own first, then each
     /// additional binding's. Empty without a rule.
     pub routes: Vec<crate::route::Route>,
+    /// What the proto says about the method.
+    pub doc: Doc,
 }
 
 impl Method {
@@ -285,6 +310,8 @@ pub struct Message {
     /// References through a oneof do not count: a oneof is a custom type,
     /// which already breaks an Elm alias cycle.
     pub wrapper: Option<Wrapper>,
+    /// What the proto says about the message.
+    pub doc: Doc,
 }
 
 /// The wrapper of a recursive message: `type Node_ = Node_ Node`, a custom
@@ -365,6 +392,8 @@ pub struct Field {
     pub jstype: JsType,
     /// What the field's options say about it beyond its type.
     pub annotations: Annotations,
+    /// What the proto says about the field.
+    pub doc: Doc,
 }
 
 impl Field {
@@ -656,6 +685,8 @@ pub struct Oneof {
     pub position: usize,
     /// One constructor per member field, in declaration order.
     pub variants: Vec<OneofVariant>,
+    /// What the proto says about the oneof.
+    pub doc: Doc,
 }
 
 impl Oneof {
@@ -701,6 +732,8 @@ pub struct OneofVariant {
     /// What the member's options say about it, as for
     /// [`Field::annotations`].
     pub annotations: Annotations,
+    /// What the proto says about the member.
+    pub doc: Doc,
 }
 
 /// An enum: one Elm custom type with a constructor per number.
@@ -718,12 +751,16 @@ pub struct Enum {
     pub proto_name: String,
     /// The Elm type name, such as `Status`.
     pub elm_name: String,
+    /// What the proto says about the enum.
+    pub doc: Doc,
     zero: EnumValue,
     rest: Vec<EnumValue>,
     /// Every value name in declaration order, aliases included.
     declared: Vec<String>,
     /// The value names, aliases included, marked `deprecated`.
     deprecated: Vec<String>,
+    /// What the proto says about each value name, aliases included.
+    value_docs: Vec<(String, Doc)>,
 }
 
 impl Enum {
@@ -745,11 +782,30 @@ impl Enum {
             proto_full_name,
             proto_name,
             elm_name,
+            doc: Doc::default(),
             zero,
             rest,
             declared,
             deprecated: Vec::new(),
+            value_docs: Vec::new(),
         })
+    }
+
+    /// The enum with what the proto says about each value name (each a
+    /// value's or an alias's).
+    pub fn with_value_docs(mut self, docs: Vec<(String, Doc)>) -> Self {
+        self.value_docs = docs;
+        self
+    }
+
+    /// What the proto says about the value name `name`, a value's or an
+    /// alias's; `None` for a name the enum does not declare or before
+    /// [`Enum::with_value_docs`].
+    pub fn value_doc(&self, name: &str) -> Option<&Doc> {
+        self.value_docs
+            .iter()
+            .find(|(declared, _)| declared == name)
+            .map(|(_, doc)| doc)
     }
 
     /// The enum with these value names (each a value's or an alias's)

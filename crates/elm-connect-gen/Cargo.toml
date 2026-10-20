@@ -13,7 +13,8 @@ exclude = ["tests/"]
 [dependencies]
 miette.workspace = true
 prost.workspace = true
-prost-reflect.workspace = true
+# text-format prints option values in declaration lines (ir::declaration).
+prost-reflect = { workspace = true, features = ["text-format"] }
 prost-types.workspace = true
 protox.workspace = true
 

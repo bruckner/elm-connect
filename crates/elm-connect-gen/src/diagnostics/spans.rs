@@ -39,6 +39,8 @@ pub mod tag {
     pub const FIELD_NAME: i32 = 1;
     /// `FieldDescriptorProto.type_name`
     pub const FIELD_TYPE_NAME: i32 = 6;
+    /// `FieldDescriptorProto.json_name`
+    pub const FIELD_JSON_NAME: i32 = 10;
     /// `OneofDescriptorProto.name`
     pub const ONEOF_NAME: i32 = 1;
     /// `EnumDescriptorProto.name`

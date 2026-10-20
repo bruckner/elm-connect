@@ -8,13 +8,14 @@ use prost_reflect::{
     FileDescriptor, Kind, MessageDescriptor, MethodDescriptor, Value,
 };
 
+use super::comments::Comments;
 use super::graph::strongly_connected;
-use super::rename;
 use super::{
-    Annotations, Cardinality, Enum, EnumValue, Field, FieldBehavior, HttpRule, HttpVerb,
+    Annotations, Cardinality, Doc, Enum, EnumValue, Field, FieldBehavior, HttpRule, HttpVerb,
     Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant, Package,
     ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
+use super::{declaration, rename};
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
@@ -465,6 +466,8 @@ struct Reference {
 struct Builder {
     diagnostics: Diagnostics,
     spans: HashMap<String, Spans>,
+    /// The comments of each file, by file name.
+    comments: HashMap<String, Comments>,
     modules: BTreeMap<String, ModuleName>,
     /// Every package being generated, whether or not it has a module name.
     generated: BTreeSet<String>,
@@ -576,6 +579,48 @@ impl Builder {
             label,
             within: Vec::new(),
         }
+    }
+
+    /// The doc of the element at `path` in `file`: its comment, with
+    /// `declaration` and `deprecated`.
+    fn doc(
+        &mut self,
+        file: &FileDescriptor,
+        path: &[i32],
+        declaration: String,
+        deprecated: bool,
+    ) -> Doc {
+        let comments = self
+            .comments
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Comments::new(file.file_descriptor_proto()));
+        Doc {
+            comment: comments.get(path).map(str::to_owned),
+            declaration,
+            deprecated,
+        }
+    }
+
+    /// The doc of `field`, a field or a oneof member of a message of
+    /// `file`, deprecated as `annotations` say.
+    fn field_doc(
+        &mut self,
+        file: &FileDescriptor,
+        field: &FieldDescriptor,
+        annotations: &Annotations,
+    ) -> Doc {
+        // The source records `json_name` where the proto sets it; without
+        // source info, a JSON name other than protoc's default was set.
+        let json_path = [field.path(), &[tag::FIELD_JSON_NAME]].concat();
+        let explicit = self
+            .spans
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Spans::new(file.file_descriptor_proto()))
+            .get(&json_path)
+            .is_some()
+            || field.json_name() != declaration::default_json_name(field.name());
+        let line = declaration::field(field, explicit);
+        self.doc(file, field.path(), line, annotations.deprecated)
     }
 
     fn origin(
@@ -743,11 +788,23 @@ impl Builder {
                         methods.push(built);
                     }
                 }
+                let deprecated = service
+                    .service_descriptor_proto()
+                    .options
+                    .as_ref()
+                    .is_some_and(|options| options.deprecated());
+                let doc = self.doc(
+                    file,
+                    service.path(),
+                    declaration::service(&service),
+                    deprecated,
+                );
                 if let Some(module) = service_module {
                     services.push(Service {
                         proto_full_name: full_name.to_owned(),
                         module,
                         methods,
+                        doc,
                     });
                 }
             }
@@ -949,6 +1006,12 @@ impl Builder {
             Some(rule) => self.routes(file, method, rule)?,
             None => Vec::new(),
         };
+        let deprecated = method
+            .method_descriptor_proto()
+            .options
+            .as_ref()
+            .is_some_and(|options| options.deprecated());
+        let doc = self.doc(file, path, declaration::method(method), deprecated);
         let built = Method {
             proto_name: method.name().to_owned(),
             elm_name,
@@ -957,6 +1020,7 @@ impl Builder {
             idempotency: idempotency(method),
             http,
             routes,
+            doc,
         };
 
         if built.elm_name == naming::VERSION_VALUE {
@@ -1233,12 +1297,21 @@ impl Builder {
         let mut values: Vec<EnumValue> = Vec::new();
         let mut declared = Vec::new();
         let mut deprecated = Vec::new();
+        let mut value_docs = Vec::new();
         for value in declared_values(enumeration) {
             declared.push(value.name().to_owned());
             let options = value.enum_value_descriptor_proto().options.as_ref();
-            if options.is_some_and(|options| options.deprecated()) {
+            let is_deprecated = options.is_some_and(|options| options.deprecated());
+            if is_deprecated {
                 deprecated.push(value.name().to_owned());
             }
+            let doc = self.doc(
+                file,
+                value.path(),
+                declaration::enum_value(&value),
+                is_deprecated,
+            );
+            value_docs.push((value.name().to_owned(), doc));
             // An alias joins the constructor of the first value with its
             // number and claims no name of its own.
             if let Some(first) = values.iter_mut().find(|v| v.number == value.number()) {
@@ -1274,6 +1347,17 @@ impl Builder {
             .strip_prefix(package)
             .and_then(|name| name.strip_prefix('.'))
             .unwrap_or(full_name);
+        let deprecated_enum = enumeration
+            .enum_descriptor_proto()
+            .options
+            .as_ref()
+            .is_some_and(|options| options.deprecated());
+        let doc = self.doc(
+            file,
+            enumeration.path(),
+            declaration::enumeration(enumeration),
+            deprecated_enum,
+        );
         Enum::new(
             full_name.to_owned(),
             proto_name.to_owned(),
@@ -1281,10 +1365,12 @@ impl Builder {
             values.next()?,
             values.collect(),
         )
-        .map(|built| {
-            built
+        .map(|built| Enum {
+            doc,
+            ..built
                 .with_declaration_order(declared)
                 .with_deprecated(deprecated)
+                .with_value_docs(value_docs)
         })
     }
 
@@ -1457,6 +1543,8 @@ impl Builder {
                     let origin = self.origin(file, member.path(), tag::FIELD_NAME, what, None);
                     self.claim_field_value(&mut values, full_name, &elm_name, origin);
                     if let Some(ty) = self.resolve(file, message, &member, member.kind()) {
+                        let annotations = annotations(&member);
+                        let doc = self.field_doc(file, &member, &annotations);
                         variants.push(OneofVariant {
                             proto_name: member.name().to_owned(),
                             json_name: member.json_name().to_owned(),
@@ -1466,10 +1554,12 @@ impl Builder {
                             ty,
                             cyclic: false,
                             jstype: jstype(&member),
-                            annotations: annotations(&member),
+                            annotations,
+                            doc,
                         });
                     }
                 }
+                let doc = self.doc(file, oneof.path(), declaration::oneof(&oneof), false);
                 oneofs.push(Oneof {
                     proto_name: oneof.name().to_owned(),
                     elm_field_name,
@@ -1477,6 +1567,7 @@ impl Builder {
                     unset_ctor,
                     position: fields.len(),
                     variants,
+                    doc,
                 });
                 continue;
             }
@@ -1525,6 +1616,8 @@ impl Builder {
                 }
             }
             if let Some((cardinality, ty)) = self.field_type(file, message, &field) {
+                let annotations = annotations(&field);
+                let doc = self.field_doc(file, &field, &annotations);
                 fields.push(Field {
                     proto_name: field.name().to_owned(),
                     json_name: field.json_name().to_owned(),
@@ -1534,17 +1627,30 @@ impl Builder {
                     ty,
                     cyclic: false,
                     jstype: jstype(&field),
-                    annotations: annotations(&field),
+                    annotations,
+                    doc,
                 });
             }
         }
 
+        let deprecated = message
+            .descriptor_proto()
+            .options
+            .as_ref()
+            .is_some_and(|options| options.deprecated());
+        let doc = self.doc(
+            file,
+            message.path(),
+            declaration::message(message),
+            deprecated,
+        );
         Some(Message {
             proto_full_name: full_name.to_owned(),
             elm_name,
             fields,
             oneofs,
             wrapper: None,
+            doc,
         })
     }
 
