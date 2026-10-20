@@ -368,6 +368,30 @@ impl Problem {
         )
     }
 
+    /// The oneof member `proto_name` of `message` has a constructor whose
+    /// ending, its first letter lowercased, is `converted`, which is not
+    /// an Elm value name.
+    pub fn invalid_member_value(
+        message: &str,
+        proto_name: &str,
+        converted: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::InvalidField,
+            format!(
+                "The oneof field `{proto_name}` of `{message}` has the descriptor value \
+                 `{converted}` in Elm, which is not a valid value name."
+            ),
+            "A oneof member's descriptor, in its message's descriptor module, is named for \
+             the end of its constructor: the member's name in PascalCase, its first letter \
+             lowercased (`_legacy` becomes `legacy`). That must start with a letter, so the \
+             proto name needs a letter after any leading underscores. Rename it in the \
+             proto; a `rename` of the member renames its constructor, not this value.",
+            vec![site],
+        )
+    }
+
     /// `referrer` uses `type_name`, a `google.protobuf` type elm-connect
     /// has no mapping for.
     pub fn unsupported_well_known(referrer: &Referrer, type_name: &str, site: Site) -> Self {
@@ -527,9 +551,9 @@ impl Problem {
             ),
             "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
              `descriptor`, the message's descriptor, and one value per field, named as its \
-             record field is (a oneof member as a field would be; a field named \
-             `descriptor` takes `descriptor_`), so two fields whose values meet cannot both \
-             be defined. Rename the field in the proto, or rename it with \
+             record field is (a oneof member's for the end of its constructor; a field \
+             named `descriptor` takes `descriptor_`), so two fields whose values meet cannot \
+             both be defined. Rename the field in the proto, or rename it with \
              `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )

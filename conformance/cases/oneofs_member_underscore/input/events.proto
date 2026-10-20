@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package events.v1;
+
+import "google/api/annotations.proto";
+
+// A oneof member with a leading underscore: its constructor is
+// `EventKindLegacy`, and its descriptor `Events.V1.Event.legacy`.
+message Event {
+  string name = 1;
+  oneof kind {
+    string _legacy = 2;
+    int32 count = 3;
+  }
+}
+
+message ListEventsRequest {
+  string parent = 1;
+  oneof filter {
+    string _legacy = 2;
+  }
+}
+
+message ListEventsResponse {
+  repeated Event events = 1;
+}
+
+service EventService {
+  // `_legacy` is a query parameter, named by
+  // `Events.V1.ListEventsRequest.legacy`.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=feeds/*}/events"};
+  }
+}

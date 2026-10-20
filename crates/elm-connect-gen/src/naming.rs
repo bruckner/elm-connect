@@ -320,14 +320,17 @@ pub fn field_value_name(elm_name: &str) -> String {
 }
 
 /// The Elm value of a oneof member's descriptor in its message's
-/// [`descriptor_module`]: the member's proto name converted as
-/// [`field_name`] converts a field's, its first letter lowercased first
-/// as [`method_name`] does, so that every member a constructor can be
-/// named for has a value name too (`Text` becomes `text`), then escaped
-/// as [`field_value_name`] escapes a field's. A record field is the Elm
-/// name of a field outside a oneof; a member has none.
+/// [`descriptor_module`]: the PascalCase name its constructor ends with
+/// ([`oneof_variant_constructor`]), its first letter lowercased, a
+/// reserved word escaped and `descriptor` too, as [`field_value_name`]
+/// escapes a field's (`created` and `Text` become `created` and `text`,
+/// `_legacy` becomes `legacy`). A record field is the Elm name of a field
+/// outside a oneof; a member has none, so its value follows the
+/// constructor, and every member whose constructor ends in a letter has
+/// one. It is the derived constructor's ending: a member's `rename`
+/// renames its constructor, not this.
 pub fn member_value_name(proto_name: &str) -> Result<String, NameError> {
-    method_name(proto_name).map(|name| field_value_name(&name))
+    method_name(&pascal_case(proto_name)).map(|name| field_value_name(&name))
 }
 
 /// The prefix the descriptor of a method takes.
@@ -531,6 +534,10 @@ mod tests {
         assert_eq!(member_value_name("Text"), Ok("text".into()));
         assert_eq!(member_value_name("type"), Ok("type_".into()));
         assert_eq!(member_value_name("descriptor"), Ok("descriptor_".into()));
+        assert_eq!(member_value_name("_legacy"), Ok("legacy".into()));
+        assert_eq!(member_value_name("__old_name"), Ok("oldName".into()));
+        assert_eq!(member_value_name("x_1"), Ok("x1".into()));
+        assert!(member_value_name("_1x").is_err());
         assert_eq!(field_value_name("descriptor"), "descriptor_");
         assert_eq!(field_value_name("descriptors"), "descriptors");
         assert_eq!(field_value_name("type_"), "type_");

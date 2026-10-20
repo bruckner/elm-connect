@@ -1064,7 +1064,7 @@ impl Builder {
                             };
                             let path = [member.path(), &[tag::FIELD_NAME]].concat();
                             let site = self.site(file, &path, "this name".into());
-                            self.diagnostics.push(Problem::invalid_field(
+                            self.diagnostics.push(Problem::invalid_member_value(
                                 full_name,
                                 member.name(),
                                 &converted,

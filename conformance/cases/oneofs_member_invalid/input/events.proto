@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package events.v1;
+
+// `_1x` has the constructor `EventKind1x`, but its descriptor value would
+// start with a digit.
+message Event {
+  oneof kind {
+    string _1x = 1;
+  }
+}

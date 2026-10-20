@@ -318,7 +318,8 @@ rpc shared call =
   lives in a module of the type's own inside the package's, named by
   its Elm type name: `Notes.V1.Note` holds one
   `Proto.Field.Descriptor` per field, named as its record field
-  (`title`, `pageSize`; a oneof member as a field would be, §3.9), and
+  (`title`, `pageSize`; a oneof member for the end of its constructor,
+  §3.7), and
   `descriptor : Proto.Message.Descriptor` built from them;
   `Notes.V1.Visibility` holds `descriptor : Proto.Enum.Descriptor`; a
   nested `Outer.Inner` is `Notes.V1.OuterInner`. Imports go one way:
@@ -993,10 +994,17 @@ Built, as the `naming` and `naming_collision` cases show:
   rejected for the typed values: `encodeFooMessage` would be both the
   encoder of `FooMessage` and the typed value of `EncodeFoo`.
 - A descriptor module's values are `descriptor` and one per field,
-  named as its record field (a oneof member's is its proto name
-  converted as a field's, its first letter lowercased), but that a
-  field or member named `descriptor` takes `descriptor_` (§3.1). A
-  renamed field that meets another field's or a member's name is
+  named as its record field, but that a field or member named
+  `descriptor` takes `descriptor_` (§3.1). A oneof member has no record
+  field, so its value is the end of its constructor, its first letter
+  lowercased: `NoteEventKindCreated` gives `created`, and `_legacy`,
+  whose constructor is `EventKindLegacy`, gives `legacy`
+  (`oneofs_member_underscore` case). It is the derived constructor's
+  end, so a member's `rename`, which renames the constructor, leaves it
+  alone; a member whose name has no letter after its leading
+  underscores (`_1x`) has a constructor but no value, and is
+  `naming::invalid_field` (`oneofs_member_invalid` case). A renamed
+  field that meets another field's or a member's name is
   `naming::value_collision`, naming both; a field renamed to
   `elmConnectVersion_` likewise (`descriptors_value_collision` case).
 - Two plain fields cannot collide in practice: protoc and protox reject

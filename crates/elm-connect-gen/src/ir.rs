@@ -685,8 +685,9 @@ pub struct OneofVariant {
     /// The constructor, such as `NoteEventKindCreated`.
     pub elm_ctor: String,
     /// The Elm value of the member's descriptor in its message's
-    /// descriptor module, such as `created`: the proto name as a field's
-    /// is converted, its first letter lowercased ([`crate::naming::member_value_name`]).
+    /// descriptor module, such as `created`: the ending of its derived
+    /// constructor, its first letter lowercased
+    /// ([`crate::naming::member_value_name`]).
     pub elm_name: String,
     /// The type of the value the constructor carries.
     pub ty: TypeRef,

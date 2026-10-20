@@ -806,7 +806,8 @@ tag (design §8).
 - Descriptors move out of the package module into a module per message
   and enum beside it: `Notes.V1.Note` holds `descriptor :
   Proto.Message.Descriptor` and one `Proto.Field.Descriptor` per field,
-  named as its record field (`Notes.V1.Note.title`), and
+  named as its record field (`Notes.V1.Note.title`; a oneof member's
+  is the end of its constructor, its first letter lowercased), and
   `Notes.V1.Visibility` holds the enum's `descriptor`. `Notes.V1` keeps
   the values a program sends and receives: types, defaults, codecs, the
   typed values (`messageNote`, `enumVisibility`) and `registry`, in
