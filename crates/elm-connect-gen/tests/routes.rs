@@ -45,6 +45,9 @@ use serde_json::Value as Json;
 
 mod common;
 use common::placeholder_header;
+#[path = "common/sample.rs"]
+mod sample;
+use sample::{Profile, Rng, sample_message};
 use similar::TextDiff;
 
 fn repo_root() -> PathBuf {
@@ -754,294 +757,15 @@ fn the_elm_replay_is_current() {
 const SEED: u64 = 0x2026_1015;
 const PER_ROUTE: usize = 16;
 
-/// SplitMix64: a generator whose sequence is fixed by its definition, so
-/// the pinned samples cannot change with a dependency's release, as
-/// `rand`'s `StdRng` may.
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^ (z >> 31)
-    }
-
-    /// A number in `0..n`.
-    fn below(&mut self, n: u64) -> u64 {
-        self.next() % n
-    }
-
-    /// A number in `low..=high`.
-    fn range(&mut self, low: i64, high: i64) -> i64 {
-        low + (self.next() % ((high - low) as u64 + 1)) as i64
-    }
-
-    /// True one time in `n`.
-    fn one_in(&mut self, n: u64) -> bool {
-        self.below(n) == 0
-    }
-
-    fn pick<T: Clone>(&mut self, items: &[T]) -> T {
-        items[self.below(items.len() as u64) as usize].clone()
-    }
-}
-
-/// A short string of what a URL must escape, what JSON and an Elm literal
-/// must escape, and multi-byte UTF-8, or empty. Only assigned characters:
-/// elm-format escapes unassigned ones, which the printer does not know.
-fn sample_string(rng: &mut Rng) -> String {
-    const CHARS: &str = "azAZ09-_.~/?#&=% +:@!$'()*,;[]\"\\\n\t\u{1}\u{7F}éßΩ中✓😀\u{10348}";
-    let chars: Vec<char> = CHARS.chars().collect();
-    let length = rng.pick(&[0, 1, 2, 3, 5, 8]);
-    (0..length).map(|_| rng.pick(&chars)).collect()
-}
-
-fn sample_i32(rng: &mut Rng) -> i32 {
-    match rng.below(4) {
-        0 => rng.pick(&[i32::MIN, i32::MAX, -1, 1]),
-        1 => rng.range(-1000, 1000) as i32,
-        _ => rng.next() as i32,
-    }
-}
-
-fn sample_i64(rng: &mut Rng) -> i64 {
-    const SAFE: i64 = (1 << 53) - 1;
-    match rng.below(4) {
-        0 => rng.pick(&[i64::MIN, i64::MAX, SAFE, SAFE + 1, SAFE + 2, -SAFE - 2]),
-        1 => rng.range(-1000, 1000),
-        _ => rng.next() as i64,
-    }
-}
-
-fn sample_u64(rng: &mut Rng) -> u64 {
-    match rng.below(4) {
-        0 => rng.pick(&[u64::MAX, 1 << 63, (1 << 53) + 1, 1]),
-        1 => rng.below(1000),
-        _ => rng.next(),
-    }
-}
-
-/// A double: the non-finite values, the extremes, `-0` and every magnitude
-/// between.
-fn sample_f64(rng: &mut Rng) -> f64 {
-    match rng.below(4) {
-        0 => rng.pick(&[
-            f64::NAN,
-            f64::INFINITY,
-            f64::NEG_INFINITY,
-            f64::MAX,
-            f64::MIN,
-            f64::MIN_POSITIVE,
-            5e-324,
-            1e21,
-            1e-7,
-            0.1,
-            -0.0,
-        ]),
-        1 => rng.range(-1000, 1000) as f64 / 8.0,
-        _ => {
-            let x = f64::from_bits(rng.next());
-            if x.is_finite() && x != 0.0 { x } else { 1.5 }
-        }
-    }
-}
-
-fn sample_f32(rng: &mut Rng) -> f32 {
-    match rng.below(4) {
-        0 => rng.pick(&[f32::NAN, f32::INFINITY, f32::NEG_INFINITY, f32::MAX, 0.1]),
-        1 => rng.range(-1000, 1000) as f32 / 8.0,
-        _ => {
-            let x = f32::from_bits(rng.next() as u32);
-            if x.is_finite() && x != 0.0 { x } else { 1.5 }
-        }
-    }
-}
-
-/// A field mask path of proto field names whose lowerCamelCase form reads
-/// back as it: lowercase words, each starting with a letter.
-fn sample_path(rng: &mut Rng) -> String {
-    let word = |rng: &mut Rng| -> String {
-        let length = rng.range(1, 4);
-        (0..length)
-            .map(|i| {
-                if i == 0 || rng.below(3) > 0 {
-                    (b'a' + rng.below(26) as u8) as char
-                } else {
-                    (b'0' + rng.below(10) as u8) as char
-                }
-            })
-            .collect()
-    };
-    (0..rng.range(1, 3))
-        .map(|_| {
-            (0..rng.range(1, 2))
-                .map(|_| word(rng))
-                .collect::<Vec<_>>()
-                .join("_")
-        })
-        .collect::<Vec<_>>()
-        .join(".")
-}
-
-/// A well-known type with a JSON form of its own, sampled within what the
-/// runtime holds exactly; `None` for any other message.
-fn sample_well_known(rng: &mut Rng, descriptor: &MessageDescriptor) -> Option<DynamicMessage> {
-    let mut message = DynamicMessage::new(descriptor.clone());
-    match descriptor.full_name() {
-        // To the millisecond, which `Time.Posix` holds; finer digits are
-        // truncated by design (§3.5).
-        "google.protobuf.Timestamp" => {
-            let any = rng.range(-62_135_596_800, 253_402_300_799);
-            let seconds = rng.pick(&[-62_135_596_800, 253_402_300_799, 0, any, any]);
-            message.set_field_by_name("seconds", Value::I64(seconds));
-            message.set_field_by_name("nanos", Value::I32(rng.range(0, 999) as i32 * 1_000_000));
-        }
-        "google.protobuf.Duration" => {
-            let negative = rng.one_in(2);
-            let any = rng.range(0, 315_576_000_000);
-            let seconds = rng.pick(&[0, 1, 315_576_000_000, any, any]);
-            let nanos = match rng.below(4) {
-                0 => 0,
-                1 => rng.range(0, 999) * 1_000_000,
-                2 => rng.range(0, 999_999) * 1_000,
-                _ => rng.range(0, 999_999_999),
-            };
-            let sign = if negative { -1 } else { 1 };
-            message.set_field_by_name("seconds", Value::I64(sign * seconds));
-            message.set_field_by_name("nanos", Value::I32((sign * nanos) as i32));
-        }
-        "google.protobuf.FieldMask" => {
-            let paths = (0..rng.range(0, 3))
-                .map(|_| Value::String(sample_path(rng)))
-                .collect();
-            message.set_field_by_name("paths", Value::List(paths));
-        }
-        name if name.starts_with("google.protobuf.") && name.ends_with("Value") => {
-            // A wrapper: at its default a third of the time.
-            let field = descriptor.get_field_by_name("value").expect("a wrapper");
-            if !rng.one_in(3) {
-                let value = sample_value(rng, &field.kind(), 0);
-                message.set_field(&field, value);
-            }
-        }
-        _ => return None,
-    }
-    Some(message)
-}
-
-/// A value of kind `kind`; a message `depth` levels down.
-fn sample_value(rng: &mut Rng, kind: &Kind, depth: usize) -> Value {
-    match kind {
-        Kind::Double => Value::F64(sample_f64(rng)),
-        Kind::Float => Value::F32(sample_f32(rng)),
-        Kind::Int32 | Kind::Sint32 | Kind::Sfixed32 => Value::I32(sample_i32(rng)),
-        Kind::Int64 | Kind::Sint64 | Kind::Sfixed64 => Value::I64(sample_i64(rng)),
-        Kind::Uint32 | Kind::Fixed32 => Value::U32(rng.next() as u32),
-        Kind::Uint64 | Kind::Fixed64 => Value::U64(sample_u64(rng)),
-        Kind::Bool => Value::Bool(rng.one_in(2)),
-        Kind::String => Value::String(sample_string(rng)),
-        Kind::Bytes => Value::Bytes(
-            (0..rng.below(7))
-                .map(|_| rng.next() as u8)
-                .collect::<Vec<u8>>()
-                .into(),
-        ),
-        Kind::Enum(descriptor) => {
-            let values: Vec<i32> = descriptor.values().map(|v| v.number()).collect();
-            Value::EnumNumber(rng.pick(&values))
-        }
-        Kind::Message(descriptor) => Value::Message(sample_message(rng, descriptor, depth + 1)),
-    }
-}
-
-/// A map key of kind `kind`.
-fn sample_key(rng: &mut Rng, kind: &Kind) -> prost_reflect::MapKey {
-    use prost_reflect::MapKey;
-    match kind {
-        Kind::String => MapKey::String(sample_string(rng)),
-        Kind::Bool => MapKey::Bool(rng.one_in(2)),
-        Kind::Int32 | Kind::Sint32 | Kind::Sfixed32 => MapKey::I32(sample_i32(rng)),
-        Kind::Int64 | Kind::Sint64 | Kind::Sfixed64 => MapKey::I64(sample_i64(rng)),
-        Kind::Uint32 | Kind::Fixed32 => MapKey::U32(rng.next() as u32),
-        Kind::Uint64 | Kind::Fixed64 => MapKey::U64(sample_u64(rng)),
-        other => panic!("no map key of kind {other:?}"),
-    }
-}
-
-/// A message of type `descriptor`: each field without presence at its
-/// default about a third of the time; each field with presence unset, set
-/// to its default (a message set but empty), or set; a oneof unset or one
-/// member set; repeated and map fields with none to three elements.
-/// Past three levels down, messages are left empty.
-fn sample_message(rng: &mut Rng, descriptor: &MessageDescriptor, depth: usize) -> DynamicMessage {
-    if let Some(message) = sample_well_known(rng, descriptor) {
-        return message;
-    }
-    let mut message = DynamicMessage::new(descriptor.clone());
-    if depth > 3 {
-        return message;
-    }
-    for oneof in descriptor.oneofs().filter(|o| !o.is_synthetic()) {
-        let members: Vec<_> = oneof.fields().collect();
-        let choice = rng.below(members.len() as u64 + 1) as usize;
-        if let Some(field) = members.get(choice) {
-            // A set member at its default is still set.
-            let value = if rng.one_in(3) {
-                Value::default_value(&field.kind())
-            } else {
-                sample_value(rng, &field.kind(), depth)
-            };
-            message.set_field(field, value);
-        }
-    }
-    for field in descriptor.fields() {
-        if field
-            .containing_oneof()
-            .is_some_and(|oneof| !oneof.is_synthetic())
-        {
-            continue;
-        }
-        let kind = field.kind();
-        let value = if field.is_map() {
-            let Kind::Message(entry) = &kind else {
-                unreachable!()
-            };
-            let key_kind = entry.map_entry_key_field().kind();
-            let value_kind = entry.map_entry_value_field().kind();
-            let entries = (0..rng.below(4))
-                .map(|_| {
-                    (
-                        sample_key(rng, &key_kind),
-                        sample_value(rng, &value_kind, depth),
-                    )
-                })
-                .collect();
-            Some(Value::Map(entries))
-        } else if field.is_list() {
-            Some(Value::List(
-                (0..rng.below(4))
-                    .map(|_| sample_value(rng, &kind, depth))
-                    .collect(),
-            ))
-        } else if field.supports_presence() {
-            match rng.below(3) {
-                0 => None,
-                1 => Some(Value::default_value(&kind)),
-                _ => Some(sample_value(rng, &kind, depth)),
-            }
-        } else if rng.one_in(3) {
-            None
-        } else {
-            Some(sample_value(rng, &kind, depth))
-        };
-        if let Some(value) = value {
-            message.set_field(&field, value);
-        }
-    }
-    message
-}
+/// What the route samples draw from: strings of what a URL must escape,
+/// what JSON and an Elm literal must escape, and multi-byte UTF-8;
+/// 64-bit integers over their whole range.
+const ROUTES: Profile = Profile {
+    chars: "azAZ09-_.~/?#&=% +:@!$'()*,;[]\"\\\n\t\u{1}\u{7F}éßΩ中✓😀\u{10348}",
+    wide: true,
+    depth: 3,
+    items: 4,
+};
 
 /// The request as proto3 JSON, written in one of the forms a parser must
 /// accept: usually as the generated encoders write it, sometimes with every
@@ -1071,7 +795,7 @@ fn samples(methods: &HashMap<String, Known>) -> Vec<(Case, DynamicMessage)> {
         };
         for binding in bindings {
             for n in 0..PER_ROUTE {
-                let message = sample_message(&mut rng, &known.input, 0);
+                let message = sample_message(&mut rng, &ROUTES, &known.input, 0);
                 let json = sample_json(&mut rng, &message);
                 let expect = match binding {
                     Some(index) => reference(&known.method.routes[index], &message),
