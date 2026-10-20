@@ -446,8 +446,8 @@ pub struct FieldRef {
 }
 
 /// Names a field of a generated message as generated code names its
-/// descriptor, or `None` for one of a message without an Elm name, which
-/// was reported already.
+/// descriptor, or `None` for a field without an Elm name, or of a message
+/// without one, which is reported where the message is built.
 pub type Namer<'a> = &'a dyn Fn(&FieldDescriptor) -> Option<FieldRef>;
 
 /// What a request body holds.
@@ -536,7 +536,9 @@ pub enum RouteError {
 /// Checks `rule` (one binding; its own additional bindings are reported,
 /// not followed) against the method's `request` and `response`, giving
 /// the route or every problem found. `name` names the fields of path
-/// variables and query parameters, all of generated messages.
+/// variables and query parameters, all of generated messages; a field it
+/// has no name for fails the route with no problem of its own, which may
+/// leave the problems empty.
 pub fn resolve(
     rule: &HttpRule,
     request: &MessageDescriptor,
@@ -571,6 +573,10 @@ pub fn resolve(
         }
     };
 
+    // Set when `name` has no name for a field the route holds: the route
+    // fails without a problem of its own, since the field's was reported
+    // where its message is built.
+    let mut unnamed = false;
     let mut segments = Vec::new();
     let mut bound: Vec<FieldPath> = Vec::new();
     for segment in template.segments {
@@ -585,7 +591,8 @@ pub fn resolve(
                 field,
                 segments: template,
             } => match path_field(request, &field, name) {
-                Ok((path, fields)) => {
+                Ok((_, None)) => unnamed = true,
+                Ok((path, Some(fields))) => {
                     if bound.contains(&path) {
                         errors.push(RouteError::PathFieldTwice {
                             field: path.dotted(),
@@ -665,11 +672,13 @@ pub fn resolve(
             errors: &mut errors,
             recursion: HashMap::new(),
             name,
+            unnamed: false,
         };
         walk.message(request, &FieldPath::default(), &[], skip.as_deref());
+        unnamed |= walk.unnamed;
     }
 
-    if errors.is_empty() {
+    if errors.is_empty() && !unnamed {
         Ok(Route {
             verb: rule.verb.clone(),
             segments,
@@ -702,12 +711,12 @@ fn well_known(message: &MessageDescriptor) -> Option<Option<WellKnown>> {
 
 /// The field a path variable names, through singular fields of generated
 /// messages to a non-repeated scalar or enum, with each field of the way
-/// named by `name`.
+/// named by `name`, or `None` for the names if `name` has none for one.
 fn path_field(
     request: &MessageDescriptor,
     names: &[String],
     name: Namer,
-) -> Result<(FieldPath, Vec<FieldRef>), String> {
+) -> Result<(FieldPath, Option<Vec<FieldRef>>), String> {
     if well_known(request).is_some() {
         return Err(format!(
             "the request is `{}`, whose fields have no JSON form of their own",
@@ -716,7 +725,7 @@ fn path_field(
     }
     let mut message = request.clone();
     let mut path = FieldPath::default();
-    let mut fields = Vec::new();
+    let mut fields = Some(Vec::new());
     for (index, field_name) in names.iter().enumerate() {
         let Some(field) = message.get_field_by_name(field_name) else {
             return Err(format!(
@@ -725,7 +734,10 @@ fn path_field(
             ));
         };
         path = path.child(&field);
-        fields.extend(name(&field));
+        fields = fields.zip(name(&field)).map(|(mut fields, named)| {
+            fields.push(named);
+            fields
+        });
         let last = index + 1 == names.len();
         if field.is_list() || field.is_map() {
             return Err(format!(
@@ -807,6 +819,9 @@ struct QueryWalk<'a> {
     /// ([`QueryWalk::recursive`]).
     recursion: HashMap<String, bool>,
     name: Namer<'a>,
+    /// Whether `name` had no name for a field the walk reached, as
+    /// [`resolve`] keeps it.
+    unnamed: bool,
 }
 
 impl QueryWalk<'_> {
@@ -827,8 +842,12 @@ impl QueryWalk<'_> {
             if self.bound.contains(&path) {
                 continue;
             }
+            let Some(named) = (self.name)(&field) else {
+                self.unnamed = true;
+                continue;
+            };
             let mut fields = refs.to_vec();
-            fields.extend((self.name)(&field));
+            fields.push(named);
             self.field(&field, path, fields);
         }
     }

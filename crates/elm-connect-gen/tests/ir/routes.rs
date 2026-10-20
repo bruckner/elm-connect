@@ -579,3 +579,26 @@ fn a_route_problem_points_at_the_rule() {
         "{rendered}"
     );
 }
+
+#[test]
+fn a_route_through_a_field_without_an_elm_name_reports_only_the_field() {
+    // `_1x` has a constructor but no descriptor value, so a route that
+    // names it, in its path or its query, fails without a problem of its
+    // own (and without naming a shorter path); the field's is reported.
+    let source = r#"syntax = "proto3";
+package t.v1;
+import "google/api/annotations.proto";
+message Inner { oneof kind { string _1x = 1; } }
+message Thing { string name = 1; Inner inner = 2; }
+service S {
+  rpc Query(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{name}" }; }
+  rpc Path(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{inner._1x}" }; }
+}
+"#;
+    let files = [("t.proto", source)];
+    let codes: Vec<String> = problems(&files, &["t.proto"])
+        .iter()
+        .map(|problem| problem.code().to_string())
+        .collect();
+    assert_eq!(codes, ["naming::invalid_field"]);
+}

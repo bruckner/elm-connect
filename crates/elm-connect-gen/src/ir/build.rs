@@ -186,6 +186,10 @@ pub fn build_with_imports(
     builder.check_import_cycles(&by_package);
 
     let (errors, warnings) = builder.diagnostics.split_warnings();
+    assert!(
+        !builder.unnamed_route || !errors.is_empty(),
+        "internal error: a route named a field without an Elm name, and no problem reports it"
+    );
     if errors.is_empty() {
         Ok(Built { packages, warnings })
     } else {
@@ -328,6 +332,9 @@ struct Builder {
     /// The rename map's entries that name a generated element and suit it:
     /// Elm names by proto full name (an enum value's under its enum's).
     renames: HashMap<String, String>,
+    /// Whether a route failed for a field without an Elm name, which only
+    /// the field's own problem reports.
+    unnamed_route: bool,
 }
 
 impl Builder {
@@ -600,6 +607,9 @@ impl Builder {
                 Ok(route) => routes.push(route),
                 Err(errors) => {
                     failed = true;
+                    // No problems: the route named a field without an Elm
+                    // name, whose problem is the field's own.
+                    self.unnamed_route |= errors.is_empty();
                     let what = match index {
                         0 => format!("The HTTP rule of `{full_name}`"),
                         n => format!("Additional binding {n} of `{full_name}`"),
@@ -615,29 +625,35 @@ impl Builder {
     }
 
     /// A field of a generated message as generated code names its
-    /// descriptor: its message's descriptor module and its value there,
-    /// named as [`Builder::message`] names it (a record field's name, or a
-    /// oneof member's [`naming::member_value_name`]). `None` for a field
-    /// whose message or name was reported already.
+    /// descriptor: its message's descriptor module and its value there
+    /// ([`Builder::field_value`]). `None` for a field whose message or
+    /// name was reported already.
     fn field_ref(&self, field: &FieldDescriptor) -> Option<route::FieldRef> {
         let message = field.parent_message();
         let ty = self.types.get(message.full_name())?;
+        Some(route::FieldRef {
+            module: naming::descriptor_module(&ty.module, &ty.name),
+            name: self.field_value(field).ok()?,
+        })
+    }
+
+    /// The Elm value of `field`'s descriptor in its message's descriptor
+    /// module, as [`Builder::message`] declares it and a route names it: a
+    /// oneof member's [`naming::member_value_name`], any other field's
+    /// record field name, renamed or derived, as
+    /// [`naming::field_value_name`] escapes it.
+    fn field_value(&self, field: &FieldDescriptor) -> Result<String, NameError> {
         let member = field
             .containing_oneof()
             .is_some_and(|oneof| !oneof.is_synthetic());
-        let name = if member {
-            naming::member_value_name(field.name()).ok()?
-        } else {
-            let elm_name = match self.renames.get(field.full_name()) {
-                Some(given) => given.clone(),
-                None => naming::field_name(field.name()).ok()?,
-            };
-            naming::field_value_name(&elm_name)
+        if member {
+            return naming::member_value_name(field.name());
+        }
+        let elm_name = match self.renames.get(field.full_name()) {
+            Some(given) => given.clone(),
+            None => naming::field_name(field.name())?,
         };
-        Some(route::FieldRef {
-            module: naming::descriptor_module(&ty.module, &ty.name),
-            name,
-        })
+        Ok(naming::field_value_name(&elm_name))
     }
 
     /// A site at `path` in `file`, or at the nearest enclosing element the
@@ -1055,7 +1071,7 @@ impl Builder {
                     let what = format!("oneof field `{}` of `{full_name}`", member.name());
                     let origin = self.origin(file, member.path(), tag::FIELD_NAME, what);
                     self.claim_constructor(constructors, package, &elm_ctor, origin);
-                    let elm_name = match naming::member_value_name(member.name()) {
+                    let elm_name = match self.field_value(&member) {
                         Ok(name) => name,
                         Err(error) => {
                             let converted = match error {
@@ -1118,9 +1134,11 @@ impl Builder {
             } else {
                 // Two record fields of one name were reported as such; their
                 // descriptor values clash too, which is the same problem.
-                let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
-                let value = naming::field_value_name(&elm_field_name);
-                self.claim_field_value(&mut values, full_name, &value, origin);
+                // The record field's name was found, so its value is too.
+                if let Ok(value) = self.field_value(&field) {
+                    let origin = self.origin(file, field.path(), tag::FIELD_NAME, what);
+                    self.claim_field_value(&mut values, full_name, &value, origin);
+                }
             }
             if let Some((cardinality, ty)) = self.field_type(file, message, &field) {
                 fields.push(Field {
