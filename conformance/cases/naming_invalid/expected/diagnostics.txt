@@ -12,7 +12,7 @@ naming::invalid_module
   help: Each package segment becomes a segment of the Elm module name in
         PascalCase (`notes.v1` becomes `Notes.V1`), and an Elm module segment
         must start with a letter. Rename the package, or rename it with
-        `rename=<proto full name>:<Elm name>`.
+        `rename=inventory.v1._2024:<Elm name>`.
 
 naming::invalid_type
 
@@ -27,7 +27,7 @@ naming::invalid_type
    ╰────
   help: Elm type names must start with an uppercase letter. Rename the proto
         type so its PascalCase form starts with one, or rename it with
-        `rename=<proto full name>:<Elm name>`.
+        `rename=catalog.v1._3dModel:<Elm name>`.
 
 naming::invalid_field
 
@@ -44,4 +44,4 @@ naming::invalid_field
         converts proto field names to lowerCamelCase without changing their
         first letter, so the proto name should be lower_snake_case, starting
         with a letter. Rename it in the proto, or rename it with
-        `rename=<proto full name>:<Elm name>`.
+        `rename=catalog.v1.Shelf.Label:<Elm name>`.

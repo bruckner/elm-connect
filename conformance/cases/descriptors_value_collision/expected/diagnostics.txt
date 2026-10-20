@@ -18,7 +18,8 @@ naming::value_collision
         field, named as its record field is (a oneof member's for the end of
         its constructor; a field named `descriptor` takes `descriptor_`), so
         two fields whose values meet cannot both be defined. Rename the field
-        in the proto, or rename it with `rename=<proto full name>:<Elm name>`.
+        in the proto, or rename it with
+        `rename=profile.v1.Profile.display_name:<Elm name>`.
 
 naming::value_collision
 
@@ -34,4 +35,4 @@ naming::value_collision
   help: Every generated module defines `elmConnectVersion_`, which names the
         release of the generator it came from, so no method or field can take
         that name in the module that defines it. Give it another name in its
-        `rename=<proto full name>:<Elm name>`.
+        `rename=profile.v1.Profile.version:<Elm name>`.

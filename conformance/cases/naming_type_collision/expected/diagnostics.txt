@@ -18,7 +18,7 @@ naming::type_collision
   help: Every message, enum and oneof of a package becomes a type in one Elm
         module, nested names joined (`Outer.Inner` becomes `OuterInner`), and
         a module cannot define two types with one name. Rename one of them in
-        the proto, or rename one with `rename=<proto full name>:<Elm name>`.
+        the proto, or rename one with `rename=library.v1.book:<Elm name>`.
 
 naming::constructor_collision
 
@@ -40,7 +40,7 @@ naming::constructor_collision
   help: Enum values, oneof cases and the record constructor of every message
         all share one constructor namespace in an Elm module, so these cannot
         both keep this name. Rename one of them in the proto, or rename one
-        with `rename=<proto full name>:<Elm name>`.
+        with `rename=library.v1.book:<Elm name>`.
 
 naming::constructor_collision
 
@@ -60,4 +60,4 @@ naming::constructor_collision
   help: Enum values, oneof cases and the record constructor of every message
         all share one constructor namespace in an Elm module, so these cannot
         both keep this name. Rename one of them in the proto, or rename one
-        with `rename=<proto full name>:<Elm name>`.
+        with `rename=library.v1.StatusActive:<Elm name>`.

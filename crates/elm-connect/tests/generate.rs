@@ -77,7 +77,11 @@ fn problems_render_against_the_proto_source() {
     assert!(rendered.contains("naming::field_collision"), "{rendered}");
     assert!(rendered.contains("╭─[clash.proto:6:10]"), "{rendered}");
     assert!(rendered.contains("string display_name = 1;"), "{rendered}");
-    assert!(rendered.contains("`--rename "), "{rendered}");
+    assert!(rendered.contains("`--rename"), "{rendered}");
+    assert!(
+        rendered.contains("clash.v1.Note.displayName:<Elm"),
+        "{rendered}"
+    );
     assert!(!rendered.contains("`rename="), "{rendered}");
 }
 

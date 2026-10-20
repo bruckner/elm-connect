@@ -890,3 +890,7 @@ tag (design §8).
   implicit` under the CLI, `rename=`, `streaming=skip` and
   `unbound_methods=implicit` under the plugin. Only `naming::reserved_*`
   did before.
+- A diagnostic's `rename` escape names the element at fault by its proto
+  full name, `rename=notes.v1.Note.title:<Elm name>`, rather than
+  `<proto full name>`: a collision's second claimant, or the first when a
+  rename of the second would not part them.

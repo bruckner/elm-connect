@@ -15,7 +15,7 @@ naming::module_collision
         segment in PascalCase, so one can take the name of another or of a
         package nested in its own, and names that differ only in case or
         underscores end up the same. Rename one of them in the proto, or
-        rename one with `rename=<proto full name>:<Elm name>`.
+        rename one with `rename=notes.v1.NotesService:<Elm name>`.
 
 Advice:
   ☞ and in `notes/v1/notes.proto`:
@@ -50,4 +50,4 @@ naming::module_collision
         segment in PascalCase, so one can take the name of another or of a
         package nested in its own, and names that differ only in case or
         underscores end up the same. Rename one of them in the proto, or
-        rename one with `rename=<proto full name>:<Elm name>`.
+        rename one with `rename=notes.v1.archive:<Elm name>`.

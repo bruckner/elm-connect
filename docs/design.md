@@ -1130,7 +1130,10 @@ rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
 `options::unknown_rename`. Names that collide after renaming are the
 `naming::*_collision` diagnostics, as before, and each `naming::*` help
-text names the escape (`rename` and `rename_invalid` cases).
+text names the escape, the `rename` of the element at fault by its proto
+full name (of a collision's second claimant, when renaming it would part
+them), with a placeholder for the Elm name (`rename` and
+`rename_invalid` cases).
 
 ### 3.8 Dead ends
 
