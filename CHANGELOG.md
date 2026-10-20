@@ -879,3 +879,9 @@ tag (design §8).
   move to the `input::` family, which holds what the generator was
   handed: `generate::unknown_file` is now `input::unknown_file` and
   `generate::not_proto3` is now `input::not_proto3`.
+- Every diagnostic code the corpus can reach has a rendered snapshot:
+  the `naming_invalid`, `naming_type_collision`, `types_unsupported`,
+  `input_proto2` and `options_invalid` conformance cases.
+  `input::unknown_file`, `input::editions` and `input::file_name`
+  cannot come from the corpus and stay covered by the crates' tests, as
+  `docs/diagnostics.md` says.

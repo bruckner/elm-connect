@@ -1176,18 +1176,19 @@ case names it):
   flattening (`naming::type_collision`), two constructors in one module,
   such as enum values or oneof members (`naming::constructor_collision`),
   and a field and a oneof of one message (`naming::field_collision`,
-  `naming_collision` case). Escape: rename one of them with `rename=`
+  `naming_collision` and `naming_type_collision` cases). Escape: rename one of them with `rename=`
   (§3.7).
 - **Names with no Elm form**: a package segment, type, field or method
   whose converted name is not a valid Elm identifier
   (`naming::invalid_module`, `naming::invalid_type`,
-  `naming::invalid_field`, `naming::invalid_method`, `services_invalid`
-  case). Escape: give it a name with `rename=` (§3.7). A file without a
+  `naming::invalid_field`, `naming::invalid_method`, `naming_invalid`
+  and `services_invalid` cases). Escape: give it a name with `rename=` (§3.7). A file without a
   package declaration (`naming::invalid_module` too) has no escape yet:
   a rename names its element by proto full name, and the file's
   package has none; its help text says to add a package.
 - **A `google.protobuf` type without a mapping**
-  (`types::unsupported_well_known`), such as `Api` or `Type`. `Any`
+  (`types::unsupported_well_known`, `types_unsupported` case), such as
+  `Api` or `Type`. `Any`
   was refused here (`types::any`) until it was built (§3.5). No escape
   yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`

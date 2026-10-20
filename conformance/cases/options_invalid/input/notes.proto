@@ -1,0 +1,8 @@
+// The protos are fine; the problems are all in options.txt.
+syntax = "proto3";
+
+package notes.v1;
+
+message Note {
+  string title = 1;
+}
