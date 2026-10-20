@@ -2551,8 +2551,11 @@ two types shared one module, the helpers for `Code` prefixed.)
   The plugin parameter is comma-separated `key=value` pairs; an unknown
   key or value, or a key other than `rename` given twice, is an error,
   as is a `rename` without its `:` or one renaming a proto name twice,
-  or a `module_prefix` that is not dot-separated Elm module segments. A conformance case sets options with an
-  `options.txt` holding that parameter.
+  or a `module_prefix` that is not dot-separated Elm module segments,
+  each an `options::*` diagnostic, all of a parameter's reported
+  together. A conformance case sets options with an
+  `options.txt` holding that parameter, and a case whose parameter has
+  problems expects them as its `diagnostics.txt`.
 - The CLI's `--include-imports` flag *(Decided, 2026-10-15; built;
   narrowed 2026-10-16)*, named after buf's: the CLI also generates every
   imported file that declares a message or enum the requested packages

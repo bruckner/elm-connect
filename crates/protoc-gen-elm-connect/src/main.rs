@@ -111,8 +111,8 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     };
     let options = match Options::from_parameter(request.parameter()) {
         Ok(options) => options,
-        Err(err) => {
-            let error = format!("elm-connect: the plugin parameter: {err}");
+        Err(problems) => {
+            let error = render_narrow(&problems);
             return (response(Some(error), Vec::new()), String::new());
         }
     };
@@ -329,6 +329,7 @@ mod tests {
         let mut request = scalars_request();
         request.parameter = Some("int64=long".into());
         let error = round_trip(request).error.expect("an error");
+        assert!(error.starts_with("options::unknown_option\n"), "{error}");
         assert!(error.contains("`string` or `int`"), "{error}");
     }
 

@@ -52,10 +52,20 @@ pub enum Code {
     ImportCycle,
     /// A file to generate is not in the descriptor set.
     UnknownFile,
-    /// A `rename` gives a name the element it renames cannot take.
+    /// A `rename` is not `<proto full name>:<Elm name>`, names an enum
+    /// value alias, or gives a name the element it renames cannot take.
     InvalidRename,
     /// A `rename` names nothing that is generated.
     UnknownRename,
+    /// The plugin parameter names an option that does not exist, gives a
+    /// known option a value it does not take, or holds a pair without
+    /// `=`.
+    UnknownOption,
+    /// An option other than `rename` is given twice, or `rename` renames
+    /// one proto element twice.
+    DuplicateOption,
+    /// `module_prefix` is not an Elm module name.
+    InvalidModulePrefix,
     /// A file to generate is not proto3.
     NotProto3,
     /// A file declares an edition (`edition = "2023";`), which elm-connect
@@ -118,6 +128,9 @@ impl Code {
             Code::UnknownFile => "generate::unknown_file",
             Code::InvalidRename => "options::invalid_rename",
             Code::UnknownRename => "options::unknown_rename",
+            Code::UnknownOption => "options::unknown_option",
+            Code::DuplicateOption => "options::duplicate_option",
+            Code::InvalidModulePrefix => "options::invalid_module_prefix",
             Code::NotProto3 => "generate::not_proto3",
             Code::Editions => "input::editions",
             Code::FileName => "input::file_name",
@@ -192,7 +205,8 @@ pub struct Problem {
     message: String,
     help: String,
     sites: Vec<Site>,
-    attached: Option<Attached>,
+    /// Boxed, so a `Problem` stays small enough to return in a `Result`.
+    attached: Option<Box<Attached>>,
 }
 
 /// The source snippets of a problem, once its source text is known.
@@ -818,6 +832,87 @@ impl Problem {
         )
     }
 
+    /// The plugin parameter holds `pair`, which has no `=`.
+    pub fn option_without_value(pair: &str) -> Self {
+        Problem::new(
+            Code::UnknownOption,
+            format!("The plugin parameter holds `{pair}`, which is not a `key=value` pair."),
+            OPTION_KEYS_HELP,
+            Vec::new(),
+        )
+    }
+
+    /// The plugin parameter names `key`, which is no option.
+    pub fn unknown_option(key: &str) -> Self {
+        Problem::new(
+            Code::UnknownOption,
+            format!("There is no option `{key}`."),
+            OPTION_KEYS_HELP,
+            Vec::new(),
+        )
+    }
+
+    /// The option `key` is given `value`, which is not among `values`, the
+    /// values it takes, its default first.
+    pub fn unknown_option_value(key: &str, value: &str, values: &[&str]) -> Self {
+        let quoted: Vec<String> = values.iter().map(|value| format!("`{value}`")).collect();
+        let default = quoted.first().cloned().unwrap_or_default();
+        Problem::new(
+            Code::UnknownOption,
+            format!("The option `{key}` is `{value}`, which is not one of its values."),
+            format!(
+                "`{key}` is {}; left out, it is {default}.",
+                join_alternatives(&quoted)
+            ),
+            Vec::new(),
+        )
+    }
+
+    /// The option `key`, which takes one value, is given more than once.
+    pub fn duplicate_option(key: &str) -> Self {
+        Problem::new(
+            Code::DuplicateOption,
+            format!("The option `{key}` is given more than once."),
+            "Every option but `rename` takes one value, and a second would silently replace \
+             the first. Keep the one you mean.",
+            Vec::new(),
+        )
+    }
+
+    /// The rename map renames `proto` more than once.
+    pub fn duplicate_rename(proto: &str) -> Self {
+        Problem::new(
+            Code::DuplicateOption,
+            format!("The options rename `{proto}` more than once."),
+            "A proto element has one Elm name, so it takes one `rename`. Keep the one you \
+             mean.",
+            Vec::new(),
+        )
+    }
+
+    /// The rename map entry `entry` is not `<proto full name>:<Elm name>`
+    /// with neither side empty.
+    pub fn rename_form(entry: &str) -> Self {
+        Problem::new(
+            Code::InvalidRename,
+            format!("The rename `{entry}` is not `<proto full name>:<Elm name>`."),
+            "A rename names a proto element by its full name and gives its Elm name, the two \
+             separated by `:`, such as `notes.v1.Note:Memo`; neither may be empty.",
+            Vec::new(),
+        )
+    }
+
+    /// `module_prefix` is `value`, which is not an Elm module name.
+    pub fn invalid_module_prefix(value: &str) -> Self {
+        Problem::new(
+            Code::InvalidModulePrefix,
+            format!("The module prefix `{value}` is not an Elm module name."),
+            "`module_prefix` is dot-separated Elm module segments, such as `Api.Notes`, each \
+             an uppercase letter followed by letters, digits or underscores.",
+            Vec::new(),
+        )
+    }
+
     /// `file` was asked for but is not in the descriptor set.
     pub fn unknown_file(file: &str) -> Self {
         Problem::new(
@@ -897,11 +992,11 @@ impl Problem {
                 });
             }
         }
-        self.attached = Some(Attached {
+        self.attached = Some(Box::new(Attached {
             source: NamedSource::new(&primary, text.clone()),
             labels,
             elsewhere,
-        });
+        }));
     }
 
     fn labels_in(&self, file: &str, text: &str, columns: Columns) -> Vec<LabeledSpan> {
@@ -913,6 +1008,21 @@ impl Problem {
                 Some(LabeledSpan::new_with_span(Some(site.label.clone()), span))
             })
             .collect()
+    }
+}
+
+/// The options of the plugin parameter, as an option problem's help
+/// lists them.
+const OPTION_KEYS_HELP: &str = "The plugin parameter is comma-separated `key=value` pairs, and \
+     its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `rename` \
+     and `module_prefix`.";
+
+/// `a`, `a or b`, `a, b or c`.
+fn join_alternatives(words: &[String]) -> String {
+    match words {
+        [] => String::new(),
+        [only] => only.clone(),
+        [init @ .., last] => format!("{} or {last}", init.join(", ")),
     }
 }
 
@@ -1046,6 +1156,20 @@ impl Diagnostics {
         self.problems.iter().all(Problem::is_warning)
     }
 
+    /// What the problems are in, for the header: the protos, the options,
+    /// or both.
+    fn subject(&self) -> &'static str {
+        let options = |problem: &Problem| problem.code.as_str().starts_with("options::");
+        match (
+            self.problems.iter().any(options),
+            self.problems.iter().all(options),
+        ) {
+            (true, true) => "the options",
+            (true, false) => "the protos and the options",
+            (false, _) => "the protos",
+        }
+    }
+
     /// Gives every problem the source text of its files, so it renders
     /// with snippets. `sources` maps proto file names to their text;
     /// `columns` says how the compiler counted columns. A file missing from
@@ -1064,6 +1188,14 @@ impl Diagnostics {
     }
 }
 
+impl From<Problem> for Diagnostics {
+    fn from(problem: Problem) -> Self {
+        Diagnostics {
+            problems: vec![problem],
+        }
+    }
+}
+
 impl<'a> IntoIterator for &'a Diagnostics {
     type Item = &'a Problem;
     type IntoIter = std::slice::Iter<'a, Problem>;
@@ -1075,11 +1207,12 @@ impl<'a> IntoIterator for &'a Diagnostics {
 
 impl fmt::Display for Diagnostics {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let subject = self.subject();
         match (self.all_warnings(), self.problems.len()) {
-            (true, 1) => f.write_str("elm-connect has a warning about the protos"),
-            (true, n) => write!(f, "elm-connect has {n} warnings about the protos"),
-            (false, 1) => f.write_str("elm-connect found a problem in the protos"),
-            (false, n) => write!(f, "elm-connect found {n} problems in the protos"),
+            (true, 1) => write!(f, "elm-connect has a warning about {subject}"),
+            (true, n) => write!(f, "elm-connect has {n} warnings about {subject}"),
+            (false, 1) => write!(f, "elm-connect found a problem in {subject}"),
+            (false, n) => write!(f, "elm-connect found {n} problems in {subject}"),
         }
     }
 }

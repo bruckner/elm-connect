@@ -864,3 +864,12 @@ tag (design §8).
 - The diagnostic code `generate::unimplemented` is gone: nothing reported
   it since every proto3 construct is generated, and codes become
   permanent at 1.0 (design §8.3).
+- Option problems are diagnostics with codes, rendered like every other:
+  `options::unknown_option` (an unknown key, an unknown value for a known
+  key, or a pair without `=`), `options::duplicate_option` (an option
+  other than `rename` given twice, or one proto name renamed twice) and
+  `options::invalid_module_prefix`; a `rename` without its `:` is
+  `options::invalid_rename`. The plugin reports every problem in its
+  parameter at once rather than the first. A run whose only problems are
+  in the options says "a problem in the options", and the CLI prints one
+  `Error:` per problem rather than another before the header.

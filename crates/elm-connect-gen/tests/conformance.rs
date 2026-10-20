@@ -103,12 +103,12 @@ fn files_under(dir: &Path) -> Vec<String> {
 }
 
 /// The generator options of `case`: its optional `options.txt`, a protoc
-/// plugin parameter (`int64=int`) on one line, or the defaults.
-fn case_options(case: &Path) -> Options {
+/// plugin parameter (`int64=int`) on one line, or the defaults; or the
+/// problems in that parameter.
+fn case_options(case: &Path) -> Result<Options, Diagnostics> {
     match fs::read_to_string(case.join(OPTIONS)) {
-        Ok(text) => Options::from_parameter(text.trim())
-            .unwrap_or_else(|e| panic!("{}: {e}", case.join(OPTIONS).display())),
-        Err(e) if e.kind() == ErrorKind::NotFound => Options::default(),
+        Ok(text) => Options::from_parameter(text.trim()),
+        Err(e) if e.kind() == ErrorKind::NotFound => Ok(Options::default()),
         Err(e) => panic!("read {}: {e}", case.join(OPTIONS).display()),
     }
 }
@@ -122,7 +122,8 @@ struct Run {
 }
 
 /// What generating a case's input gives: the files and warnings, or the
-/// narrow rendering of the problems, with the proto sources attached.
+/// narrow rendering of the problems, with the proto sources attached; the
+/// problems in its `options.txt`, if it has any, instead.
 /// Protos in the case's optional `include/` can be imported but are not
 /// requested; those of a requested package are generated with it. The
 /// case's `options.txt`, if any, sets the generator's
@@ -161,11 +162,8 @@ fn run_generator(case: &Path) -> Result<Run, String> {
         diagnostics.attach_sources(&sources, Columns::Bytes);
         render_narrow(&diagnostics)
     };
-    match generate(
-        &compiler.descriptor_pool(),
-        &generate_set,
-        &case_options(case),
-    ) {
+    let options = case_options(case).map_err(render)?;
+    match generate(&compiler.descriptor_pool(), &generate_set, &options) {
         Ok(generated) => Ok(Run {
             files: generated.files,
             warnings: if generated.warnings.is_empty() {
