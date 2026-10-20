@@ -1,7 +1,7 @@
 //! The rename map (design §3.7): what each proto full name in it denotes,
 //! and whether the Elm name given for it suits that.
 
-use prost_reflect::{DescriptorPool, FileDescriptor};
+use prost_reflect::{DescriptorPool, EnumDescriptor, FileDescriptor, MessageDescriptor};
 
 use crate::diagnostics::tag;
 use crate::ir::ModuleName;
@@ -213,4 +213,57 @@ pub(super) fn resolve(pool: &DescriptorPool, name: &str) -> Option<Target> {
         &path,
         tag::ENUM_VALUE_NAME,
     ))
+}
+
+/// Every proto full name a rename of `files` (the files of the generated
+/// packages) can name, as [`resolve`] takes it, sorted: each package,
+/// service, method, message (not a map entry), enum, field, real oneof
+/// and enum value under its enum.
+pub(super) fn names<'a>(files: impl IntoIterator<Item = &'a FileDescriptor>) -> Vec<String> {
+    fn add_enum(names: &mut Vec<String>, enumeration: &EnumDescriptor) {
+        names.push(enumeration.full_name().to_owned());
+        for value in enumeration.values() {
+            names.push(format!("{}.{}", enumeration.full_name(), value.name()));
+        }
+    }
+    fn add_message(names: &mut Vec<String>, message: &MessageDescriptor) {
+        if message.is_map_entry() {
+            return;
+        }
+        names.push(message.full_name().to_owned());
+        names.extend(message.fields().map(|field| field.full_name().to_owned()));
+        names.extend(
+            message
+                .oneofs()
+                .filter(|oneof| !oneof.is_synthetic())
+                .map(|oneof| oneof.full_name().to_owned()),
+        );
+        for nested in message.child_messages() {
+            add_message(names, &nested);
+        }
+        for nested in message.child_enums() {
+            add_enum(names, &nested);
+        }
+    }
+    let mut names = Vec::new();
+    for file in files {
+        names.push(file.package_name().to_owned());
+        for service in file.services() {
+            names.push(service.full_name().to_owned());
+            names.extend(
+                service
+                    .methods()
+                    .map(|method| method.full_name().to_owned()),
+            );
+        }
+        for nested in file.messages() {
+            add_message(&mut names, &nested);
+        }
+        for nested in file.enums() {
+            add_enum(&mut names, &nested);
+        }
+    }
+    names.sort();
+    names.dedup();
+    names
 }

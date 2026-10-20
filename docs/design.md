@@ -1128,7 +1128,8 @@ lowercase letter followed by letters, digits or underscores, and not a
 reserved word. An enum value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
-`options::unknown_rename`. Names that collide after renaming are the
+`options::unknown_rename`, which suggests the closest full name they
+have (`suggestions` case). Names that collide after renaming are the
 `naming::*_collision` diagnostics, as before, and each `naming::*` help
 text names the escape, the `rename` of the element at fault by its proto
 full name (of a collision's second claimant, when renaming it would part

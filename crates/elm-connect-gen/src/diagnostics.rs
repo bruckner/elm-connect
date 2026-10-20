@@ -736,12 +736,13 @@ impl Problem {
     /// does not resolve, for `error`.
     pub fn route(binding: &str, error: &crate::route::RouteError, site: Site) -> Self {
         use crate::route::RouteError as E;
-        let (code, message, help): (Code, String, &str) = match error {
+        let (code, message, help): (Code, String, String) = match error {
             E::NoPattern => (
                 Code::RouteRule,
                 format!("{binding} has no path."),
                 "A rule sets one of `get`, `put`, `post`, `delete` or `patch` to a path \
-                 template, or `custom` to a kind and a path.",
+                 template, or `custom` to a kind and a path."
+                    .into(),
             ),
             E::CustomKind { kind, reason } => (
                 Code::RouteRule,
@@ -751,49 +752,74 @@ impl Problem {
                 ),
                 "A `custom` rule's kind is the request's HTTP method: a token of letters, \
                  digits and ``!#$%&'*+-.^_`|~`` (RFC 9110), and not `CONNECT`, `TRACE` or \
-                 `TRACK`, which browsers refuse.",
+                 `TRACK`, which browsers refuse."
+                    .into(),
             ),
             E::NestedBindings => (
                 Code::RouteRule,
                 format!("{binding} has additional bindings of its own."),
                 "`google/api/http.proto` allows additional bindings one level deep only. Move \
-                 the nested bindings up into the rule's own `additional_bindings`.",
+                 the nested bindings up into the rule's own `additional_bindings`."
+                    .into(),
             ),
             E::Syntax { template, error } => (
                 Code::RouteTemplate,
                 format!("{binding} has the path `{template}`, which does not parse: {error}."),
                 "A path template is `/` and segments separated by `/`, each a literal, `*`, \
                  `**` (last only) or a variable like `{name}` or `{name=messages/*}`, \
-                 optionally followed by a custom verb like `:cancel`.",
+                 optionally followed by a custom verb like `:cancel`."
+                    .into(),
             ),
             E::UnboundWildcard { template } => (
                 Code::RouteTemplate,
                 format!("{binding} has the path `{template}`, with a wildcard outside a variable."),
                 "A client fills each path segment from a request field, and a bare `*` or `**` \
-                 names none. Bind it to a field, like `{name=*}`.",
+                 names none. Bind it to a field, like `{name=*}`."
+                    .into(),
             ),
-            E::PathField { field, reason } => (
+            E::PathField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RoutePathField,
                 format!("{binding} binds `{{{field}}}` in its path, but {reason}."),
-                "A path variable names a non-repeated scalar or enum field of the request, \
-                 possibly through singular message fields (`{book.name}`).",
+                format!(
+                    "{}A path variable names a non-repeated scalar or enum field of the \
+                     request, possibly through singular message fields (`{{book.name}}`).",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
             E::PathFieldTwice { field } => (
                 Code::RoutePathField,
                 format!("{binding} binds `{{{field}}}` in its path twice."),
-                "Each field can fill one path variable. Remove one of them.",
+                "Each field can fill one path variable. Remove one of them.".into(),
             ),
-            E::BodyField { field, reason } => (
+            E::BodyField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RouteBodyField,
                 format!("{binding} has `body: \"{field}\"`, but {reason}."),
-                "`body` is `*` for every field not in the path, or the name of a top-level \
-                 singular message field of the request, or left out for no body.",
+                format!(
+                    "{}`body` is `*` for every field not in the path, or the name of a \
+                     top-level singular message field of the request, or left out for no body.",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
-            E::ResponseBodyField { field, reason } => (
+            E::ResponseBodyField {
+                field,
+                reason,
+                suggestion,
+            } => (
                 Code::RouteResponseBody,
                 format!("{binding} has `response_body: \"{field}\"`, but {reason}."),
-                "`response_body` names a top-level field of the response, a generated message, \
-                 or is left out for the whole response.",
+                format!(
+                    "{}`response_body` names a top-level field of the response, a generated \
+                     message, or is left out for the whole response.",
+                    did_you_mean(suggestion.as_deref())
+                ),
             ),
             E::QueryField { field, reason } => (
                 Code::RouteQueryField,
@@ -804,7 +830,8 @@ impl Problem {
                 "Every request field outside the path and the body is a query parameter, and \
                  a parameter holds scalars, enums and well-known types with a string form. \
                  Send the field in the body (`body: \"*\"`, or a body field holding it), or \
-                 move it out of the request.",
+                 move it out of the request."
+                    .into(),
             ),
         };
         Problem::new(code, message, help, vec![site])
@@ -881,15 +908,21 @@ impl Problem {
         )
     }
 
-    /// The `rename` of `proto` names nothing that is generated.
-    pub fn unknown_rename(proto: &str) -> Self {
+    /// The `rename` of `proto` names nothing that is generated;
+    /// `suggestion` is the generated element's full name it most likely
+    /// meant, if any is close.
+    pub fn unknown_rename(proto: &str, suggestion: Option<&str>) -> Self {
         Problem::new(
             Code::UnknownRename,
             format!("The rename of `{proto}` names nothing elm-connect generates."),
-            "A rename names a package, service, method, message, enum, field, oneof or enum \
-             value of a generated package by its proto full name: nested names dotted \
-             (`notes.v1.Note.Revision`, `notes.v1.Note.title`), an enum value under its enum \
-             (`notes.v1.Visibility.VISIBILITY_PUBLIC`). Check the name against the protos.",
+            format!(
+                "{}A rename names a package, service, method, message, enum, field, oneof or \
+                 enum value of a generated package by its proto full name, as the proto \
+                 declares it (`notes.v1.Note.page_count`, not `pageCount`): nested names \
+                 dotted (`notes.v1.Note.Revision`), an enum value under its enum \
+                 (`notes.v1.Visibility.VISIBILITY_PUBLIC`).",
+                did_you_mean(suggestion)
+            ),
             Vec::new(),
         )
     }
@@ -1296,6 +1329,58 @@ impl Diagnostic for Diagnostics {
                 .map(|problem| problem as &dyn Diagnostic),
         ))
     }
+}
+
+/// The candidate a name was most likely meant to be, for a "did you
+/// mean" hint: one that differs from `name` only in case and underscores,
+/// or else the nearest within three single-character edits, the first in
+/// `candidates`' order on a tie. `None` when nothing is that close, or
+/// when `name` is itself a candidate.
+pub fn closest<'a>(name: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<String> {
+    const MAX_EDITS: usize = 3;
+    let folded = |text: &str| -> String {
+        text.chars()
+            .filter(|c| *c != '_')
+            .flat_map(char::to_lowercase)
+            .collect()
+    };
+    let target = folded(name);
+    let mut best: Option<(usize, &str)> = None;
+    for candidate in candidates {
+        if candidate == name {
+            return None;
+        }
+        let distance = if folded(candidate) == target {
+            0
+        } else {
+            edit_distance(name, candidate)
+        };
+        if distance <= MAX_EDITS && best.is_none_or(|(least, _)| distance < least) {
+            best = Some((distance, candidate));
+        }
+    }
+    best.map(|(_, candidate)| candidate.to_owned())
+}
+
+/// The Levenshtein distance between `a` and `b`, by characters.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut previous: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.chars().enumerate() {
+        let mut current = vec![i + 1];
+        for (j, cb) in b.iter().enumerate() {
+            let substitute = previous[j] + usize::from(ca != *cb);
+            current.push(substitute.min(previous[j + 1] + 1).min(current[j] + 1));
+        }
+        previous = current;
+    }
+    previous[b.len()]
+}
+
+/// "Did you mean `x`? ", the start of a help, for a suggestion; empty for
+/// none.
+fn did_you_mean(suggestion: Option<&str>) -> String {
+    suggestion.map_or_else(String::new, |s| format!("Did you mean `{s}`? "))
 }
 
 /// The width [`render_narrow`] wraps at.

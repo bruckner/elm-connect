@@ -1,0 +1,48 @@
+// Names that are nearly right: each problem suggests the name it was
+// most likely meant to be.
+syntax = "proto3";
+
+package library.v1;
+
+import "google/api/annotations.proto";
+
+message Book {
+  string name = 1;
+  int32 page_count = 2;
+}
+
+message GetBookRequest {
+  string name = 1;
+}
+
+message CreateBookRequest {
+  string shelf = 1;
+  Book book = 2;
+}
+
+message ListBooksResponse {
+  repeated Book books = 1;
+}
+
+service Library {
+  // The variable misspells `name`.
+  rpc GetBook(GetBookRequest) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/{nme=books/*}"
+    };
+  }
+  // The body misspells `book`, a message field, by case.
+  rpc CreateBook(CreateBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/{shelf=shelves/*}/books"
+      body: "Book"
+    };
+  }
+  // The response body misspells `books`.
+  rpc ListBooks(GetBookRequest) returns (ListBooksResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=shelves/*}/books"
+      response_body: "bokos"
+    };
+  }
+}

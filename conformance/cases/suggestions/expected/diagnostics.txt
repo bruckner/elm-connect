@@ -1,0 +1,69 @@
+options::unknown_rename
+
+  × The rename of `library.v1.Bok` names nothing elm-connect generates.
+  help: Did you mean `library.v1.Book`? A rename names a package, service,
+        method, message, enum, field, oneof or enum value of a generated
+        package by its proto full name, as the proto declares it
+        (`notes.v1.Note.page_count`, not `pageCount`): nested names dotted
+        (`notes.v1.Note.Revision`), an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × The rename of `library.v1.Book.pageCount` names nothing elm-connect
+  │ generates.
+  help: Did you mean `library.v1.Book.page_count`? A rename names a package,
+        service, method, message, enum, field, oneof or enum value of a
+        generated package by its proto full name, as the proto declares it
+        (`notes.v1.Note.page_count`, not `pageCount`): nested names dotted
+        (`notes.v1.Note.Revision`), an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+route::path_field
+
+  × The HTTP rule of `library.v1.Library.GetBook` binds `{nme}` in its path,
+  │ but `library.v1.GetBookRequest` has no field `nme`.
+    ╭─[library.proto:30:5]
+ 29 │       rpc GetBook(GetBookRequest) returns (Book) {
+ 30 │ ╭─▶     option (google.api.http) = {
+ 31 │ │         get: "/v1/{nme=books/*}"
+ 32 │ ├─▶     };
+    · ╰──── in this rule
+ 33 │       }
+    ╰────
+  help: Did you mean `name`? A path variable names a non-repeated scalar or
+        enum field of the request, possibly through singular message fields
+        (`{book.name}`).
+
+route::body_field
+
+  × The HTTP rule of `library.v1.Library.CreateBook` has `body: "Book"`, but
+  │ `library.v1.CreateBookRequest` has no field `Book`.
+    ╭─[library.proto:36:5]
+ 35 │       rpc CreateBook(CreateBookRequest) returns (Book) {
+ 36 │ ╭─▶     option (google.api.http) = {
+ 37 │ │         post: "/v1/{shelf=shelves/*}/books"
+ 38 │ │         body: "Book"
+ 39 │ ├─▶     };
+    · ╰──── in this rule
+ 40 │       }
+    ╰────
+  help: Did you mean `book`? `body` is `*` for every field not in the path, or
+        the name of a top-level singular message field of the request, or left
+        out for no body.
+
+route::response_body
+
+  × The HTTP rule of `library.v1.Library.ListBooks` has `response_body:
+  │ "bokos"`, but the response has no such field.
+    ╭─[library.proto:43:5]
+ 42 │       rpc ListBooks(GetBookRequest) returns (ListBooksResponse) {
+ 43 │ ╭─▶     option (google.api.http) = {
+ 44 │ │         get: "/v1/{name=shelves/*}/books"
+ 45 │ │         response_body: "bokos"
+ 46 │ ├─▶     };
+    · ╰──── in this rule
+ 47 │       }
+    ╰────
+  help: Did you mean `books`? `response_body` names a top-level field of the
+        response, a generated message, or is left out for the whole response.

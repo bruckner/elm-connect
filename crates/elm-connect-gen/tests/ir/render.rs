@@ -79,3 +79,16 @@ fn help_names_options_as_each_front_end_writes_them() {
     assert!(cli.contains("Pass `--streaming skip` to leave"), "{cli}");
     assert!(!cli.contains("streaming=skip"), "{cli}");
 }
+
+#[test]
+fn a_suggestion_is_close_or_differs_only_in_case_and_underscores() {
+    use elm_connect_gen::diagnostics::closest;
+
+    let fields = ["name", "page_count", "books"];
+    assert_eq!(closest("nme", fields), Some("name".to_owned()));
+    assert_eq!(closest("pageCount", fields), Some("page_count".to_owned()));
+    assert_eq!(closest("PAGE_COUNT", fields), Some("page_count".to_owned()));
+    assert_eq!(closest("bokos", fields), Some("books".to_owned()));
+    assert_eq!(closest("title", fields), None, "nothing is that close");
+    assert_eq!(closest("name", fields), None, "a candidate needs none");
+}

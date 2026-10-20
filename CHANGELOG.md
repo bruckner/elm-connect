@@ -894,3 +894,10 @@ tag (design §8).
   full name, `rename=notes.v1.Note.title:<Elm name>`, rather than
   `<proto full name>`: a collision's second claimant, or the first when a
   rename of the second would not part them.
+- Did-you-mean hints: `options::unknown_rename` suggests the closest
+  proto full name the generated packages have, and its help says that a
+  rename takes proto names (`page_count`, not `pageCount`);
+  `route::path_field`, `route::body_field` and `route::response_body`
+  suggest the closest field when the one named does not exist. A
+  suggestion differs only in case and underscores, or is within three
+  edits. The `suggestions` conformance case pins them.

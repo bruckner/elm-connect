@@ -15,7 +15,7 @@ use super::{
     Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant, Package,
     ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
-use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, tag};
+use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
@@ -379,11 +379,18 @@ impl Builder {
         renames: &BTreeMap<String, String>,
         by_package: &BTreeMap<String, Vec<FileDescriptor>>,
     ) {
+        // The names a rename could take, gathered once a rename names
+        // nothing, for its suggestion.
+        let mut known: Option<Vec<String>> = None;
         for (proto, elm) in renames {
             let Some(target) = rename::resolve(pool, proto)
                 .filter(|target| by_package.contains_key(&target.package))
             else {
-                self.diagnostics.push(Problem::unknown_rename(proto));
+                let known =
+                    known.get_or_insert_with(|| rename::names(by_package.values().flatten()));
+                let suggestion = closest(proto, known.iter().map(String::as_str));
+                self.diagnostics
+                    .push(Problem::unknown_rename(proto, suggestion.as_deref()));
                 continue;
             };
             let what = target.role.what();
