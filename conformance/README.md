@@ -264,6 +264,7 @@ An **envelope**, what the runner sends:
     "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
   },
   "binding": null,
+  "headers": [["x-echo", "from the call"]],
   "send": "sendTraced",
   "tracker": null,
   "cancelAfterMs": null
@@ -272,7 +273,8 @@ An **envelope**, what the runner sends:
 
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
-`binding` (applied with `Rpc.Call.viaBinding`), `send` (`sendTraced`, the
+`binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
+own, `Rpc.Call.withHeaders`, sent after the config's), `send` (`sendTraced`, the
 default, `send`, `task` or `halves`), `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
 (`Rpc.Transport.connectGet`, `withMaxGetUrl`). `retry` builds an

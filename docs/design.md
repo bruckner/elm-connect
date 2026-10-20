@@ -2794,7 +2794,8 @@ error reader's four sources (a Connect body, a `google.rpc.Status`
 body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `BadRequest` details decoded from each body, timeouts (a
 `Transport Timeout`, the server never answering first), retries,
-Connect GET and `maxGetUrl`, percent-encoded path values, `viaBinding`
+Connect GET (with the config's and the call's headers) and `maxGetUrl`,
+percent-encoded path values, `viaBinding`
 in and out of range, and `sendTraced`, `send` and `task`.
 
 Built, the Connect conformance suite *(2026-10-15)*: `connectconformance`

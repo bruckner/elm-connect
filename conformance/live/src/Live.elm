@@ -213,6 +213,7 @@ envelope =
                     |> with (Decode.succeed t)
                     |> with (Decode.field "config" (config t))
                     |> with (optional "binding" (Decode.nullable Decode.int) Nothing)
+                    |> with (optional "headers" (Decode.list pair) [])
                     |> with (optional "send" sending Traced)
                     |> with (optional "tracker" (Decode.nullable Decode.string) Nothing)
                     |> with (optional "cancelAfterMs" (Decode.nullable Decode.int) Nothing)

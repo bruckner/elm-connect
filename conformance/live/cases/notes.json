@@ -482,6 +482,81 @@
     }
   },
   {
+    "name": "connect useGet sends the config's headers and the call's",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "useGet": true,
+        "headers": [
+          [
+            "x-config",
+            "from the config"
+          ]
+        ],
+        "timeout": 5000
+      },
+      "headers": [
+        [
+          "x-echo",
+          "from a GET"
+        ]
+      ]
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "request": {
+          "method": "GET",
+          "headers": [
+            [
+              "x-config",
+              "from the config"
+            ],
+            [
+              "x-echo",
+              "from a GET"
+            ],
+            [
+              "Connect-Timeout-Ms",
+              "5000"
+            ]
+          ],
+          "body": null
+        }
+      },
+      "wire": [
+        {
+          "method": "GET",
+          "requestHeaders": {
+            "$contains": [
+              [
+                "x-config",
+                "from the config"
+              ],
+              [
+                "x-echo",
+                "from a GET"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "x-echo": "from a GET"
+          },
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
     "name": "connect x-echo header",
     "call": {
       "service": "notes.v1.NotesService",

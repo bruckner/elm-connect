@@ -25,8 +25,8 @@ import Task
 
 
 {-| One call to make: the method, its request as proto3 JSON, the transport,
-the config and the binding, if one is chosen, and the milliseconds after which
-to cancel it, if it is to be.
+the config, the binding, if one is chosen, the call's own headers, and the
+milliseconds after which to cancel it, if it is to be.
 -}
 type alias Envelope =
     { id : String
@@ -36,6 +36,7 @@ type alias Envelope =
     , transport : Transport
     , config : Rpc.Config
     , binding : Maybe Int
+    , headers : List ( String, String )
     , sending : Sending
     , tracker : Maybe String
     , cancelAfter : Maybe Int
@@ -100,6 +101,7 @@ entry toCall requestDecoder encodeResponse envelope toMsg =
             let
                 plain =
                     toCall request
+                        |> Rpc.Call.withHeaders envelope.headers
 
                 bound =
                     case envelope.binding of
