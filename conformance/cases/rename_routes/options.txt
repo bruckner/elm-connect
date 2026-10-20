@@ -1,0 +1,1 @@
+rename=things.v1.GetThingRequest.name:resource,rename=things.v1.GetThingRequest.page_size:limit,rename=things.v1.Filter:Criteria,rename=things.v1.Filter.state:status

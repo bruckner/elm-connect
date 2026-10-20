@@ -800,9 +800,9 @@ tag (design §8).
 - `Proto.Field.KindEnum` holds the enum's `Proto.Enum.Descriptor`
   instead of its full name, so a field's enum values, its zero value
   among them, can be read from the field alone. Generated descriptors
-  write `KindEnum descriptorVisibility`; code matching on `KindEnum`
-  reads the name with `Proto.Enum.typeName`. `KindMessage` still names
-  its message, since a message can contain itself.
+  write `KindEnum Notes.V1.Visibility.descriptor`; code matching on
+  `KindEnum` reads the name with `Proto.Enum.typeName`. `KindMessage`
+  still names its message, since a message can contain itself.
 - Descriptors move out of the package module into a module per message
   and enum beside it: `Notes.V1.Note` holds `descriptor :
   Proto.Message.Descriptor` and one `Proto.Field.Descriptor` per field,

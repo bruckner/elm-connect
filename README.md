@@ -49,9 +49,10 @@ Both binaries generate record types, their default values and JSON
 codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
 maps, and custom types for enums and oneofs, a typed value per message
-and enum holding its codecs and descriptor, a module per message and
-enum holding its descriptor (and a message's, one per field), and a
-module per service with a call for every unary method. Each package of the given files is
+and enum holding its codecs and descriptor, and a module per service
+with a call for every unary method. Beside the package's module, each
+message and enum gets a module of its descriptor; a message's also
+holds a descriptor per field. Each package of the given files is
 generated whole, from every file declaring it; a package they only
 import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate

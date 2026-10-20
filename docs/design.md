@@ -322,7 +322,9 @@ rpc shared call =
   §3.7), and
   `descriptor : Proto.Message.Descriptor` built from them;
   `Notes.V1.Visibility` holds `descriptor : Proto.Enum.Descriptor`; a
-  nested `Outer.Inner` is `Notes.V1.OuterInner`. Imports go one way:
+  nested `Outer.Inner` is `Notes.V1.OuterInner`, flat as its type's
+  name is (§3.7; confirmed 2026-10-19, so that one naming rule names
+  both). Imports go one way:
   the package module imports its descriptor modules (for the typed
   values and the registry), a message's descriptor module imports the
   descriptor modules of the enums its fields hold (another package's
@@ -965,6 +967,8 @@ Built *(Proposed in its details)*:
   flat for the same reason, `Notes.V1.OuterInner` beside `Notes.V1.Outer`,
   and hold no types, so a message containing itself or its nested type
   needs no import between them (a field names a message by full name).
+  *(Confirmed 2026-10-19: a descriptor module follows its type's Elm
+  name, so one naming rule names both.)*
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
 
@@ -1007,6 +1011,11 @@ Built, as the `naming` and `naming_collision` cases show:
   field that meets another field's or a member's name is
   `naming::value_collision`, naming both; a field renamed to
   `elmConnectVersion_` likewise (`descriptors_value_collision` case).
+  A field named like a value Elm imports by default (`max`, `min`,
+  `always`) needs nothing: a descriptor module's own top-level value
+  shadows the default import (`descriptors_default_names` case). A
+  renamed field or message is named by its new name wherever a route
+  names it (`rename_routes` case).
 - Two plain fields cannot collide in practice: protoc and protox reject
   a message whose fields' JSON names clash, and the Elm name is the
   default JSON name. The collision a user meets is a field and a oneof
@@ -1332,12 +1341,25 @@ registry =
   never by value, since a message can contain itself and Elm forbids
   cyclic values; a `Proto.Registry` resolves the names. A field of an
   enum type holds the enum's descriptor, `KindEnum
-  Notes.V1.Visibility.descriptor`:
-  an enum contains nothing, so it cannot lead back to the field, and its
-  zero value's name is wanted wherever the field is read alone, by a
-  route's default path or query text (§5.3) and by UI code that renders
-  the field. *(Decided, 2026-10-19; `KindEnum` held the full name
-  before.)*
+  Notes.V1.Visibility.descriptor`: an enum contains nothing, so it
+  cannot lead back to the field, and its zero value's name is wanted
+  wherever the field is read alone, by a route's default path or query
+  text (§5.3) and by UI code that renders the field. `Proto.Field`
+  imports `Proto.Enum`, which imports only `Proto.EnumValue`, so no
+  import cycle forms either. *(Decided, 2026-10-19; `KindEnum` held the
+  full name before.)*
+- **The omission rule reads the cardinality.** *(Decided, 2026-10-19.)*
+  Whether a path variable or query parameter is sent at its field's
+  default lives in the runtime (`Proto.Http.variable` and `param`,
+  §5.3), which reads presence from the last field's descriptor: a
+  `CardinalitySingular` field outside any oneof and not of a message
+  type has none, and is left out at its default; any other is left out
+  only when unset or empty. That is exactly proto3's presence, and it
+  is sound because the generator accepts proto3 alone. A later syntax
+  (proto2, editions) must map explicit presence to
+  `CardinalityOptional` (or `CardinalityRequired`), never to
+  `CardinalitySingular`, or the runtime would drop a field set to its
+  default; a generated module carries no rule of its own to fix.
 - `Proto.Field.Behavior` mirrors `google.api.FieldBehavior` but its
   unspecified zero: `BehaviorOptional`, `BehaviorRequired`,
   `BehaviorOutputOnly`, `BehaviorInputOnly`, `BehaviorImmutable`,
@@ -1427,15 +1449,25 @@ registry =
   always written: the cost falls on applications that use them. (That
   measurement predates the descriptors' split from the typed values:
   the registry then kept every type's codecs too.)
-- **Cost of the descriptor modules** *(measured 2026-10-19, source
-  only)*: the notes example's generated Elm goes from 5 modules of
-  2,598 lines (92,404 bytes) to 39 modules of 3,956 lines (124,335
-  bytes), and the Connect conformance suite's from 118,842 to 184,463
+- **Cost of the descriptor modules** *(measured 2026-10-19, Elm
+  0.19.2)*: the notes example's generated Elm goes from 5 modules of
+  2,652 lines (92,896 bytes) to 39 modules of 4,099 lines (128,572
+  bytes), and the Connect conformance suite's from 119,376 to 184,997
   bytes. Most of the growth is per module (its header, imports and
   `elmConnectVersion_`, about fifteen lines) and per value (a two-line
-  doc comment, and a field's own annotation and name). Compile time and
-  optimized program size were not measured; dead-code elimination works
-  per top-level value either way.
+  doc comment, and a field's own annotation and name). On a
+  synthetic package of 100 to 500 messages of eight fields, a cold
+  `elm make --optimize` takes the same time within run-to-run noise
+  (the superlinear growth is in the package module's types and codecs,
+  which do not move), peak memory is 1–12 % higher, and the optimized
+  program, with everything reachable through the registry, is 21–29 %
+  larger unminified, each field descriptor being a top-level value of
+  its own. Dead-code elimination works per top-level value, so a real
+  program pays for what it reaches: the notes example's optimized
+  bundle goes from 268 to 274 KB; a program reaching every call and the
+  registry, minified and gzipped, from 22.2 to 22.5 KB; a program that
+  only encodes and decodes is byte-identical; `elmConnectVersion_` is
+  dropped from every bundle.
 
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
