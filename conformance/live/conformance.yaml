@@ -20,4 +20,6 @@ features:
   supportsTrailers: false
   supportsHalfDuplexBidiOverHttp1: false
   supportsConnectGet: true
-  supportsMessageReceiveLimit: false
+  # Rpc.Transport.withReadMaxBytes, applied when a request sets
+  # message_receive_limit.
+  supportsMessageReceiveLimit: true

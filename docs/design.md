@@ -3132,6 +3132,14 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `Transport Timeout`, as a Connect client gives its own deadline.
+- The receive limit is declared (`supportsMessageReceiveLimit: true`,
+  2026-10-20): the wrapper applies a request's `message_receive_limit`
+  with `withReadMaxBytes` (0 is no limit) and reports `TooLarge` as
+  `resource_exhausted`. v1.0.6 has no client-mode case that relies on
+  it (its one such suite, Server Message Size, tests servers over the
+  proto codec), so the count stays 40; the live suite's `readMaxBytes`
+  cases in `cases/notes.json` run the knob against the example server
+  over Connect and transcoding.
 Workstream 3, built 2026-10-15: the example server also serves the
 route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
 the request Vanguard decoded, and `conformance/live/routes.mjs` sends

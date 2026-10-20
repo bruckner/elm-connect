@@ -252,15 +252,17 @@ oneOfNames what names =
 
 config : Transport -> Decoder Rpc.Config
 config t =
-    Decode.map7
-        (\baseUrl headers timeout withCredentials useGet maxGetUrl retry ->
+    Decode.map8
+        (\baseUrl headers timeout withCredentials useGet maxGetUrl readMaxBytes retry ->
             { transport =
-                case t of
+                (case t of
                     Connect ->
                         connectTransport useGet maxGetUrl
 
                     Transcode ->
                         Rpc.Transport.transcode
+                )
+                    |> (Maybe.map Rpc.Transport.withReadMaxBytes readMaxBytes |> Maybe.withDefault identity)
             , baseUrl = baseUrl
             , headers = headers
             , timeout = timeout
@@ -274,6 +276,7 @@ config t =
         (optional "withCredentials" Decode.bool False)
         (optional "useGet" Decode.bool False)
         (optional "maxGetUrl" (Decode.nullable Decode.int) Nothing)
+        (optional "readMaxBytes" (Decode.nullable Decode.int) Nothing)
         (optional "retry" (Decode.nullable retryPolicy) Nothing)
 
 

@@ -797,6 +797,60 @@
     }
   },
   {
+    "name": "connect readMaxBytes refuses a larger answer",
+    "note": "A 200 answer longer than the limit is dropped before decoding: no answer is read, and its code is resource_exhausted. The trace still has the answer's status.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "readMaxBytes": 100
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": {
+          "$match": "^TooLarge \\d+ 100$"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "resource_exhausted",
+        "attempts": 1
+      }
+    }
+  },
+  {
+    "name": "connect readMaxBytes reads an error answer whatever its size",
+    "note": "The limit applies to a successful answer; an error answer is read for the status it states.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/missing"
+      },
+      "config": {
+        "readMaxBytes": 1
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "source": "ConnectBody"
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "not_found"
+      }
+    }
+  },
+  {
     "name": "connect network error",
     "call": {
       "service": "notes.v1.NotesService",
@@ -1199,6 +1253,33 @@
           "headers": [],
           "body": null
         }
+      }
+    }
+  },
+  {
+    "name": "transcode readMaxBytes refuses a larger answer",
+    "note": "As over Connect: a 2xx answer longer than the limit is dropped before decoding.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "readMaxBytes": 100
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": {
+          "$match": "^TooLarge \\d+ 100$"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "resource_exhausted",
+        "attempts": 1
       }
     }
   },

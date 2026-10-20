@@ -81,6 +81,8 @@ async function answer(runner, send, request) {
     headers,
     timeout: request.timeoutMs ?? null,
     useGet: request.useGetHttpMethod,
+    // 0, the default, is no limit, as in connect-go.
+    readMaxBytes: request.messageReceiveLimit || null,
   };
   // A unary call's request is sent whole, so `afterCloseSendMs` counts from
   // the call being sent; refusal turns away the streaming-only timings.
@@ -195,11 +197,13 @@ function detail(json) {
 }
 
 // The error a call that got no answer stands for. A timeout is the client's
-// own deadline passing; anything else did not get an answer the runtime
-// could read as one.
+// own deadline passing, and `TooLarge <size> <limit>` an answer over the
+// receive limit, dropped unread; anything else did not get an answer the
+// runtime could read as one.
 function noAnswerError(problem) {
   if (problem === "Timeout") return { code: Code.DEADLINE_EXCEEDED, message: "Timeout" };
   if (problem === "NetworkError") return { code: Code.UNAVAILABLE, message: "NetworkError" };
+  if (problem.startsWith("TooLarge ")) return { code: Code.RESOURCE_EXHAUSTED, message: problem };
   return { code: Code.UNKNOWN, message: problem };
 }
 

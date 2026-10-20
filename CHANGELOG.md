@@ -1010,4 +1010,5 @@ tag (design §8).
   limit by default). The call fails with the new
   `Rpc.Error.NoAnswer (TooLarge { limit, size })`, code
   `ResourceExhausted`; code matching `Reason` exhaustively needs the new
-  case. `Rpc.checkConfig` reports a limit below 1.
+  case. `Rpc.checkConfig` reports a limit below 1, and the Connect
+  conformance config declares `supportsMessageReceiveLimit`.
