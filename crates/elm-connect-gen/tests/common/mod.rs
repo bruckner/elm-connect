@@ -1,6 +1,6 @@
-//! What the corpus test, the route test and the plugin's corpus replay
-//! (`crates/protoc-gen-elm-connect/tests/plugin.rs`, which includes this
-//! file by path) share. Each uses part of it.
+//! What the corpus test, the route test, the codec test and the plugin's
+//! corpus replay (`crates/protoc-gen-elm-connect/tests/plugin.rs`, which
+//! includes this file by path) share. Each uses part of it.
 #![allow(dead_code)]
 
 use std::fs;

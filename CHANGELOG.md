@@ -953,3 +953,9 @@ tag (design §8).
 - CI runs the runtime's and the notes example's Elm tests under Elm 0.19.1
   as well as 0.19.2 (`just test-with`); 0.19.0 still compiles the
   runtime and the corpus, but elm-test-rs's runner needs 0.19.1.
+- The generated proto3 JSON codecs now run in the tests, not only compile:
+  `conformance/codec/codec.proto` holds every construct they handle,
+  sampled from a fixed seed and written by prost-reflect, and the modules
+  generated from it under the default options, `int64=int`,
+  `enum_unknown=zero` and `bytes=bytes` decode and re-encode every sample
+  in Elm (`tests/Codec/`, design §7, `conformance/README.md`).

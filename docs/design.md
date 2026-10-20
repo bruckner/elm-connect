@@ -2728,6 +2728,41 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   which is all `Time.Posix` holds (§3.5). A sample that fails is a
   finding, not a case to exclude; `-0` is the one value the codec laws
   hold apart, since it is written as `0` (§3.4).
+- Codec round trips *(built 2026-10-20)*: the corpus's expected modules
+  are compiled and diffed, never run, so a construct wired wrong (a
+  wrong key, combinator, default or omission) passes once blessed.
+  `conformance/codec/codec.proto` (with `other.proto`, a second package)
+  holds every construct the codecs handle, one per message, and a
+  message nesting them all: every scalar kind, `optional`, repeated
+  fields, a map of every key kind, a oneof of scalar, `int64`, enum,
+  message, `Empty`, `Value`, `Timestamp` and wrapper members, `json_name`
+  overrides, a nested message and enum, a message recursive directly and
+  through a list, a map and a oneof, `Any`, `Struct`, `ListValue`,
+  `Value`, the other well-known types and every wrapper, and references
+  across packages. The Rust test (`crates/elm-connect-gen/tests/codec.rs`)
+  samples each message with the route properties' sampler from a fixed
+  seed, plus each oneof member and the scalars' bounds and special
+  values by construction, and prost-reflect writes each sample in three
+  forms: canonical (defaults left out), with defaults written, and under
+  proto names with an unknown field in every message object. The
+  samples become Elm data with what the encoders must write back,
+  prost-reflect's canonical form but for two differences the design
+  allows: a float without presence received as `-0` is written as `0`
+  (§3.4), and a singular `Empty` field is always written as `{}` (§3.5);
+  an `Any`'s packed message comes back as it arrived. The test writes
+  them, with the modules generated from the protos under the default
+  options, `int64=int`, `enum_unknown=zero` and `bytes=bytes`, into
+  `tests/Generated/` on every run (`just codec-gen`); none of it is
+  committed, since the corpus already shows a change to the generator's
+  output in review and the fixed seed makes the samples the same each
+  run. `tests/Codec/RoundTripTest.elm` decodes every form with each set's
+  generated decoder, re-encodes it and compares the JSON structurally,
+  numbers by value, then checks what each option changes. Its known
+  gap: the sampler is the generator's own reading of the descriptors
+  and the oracle is prost-reflect's, so a misreading both share passes,
+  and a value prost-reflect cannot write is not sampled (a `DoubleValue`
+  or `FloatValue` holding NaN or an infinity, which it writes as
+  `null`; an `Any` without a type URL).
 
 ### Live verification *(Decided 2026-10-15; built 2026-10-15)*
 
