@@ -857,3 +857,7 @@ tag (design §8).
   errors name the range, as the 32-bit ones do. Design §3.4 records
   why 64-bit integers and `bytes` stay `String` rather than opaque
   types.
+- `Proto.Json.int32` and `uint32` read a string as `int64` reads one,
+  then check the range, so `"+5"`, `"1.e3"` and `".5e1"` fail as they
+  do for a 64-bit value and an integer map key; they went through
+  `String.toFloat` before.

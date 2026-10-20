@@ -1050,8 +1050,9 @@ encodeBoolMap encode pairs =
 
 proto3 JSON writes these as numbers, and a parser must also accept a string
 and exponent notation: `42`, `"42"`, `1e2` and `"1e2"` all decode, as does
-`4.0`. A value with a fractional part fails, and so does one outside the
-type's range, -2147483648 to 2147483647.
+`4.0`. A string takes the forms [`int64`](#int64) reads one in, so `"007"` is
+7 and `"+5"` fails. A value with a fractional part fails, and so does one
+outside the type's range, -2147483648 to 2147483647.
 
 -}
 int32 : Decoder Int
@@ -1093,23 +1094,41 @@ showNumeric form =
 
 
 {-| An integer in any form proto3 JSON allows for one, within `low` to
-`high`; the bounds are compared as `Float`s, which hold them exactly.
+`high`: a number compared as a `Float`, which holds the bounds exactly, and a
+string read as [`int64`](#int64) reads one.
 -}
-boundedInt : String -> Float -> Float -> Decoder Int
+boundedInt : String -> Int -> Int -> Decoder Int
 boundedInt what low high =
+    let
+        outOfRange form =
+            Json.Decode.fail ("Expecting " ++ what ++ ", but got " ++ showNumeric form)
+    in
     numeric
         |> Json.Decode.andThen
             (\form ->
-                case integral form of
-                    Err problem ->
-                        Json.Decode.fail problem
+                case form of
+                    NumberForm _ ->
+                        case integral form of
+                            Err problem ->
+                                Json.Decode.fail problem
 
-                    Ok number ->
-                        if number < low || number > high then
-                            Json.Decode.fail ("Expecting " ++ what ++ ", but got " ++ showNumeric form)
+                            Ok number ->
+                                if number < toFloat low || number > toFloat high then
+                                    outOfRange form
 
-                        else
-                            Json.Decode.succeed (round number)
+                                else
+                                    Json.Decode.succeed (round number)
+
+                    StringForm text ->
+                        case narrowInteger low high text of
+                            Ok int ->
+                                Json.Decode.succeed int
+
+                            Err OutOfRange ->
+                                outOfRange form
+
+                            Err _ ->
+                                Json.Decode.fail ("Expecting an integer, but got " ++ showNumeric form)
             )
 
 

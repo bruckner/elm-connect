@@ -666,6 +666,11 @@ just the form encoders write. *(Proposed; built.)*
   `sint32`, `sfixed32`) and `Proto.Json.uint32` (`uint32`, `fixed32`).
   A fractional value fails, and so does one outside the proto type's
   range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
+  A string is read as `Proto.Json.int64` reads one, then range-checked,
+  so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
+  for a 64-bit value and for every integer map key. *(Decided
+  2026-10-19; a string went through `String.toFloat` before, which
+  took `"+5"`, `"1.e3"` and `".5e1"`.)*
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
   notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The

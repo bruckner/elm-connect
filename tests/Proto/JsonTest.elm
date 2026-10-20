@@ -30,6 +30,7 @@ suite =
         , boolMapTests
         , protoKeyTests
         , int32Tests
+        , int32StringTests
         , uint32Tests
         , int64Tests
         , int64AsIntTests
@@ -855,6 +856,71 @@ int32Tests =
                     |> Result.mapError Json.Decode.errorToString
                     |> Result.mapError (String.contains "Expecting an int32 (-2147483648 to 2147483647), but got 2147483648")
                     |> Expect.equal (Err True)
+        ]
+
+
+{-| The strings of 32-bit values that int32 reads as int64 reads them, and
+what each reads as.
+-}
+int32Strings : List ( String, Int )
+int32Strings =
+    [ ( "42", 42 )
+    , ( "-42", -42 )
+    , ( "007", 7 )
+    , ( "-0", 0 )
+    , ( "1e2", 100 )
+    , ( "1.5e3", 1500 )
+    , ( "15E+1", 150 )
+    , ( "1500e-2", 15 )
+    , ( "0.0025e4", 25 )
+    , ( "4.0", 4 )
+    , ( "0e999", 0 )
+    , ( "2147483647", 2147483647 )
+    , ( "-2147483648", -2147483648 )
+    , ( "2.147483647e9", 2147483647 )
+    , ( "-0002147483648", -2147483648 )
+    ]
+
+
+{-| Strings int32 and uint32 reject, as int64 rejects them or for their range.
+-}
+notInt32Strings : List String
+notInt32Strings =
+    [ "+5", " 12", "12 ", "0x10", "1.5e0", "15e-2", "4.2", "", "-", "1e", "e3", "1.e3", ".5e1", "1e+", "1e3e1", "--1", "Infinity", "-Infinity", "NaN", "2147483648", "-2147483649", "1e10", "1e999999999999" ]
+
+
+int32StringTests : Test
+int32StringTests =
+    describe "int32 and uint32 strings"
+        [ test "a string reads as int64 reads one" <|
+            \_ ->
+                int32Strings
+                    |> List.filter (\( text, int ) -> Json.Decode.decodeValue Proto.Json.int32 (Json.Encode.string text) /= Ok int)
+                    |> Expect.equal []
+        , test "a string int64 rejects, or past the range, fails" <|
+            \_ ->
+                notInt32Strings
+                    |> List.filter (\text -> Result.toMaybe (Json.Decode.decodeValue Proto.Json.int32 (Json.Encode.string text)) /= Nothing)
+                    |> Expect.equal []
+        , test "a leading + fails, naming the string" <|
+            \_ -> failsWith Proto.Json.int32 "\"+5\"" "Expecting an integer, but got \"+5\""
+        , test "a string past the range fails, naming the range" <|
+            \_ -> failsWith Proto.Json.int32 "\"2147483648\"" "Expecting an int32 (-2147483648 to 2147483647), but got \"2147483648\""
+        , test "uint32 reads the same forms within its range" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.uint32 "\"4294967295\"" 4294967295
+                    , \_ -> decodes Proto.Json.uint32 "\"004294967295\"" 4294967295
+                    , \_ -> decodes Proto.Json.uint32 "\"4.294967295e9\"" 4294967295
+                    , \_ -> decodes Proto.Json.uint32 "\"-0\"" 0
+                    , \_ -> decodes Proto.Json.uint32 "\"1e2\"" 100
+                    , \_ -> failsWith Proto.Json.uint32 "\"4294967296\"" "Expecting a uint32 (0 to 4294967295), but got \"4294967296\""
+                    , \_ -> fails Proto.Json.uint32 "\"-1\""
+                    , \_ -> fails Proto.Json.uint32 "\"+5\""
+                    , \_ -> fails Proto.Json.uint32 "\" 12\""
+                    , \_ -> fails Proto.Json.uint32 "\"0x10\""
+                    ]
+                    ()
         ]
 
 
