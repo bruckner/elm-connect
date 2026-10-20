@@ -63,8 +63,6 @@ pub enum Code {
     Editions,
     /// A file's name cannot be written into a generated module's header.
     FileName,
-    /// The protos use a construct the generator does not emit yet.
-    Unimplemented,
     /// A method streams requests or responses.
     Streaming,
     /// A method has no `google.api.http` rule, under
@@ -123,7 +121,6 @@ impl Code {
             Code::NotProto3 => "generate::not_proto3",
             Code::Editions => "input::editions",
             Code::FileName => "input::file_name",
-            Code::Unimplemented => "generate::unimplemented",
             Code::Streaming => "services::streaming",
             Code::UnboundMethod => "services::unbound_method",
             Code::ValueCollision => "naming::value_collision",
@@ -872,20 +869,6 @@ impl Problem {
             "The first line of a generated module is a comment naming the files it was \
              generated from, which a newline or another control character in a name would \
              break. Rename the file.",
-            Vec::new(),
-        )
-    }
-
-    /// `element` (a proto full name, such as `notes.v1.Note.tags`) is
-    /// `construct` (such as "a repeated field"), which elm-connect has no
-    /// emitter for yet. The problem names the element rather than pointing
-    /// at it: the emitter works from the IR, which keeps no source spans.
-    pub fn unimplemented(element: &str, construct: &str) -> Self {
-        Problem::new(
-            Code::Unimplemented,
-            format!("`{element}` is {construct}, which elm-connect cannot generate yet."),
-            "This version of elm-connect generates only part of proto3. Leave this element out \
-             of the files to generate, or use a later version.",
             Vec::new(),
         )
     }

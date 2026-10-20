@@ -861,3 +861,6 @@ tag (design §8).
   then check the range, so `"+5"`, `"1.e3"` and `".5e1"` fail as they
   do for a 64-bit value and an integer map key; they went through
   `String.toFloat` before.
+- The diagnostic code `generate::unimplemented` is gone: nothing reported
+  it since every proto3 construct is generated, and codes become
+  permanent at 1.0 (design §8.3).
