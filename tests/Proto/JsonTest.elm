@@ -703,11 +703,20 @@ int64DictTests =
             \_ ->
                 Expect.all
                     [ \_ -> acceptedKeys (Proto.Json.int64Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
-                    , \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"abc":"x"}""" "Expecting an int64 map key, but got \"abc\""
+                    , \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"abc":"x"}""" "Expecting an int64 map key (-9223372036854775808 to 9223372036854775807), but got \"abc\""
                     ]
                     ()
         , test "a key of more than 20 digits fails" <|
             \_ -> fails (Proto.Json.int64Dict Json.Decode.string) """{"123456789012345678901":"x"}"""
+        , test "a key past the int64 bounds fails, naming it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"9223372036854775808":"x"}""" "Expecting an int64 map key (-9223372036854775808 to 9223372036854775807), but got \"9223372036854775808\""
+                    , \_ -> fails (Proto.Json.int64Dict Json.Decode.string) """{"-9223372036854775809":"x"}"""
+                    , \_ -> fails (Proto.Json.int64Dict Json.Decode.string) """{"18446744073709551615":"x"}"""
+                    , \_ -> fails (Proto.Json.int64Dict Json.Decode.string) """{"1e19":"x"}"""
+                    ]
+                    ()
         , test "two keys that name one integer fail, naming both" <|
             \_ -> failsWith (Proto.Json.int64Dict Json.Decode.string) """{"7":"a","007":"b"}""" "Expecting distinct map keys, but \"7\" and \"007\" are the same key"
         , test "a canonical key encodes as held and round-trips" <|
@@ -730,8 +739,16 @@ uint64DictTests =
                 decodes (Proto.Json.uint64Dict Json.Decode.string)
                     """{"007":"a","18446744073709551615":"b","-0":"c"}"""
                     (Dict.fromList [ ( "7", "a" ), ( "18446744073709551615", "b" ), ( "0", "c" ) ])
+        , test "a key past the uint64 bound fails, naming it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith (Proto.Json.uint64Dict Json.Decode.string) """{"18446744073709551616":"x"}""" "Expecting a uint64 map key (0 to 18446744073709551615), but got \"18446744073709551616\""
+                    , \_ -> fails (Proto.Json.uint64Dict Json.Decode.string) """{"99999999999999999999":"x"}"""
+                    , \_ -> fails (Proto.Json.uint64Dict Json.Decode.string) """{"2e19":"x"}"""
+                    ]
+                    ()
         , test "a negative key fails, naming it" <|
-            \_ -> failsWith (Proto.Json.uint64Dict Json.Decode.string) """{"-1":"x"}""" "Expecting a uint64 map key (0 or more), but got \"-1\""
+            \_ -> failsWith (Proto.Json.uint64Dict Json.Decode.string) """{"-1":"x"}""" "Expecting a uint64 map key (0 to 18446744073709551615), but got \"-1\""
         , test "a key that is not an integer fails" <|
             \_ -> acceptedKeys (Proto.Json.uint64Dict Json.Decode.string) notIntegerKeys |> Expect.equal []
         , test "two keys that name one integer fail, naming both" <|
@@ -914,9 +931,42 @@ int64Tests =
         , test "more than 20 digits fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> failsWith Proto.Json.int64 "\"1e21\"" "Expecting a 64-bit integer, but got \"1e21\""
+                    [ \_ -> failsWith Proto.Json.int64 "\"1e21\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807), but got \"1e21\""
                     , \_ -> fails Proto.Json.int64 "\"1e999999999999\""
                     , \_ -> fails Proto.Json.int64 "1e21"
+                    ]
+                    ()
+        , test "the bounds decode as strings, every digit kept" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.int64 "\"9223372036854775807\"" "9223372036854775807"
+                    , \_ -> decodes Proto.Json.int64 "\"-9223372036854775808\"" "-9223372036854775808"
+                    , \_ -> decodes Proto.Json.int64 "\"0009223372036854775807\"" "9223372036854775807"
+                    , \_ -> decodes Proto.Json.int64 "\"-9.223372036854775808e18\"" "-9223372036854775808"
+                    ]
+                    ()
+        , test "one past each bound fails as a string, naming the range" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith Proto.Json.int64 "\"9223372036854775808\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807), but got \"9223372036854775808\""
+                    , \_ -> failsWith Proto.Json.int64 "\"-9223372036854775809\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807), but got \"-9223372036854775809\""
+                    , \_ -> fails Proto.Json.int64 "\"18446744073709551615\""
+                    , \_ -> fails Proto.Json.int64 "\"99999999999999999999\""
+                    , \_ -> fails Proto.Json.int64 "\"1e19\""
+                    , \_ -> fails Proto.Json.int64 "\"-1e19\""
+                    ]
+                    ()
+        , test "a number is checked as JavaScript writes it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.int64 "1e18" "1000000000000000000"
+                    , \_ -> decodes Proto.Json.int64 "-1e18" "-1000000000000000000"
+                    , \_ -> failsWith Proto.Json.int64 "1e19" "Expecting an int64 (-9223372036854775808 to 9223372036854775807), but got 10000000000000000000"
+
+                    -- Both bounds round to ±2^63 as JSON numbers, and
+                    -- JavaScript writes those as ±9223372036854776000.
+                    , \_ -> fails Proto.Json.int64 "9223372036854775807"
+                    , \_ -> fails Proto.Json.int64 "-9223372036854775808"
                     ]
                     ()
         , test "malformed exponent notation fails" <|
@@ -1156,7 +1206,7 @@ wellKnownTests =
 uint64Tests : Test
 uint64Tests =
     describe "uint64"
-        [ test "the forms int64 takes, zero or more" <|
+        [ test "the forms int64 takes, up to the uint64 bound" <|
             \_ ->
                 Expect.all
                     [ \_ -> decodes Proto.Json.uint64 "\"18446744073709551615\"" "18446744073709551615"
@@ -1166,7 +1216,25 @@ uint64Tests =
                     ]
                     ()
         , test "a negative value fails" <|
-            \_ -> fails Proto.Json.uint64 "\"-1\""
+            \_ -> failsWith Proto.Json.uint64 "\"-1\"" "Expecting a uint64 (0 to 18446744073709551615), but got \"-1\""
+        , test "one past the bound fails, naming the range" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsWith Proto.Json.uint64 "\"18446744073709551616\"" "Expecting a uint64 (0 to 18446744073709551615), but got \"18446744073709551616\""
+                    , \_ -> fails Proto.Json.uint64 "\"99999999999999999999\""
+                    , \_ -> fails Proto.Json.uint64 "\"1e20\""
+                    ]
+                    ()
+        , test "a number is checked as JavaScript writes it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.uint64 "1e19" "10000000000000000000"
+                    , \_ -> fails Proto.Json.uint64 "2e19"
+
+                    -- Rounds to 2^64 as a JSON number.
+                    , \_ -> fails Proto.Json.uint64 "18446744073709551615"
+                    ]
+                    ()
         , test "a negative number fails" <|
             \_ -> fails Proto.Json.uint64 "-42"
         ]

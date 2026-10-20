@@ -477,7 +477,8 @@ rpc shared call =
   `String.fromInt` (32-bit) or as held (64-bit). Every integer key is
   validated and canonicalised like a value of its kind, by a decoder
   per kind: `Proto.Json.int32Dict` (−2^31 to 2^31 − 1), `uint32Dict`
-  (0 to 2^32 − 1), `int64Dict`, and `uint64Dict` (0 or more). Each reads
+  (0 to 2^32 − 1), `int64Dict` (−2^63 to 2^63 − 1), and `uint64Dict`
+  (0 to 2^64 − 1). Each reads
   a key as `Proto.Json.int64` reads a string, so `"07"`, `"-0"` and
   `"1e2"` are keys and `"+5"`, `"1.5"` and `"abc"` are not. A 64-bit key is held
   in the canonical decimal form `int64` gives (`"007"` is the key
@@ -672,11 +673,21 @@ just the form encoders write. *(Proposed; built.)*
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
   found by moving the decimal point as text, never through a `Float`,
   so a string past 2^53 keeps every digit. A value that is not an
-  integer (`"1.5e0"`) fails, and so does one of more than 20 digits,
-  past every 64-bit integer, which also bounds the text an exponent can
-  ask for. `Proto.Json.int64AsInt` reads the same forms within its
-  range. A 64-bit map key is validated and canonicalised the same way
-  (§3.2).
+  integer (`"1.5e0"`) fails, and so does one outside its type's range:
+  −2^63 to 2^63 − 1 for `Proto.Json.int64`, 0 to 2^64 − 1 for
+  `Proto.Json.uint64`, checked by comparing the canonical digits with
+  the bound's as text, by length and then digit by digit, so no `Int`
+  arithmetic rounds them. *(Decided 2026-10-19; before, any value of up
+  to 20 digits passed, `"99999999999999999999"` included.)* More than
+  20 digits fails before the digits are written out, which bounds the
+  text an exponent can ask for. A JSON number past 2^53 has been
+  rounded by the JSON parser before the decoder sees it, and is checked
+  as JavaScript writes it, so the bounds themselves fail as numbers
+  (`9223372036854775807` reads as `9223372036854776000`); proto3 JSON
+  writes 64-bit integers as strings, where every digit is kept.
+  `Proto.Json.int64AsInt` reads the same forms within its range. A
+  64-bit map key is validated, range-checked and canonicalised the same
+  way (§3.2).
 - A field under its JSON name or under its proto field name. The
   generated step names the field once when the two are equal and twice
   when they differ, JSON name first:
@@ -797,6 +808,17 @@ just the form encoders write. *(Proposed; built.)*
   (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit ones do; the
   encoders are the signed ones. *(Decided 2026-10-14; a negative
   `uint64` decoded before.)*
+- Rejected: an opaque `Proto.Int64.Int64`, as protoc-gen-elm has.
+  *(Decided, 2026-10-19.)* A 64-bit value a program mostly passes
+  through or displays, such as an ID, a revision or a count, gains
+  nothing from a wrapper it must unwrap to show or compare;
+  `int64=int` and `jstype` exist for arithmetic within 2^53; and
+  `Proto.Int64.toInt` and `fromInt` convert at the edge. The cost
+  accepted is that an `int64` field and a `string` field have the same
+  Elm type, so the compiler does not tell them apart. `bytes` is the
+  same choice for the same reasons: a base64 `String` by default, with
+  `bytes=bytes` as the typed escape and `Proto.Bytes` converting at the
+  edge, rather than an opaque wrapper (see **Bytes** above).
 
 ### 3.5 Well-known types
 

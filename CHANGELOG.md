@@ -850,3 +850,10 @@ tag (design §8).
   `fromMilliseconds` give protobuf's limit, ±315,576,000,000 s, for a
   value past it, and `fromSeconds` gives zero for NaN and the
   infinities, so every `Duration` prints as text `fromString` reads.
+- `Proto.Json.int64` and `uint64`, and the `int64Dict` and `uint64Dict`
+  keys, check the type's range, -9223372036854775808 to
+  9223372036854775807 and 0 to 18446744073709551615, by comparing the
+  digits as text; any value of up to 20 digits passed before. The
+  errors name the range, as the 32-bit ones do. Design §3.4 records
+  why 64-bit integers and `bytes` stay `String` rather than opaque
+  types.

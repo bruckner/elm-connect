@@ -902,9 +902,10 @@ uint32Dict =
 
 {-| Decode a map with signed 64-bit integer keys (`int64`, `sint64`,
 `sfixed64`), keyed by decimal strings as [`int64`](#int64) holds its values,
-whatever the `int64` option. A key is read as `int64` reads a string, and held
-in its canonical form: `"007"` is the key `"7"`, `"1e3"` the key `"1000"`.
-Any other key fails, such as `"abc"` or `"1.5"`, and so do two keys that name
+whatever the `int64` option. A key is read as `int64` reads a string, within
+-9223372036854775808 to 9223372036854775807, and held in its canonical form:
+`"007"` is the key `"7"`, `"1e3"` the key `"1000"`. Any other key fails, such
+as `"abc"`, `"1.5"` or `"9223372036854775808"`, and so do two keys that name
 one integer, such as `"7"` and `"007"`.
 
     Json.Decode.decodeString (int64Dict Json.Decode.string) """{"007":"a","-2":"b"}"""
@@ -915,26 +916,15 @@ Encode one with `Json.Encode.dict identity`.
 -}
 int64Dict : Decoder a -> Decoder (Dict.Dict String a)
 int64Dict =
-    keyedDict int64Key
+    keyedDict (wideKey "an int64 map key" Signed)
 
 
 {-| Decode a map with unsigned 64-bit integer keys (`uint64`, `fixed64`): the
-keys [`int64Dict`](#int64Dict) accepts, zero or more.
+keys [`int64Dict`](#int64Dict) accepts, within 0 to 18446744073709551615.
 -}
 uint64Dict : Decoder a -> Decoder (Dict.Dict String a)
 uint64Dict =
-    keyedDict
-        (\text ->
-            int64Key text
-                |> Result.andThen
-                    (\decimal ->
-                        if String.startsWith "-" decimal then
-                            Err ("Expecting a uint64 map key (0 or more), but got " ++ quote text)
-
-                        else
-                            Ok decimal
-                    )
-        )
+    keyedDict (wideKey "a uint64 map key" Unsigned)
 
 
 {-| A map whose keys `readKey` reads from their text, failing on a key it
@@ -971,24 +961,17 @@ is.
 -}
 boundedKey : String -> Int -> Int -> String -> Result String Int
 boundedKey what low high text =
-    case Result.toMaybe (canonicalInteger text) |> Maybe.andThen String.toInt of
-        Just int ->
-            if int >= low && int <= high then
-                Ok int
-
-            else
-                Err ("Expecting " ++ what ++ ", but got " ++ quote text)
-
-        Nothing ->
-            Err ("Expecting " ++ what ++ ", but got " ++ quote text)
+    narrowInteger low high text
+        |> Result.mapError (\_ -> "Expecting " ++ what ++ ", but got " ++ quote text)
 
 
-{-| A 64-bit integer map key in its canonical decimal form.
+{-| A 64-bit integer map key in its canonical decimal form, within the range
+of `width`.
 -}
-int64Key : String -> Result String String
-int64Key text =
-    canonicalInteger text
-        |> Result.mapError (\_ -> "Expecting an int64 map key, but got " ++ quote text)
+wideKey : String -> Width -> String -> Result String String
+wideKey what width text =
+    wideInteger width text
+        |> Result.mapError (\_ -> "Expecting " ++ what ++ " " ++ widthRange width ++ ", but got " ++ quote text)
 
 
 {-| Decode a map with `bool` keys as an association list, since Elm's `Bool`
@@ -1130,6 +1113,27 @@ boundedInt what low high =
             )
 
 
+{-| A 32-bit integer written as text, as [`int64`](#int64) reads a string,
+within `low` to `high`.
+-}
+narrowInteger : Int -> Int -> String -> Result IntegerProblem Int
+narrowInteger low high text =
+    canonicalInteger text
+        |> Result.andThen
+            (\decimal ->
+                case String.toInt decimal of
+                    Just int ->
+                        if int >= low && int <= high then
+                            Ok int
+
+                        else
+                            Err OutOfRange
+
+                    Nothing ->
+                        Err NotDecimal
+            )
+
+
 {-| The integral value of a number, or of a string holding one in decimal or
 exponent notation.
 -}
@@ -1173,26 +1177,129 @@ decimal string, with no leading zeros:
     "007", "-0"        --> "7", "0"
 
 A value that is not an integer fails (`"4.2"`, `"1.5e0"`), and so does one
-written with more than 20 digits, past every 64-bit integer. Exponent
-notation is read as text, by moving the decimal point, so a string keeps every
-digit. A number past 2^53 was already rounded when the JSON was parsed, before
-this decoder saw it.
+outside the type's range, -9223372036854775808 to 9223372036854775807
+(`"9223372036854775808"`). Exponent notation is read as text, by moving the
+decimal point, so a string keeps every digit. A number past 2^53 was already
+rounded when the JSON was parsed, before this decoder saw it, and is read as
+JavaScript writes it (`9223372036854775807` as `"9223372036854776000"`, which
+is out of range).
 
 -}
 int64 : Decoder String
 int64 =
+    wide Signed
+
+
+{-| A 64-bit integer as its canonical decimal string, within the range of
+`width`.
+-}
+wide : Width -> Decoder String
+wide width =
     Json.Decode.oneOf
-        [ Json.Decode.string
-        , Json.Decode.map String.fromInt Json.Decode.int
+        [ Json.Decode.map (\text -> ( text, quote text )) Json.Decode.string
+        , Json.Decode.map (\int -> ( String.fromInt int, String.fromInt int )) Json.Decode.int
         ]
-        |> Json.Decode.andThen (\text -> fromResult (canonicalInteger text))
+        |> Json.Decode.andThen
+            (\( text, shown ) ->
+                case wideInteger width text of
+                    Ok decimal ->
+                        Json.Decode.succeed decimal
+
+                    Err NotDecimal ->
+                        Json.Decode.fail ("Expecting a decimal integer, but got " ++ shown)
+
+                    Err NotInteger ->
+                        Json.Decode.fail ("Expecting an integer, but got " ++ shown)
+
+                    Err OutOfRange ->
+                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width ++ ", but got " ++ shown)
+            )
+
+
+{-| The 64-bit integer types' two ranges.
+-}
+type Width
+    = Signed
+    | Unsigned
+
+
+widthName : Width -> String
+widthName width =
+    case width of
+        Signed ->
+            "an int64"
+
+        Unsigned ->
+            "a uint64"
+
+
+widthRange : Width -> String
+widthRange width =
+    case width of
+        Signed ->
+            "(-9223372036854775808 to 9223372036854775807)"
+
+        Unsigned ->
+            "(0 to 18446744073709551615)"
+
+
+{-| Why text is not an integer of a type.
+-}
+type IntegerProblem
+    = NotDecimal
+    | NotInteger
+    | OutOfRange
+
+
+{-| The canonical decimal form of a 64-bit integer written as text, within
+the range of `width`. The digits are compared with the bound's as text, by
+length and then digit by digit, since an `Int` is exact only to 2^53.
+-}
+wideInteger : Width -> String -> Result IntegerProblem String
+wideInteger width text =
+    canonicalInteger text
+        |> Result.andThen
+            (\decimal ->
+                let
+                    inRange =
+                        case ( width, String.startsWith "-" decimal ) of
+                            ( Signed, True ) ->
+                                atMost "9223372036854775808" (String.dropLeft 1 decimal)
+
+                            ( Signed, False ) ->
+                                atMost "9223372036854775807" decimal
+
+                            ( Unsigned, True ) ->
+                                False
+
+                            ( Unsigned, False ) ->
+                                atMost "18446744073709551615" decimal
+                in
+                if inRange then
+                    Ok decimal
+
+                else
+                    Err OutOfRange
+            )
+
+
+{-| Whether the digits of a canonical natural number (no leading zeros) are at
+most `bound`'s.
+-}
+atMost : String -> String -> Bool
+atMost bound digits =
+    String.length digits
+        < String.length bound
+        || (String.length digits == String.length bound && digits <= bound)
 
 
 {-| The canonical decimal form of an integer written as text in decimal or
 exponent notation (`"-1.5e3"` is `"-1500"`), found by moving the decimal point
-rather than through a `Float`, which would round past 2^53.
+rather than through a `Float`, which would round past 2^53. One of more than
+20 digits, past every 64-bit integer, is `OutOfRange` without being written
+out, so an exponent cannot ask for a string of any length.
 -}
-canonicalInteger : String -> Result String String
+canonicalInteger : String -> Result IntegerProblem String
 canonicalInteger text =
     let
         ( sign, unsigned ) =
@@ -1204,28 +1311,31 @@ canonicalInteger text =
     in
     case scientific unsigned of
         Nothing ->
-            Err ("Expecting a decimal integer, but got " ++ quote text)
+            Err NotDecimal
 
         Just { digits, point } ->
             let
+                leading =
+                    leadingCount '0' digits
+
                 significant =
-                    dropLeadingZeros digits
+                    String.dropLeft leading digits
 
                 -- The point counted from the first significant digit.
                 shifted =
-                    point - (String.length digits - String.length significant)
+                    point - leading
 
                 kept =
-                    String.reverse (dropLeadingZeros (String.reverse significant))
+                    String.dropRight (trailingCount '0' significant) significant
             in
             if String.isEmpty kept then
                 Ok "0"
 
             else if String.length kept > shifted then
-                Err ("Expecting an integer, but got " ++ quote text)
+                Err NotInteger
 
             else if shifted > 20 then
-                Err ("Expecting a 64-bit integer, but got " ++ quote text)
+                Err OutOfRange
 
             else
                 Ok (sign ++ kept ++ String.repeat (shifted - String.length kept) "0")
@@ -1289,13 +1399,38 @@ scientific text =
             Nothing
 
 
-dropLeadingZeros : String -> String
-dropLeadingZeros text =
-    if String.startsWith "0" text then
-        dropLeadingZeros (String.dropLeft 1 text)
+{-| How many times `char` repeats at the start of `text`, in one pass.
+-}
+leadingCount : Char -> String -> Int
+leadingCount char text =
+    String.foldl
+        (\c ( count, counting ) ->
+            if counting && c == char then
+                ( count + 1, True )
 
-    else
+            else
+                ( count, False )
+        )
+        ( 0, True )
         text
+        |> Tuple.first
+
+
+{-| How many times `char` repeats at the end of `text`, in one pass.
+-}
+trailingCount : Char -> String -> Int
+trailingCount char text =
+    String.foldr
+        (\c ( count, counting ) ->
+            if counting && c == char then
+                ( count + 1, True )
+
+            else
+                ( count, False )
+        )
+        ( 0, True )
+        text
+        |> Tuple.first
 
 
 {-| Encode a 64-bit integer, held as its decimal string, as proto3 JSON does:
@@ -1322,19 +1457,11 @@ int64AsInt =
 
 
 {-| Decode an unsigned 64-bit integer (`uint64`, `fixed64`) as its decimal
-string: the forms [`int64`](#int64) accepts, zero or more.
+string: the forms [`int64`](#int64) accepts, within 0 to
 -}
 uint64 : Decoder String
 uint64 =
-    int64
-        |> Json.Decode.andThen
-            (\decimal ->
-                if String.startsWith "-" decimal then
-                    Json.Decode.fail ("Expecting a uint64 (0 or more) but got " ++ decimal)
-
-                else
-                    Json.Decode.succeed decimal
-            )
+    wide Unsigned
 
 
 {-| Decode an unsigned 64-bit integer as an `Int`, under the `int64=int`
@@ -1379,8 +1506,14 @@ int64Form form =
 
         StringForm text ->
             case canonicalInteger text of
-                Err problem ->
-                    Json.Decode.fail problem
+                Err NotDecimal ->
+                    Json.Decode.fail ("Expecting a decimal integer, but got " ++ quote text)
+
+                Err NotInteger ->
+                    Json.Decode.fail ("Expecting an integer, but got " ++ quote text)
+
+                Err OutOfRange ->
+                    outOfRange
 
                 Ok decimal ->
                     case Proto.Int64.toInt decimal of
@@ -1518,11 +1651,7 @@ isBase64Char char =
 
 dropPadding : String -> String
 dropPadding text =
-    if String.endsWith "=" text then
-        dropPadding (String.dropRight 1 text)
-
-    else
-        text
+    String.dropRight (trailingCount '=' text) text
 
 
 {-| Encode `bytes`, held as a base64 string, as that string, unchecked.

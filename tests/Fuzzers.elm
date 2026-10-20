@@ -100,58 +100,76 @@ digits top count =
 
 
 {-| The canonical decimal string of an `int64`, across the whole range: every
-length of 1 to 19 digits, and the bounds.
+length of 1 to 19 digits, up to the bound for 19, and the bounds.
 -}
 int64Text : Fuzzer String
 int64Text =
     Fuzz.oneOf
         [ Fuzz.oneOfValues
             [ "0", "9223372036854775807", "-9223372036854775808", "9007199254740992", "-9007199254740993" ]
-        , Fuzz.map2
-            (\negative text ->
-                if negative then
-                    "-" ++ text
-
-                else
-                    text
-            )
-            Fuzz.bool
-            (Fuzz.intRange 1 19
-                |> Fuzz.andThen
-                    (\count ->
-                        digits
-                            (if count == 19 then
-                                8
-
-                             else
-                                9
-                            )
-                            count
-                    )
-            )
+        , Fuzz.map (\text -> "-" ++ text) (naturalAtMost "9223372036854775808")
+        , naturalAtMost "9223372036854775807"
         ]
 
 
-{-| The canonical decimal string of a `uint64`: 1 to 20 digits, and the
-bounds.
+{-| The canonical decimal string of a `uint64`: 1 to 20 digits, up to the
+bound for 20, and the bounds.
 -}
 uint64Text : Fuzzer String
 uint64Text =
     Fuzz.oneOf
         [ Fuzz.oneOfValues [ "0", "18446744073709551615", "9223372036854775808" ]
-        , Fuzz.intRange 1 20
-            |> Fuzz.andThen
-                (\count ->
-                    digits
-                        (if count == 20 then
-                            1
-
-                         else
-                            9
-                        )
-                        count
-                )
+        , naturalAtMost "18446744073709551615"
         ]
+
+
+{-| A positive integer in canonical decimal form, at most `bound` (itself
+canonical): any length up to `bound`'s, and at that length no greater.
+-}
+naturalAtMost : String -> Fuzzer String
+naturalAtMost bound =
+    Fuzz.intRange 1 (String.length bound)
+        |> Fuzz.andThen
+            (\count ->
+                if count < String.length bound then
+                    digits 9 count
+
+                else
+                    digitsAtMost True bound
+            )
+
+
+{-| A string of as many digits as `bound`, at most `bound`; the first digit
+not `0` when `leading`.
+-}
+digitsAtMost : Bool -> String -> Fuzzer String
+digitsAtMost leading bound =
+    case String.uncons bound of
+        Nothing ->
+            Fuzz.constant ""
+
+        Just ( top, rest ) ->
+            let
+                topDigit =
+                    Char.toCode top - Char.toCode '0'
+            in
+            Fuzz.intRange
+                (if leading then
+                    1
+
+                 else
+                    0
+                )
+                topDigit
+                |> Fuzz.andThen
+                    (\digit ->
+                        if digit == topDigit then
+                            Fuzz.map (String.cons top) (digitsAtMost False rest)
+
+                        else
+                            Fuzz.map (\tail -> String.fromInt digit ++ String.concat (List.map String.fromInt tail))
+                                (Fuzz.listOfLength (String.length rest) (Fuzz.intRange 0 9))
+                    )
 
 
 {-| A 64-bit integer an Elm `Int` cannot hold exactly: magnitude 2^53 or more,
