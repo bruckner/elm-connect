@@ -406,3 +406,6 @@ reasonToString reason =
 
         Rpc.Error.InvalidHeader name ->
             "InvalidHeader " ++ name
+
+        Rpc.Error.TooLarge { limit, size } ->
+            "TooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit

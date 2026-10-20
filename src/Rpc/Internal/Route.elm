@@ -35,7 +35,7 @@ route transport (Call fields) =
         Connect _ ->
             Implicit
 
-        Transcode ->
+        Transcode _ ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.
             case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of

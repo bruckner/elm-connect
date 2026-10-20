@@ -2072,6 +2072,7 @@ checkConfig : Config -> List String       -- the config's problems, [] when none
 -- Rpc.Transport: opaque
 connect, connectGet, transcode : Transport
 withMaxGetUrl : Int -> Transport -> Transport
+withReadMaxBytes : Int -> Transport -> Transport
 name : Transport -> String                -- "connect" | "transcode"
 
 -- Rpc.Retry: opaque
@@ -2131,6 +2132,20 @@ it.
   `withMaxGetUrl n` POSTs a call whose GET URL would be longer than `n`
   characters, for servers and proxies that cap URL length. `name` gives
   the protocol for traces and logs.
+- `withReadMaxBytes n` refuses a successful answer whose body is longer
+  than `n` bytes of UTF-8, before decoding it, on either transport:
+  connect-go's `WithReadMaxBytes` and connect-es's `readMaxBytes`, and
+  like them no limit by default. It is a protocol-level knob, so it is
+  on `Transport`, not in `Config`. The call fails with
+  `NoAnswer (TooLarge { limit, size })` (§5.4). The size is the body as
+  the browser decoded it, counted back into UTF-8 by a kernel loop
+  (`String.foldl`) rather than a recursion, so a long body cannot
+  exhaust the stack; `String.length` would count UTF-16 units. The
+  browser has received the body by then, so the limit bounds what is
+  decoded and held, not what is downloaded. An error answer is read
+  whatever its size, for its status. A limit below 1 refuses every body
+  with anything in it, and `checkConfig` reports it. *(Decided,
+  2026-10-20.)*
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
   number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
@@ -2612,10 +2627,11 @@ type Error
     = RpcStatus StatusError Response    -- the server stated an RPC status
     | HttpStatus Response               -- it answered with a failure and stated none
     | BadResponse String Response       -- it answered 2xx and the body did not decode (the problem)
-    | NoAnswer Reason                   -- nothing came back, or nothing was sent
+    | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
 
 type Reason                             -- frozen (§8.3)
     = Timeout | NetworkError | BadUrl String | InvalidHeader String
+    | TooLarge { limit : Int, size : Int }
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
@@ -2728,11 +2744,12 @@ two types shared one module, the helpers for `Code` prefixed.)
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `InvalidHeader` `Internal`. This settles whether a client timeout reads as
+  `InvalidHeader` `Internal`, `TooLarge` `ResourceExhausted`. This settles whether a client timeout reads as
   `DeadlineExceeded`: through `code` it does, while the constructor
   still says no answer came. `message` gives a description for those
   (`timeout`, `network error`, `bad URL: <url>`, `invalid header
-  "<name>"`, `bad response body: <problem>`), and `toString` is the code and the message for all of
+  "<name>"`, connect-es's `message size <size> is larger than
+  configured readMaxBytes <limit>`, `bad response body: <problem>`), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
   the whole response, so the message keeps the first 300 characters of
   it and `…`; the whole problem stays in the error. A bad URL is
@@ -2742,14 +2759,22 @@ two types shared one module, the helpers for `Code` prefixed.)
   URL stays in the error. *(Decided, 2026-10-15; the URL's printing
   2026-10-16.)*
 - `Reason` and `StatusError` are frozen (§8.3): every failure a browser
-  request can have before an answer is one of the reasons, and a later
-  kind of failure that arrives with an answer (a malformed stream
-  envelope, a failed decompression) is a `BadResponse`, whose problem
-  says what. A bad URL and an invalid header are never retried,
+  request can have before an answer is read is one of the reasons, and
+  a later kind of failure found in an answer that was read (a malformed
+  stream envelope, a failed decompression) is a `BadResponse`, whose
+  problem says what. A bad URL and an invalid header are never retried,
   whatever the policy's codes: nothing was sent, and nothing would
   change. `InvalidHeader` has its home here rather than in a
   constructor of its own beside `NoAnswer`, since it is one more reason
   nothing was sent (§5.1). *(Decided, 2026-10-16.)*
+- `TooLarge { limit, size }` is the answer over the receive limit
+  (§5.1): it arrived, but was dropped before it was decoded, so it is a
+  reason no answer was read and carries no `Response`; keeping one would
+  keep the body the limit is there to drop. It was added before 1.0
+  because `Reason` freezes then, and the Connect clients all have the
+  knob. Its code is `ResourceExhausted` and its message connect-es's.
+  It is retried only when a policy lists `ResourceExhausted`.
+  *(Decided, 2026-10-20.)*
 - The shape until 2026-10-16 was `Status { code, message, details,
   source } Response | Http Response | Transport Http.Error | Canceled`
   (2026-10-15). Review found three of the four names clashing:
@@ -3384,9 +3409,10 @@ Within a major version:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
   proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and
   `KindMessage` the message's full name, §3.9), `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
-  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` and `Source` (a
-  failure before an answer is one of the reasons, and a new kind found
-  in an answer is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
+  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
+  `NetworkError`, `BadUrl`, `InvalidHeader`, `TooLarge`) and `Source` (a
+  failure before an answer is read is one of the reasons, and a new kind
+  found in an answer that was read is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
   gains waits for a major, and until then the generator drops it.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may

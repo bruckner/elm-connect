@@ -1004,3 +1004,10 @@ tag (design §8).
   case: a message `Con`, a package `devices.aux`) is
   `naming::reserved_module` on every OS, since `Con.elm` cannot be
   created on Windows (design §3.7).
+- `Rpc.Transport.withReadMaxBytes` refuses a successful answer whose body
+  is longer than a limit, in bytes of UTF-8, before decoding it, as
+  connect-go's `WithReadMaxBytes` and connect-es's `readMaxBytes` do (no
+  limit by default). The call fails with the new
+  `Rpc.Error.NoAnswer (TooLarge { limit, size })`, code
+  `ResourceExhausted`; code matching `Reason` exhaustively needs the new
+  case. `Rpc.checkConfig` reports a limit below 1.

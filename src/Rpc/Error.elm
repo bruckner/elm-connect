@@ -41,8 +41,8 @@ import Rpc.Response exposing (Response)
     [`code`](#code) infers one from the HTTP status.
   - `BadResponse`: the server answered with success, but the body did not
     decode as the response; the problem, then the answer.
-  - `NoAnswer`: nothing came back, or nothing was sent
-    ([`Reason`](#Reason)).
+  - `NoAnswer`: nothing came back, nothing was sent, or what came back was
+    refused unread ([`Reason`](#Reason)).
 
 The [`Response`](Rpc-Response#Response) is kept whenever there was an answer,
 so an error in a shape the runtime does not read, or a body that drifted from
@@ -57,9 +57,9 @@ the schema, can still be read:
         _ ->
             Err (Rpc.Error.toString error)
 
-The constructors are fixed: a failure before an answer is one of the
-[`Reason`](#Reason)s, and one found in an answer that arrived is a
-`BadResponse`.
+The constructors are fixed: a failure before an answer, or an answer refused
+before it was read, is one of the [`Reason`](#Reason)s, and one found in an
+answer that was read is a `BadResponse`.
 
 -}
 type Error
@@ -69,7 +69,7 @@ type Error
     | NoAnswer Reason
 
 
-{-| Why no answer came:
+{-| Why no answer came, or none was read:
 
   - `Timeout`: the call's timeout passed first.
   - `NetworkError`: the request failed on the way, as when the server is
@@ -79,9 +79,13 @@ type Error
   - `InvalidHeader`: a header, named here, that a request cannot carry: its
     name is not an HTTP token, or its value holds NUL, CR, LF or a character
     above U+00FF. Nothing was sent.
+  - `TooLarge`: a successful answer's body was longer, in UTF-8 bytes
+    (`size`), than the transport reads (`limit`,
+    [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes)). The body was
+    dropped without decoding, so the error keeps no `Response`.
 
-These are every way a request can fail before an answer, and the type is
-fixed.
+These are every way a request can fail before an answer is read, and the type
+is fixed.
 
 -}
 type Reason
@@ -89,6 +93,7 @@ type Reason
     | NetworkError
     | BadUrl String
     | InvalidHeader String
+    | TooLarge { limit : Int, size : Int }
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -131,7 +136,8 @@ type Source
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus).
   - `BadResponse`: `Internal`.
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL or an invalid header `Internal`.
+    `Unavailable`, a bad URL or an invalid header `Internal`, a body over the
+    limit `ResourceExhausted`.
 
 -}
 code : Error -> Code
@@ -158,6 +164,9 @@ code error =
         NoAnswer (InvalidHeader _) ->
             Code.Internal
 
+        NoAnswer (TooLarge _) ->
+            Code.ResourceExhausted
+
 
 {-| An error's message:
 
@@ -167,8 +176,9 @@ code error =
     the JSON it rejected, which can be the whole response and hold data the
     application never shows, so the message keeps its first 300 characters,
     then `…`; the whole problem stays in the error.
-  - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>` or
-    `invalid header "<name>"`. A bad URL is printed as its scheme, host and
+  - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
+    `invalid header "<name>"` or, as connect-es words it,
+    `message size <size> is larger than configured readMaxBytes <limit>`. A bad URL is printed as its scheme, host and
     path, without the user and password a URL can hold, and without its query
     and fragment, which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
@@ -203,6 +213,9 @@ message error =
 
         NoAnswer (InvalidHeader name) ->
             "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
+
+        NoAnswer (TooLarge { limit, size }) ->
+            "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

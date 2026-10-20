@@ -176,6 +176,7 @@ suite =
         , retries
         , transports
         , configs
+        , receiveLimits
         , headerRules
         , bodies
         , traces
@@ -562,12 +563,13 @@ responses =
                         ]
         , test "an error without a stated status has the code the Connect clients give it" <|
             \_ ->
-                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), BadResponse "oops" blank ]
+                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), NoAnswer (TooLarge { limit = 10, size = 11 }), BadResponse "oops" blank ]
                     |> List.map (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal
                         [ ( DeadlineExceeded, "timeout" )
                         , ( Unavailable, "network error" )
                         , ( Internal, "bad URL: ::" )
+                        , ( ResourceExhausted, "message size 11 is larger than configured readMaxBytes 10" )
                         , ( Internal, "bad response body: oops" )
                         ]
         , test "a bad URL's message leaves out its user, password, query and fragment" <|
@@ -593,6 +595,7 @@ responses =
                 , NoAnswer Timeout
                 , NoAnswer NetworkError
                 , NoAnswer (BadUrl "::")
+                , NoAnswer (TooLarge { limit = 10, size = 11 })
                 , BadResponse "oops" blank
                 ]
                     |> List.map Rpc.Error.toString
@@ -604,6 +607,7 @@ responses =
                         , "deadline_exceeded: timeout"
                         , "unavailable: network error"
                         , "internal: bad URL: ::"
+                        , "resource_exhausted: message size 11 is larger than configured readMaxBytes 10"
                         , "internal: bad response body: oops"
                         ]
         ]
@@ -874,6 +878,79 @@ configs =
                 Rpc.checkConfig { cfg | headers = [ ( "Authorization", "Bearer s3cr3t\n" ), ( "X-Fine", "  ok  " ), ( "Bad Name", "v" ) ] }
                     |> List.map (\problem -> ( String.contains "\"Authorization\"" problem || String.contains "\"Bad Name\"" problem, String.contains "s3cr3t" problem ))
                     |> Expect.equal [ ( True, False ), ( True, False ) ]
+        ]
+
+
+limited : Rpc.Transport.Transport -> Int -> Rpc.Config
+limited transport limit =
+    { base | transport = Rpc.Transport.withReadMaxBytes limit transport }
+
+
+{-| A 200 answer with this body to `getNote`, read under a config.
+-}
+readAs : Rpc.Config -> String -> Result Error String
+readAs cfg body =
+    Rpc.response cfg (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
+
+
+receiveLimits : Test
+receiveLimits =
+    let
+        -- 13 UTF-16 units, 14 bytes of UTF-8: a limit read as String.length
+        -- would let it through at 13.
+        note =
+            "{\"title\":\"é\"}"
+    in
+    describe "withReadMaxBytes"
+        [ test "UTF-8 lengths: one to four bytes a character" <|
+            \_ ->
+                [ "", "a", "é", "€", "😀", "a😀é" ]
+                    |> List.map Rpc.Internal.Http.utf8Length
+                    |> Expect.equal [ 0, 1, 2, 3, 4, 7 ]
+        , test "a multi-megabyte body is counted without exhausting the stack" <|
+            \_ ->
+                Rpc.Internal.Http.utf8Length (String.repeat 1000000 "aé€😀")
+                    |> Expect.equal 10000000
+        , test "a body at the limit is read, one byte over is refused with both sizes" <|
+            \_ ->
+                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> List.map (\transport -> List.map (\limit -> readAs (limited transport limit) note |> withCode) [ 14, 13 ])
+                    |> List.concat
+                    |> Expect.equal
+                        (List.concat
+                            (List.repeat 3
+                                [ Ok "é"
+                                , Err ( NoAnswer (TooLarge { limit = 13, size = 14 }), ResourceExhausted, "message size 14 is larger than configured readMaxBytes 13" )
+                                ]
+                            )
+                        )
+        , test "every transport starts with no limit" <|
+            \_ ->
+                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> List.map (\transport -> readAs { base | transport = transport } ("{\"title\":\"" ++ String.repeat 100000 "x" ++ "\"}") |> Result.map String.length)
+                    |> Expect.equal [ Ok 100000, Ok 100000, Ok 100000 ]
+        , test "an error answer is read whatever its size" <|
+            \_ ->
+                Rpc.response (limited Rpc.Transport.connect 1) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") "{\"code\":\"not_found\",\"message\":\"no note\"}")
+                    |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal (Err ( NotFound, "no note" ))
+        , test "a limit below 1 refuses any body but an empty one" <|
+            \_ ->
+                [ ( -5, "" ), ( 0, "" ), ( 0, "{}" ), ( -5, "{}" ) ]
+                    |> List.map (\( limit, body ) -> Rpc.Internal.Http.overLimit limit body)
+                    |> Expect.equal [ Nothing, Nothing, Just 2, Just 2 ]
+        , test "checkConfig reports a limit below 1, not one of 1 or more" <|
+            \_ ->
+                [ 0, -1, 1, 1000000 ]
+                    |> List.map (limited Rpc.Transport.connect >> Rpc.checkConfig >> List.length)
+                    |> Expect.equal [ 1, 1, 0, 0 ]
+        , test "the knob keeps the protocol and its other options" <|
+            \_ ->
+                ( List.map (Rpc.Transport.withReadMaxBytes 10 >> Rpc.Transport.name) [ Rpc.Transport.connect, Rpc.Transport.transcode ]
+                , Rpc.request (limited (Rpc.Transport.withMaxGetUrl 30 Rpc.Transport.connectGet) 10) (getNote { name = "x" })
+                    == Rpc.request (getting (Just 30)) (getNote { name = "x" })
+                )
+                    |> Expect.equal ( [ "connect", "transcode" ], True )
         ]
 
 

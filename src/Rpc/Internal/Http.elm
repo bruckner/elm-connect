@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, percentDecode, percentEncode, send, splitTrailers, task, unreserved, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Http
 import Json.Encode
 import Rpc.Body
+import Rpc.Internal.Transport as Transport exposing (Transport)
 import Rpc.Request exposing (Request)
 import Task exposing (Task)
 
@@ -319,12 +320,12 @@ badBaseUrl url =
     String.contains "?" url || String.contains "#" url
 
 
-{-| What `Rpc.checkConfig` reports of a config's base URL and headers, one
-sentence each. A header is named but its value left out, since it may be a
-credential.
+{-| What `Rpc.checkConfig` reports of a config's transport, base URL and
+headers, one sentence each. A header is named but its value left out, since
+it may be a credential.
 -}
-configProblems : String -> List ( String, String ) -> List String
-configProblems baseUrl headers =
+configProblems : Transport -> String -> List ( String, String ) -> List String
+configProblems transport baseUrl headers =
     (if badBaseUrl baseUrl then
         [ "baseUrl " ++ baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
 
@@ -343,6 +344,17 @@ configProblems baseUrl headers =
                     Nothing
             )
             headers
+        ++ (case Transport.readMaxBytes transport of
+                Just limit ->
+                    if limit < 1 then
+                        [ "readMaxBytes " ++ String.fromInt limit ++ " is below 1, so every response with a body is refused" ]
+
+                    else
+                        []
+
+                Nothing ->
+                    []
+           )
 
 
 quote : String -> String
@@ -462,3 +474,62 @@ insertJoined key value =
                 Nothing ->
                     Just value
         )
+
+
+{-| The size of a successful answer's body, in UTF-8 bytes, when it is over
+`limit`; `Nothing` when it is within it. A limit below 0 is read as 0, so an
+empty body is never refused.
+
+A body is at least one byte of UTF-8 per UTF-16 unit of its JavaScript string
+and at most three, so a body that fits whatever it holds is never counted.
+
+-}
+overLimit : Int -> String -> Maybe Int
+overLimit limit text =
+    let
+        bound =
+            max 0 limit
+
+        units =
+            String.length text
+    in
+    if units * 3 <= bound then
+        Nothing
+
+    else
+        let
+            size =
+                utf8Length text
+        in
+        if size > bound then
+            Just size
+
+        else
+            Nothing
+
+
+{-| The length of a string written as UTF-8, in bytes. `String.foldl` is a
+loop in elm/core's kernel rather than a recursion, so a body of any length
+is counted in constant stack. A surrogate pair is one character of four
+bytes. The count is exact for well-formed text, which every body the browser
+decoded is (it writes U+FFFD for bytes that are not UTF-8); a lone surrogate
+has no UTF-8 form, and counts as three or four.
+-}
+utf8Length : String -> Int
+utf8Length =
+    String.foldl (\char size -> size + utf8Width (Char.toCode char)) 0
+
+
+utf8Width : Int -> Int
+utf8Width code =
+    if code < 0x80 then
+        1
+
+    else if code < 0x0800 then
+        2
+
+    else if code > 0xFFFF then
+        4
+
+    else
+        3

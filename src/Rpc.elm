@@ -200,9 +200,10 @@ report what it finds there:
         problems ->
             Err (String.join "; " problems)
 
-Today it finds a `baseUrl` holding a query or a fragment, and headers a
-request cannot carry, each by its name (a value is left out, since it may be
-a credential). A call sent with such a config still fails with
+Today it finds a `baseUrl` holding a query or a fragment, headers a request
+cannot carry, each by its name (a value is left out, since it may be a
+credential), and a [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) limit
+below 1. A call sent with such a config still fails with
 `NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
 before any call is made. Later releases may find more, so the result is read
 as a list rather than matched.
@@ -210,7 +211,7 @@ as a list rather than matched.
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    Internal.configProblems cfg.baseUrl cfg.headers
+    Internal.configProblems cfg.transport cfg.baseUrl cfg.headers
 
 
 
@@ -394,7 +395,10 @@ request =
 Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
 body reading as `{}`, and the response decoded from the field the binding's
 `responseBody` names when it names one. Any other answer is an error, read as
-[`Source`](Rpc-Error#Source) describes, whatever the transport.
+[`Source`](Rpc-Error#Source) describes, whatever the transport. A successful
+answer longer than the transport's
+[`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) is not decoded: it is
+`NoAnswer (TooLarge { limit, size })`.
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
