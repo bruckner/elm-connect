@@ -325,17 +325,15 @@ pub fn field_value_name(elm_name: &str) -> String {
 }
 
 /// The Elm value of a oneof member's descriptor in its message's
-/// [`descriptor_module`]: the PascalCase name its constructor ends with
-/// ([`oneof_variant_constructor`]), converted as a field name is
+/// [`descriptor_module`]: its proto name converted as a field's is
 /// ([`field_name`]), and `descriptor` escaped as [`field_value_name`]
-/// escapes a field's (`created`, `Text` and `URL` become `created`,
-/// `text` and `url`, `_legacy` becomes `legacy`). A record field is the Elm name of a field
-/// outside a oneof; a member has none, so its value follows the
-/// constructor, and every member whose constructor ends in a letter has
-/// one. It is the derived constructor's ending: a member's `rename`
-/// renames its constructor, not this.
+/// escapes a field's (`created`, `a_b`, `Text` and `URL` become `created`,
+/// `aB`, `text` and `url`, `_legacy` becomes `legacy`). A member is a
+/// field of its message, so its descriptor is named as a field of that
+/// name would be, whatever its constructor ends with. It follows the proto
+/// name: a member's `rename` renames its constructor, not this.
 pub fn member_value_name(proto_name: &str) -> Result<String, NameError> {
-    field_name(&pascal_case(proto_name)).map(|name| field_value_name(&name))
+    field_name(proto_name).map(|name| field_value_name(&name))
 }
 
 /// The prefix the descriptor of a method takes.
@@ -542,6 +540,7 @@ mod tests {
             "Notes.V1.OuterInner"
         );
         assert_eq!(member_value_name("legal_name"), Ok("legalName".into()));
+        assert_eq!(member_value_name("a_b"), Ok("aB".into()));
         assert_eq!(member_value_name("Text"), Ok("text".into()));
         assert_eq!(member_value_name("type"), Ok("type_".into()));
         assert_eq!(member_value_name("descriptor"), Ok("descriptor_".into()));

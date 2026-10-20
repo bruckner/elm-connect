@@ -929,8 +929,8 @@ tag (design §8).
   lowercased, keeping its last letter when a lowercase letter follows
   (`Label` → `label`, `URLPath` → `urlPath`, `_internal` → `internal`,
   `HTTPGet` → `httpGet`, which was `hTTPGet`). `IDs` becomes `iDs`; a
-  rename covers it. A oneof member's descriptor value follows the same
-  rule, so a member `a_b` now names `ab` (was `aB`).
+  rename covers it. A oneof member's descriptor value is named as a field
+  of its proto name would be (`URL` becomes `url`, `a_b` stays `aB`).
   `naming::invalid_field` and `naming::invalid_method` remain for names
   that are only underscores or have a digit before their first letter
   (`_1x`). The `naming_first_letter` conformance case pins the rule.
