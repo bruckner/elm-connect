@@ -90,3 +90,11 @@ fn a_rename_names_a_generated_element() {
         .expect_err("neither is generated");
     assert_eq!(codes(&diagnostics), [Code::UnknownRename; 2]);
 }
+
+#[test]
+fn a_renamed_field_is_taken_as_written() {
+    // A proto field `Label` becomes `label`; a rename to `Label` is not
+    // converted, so it is no Elm field name.
+    let diagnostics = build(&["notes.v1.Outer.inner:Label"]).expect_err("an uppercase field");
+    assert_eq!(codes(&diagnostics), [Code::InvalidRename]);
+}

@@ -11,7 +11,8 @@ naming::invalid_field
     ╰────
   help: A oneof member's descriptor, in its message's descriptor module, is
         named for the end of its constructor: the member's name in PascalCase,
-        its first letter lowercased (`_legacy` becomes `legacy`). That must
-        start with a letter, so the proto name needs a letter after any
-        leading underscores. Rename it in the proto; a `rename` of the member
-        renames its constructor, not this value.
+        its leading capitals lowercased (`_legacy` becomes `legacy`, `URL`
+        `url`). That must start with a letter, so a name that is only
+        underscores, or has a digit before its first letter, has none. Rename
+        it in the proto; a `rename` of the member renames its constructor, not
+        this value.

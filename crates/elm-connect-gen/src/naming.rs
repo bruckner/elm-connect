@@ -157,13 +157,17 @@ pub fn nested_type_name(enclosing_elm_name: &str, proto_name: &str) -> String {
 
 /// The Elm record field name for a proto field (or oneof) name.
 ///
-/// The conversion is protoc's default `json_name` rule, applied to the
-/// proto name and never to an explicit `json_name`: drop each underscore
-/// and capitalise the letter after it (`display_name` becomes
-/// `displayName`). It does not lowercase the first letter, so a proto name
-/// starting with an uppercase letter is an error rather than a silent
-/// change. An Elm reserved word gains a trailing underscore (`type`
-/// becomes `type_`).
+/// The conversion starts with protoc's default `json_name` rule, applied
+/// to the proto name and never to an explicit `json_name`: drop each
+/// underscore and capitalise the letter after it (`display_name` becomes
+/// `displayName`). Then the leading run of uppercase letters is
+/// lowercased, except that a run followed by a lowercase letter keeps its
+/// last letter, which starts the next word (`Label` becomes `label`, `ID`
+/// `id`, `URLPath` `urlPath`, `XCoord` `xCoord`). The rule cannot tell
+/// `ID` + `s` from `I` + `Ds`, so `IDs` becomes `iDs`. An Elm reserved
+/// word gains a trailing underscore (`Type` becomes `type_`). A name with
+/// no letter before its first digit (`_1x`) or with nothing but
+/// underscores has no Elm name.
 pub fn field_name(proto_name: &str) -> Result<String, NameError> {
     let mut converted = String::with_capacity(proto_name.len());
     let mut capitalise_next = false;
@@ -177,6 +181,7 @@ pub fn field_name(proto_name: &str) -> Result<String, NameError> {
             converted.push(c);
         }
     }
+    let converted = lower_leading_run(&converted);
     match converted.chars().next() {
         None => Err(NameError::Empty),
         Some(first) if !first.is_ascii_lowercase() => Err(NameError::WrongStart { converted }),
@@ -321,16 +326,16 @@ pub fn field_value_name(elm_name: &str) -> String {
 
 /// The Elm value of a oneof member's descriptor in its message's
 /// [`descriptor_module`]: the PascalCase name its constructor ends with
-/// ([`oneof_variant_constructor`]), its first letter lowercased, a
-/// reserved word escaped and `descriptor` too, as [`field_value_name`]
-/// escapes a field's (`created` and `Text` become `created` and `text`,
-/// `_legacy` becomes `legacy`). A record field is the Elm name of a field
+/// ([`oneof_variant_constructor`]), converted as a field name is
+/// ([`field_name`]), and `descriptor` escaped as [`field_value_name`]
+/// escapes a field's (`created`, `Text` and `URL` become `created`,
+/// `text` and `url`, `_legacy` becomes `legacy`). A record field is the Elm name of a field
 /// outside a oneof; a member has none, so its value follows the
 /// constructor, and every member whose constructor ends in a letter has
 /// one. It is the derived constructor's ending: a member's `rename`
 /// renames its constructor, not this.
 pub fn member_value_name(proto_name: &str) -> Result<String, NameError> {
-    method_name(&pascal_case(proto_name)).map(|name| field_value_name(&name))
+    field_name(&pascal_case(proto_name)).map(|name| field_value_name(&name))
 }
 
 /// The prefix the descriptor of a method takes.
@@ -382,19 +387,11 @@ pub const ENCODER_ARGUMENT: &str = "value";
 /// the name of a top-level value of a generated module.
 pub const ONEOF_MEMBER: &str = "member";
 
-/// The Elm value for an RPC method: the method name with its first letter
-/// lowercased and underscores dropped as for a field (`GetNote` becomes
-/// `getNote`, `get_note` becomes `getNote`), an Elm reserved word gaining a
-/// trailing underscore (`Type` becomes `type_`).
+/// The Elm value for an RPC method: its name converted as a field's is
+/// ([`field_name`]), so `GetNote` becomes `getNote`, `get_note` `getNote`,
+/// `HTTPGet` `httpGet` and `Type` `type_`.
 pub fn method_name(proto_name: &str) -> Result<String, NameError> {
-    let mut chars = proto_name.chars();
-    let lowered: String = chars
-        .next()
-        .map(|first| first.to_ascii_lowercase())
-        .into_iter()
-        .chain(chars)
-        .collect();
-    field_name(&lowered)
+    field_name(proto_name)
 }
 
 /// The Elm module for a service: its package's module followed by the
@@ -427,6 +424,20 @@ pub fn pascal_case(name: &str) -> String {
                 .chain(chars)
         })
         .collect()
+}
+
+/// `name` with its leading run of ASCII uppercase letters lowercased,
+/// except the run's last letter when a lowercase letter follows it.
+fn lower_leading_run(name: &str) -> String {
+    let run = name.bytes().take_while(u8::is_ascii_uppercase).count();
+    let followed_by_lower = name.as_bytes().get(run).is_some_and(u8::is_ascii_lowercase);
+    let lowered = if run > 1 && followed_by_lower {
+        run - 1
+    } else {
+        run
+    };
+    let (head, tail) = name.split_at(lowered);
+    head.to_ascii_lowercase() + tail
 }
 
 fn starts_with_upper(name: &str) -> bool {
@@ -537,13 +548,14 @@ mod tests {
         assert_eq!(member_value_name("_legacy"), Ok("legacy".into()));
         assert_eq!(member_value_name("__old_name"), Ok("oldName".into()));
         assert_eq!(member_value_name("x_1"), Ok("x1".into()));
+        assert_eq!(member_value_name("URL"), Ok("url".into()));
         assert!(member_value_name("_1x").is_err());
         assert_eq!(field_value_name("descriptor"), "descriptor_");
         assert_eq!(field_value_name("descriptors"), "descriptors");
         assert_eq!(field_value_name("type_"), "type_");
         assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
         assert_eq!(method_descriptor_name("type_"), "descriptorType_");
-        assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");
+        assert_eq!(method_descriptor_name("httpGet"), "descriptorHttpGet");
         assert!(method_descriptor_name("getNote").starts_with(DESCRIPTOR_PREFIX));
         let prefixes = [
             "encode",
@@ -648,7 +660,7 @@ mod tests {
             ("foo_bar", "fooBar"),
             ("foo__bar", "fooBar"),
             ("foo_", "foo"),
-            ("_foo", "Foo_error"),
+            ("_foo", "foo"),
             ("x_1", "x1"),
             ("http_url", "httpUrl"),
             ("type", "type_"),
@@ -660,33 +672,47 @@ mod tests {
             ("types", "types"),
         ];
         for (proto, expected) in cases {
-            if let Some(converted) = expected.strip_suffix("_error") {
-                assert_eq!(
-                    field_name(proto),
-                    Err(NameError::WrongStart {
-                        converted: converted.into()
-                    }),
-                    "{proto}"
-                );
-            } else {
-                assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
-            }
+            assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
+        }
+    }
+
+    #[test]
+    fn leading_uppercase_runs_are_lowercased() {
+        let cases = [
+            ("Label", "label"),
+            ("ID", "id"),
+            ("URL", "url"),
+            ("URLPath", "urlPath"),
+            ("HTTPRequest", "httpRequest"),
+            ("XCoord", "xCoord"),
+            ("ABCDef", "abcDef"),
+            ("_internal", "internal"),
+            ("__Label", "label"),
+            ("display_name", "displayName"),
+            ("Type", "type_"),
+            ("V2", "v2"),
+            // `ID` + `s` reads as `I` + `Ds`: a rename gives it another name.
+            ("IDs", "iDs"),
+        ];
+        for (proto, expected) in cases {
+            assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
         }
     }
 
     #[test]
     fn field_name_errors() {
         assert_eq!(field_name("_"), Err(NameError::Empty));
-        assert_eq!(
-            field_name("Name"),
-            Err(NameError::WrongStart {
-                converted: "Name".into()
-            })
-        );
+        assert_eq!(field_name("__"), Err(NameError::Empty));
         assert_eq!(
             field_name("_1"),
             Err(NameError::WrongStart {
                 converted: "1".into()
+            })
+        );
+        assert_eq!(
+            field_name("_1x"),
+            Err(NameError::WrongStart {
+                converted: "1x".into()
             })
         );
     }
@@ -740,7 +766,8 @@ mod tests {
             ("GetNote", "getNote"),
             ("getNote", "getNote"),
             ("get_note", "getNote"),
-            ("HTTPGet", "hTTPGet"),
+            ("HTTPGet", "httpGet"),
+            ("_Ping", "ping"),
             ("Type", "type_"),
             ("V2Get", "v2Get"),
         ];

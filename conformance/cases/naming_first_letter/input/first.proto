@@ -1,0 +1,40 @@
+// Names starting with capitals or underscores (design section 3.7): the
+// leading run of capitals is lowercased, keeping its last letter when a
+// lowercase letter follows. Types keep their names as written.
+syntax = "proto3";
+
+package first.v1;
+
+message URLPath {
+  string Label = 1;
+  string ID = 2;
+  string URL = 3;
+  string URLPath = 4;
+  string HTTPRequest = 5;
+  double XCoord = 6;
+  string ABCDef = 7;
+  string _internal = 8;
+  string display_name = 10;
+  string Type = 11;
+  // `ID` + `s` reads as `I` + `Ds`.
+  repeated string IDs = 12;
+}
+
+// `__Label` has the JSON name `Label`, so protoc refuses it beside a
+// field `Label`. A oneof named `Target` is the record field `target`; its
+// member `URL` has the constructor `LinkTargetURL` and the descriptor
+// value `url`.
+message Link {
+  string __Label = 9;
+  oneof Target {
+    string URL = 1;
+    int32 Count = 2;
+  }
+}
+
+service Fetcher {
+  rpc GetNote(URLPath) returns (URLPath);
+  rpc HTTPGet(URLPath) returns (URLPath);
+  rpc _Ping(URLPath) returns (URLPath);
+  rpc Type(URLPath) returns (URLPath);
+}

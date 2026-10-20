@@ -279,8 +279,9 @@ impl Problem {
             format!("The message `{message}` has two fields that both become `{elm_name}` in Elm."),
             format!(
                 "Elm record fields are the proto field names in lowerCamelCase, so names that \
-                 differ only in underscores or reserved-word escaping end up the same, and a \
-                 record cannot have two fields with one name. {}",
+                 differ only in underscores, the case of their leading capitals or reserved-word \
+                 escaping end up the same (`ID` and `id`), and a record cannot have two fields \
+                 with one name. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of them in the proto, or rename one with {rename}.")
@@ -424,18 +425,18 @@ impl Problem {
                  not a valid record field name."
             ),
             format!(
-                "Elm record fields must start with a lowercase letter. elm-connect converts proto \
-                 field names to lowerCamelCase without changing their first letter, so the proto \
-                 name should be lower_snake_case, starting with a letter. Rename it in the \
-                 proto, or rename it with {rename}."
+                "Elm record fields must start with a letter. elm-connect drops a proto field \
+                 name's underscores and lowercases its leading capitals, so a name that is only \
+                 underscores, or has a digit before its first letter, has no Elm field name. \
+                 Rename it in the proto, or rename it with {rename}."
             ),
             vec![site],
         )
     }
 
     /// The oneof member `proto_name` of `message` has a constructor whose
-    /// ending, its first letter lowercased, is `converted`, which is not
-    /// an Elm value name.
+    /// ending, converted as a field name is, is `converted`, which is not an
+    /// Elm value name.
     pub fn invalid_member_value(
         message: &str,
         proto_name: &str,
@@ -449,10 +450,11 @@ impl Problem {
                  `{converted}` in Elm, which is not a valid value name."
             ),
             "A oneof member's descriptor, in its message's descriptor module, is named for \
-             the end of its constructor: the member's name in PascalCase, its first letter \
-             lowercased (`_legacy` becomes `legacy`). That must start with a letter, so the \
-             proto name needs a letter after any leading underscores. Rename it in the \
-             proto; a `rename` of the member renames its constructor, not this value.",
+             the end of its constructor: the member's name in PascalCase, its leading \
+             capitals lowercased (`_legacy` becomes `legacy`, `URL` `url`). That must start \
+             with a letter, so a name that is only underscores, or has a digit before its \
+             first letter, has none. Rename it in the proto; a `rename` of the member renames \
+             its constructor, not this value.",
             vec![site],
         )
     }
@@ -575,9 +577,9 @@ impl Problem {
                  `{elm_name}`."
             ),
             format!(
-                "A service's module defines one value per method, its name with the first letter \
-                 lowercased and underscores dropped, so names that differ only in those ways end \
-                 up the same, and a module cannot define two values with one name. {}",
+                "A service's module defines one value per method, its name with its leading \
+                 capitals lowercased and underscores dropped, so names that differ only in those \
+                 ways end up the same, and a module cannot define two values with one name. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of the methods in the proto, or rename one with {rename}.")
@@ -604,8 +606,8 @@ impl Problem {
                  `{elm_name}`, which is another method's descriptor."
             ),
             format!(
-                "A service's module defines two values per method: its call, its name with the \
-                 first letter lowercased and underscores dropped, and its descriptor, \
+                "A service's module defines two values per method: its call, its name with its \
+                 leading capitals lowercased and underscores dropped, and its descriptor, \
                  `descriptor` followed by the call's name with the first letter uppercased. So a \
                  method named for another's descriptor (`DescriptorGetNote` beside `GetNote`) \
                  takes that descriptor's name, and a module cannot define two values with one \
@@ -901,9 +903,10 @@ impl Problem {
                  value name."
             ),
             format!(
-                "A method's Elm value is its name with the first letter lowercased and \
-                 underscores dropped, and must start with a letter. Rename the method, or rename \
-                 it with {rename}."
+                "A method's Elm value is its name with underscores dropped and its leading \
+                 capitals lowercased, and must start with a letter, so a name that is only \
+                 underscores, or has a digit before its first letter, has none. Rename the \
+                 method, or rename it with {rename}."
             ),
             vec![site],
         )

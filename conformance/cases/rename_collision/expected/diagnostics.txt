@@ -13,10 +13,11 @@ naming::field_collision
  10 │ }
     ╰────
   help: Elm record fields are the proto field names in lowerCamelCase, so
-        names that differ only in underscores or reserved-word escaping end up
-        the same, and a record cannot have two fields with one name. That name
-        comes from `rename=library.v1.Book.page_count:title`: give it another
-        there, or rename the other one in the proto.
+        names that differ only in underscores, the case of their leading
+        capitals or reserved-word escaping end up the same (`ID` and `id`),
+        and a record cannot have two fields with one name. That name comes
+        from `rename=library.v1.Book.page_count:title`: give it another there,
+        or rename the other one in the proto.
 
 naming::type_collision
 

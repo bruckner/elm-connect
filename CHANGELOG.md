@@ -924,3 +924,13 @@ tag (design §8).
 - The CLI's "import not found" and "file not found" errors name the
   include paths searched and say to add the file's directory with `-I`.
   The error itself is still protox's.
+- Field, oneof and method names that start with capitals or underscores
+  are converted instead of refused: the leading run of capitals is
+  lowercased, keeping its last letter when a lowercase letter follows
+  (`Label` → `label`, `URLPath` → `urlPath`, `_internal` → `internal`,
+  `HTTPGet` → `httpGet`, which was `hTTPGet`). `IDs` becomes `iDs`; a
+  rename covers it. A oneof member's descriptor value follows the same
+  rule, so a member `a_b` now names `ab` (was `aB`).
+  `naming::invalid_field` and `naming::invalid_method` remain for names
+  that are only underscores or have a digit before their first letter
+  (`_1x`). The `naming_first_letter` conformance case pins the rule.

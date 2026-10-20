@@ -36,9 +36,10 @@ const EXPECTED: &str = r#"naming::field_collision
  8 │     string text = 2;
    ╰────
   help: Elm record fields are the proto field names in lowerCamelCase, so
-        names that differ only in underscores or reserved-word escaping end up
-        the same, and a record cannot have two fields with one name. Rename
-        one of them in the proto, or rename one with
+        names that differ only in underscores, the case of their leading
+        capitals or reserved-word escaping end up the same (`ID` and `id`),
+        and a record cannot have two fields with one name. Rename one of them
+        in the proto, or rename one with
         `rename=notes.v1.Note.displayName:<Elm name>`.
 "#;
 
