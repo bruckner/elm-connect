@@ -25,9 +25,13 @@
 //!
 //! The rules:
 //!
-//! - A path variable names a non-repeated scalar or enum field of a
-//!   generated request, possibly through singular fields of generated
-//!   messages (`{sub.subfield}`). A
+//! - A path variable names a non-repeated field of a generated request,
+//!   possibly through singular fields of generated messages
+//!   (`{sub.subfield}`): a scalar, an enum, or a well-known type with a
+//!   string or scalar JSON form (timestamps, durations, field masks,
+//!   wrappers), the same well-known types a query parameter holds. A path
+//!   does not run through a well-known type (`{at.seconds}`): its fields
+//!   have no JSON form of their own. A
 //!   bare `*` or `**` outside a variable cannot be filled by a client and
 //!   is refused. `**` may only be the last segment of the template.
 //! - A message held deeper than [`NESTING_LIMIT`] messages below the
@@ -741,8 +745,36 @@ fn well_known(message: &MessageDescriptor) -> Option<Option<WellKnown>> {
         .map(WellKnown::from_name)
 }
 
+/// Whether a well-known type's JSON is one string or scalar, which a path
+/// variable or a query parameter can hold: a timestamp, duration or field
+/// mask is a string, a wrapper its wrapped value. `Empty` is an object
+/// with nothing in it; `Any`, `Struct`, `Value` and `ListValue` are
+/// objects or free-form JSON.
+fn has_scalar_json(known: WellKnown) -> bool {
+    match known {
+        WellKnown::Timestamp
+        | WellKnown::Duration
+        | WellKnown::FieldMask
+        | WellKnown::DoubleValue
+        | WellKnown::FloatValue
+        | WellKnown::Int64Value
+        | WellKnown::UInt64Value
+        | WellKnown::Int32Value
+        | WellKnown::UInt32Value
+        | WellKnown::BoolValue
+        | WellKnown::StringValue
+        | WellKnown::BytesValue => true,
+        WellKnown::Empty
+        | WellKnown::Any
+        | WellKnown::Struct
+        | WellKnown::Value
+        | WellKnown::ListValue => false,
+    }
+}
+
 /// The field a path variable names, through singular fields of generated
-/// messages to a non-repeated scalar or enum, with each field of the way
+/// messages to a non-repeated scalar, enum or well-known type with a
+/// scalar JSON form ([`has_scalar_json`]), with each field of the way
 /// named by `name`, or `None` for the names if `name` has none for one.
 fn path_field(
     request: &MessageDescriptor,
@@ -779,8 +811,14 @@ fn path_field(
         }
         match field.kind() {
             Kind::Message(inner) if last => {
+                if let Some(Some(known)) = well_known(&inner)
+                    && has_scalar_json(known)
+                {
+                    return Ok((path, fields));
+                }
                 return Err(format!(
-                    "`{}` is the message `{}`, and a path holds a scalar or an enum",
+                    "`{}` is the message `{}`, and a path holds a scalar, an enum or a \
+                     well-known type with a string or scalar JSON form",
                     path.dotted(),
                     inner.full_name()
                 ));
@@ -963,15 +1001,15 @@ impl QueryWalk<'_> {
                 ),
             ),
             Kind::Message(inner) => match well_known(&inner) {
+                Some(Some(known)) if has_scalar_json(known) => self.params.push(param(fields)),
                 Some(Some(WellKnown::Empty)) => {}
-                Some(Some(WellKnown::Struct | WellKnown::Value | WellKnown::ListValue)) => {
-                    self.refuse(&path, format!("`{}` is free-form JSON", inner.full_name()))
-                }
                 Some(Some(WellKnown::Any)) => self.refuse(
                     &path,
                     "`google.protobuf.Any` holds a message whose fields are not known",
                 ),
-                Some(Some(_)) => self.params.push(param(fields)),
+                Some(Some(_)) => {
+                    self.refuse(&path, format!("`{}` is free-form JSON", inner.full_name()))
+                }
                 // Unsupported well-known types are reported by the IR.
                 Some(None) => {}
                 None if repeated => self.refuse(&path, "it is a repeated message"),

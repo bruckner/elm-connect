@@ -3,6 +3,8 @@ syntax = "proto3";
 package library.v1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 message Book {
   string name = 1;
@@ -12,6 +14,11 @@ message Book {
 
 message GetBookRequest {
   string name = 1;
+}
+
+message StampBookRequest {
+  google.protobuf.Timestamp at = 1;
+  google.protobuf.Struct extra = 2;
 }
 
 service Library {
@@ -42,6 +49,21 @@ service Library {
         get: "/v1/books"
         response_body: "title"
       }
+    };
+  }
+  // A path does not run through a well-known type: a timestamp's JSON is
+  // a string, without its fields.
+  rpc StampBook(StampBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/stamps/{at.seconds}"
+      body: "*"
+    };
+  }
+  // A `Struct` is free-form JSON, not one value a path segment holds.
+  rpc TagBook(StampBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/tags/{extra}"
+      body: "*"
     };
   }
 }

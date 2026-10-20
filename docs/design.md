@@ -1791,6 +1791,15 @@ gets exactly this as data and never parses a template.
   through singular fields of generated messages (`{sub.subfield}`); not
   through a well-known type, whose fields have no JSON form of their own.
   A field bound twice is refused. Each violation is `route::path_field`.
+- The variable's field may also be a well-known type whose JSON is one
+  string or scalar: `Timestamp`, `Duration`, `FieldMask` and the nine
+  wrappers, the set a query parameter holds, from one predicate in
+  `route.rs` so the two cannot drift. Its text is that JSON value
+  (`/v1/at/2026-10-20T12%3A34%3A56Z`), as grpc-gateway reads it. `Empty`,
+  `Any`, `Struct`, `Value` and `ListValue` stay refused, as does a
+  repeated one. *(Decided, 2026-10-20; `routes_well_known_path` case.)*
+  Refusing every message here was the first build, although
+  `route::query_field` already accepted these.
 - The client does not check a value against the variable's template
   (`notes/42` against `notes/*`): the server matches, and a mismatch is
   its 404.
@@ -2314,7 +2323,11 @@ default, and is `Nothing` for a number the method has no binding of
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
   field's proto3 default, which the runtime reads from the variable's
-  last field descriptor (`0`, `""`, `false`, an enum's zero name). proto3 reads the field as its default there, and a
+  last field descriptor (`0`, `""`, `false`, an enum's zero name). An
+  unset well-known field (a timestamp, a wrapper) is `""`, as an unset
+  string is, so the server sees an empty segment there too; a
+  well-known type has no zero text of its own to send. *(Decided,
+  2026-10-20.)* proto3 reads the field as its default there, and a
   server parses the segment as the field's type: Vanguard rejected the
   empty segment the runtime sent before
   (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`, `invalid parameter

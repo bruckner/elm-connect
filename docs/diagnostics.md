@@ -49,7 +49,7 @@ parameter), the row says which test covers it instead.
 | **`route::`** | **A `google.api.http` rule that does not resolve.** | |
 | `route::rule` | A rule has no path, a `custom` kind that is not an HTTP method a browser sends, or additional bindings nested in an additional binding. | Fix the rule. |
 | `route::template` | A path template does not parse, or has a wildcard outside a variable. | Fix the template. |
-| `route::path_field` | A path variable names no non-repeated scalar or enum field of the request, or names one twice. | Fix the variable's field path. |
+| `route::path_field` | A path variable names no non-repeated scalar, enum or well-known field with a one-value JSON form (`Timestamp`, `Duration`, `FieldMask`, a wrapper) of the request, runs through a well-known type (`{at.seconds}`), or names a field twice. | Fix the variable's field path. |
 | `route::body_field` | `body` names no top-level singular message field of the request. | `body: "*"`, a message field's name, or no `body`. |
 | `route::response_body` | `response_body` names no top-level field of the response. | A field of the response, or no `response_body`. |
 | `route::query_field` | A request field that would be a query parameter has no query form, such as a message that is not a well-known type with a string form. | Send the field in the body (`body: "*"`, or a body field holding it), or move it out of the request. |

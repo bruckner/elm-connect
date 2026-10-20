@@ -841,8 +841,10 @@ impl Problem {
                 Code::RoutePathField,
                 format!("{binding} binds `{{{field}}}` in its path, but {reason}."),
                 format!(
-                    "{}A path variable names a non-repeated scalar or enum field of the \
-                     request, possibly through singular message fields (`{{book.name}}`).",
+                    "{}A path variable names a non-repeated field of the request, possibly \
+                     through singular message fields (`{{book.name}}`), that holds a scalar, \
+                     an enum, or a Timestamp, Duration, FieldMask or wrapper, whose JSON is \
+                     one value.",
                     did_you_mean(suggestion.as_deref())
                 ),
             ),

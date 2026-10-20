@@ -934,3 +934,10 @@ tag (design §8).
   `naming::invalid_field` and `naming::invalid_method` remain for names
   that are only underscores or have a digit before their first letter
   (`_1x`). The `naming_first_letter` conformance case pins the rule.
+- A path variable may bind a `Timestamp`, `Duration`, `FieldMask` or
+  wrapper field, the well-known types a query parameter already holds;
+  its segment is the field's JSON text, and an unset one is empty, as an
+  unset string is. `Empty`, `Any`, `Struct`, `Value` and `ListValue`,
+  and a path through a well-known type (`{at.seconds}`), are still
+  `route::path_field`. The `routes_well_known_path` conformance case
+  pins it.

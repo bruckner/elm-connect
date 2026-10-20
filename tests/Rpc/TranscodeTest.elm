@@ -59,6 +59,13 @@ sub protoName jsonName =
     field protoName jsonName CardinalitySingular (KindMessage "t.v1.Sub")
 
 
+{-| A `google.protobuf.Timestamp` field `at`.
+-}
+timestamp : Proto.Field.Descriptor
+timestamp =
+    field "at" "at" CardinalitySingular (KindMessage "google.protobuf.Timestamp")
+
+
 kind : Proto.Enum.Descriptor
 kind =
     Proto.Enum.descriptor "t.v1.Kind" [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0, Proto.EnumValue.descriptor "KIND_TEXT" 1 ]
@@ -187,6 +194,20 @@ paths =
                     (bound { rule | path = [ Proto.Http.literal "v1", var [ sub "sub" "sub", string "subfield" "subfield" ] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
+        , test "a well-known path variable is its JSON text, and the query holds the other fields" <|
+            \_ ->
+                url
+                    { rule
+                        | path = [ Proto.Http.literal "v1", Proto.Http.literal "at", var [ timestamp ] ]
+                        , query = [ Proto.Http.param [ string "note" "note" ] ]
+                    }
+                    """{"at":"2026-10-20T12:34:56.500Z","note":"x"}"""
+                    |> Expect.equal "https://api.example.com/v1/at/2026-10-20T12%3A34%3A56.500Z?note=x"
+        , test "an unset well-known path variable is empty, as an unset string is" <|
+            \_ ->
+                url { rule | path = [ Proto.Http.literal "v1", Proto.Http.literal "at", var [ timestamp ], var [ field "count" "count" CardinalitySingular (KindMessage "google.protobuf.Int32Value") ] ] }
+                    "{}"
+                    |> Expect.equal "https://api.example.com/v1/at//"
         , test "a value under an unset message is the field's default" <|
             \_ ->
                 url { rule | path = [ Proto.Http.literal "v1", var [ sub "inner" "inner", sub "deep" "deep", field "b" "b" CardinalitySingular (KindScalar ScalarUint64) ], var [ sub "inner" "inner", field "kind" "kind" CardinalitySingular (KindEnum kind) ] ] }
