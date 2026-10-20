@@ -27,6 +27,7 @@ elmConnectVersion_ =
 
 {-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`. Connect: `POST /envelope.v1.Relay/Forward`.
 No HTTP rule: the Connect path.
+From [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any) to [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any), described by [`descriptorForward`](#descriptorForward).
 -}
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
@@ -39,6 +40,7 @@ forward =
 
 {-| `rpc Send(Envelope) returns (Envelope)`. Connect: `POST /envelope.v1.Relay/Send`.
 No HTTP rule: the Connect path.
+From [`Envelope.V1.Envelope`](Envelope-V1#Envelope) to [`Envelope.V1.Envelope`](Envelope-V1#Envelope), described by [`descriptorSend`](#descriptorSend).
 -}
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =

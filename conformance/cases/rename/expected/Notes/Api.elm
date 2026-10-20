@@ -27,7 +27,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum notes.v1.Visibility`
+{-| [`enum notes.v1.Visibility`](Notes-Api-Audience#descriptor)
 
   - `AudienceUnspecified` (`VISIBILITY_UNSPECIFIED`)
   - `Everyone` (`VISIBILITY_PUBLIC`)
@@ -38,12 +38,12 @@ type Audience
     | Everyone
 
 
-{-| `message notes.v1.Note`
+{-| [`message notes.v1.Note`](Notes-Api-Memo#descriptor)
 
-  - `heading`
-  - `visibility`
-  - `revisions`
-  - `body`: See `MemoBody`.
+  - [`heading`](Notes-Api-Memo#heading)
+  - [`visibility`](Notes-Api-Memo#visibility)
+  - [`revisions`](Notes-Api-Memo#revisions)
+  - `body`: See [`MemoBody`](#MemoBody).
 
 -}
 type alias Memo =
@@ -57,8 +57,8 @@ type alias Memo =
 {-| `oneof kind` of `notes.v1.Note`
 
   - `MemoBodyUnset`: none of the fields is set.
-  - `MemoBodyText`
-  - `BodyUrl`
+  - [`MemoBodyText`](Notes-Api-Memo#text)
+  - [`BodyUrl`](Notes-Api-Memo#link)
 
 -}
 type MemoBody
@@ -67,9 +67,9 @@ type MemoBody
     | BodyUrl String
 
 
-{-| `message notes.v1.Note.Revision`
+{-| [`message notes.v1.Note.Revision`](Notes-Api-Edit#descriptor)
 
-  - `number`
+  - [`number`](Notes-Api-Edit#number)
 
 -}
 type alias Edit =
@@ -77,9 +77,9 @@ type alias Edit =
     }
 
 
-{-| `message notes.v1.GetNoteRequest`
+{-| [`message notes.v1.GetNoteRequest`](Notes-Api-GetNoteRequest#descriptor)
 
-  - `name`
+  - [`name`](Notes-Api-GetNoteRequest#name)
 
 -}
 type alias GetNoteRequest =
@@ -91,7 +91,7 @@ type alias GetNoteRequest =
 -- DEFAULTS
 
 
-{-| A `Memo` with every field at its default and every oneof unset.
+{-| A [`Memo`](#Memo) with every field at its default and every oneof unset.
 -}
 defaultMemo : Memo
 defaultMemo =
@@ -102,7 +102,7 @@ defaultMemo =
     }
 
 
-{-| A `Edit` with every field at its default and every oneof unset.
+{-| A [`Edit`](#Edit) with every field at its default and every oneof unset.
 -}
 defaultEdit : Edit
 defaultEdit =
@@ -110,7 +110,7 @@ defaultEdit =
     }
 
 
-{-| A `GetNoteRequest` with every field at its default and every oneof unset.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
@@ -122,28 +122,28 @@ defaultGetNoteRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of `Audience`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Audience`](#Audience): its codecs, zero value and descriptor together.
 -}
 enumAudience : Proto.Enum.Enum Audience
 enumAudience =
     Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified Notes.Api.Audience.descriptor
 
 
-{-| The typed value of `Memo`: its codecs, default and descriptor together.
+{-| The typed value of [`Memo`](#Memo): its codecs, default and descriptor together.
 -}
 messageMemo : Proto.Message.Message Memo
 messageMemo =
     Proto.Message.message encodeMemo decodeMemo defaultMemo Notes.Api.Memo.descriptor
 
 
-{-| The typed value of `Edit`: its codecs, default and descriptor together.
+{-| The typed value of [`Edit`](#Edit): its codecs, default and descriptor together.
 -}
 messageEdit : Proto.Message.Message Edit
 messageEdit =
     Proto.Message.message encodeEdit decodeEdit defaultEdit Notes.Api.Edit.descriptor
 
 
-{-| The typed value of `GetNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
@@ -154,7 +154,7 @@ messageGetNoteRequest =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -174,7 +174,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Audience` as proto3 JSON.
+{-| Encodes a [`Audience`](#Audience) as proto3 JSON.
 -}
 encodeAudience : Audience -> Json.Encode.Value
 encodeAudience value =
@@ -186,7 +186,7 @@ encodeAudience value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a `Memo` as proto3 JSON.
+{-| Encodes a [`Memo`](#Memo) as proto3 JSON.
 -}
 encodeMemo : Memo -> Json.Encode.Value
 encodeMemo value =
@@ -199,7 +199,7 @@ encodeMemo value =
         )
 
 
-{-| Encodes a `MemoBody` as the members of its message's JSON object.
+{-| Encodes a [`MemoBody`](#MemoBody) as the members of its message's JSON object.
 -}
 encodeMemoBody : MemoBody -> List ( String, Maybe Json.Encode.Value )
 encodeMemoBody value =
@@ -216,7 +216,7 @@ encodeMemoBody value =
             ]
 
 
-{-| Encodes a `Edit` as proto3 JSON.
+{-| Encodes a [`Edit`](#Edit) as proto3 JSON.
 -}
 encodeEdit : Edit -> Json.Encode.Value
 encodeEdit value =
@@ -225,7 +225,7 @@ encodeEdit value =
         ]
 
 
-{-| Encodes a `GetNoteRequest` as proto3 JSON.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
@@ -238,7 +238,7 @@ encodeGetNoteRequest value =
 -- DECODERS
 
 
-{-| Decodes a `Audience` from proto3 JSON.
+{-| Decodes a [`Audience`](#Audience) from proto3 JSON.
 -}
 decodeAudience : Json.Decode.Decoder Audience
 decodeAudience =
@@ -249,7 +249,7 @@ decodeAudience =
         ]
 
 
-{-| Decodes a `Memo` from proto3 JSON.
+{-| Decodes a [`Memo`](#Memo) from proto3 JSON.
 -}
 decodeMemo : Json.Decode.Decoder Memo
 decodeMemo =
@@ -260,7 +260,7 @@ decodeMemo =
         |> Proto.Json.oneof decodeMemoBody
 
 
-{-| Decodes a `MemoBody` from the members of its message's JSON object.
+{-| Decodes a [`MemoBody`](#MemoBody) from the members of its message's JSON object.
 -}
 decodeMemoBody : Json.Decode.Decoder MemoBody
 decodeMemoBody =
@@ -271,7 +271,7 @@ decodeMemoBody =
         ]
 
 
-{-| Decodes a `Edit` from proto3 JSON.
+{-| Decodes a [`Edit`](#Edit) from proto3 JSON.
 -}
 decodeEdit : Json.Decode.Decoder Edit
 decodeEdit =
@@ -279,7 +279,7 @@ decodeEdit =
         |> Proto.Json.field "number" 0 Proto.Json.int32
 
 
-{-| Decodes a `GetNoteRequest` from proto3 JSON.
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =

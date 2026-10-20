@@ -26,7 +26,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum tasks.v1.State`
+{-| [`enum tasks.v1.State`](Tasks-V1-State#descriptor)
 
   - `StateUnspecified` (`STATE_UNSPECIFIED`)
   - `StateOpen` (`STATE_OPEN`)
@@ -39,15 +39,15 @@ type State
     | StateStale
 
 
-{-| `message tasks.v1.Task`
+{-| [`message tasks.v1.Task`](Tasks-V1-Task#descriptor)
 
-  - `name`: Identifier.
-  - `title`: Required.
-  - `state`: Output only.
-  - `labels`: Unordered.
-  - `owner`: Deprecated. Immutable.
-  - `notes`
-  - `due`: See `TaskDue`.
+  - [`name`](Tasks-V1-Task#name): Identifier.
+  - [`title`](Tasks-V1-Task#title): Required.
+  - [`state`](Tasks-V1-Task#state): Output only.
+  - [`labels`](Tasks-V1-Task#labels): Unordered.
+  - [`owner`](Tasks-V1-Task#owner): Deprecated. Immutable.
+  - [`notes`](Tasks-V1-Task#notes)
+  - `due`: See [`TaskDue`](#TaskDue).
 
 -}
 type alias Task =
@@ -64,8 +64,8 @@ type alias Task =
 {-| `oneof due` of `tasks.v1.Task`
 
   - `TaskDueUnset`: none of the fields is set.
-  - `TaskDueDate`: Input only.
-  - `TaskDueNever`: Deprecated.
+  - [`TaskDueDate`](Tasks-V1-Task#date): Input only.
+  - [`TaskDueNever`](Tasks-V1-Task#never): Deprecated.
 
 -}
 type TaskDue
@@ -74,9 +74,9 @@ type TaskDue
     | TaskDueNever String
 
 
-{-| `message tasks.v1.GetTaskRequest`
+{-| [`message tasks.v1.GetTaskRequest`](Tasks-V1-GetTaskRequest#descriptor)
 
-  - `name`: Required.
+  - [`name`](Tasks-V1-GetTaskRequest#name): Required.
 
 -}
 type alias GetTaskRequest =
@@ -88,7 +88,7 @@ type alias GetTaskRequest =
 -- DEFAULTS
 
 
-{-| A `Task` with every field at its default and every oneof unset.
+{-| A [`Task`](#Task) with every field at its default and every oneof unset.
 -}
 defaultTask : Task
 defaultTask =
@@ -102,7 +102,7 @@ defaultTask =
     }
 
 
-{-| A `GetTaskRequest` with every field at its default and every oneof unset.
+{-| A [`GetTaskRequest`](#GetTaskRequest) with every field at its default and every oneof unset.
 -}
 defaultGetTaskRequest : GetTaskRequest
 defaultGetTaskRequest =
@@ -114,21 +114,21 @@ defaultGetTaskRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of `State`: its codecs, zero value and descriptor together.
+{-| The typed value of [`State`](#State): its codecs, zero value and descriptor together.
 -}
 enumState : Proto.Enum.Enum State
 enumState =
     Proto.Enum.enum encodeState decodeState StateUnspecified Tasks.V1.State.descriptor
 
 
-{-| The typed value of `Task`: its codecs, default and descriptor together.
+{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
     Proto.Message.message encodeTask decodeTask defaultTask Tasks.V1.Task.descriptor
 
 
-{-| The typed value of `GetTaskRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its codecs, default and descriptor together.
 -}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =
@@ -139,7 +139,7 @@ messageGetTaskRequest =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -158,7 +158,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `State` as proto3 JSON.
+{-| Encodes a [`State`](#State) as proto3 JSON.
 -}
 encodeState : State -> Json.Encode.Value
 encodeState value =
@@ -173,7 +173,7 @@ encodeState value =
             Json.Encode.string "STATE_STALE"
 
 
-{-| Encodes a `Task` as proto3 JSON.
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
@@ -189,7 +189,7 @@ encodeTask value =
         )
 
 
-{-| Encodes a `TaskDue` as the members of its message's JSON object.
+{-| Encodes a [`TaskDue`](#TaskDue) as the members of its message's JSON object.
 -}
 encodeTaskDue : TaskDue -> List ( String, Maybe Json.Encode.Value )
 encodeTaskDue value =
@@ -206,7 +206,7 @@ encodeTaskDue value =
             ]
 
 
-{-| Encodes a `GetTaskRequest` as proto3 JSON.
+{-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON.
 -}
 encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
 encodeGetTaskRequest value =
@@ -219,7 +219,7 @@ encodeGetTaskRequest value =
 -- DECODERS
 
 
-{-| Decodes a `State` from proto3 JSON.
+{-| Decodes a [`State`](#State) from proto3 JSON.
 -}
 decodeState : Json.Decode.Decoder State
 decodeState =
@@ -231,7 +231,7 @@ decodeState =
         ]
 
 
-{-| Decodes a `Task` from proto3 JSON.
+{-| Decodes a [`Task`](#Task) from proto3 JSON.
 -}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
@@ -245,7 +245,7 @@ decodeTask =
         |> Proto.Json.oneof decodeTaskDue
 
 
-{-| Decodes a `TaskDue` from the members of its message's JSON object.
+{-| Decodes a [`TaskDue`](#TaskDue) from the members of its message's JSON object.
 -}
 decodeTaskDue : Json.Decode.Decoder TaskDue
 decodeTaskDue =
@@ -256,7 +256,7 @@ decodeTaskDue =
         ]
 
 
-{-| Decodes a `GetTaskRequest` from proto3 JSON.
+{-| Decodes a [`GetTaskRequest`](#GetTaskRequest) from proto3 JSON.
 -}
 decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =

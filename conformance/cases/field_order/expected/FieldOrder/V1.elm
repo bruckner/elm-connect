@@ -26,7 +26,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum field_order.v1.Mood`
+{-| [`enum field_order.v1.Mood`](FieldOrder-V1-Mood#descriptor)
 
   - `MoodUnspecified` (`MOOD_UNSPECIFIED`)
   - `MoodCalm` (`MOOD_CALM`)
@@ -37,14 +37,14 @@ type Mood
     | MoodCalm
 
 
-{-| `message field_order.v1.Draft`
+{-| [`message field_order.v1.Draft`](FieldOrder-V1-Draft#descriptor)
 
-  - `title`
+  - [`title`](FieldOrder-V1-Draft#title)
   - `body`: The oneof's record field sits where its first member is declared,
-    after `title`; by number, `blob` would put it first. See `DraftBody`.
-  - `mood`
-  - `margin`
-  - `tags`
+    after `title`; by number, `blob` would put it first. See [`DraftBody`](#DraftBody).
+  - [`mood`](FieldOrder-V1-Draft#mood)
+  - [`margin`](FieldOrder-V1-Draft#margin)
+  - [`tags`](FieldOrder-V1-Draft#tags)
 
 -}
 type alias Draft =
@@ -62,8 +62,8 @@ after `title`; by number, `blob` would put it first.
 `oneof body` of `field_order.v1.Draft`
 
   - `DraftBodyUnset`: none of the fields is set.
-  - `DraftBodyText`
-  - `DraftBodyBlob`
+  - [`DraftBodyText`](FieldOrder-V1-Draft#text)
+  - [`DraftBodyBlob`](FieldOrder-V1-Draft#blob)
 
 -}
 type DraftBody
@@ -74,10 +74,10 @@ type DraftBody
 
 {-| A nested message, declared before the fields that use it.
 
-`message field_order.v1.Draft.Margin`
+[`message field_order.v1.Draft.Margin`](FieldOrder-V1-DraftMargin#descriptor)
 
-  - `left`
-  - `right`
+  - [`left`](FieldOrder-V1-DraftMargin#left)
+  - [`right`](FieldOrder-V1-DraftMargin#right)
 
 -}
 type alias DraftMargin =
@@ -90,7 +90,7 @@ type alias DraftMargin =
 -- DEFAULTS
 
 
-{-| A `Draft` with every field at its default and every oneof unset.
+{-| A [`Draft`](#Draft) with every field at its default and every oneof unset.
 -}
 defaultDraft : Draft
 defaultDraft =
@@ -102,7 +102,7 @@ defaultDraft =
     }
 
 
-{-| A `DraftMargin` with every field at its default and every oneof unset.
+{-| A [`DraftMargin`](#DraftMargin) with every field at its default and every oneof unset.
 -}
 defaultDraftMargin : DraftMargin
 defaultDraftMargin =
@@ -115,21 +115,21 @@ defaultDraftMargin =
 -- TYPED VALUES
 
 
-{-| The typed value of `Mood`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Mood`](#Mood): its codecs, zero value and descriptor together.
 -}
 enumMood : Proto.Enum.Enum Mood
 enumMood =
     Proto.Enum.enum encodeMood decodeMood MoodUnspecified FieldOrder.V1.Mood.descriptor
 
 
-{-| The typed value of `Draft`: its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
     Proto.Message.message encodeDraft decodeDraft defaultDraft FieldOrder.V1.Draft.descriptor
 
 
-{-| The typed value of `DraftMargin`: its codecs, default and descriptor together.
+{-| The typed value of [`DraftMargin`](#DraftMargin): its codecs, default and descriptor together.
 -}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =
@@ -140,7 +140,7 @@ messageDraftMargin =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -159,7 +159,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Mood` as proto3 JSON.
+{-| Encodes a [`Mood`](#Mood) as proto3 JSON.
 -}
 encodeMood : Mood -> Json.Encode.Value
 encodeMood value =
@@ -171,7 +171,7 @@ encodeMood value =
             Json.Encode.string "MOOD_CALM"
 
 
-{-| Encodes a `Draft` as proto3 JSON.
+{-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
 encodeDraft : Draft -> Json.Encode.Value
 encodeDraft value =
@@ -185,7 +185,7 @@ encodeDraft value =
         )
 
 
-{-| Encodes a `DraftBody` as the members of its message's JSON object.
+{-| Encodes a [`DraftBody`](#DraftBody) as the members of its message's JSON object.
 -}
 encodeDraftBody : DraftBody -> List ( String, Maybe Json.Encode.Value )
 encodeDraftBody value =
@@ -202,7 +202,7 @@ encodeDraftBody value =
             ]
 
 
-{-| Encodes a `DraftMargin` as proto3 JSON.
+{-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON.
 -}
 encodeDraftMargin : DraftMargin -> Json.Encode.Value
 encodeDraftMargin value =
@@ -216,7 +216,7 @@ encodeDraftMargin value =
 -- DECODERS
 
 
-{-| Decodes a `Mood` from proto3 JSON.
+{-| Decodes a [`Mood`](#Mood) from proto3 JSON.
 -}
 decodeMood : Json.Decode.Decoder Mood
 decodeMood =
@@ -227,7 +227,7 @@ decodeMood =
         ]
 
 
-{-| Decodes a `Draft` from proto3 JSON.
+{-| Decodes a [`Draft`](#Draft) from proto3 JSON.
 -}
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
@@ -239,7 +239,7 @@ decodeDraft =
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
-{-| Decodes a `DraftBody` from the members of its message's JSON object.
+{-| Decodes a [`DraftBody`](#DraftBody) from the members of its message's JSON object.
 -}
 decodeDraftBody : Json.Decode.Decoder DraftBody
 decodeDraftBody =
@@ -250,7 +250,7 @@ decodeDraftBody =
         ]
 
 
-{-| Decodes a `DraftMargin` from proto3 JSON.
+{-| Decodes a [`DraftMargin`](#DraftMargin) from proto3 JSON.
 -}
 decodeDraftMargin : Json.Decode.Decoder DraftMargin
 decodeDraftMargin =

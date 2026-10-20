@@ -20,6 +20,8 @@ or providing other forms of feedback.
 
 `message google.rpc.RequestInfo`
 
+Describes [`Google.Rpc.RequestInfo`](Google-Rpc#RequestInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

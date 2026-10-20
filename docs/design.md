@@ -476,6 +476,19 @@ rpc shared call =
   doc starts with `Deprecated.`, a field's item with it. A comment of
   several paragraphs stays whole in its item, which makes the list
   loose (blank lines between items), as Markdown does.
+  The docs link to each other as the package site and elm-doc-preview
+  resolve links, `#name` within a module and `Module-Name#name` (dots
+  as dashes) to another: a type's declaration line to its descriptor
+  module's `descriptor` (`` [`message notes.v1.Note`](Notes-V1-Note#descriptor) ``),
+  each field item's name to its descriptor value, a oneof item to its
+  custom type, a member's constructor to its value; a `descriptor`
+  back to its type (`` Describes [`Notes.V1.Note`](Notes-V1#Note). ``);
+  codecs, defaults, typed values and wrappers to the type they name; a
+  call to its request and response types and its descriptor. A runtime
+  type a doc names (`Proto.Any.Any`) links to the package site by
+  absolute URL, which an editor's hover makes clickable, at `latest`,
+  since the site has no per-major path and `elmConnectVersion_`
+  already pins the minor version.
   The comment is the leading comment, then the trailing one as a
   paragraph of its own; detached comments are left out, as
   protoc-gen-go and Java leave them out. Each line loses the space
@@ -1643,6 +1656,7 @@ message's descriptor sits in a module apart from its type (§3.1). The
 
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`. Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+From [`Notes.V1.GetNoteRequest`](Notes-V1#GetNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
@@ -1696,7 +1710,8 @@ keeps.
   bindings as its
   `google.api.http` rule writes them, the rule's own first and each
   additional binding numbered as `Rpc.Call.viaBinding` counts it, each
-  with its `body` and `response_body` where set;
+  with its `body` and `response_body` where set, then a line linking
+  its request and response types and its descriptor;
   `No HTTP rule: the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the line are named as the service's

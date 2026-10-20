@@ -29,6 +29,8 @@ based on whether the client or server under test implements these features.
 
 `message connectrpc.conformance.v1.TestSuite`
 
+Describes [`Connectrpc.Conformance.V1.TestSuite`](Connectrpc-Conformance-V1#TestSuite).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

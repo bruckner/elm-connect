@@ -20,6 +20,8 @@ This enumerates all of the "flavors" of the test suite to run.
 
 `message connectrpc.conformance.v1.Config`
 
+Describes [`Connectrpc.Conformance.V1.Config`](Connectrpc-Conformance-V1#Config).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

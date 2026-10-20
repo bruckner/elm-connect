@@ -21,6 +21,8 @@ Kept for older clients.
 
 `enum notes.v1.Legacy`
 
+Describes [`Notes.V1.Legacy`](Notes-V1#Legacy).
+
   - `LEGACY_UNSPECIFIED = 0;`
 
 -}

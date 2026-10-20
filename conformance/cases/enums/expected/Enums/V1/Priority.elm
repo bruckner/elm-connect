@@ -23,6 +23,8 @@ alias it claims no name, so the two do not collide.
 
 `enum enums.v1.Priority`
 
+Describes [`Enums.V1.Priority`](Enums-V1#Priority).
+
   - `NONE = 0;`
   - `LOW = 1;`
   - `HIGH = 2;`

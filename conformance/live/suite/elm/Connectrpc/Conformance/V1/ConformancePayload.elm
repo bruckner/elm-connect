@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.ConformancePayload`
+
+Describes [`Connectrpc.Conformance.V1.ConformancePayload`](Connectrpc-Conformance-V1#ConformancePayload).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message catalog.v1.GetEntryRequest`
+
+Describes [`Catalog.V1.GetEntryRequest`](Catalog-V1#GetEntryRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

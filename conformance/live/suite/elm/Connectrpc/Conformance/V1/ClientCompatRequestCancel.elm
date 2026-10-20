@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.ClientCompatRequest.Cancel`
+
+Describes [`Connectrpc.Conformance.V1.ClientCompatRequestCancel`](Connectrpc-Conformance-V1#ClientCompatRequestCancel).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

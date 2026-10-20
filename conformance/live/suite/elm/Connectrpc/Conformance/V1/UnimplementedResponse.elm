@@ -15,6 +15,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.UnimplementedResponse`
+
+Describes [`Connectrpc.Conformance.V1.UnimplementedResponse`](Connectrpc-Conformance-V1#UnimplementedResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

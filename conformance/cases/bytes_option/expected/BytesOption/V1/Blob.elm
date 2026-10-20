@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message bytes_option.v1.Blob`
+
+Describes [`BytesOption.V1.Blob`](BytesOption-V1#Blob).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -25,6 +25,7 @@ elmConnectVersion_ =
 
 {-| `rpc Send(Line) returns (Line)`. Connect: `POST /chat.v1.Chat/Send`.
 No HTTP rule: the Connect path.
+From [`Chat.V1.Line`](Chat-V1#Line) to [`Chat.V1.Line`](Chat-V1#Line), described by [`descriptorSend`](#descriptorSend).
 -}
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =

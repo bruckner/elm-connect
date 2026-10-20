@@ -18,7 +18,7 @@ elmConnectVersion_ =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =

@@ -24,10 +24,10 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message notes.v1.Note`
+{-| [`message notes.v1.Note`](Notes-V1-Note#descriptor)
 
-  - `title`
-  - `tags`
+  - [`title`](Notes-V1-Note#title)
+  - [`tags`](Notes-V1-Note#tags)
 
 -}
 type alias Note =
@@ -36,9 +36,9 @@ type alias Note =
     }
 
 
-{-| `message notes.v1.Tag`
+{-| [`message notes.v1.Tag`](Notes-V1-Tag#descriptor)
 
-  - `label`
+  - [`label`](Notes-V1-Tag#label)
 
 -}
 type alias Tag =
@@ -50,7 +50,7 @@ type alias Tag =
 -- DEFAULTS
 
 
-{-| A `Note` with every field at its default and every oneof unset.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -59,7 +59,7 @@ defaultNote =
     }
 
 
-{-| A `Tag` with every field at its default and every oneof unset.
+{-| A [`Tag`](#Tag) with every field at its default and every oneof unset.
 -}
 defaultTag : Tag
 defaultTag =
@@ -71,14 +71,14 @@ defaultTag =
 -- TYPED VALUES
 
 
-{-| The typed value of `Note`: its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
-{-| The typed value of `Tag`: its codecs, default and descriptor together.
+{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
@@ -89,7 +89,7 @@ messageTag =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -107,7 +107,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Note` as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
@@ -117,7 +117,7 @@ encodeNote value =
         ]
 
 
-{-| Encodes a `Tag` as proto3 JSON.
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
@@ -130,7 +130,7 @@ encodeTag value =
 -- DECODERS
 
 
-{-| Decodes a `Note` from proto3 JSON.
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
@@ -139,7 +139,7 @@ decodeNote =
         |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
 
 
-{-| Decodes a `Tag` from proto3 JSON.
+{-| Decodes a [`Tag`](#Tag) from proto3 JSON.
 -}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =

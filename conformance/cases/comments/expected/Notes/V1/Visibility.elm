@@ -24,6 +24,8 @@ A second paragraph, with `code` and a list:
 
 `enum notes.v1.Visibility`
 
+Describes [`Notes.V1.Visibility`](Notes-V1#Visibility).
+
   - `VISIBILITY_UNSPECIFIED = 0;` Nobody said; read as private.
   - `VISIBILITY_PRIVATE = 1;` Only the author.
   - `VISIBILITY_PUBLIC = 2 [deprecated = true];` Deprecated. Everyone.

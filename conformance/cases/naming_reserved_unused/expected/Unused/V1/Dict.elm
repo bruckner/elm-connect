@@ -21,6 +21,8 @@ not use unqualified: no field is a map, so `Dict` is free, and `Result`,
 
 `message unused.v1.Dict`
 
+Describes [`Unused.V1.Dict`](Unused-V1#Dict).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

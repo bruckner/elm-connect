@@ -20,6 +20,8 @@ Can be used to define responses for server-streaming or bidi-streaming calls.
 
 `message connectrpc.conformance.v1.StreamResponseDefinition`
 
+Describes [`Connectrpc.Conformance.V1.StreamResponseDefinition`](Connectrpc-Conformance-V1#StreamResponseDefinition).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

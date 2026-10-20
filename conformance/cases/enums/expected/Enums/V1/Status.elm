@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum enums.v1.Status`
 
+Describes [`Enums.V1.Status`](Enums-V1#Status).
+
   - `STATUS_UNSPECIFIED = 0;`
   - `STATUS_ACTIVE = 1;`
   - `STATUS_ARCHIVED = 2;`

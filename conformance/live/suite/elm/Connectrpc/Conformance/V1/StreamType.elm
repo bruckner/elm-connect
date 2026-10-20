@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.StreamType`
 
+Describes [`Connectrpc.Conformance.V1.StreamType`](Connectrpc-Conformance-V1#StreamType).
+
   - `STREAM_TYPE_UNSPECIFIED = 0;`
   - `STREAM_TYPE_UNARY = 1;`
   - `STREAM_TYPE_CLIENT_STREAM = 2;`

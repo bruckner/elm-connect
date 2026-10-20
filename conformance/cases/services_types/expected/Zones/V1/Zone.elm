@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message zones.v1.Zone`
+
+Describes [`Zones.V1.Zone`](Zones-V1#Zone).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

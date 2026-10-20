@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.Compression`
 
+Describes [`Connectrpc.Conformance.V1.Compression`](Connectrpc-Conformance-V1#Compression).
+
   - `COMPRESSION_UNSPECIFIED = 0;`
   - `COMPRESSION_IDENTITY = 1;`
   - `COMPRESSION_GZIP = 2;`

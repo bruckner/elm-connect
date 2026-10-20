@@ -26,16 +26,16 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message bytes_option.v1.Blob`
+{-| [`message bytes_option.v1.Blob`](BytesOption-V1-Blob#descriptor)
 
-  - `data`
-  - `maybeData`
-  - `chunks`
-  - `byName`: Map keys cannot be bytes; values follow the option.
-  - `wrapped`
-  - `wrappedChunks`
-  - `source`: See `BlobSource`.
-  - `name`: Other scalars are unchanged.
+  - [`data`](BytesOption-V1-Blob#data)
+  - [`maybeData`](BytesOption-V1-Blob#maybeData)
+  - [`chunks`](BytesOption-V1-Blob#chunks)
+  - [`byName`](BytesOption-V1-Blob#byName): Map keys cannot be bytes; values follow the option.
+  - [`wrapped`](BytesOption-V1-Blob#wrapped)
+  - [`wrappedChunks`](BytesOption-V1-Blob#wrappedChunks)
+  - `source`: See [`BlobSource`](#BlobSource).
+  - [`name`](BytesOption-V1-Blob#name): Other scalars are unchanged.
 
 -}
 type alias Blob =
@@ -53,8 +53,8 @@ type alias Blob =
 {-| `oneof source` of `bytes_option.v1.Blob`
 
   - `BlobSourceUnset`: none of the fields is set.
-  - `BlobSourceInline`
-  - `BlobSourceUrl`
+  - [`BlobSourceInline`](BytesOption-V1-Blob#inline)
+  - [`BlobSourceUrl`](BytesOption-V1-Blob#url)
 
 -}
 type BlobSource
@@ -67,7 +67,7 @@ type BlobSource
 -- DEFAULTS
 
 
-{-| A `Blob` with every field at its default and every oneof unset.
+{-| A [`Blob`](#Blob) with every field at its default and every oneof unset.
 -}
 defaultBlob : Blob
 defaultBlob =
@@ -86,7 +86,7 @@ defaultBlob =
 -- TYPED VALUES
 
 
-{-| The typed value of `Blob`: its codecs, default and descriptor together.
+{-| The typed value of [`Blob`](#Blob): its codecs, default and descriptor together.
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
@@ -97,7 +97,7 @@ messageBlob =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -114,7 +114,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Blob` as proto3 JSON.
+{-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
 encodeBlob : Blob -> Json.Encode.Value
 encodeBlob value =
@@ -131,7 +131,7 @@ encodeBlob value =
         )
 
 
-{-| Encodes a `BlobSource` as the members of its message's JSON object.
+{-| Encodes a [`BlobSource`](#BlobSource) as the members of its message's JSON object.
 -}
 encodeBlobSource : BlobSource -> List ( String, Maybe Json.Encode.Value )
 encodeBlobSource value =
@@ -152,7 +152,7 @@ encodeBlobSource value =
 -- DECODERS
 
 
-{-| Decodes a `Blob` from proto3 JSON.
+{-| Decodes a [`Blob`](#Blob) from proto3 JSON.
 -}
 decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
@@ -167,7 +167,7 @@ decodeBlob =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `BlobSource` from the members of its message's JSON object.
+{-| Decodes a [`BlobSource`](#BlobSource) from the members of its message's JSON object.
 -}
 decodeBlobSource : Json.Decode.Decoder BlobSource
 decodeBlobSource =

@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `enum awkward.v1.Marks`
 
+Describes [`Awkward.V1.Marks`](Awkward-V1#Marks).
+
   - `MARKS_UNSPECIFIED = 0;` **not a heading in proto**
 
   - `MARKS_LIST = 1;`

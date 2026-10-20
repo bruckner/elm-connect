@@ -21,6 +21,8 @@ by clients under test.
 
 `message connectrpc.conformance.v1.WireDetails`
 
+Describes [`Connectrpc.Conformance.V1.WireDetails`](Connectrpc-Conformance-V1#WireDetails).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

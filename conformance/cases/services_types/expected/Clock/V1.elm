@@ -24,9 +24,9 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message clock.v1.Alarm`
+{-| [`message clock.v1.Alarm`](Clock-V1-Alarm#descriptor)
 
-  - `at`
+  - [`at`](Clock-V1-Alarm#at)
 
 -}
 type alias Alarm =
@@ -38,7 +38,7 @@ type alias Alarm =
 -- DEFAULTS
 
 
-{-| A `Alarm` with every field at its default and every oneof unset.
+{-| A [`Alarm`](#Alarm) with every field at its default and every oneof unset.
 -}
 defaultAlarm : Alarm
 defaultAlarm =
@@ -50,7 +50,7 @@ defaultAlarm =
 -- TYPED VALUES
 
 
-{-| The typed value of `Alarm`: its codecs, default and descriptor together.
+{-| The typed value of [`Alarm`](#Alarm): its codecs, default and descriptor together.
 -}
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
@@ -61,7 +61,7 @@ messageAlarm =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -78,7 +78,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Alarm` as proto3 JSON.
+{-| Encodes a [`Alarm`](#Alarm) as proto3 JSON.
 -}
 encodeAlarm : Alarm -> Json.Encode.Value
 encodeAlarm value =
@@ -91,7 +91,7 @@ encodeAlarm value =
 -- DECODERS
 
 
-{-| Decodes a `Alarm` from proto3 JSON.
+{-| Decodes a [`Alarm`](#Alarm) from proto3 JSON.
 -}
 decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =

@@ -20,6 +20,8 @@ member lazily.
 
 `message nesting.v1.Expr`
 
+Describes [`Nesting.V1.Expr`](Nesting-V1#Expr).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

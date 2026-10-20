@@ -22,6 +22,8 @@ shadow a default import.
 
 `message range.v1.Bounds`
 
+Describes [`Range.V1.Bounds`](Range-V1#Bounds).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

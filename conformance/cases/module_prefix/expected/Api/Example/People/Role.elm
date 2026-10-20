@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum users.v1.Role`
 
+Describes [`Api.Example.People.Role`](Api-Example-People#Role).
+
   - `ROLE_UNSPECIFIED = 0;`
   - `ROLE_EDITOR = 1;`
 

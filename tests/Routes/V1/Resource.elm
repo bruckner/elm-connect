@@ -20,6 +20,8 @@ elmConnectVersion_ =
 
 `message routes.v1.Resource`
 
+Describes [`Routes.V1.Resource`](Routes-V1#Resource).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

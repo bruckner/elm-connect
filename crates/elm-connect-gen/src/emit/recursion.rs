@@ -14,7 +14,7 @@ impl Emitter {
             doc: Some(format!(
                 "A {} where a cycle of fields leads back to it, since Elm rejects a \
                  recursive type alias.",
-                docs::code(&message.elm_name)
+                docs::local(&message.elm_name)
             )),
             name: wrapper.elm_name.clone(),
             type_params: Vec::new(),
@@ -31,7 +31,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Encodes a {} as proto3 JSON.",
-                docs::code(&wrapper.elm_name)
+                docs::local(&wrapper.elm_name)
             )),
             name: wrapper.encoder_name(),
             annotation: Type::Function(
@@ -55,7 +55,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Decodes a {} from proto3 JSON.",
-                docs::code(&wrapper.elm_name)
+                docs::local(&wrapper.elm_name)
             )),
             name: wrapper.decoder_name(),
             annotation,

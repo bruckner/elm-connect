@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.TestCase.ExpandedSize`
+
+Describes [`Connectrpc.Conformance.V1.TestCaseExpandedSize`](Connectrpc-Conformance-V1#TestCaseExpandedSize).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

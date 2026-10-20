@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.BidiStreamRequest`
+
+Describes [`Connectrpc.Conformance.V1.BidiStreamRequest`](Connectrpc-Conformance-V1#BidiStreamRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

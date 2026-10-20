@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message cardinality.v1.Note`
+
+Describes [`Cardinality.V1.Note`](Cardinality-V1#Note).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

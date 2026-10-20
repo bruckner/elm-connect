@@ -4,16 +4,17 @@
 use super::{Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, int, list, pctor, pvar, string, ty, var};
-use crate::ir::Enum;
+use crate::ir::{Enum, ModuleName};
 use crate::naming::ENCODER_ARGUMENT;
 use crate::options::EnumUnknown;
 
 impl Emitter {
     /// `type Status = StatusUnspecified | ...`, one constructor per number,
     /// the zero value first.
-    pub(super) fn enum_type(&mut self, enumeration: &Enum) -> Decl {
+    pub(super) fn enum_type(&mut self, package: &ModuleName, enumeration: &Enum) -> Decl {
+        let descriptors = docs::page(&enumeration.descriptor_module(package));
         Decl::CustomType {
-            doc: Some(docs::enumeration(enumeration)),
+            doc: Some(docs::enumeration(enumeration, &descriptors)),
             name: enumeration.elm_name.clone(),
             type_params: Vec::new(),
             variants: enumeration
@@ -44,7 +45,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Encodes a {} as proto3 JSON.",
-                docs::code(&enumeration.elm_name)
+                docs::local(&enumeration.elm_name)
             )),
             name: enumeration.encoder_name(),
             annotation: Type::Function(
@@ -94,7 +95,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Decodes a {} from proto3 JSON.",
-                docs::code(&enumeration.elm_name)
+                docs::local(&enumeration.elm_name)
             )),
             name: enumeration.decoder_name(),
             annotation,

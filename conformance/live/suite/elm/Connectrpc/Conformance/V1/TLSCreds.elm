@@ -21,6 +21,8 @@ in PEM format.
 
 `message connectrpc.conformance.v1.TLSCreds`
 
+Describes [`Connectrpc.Conformance.V1.TLSCreds`](Connectrpc-Conformance-V1#TLSCreds).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

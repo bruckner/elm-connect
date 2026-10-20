@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.Codec`
 
+Describes [`Connectrpc.Conformance.V1.Codec`](Connectrpc-Conformance-V1#Codec).
+
   - `CODEC_UNSPECIFIED = 0;`
   - `CODEC_PROTO = 1;`
   - `CODEC_JSON = 2;`

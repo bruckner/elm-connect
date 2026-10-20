@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message nesting.v1.Outer.Inner`
+
+Describes [`Nesting.V1.OuterInner`](Nesting-V1#OuterInner).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

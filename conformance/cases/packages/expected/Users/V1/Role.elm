@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum users.v1.Role`
 
+Describes [`Users.V1.Role`](Users-V1#Role).
+
   - `ROLE_UNSPECIFIED = 0;`
   - `ROLE_EDITOR = 1;`
 

@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message google.rpc.DebugInfo`
 
+Describes [`Google.Rpc.DebugInfo`](Google-Rpc#DebugInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

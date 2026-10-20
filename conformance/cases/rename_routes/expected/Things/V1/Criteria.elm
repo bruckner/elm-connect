@@ -20,6 +20,8 @@ elmConnectVersion_ =
 
 `message things.v1.Filter`
 
+Describes [`Things.V1.Criteria`](Things-V1#Criteria).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

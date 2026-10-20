@@ -25,9 +25,9 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message things.v1.Thing`
+{-| [`message things.v1.Thing`](Things-V1-Thing#descriptor)
 
-  - `name`
+  - [`name`](Things-V1-Thing#name)
 
 -}
 type alias Thing =
@@ -38,9 +38,9 @@ type alias Thing =
 {-| Renamed to `Criteria` (options.txt), so its descriptor module is
 `Things.V1.Criteria`; `state` is renamed to `status`.
 
-`message things.v1.Filter`
+[`message things.v1.Filter`](Things-V1-Criteria#descriptor)
 
-  - `status`
+  - [`status`](Things-V1-Criteria#status)
 
 -}
 type alias Criteria =
@@ -51,11 +51,11 @@ type alias Criteria =
 {-| `name` is renamed to `resource` and `page_size` to `limit`
 (options.txt): the route names their descriptors by the new names.
 
-`message things.v1.GetThingRequest`
+[`message things.v1.GetThingRequest`](Things-V1-GetThingRequest#descriptor)
 
-  - `resource`
-  - `limit`
-  - `filter`
+  - [`resource`](Things-V1-GetThingRequest#resource)
+  - [`limit`](Things-V1-GetThingRequest#limit)
+  - [`filter`](Things-V1-GetThingRequest#filter)
 
 -}
 type alias GetThingRequest =
@@ -69,7 +69,7 @@ type alias GetThingRequest =
 -- DEFAULTS
 
 
-{-| A `Thing` with every field at its default and every oneof unset.
+{-| A [`Thing`](#Thing) with every field at its default and every oneof unset.
 -}
 defaultThing : Thing
 defaultThing =
@@ -77,7 +77,7 @@ defaultThing =
     }
 
 
-{-| A `Criteria` with every field at its default and every oneof unset.
+{-| A [`Criteria`](#Criteria) with every field at its default and every oneof unset.
 -}
 defaultCriteria : Criteria
 defaultCriteria =
@@ -85,7 +85,7 @@ defaultCriteria =
     }
 
 
-{-| A `GetThingRequest` with every field at its default and every oneof unset.
+{-| A [`GetThingRequest`](#GetThingRequest) with every field at its default and every oneof unset.
 -}
 defaultGetThingRequest : GetThingRequest
 defaultGetThingRequest =
@@ -99,21 +99,21 @@ defaultGetThingRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of `Thing`: its codecs, default and descriptor together.
+{-| The typed value of [`Thing`](#Thing): its codecs, default and descriptor together.
 -}
 messageThing : Proto.Message.Message Thing
 messageThing =
     Proto.Message.message encodeThing decodeThing defaultThing Things.V1.Thing.descriptor
 
 
-{-| The typed value of `Criteria`: its codecs, default and descriptor together.
+{-| The typed value of [`Criteria`](#Criteria): its codecs, default and descriptor together.
 -}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
     Proto.Message.message encodeCriteria decodeCriteria defaultCriteria Things.V1.Criteria.descriptor
 
 
-{-| The typed value of `GetThingRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetThingRequest`](#GetThingRequest): its codecs, default and descriptor together.
 -}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =
@@ -124,7 +124,7 @@ messageGetThingRequest =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -143,7 +143,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Thing` as proto3 JSON.
+{-| Encodes a [`Thing`](#Thing) as proto3 JSON.
 -}
 encodeThing : Thing -> Json.Encode.Value
 encodeThing value =
@@ -152,7 +152,7 @@ encodeThing value =
         ]
 
 
-{-| Encodes a `Criteria` as proto3 JSON.
+{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
 -}
 encodeCriteria : Criteria -> Json.Encode.Value
 encodeCriteria value =
@@ -161,7 +161,7 @@ encodeCriteria value =
         ]
 
 
-{-| Encodes a `GetThingRequest` as proto3 JSON.
+{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
 -}
 encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
 encodeGetThingRequest value =
@@ -176,7 +176,7 @@ encodeGetThingRequest value =
 -- DECODERS
 
 
-{-| Decodes a `Thing` from proto3 JSON.
+{-| Decodes a [`Thing`](#Thing) from proto3 JSON.
 -}
 decodeThing : Json.Decode.Decoder Thing
 decodeThing =
@@ -184,7 +184,7 @@ decodeThing =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `Criteria` from proto3 JSON.
+{-| Decodes a [`Criteria`](#Criteria) from proto3 JSON.
 -}
 decodeCriteria : Json.Decode.Decoder Criteria
 decodeCriteria =
@@ -192,7 +192,7 @@ decodeCriteria =
         |> Proto.Json.field "state" "" Json.Decode.string
 
 
-{-| Decodes a `GetThingRequest` from proto3 JSON.
+{-| Decodes a [`GetThingRequest`](#GetThingRequest) from proto3 JSON.
 -}
 decodeGetThingRequest : Json.Decode.Decoder GetThingRequest
 decodeGetThingRequest =

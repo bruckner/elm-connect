@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.HTTPVersion`
 
+Describes [`Connectrpc.Conformance.V1.HTTPVersion`](Connectrpc-Conformance-V1#HTTPVersion).
+
   - `HTTP_VERSION_UNSPECIFIED = 0;`
   - `HTTP_VERSION_1 = 1;`
   - `HTTP_VERSION_2 = 2;`

@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message notes.v1.ListNotesRequest`
+
+Describes [`Notes.V1.ListNotesRequest`](Notes-V1#ListNotesRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

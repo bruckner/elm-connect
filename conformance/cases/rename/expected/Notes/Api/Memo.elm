@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| `message notes.v1.Note`
+
+Describes [`Notes.Api.Memo`](Notes-Api#Memo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

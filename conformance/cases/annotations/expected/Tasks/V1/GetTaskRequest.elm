@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message tasks.v1.GetTaskRequest`
+
+Describes [`Tasks.V1.GetTaskRequest`](Tasks-V1#GetTaskRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

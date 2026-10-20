@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message clock.v1.Moment`
+
+Describes [`Clock.V1.Moment`](Clock-V1#Moment).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -30,6 +30,7 @@ elmConnectVersion_ =
 
 `rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`. Connect: `POST /events.v1.EventService/ListEvents`.
 Transcode: `GET /v1/{parent=feeds/*}/events`.
+From [`Events.V1.ListEventsRequest`](Events-V1#ListEventsRequest) to [`Events.V1.ListEventsResponse`](Events-V1#ListEventsResponse), described by [`descriptorListEvents`](#descriptorListEvents).
 
 -}
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse

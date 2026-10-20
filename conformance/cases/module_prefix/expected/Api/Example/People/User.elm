@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| `message users.v1.User`
+
+Describes [`Api.Example.People.User`](Api-Example-People#User).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

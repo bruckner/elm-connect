@@ -264,13 +264,13 @@ pub fn emit_descriptor_modules(package: &Package, options: &Options) -> Vec<Modu
     let mut modules = Vec::new();
     for enumeration in &package.enums {
         let mut emitter = Emitter::new(&enumeration.descriptor_module(&package.module), options);
-        let decls = emitter.enum_descriptor_module(enumeration);
+        let decls = emitter.enum_descriptor_module(&package.module, enumeration);
         modules.push(emitter.module(package, decls));
     }
     for message in &package.messages {
         let shape = message_shape(message, &by_name, Holding::of(options));
         let mut emitter = Emitter::new(&message.descriptor_module(&package.module), options);
-        let decls = emitter.message_descriptor_module(&shape);
+        let decls = emitter.message_descriptor_module(&package.module, &shape);
         modules.push(emitter.module(package, decls));
     }
     modules
@@ -462,13 +462,13 @@ impl Emitter {
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
-            types.push(self.enum_type(enumeration));
+            types.push(self.enum_type(&package.module, enumeration));
             values.push(self.enum_record(&package.module, enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
         }
         for shape in &messages {
-            types.push(self.message_alias(shape));
+            types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
             encoders.push(self.message_encoder(shape));
@@ -479,7 +479,7 @@ impl Emitter {
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
-                types.push(self.oneof_type(&shape.message.proto_full_name, oneof));
+                types.push(self.oneof_type(&package.module, shape.message, oneof));
                 encoders.push(self.oneof_encoder(oneof));
                 decoders.push(self.oneof_decoder(oneof));
             }

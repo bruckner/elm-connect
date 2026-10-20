@@ -30,6 +30,8 @@ vs. invalid config case using protovalidate rules
 
 `message connectrpc.conformance.v1.ConfigCase`
 
+Describes [`Connectrpc.Conformance.V1.ConfigCase`](Connectrpc-Conformance-V1#ConfigCase).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -20,6 +20,8 @@ elmConnectVersion_ =
 
 `message things.v1.GetThingRequest`
 
+Describes [`Things.V1.GetThingRequest`](Things-V1#GetThingRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

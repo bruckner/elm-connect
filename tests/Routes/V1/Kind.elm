@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum routes.v1.Kind`
 
+Describes [`Routes.V1.Kind`](Routes-V1#Kind).
+
   - `KIND_UNSPECIFIED = 0;`
   - `KIND_TEXT = 1;`
   - `KIND_IMAGE = 2;`

@@ -29,10 +29,10 @@ elmConnectVersion_ =
 `Catalog.V1.Entry`, whose `descriptor` is the message's own, and keeps
 `descriptor` as its record field.
 
-`message catalog.v1.Entry`
+[`message catalog.v1.Entry`](Catalog-V1-Entry#descriptor)
 
-  - `name`
-  - `descriptor`
+  - [`name`](Catalog-V1-Entry#name)
+  - [`descriptor`](Catalog-V1-Entry#descriptor_)
 
 -}
 type alias Entry =
@@ -43,9 +43,9 @@ type alias Entry =
 
 {-| A oneof member named `descriptor` takes `descriptor_` too.
 
-`message catalog.v1.Part`
+[`message catalog.v1.Part`](Catalog-V1-Part#descriptor)
 
-  - `kind`: See `PartKind`.
+  - `kind`: See [`PartKind`](#PartKind).
 
 -}
 type alias Part =
@@ -56,8 +56,8 @@ type alias Part =
 {-| `oneof kind` of `catalog.v1.Part`
 
   - `PartKindUnset`: none of the fields is set.
-  - `PartKindDescriptor`
-  - `PartKindCount`
+  - [`PartKindDescriptor`](Catalog-V1-Part#descriptor_)
+  - [`PartKindCount`](Catalog-V1-Part#count)
 
 -}
 type PartKind
@@ -66,11 +66,11 @@ type PartKind
     | PartKindCount Int
 
 
-{-| `message catalog.v1.GetEntryRequest`
+{-| [`message catalog.v1.GetEntryRequest`](Catalog-V1-GetEntryRequest#descriptor)
 
-  - `name`
-  - `descriptor`
-  - `part`
+  - [`name`](Catalog-V1-GetEntryRequest#name)
+  - [`descriptor`](Catalog-V1-GetEntryRequest#descriptor_)
+  - [`part`](Catalog-V1-GetEntryRequest#part)
 
 -}
 type alias GetEntryRequest =
@@ -84,7 +84,7 @@ type alias GetEntryRequest =
 -- DEFAULTS
 
 
-{-| A `Entry` with every field at its default and every oneof unset.
+{-| A [`Entry`](#Entry) with every field at its default and every oneof unset.
 -}
 defaultEntry : Entry
 defaultEntry =
@@ -93,7 +93,7 @@ defaultEntry =
     }
 
 
-{-| A `Part` with every field at its default and every oneof unset.
+{-| A [`Part`](#Part) with every field at its default and every oneof unset.
 -}
 defaultPart : Part
 defaultPart =
@@ -101,7 +101,7 @@ defaultPart =
     }
 
 
-{-| A `GetEntryRequest` with every field at its default and every oneof unset.
+{-| A [`GetEntryRequest`](#GetEntryRequest) with every field at its default and every oneof unset.
 -}
 defaultGetEntryRequest : GetEntryRequest
 defaultGetEntryRequest =
@@ -115,21 +115,21 @@ defaultGetEntryRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of `Entry`: its codecs, default and descriptor together.
+{-| The typed value of [`Entry`](#Entry): its codecs, default and descriptor together.
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
     Proto.Message.message encodeEntry decodeEntry defaultEntry Catalog.V1.Entry.descriptor
 
 
-{-| The typed value of `Part`: its codecs, default and descriptor together.
+{-| The typed value of [`Part`](#Part): its codecs, default and descriptor together.
 -}
 messagePart : Proto.Message.Message Part
 messagePart =
     Proto.Message.message encodePart decodePart defaultPart Catalog.V1.Part.descriptor
 
 
-{-| The typed value of `GetEntryRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its codecs, default and descriptor together.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
@@ -140,7 +140,7 @@ messageGetEntryRequest =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -159,7 +159,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Entry` as proto3 JSON.
+{-| Encodes a [`Entry`](#Entry) as proto3 JSON.
 -}
 encodeEntry : Entry -> Json.Encode.Value
 encodeEntry value =
@@ -169,14 +169,14 @@ encodeEntry value =
         ]
 
 
-{-| Encodes a `Part` as proto3 JSON.
+{-| Encodes a [`Part`](#Part) as proto3 JSON.
 -}
 encodePart : Part -> Json.Encode.Value
 encodePart value =
     Proto.Json.objectOfFields (encodePartKind value.kind)
 
 
-{-| Encodes a `PartKind` as the members of its message's JSON object.
+{-| Encodes a [`PartKind`](#PartKind) as the members of its message's JSON object.
 -}
 encodePartKind : PartKind -> List ( String, Maybe Json.Encode.Value )
 encodePartKind value =
@@ -193,7 +193,7 @@ encodePartKind value =
             ]
 
 
-{-| Encodes a `GetEntryRequest` as proto3 JSON.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
 encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
 encodeGetEntryRequest value =
@@ -208,7 +208,7 @@ encodeGetEntryRequest value =
 -- DECODERS
 
 
-{-| Decodes a `Entry` from proto3 JSON.
+{-| Decodes a [`Entry`](#Entry) from proto3 JSON.
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
@@ -217,7 +217,7 @@ decodeEntry =
         |> Proto.Json.field "descriptor" "" Json.Decode.string
 
 
-{-| Decodes a `Part` from proto3 JSON.
+{-| Decodes a [`Part`](#Part) from proto3 JSON.
 -}
 decodePart : Json.Decode.Decoder Part
 decodePart =
@@ -225,7 +225,7 @@ decodePart =
         |> Proto.Json.oneof decodePartKind
 
 
-{-| Decodes a `PartKind` from the members of its message's JSON object.
+{-| Decodes a [`PartKind`](#PartKind) from the members of its message's JSON object.
 -}
 decodePartKind : Json.Decode.Decoder PartKind
 decodePartKind =
@@ -236,7 +236,7 @@ decodePartKind =
         ]
 
 
-{-| Decodes a `GetEntryRequest` from proto3 JSON.
+{-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from proto3 JSON.
 -}
 decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =

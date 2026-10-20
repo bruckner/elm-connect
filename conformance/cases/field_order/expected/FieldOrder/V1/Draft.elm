@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| `message field_order.v1.Draft`
+
+Describes [`FieldOrder.V1.Draft`](FieldOrder-V1#Draft).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

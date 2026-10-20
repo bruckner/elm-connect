@@ -972,3 +972,6 @@ tag (design §8).
   `elm-format --validate` still accepts generated code (design §3.1,
   §4).
 - A service module's calls come before its method descriptors.
+- Generated docs link to each other (a type to its descriptor, a field
+  item to its descriptor value, a call to its types and descriptor, a
+  codec to its type) and to the runtime's types on the package site.

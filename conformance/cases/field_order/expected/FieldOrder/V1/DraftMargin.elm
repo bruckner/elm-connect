@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message field_order.v1.Draft.Margin`
 
+Describes [`FieldOrder.V1.DraftMargin`](FieldOrder-V1#DraftMargin).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

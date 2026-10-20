@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum oneofs.v1.Color`
 
+Describes [`Oneofs.V1.Color`](Oneofs-V1#Color).
+
   - `COLOR_UNSPECIFIED = 0;`
   - `COLOR_RED = 1;`
 

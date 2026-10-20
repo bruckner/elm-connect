@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message catalog.v1.Part`
 
+Describes [`Catalog.V1.Part`](Catalog-V1#Part).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

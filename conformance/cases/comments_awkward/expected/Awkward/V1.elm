@@ -28,7 +28,7 @@ elmConnectVersion_ =
 
 {-| Lines that start like Markdown inside an enum's values.
 
-`enum awkward.v1.Marks`
+[`enum awkward.v1.Marks`](Awkward-V1-Marks#descriptor)
 
   - `MarksUnspecified` (`MARKS_UNSPECIFIED`): **not a heading in proto**
 
@@ -50,9 +50,9 @@ type Marks
 Emphasis with _stars_ and _underscores_, **strong** and **strong**;
 snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
-`message awkward.v1.Delimiters`
+[`message awkward.v1.Delimiters`](Awkward-V1-Delimiters#descriptor)
 
-  - `lists`:
+  - [`lists`](Awkward-V1-Delimiters#lists):
 
       - a star item
 
@@ -69,7 +69,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
     3.  third
 
-  - `blocks`: **A heading**
+  - [`blocks`](Awkward-V1-Delimiters#blocks): **A heading**
 
     **Setext heading**
 
@@ -78,7 +78,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
     > A quote
     > on two lines.
 
-  - `code`: Indented code:
+  - [`code`](Awkward-V1-Delimiters#code): Indented code:
 
     ```text
     rpc Get(Request) returns (Response);
@@ -103,7 +103,7 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
     message M { int32 x = 1; }
     ```
 
-  - `inline`: | a | b |
+  - [`inline`](Awkward-V1-Delimiters#inline): | a | b |
     |---|---|
     | 1 | 2 |
 
@@ -113,14 +113,14 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
     [ref]: https://example.com "Title"
 
-  - `text`: Trailing spaces end this line
+  - [`text`](Awkward-V1-Delimiters#text): Trailing spaces end this line
     and a tab sits here.
     A line of two hundred characters, which elm-format leaves as it is rather than wrapping it, since it reflows no paragraph of a doc comment at all, however long it runs: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     Non-ASCII: café, naïve, “quotes”, — and ✓.
 
-  - `whitespaceOnly`
+  - [`whitespaceOnly`](Awkward-V1-Delimiters#whitespaceOnly)
 
-  - `unclosed`:
+  - [`unclosed`](Awkward-V1-Delimiters#unclosed):
 
     ```text
     A fence that never closes.
@@ -140,9 +140,9 @@ type alias Delimiters =
 
 {-| `@docs` at the start.
 
-`message awkward.v1.Docs`
+[`message awkward.v1.Docs`](Awkward-V1-Docs#descriptor)
 
-  - `field`: `@docs` field
+  - [`field`](Awkward-V1-Docs#field): `@docs` field
 
 -}
 type alias Docs =
@@ -154,7 +154,7 @@ type alias Docs =
 -- DEFAULTS
 
 
-{-| A `Delimiters` with every field at its default and every oneof unset.
+{-| A [`Delimiters`](#Delimiters) with every field at its default and every oneof unset.
 -}
 defaultDelimiters : Delimiters
 defaultDelimiters =
@@ -168,7 +168,7 @@ defaultDelimiters =
     }
 
 
-{-| A `Docs` with every field at its default and every oneof unset.
+{-| A [`Docs`](#Docs) with every field at its default and every oneof unset.
 -}
 defaultDocs : Docs
 defaultDocs =
@@ -180,21 +180,21 @@ defaultDocs =
 -- TYPED VALUES
 
 
-{-| The typed value of `Marks`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Marks`](#Marks): its codecs, zero value and descriptor together.
 -}
 enumMarks : Proto.Enum.Enum Marks
 enumMarks =
     Proto.Enum.enum encodeMarks decodeMarks MarksUnspecified Awkward.V1.Marks.descriptor
 
 
-{-| The typed value of `Delimiters`: its codecs, default and descriptor together.
+{-| The typed value of [`Delimiters`](#Delimiters): its codecs, default and descriptor together.
 -}
 messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
     Proto.Message.message encodeDelimiters decodeDelimiters defaultDelimiters Awkward.V1.Delimiters.descriptor
 
 
-{-| The typed value of `Docs`: its codecs, default and descriptor together.
+{-| The typed value of [`Docs`](#Docs): its codecs, default and descriptor together.
 -}
 messageDocs : Proto.Message.Message Docs
 messageDocs =
@@ -205,7 +205,7 @@ messageDocs =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -224,7 +224,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Marks` as proto3 JSON.
+{-| Encodes a [`Marks`](#Marks) as proto3 JSON.
 -}
 encodeMarks : Marks -> Json.Encode.Value
 encodeMarks value =
@@ -239,7 +239,7 @@ encodeMarks value =
             Json.Encode.string "MARKS_DELIMITED"
 
 
-{-| Encodes a `Delimiters` as proto3 JSON.
+{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
 -}
 encodeDelimiters : Delimiters -> Json.Encode.Value
 encodeDelimiters value =
@@ -254,7 +254,7 @@ encodeDelimiters value =
         ]
 
 
-{-| Encodes a `Docs` as proto3 JSON.
+{-| Encodes a [`Docs`](#Docs) as proto3 JSON.
 -}
 encodeDocs : Docs -> Json.Encode.Value
 encodeDocs value =
@@ -267,7 +267,7 @@ encodeDocs value =
 -- DECODERS
 
 
-{-| Decodes a `Marks` from proto3 JSON.
+{-| Decodes a [`Marks`](#Marks) from proto3 JSON.
 -}
 decodeMarks : Json.Decode.Decoder Marks
 decodeMarks =
@@ -279,7 +279,7 @@ decodeMarks =
         ]
 
 
-{-| Decodes a `Delimiters` from proto3 JSON.
+{-| Decodes a [`Delimiters`](#Delimiters) from proto3 JSON.
 -}
 decodeDelimiters : Json.Decode.Decoder Delimiters
 decodeDelimiters =
@@ -293,7 +293,7 @@ decodeDelimiters =
         |> Proto.Json.field "unclosed" "" Json.Decode.string
 
 
-{-| Decodes a `Docs` from proto3 JSON.
+{-| Decodes a [`Docs`](#Docs) from proto3 JSON.
 -}
 decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =

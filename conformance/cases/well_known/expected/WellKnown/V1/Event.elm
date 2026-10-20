@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message well_known.v1.Event`
+
+Describes [`WellKnown.V1.Event`](WellKnown-V1#Event).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

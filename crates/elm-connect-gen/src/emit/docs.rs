@@ -13,8 +13,11 @@
 //! settled on its own first, so a construct it leaves open cannot take in
 //! the text after it.
 
+use std::fmt::Display;
+
 use crate::elm::markdown;
 use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Service};
+use crate::naming::RUNTIME_DOCS;
 
 /// `text` as a Markdown code span.
 pub(super) fn code(text: &str) -> String {
@@ -29,6 +32,34 @@ pub(super) fn code(text: &str) -> String {
         let ticks = "`".repeat(longest + 1);
         format!("{ticks} {text} {ticks}")
     }
+}
+
+/// The page of `module` in the documentation the package site and
+/// elm-doc-preview render, which a link names: `Notes-V1-Note` for
+/// `Notes.V1.Note`.
+pub(super) fn page(module: &impl Display) -> String {
+    module.to_string().replace('.', "-")
+}
+
+/// A link with `text` as code to `target`, a page and an anchor
+/// (`Notes-V1-Note#title`), an anchor of this page (`#Note`) or a URL.
+pub(super) fn link(text: &str, target: &str) -> String {
+    format!("[{}]({target})", code(text))
+}
+
+/// A link to the declaration `name` of the module being documented.
+pub(super) fn local(name: &str) -> String {
+    link(name, &format!("#{name}"))
+}
+
+/// A link to the declaration `name` of the runtime's module `module` on
+/// the package site, an absolute URL, which an editor's hover makes
+/// clickable where it does not follow a page link.
+pub(super) fn runtime(module: &str, name: &str) -> String {
+    link(
+        &format!("{module}.{name}"),
+        &format!("{RUNTIME_DOCS}{}#{name}", page(&module)),
+    )
 }
 
 /// The proto comment of `doc` as Markdown blocks, if it has one.
@@ -105,29 +136,43 @@ fn list(items: Vec<String>) -> String {
 }
 
 /// The doc of a message's record alias: the proto's part, its
-/// declaration, then `items`, one per record field ([`field_item`],
+/// declaration linked to its descriptor in `descriptors`, its descriptor
+/// module, then `items`, one per record field ([`field_item`],
 /// [`oneof_item`]).
-pub(super) fn message(message: &Message, items: Vec<String>) -> String {
-    paragraphs(
-        proto_part(&message.doc)
-            .into_iter()
-            .chain([code(&message.doc.declaration), list(items)]),
-    )
+pub(super) fn message(message: &Message, descriptors: &str, items: Vec<String>) -> String {
+    paragraphs(proto_part(&message.doc).into_iter().chain([
+        link(&message.doc.declaration, &descriptor_target(descriptors)),
+        list(items),
+    ]))
 }
 
-/// The item of a record field: its Elm name, then `Deprecated.`, its
-/// comment and its behaviors as words (`Required.`); the name alone when
-/// there is nothing else. The field's declaration is on its descriptor
-/// value.
-pub(super) fn field_item(elm_name: &str, doc: &Doc, behavior: &[FieldBehavior]) -> String {
+/// The target of a link to the `descriptor` of the descriptor module
+/// whose page is `descriptors`.
+fn descriptor_target(descriptors: &str) -> String {
+    format!("{descriptors}#{}", crate::naming::DESCRIPTOR_VALUE)
+}
+
+/// The item of a record field: its Elm name linked to `target`, its
+/// descriptor value, then `Deprecated.`, its comment and its behaviors as
+/// words (`Required.`); the name alone when there is nothing else. The
+/// field's declaration is on its descriptor value.
+pub(super) fn field_item(
+    elm_name: &str,
+    target: &str,
+    doc: &Doc,
+    behavior: &[FieldBehavior],
+) -> String {
     let words = behavior_words(behavior);
-    named_item(&code(elm_name), with_sentence(item_rest(doc), &words))
+    named_item(
+        &link(elm_name, target),
+        with_sentence(item_rest(doc), &words),
+    )
 }
 
 /// The item of a oneof in its message's record: its Elm field name, its
 /// comment, and the name of its custom type.
 pub(super) fn oneof_item(oneof: &Oneof) -> String {
-    let pointer = format!("See {}.", code(&oneof.elm_type_name));
+    let pointer = format!("See {}.", local(&oneof.elm_type_name));
     named_item(
         &code(&oneof.elm_field_name),
         with_sentence(item_rest(&oneof.doc), &pointer),
@@ -201,12 +246,13 @@ fn item_rest(doc: &Doc) -> Vec<String> {
     }
 }
 
-/// The doc of an enum's custom type: the proto's part, its declaration,
-/// then an item per constructor: the constructor, the proto name of its
+/// The doc of an enum's custom type: the proto's part, its declaration
+/// linked to its descriptor in `descriptors`, its descriptor module, then
+/// an item per constructor: the constructor, the proto name of its
 /// value and of each alias, the value's comment, and `Deprecated.` when
 /// the value is. The number and each alias's own comment are on the
 /// enum's descriptor.
-pub(super) fn enumeration(enumeration: &Enum) -> String {
+pub(super) fn enumeration(enumeration: &Enum, descriptors: &str) -> String {
     let items = enumeration
         .values()
         .map(|value| {
@@ -229,17 +275,21 @@ pub(super) fn enumeration(enumeration: &Enum) -> String {
             )
         })
         .collect();
-    paragraphs(
-        proto_part(&enumeration.doc)
-            .into_iter()
-            .chain([code(&enumeration.doc.declaration), list(items)]),
-    )
+    paragraphs(proto_part(&enumeration.doc).into_iter().chain([
+        link(
+            &enumeration.doc.declaration,
+            &descriptor_target(descriptors),
+        ),
+        list(items),
+    ]))
 }
 
 /// The doc of a oneof's custom type: the proto's part, its declaration
 /// with its message's name, then an item for the unset constructor and
-/// one per member, shaped as a record field's ([`field_item`]).
-pub(super) fn oneof(message: &str, oneof: &Oneof) -> String {
+/// one per member, shaped as a record field's ([`field_item`]) and linked
+/// to the member's value in `descriptors`, its message's descriptor
+/// module.
+pub(super) fn oneof(message: &str, oneof: &Oneof, descriptors: &str) -> String {
     let unset = item(
         &format!("{}: none of the fields is set.", code(&oneof.unset_ctor)),
         &[],
@@ -247,6 +297,7 @@ pub(super) fn oneof(message: &str, oneof: &Oneof) -> String {
     let members = oneof.variants.iter().map(|variant| {
         field_item(
             &variant.elm_ctor,
+            &format!("{descriptors}#{}", variant.elm_name),
             &variant.doc,
             &variant.annotations.behavior,
         )
@@ -258,9 +309,15 @@ pub(super) fn oneof(message: &str, oneof: &Oneof) -> String {
 }
 
 /// The doc of a message's `descriptor` or a method's: the proto's part,
-/// then the declaration.
-pub(super) fn descriptor(doc: &Doc) -> String {
-    paragraphs(proto_part(doc).into_iter().chain([code(&doc.declaration)]))
+/// then the declaration, then `described`, a link to the type it
+/// describes, if any.
+pub(super) fn descriptor(doc: &Doc, described: Option<String>) -> String {
+    paragraphs(
+        proto_part(doc)
+            .into_iter()
+            .chain([code(&doc.declaration)])
+            .chain(described.map(|link| format!("Describes {link}."))),
+    )
 }
 
 /// The doc of a field's descriptor value: the proto's part, then the
@@ -273,24 +330,26 @@ pub(super) fn field_descriptor(doc: &Doc, oneof: Option<&str>) -> String {
     paragraphs(proto_part(doc).into_iter().chain([line]))
 }
 
-/// The doc of an enum's `descriptor`: the proto's part and the
-/// declaration, then an item per declared value name, aliases included.
-pub(super) fn enum_descriptor(enumeration: &Enum) -> String {
+/// The doc of an enum's `descriptor`: the proto's part, the declaration
+/// and `described`, a link to the enum's type, then an item per declared
+/// value name, aliases included.
+pub(super) fn enum_descriptor(enumeration: &Enum, described: &str) -> String {
     let items = enumeration
         .declared()
         .filter_map(|(name, _)| enumeration.value_doc(name))
         .map(|doc| item(&code(&doc.declaration), &item_rest(doc)))
         .collect();
-    paragraphs(
-        proto_part(&enumeration.doc)
-            .into_iter()
-            .chain([code(&enumeration.doc.declaration), list(items)]),
-    )
+    paragraphs(proto_part(&enumeration.doc).into_iter().chain([
+        code(&enumeration.doc.declaration),
+        format!("Describes {described}."),
+        list(items),
+    ]))
 }
 
 /// The doc of a method's call: the proto's part, then its declaration,
-/// its Connect path and its HTTP bindings as its rule writes them.
-pub(super) fn method(service: &str, method: &Method) -> String {
+/// its Connect path and its HTTP bindings as its rule writes them, and
+/// its `request` and `response` types and its descriptor, as links.
+pub(super) fn method(service: &str, method: &Method, request: &str, response: &str) -> String {
     let routes = match &method.http {
         Some(rule) => {
             let bindings = std::iter::once(rule)
@@ -306,9 +365,10 @@ pub(super) fn method(service: &str, method: &Method) -> String {
         None => "No HTTP rule: the Connect path.".to_owned(),
     };
     let head = format!(
-        "{}. Connect: {}.\n{routes}",
+        "{}. Connect: {}.\n{routes}\nFrom {request} to {response}, described by {}.",
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
+        local(&method.descriptor_name()),
     );
     paragraphs(proto_part(&method.doc).into_iter().chain([head]))
 }
@@ -345,6 +405,17 @@ mod tests {
         assert_eq!(code("a"), "`a`");
         assert_eq!(code("a`b"), "`` a`b ``");
         assert_eq!(code("``"), "``` `` ```");
+    }
+
+    #[test]
+    fn links_name_a_page_with_dashes_and_the_runtime_by_url() {
+        assert_eq!(page(&"Notes.V1.Note"), "Notes-V1-Note");
+        assert_eq!(local("Note_"), "[`Note_`](#Note_)");
+        assert_eq!(
+            runtime("Proto.Message", "Descriptor"),
+            "[`Proto.Message.Descriptor`](https://package.elm-lang.org/packages/\
+             bruckner/elm-connect/latest/Proto-Message#Descriptor)"
+        );
     }
 
     #[test]
@@ -392,18 +463,26 @@ mod tests {
             declaration: "string a = 1;".into(),
             deprecated,
         };
-        assert_eq!(field_item("a", &doc(None, false), &[]), "  - `a`");
         assert_eq!(
-            field_item("a", &doc(Some("The a."), false), &[Required, Optional]),
-            "  - `a`: The a. Required."
+            field_item("a", "M#a", &doc(None, false), &[]),
+            "  - [`a`](M#a)"
         );
         assert_eq!(
-            field_item("a", &doc(None, true), &[OutputOnly, UnorderedList]),
-            "  - `a`: Deprecated. Output only. Unordered."
+            field_item(
+                "a",
+                "M#a",
+                &doc(Some("The a."), false),
+                &[Required, Optional]
+            ),
+            "  - [`a`](M#a): The a. Required."
         );
         assert_eq!(
-            field_item("a", &doc(Some("One.\n\nTwo."), false), &[Immutable]),
-            "  - `a`: One.\n\n    Two.\n\n    Immutable."
+            field_item("a", "M#a", &doc(None, true), &[OutputOnly, UnorderedList]),
+            "  - [`a`](M#a): Deprecated. Output only. Unordered."
+        );
+        assert_eq!(
+            field_item("a", "M#a", &doc(Some("One.\n\nTwo."), false), &[Immutable]),
+            "  - [`a`](M#a): One.\n\n    Two.\n\n    Immutable."
         );
         assert_eq!(
             behavior_words(&[NonEmptyDefault, Identifier, InputOnly]),

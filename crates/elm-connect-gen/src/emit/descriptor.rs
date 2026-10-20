@@ -47,7 +47,11 @@ impl Emitter {
     /// then one `Proto.Field.Descriptor` per field in declaration order,
     /// each oneof's members where the oneof is. The builder derives the
     /// message's oneofs from the fields.
-    pub(super) fn message_descriptor_module(&mut self, shape: &MessageShape) -> Vec<Decl> {
+    pub(super) fn message_descriptor_module(
+        &mut self,
+        package: &ModuleName,
+        shape: &MessageShape,
+    ) -> Vec<Decl> {
         let message = shape.message;
         let fields = field_values(shape);
         let builder = self.reference((PROTO_MESSAGE, "descriptor"));
@@ -59,7 +63,10 @@ impl Emitter {
             ],
         );
         let mut decls = vec![Decl::Value {
-            doc: Some(docs::descriptor(&message.doc)),
+            doc: Some(docs::descriptor(
+                &message.doc,
+                Some(type_link(package, &message.elm_name)),
+            )),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_MESSAGE, "Descriptor", []),
             params: Vec::new(),
@@ -94,7 +101,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "The typed value of {}: its codecs, default and descriptor together.",
-                docs::code(&message.elm_name)
+                docs::local(&message.elm_name)
             )),
             name: message.value_name(),
             annotation,
@@ -115,7 +122,11 @@ impl Emitter {
     /// Proto.Enum.Descriptor`, the enum's full name and every declared
     /// name in order with its number (an alias with its number), each
     /// deprecated one marked.
-    pub(super) fn enum_descriptor_module(&mut self, enumeration: &Enum) -> Vec<Decl> {
+    pub(super) fn enum_descriptor_module(
+        &mut self,
+        package: &ModuleName,
+        enumeration: &Enum,
+    ) -> Vec<Decl> {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
@@ -134,7 +145,10 @@ impl Emitter {
             [string(enumeration.proto_full_name.clone()), list(values)],
         );
         vec![Decl::Value {
-            doc: Some(docs::enum_descriptor(enumeration)),
+            doc: Some(docs::enum_descriptor(
+                enumeration,
+                &type_link(package, &enumeration.elm_name),
+            )),
             name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_ENUM, "Descriptor", []),
             params: Vec::new(),
@@ -155,7 +169,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "The typed value of {}: its codecs, zero value and descriptor together.",
-                docs::code(&enumeration.elm_name)
+                docs::local(&enumeration.elm_name)
             )),
             name: enumeration.value_name(),
             annotation,
@@ -215,12 +229,12 @@ impl Emitter {
             .reduce(|right, left| apply(union.clone(), [left, right]))
             .expect("at least the well-known types");
         Decl::Value {
-            doc: Some(
+            doc: Some(format!(
                 "The descriptors of this package's types, of the packages it imports and of \
                  the well-known types, by full name. It resolves the message types a \
-                 descriptor names, and the type of an `Any`."
-                    .to_owned(),
-            ),
+                 descriptor names, and the type of a {}.",
+                docs::runtime("Proto.Any", "Any")
+            )),
             name: REGISTRY.to_owned(),
             annotation: self.library_type(PROTO_REGISTRY, "Registry", []),
             params: Vec::new(),
@@ -301,6 +315,15 @@ impl Emitter {
         };
         apply(self.reference((PROTO_FIELD, constructor)), [argument])
     }
+}
+
+/// A link to the type `elm_name` of the package module `package`, with
+/// its qualified name: `` [`Notes.V1.Note`](Notes-V1#Note) ``.
+fn type_link(package: &ModuleName, elm_name: &str) -> String {
+    docs::link(
+        &format!("{package}.{elm_name}"),
+        &format!("{}#{elm_name}", docs::page(package)),
+    )
 }
 
 /// The other generated packages `package`'s module imports: those its

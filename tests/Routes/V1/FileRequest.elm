@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message routes.v1.FileRequest`
+
+Describes [`Routes.V1.FileRequest`](Routes-V1#FileRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

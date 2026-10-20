@@ -24,26 +24,26 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message scalars.v1.Scalars`
+{-| [`message scalars.v1.Scalars`](Scalars-V1-Scalars#descriptor)
 
-  - `doubleValue`
-  - `floatValue`
-  - `int32Value`
-  - `int64Value`
-  - `uint32Value`
-  - `uint64Value`
-  - `sint32Value`
-  - `sint64Value`
-  - `fixed32Value`
-  - `fixed64Value`
-  - `sfixed32Value`
-  - `sfixed64Value`
-  - `boolValue`
-  - `stringValue`: An explicit json\_name changes the wire name, never the Elm name.
-  - `bytesValue`
-  - `smallCount`: jstype overrides the int64 option per field: JS\_NUMBER makes an Int
+  - [`doubleValue`](Scalars-V1-Scalars#doubleValue)
+  - [`floatValue`](Scalars-V1-Scalars#floatValue)
+  - [`int32Value`](Scalars-V1-Scalars#int32Value)
+  - [`int64Value`](Scalars-V1-Scalars#int64Value)
+  - [`uint32Value`](Scalars-V1-Scalars#uint32Value)
+  - [`uint64Value`](Scalars-V1-Scalars#uint64Value)
+  - [`sint32Value`](Scalars-V1-Scalars#sint32Value)
+  - [`sint64Value`](Scalars-V1-Scalars#sint64Value)
+  - [`fixed32Value`](Scalars-V1-Scalars#fixed32Value)
+  - [`fixed64Value`](Scalars-V1-Scalars#fixed64Value)
+  - [`sfixed32Value`](Scalars-V1-Scalars#sfixed32Value)
+  - [`sfixed64Value`](Scalars-V1-Scalars#sfixed64Value)
+  - [`boolValue`](Scalars-V1-Scalars#boolValue)
+  - [`stringValue`](Scalars-V1-Scalars#stringValue): An explicit json\_name changes the wire name, never the Elm name.
+  - [`bytesValue`](Scalars-V1-Scalars#bytesValue)
+  - [`smallCount`](Scalars-V1-Scalars#smallCount): jstype overrides the int64 option per field: JS\_NUMBER makes an Int
     decoded within ±(2^53 − 1), JS\_STRING (the default here) a String.
-  - `exactTotal`
+  - [`exactTotal`](Scalars-V1-Scalars#exactTotal)
 
 -}
 type alias Scalars =
@@ -67,7 +67,7 @@ type alias Scalars =
     }
 
 
-{-| `message scalars.v1.Empty`
+{-| [`message scalars.v1.Empty`](Scalars-V1-Empty#descriptor)
 -}
 type alias Empty =
     {}
@@ -77,7 +77,7 @@ type alias Empty =
 -- DEFAULTS
 
 
-{-| A `Scalars` with every field at its default and every oneof unset.
+{-| A [`Scalars`](#Scalars) with every field at its default and every oneof unset.
 -}
 defaultScalars : Scalars
 defaultScalars =
@@ -101,7 +101,7 @@ defaultScalars =
     }
 
 
-{-| A `Empty` with every field at its default and every oneof unset.
+{-| A [`Empty`](#Empty) with every field at its default and every oneof unset.
 -}
 defaultEmpty : Empty
 defaultEmpty =
@@ -112,14 +112,14 @@ defaultEmpty =
 -- TYPED VALUES
 
 
-{-| The typed value of `Scalars`: its codecs, default and descriptor together.
+{-| The typed value of [`Scalars`](#Scalars): its codecs, default and descriptor together.
 -}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
     Proto.Message.message encodeScalars decodeScalars defaultScalars Scalars.V1.Scalars.descriptor
 
 
-{-| The typed value of `Empty`: its codecs, default and descriptor together.
+{-| The typed value of [`Empty`](#Empty): its codecs, default and descriptor together.
 -}
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
@@ -130,7 +130,7 @@ messageEmpty =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -148,7 +148,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Scalars` as proto3 JSON.
+{-| Encodes a [`Scalars`](#Scalars) as proto3 JSON.
 -}
 encodeScalars : Scalars -> Json.Encode.Value
 encodeScalars value =
@@ -173,7 +173,7 @@ encodeScalars value =
         ]
 
 
-{-| Encodes a `Empty` as proto3 JSON.
+{-| Encodes a [`Empty`](#Empty) as proto3 JSON.
 -}
 encodeEmpty : Empty -> Json.Encode.Value
 encodeEmpty _ =
@@ -184,7 +184,7 @@ encodeEmpty _ =
 -- DECODERS
 
 
-{-| Decodes a `Scalars` from proto3 JSON.
+{-| Decodes a [`Scalars`](#Scalars) from proto3 JSON.
 -}
 decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
@@ -208,7 +208,7 @@ decodeScalars =
         |> Proto.Json.fieldEither "exactTotal" "exact_total" "0" Proto.Json.uint64
 
 
-{-| Decodes a `Empty` from proto3 JSON.
+{-| Decodes a [`Empty`](#Empty) from proto3 JSON.
 -}
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =

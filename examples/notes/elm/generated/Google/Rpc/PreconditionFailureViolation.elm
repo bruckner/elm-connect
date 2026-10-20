@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message google.rpc.PreconditionFailure.Violation`
 
+Describes [`Google.Rpc.PreconditionFailureViolation`](Google-Rpc#PreconditionFailureViolation).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

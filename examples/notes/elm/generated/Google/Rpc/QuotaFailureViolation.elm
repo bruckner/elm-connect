@@ -20,6 +20,8 @@ daily quota or a custom quota that was exceeded.
 
 `message google.rpc.QuotaFailure.Violation`
 
+Describes [`Google.Rpc.QuotaFailureViolation`](Google-Rpc#QuotaFailureViolation).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

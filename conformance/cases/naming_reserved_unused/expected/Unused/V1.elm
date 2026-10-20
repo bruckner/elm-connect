@@ -30,7 +30,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum unused.v1.Char`
+{-| [`enum unused.v1.Char`](Unused-V1-Char#descriptor)
 
   - `CharUnspecified` (`CHAR_UNSPECIFIED`)
   - `CharA` (`CHAR_A`)
@@ -45,9 +45,9 @@ type Char
 not use unqualified: no field is a map, so `Dict` is free, and `Result`,
 `Order`, `Never`, `Cmd`, `True` and `Char` are never used. Each compiles.
 
-`message unused.v1.Dict`
+[`message unused.v1.Dict`](Unused-V1-Dict#descriptor)
 
-  - `name`
+  - [`name`](Unused-V1-Dict#name)
 
 -}
 type alias Dict =
@@ -55,11 +55,11 @@ type alias Dict =
     }
 
 
-{-| `message unused.v1.Result`
+{-| [`message unused.v1.Result`](Unused-V1-Result#descriptor)
 
-  - `ok`
-  - `dict`
-  - `chars`
+  - [`ok`](Unused-V1-Result#ok)
+  - [`dict`](Unused-V1-Result#dict)
+  - [`chars`](Unused-V1-Result#chars)
 
 -}
 type alias Result =
@@ -69,25 +69,25 @@ type alias Result =
     }
 
 
-{-| `message unused.v1.Order`
+{-| [`message unused.v1.Order`](Unused-V1-Order#descriptor)
 -}
 type alias Order =
     {}
 
 
-{-| `message unused.v1.Never`
+{-| [`message unused.v1.Never`](Unused-V1-Never#descriptor)
 -}
 type alias Never =
     {}
 
 
-{-| `message unused.v1.Cmd`
+{-| [`message unused.v1.Cmd`](Unused-V1-Cmd#descriptor)
 -}
 type alias Cmd =
     {}
 
 
-{-| `message unused.v1.True`
+{-| [`message unused.v1.True`](Unused-V1-True#descriptor)
 -}
 type alias True =
     {}
@@ -97,7 +97,7 @@ type alias True =
 -- DEFAULTS
 
 
-{-| A `Dict` with every field at its default and every oneof unset.
+{-| A [`Dict`](#Dict) with every field at its default and every oneof unset.
 -}
 defaultDict : Dict
 defaultDict =
@@ -105,7 +105,7 @@ defaultDict =
     }
 
 
-{-| A `Result` with every field at its default and every oneof unset.
+{-| A [`Result`](#Result) with every field at its default and every oneof unset.
 -}
 defaultResult : Result
 defaultResult =
@@ -115,28 +115,28 @@ defaultResult =
     }
 
 
-{-| A `Order` with every field at its default and every oneof unset.
+{-| A [`Order`](#Order) with every field at its default and every oneof unset.
 -}
 defaultOrder : Order
 defaultOrder =
     {}
 
 
-{-| A `Never` with every field at its default and every oneof unset.
+{-| A [`Never`](#Never) with every field at its default and every oneof unset.
 -}
 defaultNever : Never
 defaultNever =
     {}
 
 
-{-| A `Cmd` with every field at its default and every oneof unset.
+{-| A [`Cmd`](#Cmd) with every field at its default and every oneof unset.
 -}
 defaultCmd : Cmd
 defaultCmd =
     {}
 
 
-{-| A `True` with every field at its default and every oneof unset.
+{-| A [`True`](#True) with every field at its default and every oneof unset.
 -}
 defaultTrue : True
 defaultTrue =
@@ -147,49 +147,49 @@ defaultTrue =
 -- TYPED VALUES
 
 
-{-| The typed value of `Char`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Char`](#Char): its codecs, zero value and descriptor together.
 -}
 enumChar : Proto.Enum.Enum Char
 enumChar =
     Proto.Enum.enum encodeChar decodeChar CharUnspecified Unused.V1.Char.descriptor
 
 
-{-| The typed value of `Dict`: its codecs, default and descriptor together.
+{-| The typed value of [`Dict`](#Dict): its codecs, default and descriptor together.
 -}
 messageDict : Proto.Message.Message Dict
 messageDict =
     Proto.Message.message encodeDict decodeDict defaultDict Unused.V1.Dict.descriptor
 
 
-{-| The typed value of `Result`: its codecs, default and descriptor together.
+{-| The typed value of [`Result`](#Result): its codecs, default and descriptor together.
 -}
 messageResult : Proto.Message.Message Result
 messageResult =
     Proto.Message.message encodeResult decodeResult defaultResult Unused.V1.Result.descriptor
 
 
-{-| The typed value of `Order`: its codecs, default and descriptor together.
+{-| The typed value of [`Order`](#Order): its codecs, default and descriptor together.
 -}
 messageOrder : Proto.Message.Message Order
 messageOrder =
     Proto.Message.message encodeOrder decodeOrder defaultOrder Unused.V1.Order.descriptor
 
 
-{-| The typed value of `Never`: its codecs, default and descriptor together.
+{-| The typed value of [`Never`](#Never): its codecs, default and descriptor together.
 -}
 messageNever : Proto.Message.Message Never
 messageNever =
     Proto.Message.message encodeNever decodeNever defaultNever Unused.V1.Never.descriptor
 
 
-{-| The typed value of `Cmd`: its codecs, default and descriptor together.
+{-| The typed value of [`Cmd`](#Cmd): its codecs, default and descriptor together.
 -}
 messageCmd : Proto.Message.Message Cmd
 messageCmd =
     Proto.Message.message encodeCmd decodeCmd defaultCmd Unused.V1.Cmd.descriptor
 
 
-{-| The typed value of `True`: its codecs, default and descriptor together.
+{-| The typed value of [`True`](#True): its codecs, default and descriptor together.
 -}
 messageTrue : Proto.Message.Message True
 messageTrue =
@@ -200,7 +200,7 @@ messageTrue =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -223,7 +223,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Char` as proto3 JSON.
+{-| Encodes a [`Char`](#Char) as proto3 JSON.
 -}
 encodeChar : Char -> Json.Encode.Value
 encodeChar value =
@@ -235,7 +235,7 @@ encodeChar value =
             Json.Encode.string "CHAR_A"
 
 
-{-| Encodes a `Dict` as proto3 JSON.
+{-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
 encodeDict : Dict -> Json.Encode.Value
 encodeDict value =
@@ -244,7 +244,7 @@ encodeDict value =
         ]
 
 
-{-| Encodes a `Result` as proto3 JSON.
+{-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
 encodeResult : Result -> Json.Encode.Value
 encodeResult value =
@@ -255,28 +255,28 @@ encodeResult value =
         ]
 
 
-{-| Encodes a `Order` as proto3 JSON.
+{-| Encodes a [`Order`](#Order) as proto3 JSON.
 -}
 encodeOrder : Order -> Json.Encode.Value
 encodeOrder _ =
     Json.Encode.object []
 
 
-{-| Encodes a `Never` as proto3 JSON.
+{-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
 encodeNever : Never -> Json.Encode.Value
 encodeNever _ =
     Json.Encode.object []
 
 
-{-| Encodes a `Cmd` as proto3 JSON.
+{-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
 encodeCmd : Cmd -> Json.Encode.Value
 encodeCmd _ =
     Json.Encode.object []
 
 
-{-| Encodes a `True` as proto3 JSON.
+{-| Encodes a [`True`](#True) as proto3 JSON.
 -}
 encodeTrue : True -> Json.Encode.Value
 encodeTrue _ =
@@ -287,7 +287,7 @@ encodeTrue _ =
 -- DECODERS
 
 
-{-| Decodes a `Char` from proto3 JSON.
+{-| Decodes a [`Char`](#Char) from proto3 JSON.
 -}
 decodeChar : Json.Decode.Decoder Char
 decodeChar =
@@ -298,7 +298,7 @@ decodeChar =
         ]
 
 
-{-| Decodes a `Dict` from proto3 JSON.
+{-| Decodes a [`Dict`](#Dict) from proto3 JSON.
 -}
 decodeDict : Json.Decode.Decoder Dict
 decodeDict =
@@ -306,7 +306,7 @@ decodeDict =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `Result` from proto3 JSON.
+{-| Decodes a [`Result`](#Result) from proto3 JSON.
 -}
 decodeResult : Json.Decode.Decoder Result
 decodeResult =
@@ -316,28 +316,28 @@ decodeResult =
         |> Proto.Json.field "chars" [] (Json.Decode.list decodeChar)
 
 
-{-| Decodes a `Order` from proto3 JSON.
+{-| Decodes a [`Order`](#Order) from proto3 JSON.
 -}
 decodeOrder : Json.Decode.Decoder Order
 decodeOrder =
     Proto.Json.emptyMessage
 
 
-{-| Decodes a `Never` from proto3 JSON.
+{-| Decodes a [`Never`](#Never) from proto3 JSON.
 -}
 decodeNever : Json.Decode.Decoder Never
 decodeNever =
     Proto.Json.emptyMessage
 
 
-{-| Decodes a `Cmd` from proto3 JSON.
+{-| Decodes a [`Cmd`](#Cmd) from proto3 JSON.
 -}
 decodeCmd : Json.Decode.Decoder Cmd
 decodeCmd =
     Proto.Json.emptyMessage
 
 
-{-| Decodes a `True` from proto3 JSON.
+{-| Decodes a [`True`](#True) from proto3 JSON.
 -}
 decodeTrue : Json.Decode.Decoder True
 decodeTrue =

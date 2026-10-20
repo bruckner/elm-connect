@@ -22,6 +22,8 @@ value `url`.
 
 `message first.v1.Link`
 
+Describes [`First.V1.Link`](First-V1#Link).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

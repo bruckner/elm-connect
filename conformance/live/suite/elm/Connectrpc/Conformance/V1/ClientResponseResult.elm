@@ -20,6 +20,8 @@ The client will build this message and return it back to the test runner.
 
 `message connectrpc.conformance.v1.ClientResponseResult`
 
+Describes [`Connectrpc.Conformance.V1.ClientResponseResult`](Connectrpc-Conformance-V1#ClientResponseResult).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

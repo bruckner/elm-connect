@@ -23,6 +23,8 @@ directly to the right place in the developer console to flip the bit.
 
 `message google.rpc.Help`
 
+Describes [`Google.Rpc.Help`](Google-Rpc#Help).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

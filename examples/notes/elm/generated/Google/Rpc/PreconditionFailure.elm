@@ -23,6 +23,8 @@ PreconditionFailure message.
 
 `message google.rpc.PreconditionFailure`
 
+Describes [`Google.Rpc.PreconditionFailure`](Google-Rpc#PreconditionFailure).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

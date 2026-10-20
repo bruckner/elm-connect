@@ -29,6 +29,8 @@ quota failure.
 
 `message google.rpc.QuotaFailure`
 
+Describes [`Google.Rpc.QuotaFailure`](Google-Rpc#QuotaFailure).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

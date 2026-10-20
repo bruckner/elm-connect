@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `enum naming.v1.HttpMethod`
 
+Describes [`Naming.V1.HttpMethod`](Naming-V1#HttpMethod).
+
   - `HTTP_METHOD_UNSPECIFIED = 0;`
   - `HTTP_METHOD_GET = 1;`
   - `POST = 2;`

@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.TestSuite.TestMode`
 
+Describes [`Connectrpc.Conformance.V1.TestSuiteTestMode`](Connectrpc-Conformance-V1#TestSuiteTestMode).
+
   - `TEST_MODE_UNSPECIFIED = 0;` Used when the test suite does not apply to a particular mode. Such tests
     are run, regardless of the current test mode, to verify both clients and
     servers under test.

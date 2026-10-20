@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum unused.v1.Char`
 
+Describes [`Unused.V1.Char`](Unused-V1#Char).
+
   - `CHAR_UNSPECIFIED = 0;`
   - `CHAR_A = 1;`
 

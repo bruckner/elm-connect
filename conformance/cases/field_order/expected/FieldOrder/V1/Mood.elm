@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum field_order.v1.Mood`
 
+Describes [`FieldOrder.V1.Mood`](FieldOrder-V1#Mood).
+
   - `MOOD_UNSPECIFIED = 0;`
   - `MOOD_CALM = 1;`
 

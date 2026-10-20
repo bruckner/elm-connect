@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message notes.v1.ReadFileRequest`
+
+Describes [`Notes.V1.ReadFileRequest`](Notes-V1#ReadFileRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

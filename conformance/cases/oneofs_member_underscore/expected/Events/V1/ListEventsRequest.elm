@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message events.v1.ListEventsRequest`
+
+Describes [`Events.V1.ListEventsRequest`](Events-V1#ListEventsRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

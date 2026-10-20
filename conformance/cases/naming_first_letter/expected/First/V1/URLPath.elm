@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message first.v1.URLPath`
+
+Describes [`First.V1.URLPath`](First-V1#URLPath).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

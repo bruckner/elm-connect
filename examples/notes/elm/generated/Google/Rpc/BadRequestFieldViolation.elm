@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message google.rpc.BadRequest.FieldViolation`
 
+Describes [`Google.Rpc.BadRequestFieldViolation`](Google-Rpc#BadRequestFieldViolation).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

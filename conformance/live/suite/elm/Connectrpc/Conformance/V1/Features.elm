@@ -30,6 +30,8 @@ invalid (i.e. conflicting/impossible) features using protovalidate rules
 
 `message connectrpc.conformance.v1.Features`
 
+Describes [`Connectrpc.Conformance.V1.Features`](Connectrpc-Conformance-V1#Features).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

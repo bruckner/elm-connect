@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message int64_option.v1.Counters`
+
+Describes [`Int64Option.V1.Counters`](Int64Option-V1#Counters).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

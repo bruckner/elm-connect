@@ -26,6 +26,7 @@ elmConnectVersion_ =
 
 {-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`. Connect: `POST /ping.v1.Ping/Ping`.
 No HTTP rule: the Connect path.
+From `google.protobuf.Empty` to `google.protobuf.Timestamp`, described by [`descriptorPing`](#descriptorPing).
 -}
 ping : () -> Rpc.Call () Time.Posix
 ping =

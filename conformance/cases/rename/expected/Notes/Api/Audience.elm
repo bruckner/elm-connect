@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum notes.v1.Visibility`
 
+Describes [`Notes.Api.Audience`](Notes-Api#Audience).
+
   - `VISIBILITY_UNSPECIFIED = 0;`
   - `VISIBILITY_PUBLIC = 1;`
 

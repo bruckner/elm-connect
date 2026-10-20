@@ -5,14 +5,21 @@ use super::field::{ValueShape, Zeroed};
 use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, var};
+use crate::ir::{Message, ModuleName};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
 
 impl Emitter {
     /// `type FooKind = FooKindUnset | FooKindBar Bar | ...`: the unset case
     /// first, then a constructor per member carrying its value, or nothing
-    /// for a member of `google.protobuf.Empty`. `message` is the full name
-    /// of the message holding it.
-    pub(super) fn oneof_type(&mut self, message: &str, shape: &OneofShape) -> Decl {
+    /// for a member of `google.protobuf.Empty`. `message` holds it, and
+    /// `package` is its package's module.
+    pub(super) fn oneof_type(
+        &mut self,
+        package: &ModuleName,
+        message: &Message,
+        shape: &OneofShape,
+    ) -> Decl {
+        let descriptors = docs::page(&message.descriptor_module(package));
         let unset = Variant {
             name: shape.oneof.unset_ctor.clone(),
             args: Vec::new(),
@@ -26,7 +33,11 @@ impl Emitter {
             },
         });
         Decl::CustomType {
-            doc: Some(docs::oneof(message, shape.oneof)),
+            doc: Some(docs::oneof(
+                &message.proto_full_name,
+                shape.oneof,
+                &descriptors,
+            )),
             name: shape.oneof.elm_type_name.clone(),
             type_params: Vec::new(),
             variants: std::iter::once(unset)
@@ -75,7 +86,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Encodes a {} as the members of its message's JSON object.",
-                docs::code(&shape.oneof.elm_type_name)
+                docs::local(&shape.oneof.elm_type_name)
             )),
             name: shape.oneof.encoder_name(),
             annotation: Type::Function(
@@ -145,7 +156,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Decodes a {} from the members of its message's JSON object.",
-                docs::code(&shape.oneof.elm_type_name)
+                docs::local(&shape.oneof.elm_type_name)
             )),
             name: shape.oneof.decoder_name(),
             annotation,

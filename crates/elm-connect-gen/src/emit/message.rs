@@ -6,23 +6,28 @@ use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
     access, apply, binop, list, pipeline, pvar, record, string, tuple2, ty, var,
 };
+use crate::ir::ModuleName;
 use crate::naming::ENCODER_ARGUMENT;
 
 impl Emitter {
     /// `type alias Foo = { ... }`, one record field per proto field and per
     /// oneof, in declaration order.
-    pub(super) fn message_alias(&mut self, shape: &MessageShape) -> Decl {
+    pub(super) fn message_alias(&mut self, package: &ModuleName, shape: &MessageShape) -> Decl {
         let record = shape.record();
+        let descriptors = docs::page(&shape.message.descriptor_module(package));
         let items = record
             .iter()
             .map(|field| match field {
-                RecordField::Field(field, _) => {
-                    docs::field_item(&field.elm_name, &field.doc, &field.annotations.behavior)
-                }
+                RecordField::Field(field, _) => docs::field_item(
+                    &field.elm_name,
+                    &format!("{descriptors}#{}", field.value_name()),
+                    &field.doc,
+                    &field.annotations.behavior,
+                ),
                 RecordField::Oneof(oneof) => docs::oneof_item(oneof.oneof),
             })
             .collect();
-        let doc = docs::message(shape.message, items);
+        let doc = docs::message(shape.message, &descriptors, items);
         let body = record
             .iter()
             .map(|field| match field {
@@ -65,7 +70,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "A {} with every field at its default and every oneof unset.",
-                docs::code(&shape.message.elm_name)
+                docs::local(&shape.message.elm_name)
             )),
             name: shape.message.default_name(),
             annotation: ty(shape.message.elm_name.clone(), []),
@@ -129,7 +134,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Encodes a {} as proto3 JSON.",
-                docs::code(&shape.message.elm_name)
+                docs::local(&shape.message.elm_name)
             )),
             name: shape.message.encoder_name(),
             annotation: Type::Function(
@@ -208,7 +213,7 @@ impl Emitter {
         Decl::Value {
             doc: Some(format!(
                 "Decodes a {} from proto3 JSON.",
-                docs::code(&shape.message.elm_name)
+                docs::local(&shape.message.elm_name)
             )),
             name: shape.message.decoder_name(),
             annotation,

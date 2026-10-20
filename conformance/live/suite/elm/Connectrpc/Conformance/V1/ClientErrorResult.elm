@@ -21,6 +21,8 @@ not being supported. This is completely independent of the actual RPC invocation
 
 `message connectrpc.conformance.v1.ClientErrorResult`
 
+Describes [`Connectrpc.Conformance.V1.ClientErrorResult`](Connectrpc-Conformance-V1#ClientErrorResult).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

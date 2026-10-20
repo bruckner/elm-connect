@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`
+
+Describes [`Connectrpc.Conformance.V1.RawHTTPRequestEncodedQueryParam`](Connectrpc-Conformance-V1#RawHTTPRequestEncodedQueryParam).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -17,6 +17,9 @@ elmConnectVersion_ =
 
 
 {-| `message tasks.v1.Task`
+
+Describes [`Tasks.V1.Task`](Tasks-V1#Task).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -20,6 +20,8 @@ Can be used to define a response for unary or client-streaming calls.
 
 `message connectrpc.conformance.v1.UnaryResponseDefinition`
 
+Describes [`Connectrpc.Conformance.V1.UnaryResponseDefinition`](Connectrpc-Conformance-V1#UnaryResponseDefinition).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

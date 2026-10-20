@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message connectrpc.conformance.v1.IdempotentUnaryRequest`
+
+Describes [`Connectrpc.Conformance.V1.IdempotentUnaryRequest`](Connectrpc-Conformance-V1#IdempotentUnaryRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

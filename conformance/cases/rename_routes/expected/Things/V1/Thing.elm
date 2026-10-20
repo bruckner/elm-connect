@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message things.v1.Thing`
+
+Describes [`Things.V1.Thing`](Things-V1#Thing).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum tasks.v1.State`
 
+Describes [`Tasks.V1.State`](Tasks-V1#State).
+
   - `STATE_UNSPECIFIED = 0;`
   - `STATE_OPEN = 1;`
   - `STATE_STALE = 2 [deprecated = true];` Deprecated.

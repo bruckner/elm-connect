@@ -36,7 +36,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum notes.v1.Visibility`
+{-| [`enum notes.v1.Visibility`](Notes-V1-Visibility#descriptor)
 
   - `VisibilityUnspecified` (`VISIBILITY_UNSPECIFIED`)
   - `VisibilityPrivate` (`VISIBILITY_PRIVATE`)
@@ -49,12 +49,12 @@ type Visibility
     | VisibilityPublic
 
 
-{-| `message notes.v1.Note`
+{-| [`message notes.v1.Note`](Notes-V1-Note#descriptor)
 
-  - `name`
-  - `title`
-  - `visibility`
-  - `tags`
+  - [`name`](Notes-V1-Note#name)
+  - [`title`](Notes-V1-Note#title)
+  - [`visibility`](Notes-V1-Note#visibility)
+  - [`tags`](Notes-V1-Note#tags)
 
 -}
 type alias Note =
@@ -65,9 +65,9 @@ type alias Note =
     }
 
 
-{-| `message notes.v1.GetNoteRequest`
+{-| [`message notes.v1.GetNoteRequest`](Notes-V1-GetNoteRequest#descriptor)
 
-  - `name`
+  - [`name`](Notes-V1-GetNoteRequest#name)
 
 -}
 type alias GetNoteRequest =
@@ -75,15 +75,15 @@ type alias GetNoteRequest =
     }
 
 
-{-| `message notes.v1.ListNotesRequest`
+{-| [`message notes.v1.ListNotesRequest`](Notes-V1-ListNotesRequest#descriptor)
 
-  - `parent`
-  - `pageSize`
-  - `pageToken`
-  - `filter`
-  - `tags`
-  - `archived`
-  - `revision`
+  - [`parent`](Notes-V1-ListNotesRequest#parent)
+  - [`pageSize`](Notes-V1-ListNotesRequest#pageSize)
+  - [`pageToken`](Notes-V1-ListNotesRequest#pageToken)
+  - [`filter`](Notes-V1-ListNotesRequest#filter)
+  - [`tags`](Notes-V1-ListNotesRequest#tags)
+  - [`archived`](Notes-V1-ListNotesRequest#archived)
+  - [`revision`](Notes-V1-ListNotesRequest#revision)
 
 -}
 type alias ListNotesRequest =
@@ -97,10 +97,10 @@ type alias ListNotesRequest =
     }
 
 
-{-| `message notes.v1.ListNotesRequest.Filter`
+{-| [`message notes.v1.ListNotesRequest.Filter`](Notes-V1-ListNotesRequestFilter#descriptor)
 
-  - `visibility`
-  - `since`
+  - [`visibility`](Notes-V1-ListNotesRequestFilter#visibility)
+  - [`since`](Notes-V1-ListNotesRequestFilter#since)
 
 -}
 type alias ListNotesRequestFilter =
@@ -109,10 +109,10 @@ type alias ListNotesRequestFilter =
     }
 
 
-{-| `message notes.v1.ListNotesResponse`
+{-| [`message notes.v1.ListNotesResponse`](Notes-V1-ListNotesResponse#descriptor)
 
-  - `notes`
-  - `nextPageToken`
+  - [`notes`](Notes-V1-ListNotesResponse#notes)
+  - [`nextPageToken`](Notes-V1-ListNotesResponse#nextPageToken)
 
 -}
 type alias ListNotesResponse =
@@ -121,10 +121,10 @@ type alias ListNotesResponse =
     }
 
 
-{-| `message notes.v1.CreateNoteRequest`
+{-| [`message notes.v1.CreateNoteRequest`](Notes-V1-CreateNoteRequest#descriptor)
 
-  - `parent`
-  - `note`
+  - [`parent`](Notes-V1-CreateNoteRequest#parent)
+  - [`note`](Notes-V1-CreateNoteRequest#note)
 
 -}
 type alias CreateNoteRequest =
@@ -133,10 +133,10 @@ type alias CreateNoteRequest =
     }
 
 
-{-| `message notes.v1.UpdateNoteRequest`
+{-| [`message notes.v1.UpdateNoteRequest`](Notes-V1-UpdateNoteRequest#descriptor)
 
-  - `note`
-  - `updateMask`
+  - [`note`](Notes-V1-UpdateNoteRequest#note)
+  - [`updateMask`](Notes-V1-UpdateNoteRequest#updateMask)
 
 -}
 type alias UpdateNoteRequest =
@@ -145,10 +145,10 @@ type alias UpdateNoteRequest =
     }
 
 
-{-| `message notes.v1.DeleteNoteRequest`
+{-| [`message notes.v1.DeleteNoteRequest`](Notes-V1-DeleteNoteRequest#descriptor)
 
-  - `name`
-  - `force`
+  - [`name`](Notes-V1-DeleteNoteRequest#name)
+  - [`force`](Notes-V1-DeleteNoteRequest#force)
 
 -}
 type alias DeleteNoteRequest =
@@ -157,10 +157,10 @@ type alias DeleteNoteRequest =
     }
 
 
-{-| `message notes.v1.ArchiveNoteRequest`
+{-| [`message notes.v1.ArchiveNoteRequest`](Notes-V1-ArchiveNoteRequest#descriptor)
 
-  - `name`
-  - `reason`
+  - [`name`](Notes-V1-ArchiveNoteRequest#name)
+  - [`reason`](Notes-V1-ArchiveNoteRequest#reason)
 
 -}
 type alias ArchiveNoteRequest =
@@ -169,9 +169,9 @@ type alias ArchiveNoteRequest =
     }
 
 
-{-| `message notes.v1.ReadFileRequest`
+{-| [`message notes.v1.ReadFileRequest`](Notes-V1-ReadFileRequest#descriptor)
 
-  - `path`
+  - [`path`](Notes-V1-ReadFileRequest#path)
 
 -}
 type alias ReadFileRequest =
@@ -179,9 +179,9 @@ type alias ReadFileRequest =
     }
 
 
-{-| `message notes.v1.Summary`
+{-| [`message notes.v1.Summary`](Notes-V1-Summary#descriptor)
 
-  - `text`
+  - [`text`](Notes-V1-Summary#text)
 
 -}
 type alias Summary =
@@ -193,7 +193,7 @@ type alias Summary =
 -- DEFAULTS
 
 
-{-| A `Note` with every field at its default and every oneof unset.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -204,7 +204,7 @@ defaultNote =
     }
 
 
-{-| A `GetNoteRequest` with every field at its default and every oneof unset.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
@@ -212,7 +212,7 @@ defaultGetNoteRequest =
     }
 
 
-{-| A `ListNotesRequest` with every field at its default and every oneof unset.
+{-| A [`ListNotesRequest`](#ListNotesRequest) with every field at its default and every oneof unset.
 -}
 defaultListNotesRequest : ListNotesRequest
 defaultListNotesRequest =
@@ -226,7 +226,7 @@ defaultListNotesRequest =
     }
 
 
-{-| A `ListNotesRequestFilter` with every field at its default and every oneof unset.
+{-| A [`ListNotesRequestFilter`](#ListNotesRequestFilter) with every field at its default and every oneof unset.
 -}
 defaultListNotesRequestFilter : ListNotesRequestFilter
 defaultListNotesRequestFilter =
@@ -235,7 +235,7 @@ defaultListNotesRequestFilter =
     }
 
 
-{-| A `ListNotesResponse` with every field at its default and every oneof unset.
+{-| A [`ListNotesResponse`](#ListNotesResponse) with every field at its default and every oneof unset.
 -}
 defaultListNotesResponse : ListNotesResponse
 defaultListNotesResponse =
@@ -244,7 +244,7 @@ defaultListNotesResponse =
     }
 
 
-{-| A `CreateNoteRequest` with every field at its default and every oneof unset.
+{-| A [`CreateNoteRequest`](#CreateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultCreateNoteRequest : CreateNoteRequest
 defaultCreateNoteRequest =
@@ -253,7 +253,7 @@ defaultCreateNoteRequest =
     }
 
 
-{-| A `UpdateNoteRequest` with every field at its default and every oneof unset.
+{-| A [`UpdateNoteRequest`](#UpdateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateNoteRequest : UpdateNoteRequest
 defaultUpdateNoteRequest =
@@ -262,7 +262,7 @@ defaultUpdateNoteRequest =
     }
 
 
-{-| A `DeleteNoteRequest` with every field at its default and every oneof unset.
+{-| A [`DeleteNoteRequest`](#DeleteNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultDeleteNoteRequest : DeleteNoteRequest
 defaultDeleteNoteRequest =
@@ -271,7 +271,7 @@ defaultDeleteNoteRequest =
     }
 
 
-{-| A `ArchiveNoteRequest` with every field at its default and every oneof unset.
+{-| A [`ArchiveNoteRequest`](#ArchiveNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultArchiveNoteRequest : ArchiveNoteRequest
 defaultArchiveNoteRequest =
@@ -280,7 +280,7 @@ defaultArchiveNoteRequest =
     }
 
 
-{-| A `ReadFileRequest` with every field at its default and every oneof unset.
+{-| A [`ReadFileRequest`](#ReadFileRequest) with every field at its default and every oneof unset.
 -}
 defaultReadFileRequest : ReadFileRequest
 defaultReadFileRequest =
@@ -288,7 +288,7 @@ defaultReadFileRequest =
     }
 
 
-{-| A `Summary` with every field at its default and every oneof unset.
+{-| A [`Summary`](#Summary) with every field at its default and every oneof unset.
 -}
 defaultSummary : Summary
 defaultSummary =
@@ -300,84 +300,84 @@ defaultSummary =
 -- TYPED VALUES
 
 
-{-| The typed value of `Visibility`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Visibility`](#Visibility): its codecs, zero value and descriptor together.
 -}
 enumVisibility : Proto.Enum.Enum Visibility
 enumVisibility =
     Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified Notes.V1.Visibility.descriptor
 
 
-{-| The typed value of `Note`: its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
-{-| The typed value of `GetNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
     Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.V1.GetNoteRequest.descriptor
 
 
-{-| The typed value of `ListNotesRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its codecs, default and descriptor together.
 -}
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
     Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest Notes.V1.ListNotesRequest.descriptor
 
 
-{-| The typed value of `ListNotesRequestFilter`: its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesRequestFilter`](#ListNotesRequestFilter): its codecs, default and descriptor together.
 -}
 messageListNotesRequestFilter : Proto.Message.Message ListNotesRequestFilter
 messageListNotesRequestFilter =
     Proto.Message.message encodeListNotesRequestFilter decodeListNotesRequestFilter defaultListNotesRequestFilter Notes.V1.ListNotesRequestFilter.descriptor
 
 
-{-| The typed value of `ListNotesResponse`: its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its codecs, default and descriptor together.
 -}
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
     Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse Notes.V1.ListNotesResponse.descriptor
 
 
-{-| The typed value of `CreateNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its codecs, default and descriptor together.
 -}
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
     Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest Notes.V1.CreateNoteRequest.descriptor
 
 
-{-| The typed value of `UpdateNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`UpdateNoteRequest`](#UpdateNoteRequest): its codecs, default and descriptor together.
 -}
 messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
 messageUpdateNoteRequest =
     Proto.Message.message encodeUpdateNoteRequest decodeUpdateNoteRequest defaultUpdateNoteRequest Notes.V1.UpdateNoteRequest.descriptor
 
 
-{-| The typed value of `DeleteNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`DeleteNoteRequest`](#DeleteNoteRequest): its codecs, default and descriptor together.
 -}
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
 messageDeleteNoteRequest =
     Proto.Message.message encodeDeleteNoteRequest decodeDeleteNoteRequest defaultDeleteNoteRequest Notes.V1.DeleteNoteRequest.descriptor
 
 
-{-| The typed value of `ArchiveNoteRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`ArchiveNoteRequest`](#ArchiveNoteRequest): its codecs, default and descriptor together.
 -}
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
 messageArchiveNoteRequest =
     Proto.Message.message encodeArchiveNoteRequest decodeArchiveNoteRequest defaultArchiveNoteRequest Notes.V1.ArchiveNoteRequest.descriptor
 
 
-{-| The typed value of `ReadFileRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`ReadFileRequest`](#ReadFileRequest): its codecs, default and descriptor together.
 -}
 messageReadFileRequest : Proto.Message.Message ReadFileRequest
 messageReadFileRequest =
     Proto.Message.message encodeReadFileRequest decodeReadFileRequest defaultReadFileRequest Notes.V1.ReadFileRequest.descriptor
 
 
-{-| The typed value of `Summary`: its codecs, default and descriptor together.
+{-| The typed value of [`Summary`](#Summary): its codecs, default and descriptor together.
 -}
 messageSummary : Proto.Message.Message Summary
 messageSummary =
@@ -388,7 +388,7 @@ messageSummary =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -416,7 +416,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Visibility` as proto3 JSON.
+{-| Encodes a [`Visibility`](#Visibility) as proto3 JSON.
 -}
 encodeVisibility : Visibility -> Json.Encode.Value
 encodeVisibility value =
@@ -431,7 +431,7 @@ encodeVisibility value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a `Note` as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
@@ -443,7 +443,7 @@ encodeNote value =
         ]
 
 
-{-| Encodes a `GetNoteRequest` as proto3 JSON.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
@@ -452,7 +452,7 @@ encodeGetNoteRequest value =
         ]
 
 
-{-| Encodes a `ListNotesRequest` as proto3 JSON.
+{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON.
 -}
 encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
 encodeListNotesRequest value =
@@ -467,7 +467,7 @@ encodeListNotesRequest value =
         ]
 
 
-{-| Encodes a `ListNotesRequestFilter` as proto3 JSON.
+{-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as proto3 JSON.
 -}
 encodeListNotesRequestFilter : ListNotesRequestFilter -> Json.Encode.Value
 encodeListNotesRequestFilter value =
@@ -477,7 +477,7 @@ encodeListNotesRequestFilter value =
         ]
 
 
-{-| Encodes a `ListNotesResponse` as proto3 JSON.
+{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON.
 -}
 encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
 encodeListNotesResponse value =
@@ -487,7 +487,7 @@ encodeListNotesResponse value =
         ]
 
 
-{-| Encodes a `CreateNoteRequest` as proto3 JSON.
+{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON.
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
 encodeCreateNoteRequest value =
@@ -497,7 +497,7 @@ encodeCreateNoteRequest value =
         ]
 
 
-{-| Encodes a `UpdateNoteRequest` as proto3 JSON.
+{-| Encodes a [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON.
 -}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
@@ -507,7 +507,7 @@ encodeUpdateNoteRequest value =
         ]
 
 
-{-| Encodes a `DeleteNoteRequest` as proto3 JSON.
+{-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as proto3 JSON.
 -}
 encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
 encodeDeleteNoteRequest value =
@@ -517,7 +517,7 @@ encodeDeleteNoteRequest value =
         ]
 
 
-{-| Encodes a `ArchiveNoteRequest` as proto3 JSON.
+{-| Encodes a [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON.
 -}
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
@@ -527,7 +527,7 @@ encodeArchiveNoteRequest value =
         ]
 
 
-{-| Encodes a `ReadFileRequest` as proto3 JSON.
+{-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as proto3 JSON.
 -}
 encodeReadFileRequest : ReadFileRequest -> Json.Encode.Value
 encodeReadFileRequest value =
@@ -536,7 +536,7 @@ encodeReadFileRequest value =
         ]
 
 
-{-| Encodes a `Summary` as proto3 JSON.
+{-| Encodes a [`Summary`](#Summary) as proto3 JSON.
 -}
 encodeSummary : Summary -> Json.Encode.Value
 encodeSummary value =
@@ -549,7 +549,7 @@ encodeSummary value =
 -- DECODERS
 
 
-{-| Decodes a `Visibility` from proto3 JSON.
+{-| Decodes a [`Visibility`](#Visibility) from proto3 JSON.
 -}
 decodeVisibility : Json.Decode.Decoder Visibility
 decodeVisibility =
@@ -561,7 +561,7 @@ decodeVisibility =
         ]
 
 
-{-| Decodes a `Note` from proto3 JSON.
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
@@ -572,7 +572,7 @@ decodeNote =
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
-{-| Decodes a `GetNoteRequest` from proto3 JSON.
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
@@ -580,7 +580,7 @@ decodeGetNoteRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `ListNotesRequest` from proto3 JSON.
+{-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
 -}
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
@@ -594,7 +594,7 @@ decodeListNotesRequest =
         |> Proto.Json.field "revision" "0" Proto.Json.int64
 
 
-{-| Decodes a `ListNotesRequestFilter` from proto3 JSON.
+{-| Decodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) from proto3 JSON.
 -}
 decodeListNotesRequestFilter : Json.Decode.Decoder ListNotesRequestFilter
 decodeListNotesRequestFilter =
@@ -603,7 +603,7 @@ decodeListNotesRequestFilter =
         |> Proto.Json.field "since" Nothing (Json.Decode.map Just Proto.Json.timestamp)
 
 
-{-| Decodes a `ListNotesResponse` from proto3 JSON.
+{-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from proto3 JSON.
 -}
 decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
@@ -612,7 +612,7 @@ decodeListNotesResponse =
         |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Json.Decode.string
 
 
-{-| Decodes a `CreateNoteRequest` from proto3 JSON.
+{-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from proto3 JSON.
 -}
 decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
@@ -621,7 +621,7 @@ decodeCreateNoteRequest =
         |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
 
 
-{-| Decodes a `UpdateNoteRequest` from proto3 JSON.
+{-| Decodes a [`UpdateNoteRequest`](#UpdateNoteRequest) from proto3 JSON.
 -}
 decodeUpdateNoteRequest : Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequest =
@@ -630,7 +630,7 @@ decodeUpdateNoteRequest =
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
 
 
-{-| Decodes a `DeleteNoteRequest` from proto3 JSON.
+{-| Decodes a [`DeleteNoteRequest`](#DeleteNoteRequest) from proto3 JSON.
 -}
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
@@ -639,7 +639,7 @@ decodeDeleteNoteRequest =
         |> Proto.Json.field "force" False Json.Decode.bool
 
 
-{-| Decodes a `ArchiveNoteRequest` from proto3 JSON.
+{-| Decodes a [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
 -}
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
@@ -648,7 +648,7 @@ decodeArchiveNoteRequest =
         |> Proto.Json.field "reason" "" Json.Decode.string
 
 
-{-| Decodes a `ReadFileRequest` from proto3 JSON.
+{-| Decodes a [`ReadFileRequest`](#ReadFileRequest) from proto3 JSON.
 -}
 decodeReadFileRequest : Json.Decode.Decoder ReadFileRequest
 decodeReadFileRequest =
@@ -656,7 +656,7 @@ decodeReadFileRequest =
         |> Proto.Json.field "path" "" Json.Decode.string
 
 
-{-| Decodes a `Summary` from proto3 JSON.
+{-| Decodes a [`Summary`](#Summary) from proto3 JSON.
 -}
 decodeSummary : Json.Decode.Decoder Summary
 decodeSummary =

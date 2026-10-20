@@ -24,9 +24,9 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message cardinality.v1.Author`
+{-| [`message cardinality.v1.Author`](Cardinality-V1-Author#descriptor)
 
-  - `name`
+  - [`name`](Cardinality-V1-Author#name)
 
 -}
 type alias Author =
@@ -34,21 +34,21 @@ type alias Author =
     }
 
 
-{-| `message cardinality.v1.Note`
+{-| [`message cardinality.v1.Note`](Cardinality-V1-Note#descriptor)
 
-  - `subtitle`: Scalars with explicit presence become `Maybe`.
-  - `stars`
-  - `score`
-  - `views`
-  - `author`: A singular message field has presence too, `optional` or not.
-  - `editor`
-  - `tags`: Repeated fields become lists.
-  - `counts`
-  - `weights`
-  - `reviewers`
-  - `relatedLinks`: A JSON name that differs from the proto name: parsers accept both.
-  - `isDraft`
-  - `title`: A one-word name: the JSON name is the proto name.
+  - [`subtitle`](Cardinality-V1-Note#subtitle): Scalars with explicit presence become `Maybe`.
+  - [`stars`](Cardinality-V1-Note#stars)
+  - [`score`](Cardinality-V1-Note#score)
+  - [`views`](Cardinality-V1-Note#views)
+  - [`author`](Cardinality-V1-Note#author): A singular message field has presence too, `optional` or not.
+  - [`editor`](Cardinality-V1-Note#editor)
+  - [`tags`](Cardinality-V1-Note#tags): Repeated fields become lists.
+  - [`counts`](Cardinality-V1-Note#counts)
+  - [`weights`](Cardinality-V1-Note#weights)
+  - [`reviewers`](Cardinality-V1-Note#reviewers)
+  - [`relatedLinks`](Cardinality-V1-Note#relatedLinks): A JSON name that differs from the proto name: parsers accept both.
+  - [`isDraft`](Cardinality-V1-Note#isDraft)
+  - [`title`](Cardinality-V1-Note#title): A one-word name: the JSON name is the proto name.
 
 -}
 type alias Note =
@@ -72,7 +72,7 @@ type alias Note =
 -- DEFAULTS
 
 
-{-| A `Author` with every field at its default and every oneof unset.
+{-| A [`Author`](#Author) with every field at its default and every oneof unset.
 -}
 defaultAuthor : Author
 defaultAuthor =
@@ -80,7 +80,7 @@ defaultAuthor =
     }
 
 
-{-| A `Note` with every field at its default and every oneof unset.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -104,14 +104,14 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of `Author`: its codecs, default and descriptor together.
+{-| The typed value of [`Author`](#Author): its codecs, default and descriptor together.
 -}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
     Proto.Message.message encodeAuthor decodeAuthor defaultAuthor Cardinality.V1.Author.descriptor
 
 
-{-| The typed value of `Note`: its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
@@ -122,7 +122,7 @@ messageNote =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -140,7 +140,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Author` as proto3 JSON.
+{-| Encodes a [`Author`](#Author) as proto3 JSON.
 -}
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
@@ -149,7 +149,7 @@ encodeAuthor value =
         ]
 
 
-{-| Encodes a `Note` as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
@@ -174,7 +174,7 @@ encodeNote value =
 -- DECODERS
 
 
-{-| Decodes a `Author` from proto3 JSON.
+{-| Decodes a [`Author`](#Author) from proto3 JSON.
 -}
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
@@ -182,7 +182,7 @@ decodeAuthor =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `Note` from proto3 JSON.
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =

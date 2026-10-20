@@ -20,6 +20,8 @@ syntactic aspects of the request.
 
 `message google.rpc.BadRequest`
 
+Describes [`Google.Rpc.BadRequest`](Google-Rpc#BadRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

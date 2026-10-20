@@ -25,13 +25,13 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message envelope.v1.Envelope`
+{-| [`message envelope.v1.Envelope`](Envelope-V1-Envelope#descriptor)
 
-  - `id`
-  - `payload`
-  - `attachments`
-  - `headers`
-  - `body`: See `EnvelopeBody`.
+  - [`id`](Envelope-V1-Envelope#id)
+  - [`payload`](Envelope-V1-Envelope#payload)
+  - [`attachments`](Envelope-V1-Envelope#attachments)
+  - [`headers`](Envelope-V1-Envelope#headers)
+  - `body`: See [`EnvelopeBody`](#EnvelopeBody).
 
 -}
 type alias Envelope =
@@ -46,8 +46,8 @@ type alias Envelope =
 {-| `oneof body` of `envelope.v1.Envelope`
 
   - `EnvelopeBodyUnset`: none of the fields is set.
-  - `EnvelopeBodyPacked`
-  - `EnvelopeBodyText`
+  - [`EnvelopeBodyPacked`](Envelope-V1-Envelope#packed)
+  - [`EnvelopeBodyText`](Envelope-V1-Envelope#text)
 
 -}
 type EnvelopeBody
@@ -60,7 +60,7 @@ type EnvelopeBody
 -- DEFAULTS
 
 
-{-| A `Envelope` with every field at its default and every oneof unset.
+{-| A [`Envelope`](#Envelope) with every field at its default and every oneof unset.
 -}
 defaultEnvelope : Envelope
 defaultEnvelope =
@@ -76,7 +76,7 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
-{-| The typed value of `Envelope`: its codecs, default and descriptor together.
+{-| The typed value of [`Envelope`](#Envelope): its codecs, default and descriptor together.
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
@@ -87,7 +87,7 @@ messageEnvelope =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -104,7 +104,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Envelope` as proto3 JSON.
+{-| Encodes a [`Envelope`](#Envelope) as proto3 JSON.
 -}
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
@@ -118,7 +118,7 @@ encodeEnvelope value =
         )
 
 
-{-| Encodes a `EnvelopeBody` as the members of its message's JSON object.
+{-| Encodes a [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
 -}
 encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
 encodeEnvelopeBody value =
@@ -139,7 +139,7 @@ encodeEnvelopeBody value =
 -- DECODERS
 
 
-{-| Decodes a `Envelope` from proto3 JSON.
+{-| Decodes a [`Envelope`](#Envelope) from proto3 JSON.
 -}
 decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
@@ -151,7 +151,7 @@ decodeEnvelope =
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
-{-| Decodes a `EnvelopeBody` from the members of its message's JSON object.
+{-| Decodes a [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.
 -}
 decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBody =

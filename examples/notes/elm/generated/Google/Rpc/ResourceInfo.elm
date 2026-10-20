@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message google.rpc.ResourceInfo`
 
+Describes [`Google.Rpc.ResourceInfo`](Google-Rpc#ResourceInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

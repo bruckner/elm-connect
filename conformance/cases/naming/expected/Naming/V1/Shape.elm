@@ -20,6 +20,8 @@ the enum's name; digits stay as written.
 
 `enum naming.v1.Shape`
 
+Describes [`Naming.V1.Shape`](Naming-V1#Shape).
+
   - `SHAPE_UNSPECIFIED = 0;`
   - `SHAPE_2D = 1;`
   - `CUBE = 2;`

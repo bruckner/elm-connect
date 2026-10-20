@@ -25,7 +25,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum users.v1.Role`
+{-| [`enum users.v1.Role`](Api-Example-People-Role#descriptor)
 
   - `RoleUnspecified` (`ROLE_UNSPECIFIED`)
   - `RoleEditor` (`ROLE_EDITOR`)
@@ -36,10 +36,10 @@ type Role
     | RoleEditor
 
 
-{-| `message users.v1.User`
+{-| [`message users.v1.User`](Api-Example-People-User#descriptor)
 
-  - `name`
-  - `role`
+  - [`name`](Api-Example-People-User#name)
+  - [`role`](Api-Example-People-User#role)
 
 -}
 type alias User =
@@ -52,7 +52,7 @@ type alias User =
 -- DEFAULTS
 
 
-{-| A `User` with every field at its default and every oneof unset.
+{-| A [`User`](#User) with every field at its default and every oneof unset.
 -}
 defaultUser : User
 defaultUser =
@@ -65,14 +65,14 @@ defaultUser =
 -- TYPED VALUES
 
 
-{-| The typed value of `Role`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Role`](#Role): its codecs, zero value and descriptor together.
 -}
 enumRole : Proto.Enum.Enum Role
 enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Api.Example.People.Role.descriptor
 
 
-{-| The typed value of `User`: its codecs, default and descriptor together.
+{-| The typed value of [`User`](#User): its codecs, default and descriptor together.
 -}
 messageUser : Proto.Message.Message User
 messageUser =
@@ -83,7 +83,7 @@ messageUser =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -101,7 +101,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Role` as proto3 JSON.
+{-| Encodes a [`Role`](#Role) as proto3 JSON.
 -}
 encodeRole : Role -> Json.Encode.Value
 encodeRole value =
@@ -113,7 +113,7 @@ encodeRole value =
             Json.Encode.string "ROLE_EDITOR"
 
 
-{-| Encodes a `User` as proto3 JSON.
+{-| Encodes a [`User`](#User) as proto3 JSON.
 -}
 encodeUser : User -> Json.Encode.Value
 encodeUser value =
@@ -127,7 +127,7 @@ encodeUser value =
 -- DECODERS
 
 
-{-| Decodes a `Role` from proto3 JSON.
+{-| Decodes a [`Role`](#Role) from proto3 JSON.
 -}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
@@ -138,7 +138,7 @@ decodeRole =
         ]
 
 
-{-| Decodes a `User` from proto3 JSON.
+{-| Decodes a [`User`](#User) from proto3 JSON.
 -}
 decodeUser : Json.Decode.Decoder User
 decodeUser =

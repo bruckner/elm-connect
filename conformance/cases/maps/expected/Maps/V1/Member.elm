@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message maps.v1.Member`
+
+Describes [`Maps.V1.Member`](Maps-V1#Member).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

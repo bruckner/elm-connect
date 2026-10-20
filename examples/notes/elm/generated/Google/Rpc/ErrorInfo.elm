@@ -46,6 +46,8 @@ instance in a region that is out of stock:
 
 `message google.rpc.ErrorInfo`
 
+Describes [`Google.Rpc.ErrorInfo`](Google-Rpc#ErrorInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

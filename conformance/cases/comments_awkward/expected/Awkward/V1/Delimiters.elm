@@ -22,6 +22,8 @@ snake\_case\_names, a glob notes/\* and 2\_3\_4 arithmetic.
 
 `message awkward.v1.Delimiters`
 
+Describes [`Awkward.V1.Delimiters`](Awkward-V1#Delimiters).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -21,6 +21,8 @@ malformed requests) to test edge cases in servers.
 
 `message connectrpc.conformance.v1.RawHTTPRequest`
 
+Describes [`Connectrpc.Conformance.V1.RawHTTPRequest`](Connectrpc-Conformance-V1#RawHTTPRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

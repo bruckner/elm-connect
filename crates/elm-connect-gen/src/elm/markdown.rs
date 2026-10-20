@@ -2196,6 +2196,34 @@ mod tests {
         assert_eq!(blocks("# heading\n\ntext"), "# heading\n\ntext");
     }
 
+    /// The links generated docs carry, each as the generator writes it,
+    /// which must be its own elm-format form: a code span as link text, a
+    /// page and an anchor, an anchor alone, an absolute URL, an anchor
+    /// ending in `_`; in a list item, at the end of a line and before a
+    /// line break.
+    const LINKS: &[&str] = &[
+        "[`message notes.v1.Note`](Notes-V1-Note#descriptor)",
+        "Describes [`Notes.V1.Note`](Notes-V1#Note).",
+        "Encodes a [`Node_`](#Node_) as proto3 JSON.",
+        "`rpc Get(A) returns (B)`. Connect: `POST /s.v1.S/Get`.\n\
+         No HTTP rule: the Connect path.\n\
+         From [`S.V1.A`](S-V1#A) to [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
+         bruckner/elm-connect/latest/Proto-Any#Any), described by [`descriptorGet`](#descriptorGet).",
+        "[`message s.v1.M`](S-V1-M#descriptor)\n\n\
+         \x20 - [`descriptor`](S-V1-M#descriptor_): The a. Required.\n\
+         \x20 - [`type_`](S-V1-M#type_)\n\
+         \x20 - [`kind`](S-V1-M#kind): See [`MKind`](#MKind).",
+        "Text then a link at the end of a line [`a`](#a)\nand more.",
+    ];
+
+    #[test]
+    fn generated_links_are_their_own_elm_format_form() {
+        for sample in LINKS {
+            assert_eq!(blocks(sample), *sample, "{sample:?}");
+            assert_eq!(item_blocks(sample), *sample, "{sample:?}");
+        }
+    }
+
     #[test]
     fn a_paragraph_first_is_known() {
         assert!(starts_with_paragraph("Text.\n\n- a"));

@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum maps.v1.Role`
 
+Describes [`Maps.V1.Role`](Maps-V1#Role).
+
   - `ROLE_UNSPECIFIED = 0;`
   - `ROLE_OWNER = 1;`
 

@@ -20,6 +20,8 @@ which can be attached to an RPC error.
 
 `message google.rpc.LocalizedMessage`
 
+Describes [`Google.Rpc.LocalizedMessage`](Google-Rpc#LocalizedMessage).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

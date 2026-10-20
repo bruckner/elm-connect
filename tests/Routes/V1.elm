@@ -37,7 +37,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum routes.v1.Kind`
+{-| [`enum routes.v1.Kind`](Routes-V1-Kind#descriptor)
 
   - `KindUnspecified` (`KIND_UNSPECIFIED`)
   - `KindText` (`KIND_TEXT`)
@@ -52,13 +52,13 @@ type Kind
 
 {-| The messages of google/api/http.proto's examples.
 
-`message routes.v1.GetMessageRequest`
+[`message routes.v1.GetMessageRequest`](Routes-V1-GetMessageRequest#descriptor)
 
-  - `messageId`
-  - `revision`
-  - `sub`
-  - `userId`
-  - `name`
+  - [`messageId`](Routes-V1-GetMessageRequest#messageId)
+  - [`revision`](Routes-V1-GetMessageRequest#revision)
+  - [`sub`](Routes-V1-GetMessageRequest#sub)
+  - [`userId`](Routes-V1-GetMessageRequest#userId)
+  - [`name`](Routes-V1-GetMessageRequest#name)
 
 -}
 type alias GetMessageRequest =
@@ -70,9 +70,9 @@ type alias GetMessageRequest =
     }
 
 
-{-| `message routes.v1.GetMessageRequest.SubMessage`
+{-| [`message routes.v1.GetMessageRequest.SubMessage`](Routes-V1-GetMessageRequestSubMessage#descriptor)
 
-  - `subfield`
+  - [`subfield`](Routes-V1-GetMessageRequestSubMessage#subfield)
 
 -}
 type alias GetMessageRequestSubMessage =
@@ -80,10 +80,10 @@ type alias GetMessageRequestSubMessage =
     }
 
 
-{-| `message routes.v1.Message`
+{-| [`message routes.v1.Message`](Routes-V1-Message#descriptor)
 
-  - `messageId`
-  - `text`
+  - [`messageId`](Routes-V1-Message#messageId)
+  - [`text`](Routes-V1-Message#text)
 
 -}
 type alias Message =
@@ -92,10 +92,10 @@ type alias Message =
     }
 
 
-{-| `message routes.v1.UpdateMessageRequest`
+{-| [`message routes.v1.UpdateMessageRequest`](Routes-V1-UpdateMessageRequest#descriptor)
 
-  - `messageId`
-  - `message`
+  - [`messageId`](Routes-V1-UpdateMessageRequest#messageId)
+  - [`message`](Routes-V1-UpdateMessageRequest#message)
 
 -}
 type alias UpdateMessageRequest =
@@ -106,29 +106,29 @@ type alias UpdateMessageRequest =
 
 {-| A field of every kind a query parameter or path variable can hold.
 
-`message routes.v1.Everything`
+[`message routes.v1.Everything`](Routes-V1-Everything#descriptor)
 
-  - `name`
-  - `count`
-  - `big`
-  - `ubig`
-  - `flag`
-  - `ratio`
-  - `scale`
-  - `data`
-  - `kind`
-  - `tags`
-  - `kinds`
-  - `numbers`
-  - `maybeCount`
-  - `maybeName`
-  - `at`
-  - `wait`
-  - `mask`
-  - `limit`
-  - `label`
-  - `inner`
-  - `choice`: See `EverythingChoice`.
+  - [`name`](Routes-V1-Everything#name)
+  - [`count`](Routes-V1-Everything#count)
+  - [`big`](Routes-V1-Everything#big)
+  - [`ubig`](Routes-V1-Everything#ubig)
+  - [`flag`](Routes-V1-Everything#flag)
+  - [`ratio`](Routes-V1-Everything#ratio)
+  - [`scale`](Routes-V1-Everything#scale)
+  - [`data`](Routes-V1-Everything#data)
+  - [`kind`](Routes-V1-Everything#kind)
+  - [`tags`](Routes-V1-Everything#tags)
+  - [`kinds`](Routes-V1-Everything#kinds)
+  - [`numbers`](Routes-V1-Everything#numbers)
+  - [`maybeCount`](Routes-V1-Everything#maybeCount)
+  - [`maybeName`](Routes-V1-Everything#maybeName)
+  - [`at`](Routes-V1-Everything#at)
+  - [`wait`](Routes-V1-Everything#wait)
+  - [`mask`](Routes-V1-Everything#mask)
+  - [`limit`](Routes-V1-Everything#limit)
+  - [`label`](Routes-V1-Everything#label)
+  - [`inner`](Routes-V1-Everything#inner)
+  - `choice`: See [`EverythingChoice`](#EverythingChoice).
 
 -}
 type alias Everything =
@@ -159,8 +159,8 @@ type alias Everything =
 {-| `oneof choice` of `routes.v1.Everything`
 
   - `EverythingChoiceUnset`: none of the fields is set.
-  - `EverythingChoiceText`
-  - `EverythingChoiceNumber`
+  - [`EverythingChoiceText`](Routes-V1-Everything#text)
+  - [`EverythingChoiceNumber`](Routes-V1-Everything#number)
 
 -}
 type EverythingChoice
@@ -169,10 +169,10 @@ type EverythingChoice
     | EverythingChoiceNumber Int
 
 
-{-| `message routes.v1.Inner`
+{-| [`message routes.v1.Inner`](Routes-V1-Inner#descriptor)
 
-  - `a`
-  - `deep`
+  - [`a`](Routes-V1-Inner#a)
+  - [`deep`](Routes-V1-Inner#deep)
 
 -}
 type alias Inner =
@@ -181,10 +181,10 @@ type alias Inner =
     }
 
 
-{-| `message routes.v1.Deep`
+{-| [`message routes.v1.Deep`](Routes-V1-Deep#descriptor)
 
-  - `b`
-  - `c`
+  - [`b`](Routes-V1-Deep#b)
+  - [`c`](Routes-V1-Deep#c)
 
 -}
 type alias Deep =
@@ -193,9 +193,9 @@ type alias Deep =
     }
 
 
-{-| `message routes.v1.FileRequest`
+{-| [`message routes.v1.FileRequest`](Routes-V1-FileRequest#descriptor)
 
-  - `path`
+  - [`path`](Routes-V1-FileRequest#path)
 
 -}
 type alias FileRequest =
@@ -205,13 +205,13 @@ type alias FileRequest =
 
 {-| Sent only as a body, so it may hold maps, which have no query form.
 
-`message routes.v1.Resource`
+[`message routes.v1.Resource`](Routes-V1-Resource#descriptor)
 
-  - `name`
-  - `displayName`
-  - `labels`
-  - `kinds`
-  - `weights`
+  - [`name`](Routes-V1-Resource#name)
+  - [`displayName`](Routes-V1-Resource#displayName)
+  - [`labels`](Routes-V1-Resource#labels)
+  - [`kinds`](Routes-V1-Resource#kinds)
+  - [`weights`](Routes-V1-Resource#weights)
 
 -}
 type alias Resource =
@@ -223,10 +223,10 @@ type alias Resource =
     }
 
 
-{-| `message routes.v1.UpdateResourceRequest`
+{-| [`message routes.v1.UpdateResourceRequest`](Routes-V1-UpdateResourceRequest#descriptor)
 
-  - `resource`
-  - `updateMask`
+  - [`resource`](Routes-V1-UpdateResourceRequest#resource)
+  - [`updateMask`](Routes-V1-UpdateResourceRequest#updateMask)
 
 -}
 type alias UpdateResourceRequest =
@@ -239,7 +239,7 @@ type alias UpdateResourceRequest =
 -- DEFAULTS
 
 
-{-| A `GetMessageRequest` with every field at its default and every oneof unset.
+{-| A [`GetMessageRequest`](#GetMessageRequest) with every field at its default and every oneof unset.
 -}
 defaultGetMessageRequest : GetMessageRequest
 defaultGetMessageRequest =
@@ -251,7 +251,7 @@ defaultGetMessageRequest =
     }
 
 
-{-| A `GetMessageRequestSubMessage` with every field at its default and every oneof unset.
+{-| A [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) with every field at its default and every oneof unset.
 -}
 defaultGetMessageRequestSubMessage : GetMessageRequestSubMessage
 defaultGetMessageRequestSubMessage =
@@ -259,7 +259,7 @@ defaultGetMessageRequestSubMessage =
     }
 
 
-{-| A `Message` with every field at its default and every oneof unset.
+{-| A [`Message`](#Message) with every field at its default and every oneof unset.
 -}
 defaultMessage : Message
 defaultMessage =
@@ -268,7 +268,7 @@ defaultMessage =
     }
 
 
-{-| A `UpdateMessageRequest` with every field at its default and every oneof unset.
+{-| A [`UpdateMessageRequest`](#UpdateMessageRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateMessageRequest : UpdateMessageRequest
 defaultUpdateMessageRequest =
@@ -277,7 +277,7 @@ defaultUpdateMessageRequest =
     }
 
 
-{-| A `Everything` with every field at its default and every oneof unset.
+{-| A [`Everything`](#Everything) with every field at its default and every oneof unset.
 -}
 defaultEverything : Everything
 defaultEverything =
@@ -305,7 +305,7 @@ defaultEverything =
     }
 
 
-{-| A `Inner` with every field at its default and every oneof unset.
+{-| A [`Inner`](#Inner) with every field at its default and every oneof unset.
 -}
 defaultInner : Inner
 defaultInner =
@@ -314,7 +314,7 @@ defaultInner =
     }
 
 
-{-| A `Deep` with every field at its default and every oneof unset.
+{-| A [`Deep`](#Deep) with every field at its default and every oneof unset.
 -}
 defaultDeep : Deep
 defaultDeep =
@@ -323,7 +323,7 @@ defaultDeep =
     }
 
 
-{-| A `FileRequest` with every field at its default and every oneof unset.
+{-| A [`FileRequest`](#FileRequest) with every field at its default and every oneof unset.
 -}
 defaultFileRequest : FileRequest
 defaultFileRequest =
@@ -331,7 +331,7 @@ defaultFileRequest =
     }
 
 
-{-| A `Resource` with every field at its default and every oneof unset.
+{-| A [`Resource`](#Resource) with every field at its default and every oneof unset.
 -}
 defaultResource : Resource
 defaultResource =
@@ -343,7 +343,7 @@ defaultResource =
     }
 
 
-{-| A `UpdateResourceRequest` with every field at its default and every oneof unset.
+{-| A [`UpdateResourceRequest`](#UpdateResourceRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateResourceRequest : UpdateResourceRequest
 defaultUpdateResourceRequest =
@@ -356,77 +356,77 @@ defaultUpdateResourceRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of `Kind`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Kind`](#Kind): its codecs, zero value and descriptor together.
 -}
 enumKind : Proto.Enum.Enum Kind
 enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified Routes.V1.Kind.descriptor
 
 
-{-| The typed value of `GetMessageRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`GetMessageRequest`](#GetMessageRequest): its codecs, default and descriptor together.
 -}
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
     Proto.Message.message encodeGetMessageRequest decodeGetMessageRequest defaultGetMessageRequest Routes.V1.GetMessageRequest.descriptor
 
 
-{-| The typed value of `GetMessageRequestSubMessage`: its codecs, default and descriptor together.
+{-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its codecs, default and descriptor together.
 -}
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
     Proto.Message.message encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage defaultGetMessageRequestSubMessage Routes.V1.GetMessageRequestSubMessage.descriptor
 
 
-{-| The typed value of `Message`: its codecs, default and descriptor together.
+{-| The typed value of [`Message`](#Message): its codecs, default and descriptor together.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =
     Proto.Message.message encodeMessage decodeMessage defaultMessage Routes.V1.Message.descriptor
 
 
-{-| The typed value of `UpdateMessageRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its codecs, default and descriptor together.
 -}
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
     Proto.Message.message encodeUpdateMessageRequest decodeUpdateMessageRequest defaultUpdateMessageRequest Routes.V1.UpdateMessageRequest.descriptor
 
 
-{-| The typed value of `Everything`: its codecs, default and descriptor together.
+{-| The typed value of [`Everything`](#Everything): its codecs, default and descriptor together.
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =
     Proto.Message.message encodeEverything decodeEverything defaultEverything Routes.V1.Everything.descriptor
 
 
-{-| The typed value of `Inner`: its codecs, default and descriptor together.
+{-| The typed value of [`Inner`](#Inner): its codecs, default and descriptor together.
 -}
 messageInner : Proto.Message.Message Inner
 messageInner =
     Proto.Message.message encodeInner decodeInner defaultInner Routes.V1.Inner.descriptor
 
 
-{-| The typed value of `Deep`: its codecs, default and descriptor together.
+{-| The typed value of [`Deep`](#Deep): its codecs, default and descriptor together.
 -}
 messageDeep : Proto.Message.Message Deep
 messageDeep =
     Proto.Message.message encodeDeep decodeDeep defaultDeep Routes.V1.Deep.descriptor
 
 
-{-| The typed value of `FileRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`FileRequest`](#FileRequest): its codecs, default and descriptor together.
 -}
 messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
     Proto.Message.message encodeFileRequest decodeFileRequest defaultFileRequest Routes.V1.FileRequest.descriptor
 
 
-{-| The typed value of `Resource`: its codecs, default and descriptor together.
+{-| The typed value of [`Resource`](#Resource): its codecs, default and descriptor together.
 -}
 messageResource : Proto.Message.Message Resource
 messageResource =
     Proto.Message.message encodeResource decodeResource defaultResource Routes.V1.Resource.descriptor
 
 
-{-| The typed value of `UpdateResourceRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its codecs, default and descriptor together.
 -}
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
@@ -437,7 +437,7 @@ messageUpdateResourceRequest =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -464,7 +464,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Kind` as proto3 JSON.
+{-| Encodes a [`Kind`](#Kind) as proto3 JSON.
 -}
 encodeKind : Kind -> Json.Encode.Value
 encodeKind value =
@@ -479,7 +479,7 @@ encodeKind value =
             Json.Encode.string "KIND_IMAGE"
 
 
-{-| Encodes a `GetMessageRequest` as proto3 JSON.
+{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON.
 -}
 encodeGetMessageRequest : GetMessageRequest -> Json.Encode.Value
 encodeGetMessageRequest value =
@@ -492,7 +492,7 @@ encodeGetMessageRequest value =
         ]
 
 
-{-| Encodes a `GetMessageRequestSubMessage` as proto3 JSON.
+{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON.
 -}
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Json.Encode.Value
 encodeGetMessageRequestSubMessage value =
@@ -501,7 +501,7 @@ encodeGetMessageRequestSubMessage value =
         ]
 
 
-{-| Encodes a `Message` as proto3 JSON.
+{-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
 encodeMessage : Message -> Json.Encode.Value
 encodeMessage value =
@@ -511,7 +511,7 @@ encodeMessage value =
         ]
 
 
-{-| Encodes a `UpdateMessageRequest` as proto3 JSON.
+{-| Encodes a [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
 -}
 encodeUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
 encodeUpdateMessageRequest value =
@@ -521,7 +521,7 @@ encodeUpdateMessageRequest value =
         ]
 
 
-{-| Encodes a `Everything` as proto3 JSON.
+{-| Encodes a [`Everything`](#Everything) as proto3 JSON.
 -}
 encodeEverything : Everything -> Json.Encode.Value
 encodeEverything value =
@@ -551,7 +551,7 @@ encodeEverything value =
         )
 
 
-{-| Encodes a `EverythingChoice` as the members of its message's JSON object.
+{-| Encodes a [`EverythingChoice`](#EverythingChoice) as the members of its message's JSON object.
 -}
 encodeEverythingChoice : EverythingChoice -> List ( String, Maybe Json.Encode.Value )
 encodeEverythingChoice value =
@@ -568,7 +568,7 @@ encodeEverythingChoice value =
             ]
 
 
-{-| Encodes a `Inner` as proto3 JSON.
+{-| Encodes a [`Inner`](#Inner) as proto3 JSON.
 -}
 encodeInner : Inner -> Json.Encode.Value
 encodeInner value =
@@ -578,7 +578,7 @@ encodeInner value =
         ]
 
 
-{-| Encodes a `Deep` as proto3 JSON.
+{-| Encodes a [`Deep`](#Deep) as proto3 JSON.
 -}
 encodeDeep : Deep -> Json.Encode.Value
 encodeDeep value =
@@ -588,7 +588,7 @@ encodeDeep value =
         ]
 
 
-{-| Encodes a `FileRequest` as proto3 JSON.
+{-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON.
 -}
 encodeFileRequest : FileRequest -> Json.Encode.Value
 encodeFileRequest value =
@@ -597,7 +597,7 @@ encodeFileRequest value =
         ]
 
 
-{-| Encodes a `Resource` as proto3 JSON.
+{-| Encodes a [`Resource`](#Resource) as proto3 JSON.
 -}
 encodeResource : Resource -> Json.Encode.Value
 encodeResource value =
@@ -610,7 +610,7 @@ encodeResource value =
         ]
 
 
-{-| Encodes a `UpdateResourceRequest` as proto3 JSON.
+{-| Encodes a [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON.
 -}
 encodeUpdateResourceRequest : UpdateResourceRequest -> Json.Encode.Value
 encodeUpdateResourceRequest value =
@@ -624,7 +624,7 @@ encodeUpdateResourceRequest value =
 -- DECODERS
 
 
-{-| Decodes a `Kind` from proto3 JSON.
+{-| Decodes a [`Kind`](#Kind) from proto3 JSON.
 -}
 decodeKind : Json.Decode.Decoder Kind
 decodeKind =
@@ -636,7 +636,7 @@ decodeKind =
         ]
 
 
-{-| Decodes a `GetMessageRequest` from proto3 JSON.
+{-| Decodes a [`GetMessageRequest`](#GetMessageRequest) from proto3 JSON.
 -}
 decodeGetMessageRequest : Json.Decode.Decoder GetMessageRequest
 decodeGetMessageRequest =
@@ -648,7 +648,7 @@ decodeGetMessageRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `GetMessageRequestSubMessage` from proto3 JSON.
+{-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from proto3 JSON.
 -}
 decodeGetMessageRequestSubMessage : Json.Decode.Decoder GetMessageRequestSubMessage
 decodeGetMessageRequestSubMessage =
@@ -656,7 +656,7 @@ decodeGetMessageRequestSubMessage =
         |> Proto.Json.field "subfield" "" Json.Decode.string
 
 
-{-| Decodes a `Message` from proto3 JSON.
+{-| Decodes a [`Message`](#Message) from proto3 JSON.
 -}
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
@@ -665,7 +665,7 @@ decodeMessage =
         |> Proto.Json.field "text" "" Json.Decode.string
 
 
-{-| Decodes a `UpdateMessageRequest` from proto3 JSON.
+{-| Decodes a [`UpdateMessageRequest`](#UpdateMessageRequest) from proto3 JSON.
 -}
 decodeUpdateMessageRequest : Json.Decode.Decoder UpdateMessageRequest
 decodeUpdateMessageRequest =
@@ -674,7 +674,7 @@ decodeUpdateMessageRequest =
         |> Proto.Json.field "message" Nothing (Json.Decode.map Just decodeMessage)
 
 
-{-| Decodes a `Everything` from proto3 JSON.
+{-| Decodes a [`Everything`](#Everything) from proto3 JSON.
 -}
 decodeEverything : Json.Decode.Decoder Everything
 decodeEverything =
@@ -702,7 +702,7 @@ decodeEverything =
         |> Proto.Json.oneof decodeEverythingChoice
 
 
-{-| Decodes a `EverythingChoice` from the members of its message's JSON object.
+{-| Decodes a [`EverythingChoice`](#EverythingChoice) from the members of its message's JSON object.
 -}
 decodeEverythingChoice : Json.Decode.Decoder EverythingChoice
 decodeEverythingChoice =
@@ -713,7 +713,7 @@ decodeEverythingChoice =
         ]
 
 
-{-| Decodes a `Inner` from proto3 JSON.
+{-| Decodes a [`Inner`](#Inner) from proto3 JSON.
 -}
 decodeInner : Json.Decode.Decoder Inner
 decodeInner =
@@ -722,7 +722,7 @@ decodeInner =
         |> Proto.Json.field "deep" Nothing (Json.Decode.map Just decodeDeep)
 
 
-{-| Decodes a `Deep` from proto3 JSON.
+{-| Decodes a [`Deep`](#Deep) from proto3 JSON.
 -}
 decodeDeep : Json.Decode.Decoder Deep
 decodeDeep =
@@ -731,7 +731,7 @@ decodeDeep =
         |> Proto.Json.field "c" [] (Json.Decode.list Json.Decode.string)
 
 
-{-| Decodes a `FileRequest` from proto3 JSON.
+{-| Decodes a [`FileRequest`](#FileRequest) from proto3 JSON.
 -}
 decodeFileRequest : Json.Decode.Decoder FileRequest
 decodeFileRequest =
@@ -739,7 +739,7 @@ decodeFileRequest =
         |> Proto.Json.field "path" "" Json.Decode.string
 
 
-{-| Decodes a `Resource` from proto3 JSON.
+{-| Decodes a [`Resource`](#Resource) from proto3 JSON.
 -}
 decodeResource : Json.Decode.Decoder Resource
 decodeResource =
@@ -751,7 +751,7 @@ decodeResource =
         |> Proto.Json.field "weights" [] (Proto.Json.boolMap Proto.Json.float)
 
 
-{-| Decodes a `UpdateResourceRequest` from proto3 JSON.
+{-| Decodes a [`UpdateResourceRequest`](#UpdateResourceRequest) from proto3 JSON.
 -}
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest
 decodeUpdateResourceRequest =

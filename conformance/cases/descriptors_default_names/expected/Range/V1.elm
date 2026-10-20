@@ -28,11 +28,11 @@ elmConnectVersion_ =
 `Range.V1.Bounds` are top-level values of that module, which Elm lets
 shadow a default import.
 
-`message range.v1.Bounds`
+[`message range.v1.Bounds`](Range-V1-Bounds#descriptor)
 
-  - `max`
-  - `min`
-  - `always`
+  - [`max`](Range-V1-Bounds#max)
+  - [`min`](Range-V1-Bounds#min)
+  - [`always`](Range-V1-Bounds#always)
 
 -}
 type alias Bounds =
@@ -46,7 +46,7 @@ type alias Bounds =
 -- DEFAULTS
 
 
-{-| A `Bounds` with every field at its default and every oneof unset.
+{-| A [`Bounds`](#Bounds) with every field at its default and every oneof unset.
 -}
 defaultBounds : Bounds
 defaultBounds =
@@ -60,7 +60,7 @@ defaultBounds =
 -- TYPED VALUES
 
 
-{-| The typed value of `Bounds`: its codecs, default and descriptor together.
+{-| The typed value of [`Bounds`](#Bounds): its codecs, default and descriptor together.
 -}
 messageBounds : Proto.Message.Message Bounds
 messageBounds =
@@ -71,7 +71,7 @@ messageBounds =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -88,7 +88,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Bounds` as proto3 JSON.
+{-| Encodes a [`Bounds`](#Bounds) as proto3 JSON.
 -}
 encodeBounds : Bounds -> Json.Encode.Value
 encodeBounds value =
@@ -103,7 +103,7 @@ encodeBounds value =
 -- DECODERS
 
 
-{-| Decodes a `Bounds` from proto3 JSON.
+{-| Decodes a [`Bounds`](#Bounds) from proto3 JSON.
 -}
 decodeBounds : Json.Decode.Decoder Bounds
 decodeBounds =

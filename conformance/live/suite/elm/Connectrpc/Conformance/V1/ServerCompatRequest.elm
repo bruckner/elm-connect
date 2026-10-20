@@ -34,6 +34,8 @@ will be started, each with different properties.
 
 `message connectrpc.conformance.v1.ServerCompatRequest`
 
+Describes [`Connectrpc.Conformance.V1.ServerCompatRequest`](Connectrpc-Conformance-V1#ServerCompatRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

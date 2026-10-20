@@ -31,6 +31,8 @@ reached.
 
 `message google.rpc.RetryInfo`
 
+Describes [`Google.Rpc.RetryInfo`](Google-Rpc#RetryInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

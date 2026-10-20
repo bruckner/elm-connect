@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.Protocol`
 
+Describes [`Connectrpc.Conformance.V1.Protocol`](Connectrpc-Conformance-V1#Protocol).
+
   - `PROTOCOL_UNSPECIFIED = 0;`
   - `PROTOCOL_CONNECT = 1;`
   - `PROTOCOL_GRPC = 2;`

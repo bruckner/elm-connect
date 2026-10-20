@@ -26,7 +26,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum enums.v1.Status`
+{-| [`enum enums.v1.Status`](Enums-V1-Status#descriptor)
 
   - `StatusUnspecified` (`STATUS_UNSPECIFIED`)
   - `StatusActive` (`STATUS_ACTIVE`)
@@ -45,7 +45,7 @@ first declared, which the encoder writes; the decoder reads them all.
 PRIORITY\_LOW would be the constructor PriorityLow, like LOW; as an
 alias it claims no name, so the two do not collide.
 
-`enum enums.v1.Priority`
+[`enum enums.v1.Priority`](Enums-V1-Priority#descriptor)
 
   - `PriorityNone` (`NONE`, also `UNSET`)
   - `PriorityLow` (`LOW`, also `PRIORITY_LOW`)
@@ -60,12 +60,12 @@ type Priority
     | PriorityBelowZero
 
 
-{-| `message enums.v1.Task`
+{-| [`message enums.v1.Task`](Enums-V1-Task#descriptor)
 
-  - `status`: Without presence, an enum field reads absence as its zero value.
-  - `priority`: With presence, it is a Maybe.
-  - `history`
-  - `previousStatus`
+  - [`status`](Enums-V1-Task#status): Without presence, an enum field reads absence as its zero value.
+  - [`priority`](Enums-V1-Task#priority): With presence, it is a Maybe.
+  - [`history`](Enums-V1-Task#history)
+  - [`previousStatus`](Enums-V1-Task#previousStatus)
 
 -}
 type alias Task =
@@ -80,7 +80,7 @@ type alias Task =
 -- DEFAULTS
 
 
-{-| A `Task` with every field at its default and every oneof unset.
+{-| A [`Task`](#Task) with every field at its default and every oneof unset.
 -}
 defaultTask : Task
 defaultTask =
@@ -95,21 +95,21 @@ defaultTask =
 -- TYPED VALUES
 
 
-{-| The typed value of `Status`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Status`](#Status): its codecs, zero value and descriptor together.
 -}
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
     Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Enums.V1.Status.descriptor
 
 
-{-| The typed value of `Priority`: its codecs, zero value and descriptor together.
+{-| The typed value of [`Priority`](#Priority): its codecs, zero value and descriptor together.
 -}
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
     Proto.Enum.enum encodePriority decodePriority PriorityNone Enums.V1.Priority.descriptor
 
 
-{-| The typed value of `Task`: its codecs, default and descriptor together.
+{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
@@ -120,7 +120,7 @@ messageTask =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -139,7 +139,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Status` as proto3 JSON.
+{-| Encodes a [`Status`](#Status) as proto3 JSON.
 -}
 encodeStatus : Status -> Json.Encode.Value
 encodeStatus value =
@@ -154,7 +154,7 @@ encodeStatus value =
             Json.Encode.string "STATUS_ARCHIVED"
 
 
-{-| Encodes a `Priority` as proto3 JSON.
+{-| Encodes a [`Priority`](#Priority) as proto3 JSON.
 -}
 encodePriority : Priority -> Json.Encode.Value
 encodePriority value =
@@ -172,7 +172,7 @@ encodePriority value =
             Json.Encode.string "BELOW_ZERO"
 
 
-{-| Encodes a `Task` as proto3 JSON.
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
@@ -188,7 +188,7 @@ encodeTask value =
 -- DECODERS
 
 
-{-| Decodes a `Status` from proto3 JSON.
+{-| Decodes a [`Status`](#Status) from proto3 JSON.
 -}
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
@@ -200,7 +200,7 @@ decodeStatus =
         ]
 
 
-{-| Decodes a `Priority` from proto3 JSON.
+{-| Decodes a [`Priority`](#Priority) from proto3 JSON.
 -}
 decodePriority : Json.Decode.Decoder Priority
 decodePriority =
@@ -216,7 +216,7 @@ decodePriority =
         ]
 
 
-{-| Decodes a `Task` from proto3 JSON.
+{-| Decodes a [`Task`](#Task) from proto3 JSON.
 -}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =

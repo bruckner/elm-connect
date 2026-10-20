@@ -34,7 +34,7 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `enum nesting.v1.Outer.Inner.Kind`
+{-| [`enum nesting.v1.Outer.Inner.Kind`](Nesting-V1-OuterInnerKind#descriptor)
 
   - `OuterInnerKindUnspecified` (`KIND_UNSPECIFIED`)
   - `OuterInnerKindDraft` (`KIND_DRAFT`)
@@ -45,11 +45,11 @@ type OuterInnerKind
     | OuterInnerKindDraft
 
 
-{-| `message nesting.v1.Outer`
+{-| [`message nesting.v1.Outer`](Nesting-V1-Outer#descriptor)
 
-  - `inner`
-  - `kind`
-  - `all`
+  - [`inner`](Nesting-V1-Outer#inner)
+  - [`kind`](Nesting-V1-Outer#kind)
+  - [`all`](Nesting-V1-Outer#all)
 
 -}
 type alias Outer =
@@ -59,9 +59,9 @@ type alias Outer =
     }
 
 
-{-| `message nesting.v1.Outer.Inner`
+{-| [`message nesting.v1.Outer.Inner`](Nesting-V1-OuterInner#descriptor)
 
-  - `deepest`
+  - [`deepest`](Nesting-V1-OuterInner#deepest)
 
 -}
 type alias OuterInner =
@@ -69,9 +69,9 @@ type alias OuterInner =
     }
 
 
-{-| `message nesting.v1.Outer.Inner.Deepest`
+{-| [`message nesting.v1.Outer.Inner.Deepest`](Nesting-V1-OuterInnerDeepest#descriptor)
 
-  - `kind`
+  - [`kind`](Nesting-V1-OuterInnerDeepest#kind)
 
 -}
 type alias OuterInnerDeepest =
@@ -81,11 +81,11 @@ type alias OuterInnerDeepest =
 
 {-| A message that refers to itself.
 
-`message nesting.v1.Node`
+[`message nesting.v1.Node`](Nesting-V1-Node#descriptor)
 
-  - `label`
-  - `children`
-  - `byName`: A map value closes the cycle too.
+  - [`label`](Nesting-V1-Node#label)
+  - [`children`](Nesting-V1-Node#children)
+  - [`byName`](Nesting-V1-Node#byName): A map value closes the cycle too.
 
 -}
 type alias Node =
@@ -95,7 +95,7 @@ type alias Node =
     }
 
 
-{-| A `Node` where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
+{-| A [`Node`](#Node) where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
 -}
 type Node_
     = Node_ Node
@@ -103,10 +103,10 @@ type Node_
 
 {-| Two messages that refer to each other.
 
-`message nesting.v1.Person`
+[`message nesting.v1.Person`](Nesting-V1-Person#descriptor)
 
-  - `name`
-  - `employer`
+  - [`name`](Nesting-V1-Person#name)
+  - [`employer`](Nesting-V1-Person#employer)
 
 -}
 type alias Person =
@@ -115,16 +115,16 @@ type alias Person =
     }
 
 
-{-| A `Person` where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
+{-| A [`Person`](#Person) where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
 -}
 type Person_
     = Person_ Person
 
 
-{-| `message nesting.v1.Company`
+{-| [`message nesting.v1.Company`](Nesting-V1-Company#descriptor)
 
-  - `name`
-  - `staff`
+  - [`name`](Nesting-V1-Company#name)
+  - [`staff`](Nesting-V1-Company#staff)
 
 -}
 type alias Company =
@@ -133,7 +133,7 @@ type alias Company =
     }
 
 
-{-| A `Company` where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
+{-| A [`Company`](#Company) where a cycle of fields leads back to it, since Elm rejects a recursive type alias.
 -}
 type Company_
     = Company_ Company
@@ -141,9 +141,9 @@ type Company_
 
 {-| Off any cycle, referring to a recursive message: no wrapper needed.
 
-`message nesting.v1.Forest`
+[`message nesting.v1.Forest`](Nesting-V1-Forest#descriptor)
 
-  - `trees`
+  - [`trees`](Nesting-V1-Forest#trees)
 
 -}
 type alias Forest =
@@ -154,9 +154,9 @@ type alias Forest =
 {-| A cycle through a oneof needs no wrapper type, but its decoders read the
 member lazily.
 
-`message nesting.v1.Expr`
+[`message nesting.v1.Expr`](Nesting-V1-Expr#descriptor)
 
-  - `value`: See `ExprValue`.
+  - `value`: See [`ExprValue`](#ExprValue).
 
 -}
 type alias Expr =
@@ -167,8 +167,8 @@ type alias Expr =
 {-| `oneof value` of `nesting.v1.Expr`
 
   - `ExprValueUnset`: none of the fields is set.
-  - `ExprValueNumber`
-  - `ExprValueSum`
+  - [`ExprValueNumber`](Nesting-V1-Expr#number)
+  - [`ExprValueSum`](Nesting-V1-Expr#sum)
 
 -}
 type ExprValue
@@ -177,9 +177,9 @@ type ExprValue
     | ExprValueSum Sum
 
 
-{-| `message nesting.v1.Sum`
+{-| [`message nesting.v1.Sum`](Nesting-V1-Sum#descriptor)
 
-  - `terms`
+  - [`terms`](Nesting-V1-Sum#terms)
 
 -}
 type alias Sum =
@@ -191,7 +191,7 @@ type alias Sum =
 -- DEFAULTS
 
 
-{-| A `Outer` with every field at its default and every oneof unset.
+{-| A [`Outer`](#Outer) with every field at its default and every oneof unset.
 -}
 defaultOuter : Outer
 defaultOuter =
@@ -201,7 +201,7 @@ defaultOuter =
     }
 
 
-{-| A `OuterInner` with every field at its default and every oneof unset.
+{-| A [`OuterInner`](#OuterInner) with every field at its default and every oneof unset.
 -}
 defaultOuterInner : OuterInner
 defaultOuterInner =
@@ -209,7 +209,7 @@ defaultOuterInner =
     }
 
 
-{-| A `OuterInnerDeepest` with every field at its default and every oneof unset.
+{-| A [`OuterInnerDeepest`](#OuterInnerDeepest) with every field at its default and every oneof unset.
 -}
 defaultOuterInnerDeepest : OuterInnerDeepest
 defaultOuterInnerDeepest =
@@ -217,7 +217,7 @@ defaultOuterInnerDeepest =
     }
 
 
-{-| A `Node` with every field at its default and every oneof unset.
+{-| A [`Node`](#Node) with every field at its default and every oneof unset.
 -}
 defaultNode : Node
 defaultNode =
@@ -227,7 +227,7 @@ defaultNode =
     }
 
 
-{-| A `Person` with every field at its default and every oneof unset.
+{-| A [`Person`](#Person) with every field at its default and every oneof unset.
 -}
 defaultPerson : Person
 defaultPerson =
@@ -236,7 +236,7 @@ defaultPerson =
     }
 
 
-{-| A `Company` with every field at its default and every oneof unset.
+{-| A [`Company`](#Company) with every field at its default and every oneof unset.
 -}
 defaultCompany : Company
 defaultCompany =
@@ -245,7 +245,7 @@ defaultCompany =
     }
 
 
-{-| A `Forest` with every field at its default and every oneof unset.
+{-| A [`Forest`](#Forest) with every field at its default and every oneof unset.
 -}
 defaultForest : Forest
 defaultForest =
@@ -253,7 +253,7 @@ defaultForest =
     }
 
 
-{-| A `Expr` with every field at its default and every oneof unset.
+{-| A [`Expr`](#Expr) with every field at its default and every oneof unset.
 -}
 defaultExpr : Expr
 defaultExpr =
@@ -261,7 +261,7 @@ defaultExpr =
     }
 
 
-{-| A `Sum` with every field at its default and every oneof unset.
+{-| A [`Sum`](#Sum) with every field at its default and every oneof unset.
 -}
 defaultSum : Sum
 defaultSum =
@@ -273,70 +273,70 @@ defaultSum =
 -- TYPED VALUES
 
 
-{-| The typed value of `OuterInnerKind`: its codecs, zero value and descriptor together.
+{-| The typed value of [`OuterInnerKind`](#OuterInnerKind): its codecs, zero value and descriptor together.
 -}
 enumOuterInnerKind : Proto.Enum.Enum OuterInnerKind
 enumOuterInnerKind =
     Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified Nesting.V1.OuterInnerKind.descriptor
 
 
-{-| The typed value of `Outer`: its codecs, default and descriptor together.
+{-| The typed value of [`Outer`](#Outer): its codecs, default and descriptor together.
 -}
 messageOuter : Proto.Message.Message Outer
 messageOuter =
     Proto.Message.message encodeOuter decodeOuter defaultOuter Nesting.V1.Outer.descriptor
 
 
-{-| The typed value of `OuterInner`: its codecs, default and descriptor together.
+{-| The typed value of [`OuterInner`](#OuterInner): its codecs, default and descriptor together.
 -}
 messageOuterInner : Proto.Message.Message OuterInner
 messageOuterInner =
     Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner Nesting.V1.OuterInner.descriptor
 
 
-{-| The typed value of `OuterInnerDeepest`: its codecs, default and descriptor together.
+{-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its codecs, default and descriptor together.
 -}
 messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
 messageOuterInnerDeepest =
     Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest Nesting.V1.OuterInnerDeepest.descriptor
 
 
-{-| The typed value of `Node`: its codecs, default and descriptor together.
+{-| The typed value of [`Node`](#Node): its codecs, default and descriptor together.
 -}
 messageNode : Proto.Message.Message Node
 messageNode =
     Proto.Message.message encodeNode decodeNode defaultNode Nesting.V1.Node.descriptor
 
 
-{-| The typed value of `Person`: its codecs, default and descriptor together.
+{-| The typed value of [`Person`](#Person): its codecs, default and descriptor together.
 -}
 messagePerson : Proto.Message.Message Person
 messagePerson =
     Proto.Message.message encodePerson decodePerson defaultPerson Nesting.V1.Person.descriptor
 
 
-{-| The typed value of `Company`: its codecs, default and descriptor together.
+{-| The typed value of [`Company`](#Company): its codecs, default and descriptor together.
 -}
 messageCompany : Proto.Message.Message Company
 messageCompany =
     Proto.Message.message encodeCompany decodeCompany defaultCompany Nesting.V1.Company.descriptor
 
 
-{-| The typed value of `Forest`: its codecs, default and descriptor together.
+{-| The typed value of [`Forest`](#Forest): its codecs, default and descriptor together.
 -}
 messageForest : Proto.Message.Message Forest
 messageForest =
     Proto.Message.message encodeForest decodeForest defaultForest Nesting.V1.Forest.descriptor
 
 
-{-| The typed value of `Expr`: its codecs, default and descriptor together.
+{-| The typed value of [`Expr`](#Expr): its codecs, default and descriptor together.
 -}
 messageExpr : Proto.Message.Message Expr
 messageExpr =
     Proto.Message.message encodeExpr decodeExpr defaultExpr Nesting.V1.Expr.descriptor
 
 
-{-| The typed value of `Sum`: its codecs, default and descriptor together.
+{-| The typed value of [`Sum`](#Sum): its codecs, default and descriptor together.
 -}
 messageSum : Proto.Message.Message Sum
 messageSum =
@@ -347,7 +347,7 @@ messageSum =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -373,7 +373,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `OuterInnerKind` as proto3 JSON.
+{-| Encodes a [`OuterInnerKind`](#OuterInnerKind) as proto3 JSON.
 -}
 encodeOuterInnerKind : OuterInnerKind -> Json.Encode.Value
 encodeOuterInnerKind value =
@@ -385,7 +385,7 @@ encodeOuterInnerKind value =
             Json.Encode.string "KIND_DRAFT"
 
 
-{-| Encodes a `Outer` as proto3 JSON.
+{-| Encodes a [`Outer`](#Outer) as proto3 JSON.
 -}
 encodeOuter : Outer -> Json.Encode.Value
 encodeOuter value =
@@ -396,7 +396,7 @@ encodeOuter value =
         ]
 
 
-{-| Encodes a `OuterInner` as proto3 JSON.
+{-| Encodes a [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
 encodeOuterInner : OuterInner -> Json.Encode.Value
 encodeOuterInner value =
@@ -405,7 +405,7 @@ encodeOuterInner value =
         ]
 
 
-{-| Encodes a `OuterInnerDeepest` as proto3 JSON.
+{-| Encodes a [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
 -}
 encodeOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
 encodeOuterInnerDeepest value =
@@ -414,7 +414,7 @@ encodeOuterInnerDeepest value =
         ]
 
 
-{-| Encodes a `Node` as proto3 JSON.
+{-| Encodes a [`Node`](#Node) as proto3 JSON.
 -}
 encodeNode : Node -> Json.Encode.Value
 encodeNode value =
@@ -425,14 +425,14 @@ encodeNode value =
         ]
 
 
-{-| Encodes a `Node_` as proto3 JSON.
+{-| Encodes a [`Node_`](#Node_) as proto3 JSON.
 -}
 encodeNode_ : Node_ -> Json.Encode.Value
 encodeNode_ (Node_ value) =
     encodeNode value
 
 
-{-| Encodes a `Person` as proto3 JSON.
+{-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
 encodePerson : Person -> Json.Encode.Value
 encodePerson value =
@@ -442,14 +442,14 @@ encodePerson value =
         ]
 
 
-{-| Encodes a `Person_` as proto3 JSON.
+{-| Encodes a [`Person_`](#Person_) as proto3 JSON.
 -}
 encodePerson_ : Person_ -> Json.Encode.Value
 encodePerson_ (Person_ value) =
     encodePerson value
 
 
-{-| Encodes a `Company` as proto3 JSON.
+{-| Encodes a [`Company`](#Company) as proto3 JSON.
 -}
 encodeCompany : Company -> Json.Encode.Value
 encodeCompany value =
@@ -459,14 +459,14 @@ encodeCompany value =
         ]
 
 
-{-| Encodes a `Company_` as proto3 JSON.
+{-| Encodes a [`Company_`](#Company_) as proto3 JSON.
 -}
 encodeCompany_ : Company_ -> Json.Encode.Value
 encodeCompany_ (Company_ value) =
     encodeCompany value
 
 
-{-| Encodes a `Forest` as proto3 JSON.
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
 encodeForest : Forest -> Json.Encode.Value
 encodeForest value =
@@ -475,14 +475,14 @@ encodeForest value =
         ]
 
 
-{-| Encodes a `Expr` as proto3 JSON.
+{-| Encodes a [`Expr`](#Expr) as proto3 JSON.
 -}
 encodeExpr : Expr -> Json.Encode.Value
 encodeExpr value =
     Proto.Json.objectOfFields (encodeExprValue value.value)
 
 
-{-| Encodes a `ExprValue` as the members of its message's JSON object.
+{-| Encodes a [`ExprValue`](#ExprValue) as the members of its message's JSON object.
 -}
 encodeExprValue : ExprValue -> List ( String, Maybe Json.Encode.Value )
 encodeExprValue value =
@@ -499,7 +499,7 @@ encodeExprValue value =
             ]
 
 
-{-| Encodes a `Sum` as proto3 JSON.
+{-| Encodes a [`Sum`](#Sum) as proto3 JSON.
 -}
 encodeSum : Sum -> Json.Encode.Value
 encodeSum value =
@@ -512,7 +512,7 @@ encodeSum value =
 -- DECODERS
 
 
-{-| Decodes a `OuterInnerKind` from proto3 JSON.
+{-| Decodes a [`OuterInnerKind`](#OuterInnerKind) from proto3 JSON.
 -}
 decodeOuterInnerKind : Json.Decode.Decoder OuterInnerKind
 decodeOuterInnerKind =
@@ -523,7 +523,7 @@ decodeOuterInnerKind =
         ]
 
 
-{-| Decodes a `Outer` from proto3 JSON.
+{-| Decodes a [`Outer`](#Outer) from proto3 JSON.
 -}
 decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
@@ -533,7 +533,7 @@ decodeOuter =
         |> Proto.Json.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
 
 
-{-| Decodes a `OuterInner` from proto3 JSON.
+{-| Decodes a [`OuterInner`](#OuterInner) from proto3 JSON.
 -}
 decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
@@ -541,7 +541,7 @@ decodeOuterInner =
         |> Proto.Json.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
 
 
-{-| Decodes a `OuterInnerDeepest` from proto3 JSON.
+{-| Decodes a [`OuterInnerDeepest`](#OuterInnerDeepest) from proto3 JSON.
 -}
 decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
@@ -549,7 +549,7 @@ decodeOuterInnerDeepest =
         |> Proto.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
 
 
-{-| Decodes a `Node` from proto3 JSON.
+{-| Decodes a [`Node`](#Node) from proto3 JSON.
 -}
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
@@ -559,14 +559,14 @@ decodeNode =
         |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Json.Decode.dict decodeNode_)
 
 
-{-| Decodes a `Node_` from proto3 JSON.
+{-| Decodes a [`Node_`](#Node_) from proto3 JSON.
 -}
 decodeNode_ : Json.Decode.Decoder Node_
 decodeNode_ =
     Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNode))
 
 
-{-| Decodes a `Person` from proto3 JSON.
+{-| Decodes a [`Person`](#Person) from proto3 JSON.
 -}
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
@@ -575,14 +575,14 @@ decodePerson =
         |> Proto.Json.field "employer" Nothing (Json.Decode.map Just decodeCompany_)
 
 
-{-| Decodes a `Person_` from proto3 JSON.
+{-| Decodes a [`Person_`](#Person_) from proto3 JSON.
 -}
 decodePerson_ : Json.Decode.Decoder Person_
 decodePerson_ =
     Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodePerson))
 
 
-{-| Decodes a `Company` from proto3 JSON.
+{-| Decodes a [`Company`](#Company) from proto3 JSON.
 -}
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
@@ -591,14 +591,14 @@ decodeCompany =
         |> Proto.Json.field "staff" [] (Json.Decode.list decodePerson_)
 
 
-{-| Decodes a `Company_` from proto3 JSON.
+{-| Decodes a [`Company_`](#Company_) from proto3 JSON.
 -}
 decodeCompany_ : Json.Decode.Decoder Company_
 decodeCompany_ =
     Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeCompany))
 
 
-{-| Decodes a `Forest` from proto3 JSON.
+{-| Decodes a [`Forest`](#Forest) from proto3 JSON.
 -}
 decodeForest : Json.Decode.Decoder Forest
 decodeForest =
@@ -606,7 +606,7 @@ decodeForest =
         |> Proto.Json.field "trees" [] (Json.Decode.list decodeNode)
 
 
-{-| Decodes a `Expr` from proto3 JSON.
+{-| Decodes a [`Expr`](#Expr) from proto3 JSON.
 -}
 decodeExpr : Json.Decode.Decoder Expr
 decodeExpr =
@@ -614,7 +614,7 @@ decodeExpr =
         |> Proto.Json.oneof decodeExprValue
 
 
-{-| Decodes a `ExprValue` from the members of its message's JSON object.
+{-| Decodes a [`ExprValue`](#ExprValue) from the members of its message's JSON object.
 -}
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =
@@ -625,7 +625,7 @@ decodeExprValue =
         ]
 
 
-{-| Decodes a `Sum` from proto3 JSON.
+{-| Decodes a [`Sum`](#Sum) from proto3 JSON.
 -}
 decodeSum : Json.Decode.Decoder Sum
 decodeSum =

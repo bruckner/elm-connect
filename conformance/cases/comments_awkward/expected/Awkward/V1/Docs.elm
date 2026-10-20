@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message awkward.v1.Docs`
 
+Describes [`Awkward.V1.Docs`](Awkward-V1#Docs).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

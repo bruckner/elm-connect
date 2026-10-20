@@ -16,6 +16,9 @@ elmConnectVersion_ =
 
 
 {-| `message routes.v1.GetMessageRequest.SubMessage`
+
+Describes [`Routes.V1.GetMessageRequestSubMessage`](Routes-V1#GetMessageRequestSubMessage).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

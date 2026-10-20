@@ -23,9 +23,9 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message chat.v1.Line`
+{-| [`message chat.v1.Line`](Chat-V1-Line#descriptor)
 
-  - `text`
+  - [`text`](Chat-V1-Line#text)
 
 -}
 type alias Line =
@@ -37,7 +37,7 @@ type alias Line =
 -- DEFAULTS
 
 
-{-| A `Line` with every field at its default and every oneof unset.
+{-| A [`Line`](#Line) with every field at its default and every oneof unset.
 -}
 defaultLine : Line
 defaultLine =
@@ -49,7 +49,7 @@ defaultLine =
 -- TYPED VALUES
 
 
-{-| The typed value of `Line`: its codecs, default and descriptor together.
+{-| The typed value of [`Line`](#Line): its codecs, default and descriptor together.
 -}
 messageLine : Proto.Message.Message Line
 messageLine =
@@ -60,7 +60,7 @@ messageLine =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -77,7 +77,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `Line` as proto3 JSON.
+{-| Encodes a [`Line`](#Line) as proto3 JSON.
 -}
 encodeLine : Line -> Json.Encode.Value
 encodeLine value =
@@ -90,7 +90,7 @@ encodeLine value =
 -- DECODERS
 
 
-{-| Decodes a `Line` from proto3 JSON.
+{-| Decodes a [`Line`](#Line) from proto3 JSON.
 -}
 decodeLine : Json.Decode.Decoder Line
 decodeLine =

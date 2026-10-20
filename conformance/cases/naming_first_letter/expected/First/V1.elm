@@ -24,19 +24,19 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message first.v1.URLPath`
+{-| [`message first.v1.URLPath`](First-V1-URLPath#descriptor)
 
-  - `label`
-  - `id`
-  - `url`
-  - `urlPath`
-  - `httpRequest`
-  - `xCoord`
-  - `abcDef`
-  - `internal`
-  - `displayName`
-  - `type_`
-  - `iDs`: `ID` + `s` reads as `I` + `Ds`.
+  - [`label`](First-V1-URLPath#label)
+  - [`id`](First-V1-URLPath#id)
+  - [`url`](First-V1-URLPath#url)
+  - [`urlPath`](First-V1-URLPath#urlPath)
+  - [`httpRequest`](First-V1-URLPath#httpRequest)
+  - [`xCoord`](First-V1-URLPath#xCoord)
+  - [`abcDef`](First-V1-URLPath#abcDef)
+  - [`internal`](First-V1-URLPath#internal)
+  - [`displayName`](First-V1-URLPath#displayName)
+  - [`type_`](First-V1-URLPath#type_)
+  - [`iDs`](First-V1-URLPath#iDs): `ID` + `s` reads as `I` + `Ds`.
 
 -}
 type alias URLPath =
@@ -59,10 +59,10 @@ field `Label`. A oneof named `Target` is the record field `target`; its
 member `URL` has the constructor `LinkTargetURL` and the descriptor
 value `url`.
 
-`message first.v1.Link`
+[`message first.v1.Link`](First-V1-Link#descriptor)
 
-  - `label`
-  - `target`: See `LinkTarget`.
+  - [`label`](First-V1-Link#label)
+  - `target`: See [`LinkTarget`](#LinkTarget).
 
 -}
 type alias Link =
@@ -74,8 +74,8 @@ type alias Link =
 {-| `oneof Target` of `first.v1.Link`
 
   - `LinkTargetUnset`: none of the fields is set.
-  - `LinkTargetURL`
-  - `LinkTargetCount`
+  - [`LinkTargetURL`](First-V1-Link#url)
+  - [`LinkTargetCount`](First-V1-Link#count)
 
 -}
 type LinkTarget
@@ -88,7 +88,7 @@ type LinkTarget
 -- DEFAULTS
 
 
-{-| A `URLPath` with every field at its default and every oneof unset.
+{-| A [`URLPath`](#URLPath) with every field at its default and every oneof unset.
 -}
 defaultURLPath : URLPath
 defaultURLPath =
@@ -106,7 +106,7 @@ defaultURLPath =
     }
 
 
-{-| A `Link` with every field at its default and every oneof unset.
+{-| A [`Link`](#Link) with every field at its default and every oneof unset.
 -}
 defaultLink : Link
 defaultLink =
@@ -119,14 +119,14 @@ defaultLink =
 -- TYPED VALUES
 
 
-{-| The typed value of `URLPath`: its codecs, default and descriptor together.
+{-| The typed value of [`URLPath`](#URLPath): its codecs, default and descriptor together.
 -}
 messageURLPath : Proto.Message.Message URLPath
 messageURLPath =
     Proto.Message.message encodeURLPath decodeURLPath defaultURLPath First.V1.URLPath.descriptor
 
 
-{-| The typed value of `Link`: its codecs, default and descriptor together.
+{-| The typed value of [`Link`](#Link): its codecs, default and descriptor together.
 -}
 messageLink : Proto.Message.Message Link
 messageLink =
@@ -137,7 +137,7 @@ messageLink =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -155,7 +155,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `URLPath` as proto3 JSON.
+{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
 -}
 encodeURLPath : URLPath -> Json.Encode.Value
 encodeURLPath value =
@@ -174,7 +174,7 @@ encodeURLPath value =
         ]
 
 
-{-| Encodes a `Link` as proto3 JSON.
+{-| Encodes a [`Link`](#Link) as proto3 JSON.
 -}
 encodeLink : Link -> Json.Encode.Value
 encodeLink value =
@@ -185,7 +185,7 @@ encodeLink value =
         )
 
 
-{-| Encodes a `LinkTarget` as the members of its message's JSON object.
+{-| Encodes a [`LinkTarget`](#LinkTarget) as the members of its message's JSON object.
 -}
 encodeLinkTarget : LinkTarget -> List ( String, Maybe Json.Encode.Value )
 encodeLinkTarget value =
@@ -206,7 +206,7 @@ encodeLinkTarget value =
 -- DECODERS
 
 
-{-| Decodes a `URLPath` from proto3 JSON.
+{-| Decodes a [`URLPath`](#URLPath) from proto3 JSON.
 -}
 decodeURLPath : Json.Decode.Decoder URLPath
 decodeURLPath =
@@ -224,7 +224,7 @@ decodeURLPath =
         |> Proto.Json.field "IDs" [] (Json.Decode.list Json.Decode.string)
 
 
-{-| Decodes a `Link` from proto3 JSON.
+{-| Decodes a [`Link`](#Link) from proto3 JSON.
 -}
 decodeLink : Json.Decode.Decoder Link
 decodeLink =
@@ -233,7 +233,7 @@ decodeLink =
         |> Proto.Json.oneof decodeLinkTarget
 
 
-{-| Decodes a `LinkTarget` from the members of its message's JSON object.
+{-| Decodes a [`LinkTarget`](#LinkTarget) from the members of its message's JSON object.
 -}
 decodeLinkTarget : Json.Decode.Decoder LinkTarget
 decodeLinkTarget =

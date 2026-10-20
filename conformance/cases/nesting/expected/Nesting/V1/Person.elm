@@ -19,6 +19,8 @@ elmConnectVersion_ =
 
 `message nesting.v1.Person`
 
+Describes [`Nesting.V1.Person`](Nesting-V1#Person).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

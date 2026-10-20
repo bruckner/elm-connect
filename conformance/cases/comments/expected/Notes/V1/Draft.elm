@@ -21,6 +21,8 @@ A note not yet saved.
 
 `message notes.v1.Draft`
 
+Describes [`Notes.V1.Draft`](Notes-V1#Draft).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.TestSuite.ConnectVersionMode`
 
+Describes [`Connectrpc.Conformance.V1.TestSuiteConnectVersionMode`](Connectrpc-Conformance-V1#TestSuiteConnectVersionMode).
+
   - `CONNECT_VERSION_MODE_UNSPECIFIED = 0;` Used when the suite is agnostic to the server's validation
     behavior.
   - `CONNECT_VERSION_MODE_REQUIRE = 1;` Used when the suite relies on the server validating the presence

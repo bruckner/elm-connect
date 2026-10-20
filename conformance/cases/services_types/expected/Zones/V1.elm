@@ -24,9 +24,9 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| `message zones.v1.ZoneRequest`
+{-| [`message zones.v1.ZoneRequest`](Zones-V1-ZoneRequest#descriptor)
 
-  - `name`
+  - [`name`](Zones-V1-ZoneRequest#name)
 
 -}
 type alias ZoneRequest =
@@ -34,10 +34,10 @@ type alias ZoneRequest =
     }
 
 
-{-| `message zones.v1.Zone`
+{-| [`message zones.v1.Zone`](Zones-V1-Zone#descriptor)
 
-  - `name`
-  - `offsetSeconds`
+  - [`name`](Zones-V1-Zone#name)
+  - [`offsetSeconds`](Zones-V1-Zone#offsetSeconds)
 
 -}
 type alias Zone =
@@ -50,7 +50,7 @@ type alias Zone =
 -- DEFAULTS
 
 
-{-| A `ZoneRequest` with every field at its default and every oneof unset.
+{-| A [`ZoneRequest`](#ZoneRequest) with every field at its default and every oneof unset.
 -}
 defaultZoneRequest : ZoneRequest
 defaultZoneRequest =
@@ -58,7 +58,7 @@ defaultZoneRequest =
     }
 
 
-{-| A `Zone` with every field at its default and every oneof unset.
+{-| A [`Zone`](#Zone) with every field at its default and every oneof unset.
 -}
 defaultZone : Zone
 defaultZone =
@@ -71,14 +71,14 @@ defaultZone =
 -- TYPED VALUES
 
 
-{-| The typed value of `ZoneRequest`: its codecs, default and descriptor together.
+{-| The typed value of [`ZoneRequest`](#ZoneRequest): its codecs, default and descriptor together.
 -}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
     Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
 
 
-{-| The typed value of `Zone`: its codecs, default and descriptor together.
+{-| The typed value of [`Zone`](#Zone): its codecs, default and descriptor together.
 -}
 messageZone : Proto.Message.Message Zone
 messageZone =
@@ -89,7 +89,7 @@ messageZone =
 -- REGISTRY
 
 
-{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of an `Any`.
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
 -}
 registry : Proto.Registry.Registry
 registry =
@@ -107,7 +107,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a `ZoneRequest` as proto3 JSON.
+{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON.
 -}
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
@@ -116,7 +116,7 @@ encodeZoneRequest value =
         ]
 
 
-{-| Encodes a `Zone` as proto3 JSON.
+{-| Encodes a [`Zone`](#Zone) as proto3 JSON.
 -}
 encodeZone : Zone -> Json.Encode.Value
 encodeZone value =
@@ -130,7 +130,7 @@ encodeZone value =
 -- DECODERS
 
 
-{-| Decodes a `ZoneRequest` from proto3 JSON.
+{-| Decodes a [`ZoneRequest`](#ZoneRequest) from proto3 JSON.
 -}
 decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
@@ -138,7 +138,7 @@ decodeZoneRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a `Zone` from proto3 JSON.
+{-| Decodes a [`Zone`](#Zone) from proto3 JSON.
 -}
 decodeZone : Json.Decode.Decoder Zone
 decodeZone =

@@ -41,6 +41,7 @@ An unclosed fence in a method's comment.
 
 `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`. Connect: `POST /awkward.v1.AwkwardService/Ping`.
 Transcode: `HEAD /v1/ping`.
+From `google.protobuf.Empty` to `google.protobuf.Empty`, described by [`descriptorPing`](#descriptorPing).
 
 -}
 ping : () -> Rpc.Call () ()

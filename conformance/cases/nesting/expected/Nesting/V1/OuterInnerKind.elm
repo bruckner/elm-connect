@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum nesting.v1.Outer.Inner.Kind`
 
+Describes [`Nesting.V1.OuterInnerKind`](Nesting-V1#OuterInnerKind).
+
   - `KIND_UNSPECIFIED = 0;`
   - `KIND_DRAFT = 1;`
 

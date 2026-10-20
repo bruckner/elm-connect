@@ -27,6 +27,8 @@ message) to stdout.
 
 `message connectrpc.conformance.v1.ClientCompatRequest`
 
+Describes [`Connectrpc.Conformance.V1.ClientCompatRequest`](Connectrpc-Conformance-V1#ClientCompatRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

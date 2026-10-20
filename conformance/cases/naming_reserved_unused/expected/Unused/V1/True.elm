@@ -15,6 +15,9 @@ elmConnectVersion_ =
 
 
 {-| `message unused.v1.True`
+
+Describes [`Unused.V1.True`](Unused-V1#True).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

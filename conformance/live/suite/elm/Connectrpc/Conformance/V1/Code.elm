@@ -17,6 +17,8 @@ elmConnectVersion_ =
 
 {-| `enum connectrpc.conformance.v1.Code`
 
+Describes [`Connectrpc.Conformance.V1.Code`](Connectrpc-Conformance-V1#Code).
+
   - `CODE_UNSPECIFIED = 0;`
   - `CODE_CANCELED = 1;`
   - `CODE_UNKNOWN = 2;`
