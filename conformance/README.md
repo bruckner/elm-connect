@@ -483,5 +483,7 @@ update mask), sent with `fetch` as written (`request`: `method`, `path`
 under the prefix, `body`), whose `observed` is matched against `{status,
 body}`, the body parsed as JSON. The probes are the same in both files and
 record where the two transcoders answer differently. A listed fixture
-passes while that answer holds, and fails once it agrees, until its entry
-is removed; a probe fails when its answer changes.
+passes while that answer holds and its request (verb, path, query, body
+and headers) is still the fixture's, so an entry excuses the
+transcoder's answer and never the request; it fails once it agrees, until
+its entry is removed; a probe fails when its answer changes.

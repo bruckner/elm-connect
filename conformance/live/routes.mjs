@@ -14,8 +14,9 @@
 // A fixture the transcoder rejects or echoes differently is recorded in its
 // known-divergent file (known-divergent-vanguard.json,
 // known-divergent-gateway.json) with the transcoder's answer, and the run
-// stays green while that answer holds; one that starts agreeing fails until
-// its entry is removed. The bindings the transcoder cannot serve beside the
+// stays green while that answer holds and (a) passes: a listed fixture's
+// divergence is the transcoder's, never the request's. One that starts
+// agreeing fails until its entry is removed. The bindings the transcoder cannot serve beside the
 // others are listed there too, and must match the server's GET
 // <prefix>/routes/layers. Its probes are requests the runtime does not make
 // (an unknown query parameter, a verb without a route), sent with fetch,
@@ -300,18 +301,23 @@ function echoOf(schema, method, answer) {
   return JSON.parse(answer[echoFields[output]] ?? "{}");
 }
 
-// The problems with one fixture's live call, as [what, expected, actual],
+// The problems with one fixture's live call, as [what, expected, actual]:
+// requestProblems with the request the runtime made (a), answerProblems with
+// the server's answer and the runtime's reading of it (b, c), problems both;
 // and notes on what passed only as the fixtures compare.
 export function check(schema, fixture, result, baseUrl) {
-  const problems = [];
+  const requestProblems = [];
+  const answerProblems = [];
   const notes = [];
-  const fail = (what, expected, actual) => problems.push([what, expected, actual]);
+  let side = requestProblems;
+  const fail = (what, expected, actual) => side.push([what, expected, actual]);
+  const done = () => ({ requestProblems, answerProblems, problems: requestProblems.concat(answerProblems), notes });
   const method = schema.methods[fixture.method];
   const input = typeOf(schema, method.input);
   const request = result.trace?.request;
   if (!request) {
     fail("trace", "a trace", result);
-    return { problems, notes };
+    return done();
   }
 
   // (a) The request.
@@ -350,11 +356,12 @@ export function check(schema, fixture, result, baseUrl) {
   }
 
   // (b) The server's answer.
+  side = answerProblems;
   const exchange = result.wire?.at(-1);
   if (result.trace.httpStatus !== 200) fail("HTTP status", 200, result.trace.httpStatus);
   if (!exchange || exchange.status !== 200) {
     fail("answer", "HTTP 200", exchange ? { status: exchange.status, body: exchange.responseBody } : null);
-    return { problems, notes };
+    return done();
   }
   const want = normalize(schema, input, fixture.request);
   if (verb === "HEAD") {
@@ -365,7 +372,7 @@ export function check(schema, fixture, result, baseUrl) {
     if (!result.result?.ok || !sameJson(normalize(schema, output, result.result.ok), {})) {
       fail("result", { ok: {} }, result.result);
     }
-    return { problems, notes };
+    return done();
   }
   let answer;
   try {
@@ -374,7 +381,7 @@ export function check(schema, fixture, result, baseUrl) {
     if (!sameJson(echoed, want)) fail("echo", want, echoed);
   } catch (e) {
     fail("echo", want, `${exchange.responseBody} (${e.message})`);
-    return { problems, notes };
+    return done();
   }
 
   // (c) The runtime's reading of it.
@@ -390,7 +397,7 @@ export function check(schema, fixture, result, baseUrl) {
       fail("result.ok", answer, `${JSON.stringify(result.result.ok)} (${e.message})`);
     }
   }
-  return { problems, notes };
+  return done();
 }
 
 function bodyTypeOf(schema, input, rule) {
@@ -496,11 +503,15 @@ export async function runFixtures(runner, url, { log = console.log, known } = {}
         config: { baseUrl },
         binding: fixture.binding,
       });
-      const { problems, notes } = check(schema, fixture, result, baseUrl);
+      const { requestProblems, problems, notes } = check(schema, fixture, result, baseUrl);
       const divergence = known.fixtures.find((d) => d.file === file && d.fixture === fixture.name);
       if (divergence) {
         const differs = mismatches(divergence.observed, result);
-        if (problems.length === 0) {
+        if (requestProblems.length > 0) {
+          failed.push(name);
+          log(`FAIL  ${name}\n        the request is not the fixture's: a known divergence covers only the answer`);
+          report(log, requestProblems, result);
+        } else if (problems.length === 0) {
           failed.push(name);
           log(`FAIL  ${name}\n        agrees now: remove it from the known-divergent file`);
         } else if (differs.length > 0) {
