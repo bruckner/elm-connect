@@ -5,9 +5,11 @@ module Notes.Api exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Notes.Api.Audience
+import Notes.Api.Edit
+import Notes.Api.GetNoteRequest
+import Notes.Api.Memo
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -80,73 +82,42 @@ defaultGetNoteRequest =
 
 
 
--- DESCRIPTORS
-
-
-descriptorAudience : Proto.Enum.Descriptor
-descriptorAudience =
-    Proto.Enum.descriptor "notes.v1.Visibility"
-        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "VISIBILITY_PUBLIC" 1
-        ]
+-- TYPED VALUES
 
 
 enumAudience : Proto.Enum.Enum Audience
 enumAudience =
-    Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified descriptorAudience
-
-
-descriptorMemo : Proto.Message.Descriptor
-descriptorMemo =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "visibility" "visibility" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "notes.v1.Visibility")
-        , Proto.Field.descriptor "revisions" "revisions" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note.Revision")
-        , Proto.Field.descriptor "text" "text" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "link" "link" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
-        ]
+    Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified Notes.Api.Audience.descriptor
 
 
 messageMemo : Proto.Message.Message Memo
 messageMemo =
-    Proto.Message.message encodeMemo decodeMemo defaultMemo descriptorMemo
-
-
-descriptorEdit : Proto.Message.Descriptor
-descriptorEdit =
-    Proto.Message.descriptor "notes.v1.Note.Revision"
-        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        ]
+    Proto.Message.message encodeMemo decodeMemo defaultMemo Notes.Api.Memo.descriptor
 
 
 messageEdit : Proto.Message.Message Edit
 messageEdit =
-    Proto.Message.message encodeEdit decodeEdit defaultEdit descriptorEdit
-
-
-descriptorGetNoteRequest : Proto.Message.Descriptor
-descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeEdit decodeEdit defaultEdit Notes.Api.Edit.descriptor
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest descriptorGetNoteRequest
+    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.Api.GetNoteRequest.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorMemo
-            , descriptorEdit
-            , descriptorGetNoteRequest
+            [ Notes.Api.Memo.descriptor
+            , Notes.Api.Edit.descriptor
+            , Notes.Api.GetNoteRequest.descriptor
             ]
-            [ descriptorAudience
+            [ Notes.Api.Audience.descriptor
             ]
         )
         Proto.Registry.wellKnown

@@ -1,0 +1,17 @@
+naming::invalid_field
+
+  × The oneof field `_1x` of `events.v1.Event` has the descriptor value `1x`
+  │ in Elm, which is not a valid value name.
+    ╭─[events.proto:9:12]
+  8 │   oneof kind {
+  9 │     string _1x = 1;
+    ·            ─┬─
+    ·             ╰── this name
+ 10 │   }
+    ╰────
+  help: A oneof member's descriptor, in its message's descriptor module, is
+        named for the end of its constructor: the member's name in PascalCase,
+        its first letter lowercased (`_legacy` becomes `legacy`). That must
+        start with a letter, so the proto name needs a letter after any
+        leading underscores. Rename it in the proto; a `rename` of the member
+        renames its constructor, not this value.

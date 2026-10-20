@@ -4,6 +4,13 @@
 module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
+import Notes.V1.ArchiveNoteRequest
+import Notes.V1.CreateNoteRequest
+import Notes.V1.DeleteNoteRequest
+import Notes.V1.GetNoteRequest
+import Notes.V1.ListNotesRequest
+import Notes.V1.Note
+import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -33,7 +40,10 @@ descriptorGetNote =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -60,10 +70,10 @@ descriptorListNotes =
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "page_size" [ "pageSize" ] (Just "0")
-                , Proto.Http.param "page_token" [ "pageToken" ] (Just "")
-                , Proto.Http.param "filter" [ "filter" ] (Just "")
-                , Proto.Http.param "visibility" [ "visibility" ] (Just "VISIBILITY_UNSPECIFIED")
+                [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.visibility ]
                 ]
             }
         ]
@@ -83,7 +93,7 @@ descriptorCreateNote =
                 , Proto.Http.literal "notes"
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
             , responseBody = Nothing
             , query = []
             }
@@ -101,13 +111,16 @@ descriptorUpdateNote =
             { method = "PATCH"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "note", "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
                 ]
             }
         ]
@@ -124,7 +137,10 @@ descriptorDeleteNote =
             { method = "DELETE"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -145,7 +161,10 @@ descriptorArchiveNote =
             { method = "POST"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "notes", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Just "archive"
             , body = Proto.Http.wholeBody

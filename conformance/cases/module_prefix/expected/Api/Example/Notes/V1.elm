@@ -3,10 +3,11 @@
 
 module Api.Example.Notes.V1 exposing (..)
 
+import Api.Example.Notes.V1.GetNoteRequest
+import Api.Example.Notes.V1.Note
 import Api.Example.People
 import Json.Decode
 import Json.Encode
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -55,41 +56,29 @@ defaultGetNoteRequest =
 
 
 
--- DESCRIPTORS
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
-        , Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "users.v1.Role")
-        ]
+-- TYPED VALUES
 
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
-
-
-descriptorGetNoteRequest : Proto.Message.Descriptor
-descriptorGetNoteRequest =
-    Proto.Message.descriptor "notes.v1.GetNoteRequest"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeNote decodeNote defaultNote Api.Example.Notes.V1.Note.descriptor
 
 
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest descriptorGetNoteRequest
+    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Api.Example.Notes.V1.GetNoteRequest.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorNote
-            , descriptorGetNoteRequest
+            [ Api.Example.Notes.V1.Note.descriptor
+            , Api.Example.Notes.V1.GetNoteRequest.descriptor
             ]
             []
         )

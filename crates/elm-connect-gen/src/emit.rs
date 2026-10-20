@@ -17,19 +17,28 @@
 //!   Elm imports by default), and defines `elmConnectVersion_`, the
 //!   `Proto.Version` value of the release it was generated for, which the
 //!   compiler refuses unless the runtime package is of a compatible
-//!   release (design §8). A package's module then holds five sections in
-//!   order: types, defaults, descriptors,
-//!   encoders, decoders. Each section has the enums, then the messages,
-//!   each followed by its recursion wrapper and its oneofs; the defaults
-//!   section has the messages alone, and is left out when there are none,
-//!   and the descriptors section has each enum's and message's descriptor
-//!   followed by its typed value.
+//!   release (design §8). A package's module then holds six sections in
+//!   order: types, defaults, typed values, registry, encoders, decoders.
+//!   Each section has the enums, then the messages, each followed by its
+//!   recursion wrapper and its oneofs; the defaults section has the
+//!   messages alone, and is left out when there are none, and the typed
+//!   values section has each enum's and message's typed value. A package
+//!   without types has the registry alone.
+//! - Each message and enum has a descriptor module of its own inside its
+//!   package's, `Notes.V1.Note` (design §3.1): what the proto says about
+//!   it, while the package's module holds the values a program sends and
+//!   receives. It imports the runtime and the descriptor modules of the
+//!   enums its fields hold, never a package's module, so the package's
+//!   module can import it.
 //! - A service's module, `Notes.V1.NotesService`, holds two sections:
 //!   descriptors, then calls. Each method's descriptor,
 //!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
 //!   `Proto.Method.descriptor` from its service, name, idempotency, type
 //!   names and bindings, the bindings its HTTP rule's own and then its
-//!   additional ones, as data (`Proto.Http.binding`). A method without a
+//!   additional ones, as data (`Proto.Http.binding`), each path variable
+//!   and query parameter the path of field descriptors from the request
+//!   down to its field (`[ Notes.V1.GetNoteRequest.name ]`), from the
+//!   descriptor modules the service's module then imports. A method without a
 //!   rule has no bindings, and the runtime calls it over the implicit
 //!   route. Its call is a function from its request to an `Rpc.Call`,
 //!   written point-free as `Rpc.call` of the method's
@@ -43,24 +52,26 @@
 //!   with the descriptor inline, and one that does not keeps neither.
 //!   Every library name the module refers to is qualified, so a method's
 //!   name cannot shadow or clash with one.
-//! - A message's descriptor, `descriptorFoo : Proto.Message.Descriptor`,
-//!   is built with `Proto.Message.descriptor` from its full name and one
-//!   `Proto.Field.descriptor` per field, faithful to the proto: its
-//!   names, number, cardinality and kind (other types by full name), then
+//! - A message's descriptor, `descriptor : Proto.Message.Descriptor` in
+//!   its descriptor module, is built with `Proto.Message.descriptor` from
+//!   its full name and the module's field values, one
+//!   `Proto.Field.descriptor` per field named as its record field
+//!   (`title`), faithful to the proto: its
+//!   names, number, cardinality and kind (an enum by its descriptor
+//!   value, a message by its full name), then
 //!   a modifier only for what it has beyond those (`inOneof`,
 //!   `withBehavior`, `withDeprecated`); the builder derives the oneofs.
-//!   An enum's, `descriptorBar : Proto.Enum.Descriptor`, holds every
+//!   An enum's, `descriptor : Proto.Enum.Descriptor`, holds every
 //!   declared name with its number (`Proto.EnumValue.descriptor`), each
-//!   deprecated one marked (`withDeprecated`). Each type's typed value
-//!   follows
-//!   its descriptor:
+//!   deprecated one marked (`withDeprecated`). Each type's typed value,
+//!   in the package's module, is
 //!   `messageFoo : Proto.Message.Message Foo`, built by
 //!   `Proto.Message.message` from its encoder, decoder, default and
 //!   descriptor, and `enumBar : Proto.Enum.Enum Bar` likewise with its
-//!   zero value. The section ends with the package's `registry`: its own
-//!   descriptors (the `descriptorFoo` values, so a program using it keeps
-//!   no codecs), then the registries of the packages its module imports
-//!   and the well-known types', so it is transitive.
+//!   zero value. The package's `registry` holds its own descriptors (the
+//!   descriptor modules' values, so a program using it keeps no codecs),
+//!   then the registries of the packages its module imports and the
+//!   well-known types', so it is transitive.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -240,6 +251,35 @@ pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics>
     Ok(emitter.module(package, decls))
 }
 
+/// The descriptor modules of `package`: one per enum, then one per
+/// message, each in declaration order.
+pub fn emit_descriptor_modules(package: &Package, options: &Options) -> Vec<Module> {
+    let by_name = messages_by_name(package);
+    let mut modules = Vec::new();
+    for enumeration in &package.enums {
+        let mut emitter = Emitter::new(&enumeration.descriptor_module(&package.module), options);
+        let decls = emitter.enum_descriptor_module(enumeration);
+        modules.push(emitter.module(package, decls));
+    }
+    for message in &package.messages {
+        let shape = message_shape(message, &by_name, Holding::of(options));
+        let mut emitter = Emitter::new(&message.descriptor_module(&package.module), options);
+        let decls = emitter.message_descriptor_module(&shape);
+        modules.push(emitter.module(package, decls));
+    }
+    modules
+}
+
+/// Every message of `package` by its Elm name, for the wrappers of cyclic
+/// fields.
+fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
+    package
+        .messages
+        .iter()
+        .map(|message| (message.elm_name.as_str(), message))
+        .collect()
+}
+
 /// The Elm module of `service`, one of `package`'s: a descriptor and a
 /// call per method, in two sections.
 pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
@@ -397,36 +437,31 @@ impl Emitter {
 
     /// The declarations of `package`, by section.
     fn package(&mut self, package: &Package) -> Vec<Decl> {
-        let by_name: HashMap<&str, &Message> = package
-            .messages
-            .iter()
-            .map(|message| (message.elm_name.as_str(), message))
-            .collect();
+        let by_name = messages_by_name(package);
         let messages: Vec<_> = package
             .messages
             .iter()
             .map(|message| message_shape(message, &by_name, self.holding))
             .collect();
+        let registry = vec![Decl::Comment("REGISTRY".into()), self.registry(package)];
         if messages.is_empty() && package.enums.is_empty() {
-            return vec![Decl::Comment("DESCRIPTORS".into()), self.registry(package)];
+            return registry;
         }
         let mut types = vec![Decl::Comment("TYPES".into())];
         let mut defaults = vec![Decl::Comment("DEFAULTS".into())];
-        let mut descriptors = vec![Decl::Comment("DESCRIPTORS".into())];
+        let mut values = vec![Decl::Comment("TYPED VALUES".into())];
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
             types.push(self.enum_type(enumeration));
-            descriptors.push(self.enum_descriptor(enumeration));
-            descriptors.push(self.enum_record(enumeration));
+            values.push(self.enum_record(&package.module, enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
         }
         for shape in &messages {
             types.push(self.message_alias(shape));
             defaults.push(self.message_default(shape));
-            descriptors.push(self.message_descriptor(shape));
-            descriptors.push(self.message_record(shape));
+            values.push(self.message_record(&package.module, shape));
             encoders.push(self.message_encoder(shape));
             decoders.push(self.message_decoder(shape));
             if let Some(wrapper) = &shape.message.wrapper {
@@ -440,7 +475,6 @@ impl Emitter {
                 decoders.push(self.oneof_decoder(oneof));
             }
         }
-        descriptors.push(self.registry(package));
         // A package of enums alone has no defaults.
         if messages.is_empty() {
             defaults.clear();
@@ -448,7 +482,8 @@ impl Emitter {
         types
             .into_iter()
             .chain(defaults)
-            .chain(descriptors)
+            .chain(values)
+            .chain(registry)
             .chain(encoders)
             .chain(decoders)
             .collect()
@@ -659,15 +694,18 @@ mod tests {
     #[test]
     fn every_module_names_its_release_first() {
         let expected = format!(
-            "import Proto.Version\n\n\n{{-| {VERSION_VALUE_DOC}\n-}}\nelmConnectVersion_ : \
+            "\n\n\n{{-| {VERSION_VALUE_DOC}\n-}}\nelmConnectVersion_ : \
              Proto.Version.Generated\nelmConnectVersion_ =\n    Proto.Version.{SENTINEL}\n\n\n\n-- TYPES\n"
         );
-        let module = emit(
-            &package(vec![message("A", Vec::new())]),
-            &Options::default(),
-        );
+        let one = package(vec![message("A", Vec::new())]);
+        let module = emit(&one, &Options::default());
         let printed = crate::elm::print::print_module(&module.expect("emits"));
         assert!(printed.contains(&expected), "{printed}");
+        let descriptors = emit_descriptor_modules(&one, &Options::default());
+        assert!(matches!(
+            descriptors[0].decls.as_slice(),
+            [Decl::Value { name, .. }, ..] if name == VERSION_VALUE
+        ));
 
         let service = Service {
             proto_full_name: "t.v1.S".into(),
@@ -698,13 +736,20 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
-                "Proto.Field",
                 "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
-                "Proto.Version"
+                "Proto.Version",
+                "T.V1.A"
             ]
         );
+        let descriptors = emit_descriptor_modules(&only_ints, &Options::default());
+        let imports: Vec<&str> = descriptors[0]
+            .imports
+            .iter()
+            .map(|i| i.module.as_str())
+            .collect();
+        assert_eq!(imports, ["Proto.Field", "Proto.Message", "Proto.Version"]);
 
         // An empty message's decoder is `Proto.Json.emptyMessage`; it has
         // no fields to describe, so no `Proto.Field`.
@@ -719,9 +764,17 @@ mod tests {
                 "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
-                "Proto.Version"
+                "Proto.Version",
+                "T.V1.E"
             ]
         );
+        let descriptors = emit_descriptor_modules(&empty, &Options::default());
+        let imports: Vec<&str> = descriptors[0]
+            .imports
+            .iter()
+            .map(|i| i.module.as_str())
+            .collect();
+        assert_eq!(imports, ["Proto.Message", "Proto.Version"]);
     }
 
     #[test]
@@ -734,25 +787,36 @@ mod tests {
                 TypeRef::Scalar(ScalarKind::SFixed64),
             )],
         )]);
-        let printed = |options: &Options| {
-            crate::elm::print::print_module(&emit(&one, options).expect("emits"))
-        };
-        let on = printed(&Options::default());
+        let descriptors = emit_descriptor_modules(&one, &Options::default());
+        assert_eq!(descriptors[0].name.as_str(), "T.V1.A");
+        let a = crate::elm::print::print_module(&descriptors[0]);
+        assert!(
+            a.contains(
+                "descriptor =\n    Proto.Message.descriptor \"t.v1.A\"\n        [ n\n        ]"
+            ),
+            "{a}"
+        );
+        assert!(
+            a.contains(
+                "n : Proto.Field.Descriptor\nn =\n    Proto.Field.descriptor \"n\" \"n\" 1 \
+                 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) \
+                 (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)"
+            ),
+            "{a}"
+        );
+        let on = crate::elm::print::print_module(&emit(&one, &Options::default()).expect("emits"));
         assert!(
             on.contains(
-                "descriptorA =\n    Proto.Message.descriptor \"t.v1.A\"\n        [ \
-                 Proto.Field.descriptor \"n\" \"n\" 1 \
-                 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) \
-                 (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)\n        ]"
+                "registry =\n    Proto.Registry.union\n        \
+                 (Proto.Registry.fromDescriptors\n            \
+                 [ T.V1.A.descriptor\n            ]\n            []\n        \
+                 )\n        Proto.Registry.wellKnown"
             ),
             "{on}"
         );
         assert!(
             on.contains(
-                "registry =\n    Proto.Registry.union\n        \
-                 (Proto.Registry.fromDescriptors\n            \
-                 [ descriptorA\n            ]\n            []\n        \
-                 )\n        Proto.Registry.wellKnown"
+                "messageA =\n    Proto.Message.message encodeA decodeA defaultA T.V1.A.descriptor"
             ),
             "{on}"
         );
@@ -781,7 +845,14 @@ mod tests {
         let one = package(vec![message("A", Vec::new())]);
         assert_eq!(
             sections(&one),
-            ["TYPES", "DEFAULTS", "DESCRIPTORS", "ENCODERS", "DECODERS"]
+            [
+                "TYPES",
+                "DEFAULTS",
+                "TYPED VALUES",
+                "REGISTRY",
+                "ENCODERS",
+                "DECODERS"
+            ]
         );
         let printed = crate::elm::print::print_module(&emit(&one, &Options::default()).unwrap());
         assert!(
@@ -808,8 +879,9 @@ mod tests {
         );
         assert_eq!(
             sections(&enums_only),
-            ["TYPES", "DESCRIPTORS", "ENCODERS", "DECODERS"]
+            ["TYPES", "TYPED VALUES", "REGISTRY", "ENCODERS", "DECODERS"]
         );
+        assert_eq!(sections(&package(Vec::new())), ["REGISTRY"]);
     }
 
     #[test]
@@ -838,19 +910,15 @@ mod tests {
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
-                "Proto.Field",
                 "Proto.Json",
                 "Proto.Message",
                 "Proto.Registry",
-                "Proto.Version"
+                "Proto.Version",
+                "T.V1.A"
             ]
         );
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
-        assert!(
-            printed.contains("(Proto.Field.KindMessage \"other.v1.B\")"),
-            "{printed}"
-        );
         assert!(
             printed.contains("(Proto.Registry.union Other.V1.registry Proto.Registry.wellKnown)"),
             "{printed}"
@@ -872,27 +940,31 @@ mod tests {
             name: "Level".into(),
             proto_full_name: "other.v1.Level".into(),
         };
-        let module = emit(
-            &package(vec![message(
-                "A",
-                vec![field(
-                    "level",
-                    Cardinality::Singular,
-                    TypeRef::Enum {
-                        name: elsewhere,
-                        zero_ctor: "LevelNone".into(),
-                    },
-                )],
-            )]),
-            &Options::default(),
-        )
-        .expect("emits");
+        let one = package(vec![message(
+            "A",
+            vec![field(
+                "level",
+                Cardinality::Singular,
+                TypeRef::Enum {
+                    name: elsewhere,
+                    zero_ctor: "LevelNone".into(),
+                },
+            )],
+        )]);
+        let module = emit(&one, &Options::default()).expect("emits");
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("level : Other.V1.Level"), "{printed}");
         assert!(
             printed.contains(r#"Proto.Json.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#),
             "{printed}"
         );
+        let descriptors = emit_descriptor_modules(&one, &Options::default());
+        let printed = crate::elm::print::print_module(&descriptors[0]);
+        assert!(
+            printed.contains("(Proto.Field.KindEnum Other.V1.Level.descriptor)"),
+            "{printed}"
+        );
+        assert!(printed.contains("import Other.V1.Level\n"), "{printed}");
     }
 
     #[test]

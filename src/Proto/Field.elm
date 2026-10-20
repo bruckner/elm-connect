@@ -8,6 +8,8 @@ module Proto.Field exposing
 {-| A field of a message, as its message's descriptor
 ([`Proto.Message.Descriptor`](Proto-Message#Descriptor)) holds it: the
 descriptor type, its builder and its readers, and the unions it holds.
+Generated code gives each field's descriptor a value of its own, in the
+module of its message's descriptor (`Notes.V1.Note.title`).
 
 Each union's constructors carry the union's name as a prefix
 (`CardinalitySingular`, `KindMessage`, `ScalarString`, `BehaviorRequired`), so
@@ -33,6 +35,8 @@ things.
 @docs Cardinality, Kind, Scalar, Behavior
 
 -}
+
+import Proto.Enum
 
 
 {-| A field's descriptor. It is opaque, built by [`descriptor`](#descriptor)
@@ -72,12 +76,17 @@ type Cardinality
     | CardinalityMap Scalar
 
 
-{-| The type of a field's values: a scalar, or an enum or a message by its full
-name (`google.protobuf.Timestamp` for a well-known type).
+{-| The type of a field's values: a scalar, an enum by its descriptor, or a
+message by its full name (`google.protobuf.Timestamp` for a well-known type).
+
+An enum's values, its zero value first, can be read from the field alone
+([`Proto.Enum.values`](Proto-Enum#values)). A message's fields are found by
+resolving its name in a [`Proto.Registry`](Proto-Registry).
+
 -}
 type Kind
     = KindScalar Scalar
-    | KindEnum String
+    | KindEnum Proto.Enum.Descriptor
     | KindMessage String
 
 

@@ -253,8 +253,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
-/// `descriptor`) followed by a type name. Type names are unique within a module and
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
+/// followed by a type name. Type names are unique within a module and
 /// start with an uppercase letter, and no prefix is another's, so two such
 /// names never collide: neither within one prefix nor across two. (A
 /// suffix would not do: `encodeFooMessage` would be both the encoder of
@@ -286,16 +286,54 @@ pub fn enum_value_name(type_elm_name: &str) -> String {
 /// The prefix of [`enum_value_name`].
 const ENUM_PREFIX: &str = "enum";
 
-/// The descriptor of a message or an enum (`Proto.Message.Descriptor`
-/// or `Proto.Enum.Descriptor`): `descriptor` followed by the
-/// type's Elm name (`Note` becomes `descriptorNote`). Like
-/// [`default_name`], a prefix and a type name; one prefix serves both,
-/// since a message and an enum never share a name in one module.
-pub fn descriptor_name(type_elm_name: &str) -> String {
-    format!("{DESCRIPTOR_PREFIX}{type_elm_name}")
+/// The module of a message's or an enum's descriptor: its package's
+/// module followed by its Elm type name (`Note` in `Notes.V1` becomes
+/// `Notes.V1.Note`, a nested `Outer.Inner` becomes `Notes.V1.OuterInner`).
+/// The package's module holds the values a program sends and receives;
+/// this one holds what the proto says about the type, and imports nothing
+/// of the package's module, so the package's module can import it.
+pub fn descriptor_module(package_module: &ModuleName, type_elm_name: &str) -> ModuleName {
+    let mut segments = package_module.segments().to_vec();
+    segments.push(type_elm_name.to_owned());
+    ModuleName::new(segments).expect("a type name is a valid module segment")
 }
 
-/// The prefix of [`descriptor_name`].
+/// The value of a type's descriptor in its [`descriptor_module`]:
+/// `Notes.V1.Note.descriptor`. It is the one value the generator adds to
+/// a descriptor module whose name a field could take; a field of that
+/// name takes `descriptor_` instead ([`field_value_name`]). Any value
+/// added to descriptor modules later ends in `_`, which a field's name
+/// does only as a reserved word's escape (`type_`) or as this one's
+/// (design §3.1).
+pub const DESCRIPTOR_VALUE: &str = "descriptor";
+
+/// The Elm value of a field's descriptor in its message's
+/// [`descriptor_module`], from the field's record field name: the same
+/// name, but [`DESCRIPTOR_VALUE`], which the message's own descriptor
+/// holds, gains a trailing underscore (`descriptor_`).
+pub fn field_value_name(elm_name: &str) -> String {
+    if elm_name == DESCRIPTOR_VALUE {
+        format!("{elm_name}_")
+    } else {
+        elm_name.to_owned()
+    }
+}
+
+/// The Elm value of a oneof member's descriptor in its message's
+/// [`descriptor_module`]: the PascalCase name its constructor ends with
+/// ([`oneof_variant_constructor`]), its first letter lowercased, a
+/// reserved word escaped and `descriptor` too, as [`field_value_name`]
+/// escapes a field's (`created` and `Text` become `created` and `text`,
+/// `_legacy` becomes `legacy`). A record field is the Elm name of a field
+/// outside a oneof; a member has none, so its value follows the
+/// constructor, and every member whose constructor ends in a letter has
+/// one. It is the derived constructor's ending: a member's `rename`
+/// renames its constructor, not this.
+pub fn member_value_name(proto_name: &str) -> Result<String, NameError> {
+    method_name(&pascal_case(proto_name)).map(|name| field_value_name(&name))
+}
+
+/// The prefix the descriptor of a method takes.
 const DESCRIPTOR_PREFIX: &str = "descriptor";
 
 /// The descriptor of a method (`Proto.Method.Descriptor`), in
@@ -488,7 +526,21 @@ mod tests {
         assert_eq!(default_name("OuterInner"), "defaultOuterInner");
         assert_eq!(message_value_name("OuterInner"), "messageOuterInner");
         assert_eq!(enum_value_name("OuterInner"), "enumOuterInner");
-        assert_eq!(descriptor_name("OuterInner"), "descriptorOuterInner");
+        assert_eq!(
+            descriptor_module(&ModuleName::parse("Notes.V1").unwrap(), "OuterInner").to_string(),
+            "Notes.V1.OuterInner"
+        );
+        assert_eq!(member_value_name("legal_name"), Ok("legalName".into()));
+        assert_eq!(member_value_name("Text"), Ok("text".into()));
+        assert_eq!(member_value_name("type"), Ok("type_".into()));
+        assert_eq!(member_value_name("descriptor"), Ok("descriptor_".into()));
+        assert_eq!(member_value_name("_legacy"), Ok("legacy".into()));
+        assert_eq!(member_value_name("__old_name"), Ok("oldName".into()));
+        assert_eq!(member_value_name("x_1"), Ok("x1".into()));
+        assert!(member_value_name("_1x").is_err());
+        assert_eq!(field_value_name("descriptor"), "descriptor_");
+        assert_eq!(field_value_name("descriptors"), "descriptors");
+        assert_eq!(field_value_name("type_"), "type_");
         assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
         assert_eq!(method_descriptor_name("type_"), "descriptorType_");
         assert_eq!(method_descriptor_name("hTTPGet"), "descriptorHTTPGet");

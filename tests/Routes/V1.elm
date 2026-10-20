@@ -8,12 +8,21 @@ import Json.Decode
 import Json.Encode
 import Proto.Duration exposing (Duration)
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Routes.V1.Deep
+import Routes.V1.Everything
+import Routes.V1.FileRequest
+import Routes.V1.GetMessageRequest
+import Routes.V1.GetMessageRequestSubMessage
+import Routes.V1.Inner
+import Routes.V1.Kind
+import Routes.V1.Message
+import Routes.V1.Resource
+import Routes.V1.UpdateMessageRequest
+import Routes.V1.UpdateResourceRequest
 import Time
 
 
@@ -221,195 +230,84 @@ defaultUpdateResourceRequest =
 
 
 
--- DESCRIPTORS
-
-
-descriptorKind : Proto.Enum.Descriptor
-descriptorKind =
-    Proto.Enum.descriptor "routes.v1.Kind"
-        [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "KIND_TEXT" 1
-        , Proto.EnumValue.descriptor "KIND_IMAGE" 2
-        ]
+-- TYPED VALUES
 
 
 enumKind : Proto.Enum.Enum Kind
 enumKind =
-    Proto.Enum.enum encodeKind decodeKind KindUnspecified descriptorKind
-
-
-descriptorGetMessageRequest : Proto.Message.Descriptor
-descriptorGetMessageRequest =
-    Proto.Message.descriptor "routes.v1.GetMessageRequest"
-        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "revision" "revision" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "sub" "sub" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.GetMessageRequest.SubMessage")
-        , Proto.Field.descriptor "user_id" "userId" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "name" "name" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Enum.enum encodeKind decodeKind KindUnspecified Routes.V1.Kind.descriptor
 
 
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
-    Proto.Message.message encodeGetMessageRequest decodeGetMessageRequest defaultGetMessageRequest descriptorGetMessageRequest
-
-
-descriptorGetMessageRequestSubMessage : Proto.Message.Descriptor
-descriptorGetMessageRequestSubMessage =
-    Proto.Message.descriptor "routes.v1.GetMessageRequest.SubMessage"
-        [ Proto.Field.descriptor "subfield" "subfield" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeGetMessageRequest decodeGetMessageRequest defaultGetMessageRequest Routes.V1.GetMessageRequest.descriptor
 
 
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    Proto.Message.message encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage defaultGetMessageRequestSubMessage descriptorGetMessageRequestSubMessage
-
-
-descriptorMessage : Proto.Message.Descriptor
-descriptorMessage =
-    Proto.Message.descriptor "routes.v1.Message"
-        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "text" "text" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage defaultGetMessageRequestSubMessage Routes.V1.GetMessageRequestSubMessage.descriptor
 
 
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.message encodeMessage decodeMessage defaultMessage descriptorMessage
-
-
-descriptorUpdateMessageRequest : Proto.Message.Descriptor
-descriptorUpdateMessageRequest =
-    Proto.Message.descriptor "routes.v1.UpdateMessageRequest"
-        [ Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "message" "message" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Message")
-        ]
+    Proto.Message.message encodeMessage decodeMessage defaultMessage Routes.V1.Message.descriptor
 
 
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
-    Proto.Message.message encodeUpdateMessageRequest decodeUpdateMessageRequest defaultUpdateMessageRequest descriptorUpdateMessageRequest
-
-
-descriptorEverything : Proto.Message.Descriptor
-descriptorEverything =
-    Proto.Message.descriptor "routes.v1.Everything"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "count" "count" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "big" "big" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-        , Proto.Field.descriptor "ubig" "ubig" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
-        , Proto.Field.descriptor "flag" "flag" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "ratio" "ratio" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        , Proto.Field.descriptor "scale" "scale" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
-        , Proto.Field.descriptor "data" "data" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "kind" "kind" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "routes.v1.Kind")
-        , Proto.Field.descriptor "tags" "tags" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "kinds" "kinds" 11 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "routes.v1.Kind")
-        , Proto.Field.descriptor "numbers" "numbers" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "maybe_count" "maybeCount" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "maybe_name" "maybeName" 14 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "at" "at" 15 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
-        , Proto.Field.descriptor "wait" "wait" 16 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
-        , Proto.Field.descriptor "mask" "mask" 17 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
-        , Proto.Field.descriptor "limit" "limit" 18 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
-        , Proto.Field.descriptor "label" "label" 19 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.StringValue")
-        , Proto.Field.descriptor "inner" "inner" 20 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Inner")
-        , Proto.Field.descriptor "text" "text" 21 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "choice"
-        , Proto.Field.descriptor "number" "number" 22 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-            |> Proto.Field.inOneof "choice"
-        ]
+    Proto.Message.message encodeUpdateMessageRequest decodeUpdateMessageRequest defaultUpdateMessageRequest Routes.V1.UpdateMessageRequest.descriptor
 
 
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.message encodeEverything decodeEverything defaultEverything descriptorEverything
-
-
-descriptorInner : Proto.Message.Descriptor
-descriptorInner =
-    Proto.Message.descriptor "routes.v1.Inner"
-        [ Proto.Field.descriptor "a" "a" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "deep" "deep" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Deep")
-        ]
+    Proto.Message.message encodeEverything decodeEverything defaultEverything Routes.V1.Everything.descriptor
 
 
 messageInner : Proto.Message.Message Inner
 messageInner =
-    Proto.Message.message encodeInner decodeInner defaultInner descriptorInner
-
-
-descriptorDeep : Proto.Message.Descriptor
-descriptorDeep =
-    Proto.Message.descriptor "routes.v1.Deep"
-        [ Proto.Field.descriptor "b" "b" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
-        , Proto.Field.descriptor "c" "c" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeInner decodeInner defaultInner Routes.V1.Inner.descriptor
 
 
 messageDeep : Proto.Message.Message Deep
 messageDeep =
-    Proto.Message.message encodeDeep decodeDeep defaultDeep descriptorDeep
-
-
-descriptorFileRequest : Proto.Message.Descriptor
-descriptorFileRequest =
-    Proto.Message.descriptor "routes.v1.FileRequest"
-        [ Proto.Field.descriptor "path" "path" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeDeep decodeDeep defaultDeep Routes.V1.Deep.descriptor
 
 
 messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
-    Proto.Message.message encodeFileRequest decodeFileRequest defaultFileRequest descriptorFileRequest
-
-
-descriptorResource : Proto.Message.Descriptor
-descriptorResource =
-    Proto.Message.descriptor "routes.v1.Resource"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "display_name" "displayName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "labels" "labels" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "kinds" "kinds" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindEnum "routes.v1.Kind")
-        , Proto.Field.descriptor "weights" "weights" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarBool) (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-        ]
+    Proto.Message.message encodeFileRequest decodeFileRequest defaultFileRequest Routes.V1.FileRequest.descriptor
 
 
 messageResource : Proto.Message.Message Resource
 messageResource =
-    Proto.Message.message encodeResource decodeResource defaultResource descriptorResource
-
-
-descriptorUpdateResourceRequest : Proto.Message.Descriptor
-descriptorUpdateResourceRequest =
-    Proto.Message.descriptor "routes.v1.UpdateResourceRequest"
-        [ Proto.Field.descriptor "resource" "resource" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.Resource")
-        , Proto.Field.descriptor "update_mask" "updateMask" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
-        ]
+    Proto.Message.message encodeResource decodeResource defaultResource Routes.V1.Resource.descriptor
 
 
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
-    Proto.Message.message encodeUpdateResourceRequest decodeUpdateResourceRequest defaultUpdateResourceRequest descriptorUpdateResourceRequest
+    Proto.Message.message encodeUpdateResourceRequest decodeUpdateResourceRequest defaultUpdateResourceRequest Routes.V1.UpdateResourceRequest.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorGetMessageRequest
-            , descriptorGetMessageRequestSubMessage
-            , descriptorMessage
-            , descriptorUpdateMessageRequest
-            , descriptorEverything
-            , descriptorInner
-            , descriptorDeep
-            , descriptorFileRequest
-            , descriptorResource
-            , descriptorUpdateResourceRequest
+            [ Routes.V1.GetMessageRequest.descriptor
+            , Routes.V1.GetMessageRequestSubMessage.descriptor
+            , Routes.V1.Message.descriptor
+            , Routes.V1.UpdateMessageRequest.descriptor
+            , Routes.V1.Everything.descriptor
+            , Routes.V1.Inner.descriptor
+            , Routes.V1.Deep.descriptor
+            , Routes.V1.FileRequest.descriptor
+            , Routes.V1.Resource.descriptor
+            , Routes.V1.UpdateResourceRequest.descriptor
             ]
-            [ descriptorKind
+            [ Routes.V1.Kind.descriptor
             ]
         )
         Proto.Registry.wellKnown

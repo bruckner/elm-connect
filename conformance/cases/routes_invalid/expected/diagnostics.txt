@@ -81,5 +81,5 @@ route::response_body
     · ╰──── in this rule
  46 │       }
     ╰────
-  help: `response_body` names a top-level field of the response, or is left
-        out for the whole response.
+  help: `response_body` names a top-level field of the response, a generated
+        message, or is left out for the whole response.

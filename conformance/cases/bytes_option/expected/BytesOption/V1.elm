@@ -4,11 +4,11 @@
 module BytesOption.V1 exposing (..)
 
 import Bytes
+import BytesOption.V1.Blob
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -62,36 +62,23 @@ defaultBlob =
 
 
 
--- DESCRIPTORS
-
-
-descriptorBlob : Proto.Message.Descriptor
-descriptorBlob =
-    Proto.Message.descriptor "bytes_option.v1.Blob"
-        [ Proto.Field.descriptor "data" "data" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "maybe_data" "maybeData" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "chunks" "chunks" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "by_name" "byName" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-        , Proto.Field.descriptor "wrapped" "wrapped" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BytesValue")
-        , Proto.Field.descriptor "wrapped_chunks" "wrappedChunks" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.BytesValue")
-        , Proto.Field.descriptor "inline" "inline" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
-            |> Proto.Field.inOneof "source"
-        , Proto.Field.descriptor "url" "url" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "source"
-        , Proto.Field.descriptor "name" "name" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+-- TYPED VALUES
 
 
 messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.message encodeBlob decodeBlob defaultBlob descriptorBlob
+    Proto.Message.message encodeBlob decodeBlob defaultBlob BytesOption.V1.Blob.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorBlob
+            [ BytesOption.V1.Blob.descriptor
             ]
             []
         )

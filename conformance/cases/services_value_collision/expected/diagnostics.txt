@@ -31,8 +31,8 @@ naming::value_collision
  21 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
     ╰────
   help: Every generated module defines `elmConnectVersion_`, which names the
-        release of the generator it came from, so a module cannot have a
-        method of that name too. Give the method another name in its
+        release of the generator it came from, so no method or field can take
+        that name in the module that defines it. Give it another name in its
         `rename=<proto full name>:<Elm name>`.
 
 naming::value_collision

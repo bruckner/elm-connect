@@ -4,10 +4,10 @@
 module Envelope.V1 exposing (..)
 
 import Dict exposing (Dict)
+import Envelope.V1.Envelope
 import Json.Decode
 import Json.Encode
 import Proto.Any
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -55,33 +55,23 @@ defaultEnvelope =
 
 
 
--- DESCRIPTORS
-
-
-descriptorEnvelope : Proto.Message.Descriptor
-descriptorEnvelope =
-    Proto.Message.descriptor "envelope.v1.Envelope"
-        [ Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "payload" "payload" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "attachments" "attachments" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "headers" "headers" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Any")
-        , Proto.Field.descriptor "packed" "packed" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-            |> Proto.Field.inOneof "body"
-        , Proto.Field.descriptor "text" "text" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "body"
-        ]
+-- TYPED VALUES
 
 
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope descriptorEnvelope
+    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope Envelope.V1.Envelope.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorEnvelope
+            [ Envelope.V1.Envelope.descriptor
             ]
             []
         )

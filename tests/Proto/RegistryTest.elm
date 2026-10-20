@@ -30,8 +30,8 @@ resolves kind =
         KindMessage name ->
             Registry.message name Registry.wellKnown /= Nothing
 
-        KindEnum name ->
-            Registry.enum name Registry.wellKnown /= Nothing
+        KindEnum descriptor ->
+            Registry.enum (Enum.typeName descriptor) Registry.wellKnown /= Nothing
 
         KindScalar _ ->
             True

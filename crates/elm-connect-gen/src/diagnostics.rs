@@ -71,13 +71,15 @@ pub enum Code {
     /// `unbound_methods=error`.
     UnboundMethod,
     /// Two methods of a service get the same Elm value name, a method gets
-    /// another method's descriptor's name, or a method gets the name of the
-    /// value every generated module defines.
+    /// another method's descriptor's name, two fields of a message (or one
+    /// and the message's descriptor) get the same value name in its
+    /// descriptor module, or a method or field gets the name of the value
+    /// every generated module defines.
     ValueCollision,
     /// A method has no valid Elm value name.
     InvalidMethod,
-    /// Two generated modules, each a package's or a service's, get the
-    /// same Elm module name.
+    /// Two generated modules, each a package's, a service's or a type's
+    /// descriptor module, get the same Elm module name.
     ModuleCollision,
     /// A service has no valid Elm module name.
     InvalidService,
@@ -366,6 +368,30 @@ impl Problem {
         )
     }
 
+    /// The oneof member `proto_name` of `message` has a constructor whose
+    /// ending, its first letter lowercased, is `converted`, which is not
+    /// an Elm value name.
+    pub fn invalid_member_value(
+        message: &str,
+        proto_name: &str,
+        converted: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::InvalidField,
+            format!(
+                "The oneof field `{proto_name}` of `{message}` has the descriptor value \
+                 `{converted}` in Elm, which is not a valid value name."
+            ),
+            "A oneof member's descriptor, in its message's descriptor module, is named for \
+             the end of its constructor: the member's name in PascalCase, its first letter \
+             lowercased (`_legacy` becomes `legacy`). That must start with a letter, so the \
+             proto name needs a letter after any leading underscores. Rename it in the \
+             proto; a `rename` of the member renames its constructor, not this value.",
+            vec![site],
+        )
+    }
+
     /// `referrer` uses `type_name`, a `google.protobuf` type elm-connect
     /// has no mapping for.
     pub fn unsupported_well_known(referrer: &Referrer, type_name: &str, site: Site) -> Self {
@@ -495,35 +521,58 @@ impl Problem {
         )
     }
 
-    /// A `rename` gives the method `method` the name `elm_name`, the value
-    /// every generated module defines to name the release it was generated
-    /// for. No proto name derives to it.
-    pub fn reserved_value(method: &str, elm_name: &str, site: Site) -> Self {
+    /// A `rename` gives `what` (such as "method `notes.v1.Notes.Get`" or
+    /// "field `title`") the name `elm_name`, the value every generated
+    /// module defines to name the release it was generated for. No proto
+    /// name derives to it.
+    pub fn reserved_value(what: &str, elm_name: &str, site: Site) -> Self {
         Problem::new(
             Code::ValueCollision,
             format!(
-                "The method `{method}` is renamed to the Elm value `{elm_name}`, which every \
-                 generated module defines already."
+                "The {what} is renamed to the Elm value `{elm_name}`, which every generated \
+                 module defines already."
             ),
             "Every generated module defines `elmConnectVersion_`, which names the release of \
-             the generator it came from, so a module cannot have a method of that name too. \
-             Give the method another name in its `rename=<proto full name>:<Elm name>`.",
+             the generator it came from, so no method or field can take that name in the \
+             module that defines it. Give it another name in its \
+             `rename=<proto full name>:<Elm name>`.",
             vec![site],
         )
     }
 
-    /// Two generated modules, each a package's or a service's, become the
-    /// same Elm module `elm_module`.
+    /// Two fields or oneof members of `message` become the same Elm value
+    /// `elm_name` in the message's descriptor module.
+    pub fn field_value_collision(message: &str, elm_name: &str, first: Site, second: Site) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The descriptor module of `{message}` would define the Elm value \
+                 `{elm_name}` twice."
+            ),
+            "A message's descriptor module (`Notes.V1.Note` for `notes.v1.Note`) defines \
+             `descriptor`, the message's descriptor, and one value per field, named as its \
+             record field is (a oneof member's for the end of its constructor; a field \
+             named `descriptor` takes `descriptor_`), so two fields whose values meet cannot \
+             both be defined. Rename the field in the proto, or rename it with \
+             `rename=<proto full name>:<Elm name>`.",
+            vec![first, second],
+        )
+    }
+
+    /// Two generated modules, each a package's, a service's or a message's
+    /// or enum's descriptor module, become the same Elm module
+    /// `elm_module`.
     pub fn module_collision(elm_module: &str, first: Site, second: Site) -> Self {
         Problem::new(
             Code::ModuleCollision,
             format!("Two generated modules both become the Elm module `{elm_module}`."),
             "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
-             service becomes a module inside its package's (`notes.v1.NotesService` becomes \
-             `Notes.V1.NotesService`), each segment in PascalCase, so a service can take the \
-             name of a package nested in its own, and names that differ only in case or \
-             underscores end up the same. Rename the service or the package, or rename one \
-             with `rename=<proto full name>:<Elm name>`.",
+             service, message and enum becomes a module inside its package's \
+             (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
+             `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
+             take the name of another or of a package nested in its own, and names that \
+             differ only in case or underscores end up the same. Rename one of them in the \
+             proto, or rename one with `rename=<proto full name>:<Elm name>`.",
             vec![first, second],
         )
     }
@@ -545,8 +594,8 @@ impl Problem {
             format!(
                 "Each module is written to a file named for it (`Notes.V1` to \
                  `Notes/V1.elm`), and the default file systems of macOS and Windows ignore \
-                 case, so one of these would overwrite the other. Rename the service or the \
-                 package, or rename one with {escapes}."
+                 case, so one of these would overwrite the other. Rename one of them in the \
+                 proto, or rename one with {escapes}."
             ),
             vec![sites.0, sites.1],
         )
@@ -669,14 +718,11 @@ impl Problem {
                 "`body` is `*` for every field not in the path, or the name of a top-level \
                  singular message field of the request, or left out for no body.",
             ),
-            E::ResponseBodyField { field } => (
+            E::ResponseBodyField { field, reason } => (
                 Code::RouteResponseBody,
-                format!(
-                    "{binding} has `response_body: \"{field}\"`, but the response has no such \
-                     field."
-                ),
-                "`response_body` names a top-level field of the response, or is left out for \
-                 the whole response.",
+                format!("{binding} has `response_body: \"{field}\"`, but {reason}."),
+                "`response_body` names a top-level field of the response, a generated message, \
+                 or is left out for the whole response.",
             ),
             E::QueryField { field, reason } => (
                 Code::RouteQueryField,

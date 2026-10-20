@@ -5,7 +5,8 @@ module Notes.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Proto.Field
+import Notes.V1.Note
+import Notes.V1.Tag
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -52,40 +53,29 @@ defaultTag =
 
 
 
--- DESCRIPTORS
-
-
-descriptorNote : Proto.Message.Descriptor
-descriptorNote =
-    Proto.Message.descriptor "notes.v1.Note"
-        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "tags" "tags" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Tag")
-        ]
+-- TYPED VALUES
 
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
-
-
-descriptorTag : Proto.Message.Descriptor
-descriptorTag =
-    Proto.Message.descriptor "notes.v1.Tag"
-        [ Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag descriptorTag
+    Proto.Message.message encodeTag decodeTag defaultTag Notes.V1.Tag.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorNote
-            , descriptorTag
+            [ Notes.V1.Note.descriptor
+            , Notes.V1.Tag.descriptor
             ]
             []
         )

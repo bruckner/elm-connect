@@ -50,7 +50,9 @@ codecs for messages whose fields are scalars, enums, messages (recursive
 ones too) or well-known types, singular, `optional`, repeated or in
 maps, and custom types for enums and oneofs, a typed value per message
 and enum holding its codecs and descriptor, and a module per service
-with a call for every unary method. Each package of the given files is
+with a call for every unary method. Beside the package's module, each
+message and enum gets a module of its descriptor; a message's also
+holds a descriptor per field. Each package of the given files is
 generated whole, from every file declaring it; a package they only
 import is not generated, as with any protoc plugin, and a reference to
 it is an error naming the ways to add it (`buf generate
@@ -192,9 +194,10 @@ service NotesService {
 }
 ```
 
-the generator writes two modules: `Notes.V1`, the types and their
-codecs, and `Notes.V1.NotesService`, one function per method, each
-calling through its method's descriptor, `descriptorGetNote`:
+the generator writes `Notes.V1`, the types and their codecs,
+`Notes.V1.NotesService`, one function per method, each calling through
+its method's descriptor, `descriptorGetNote`, and a module of
+descriptors per message and enum, such as `Notes.V1.Note` (below):
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
@@ -271,14 +274,18 @@ Each message and enum also has a typed value, `Notes.V1.messageNote`
 and `Notes.V1.enumVisibility`, holding its codecs, its default and its
 descriptor: its full name and its fields (or values) as data, each
 field with its `google.api.field_behavior` and whether it is deprecated.
-The descriptor is a value of its own too, `Notes.V1.descriptorNote`. Both
-are opaque, read through the module of their concept (`Proto.Message`,
-with `Proto.Field` for a descriptor's fields). `Notes.V1.registry`
-holds the descriptors of the package, of every package it imports and
-of the well-known types, by full name:
+The descriptor lives in a module of its own beside the package's, the
+values a program sends and receives staying in `Notes.V1`:
+`Notes.V1.Note.descriptor`, with one value per field
+(`Notes.V1.Note.title`), and `Notes.V1.Visibility.descriptor`. All are
+opaque, read through the module of their concept (`Proto.Message`,
+with `Proto.Field` for a field). `Notes.V1.registry` holds the
+descriptors of the package, of every package it imports and of the
+well-known types, by full name:
 
 ```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
 import Notes.V1
+import Notes.V1.Note
 import Proto.Field
 import Proto.Message
 import Proto.Registry
@@ -287,7 +294,7 @@ import Proto.Registry
 noteUrl : String
 noteUrl =
     -- "type.googleapis.com/notes.v1.Note"
-    Proto.Message.typeUrl Notes.V1.descriptorNote
+    Proto.Message.typeUrl Notes.V1.Note.descriptor
 
 
 noteFields : List String

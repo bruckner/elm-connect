@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package shop.v1;
+
+// `ShopItem` and `Shopitem` are distinct Elm types, but their descriptor
+// modules, `Shop.V1.ShopItem` and `Shop.V1.Shopitem`, are one file where
+// case is ignored.
+message ShopItem {
+  string name = 1;
+}
+
+message Shopitem {
+  string name = 1;
+}

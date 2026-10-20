@@ -1,9 +1,16 @@
 module Proto.MessageTest exposing (suite)
 
 import Expect
+import Proto.Enum as Enum
+import Proto.EnumValue as EnumValue
 import Proto.Field as Field exposing (Behavior(..), Cardinality(..), Kind(..), Scalar(..))
 import Proto.Message as Message
 import Test exposing (Test, describe, test)
+
+
+level : Enum.Descriptor
+level =
+    Enum.descriptor "t.v1.Level" [ EnumValue.descriptor "LEVEL_UNSPECIFIED" 0 ]
 
 
 {-| A message as generated code builds one: a oneof whose members are apart,
@@ -14,7 +21,7 @@ event =
     Message.descriptor "t.v1.Event"
         [ Field.descriptor "name" "name" 1 CardinalitySingular (KindScalar ScalarString) |> Field.withBehavior [ BehaviorIdentifier ]
         , Field.descriptor "text" "text" 2 CardinalitySingular (KindScalar ScalarString) |> Field.inOneof "body"
-        , Field.descriptor "level" "level" 3 CardinalityOptional (KindEnum "t.v1.Level") |> Field.inOneof "source"
+        , Field.descriptor "level" "level" 3 CardinalityOptional (KindEnum level) |> Field.inOneof "source"
         , Field.descriptor "link" "link" 4 CardinalitySingular (KindScalar ScalarString) |> Field.inOneof "body"
         , Field.descriptor "create_time" "createTime" 5 CardinalitySingular (KindMessage "google.protobuf.Timestamp")
             |> Field.withBehavior [ BehaviorOutputOnly ]
@@ -38,7 +45,7 @@ suite =
                     |> Expect.equal
                         [ ( ( "name", "name", 1 ), ( CardinalitySingular, KindScalar ScalarString ), ( [ BehaviorIdentifier ], False ) )
                         , ( ( "text", "text", 2 ), ( CardinalitySingular, KindScalar ScalarString ), ( [], False ) )
-                        , ( ( "level", "level", 3 ), ( CardinalityOptional, KindEnum "t.v1.Level" ), ( [], False ) )
+                        , ( ( "level", "level", 3 ), ( CardinalityOptional, KindEnum level ), ( [], False ) )
                         , ( ( "link", "link", 4 ), ( CardinalitySingular, KindScalar ScalarString ), ( [], False ) )
                         , ( ( "create_time", "createTime", 5 ), ( CardinalitySingular, KindMessage "google.protobuf.Timestamp" ), ( [ BehaviorOutputOnly, BehaviorImmutable ], True ) )
                         ]

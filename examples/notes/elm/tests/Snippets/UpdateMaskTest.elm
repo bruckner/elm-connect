@@ -3,6 +3,7 @@ module Snippets.UpdateMaskTest exposing (suite)
 import Dict
 import Expect
 import Notes.V1 exposing (Note, NoteKind(..))
+import Notes.V1.UpdateNoteRequest
 import Proto.Duration
 import Snippets.UpdateMask exposing (updateMask, validMask)
 import Test exposing (Test, describe, test)
@@ -81,6 +82,6 @@ suite =
                 , [ "note." ]
                 , [ "" ]
                 ]
-                    |> List.map (validMask Notes.V1.registry Notes.V1.descriptorUpdateNoteRequest)
+                    |> List.map (validMask Notes.V1.registry Notes.V1.UpdateNoteRequest.descriptor)
                     |> Expect.equal [ True, True, False, False, False, False, False ]
         ]

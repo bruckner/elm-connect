@@ -797,3 +797,41 @@ tag (design §8).
 - A message without fields decodes only from a JSON object, through the
   new `Proto.Json.emptyMessage`, as every other message does; it
   accepted any JSON (`5`, `"x"`, `[]`, `true`) before.
+- `Proto.Field.KindEnum` holds the enum's `Proto.Enum.Descriptor`
+  instead of its full name, so a field's enum values, its zero value
+  among them, can be read from the field alone. Generated descriptors
+  write `KindEnum Notes.V1.Visibility.descriptor`; code matching on
+  `KindEnum` reads the name with `Proto.Enum.typeName`. `KindMessage`
+  still names its message, since a message can contain itself.
+- Descriptors move out of the package module into a module per message
+  and enum beside it: `Notes.V1.Note` holds `descriptor :
+  Proto.Message.Descriptor` and one `Proto.Field.Descriptor` per field,
+  named as its record field (`Notes.V1.Note.title`; a oneof member's
+  is the end of its constructor, its first letter lowercased), and
+  `Notes.V1.Visibility` holds the enum's `descriptor`. `Notes.V1` keeps
+  the values a program sends and receives: types, defaults, codecs, the
+  typed values (`messageNote`, `enumVisibility`) and `registry`, in
+  sections types, defaults, typed values, registry, encoders, decoders.
+  `Notes.V1.descriptorNote` is now `Notes.V1.Note.descriptor`. A message
+  or enum whose module name another generated module has (a service of
+  its package, a package nested in its own, or another type's but for
+  case) is `naming::module_collision`. A field named `descriptor` gets
+  the value `descriptor_` there (its record field stays `descriptor`);
+  two fields whose descriptor values meet, or a field renamed to
+  `elmConnectVersion_`, is `naming::value_collision`.
+- `Proto.Http.variable` takes `{ fieldPath, template }` and `Proto.Http.param`
+  a path, where `fieldPath` is the path of field descriptors from the
+  request message down to the field (`[ Notes.V1.GetNoteRequest.name ]`)
+  instead of positional names and texts. The runtime derives a
+  variable's or parameter's JSON path, a parameter's dotted proto name,
+  the text of the field's default (an enum's zero value's name from its
+  descriptor) and whether a parameter is left out at it, once, when the
+  binding is built; the generator no longer computes them.
+  `Proto.Http.bodyField` takes the body field's descriptor
+  (`Notes.V1.CreateNoteRequest.note`) and `Proto.Http.binding`'s
+  `responseBody` the response field's
+  (`Just Notes.V1.ListNotesResponse.notes`), instead of JSON names.
+  Generated service modules import the descriptor modules their routes
+  name. A path variable, body field or response body of a well-known
+  request or response type is `route::path_field`, `route::body_field`
+  or `route::response_body`.

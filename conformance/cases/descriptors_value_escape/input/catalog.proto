@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+import "google/api/annotations.proto";
+
+// A field named `descriptor` takes the value `descriptor_` in
+// `Catalog.V1.Entry`, whose `descriptor` is the message's own, and keeps
+// `descriptor` as its record field.
+message Entry {
+  string name = 1;
+  string descriptor = 2;
+}
+
+// A oneof member named `descriptor` takes `descriptor_` too.
+message Part {
+  oneof kind {
+    string descriptor = 1;
+    int32 count = 2;
+  }
+}
+
+message GetEntryRequest {
+  string name = 1;
+  string descriptor = 2;
+  Part part = 3;
+}
+
+service CatalogService {
+  // `descriptor` and `part.descriptor` are query parameters, named by
+  // `Catalog.V1.GetEntryRequest.descriptor_` and
+  // `Catalog.V1.Part.descriptor_`.
+  rpc GetEntry(GetEntryRequest) returns (Entry) {
+    option (google.api.http) = {get: "/v1/{name=entries/*}"};
+  }
+}

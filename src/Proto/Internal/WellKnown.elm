@@ -56,7 +56,12 @@ messages =
 
 enums : List Enum.Descriptor
 enums =
-    [ Enum.descriptor "google.protobuf.NullValue" [ EnumValue.descriptor "NULL_VALUE" 0 ] ]
+    [ nullValue ]
+
+
+nullValue : Enum.Descriptor
+nullValue =
+    Enum.descriptor "google.protobuf.NullValue" [ EnumValue.descriptor "NULL_VALUE" 0 ]
 
 
 member : String -> String -> Int -> Kind -> Field.Descriptor
@@ -108,7 +113,7 @@ struct =
 value : Message.Descriptor
 value =
     Message.descriptor "google.protobuf.Value"
-        [ member "null_value" "nullValue" 1 (KindEnum "google.protobuf.NullValue")
+        [ member "null_value" "nullValue" 1 (KindEnum nullValue)
         , member "number_value" "numberValue" 2 (KindScalar ScalarDouble)
         , member "string_value" "stringValue" 3 (KindScalar ScalarString)
         , member "bool_value" "boolValue" 4 (KindScalar ScalarBool)

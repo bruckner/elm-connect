@@ -7,10 +7,11 @@ module Proto.Message exposing
 
 {-| A message type: its typed value, which holds its proto3 JSON codecs, its
 default and its descriptor together, and its descriptor, what the proto says
-about it as data. Generated code gives one of each per message
-(`Notes.V1.messageNote : Message Note`, `Notes.V1.descriptorNote :
-Descriptor`), and [`Proto.WellKnown`](Proto-WellKnown) one per well-known
-type.
+about it as data. Generated code gives one of each per message: the typed
+value in the package's module (`Notes.V1.messageNote : Message Note`), the
+descriptor in a module of the message's own, beside one value per field
+(`Notes.V1.Note.descriptor : Descriptor`, `Notes.V1.Note.title`); and
+[`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type.
 
 @docs Message, message
 
@@ -56,7 +57,7 @@ decodes to) and its descriptor. Generated code writes:
 
     messageNote : Proto.Message.Message Note
     messageNote =
-        Proto.Message.message encodeNote decodeNote defaultNote descriptorNote
+        Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 -}
 message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Message a
@@ -105,14 +106,14 @@ breaking code that builds or reads one.
 A descriptor is faithful to the proto, not to the Elm the generator makes of
 it: a singular message field is
 [`CardinalitySingular`](Proto-Field#Cardinality) of a
-[`KindMessage`](Proto-Field#Kind), though Elm holds it as a `Maybe`. Types
-refer to each other by full name, never by value, so a message can contain
+[`KindMessage`](Proto-Field#Kind), though Elm holds it as a `Maybe`. A field
+refers to a message by full name, never by value, so a message can contain
 itself; a [`Registry`](Proto-Registry) resolves the names.
 
     import Proto.Field
     import Proto.Message
 
-    Proto.Message.fields Notes.V1.descriptorNote
+    Proto.Message.fields Notes.V1.Note.descriptor
         |> List.map Proto.Field.name
     --> [ "name", "title", … ]
 

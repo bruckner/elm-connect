@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package range.v1;
+
+// Fields named like values Elm imports by default (`Basics.max`,
+// `Basics.min`, `Basics.always`): their descriptor values in
+// `Range.V1.Bounds` are top-level values of that module, which Elm lets
+// shadow a default import.
+message Bounds {
+  int32 max = 1;
+  int32 min = 2;
+  bool always = 3;
+}

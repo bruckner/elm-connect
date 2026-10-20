@@ -1,10 +1,15 @@
 //! The descriptors of a package's messages and enums, their typed values
-//! and the package's registry (design §3.9): `descriptorFoo :
-//! Proto.Message.Descriptor` and `descriptorBar : Proto.Enum.Descriptor`,
-//! built with the positional `descriptor` builders; `messageFoo : Proto.Message.Message
-//! Foo` and `enumBar : Proto.Enum.Enum Bar`, each built from its type's
-//! codecs, default and descriptor; and `registry :
-//! Proto.Registry.Registry`, built from the descriptors alone.
+//! and the package's registry (design §3.9).
+//!
+//! A message's descriptor module, `Notes.V1.Note`, holds one
+//! `Proto.Field.Descriptor` per field, named as its record field
+//! (`title`), and `descriptor : Proto.Message.Descriptor` built from
+//! them; an enum's, `Notes.V1.Visibility`, holds `descriptor :
+//! Proto.Enum.Descriptor`. The package's module holds the typed values,
+//! `messageNote : Proto.Message.Message Note` and `enumVisibility :
+//! Proto.Enum.Enum Visibility`, each built from its type's codecs,
+//! default and descriptor, and `registry : Proto.Registry.Registry`,
+//! built from the descriptors alone.
 
 use std::collections::BTreeSet;
 
@@ -17,37 +22,86 @@ use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind, TypeRef,
 };
-use crate::naming::REGISTRY;
+use crate::naming::{DESCRIPTOR_VALUE, REGISTRY};
+
+/// One field or oneof member of a message, as its descriptor module
+/// declares it.
+struct FieldValue<'m> {
+    /// The Elm value, such as `pageSize`.
+    elm_name: String,
+    proto_name: &'m str,
+    json_name: &'m str,
+    number: u32,
+    cardinality: Option<Cardinality>,
+    ty: &'m TypeRef,
+    /// The proto name of the oneof it is a member of.
+    oneof: Option<&'m str>,
+    annotations: &'m Annotations,
+}
 
 impl Emitter {
-    /// `descriptorFoo : Proto.Message.Descriptor`: the
-    /// message's full name and its fields; the builder derives its oneofs
-    /// from the fields.
-    pub(super) fn message_descriptor(&mut self, shape: &MessageShape) -> Decl {
+    /// The declarations of a message's descriptor module: `descriptor :
+    /// Proto.Message.Descriptor`, the message's full name and its fields,
+    /// then one `Proto.Field.Descriptor` per field in declaration order,
+    /// each oneof's members where the oneof is. The builder derives the
+    /// message's oneofs from the fields.
+    pub(super) fn message_descriptor_module(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let message = shape.message;
-        let fields = self.field_descriptors(shape);
+        let fields = field_values(shape);
         let builder = self.reference((PROTO_MESSAGE, "descriptor"));
         let body = apply(
             builder,
-            [string(message.proto_full_name.clone()), list(fields)],
+            [
+                string(message.proto_full_name.clone()),
+                list(fields.iter().map(|field| var(field.elm_name.clone()))),
+            ],
         );
-        Decl::Value {
-            doc: None,
-            name: message.descriptor_name(),
+        let mut decls = vec![Decl::Value {
+            doc: Some(format!(
+                "What the proto says about the message `{}`: its full name and its fields, \
+                 in declaration order.",
+                message.proto_full_name
+            )),
+            name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_MESSAGE, "Descriptor", []),
             params: Vec::new(),
             body,
+        }];
+        for field in &fields {
+            let doc = match field.oneof {
+                Some(oneof) => format!(
+                    "The field `{}` of `{}`, a member of the oneof `{oneof}`.",
+                    field.proto_name, message.proto_full_name
+                ),
+                None => format!(
+                    "The field `{}` of `{}`.",
+                    field.proto_name, message.proto_full_name
+                ),
+            };
+            let body = self.field_descriptor(field);
+            decls.push(Decl::Value {
+                doc: Some(doc),
+                name: field.elm_name.clone(),
+                annotation: self.library_type(PROTO_FIELD, "Descriptor", []),
+                params: Vec::new(),
+                body,
+            });
         }
+        decls
     }
 
     /// `messageFoo : Proto.Message.Message Foo`, built by
     /// `Proto.Message.message` from the message's encoder, decoder and
     /// default, and its descriptor.
-    pub(super) fn message_record(&mut self, shape: &MessageShape) -> Decl {
+    pub(super) fn message_record(&mut self, package: &ModuleName, shape: &MessageShape) -> Decl {
         let message = shape.message;
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_MESSAGE, "message"));
+        let descriptor = self.generated_value(
+            &message.descriptor_module(package),
+            DESCRIPTOR_VALUE.to_owned(),
+        );
         Decl::Value {
             doc: None,
             name: message.value_name(),
@@ -59,16 +113,17 @@ impl Emitter {
                     var(message.encoder_name()),
                     var(message.decoder_name()),
                     var(message.default_name()),
-                    var(message.descriptor_name()),
+                    descriptor,
                 ],
             ),
         }
     }
 
-    /// `descriptorBar : Proto.Enum.Descriptor`: the enum's full
-    /// name and every declared name in order with its number (an alias
-    /// with its number), each deprecated one marked.
-    pub(super) fn enum_descriptor(&mut self, enumeration: &Enum) -> Decl {
+    /// The declaration of an enum's descriptor module: `descriptor :
+    /// Proto.Enum.Descriptor`, the enum's full name and every declared
+    /// name in order with its number (an alias with its number), each
+    /// deprecated one marked.
+    pub(super) fn enum_descriptor_module(&mut self, enumeration: &Enum) -> Vec<Decl> {
         let values: Vec<Expr> = enumeration
             .declared()
             .map(|(name, value)| {
@@ -86,21 +141,29 @@ impl Emitter {
             builder,
             [string(enumeration.proto_full_name.clone()), list(values)],
         );
-        Decl::Value {
-            doc: None,
-            name: enumeration.descriptor_name(),
+        vec![Decl::Value {
+            doc: Some(format!(
+                "What the proto says about the enum `{}`: its full name and its values, in \
+                 declaration order.",
+                enumeration.proto_full_name
+            )),
+            name: DESCRIPTOR_VALUE.to_owned(),
             annotation: self.library_type(PROTO_ENUM, "Descriptor", []),
             params: Vec::new(),
             body,
-        }
+        }]
     }
 
     /// `enumBar : Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from
     /// the enum's encoder, decoder and zero value, and its descriptor.
-    pub(super) fn enum_record(&mut self, enumeration: &Enum) -> Decl {
+    pub(super) fn enum_record(&mut self, package: &ModuleName, enumeration: &Enum) -> Decl {
         let annotation =
             self.library_type(PROTO_ENUM, "Enum", [ty(enumeration.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_ENUM, "enum"));
+        let descriptor = self.generated_value(
+            &enumeration.descriptor_module(package),
+            DESCRIPTOR_VALUE.to_owned(),
+        );
         Decl::Value {
             doc: None,
             name: enumeration.value_name(),
@@ -112,7 +175,7 @@ impl Emitter {
                     var(enumeration.encoder_name()),
                     var(enumeration.decoder_name()),
                     var(enumeration.zero().elm_ctor.clone()),
-                    var(enumeration.descriptor_name()),
+                    descriptor,
                 ],
             ),
         }
@@ -124,20 +187,26 @@ impl Emitter {
     /// types'. Of two descriptors with one full name the first is kept,
     /// though a full name is never in two packages.
     ///
-    /// It lists the `descriptorFoo` values, not the typed values: Elm's
-    /// dead-code elimination keeps a top-level value whole, so a registry
-    /// built from `messageFoo` would keep every type's codecs and default
-    /// in a program that uses it.
+    /// It lists the descriptor modules' `descriptor` values, not the
+    /// typed values: Elm's dead-code elimination keeps a top-level value
+    /// whole, so a registry built from `messageFoo` would keep every type's
+    /// codecs and default in a program that uses it.
     pub(super) fn registry(&mut self, package: &Package) -> Decl {
         let messages: Vec<Expr> = package
             .messages
             .iter()
-            .map(|message| var(message.descriptor_name()))
+            .map(|message| {
+                let module = message.descriptor_module(&package.module);
+                self.generated_value(&module, DESCRIPTOR_VALUE.to_owned())
+            })
             .collect();
         let enums: Vec<Expr> = package
             .enums
             .iter()
-            .map(|enumeration| var(enumeration.descriptor_name()))
+            .map(|enumeration| {
+                let module = enumeration.descriptor_module(&package.module);
+                self.generated_value(&module, DESCRIPTOR_VALUE.to_owned())
+            })
             .collect();
         let union = self.reference((PROTO_REGISTRY, "union"));
         let mut parts: Vec<Expr> = Vec::new();
@@ -163,73 +232,31 @@ impl Emitter {
         }
     }
 
-    /// One `Proto.Field.Descriptor` per field of the message, in
-    /// declaration order: each oneof's members where the oneof is.
-    fn field_descriptors(&mut self, shape: &MessageShape) -> Vec<Expr> {
-        let mut fields = Vec::new();
-        for field in shape.record() {
-            match field {
-                RecordField::Field(field, _) => {
-                    let cardinality = self.cardinality(field.cardinality);
-                    fields.push(self.field_descriptor(
-                        &field.proto_name,
-                        &field.json_name,
-                        field.number,
-                        cardinality,
-                        &field.ty,
-                        None,
-                        &field.annotations,
-                    ));
-                }
-                RecordField::Oneof(oneof) => {
-                    for (variant, _) in &oneof.variants {
-                        let cardinality = self.reference((PROTO_FIELD, "CardinalitySingular"));
-                        fields.push(self.field_descriptor(
-                            &variant.proto_name,
-                            &variant.json_name,
-                            variant.number,
-                            cardinality,
-                            &variant.ty,
-                            Some(&oneof.oneof.proto_name),
-                            &variant.annotations,
-                        ));
-                    }
-                }
-            }
-        }
-        fields
-    }
-
     /// `Proto.Field.descriptor name jsonName number cardinality kind`,
     /// then a modifier for each property the field has beyond those: its
     /// oneof, its behavior, its deprecation. A field without any is the
     /// builder alone, so the common field stays one line.
-    #[allow(clippy::too_many_arguments)]
-    fn field_descriptor(
-        &mut self,
-        name: &str,
-        json_name: &str,
-        number: u32,
-        cardinality: Expr,
-        ty: &TypeRef,
-        oneof: Option<&str>,
-        annotations: &Annotations,
-    ) -> Expr {
-        let kind = self.kind(ty);
+    fn field_descriptor(&mut self, field: &FieldValue) -> Expr {
+        let cardinality = match field.cardinality {
+            Some(cardinality) => self.cardinality(cardinality),
+            None => self.reference((PROTO_FIELD, "CardinalitySingular")),
+        };
+        let kind = self.kind(field.ty);
         let mut built = apply(
             self.reference((PROTO_FIELD, "descriptor")),
             [
-                string(name),
-                string(json_name),
-                int(number.into()),
+                string(field.proto_name),
+                string(field.json_name),
+                int(field.number.into()),
                 cardinality,
                 kind,
             ],
         );
-        if let Some(oneof) = oneof {
+        if let Some(oneof) = field.oneof {
             let modifier = apply(self.reference((PROTO_FIELD, "inOneof")), [string(oneof)]);
             built = pipe(built, modifier);
         }
+        let annotations = field.annotations;
         if !annotations.behavior.is_empty() {
             let behavior: Vec<Expr> = annotations
                 .behavior
@@ -263,12 +290,16 @@ impl Emitter {
         }
     }
 
-    /// `Proto.Field.KindScalar` of the scalar, or `KindEnum` or
-    /// `KindMessage` of the type's full name.
+    /// `Proto.Field.KindScalar` of the scalar, `KindEnum` of the enum's
+    /// descriptor, from its descriptor module, or `KindMessage` of the
+    /// message's full name.
     fn kind(&mut self, ty: &TypeRef) -> Expr {
         let (constructor, argument) = match ty {
             TypeRef::Scalar(kind) => ("KindScalar", self.reference((PROTO_FIELD, scalar(*kind)))),
-            TypeRef::Enum { name, .. } => ("KindEnum", string(name.proto_full_name.clone())),
+            TypeRef::Enum { name, .. } => (
+                "KindEnum",
+                self.generated_value(&name.descriptor_module(), DESCRIPTOR_VALUE.to_owned()),
+            ),
             TypeRef::Message(name) => ("KindMessage", string(name.proto_full_name.clone())),
             TypeRef::WellKnown(known) => ("KindMessage", string(known.proto_full_name())),
         };
@@ -298,6 +329,41 @@ fn imported_packages(package: &Package) -> BTreeSet<ModuleName> {
         .filter(|module| **module != package.module)
         .cloned()
         .collect()
+}
+
+/// The fields of a message's descriptor module, in declaration order:
+/// each oneof's members where the oneof is.
+fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
+    let mut fields = Vec::new();
+    for field in shape.record() {
+        match field {
+            RecordField::Field(field, _) => fields.push(FieldValue {
+                elm_name: field.value_name(),
+                proto_name: &field.proto_name,
+                json_name: &field.json_name,
+                number: field.number,
+                cardinality: Some(field.cardinality),
+                ty: &field.ty,
+                oneof: None,
+                annotations: &field.annotations,
+            }),
+            RecordField::Oneof(oneof) => {
+                for (variant, _) in &oneof.variants {
+                    fields.push(FieldValue {
+                        elm_name: variant.elm_name.clone(),
+                        proto_name: &variant.proto_name,
+                        json_name: &variant.json_name,
+                        number: variant.number,
+                        cardinality: None,
+                        ty: &variant.ty,
+                        oneof: Some(&oneof.oneof.proto_name),
+                        annotations: &variant.annotations,
+                    });
+                }
+            }
+        }
+    }
+    fields
 }
 
 /// The `Proto.Field.Behavior` constructor of a field behavior.

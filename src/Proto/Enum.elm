@@ -8,9 +8,10 @@ module Proto.Enum exposing
 
 {-| An enum type: its typed value, which holds its proto3 JSON codecs, its
 zero value and its descriptor together, and its descriptor, what the proto
-says about it as data. Generated code gives one of each per enum
-(`Notes.V1.enumVisibility : Enum Visibility`,
-`Notes.V1.descriptorVisibility : Descriptor`).
+says about it as data. Generated code gives one of each per enum: the typed
+value in the package's module (`Notes.V1.enumVisibility : Enum Visibility`),
+the descriptor in a module of the enum's own
+(`Notes.V1.Visibility.descriptor : Descriptor`).
 
 @docs Enum, enum
 
@@ -63,7 +64,7 @@ type Enum a
 
     enumVisibility : Proto.Enum.Enum Visibility
     enumVisibility =
-        Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified descriptorVisibility
+        Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified Notes.V1.Visibility.descriptor
 
 -}
 enum : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Enum a

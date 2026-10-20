@@ -13,7 +13,7 @@ use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
-use crate::route::{Body, PathSegment, QueryParam, Route, Segment};
+use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
     /// `descriptorGetNote : Proto.Method.Descriptor`, built by
@@ -127,16 +127,16 @@ impl Emitter {
         let body = match &route.body {
             Body::None => self.reference((PROTO_HTTP, "noBody")),
             Body::All => self.reference((PROTO_HTTP, "wholeBody")),
-            Body::Field(field) => apply(
+            Body::Field(top) => apply(
                 self.reference((PROTO_HTTP, "bodyField")),
-                [string(field.json[0].clone())],
+                [self.field_ref(&top.descriptor)],
             ),
         };
         let response_body = maybe(
             route
                 .response_body
                 .as_ref()
-                .map(|field| string(field.json[0].clone())),
+                .map(|top| self.field_ref(&top.descriptor)),
         );
         let query: Vec<Expr> = route
             .query
@@ -169,18 +169,19 @@ impl Emitter {
                 [string(text.clone())],
             ),
             PathSegment::Variable {
-                field,
-                template,
-                zero,
+                template, fields, ..
             } => {
-                let names = inline_list(field.json.iter().map(|name| string(name.clone())));
+                let fields = self.field_refs(fields);
                 let template: Vec<Expr> = template
                     .iter()
                     .map(|segment| self.template_segment(segment))
                     .collect();
                 apply(
                     self.reference((PROTO_HTTP, "variable")),
-                    [names, inline_list(template), string(zero.clone())],
+                    [record([
+                        ("fieldPath", fields),
+                        ("template", inline_list(template)),
+                    ])],
                 )
             }
         }
@@ -200,15 +201,22 @@ impl Emitter {
     }
 
     fn query_param(&mut self, param: &QueryParam) -> Expr {
-        let zero = maybe(param.zero.as_deref().map(string));
-        apply(
-            self.reference((PROTO_HTTP, "param")),
-            [
-                string(param.field.dotted()),
-                inline_list(param.field.json.iter().map(|name| string(name.clone()))),
-                zero,
-            ],
-        )
+        let fields = self.field_refs(&param.fields);
+        apply(self.reference((PROTO_HTTP, "param")), [fields])
+    }
+
+    /// `[ Notes.V1.ListNotesRequest.filter, … ]`: the descriptors of a
+    /// path of fields from the request, each from its message's
+    /// descriptor module, which the module then imports.
+    fn field_refs(&mut self, fields: &[FieldRef]) -> Expr {
+        let refs: Vec<Expr> = fields.iter().map(|field| self.field_ref(field)).collect();
+        inline_list(refs)
+    }
+
+    /// `Notes.V1.Note.title`: a field's descriptor, from its message's
+    /// descriptor module, which the module then imports.
+    fn field_ref(&mut self, field: &FieldRef) -> Expr {
+        self.generated_value(&field.module, field.name.clone())
     }
 }
 

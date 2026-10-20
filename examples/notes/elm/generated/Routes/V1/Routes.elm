@@ -7,6 +7,16 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Routes.V1
+import Routes.V1.Deep
+import Routes.V1.Everything
+import Routes.V1.FileRequest
+import Routes.V1.GetMessageRequest
+import Routes.V1.GetMessageRequestSubMessage
+import Routes.V1.Inner
+import Routes.V1.Message
+import Routes.V1.Resource
+import Routes.V1.UpdateMessageRequest
+import Routes.V1.UpdateResourceRequest
 import Rpc
 
 
@@ -32,16 +42,19 @@ descriptorGetMessage =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "messages", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.name ]
+                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "message_id" [ "messageId" ] (Just "")
-                , Proto.Http.param "revision" [ "revision" ] (Just "0")
-                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                , Proto.Http.param "user_id" [ "userId" ] (Just "")
+                [ Proto.Http.param [ Routes.V1.GetMessageRequest.messageId ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
                 ]
             }
         , Proto.Http.binding
@@ -49,16 +62,22 @@ descriptorGetMessage =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "messages"
-                , Proto.Http.variable [ "messageId" ] [] ""
-                , Proto.Http.variable [ "sub", "subfield" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                , Proto.Http.param "user_id" [ "userId" ] (Just "")
-                , Proto.Http.param "name" [ "name" ] (Just "")
+                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
                 ]
             }
         , Proto.Http.binding
@@ -66,16 +85,19 @@ descriptorGetMessage =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "messages"
-                , Proto.Http.variable [ "messageId" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                , Proto.Http.param "user_id" [ "userId" ] (Just "")
-                , Proto.Http.param "name" [ "name" ] (Just "")
+                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
                 ]
             }
         , Proto.Http.binding
@@ -83,17 +105,23 @@ descriptorGetMessage =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "users"
-                , Proto.Http.variable [ "userId" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.userId ]
+                    , template = []
+                    }
                 , Proto.Http.literal "messages"
-                , Proto.Http.variable [ "messageId" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "revision" [ "revision" ] (Just "0")
-                , Proto.Http.param "sub.subfield" [ "sub", "subfield" ] (Just "")
-                , Proto.Http.param "name" [ "name" ] (Just "")
+                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
                 ]
             }
         ]
@@ -111,10 +139,13 @@ descriptorUpdateMessage =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "messages"
-                , Proto.Http.variable [ "messageId" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.UpdateMessageRequest.messageId ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "message"
+            , body = Proto.Http.bodyField Routes.V1.UpdateMessageRequest.message
             , responseBody = Nothing
             , query = []
             }
@@ -133,7 +164,10 @@ descriptorUpdateMessageWhole =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "messages"
-                , Proto.Http.variable [ "messageId" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Message.messageId ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.wholeBody
@@ -155,7 +189,10 @@ descriptorPostSub =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "subs"
-                , Proto.Http.variable [ "sub", "subfield" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.wholeBody
@@ -182,30 +219,30 @@ descriptorQuery =
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "name" [ "name" ] (Just "")
-                , Proto.Http.param "count" [ "count" ] (Just "0")
-                , Proto.Http.param "big" [ "big" ] (Just "0")
-                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                , Proto.Http.param "data" [ "data" ] (Just "")
-                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                , Proto.Http.param "tags" [ "tags" ] Nothing
-                , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                , Proto.Http.param "at" [ "at" ] Nothing
-                , Proto.Http.param "wait" [ "wait" ] Nothing
-                , Proto.Http.param "mask" [ "mask" ] Nothing
-                , Proto.Http.param "limit" [ "limit" ] Nothing
-                , Proto.Http.param "label" [ "label" ] Nothing
-                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                , Proto.Http.param "text" [ "text" ] Nothing
-                , Proto.Http.param "number" [ "number" ] Nothing
+                [ Proto.Http.param [ Routes.V1.Everything.name ]
+                , Proto.Http.param [ Routes.V1.Everything.count ]
+                , Proto.Http.param [ Routes.V1.Everything.big ]
+                , Proto.Http.param [ Routes.V1.Everything.ubig ]
+                , Proto.Http.param [ Routes.V1.Everything.flag ]
+                , Proto.Http.param [ Routes.V1.Everything.ratio ]
+                , Proto.Http.param [ Routes.V1.Everything.scale ]
+                , Proto.Http.param [ Routes.V1.Everything.data ]
+                , Proto.Http.param [ Routes.V1.Everything.kind ]
+                , Proto.Http.param [ Routes.V1.Everything.tags ]
+                , Proto.Http.param [ Routes.V1.Everything.kinds ]
+                , Proto.Http.param [ Routes.V1.Everything.numbers ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+                , Proto.Http.param [ Routes.V1.Everything.at ]
+                , Proto.Http.param [ Routes.V1.Everything.wait ]
+                , Proto.Http.param [ Routes.V1.Everything.mask ]
+                , Proto.Http.param [ Routes.V1.Everything.limit ]
+                , Proto.Http.param [ Routes.V1.Everything.label ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+                , Proto.Http.param [ Routes.V1.Everything.text ]
+                , Proto.Http.param [ Routes.V1.Everything.number ]
                 ]
             }
         ]
@@ -223,35 +260,38 @@ descriptorSingle =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "single"
-                , Proto.Http.variable [ "name" ] [] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.name ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "count" [ "count" ] (Just "0")
-                , Proto.Http.param "big" [ "big" ] (Just "0")
-                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                , Proto.Http.param "data" [ "data" ] (Just "")
-                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                , Proto.Http.param "tags" [ "tags" ] Nothing
-                , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                , Proto.Http.param "at" [ "at" ] Nothing
-                , Proto.Http.param "wait" [ "wait" ] Nothing
-                , Proto.Http.param "mask" [ "mask" ] Nothing
-                , Proto.Http.param "limit" [ "limit" ] Nothing
-                , Proto.Http.param "label" [ "label" ] Nothing
-                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                , Proto.Http.param "text" [ "text" ] Nothing
-                , Proto.Http.param "number" [ "number" ] Nothing
+                [ Proto.Http.param [ Routes.V1.Everything.count ]
+                , Proto.Http.param [ Routes.V1.Everything.big ]
+                , Proto.Http.param [ Routes.V1.Everything.ubig ]
+                , Proto.Http.param [ Routes.V1.Everything.flag ]
+                , Proto.Http.param [ Routes.V1.Everything.ratio ]
+                , Proto.Http.param [ Routes.V1.Everything.scale ]
+                , Proto.Http.param [ Routes.V1.Everything.data ]
+                , Proto.Http.param [ Routes.V1.Everything.kind ]
+                , Proto.Http.param [ Routes.V1.Everything.tags ]
+                , Proto.Http.param [ Routes.V1.Everything.kinds ]
+                , Proto.Http.param [ Routes.V1.Everything.numbers ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+                , Proto.Http.param [ Routes.V1.Everything.at ]
+                , Proto.Http.param [ Routes.V1.Everything.wait ]
+                , Proto.Http.param [ Routes.V1.Everything.mask ]
+                , Proto.Http.param [ Routes.V1.Everything.limit ]
+                , Proto.Http.param [ Routes.V1.Everything.label ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+                , Proto.Http.param [ Routes.V1.Everything.text ]
+                , Proto.Http.param [ Routes.V1.Everything.number ]
                 ]
             }
         ]
@@ -268,35 +308,38 @@ descriptorMulti =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "things", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.name ]
+                    , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "count" [ "count" ] (Just "0")
-                , Proto.Http.param "big" [ "big" ] (Just "0")
-                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                , Proto.Http.param "flag" [ "flag" ] (Just "false")
-                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                , Proto.Http.param "data" [ "data" ] (Just "")
-                , Proto.Http.param "kind" [ "kind" ] (Just "KIND_UNSPECIFIED")
-                , Proto.Http.param "tags" [ "tags" ] Nothing
-                , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                , Proto.Http.param "at" [ "at" ] Nothing
-                , Proto.Http.param "wait" [ "wait" ] Nothing
-                , Proto.Http.param "mask" [ "mask" ] Nothing
-                , Proto.Http.param "limit" [ "limit" ] Nothing
-                , Proto.Http.param "label" [ "label" ] Nothing
-                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                , Proto.Http.param "inner.deep.b" [ "inner", "deep", "b" ] (Just "0")
-                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                , Proto.Http.param "text" [ "text" ] Nothing
-                , Proto.Http.param "number" [ "number" ] Nothing
+                [ Proto.Http.param [ Routes.V1.Everything.count ]
+                , Proto.Http.param [ Routes.V1.Everything.big ]
+                , Proto.Http.param [ Routes.V1.Everything.ubig ]
+                , Proto.Http.param [ Routes.V1.Everything.flag ]
+                , Proto.Http.param [ Routes.V1.Everything.ratio ]
+                , Proto.Http.param [ Routes.V1.Everything.scale ]
+                , Proto.Http.param [ Routes.V1.Everything.data ]
+                , Proto.Http.param [ Routes.V1.Everything.kind ]
+                , Proto.Http.param [ Routes.V1.Everything.tags ]
+                , Proto.Http.param [ Routes.V1.Everything.kinds ]
+                , Proto.Http.param [ Routes.V1.Everything.numbers ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+                , Proto.Http.param [ Routes.V1.Everything.at ]
+                , Proto.Http.param [ Routes.V1.Everything.wait ]
+                , Proto.Http.param [ Routes.V1.Everything.mask ]
+                , Proto.Http.param [ Routes.V1.Everything.limit ]
+                , Proto.Http.param [ Routes.V1.Everything.label ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+                , Proto.Http.param [ Routes.V1.Everything.text ]
+                , Proto.Http.param [ Routes.V1.Everything.number ]
                 ]
             }
         ]
@@ -314,35 +357,50 @@ descriptorTyped =
             , path =
                 [ Proto.Http.literal "v1"
                 , Proto.Http.literal "typed"
-                , Proto.Http.variable [ "count" ] [] "0"
-                , Proto.Http.variable [ "flag" ] [] "false"
-                , Proto.Http.variable [ "kind" ] [] "KIND_UNSPECIFIED"
-                , Proto.Http.variable [ "big" ] [] "0"
-                , Proto.Http.variable [ "inner", "deep", "b" ] [] "0"
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.count ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.flag ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.kind ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.big ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                    , template = []
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "name" [ "name" ] (Just "")
-                , Proto.Http.param "ubig" [ "ubig" ] (Just "0")
-                , Proto.Http.param "ratio" [ "ratio" ] (Just "0")
-                , Proto.Http.param "scale" [ "scale" ] (Just "0")
-                , Proto.Http.param "data" [ "data" ] (Just "")
-                , Proto.Http.param "tags" [ "tags" ] Nothing
-                , Proto.Http.param "kinds" [ "kinds" ] Nothing
-                , Proto.Http.param "numbers" [ "numbers" ] Nothing
-                , Proto.Http.param "maybe_count" [ "maybeCount" ] Nothing
-                , Proto.Http.param "maybe_name" [ "maybeName" ] Nothing
-                , Proto.Http.param "at" [ "at" ] Nothing
-                , Proto.Http.param "wait" [ "wait" ] Nothing
-                , Proto.Http.param "mask" [ "mask" ] Nothing
-                , Proto.Http.param "limit" [ "limit" ] Nothing
-                , Proto.Http.param "label" [ "label" ] Nothing
-                , Proto.Http.param "inner.a" [ "inner", "a" ] (Just "")
-                , Proto.Http.param "inner.deep.c" [ "inner", "deep", "c" ] Nothing
-                , Proto.Http.param "text" [ "text" ] Nothing
-                , Proto.Http.param "number" [ "number" ] Nothing
+                [ Proto.Http.param [ Routes.V1.Everything.name ]
+                , Proto.Http.param [ Routes.V1.Everything.ubig ]
+                , Proto.Http.param [ Routes.V1.Everything.ratio ]
+                , Proto.Http.param [ Routes.V1.Everything.scale ]
+                , Proto.Http.param [ Routes.V1.Everything.data ]
+                , Proto.Http.param [ Routes.V1.Everything.tags ]
+                , Proto.Http.param [ Routes.V1.Everything.kinds ]
+                , Proto.Http.param [ Routes.V1.Everything.numbers ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+                , Proto.Http.param [ Routes.V1.Everything.at ]
+                , Proto.Http.param [ Routes.V1.Everything.wait ]
+                , Proto.Http.param [ Routes.V1.Everything.mask ]
+                , Proto.Http.param [ Routes.V1.Everything.limit ]
+                , Proto.Http.param [ Routes.V1.Everything.label ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+                , Proto.Http.param [ Routes.V1.Everything.text ]
+                , Proto.Http.param [ Routes.V1.Everything.number ]
                 ]
             }
         ]
@@ -359,7 +417,10 @@ descriptorFiles =
             { method = "GET"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.FileRequest.path ]
+                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
@@ -380,7 +441,10 @@ descriptorCancel =
             { method = "POST"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "name" ] [ Proto.Http.literal "operations", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Resource.name ]
+                    , template = [ Proto.Http.literal "operations", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Just "cancel"
             , body = Proto.Http.wholeBody
@@ -401,13 +465,16 @@ descriptorUpdateResource =
             { method = "PATCH"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "resource", "name" ] [ Proto.Http.literal "resources", Proto.Http.wildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.UpdateResourceRequest.resource, Routes.V1.Resource.name ]
+                    , template = [ Proto.Http.literal "resources", Proto.Http.wildcard ]
+                    }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "resource"
+            , body = Proto.Http.bodyField Routes.V1.UpdateResourceRequest.resource
             , responseBody = Nothing
             , query =
-                [ Proto.Http.param "update_mask" [ "updateMask" ] Nothing
+                [ Proto.Http.param [ Routes.V1.UpdateResourceRequest.updateMask ]
                 ]
             }
         ]
@@ -424,7 +491,10 @@ descriptorHead =
             { method = "HEAD"
             , path =
                 [ Proto.Http.literal "v1"
-                , Proto.Http.variable [ "path" ] [ Proto.Http.literal "files", Proto.Http.doubleWildcard ] ""
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.FileRequest.path ]
+                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                    }
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody

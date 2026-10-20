@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package things.v1;
+
+import "google/api/annotations.proto";
+
+message Thing {
+  string name = 1;
+}
+
+// Renamed to `Criteria` (options.txt), so its descriptor module is
+// `Things.V1.Criteria`; `state` is renamed to `status`.
+message Filter {
+  string state = 1;
+}
+
+// `name` is renamed to `resource` and `page_size` to `limit`
+// (options.txt): the route names their descriptors by the new names.
+message GetThingRequest {
+  string name = 1;
+  int32 page_size = 2;
+  Filter filter = 3;
+}
+
+service ThingService {
+  rpc GetThing(GetThingRequest) returns (Thing) {
+    option (google.api.http) = {get: "/v1/{name=things/*}"};
+  }
+}

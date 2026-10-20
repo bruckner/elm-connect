@@ -6,12 +6,17 @@ module Unused.V1 exposing (..)
 import Json.Decode
 import Json.Encode
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Unused.V1.Char
+import Unused.V1.Cmd
+import Unused.V1.Dict
+import Unused.V1.Never
+import Unused.V1.Order
+import Unused.V1.Result
+import Unused.V1.True
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -97,100 +102,60 @@ defaultTrue =
 
 
 
--- DESCRIPTORS
-
-
-descriptorChar : Proto.Enum.Descriptor
-descriptorChar =
-    Proto.Enum.descriptor "unused.v1.Char"
-        [ Proto.EnumValue.descriptor "CHAR_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "CHAR_A" 1
-        ]
+-- TYPED VALUES
 
 
 enumChar : Proto.Enum.Enum Char
 enumChar =
-    Proto.Enum.enum encodeChar decodeChar CharUnspecified descriptorChar
-
-
-descriptorDict : Proto.Message.Descriptor
-descriptorDict =
-    Proto.Message.descriptor "unused.v1.Dict"
-        [ Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Enum.enum encodeChar decodeChar CharUnspecified Unused.V1.Char.descriptor
 
 
 messageDict : Proto.Message.Message Dict
 messageDict =
-    Proto.Message.message encodeDict decodeDict defaultDict descriptorDict
-
-
-descriptorResult : Proto.Message.Descriptor
-descriptorResult =
-    Proto.Message.descriptor "unused.v1.Result"
-        [ Proto.Field.descriptor "ok" "ok" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
-        , Proto.Field.descriptor "dict" "dict" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "unused.v1.Dict")
-        , Proto.Field.descriptor "chars" "chars" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum "unused.v1.Char")
-        ]
+    Proto.Message.message encodeDict decodeDict defaultDict Unused.V1.Dict.descriptor
 
 
 messageResult : Proto.Message.Message Result
 messageResult =
-    Proto.Message.message encodeResult decodeResult defaultResult descriptorResult
-
-
-descriptorOrder : Proto.Message.Descriptor
-descriptorOrder =
-    Proto.Message.descriptor "unused.v1.Order" []
+    Proto.Message.message encodeResult decodeResult defaultResult Unused.V1.Result.descriptor
 
 
 messageOrder : Proto.Message.Message Order
 messageOrder =
-    Proto.Message.message encodeOrder decodeOrder defaultOrder descriptorOrder
-
-
-descriptorNever : Proto.Message.Descriptor
-descriptorNever =
-    Proto.Message.descriptor "unused.v1.Never" []
+    Proto.Message.message encodeOrder decodeOrder defaultOrder Unused.V1.Order.descriptor
 
 
 messageNever : Proto.Message.Message Never
 messageNever =
-    Proto.Message.message encodeNever decodeNever defaultNever descriptorNever
-
-
-descriptorCmd : Proto.Message.Descriptor
-descriptorCmd =
-    Proto.Message.descriptor "unused.v1.Cmd" []
+    Proto.Message.message encodeNever decodeNever defaultNever Unused.V1.Never.descriptor
 
 
 messageCmd : Proto.Message.Message Cmd
 messageCmd =
-    Proto.Message.message encodeCmd decodeCmd defaultCmd descriptorCmd
-
-
-descriptorTrue : Proto.Message.Descriptor
-descriptorTrue =
-    Proto.Message.descriptor "unused.v1.True" []
+    Proto.Message.message encodeCmd decodeCmd defaultCmd Unused.V1.Cmd.descriptor
 
 
 messageTrue : Proto.Message.Message True
 messageTrue =
-    Proto.Message.message encodeTrue decodeTrue defaultTrue descriptorTrue
+    Proto.Message.message encodeTrue decodeTrue defaultTrue Unused.V1.True.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorDict
-            , descriptorResult
-            , descriptorOrder
-            , descriptorNever
-            , descriptorCmd
-            , descriptorTrue
+            [ Unused.V1.Dict.descriptor
+            , Unused.V1.Result.descriptor
+            , Unused.V1.Order.descriptor
+            , Unused.V1.Never.descriptor
+            , Unused.V1.Cmd.descriptor
+            , Unused.V1.True.descriptor
             ]
-            [ descriptorChar
+            [ Unused.V1.Char.descriptor
             ]
         )
         Proto.Registry.wellKnown

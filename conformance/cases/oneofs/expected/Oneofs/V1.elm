@@ -5,9 +5,11 @@ module Oneofs.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Oneofs.V1.Choice
+import Oneofs.V1.Color
+import Oneofs.V1.Created
+import Oneofs.V1.NoteEvent
 import Proto.Enum
-import Proto.EnumValue
-import Proto.Field
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -96,87 +98,42 @@ defaultChoice =
 
 
 
--- DESCRIPTORS
-
-
-descriptorColor : Proto.Enum.Descriptor
-descriptorColor =
-    Proto.Enum.descriptor "oneofs.v1.Color"
-        [ Proto.EnumValue.descriptor "COLOR_UNSPECIFIED" 0
-        , Proto.EnumValue.descriptor "COLOR_RED" 1
-        ]
+-- TYPED VALUES
 
 
 enumColor : Proto.Enum.Enum Color
 enumColor =
-    Proto.Enum.enum encodeColor decodeColor ColorUnspecified descriptorColor
-
-
-descriptorCreated : Proto.Message.Descriptor
-descriptorCreated =
-    Proto.Message.descriptor "oneofs.v1.Created"
-        [ Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Enum.enum encodeColor decodeColor ColorUnspecified Oneofs.V1.Color.descriptor
 
 
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    Proto.Message.message encodeCreated decodeCreated defaultCreated descriptorCreated
-
-
-descriptorNoteEvent : Proto.Message.Descriptor
-descriptorNoteEvent =
-    Proto.Message.descriptor "oneofs.v1.NoteEvent"
-        [ Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-        , Proto.Field.descriptor "created" "created" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "oneofs.v1.Created")
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "title_changed" "titleChanged" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "recolored" "recolored" 4 Proto.Field.CardinalitySingular (Proto.Field.KindEnum "oneofs.v1.Color")
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "deleted_at" "deletedAt" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "archived" "archived" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "cleared_all" "clearedAll" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Empty")
-            |> Proto.Field.inOneof "kind"
-        , Proto.Field.descriptor "user" "user" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "source"
-        , Proto.Field.descriptor "automated" "automated" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
-            |> Proto.Field.inOneof "source"
-        , Proto.Field.descriptor "tags" "tags" 8 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
-        ]
+    Proto.Message.message encodeCreated decodeCreated defaultCreated Oneofs.V1.Created.descriptor
 
 
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent descriptorNoteEvent
-
-
-descriptorChoice : Proto.Message.Descriptor
-descriptorChoice =
-    Proto.Message.descriptor "oneofs.v1.Choice"
-        [ Proto.Field.descriptor "number" "number" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
-            |> Proto.Field.inOneof "value"
-        , Proto.Field.descriptor "text" "label" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-            |> Proto.Field.inOneof "value"
-        ]
+    Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent Oneofs.V1.NoteEvent.descriptor
 
 
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    Proto.Message.message encodeChoice decodeChoice defaultChoice descriptorChoice
+    Proto.Message.message encodeChoice decodeChoice defaultChoice Oneofs.V1.Choice.descriptor
+
+
+
+-- REGISTRY
 
 
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
         (Proto.Registry.fromDescriptors
-            [ descriptorCreated
-            , descriptorNoteEvent
-            , descriptorChoice
+            [ Oneofs.V1.Created.descriptor
+            , Oneofs.V1.NoteEvent.descriptor
+            , Oneofs.V1.Choice.descriptor
             ]
-            [ descriptorColor
+            [ Oneofs.V1.Color.descriptor
             ]
         )
         Proto.Registry.wellKnown

@@ -420,7 +420,7 @@ fn reference(route: &Route, request: &DynamicMessage) -> Http {
             }
             Some(to_json(&whole))
         }
-        Body::Field(field) => Some(match field_at(request, &field.proto) {
+        Body::Field(top) => Some(match field_at(request, &top.field.proto) {
             Some((Value::Message(inner), _)) => to_json(&inner),
             _ => Json::Object(Default::default()),
         }),
