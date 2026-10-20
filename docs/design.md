@@ -1134,7 +1134,9 @@ have (`suggestions` case). Names that collide after renaming are the
 text names the escape, the `rename` of the element at fault by its proto
 full name (of a collision's second claimant, when renaming it would part
 them), with a placeholder for the Elm name (`rename` and
-`rename_invalid` cases).
+`rename_invalid` cases). When a rename gave one of them the name, its
+site says so ("renamed to `title` by `rename`") and the help points at
+that rename instead (`rename_collision` case).
 
 ### 3.8 Dead ends
 

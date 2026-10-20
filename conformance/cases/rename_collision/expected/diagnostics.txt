@@ -1,0 +1,45 @@
+naming::field_collision
+
+  × The message `library.v1.Book` has two fields that both become `title` in
+  │ Elm.
+    ╭─[library.proto:8:10]
+  7 │ message Book {
+  8 │   string title = 1;
+    ·          ──┬──
+    ·            ╰── field `title` becomes `title`
+  9 │   int32 page_count = 2;
+    ·         ─────┬────
+    ·              ╰── and field `page_count` is renamed to it by `rename`
+ 10 │ }
+    ╰────
+  help: Elm record fields are the proto field names in lowerCamelCase, so
+        names that differ only in underscores or reserved-word escaping end up
+        the same, and a record cannot have two fields with one name. That name
+        comes from `rename=library.v1.Book.page_count:title`: give it another
+        there, or rename the other one in the proto.
+
+naming::type_collision
+
+  × The package `library.v1` has two messages that both become the Elm type
+  │ and record constructor `Book`.
+    ╭─[library.proto:7:9]
+  6 │
+  7 │ message Book {
+    ·         ──┬─
+    ·           ╰── message `library.v1.Book` becomes `Book`
+  8 │   string title = 1;
+  9 │   int32 page_count = 2;
+ 10 │ }
+ 11 │
+ 12 │ message Shelf {
+    ·         ──┬──
+    ·           ╰── and message `library.v1.Shelf` is renamed to it by `rename`
+ 13 │   string name = 1;
+    ╰────
+  help: Every message, enum and oneof of a package becomes a type in one Elm
+        module, nested names joined (`Outer.Inner` becomes `OuterInner`), and
+        a module cannot define two types with one name. A message's record
+        constructor takes its type's name, so the two collide as constructors
+        too, and one rename parts both. That name comes from
+        `rename=library.v1.Shelf:Book`: give it another there, or rename the
+        other one in the proto.

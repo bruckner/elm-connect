@@ -61,6 +61,23 @@ impl Spelling {
         }
     }
 
+    /// The `rename` option giving `proto` the Elm name `elm`, quoted:
+    /// `` `rename=notes.v1.Note.title:heading` ``.
+    pub fn rename_to(self, proto: &str, elm: &str) -> String {
+        match self {
+            Spelling::Parameter => format!("`rename={proto}:{elm}`"),
+            Spelling::Flags => format!("`--rename {proto}:{elm}`"),
+        }
+    }
+
+    /// The `rename` option's name, quoted: `` `rename` `` or `` `--rename` ``.
+    pub fn rename_key(self) -> &'static str {
+        match self {
+            Spelling::Parameter => "`rename`",
+            Spelling::Flags => "`--rename`",
+        }
+    }
+
     /// The option `key` set to `value`, quoted: `` `streaming=skip` `` or
     /// `` `--streaming skip` ``.
     pub fn option(self, key: &str, value: &str) -> String {

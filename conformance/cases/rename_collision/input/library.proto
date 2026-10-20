@@ -1,0 +1,14 @@
+// A rename that takes a name the protos already give: the problem points
+// at the rename, not at the protos.
+syntax = "proto3";
+
+package library.v1;
+
+message Book {
+  string title = 1;
+  int32 page_count = 2;
+}
+
+message Shelf {
+  string name = 1;
+}

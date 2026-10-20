@@ -272,6 +272,7 @@ impl Problem {
         first: Site,
         second: Site,
         rename: &str,
+        renamed: Option<&str>,
     ) -> Self {
         Problem::new(
             Code::FieldCollision,
@@ -279,8 +280,11 @@ impl Problem {
             format!(
                 "Elm record fields are the proto field names in lowerCamelCase, so names that \
                  differ only in underscores or reserved-word escaping end up the same, and a \
-                 record cannot have two fields with one name. Rename one of them in the proto, \
-                 or rename one with {rename}."
+                 record cannot have two fields with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -296,6 +300,7 @@ impl Problem {
         second: Site,
         rename: &str,
         records: bool,
+        renamed: Option<&str>,
     ) -> Self {
         let (definitions, becomes, constructors) = if records {
             (
@@ -316,8 +321,11 @@ impl Problem {
             format!(
                 "Every message, enum and oneof of a package becomes a type in one Elm module, \
                  nested names joined (`Outer.Inner` becomes `OuterInner`), and a module cannot \
-                 define two types with one name.{constructors} Rename one of them in the proto, \
-                 or rename one with {rename}."
+                 define two types with one name.{constructors} {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -331,6 +339,7 @@ impl Problem {
         first: Site,
         second: Site,
         rename: &str,
+        renamed: Option<&str>,
     ) -> Self {
         Problem::new(
             Code::ConstructorCollision,
@@ -341,8 +350,11 @@ impl Problem {
             format!(
                 "Enum values, oneof cases and the record constructor of every message all share \
                  one constructor namespace in an Elm module, so these cannot both keep this name. \
-                 Rename one of them in the proto, or rename one with \
-                 {rename}."
+                 {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -554,6 +566,7 @@ impl Problem {
         first: Site,
         second: Site,
         rename: &str,
+        renamed: Option<&str>,
     ) -> Self {
         Problem::new(
             Code::ValueCollision,
@@ -564,9 +577,11 @@ impl Problem {
             format!(
                 "A service's module defines one value per method, its name with the first letter \
                  lowercased and underscores dropped, so names that differ only in those ways end \
-                 up the same, and a module cannot define two values with one name. Rename one of \
-                 the methods in the proto, or rename one with \
-                 {rename}."
+                 up the same, and a module cannot define two values with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -580,6 +595,7 @@ impl Problem {
         first: Site,
         second: Site,
         rename: &str,
+        renamed: Option<&str>,
     ) -> Self {
         Problem::new(
             Code::ValueCollision,
@@ -593,8 +609,11 @@ impl Problem {
                  `descriptor` followed by the call's name with the first letter uppercased. So a \
                  method named for another's descriptor (`DescriptorGetNote` beside `GetNote`) \
                  takes that descriptor's name, and a module cannot define two values with one \
-                 name. Rename one of the methods in the proto, or rename one with \
-                 {rename}."
+                 name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -629,6 +648,7 @@ impl Problem {
         first: Site,
         second: Site,
         rename: &str,
+        renamed: Option<&str>,
     ) -> Self {
         Problem::new(
             Code::ValueCollision,
@@ -641,8 +661,11 @@ impl Problem {
                  `descriptor`, the message's descriptor, and one value per field, named as its \
                  record field is (a oneof member's for the end of its constructor; a field \
                  named `descriptor` takes `descriptor_`), so two fields whose values meet cannot \
-                 both be defined. Rename the field in the proto, or rename it with \
-                 {rename}."
+                 both be defined. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename the field in the proto, or rename it with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -651,7 +674,13 @@ impl Problem {
     /// Two generated modules, each a package's, a service's or a message's
     /// or enum's descriptor module, become the same Elm module
     /// `elm_module`.
-    pub fn module_collision(elm_module: &str, first: Site, second: Site, rename: &str) -> Self {
+    pub fn module_collision(
+        elm_module: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
         Problem::new(
             Code::ModuleCollision,
             format!("Two generated modules both become the Elm module `{elm_module}`."),
@@ -661,8 +690,11 @@ impl Problem {
                  (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
                  `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
                  take the name of another or of a package nested in its own, and names that \
-                 differ only in case or underscores end up the same. Rename one of them in the \
-                 proto, or rename one with {rename}."
+                 differ only in case or underscores end up the same. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
             ),
             vec![first, second],
         )
@@ -1125,6 +1157,19 @@ impl Problem {
                 Some(LabeledSpan::new_with_span(Some(site.label.clone()), span))
             })
             .collect()
+    }
+}
+
+/// The end of a collision's help: `default`, which names the escape, or,
+/// when `renamed` is the option (written with its Elm name) that gave one
+/// claimant the name, a pointer at that option instead.
+fn rename_escape(renamed: Option<&str>, default: String) -> String {
+    match renamed {
+        Some(option) => format!(
+            "That name comes from {option}: give it another there, or rename the other one in \
+             the proto."
+        ),
+        None => default,
     }
 }
 

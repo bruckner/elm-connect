@@ -917,3 +917,7 @@ tag (design §8).
   `library/v1/library.proto:5:9`, from the request's `SourceCodeInfo`,
   and one with several sites lists each with its label. The CLI's
   rendering is unchanged.
+- A collision that a rename caused says so: the renamed side's label
+  reads "renamed to `title` by `rename`" (`--rename` under the CLI), and
+  the help points at that rename rather than at renaming the protos. The
+  `rename_collision` conformance case pins it.

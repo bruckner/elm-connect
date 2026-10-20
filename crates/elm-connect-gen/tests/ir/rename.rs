@@ -56,6 +56,35 @@ fn a_rename_can_collide() {
 }
 
 #[test]
+fn a_collision_a_rename_causes_points_at_the_rename() {
+    let mut options = Options::default();
+    options.spelling = elm_connect_gen::Spelling::Flags;
+    options.add_rename("notes.v1.Outer:Note").expect("a rename");
+    let diagnostics = ir::build_with(&pool(&[("notes.proto", NOTES)]), &["notes.proto"], &options)
+        .expect_err("two types `Note`");
+    let problem = diagnostics.iter().next().expect("a problem");
+    let labels: Vec<&str> = problem
+        .sites()
+        .iter()
+        .map(|site| site.label.as_str())
+        .collect();
+    assert_eq!(
+        labels,
+        [
+            "message `notes.v1.Outer` is renamed to `Note` by `--rename`",
+            "and so does message `notes.v1.Note`"
+        ]
+    );
+    assert!(
+        problem
+            .help_text()
+            .ends_with("That name comes from `--rename notes.v1.Outer:Note`: give it another there, or rename the other one in the proto."),
+        "{}",
+        problem.help_text()
+    );
+}
+
+#[test]
 fn a_rename_names_a_generated_element() {
     let diagnostics = build(&["google.protobuf.Empty:Nothing", "notes.v2:Notes.V2"])
         .expect_err("neither is generated");

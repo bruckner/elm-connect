@@ -362,6 +362,38 @@ struct Origin {
     /// Whether this is a message's claim of its type or its record
     /// constructor, which share one name.
     record: bool,
+    /// The Elm name the rename map gives `proto`, if it gives one, and the
+    /// `rename` option's name as the reader writes it.
+    given: Option<(String, &'static str)>,
+}
+
+impl Origin {
+    /// Whether `name`, which this claims, is the one its rename gives:
+    /// the name itself, or the last segments of a module name.
+    fn renamed_to(&self, name: &str) -> bool {
+        self.given.as_ref().is_some_and(|(given, _)| {
+            name == given
+                || name
+                    .strip_suffix(given.as_str())
+                    .is_some_and(|rest| rest.ends_with('.'))
+        })
+    }
+
+    /// The label of this claim of `name`: "message `a.B` becomes `B`",
+    /// or, when its rename gives the name, "... is renamed to `B` by
+    /// `rename`". `and` labels the second claim of a clash.
+    fn label(&self, name: &str, and: bool) -> String {
+        match (&self.given, and) {
+            (Some((_, option)), false) if self.renamed_to(name) => {
+                format!("{} is renamed to `{name}` by {option}", self.what)
+            }
+            (Some((_, option)), true) if self.renamed_to(name) => {
+                format!("and {} is renamed to it by {option}", self.what)
+            }
+            (_, false) => format!("{} becomes `{name}`", self.what),
+            (_, true) => format!("and so does {}", self.what),
+        }
+    }
 }
 
 /// Two claims of one name: the first claimant's site and the new one's,
@@ -371,6 +403,9 @@ struct Clash {
     first: Site,
     second: Site,
     rename: Option<String>,
+    /// The proto full name and Elm name of a claimant whose rename gave
+    /// it the name, the new one's first.
+    renamed: Option<(String, String)>,
 }
 
 /// The names claimed in one Elm namespace, and by whom first.
@@ -383,17 +418,24 @@ impl Namespace {
     /// Claims `name` for `origin`; `None` unless it clashes.
     fn claim(&mut self, name: &str, origin: Origin) -> Option<Clash> {
         match self.claimed.get(name) {
-            Some(first) => Some(Clash {
-                first: Site {
-                    label: format!("{} becomes `{name}`", first.what),
-                    ..first.site.clone()
-                },
-                second: Site {
-                    label: format!("and so does {}", origin.what),
-                    ..origin.site
-                },
-                rename: origin.proto.or_else(|| first.proto.clone()),
-            }),
+            Some(first) => {
+                let renamed = [&origin, first]
+                    .into_iter()
+                    .find(|claim| claim.renamed_to(name))
+                    .and_then(|claim| Some((claim.proto.clone()?, claim.given.clone()?.0)));
+                Some(Clash {
+                    first: Site {
+                        label: first.label(name, false),
+                        ..first.site.clone()
+                    },
+                    second: Site {
+                        label: origin.label(name, true),
+                        ..origin.site
+                    },
+                    rename: origin.proto.or_else(|| first.proto.clone()),
+                    renamed,
+                })
+            }
             None => {
                 self.claimed.insert(name.to_owned(), origin);
                 None
@@ -551,6 +593,9 @@ impl Builder {
             site,
             proto: proto.map(str::to_owned),
             record: false,
+            given: proto
+                .and_then(|proto| self.renames.get(proto))
+                .map(|given| (given.clone(), self.spelling.rename_key())),
         }
     }
 
@@ -559,6 +604,12 @@ impl Builder {
     /// when no proto element's rename would help.
     fn rename_of(&self, proto: Option<&str>) -> String {
         self.spelling.rename(proto.unwrap_or(RENAME_PLACEHOLDER))
+    }
+
+    /// The rename option that gave a clash's claimant its name, written
+    /// as the reader wrote it, if one did.
+    fn renamed_by(&self, renamed: Option<&(String, String)>) -> Option<String> {
+        renamed.map(|(proto, elm)| self.spelling.rename_to(proto, elm))
     }
 
     /// Names every message and enum of `file`, so references can resolve
@@ -928,6 +979,7 @@ impl Builder {
             first,
             second,
             rename,
+            renamed,
         }) = values.names.claim(&built.elm_name, origin)
         {
             let problem = if values.descriptors.contains(&built.elm_name) {
@@ -941,6 +993,7 @@ impl Builder {
                 first,
                 second,
                 &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
             ));
         } else {
             // A call that clashes with another call has a descriptor that
@@ -952,6 +1005,7 @@ impl Builder {
                 first,
                 second,
                 rename,
+                renamed,
             }) = values.names.claim(&descriptor, origin)
             {
                 self.diagnostics.push(Problem::descriptor_collision(
@@ -960,6 +1014,7 @@ impl Builder {
                     first,
                     second,
                     &self.rename_of(rename.as_deref()),
+                    self.renamed_by(renamed.as_ref()).as_deref(),
                 ));
             }
             values.descriptors.insert(descriptor);
@@ -1022,6 +1077,7 @@ impl Builder {
             first,
             second,
             rename,
+            renamed,
         }) = self.module_names.claim(&name, origin)
         {
             self.diagnostics.push(Problem::module_collision(
@@ -1029,6 +1085,7 @@ impl Builder {
                 first,
                 second,
                 &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
             ));
         }
     }
@@ -1050,6 +1107,7 @@ impl Builder {
             first,
             second,
             rename,
+            renamed,
         }) = types.claim(name, origin)
         {
             self.diagnostics.push(Problem::type_collision(
@@ -1059,6 +1117,7 @@ impl Builder {
                 second,
                 &self.rename_of(rename.as_deref()),
                 records,
+                self.renamed_by(renamed.as_ref()).as_deref(),
             ));
             return false;
         }
@@ -1104,6 +1163,7 @@ impl Builder {
             first,
             second,
             rename,
+            renamed,
         }) = values.claim(name, origin)
         {
             self.diagnostics.push(Problem::field_value_collision(
@@ -1112,6 +1172,7 @@ impl Builder {
                 first,
                 second,
                 &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
             ));
         }
     }
@@ -1127,6 +1188,7 @@ impl Builder {
             first,
             second,
             rename,
+            renamed,
         }) = constructors.claim(name, origin)
         {
             self.diagnostics.push(Problem::constructor_collision(
@@ -1135,6 +1197,7 @@ impl Builder {
                 first,
                 second,
                 &self.rename_of(rename.as_deref()),
+                self.renamed_by(renamed.as_ref()).as_deref(),
             ));
         }
     }
@@ -1317,6 +1380,7 @@ impl Builder {
                     first,
                     second,
                     rename,
+                    renamed,
                 }) = record.claim(&elm_field_name, origin)
                 {
                     self.diagnostics.push(Problem::field_collision(
@@ -1325,6 +1389,7 @@ impl Builder {
                         first,
                         second,
                         &self.rename_of(rename.as_deref()),
+                        self.renamed_by(renamed.as_ref()).as_deref(),
                     ));
                 }
 
@@ -1433,6 +1498,7 @@ impl Builder {
                 first,
                 second,
                 rename,
+                renamed,
             }) = record.claim(&elm_field_name, origin)
             {
                 self.diagnostics.push(Problem::field_collision(
@@ -1441,6 +1507,7 @@ impl Builder {
                     first,
                     second,
                     &self.rename_of(rename.as_deref()),
+                    self.renamed_by(renamed.as_ref()).as_deref(),
                 ));
             } else {
                 // Two record fields of one name were reported as such; their
