@@ -36,8 +36,9 @@ type alias Binding =
   - `path`: the path template's segments.
   - `customVerb`: the text after `:` at the end of the template, if any.
   - `body`: what the request body holds.
-  - `responseBody`: the JSON name (not the proto name) of the response field
-    the answer holds, if it is not the whole response.
+  - `responseBody`: the descriptor of the top-level response field the answer
+    holds (`Notes.V1.ListNotesResponse.notes`), if it is not the whole
+    response. The answer is read as that field's JSON.
   - `query`: the query parameters, every request field outside the path and the
     body.
 
@@ -47,12 +48,19 @@ binding :
     , path : List Segment
     , customVerb : Maybe String
     , body : Body
-    , responseBody : Maybe String
+    , responseBody : Maybe Proto.Field.Descriptor
     , query : List Param
     }
     -> Binding
-binding =
+binding rule =
     Internal.Binding
+        { method = rule.method
+        , path = rule.path
+        , customVerb = rule.customVerb
+        , body = rule.body
+        , responseBody = Maybe.map Proto.Field.jsonName rule.responseBody
+        , query = rule.query
+        }
 
 
 {-| One segment of a path template.
@@ -70,9 +78,9 @@ literal =
 
 {-| A request field's value. `fieldPath` is the path of field descriptors from the
 request message down to the field, a scalar or an enum, through singular
-message fields: `[ Notes.V1.GetNoteRequest.name ]`, or
-`[ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.visibility ]`
-for `{filter.visibility}`. `template` is the variable's template
+message fields: `[ Notes.V1.GetNoteRequest.name ]` for `{name}`, or
+`[ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]` for `{note.name}`.
+`template` is the variable's template
 (`[ literal "books", wildcard ]` for `{book.name=books/*}`; `[]` for `{name}`).
 
 The value is read from the request's JSON by each field's JSON name. A variable
@@ -125,13 +133,13 @@ wholeBody =
     Internal.WholeBody
 
 
-{-| `body: "note"`: the JSON of one top-level field, by its JSON name (not its
-proto name), sent whole even when the path holds a field inside it. An unset
-field is sent as `{}`.
+{-| `body: "note"`: the JSON of one top-level message field of the request, by
+its descriptor (`Notes.V1.CreateNoteRequest.note`), sent whole even when the
+path holds a field inside it. An unset field is sent as `{}`.
 -}
-bodyField : String -> Body
-bodyField =
-    Internal.BodyField
+bodyField : Proto.Field.Descriptor -> Body
+bodyField field =
+    Internal.BodyField (Proto.Field.jsonName field)
 
 
 {-| One query parameter.
@@ -171,8 +179,8 @@ param fieldPath =
 set rather than by its value, or is a list.
 -}
 hasPresence : List Proto.Field.Descriptor -> Bool
-hasPresence field =
-    case last field of
+hasPresence fields =
+    case last fields of
         Just leaf ->
             case ( Proto.Field.cardinality leaf, Proto.Field.kind leaf, Proto.Field.oneof leaf ) of
                 ( CardinalitySingular, KindMessage _, _ ) ->
@@ -193,8 +201,8 @@ for a string or bytes, `false`, `0` for any number, and an enum's zero value's
 name.
 -}
 defaultText : List Proto.Field.Descriptor -> String
-defaultText field =
-    case Maybe.map Proto.Field.kind (last field) of
+defaultText fields =
+    case Maybe.map Proto.Field.kind (last fields) of
         Just (KindScalar ScalarString) ->
             ""
 

@@ -5,6 +5,7 @@ module Notes.V1.NotesService exposing (..)
 
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
+import Notes.V1.CreateNoteRequest
 import Notes.V1.DeleteNoteRequest
 import Notes.V1.GetNoteRequest
 import Notes.V1.ListNotesRequest
@@ -92,7 +93,7 @@ descriptorCreateNote =
                 , Proto.Http.literal "notes"
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
             , responseBody = Nothing
             , query = []
             }
@@ -116,7 +117,7 @@ descriptorUpdateNote =
                     }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
             , responseBody = Nothing
             , query =
                 [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]

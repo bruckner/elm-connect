@@ -10,6 +10,7 @@ import Notes.V1.DeleteNoteRequest
 import Notes.V1.GetNoteRequest
 import Notes.V1.ListNotesRequest
 import Notes.V1.ListNotesRequestFilter
+import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Notes.V1.ReadFileRequest
 import Notes.V1.UpdateNoteRequest
@@ -88,7 +89,7 @@ descriptorListNotes =
                 ]
             , customVerb = Nothing
             , body = Proto.Http.noBody
-            , responseBody = Just "notes"
+            , responseBody = Just Notes.V1.ListNotesResponse.notes
             , query =
                 [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
                 , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
@@ -120,7 +121,7 @@ descriptorCreateNote =
                 , Proto.Http.literal "notes"
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
             , responseBody = Nothing
             , query = []
             }
@@ -144,7 +145,7 @@ descriptorUpdateNote =
                     }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "note"
+            , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
             , responseBody = Nothing
             , query =
                 [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]

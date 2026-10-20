@@ -145,7 +145,7 @@ descriptorUpdateMessage =
                     }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "message"
+            , body = Proto.Http.bodyField Routes.V1.UpdateMessageRequest.message
             , responseBody = Nothing
             , query = []
             }
@@ -471,7 +471,7 @@ descriptorUpdateResource =
                     }
                 ]
             , customVerb = Nothing
-            , body = Proto.Http.bodyField "resource"
+            , body = Proto.Http.bodyField Routes.V1.UpdateResourceRequest.resource
             , responseBody = Nothing
             , query =
                 [ Proto.Http.param [ Routes.V1.UpdateResourceRequest.updateMask ]

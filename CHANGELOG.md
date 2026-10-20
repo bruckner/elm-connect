@@ -826,6 +826,12 @@ tag (design §8).
   variable's or parameter's JSON path, a parameter's dotted proto name,
   the text of the field's default (an enum's zero value's name from its
   descriptor) and whether a parameter is left out at it, once, when the
-  binding is built; the generator no longer computes them. Generated
-  service modules import the descriptor modules their routes name. A
-  path variable of a well-known request type is `route::path_field`.
+  binding is built; the generator no longer computes them.
+  `Proto.Http.bodyField` takes the body field's descriptor
+  (`Notes.V1.CreateNoteRequest.note`) and `Proto.Http.binding`'s
+  `responseBody` the response field's
+  (`Just Notes.V1.ListNotesResponse.notes`), instead of JSON names.
+  Generated service modules import the descriptor modules their routes
+  name. A path variable, body field or response body of a well-known
+  request or response type is `route::path_field`, `route::body_field`
+  or `route::response_body`.

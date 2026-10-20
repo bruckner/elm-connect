@@ -127,16 +127,16 @@ impl Emitter {
         let body = match &route.body {
             Body::None => self.reference((PROTO_HTTP, "noBody")),
             Body::All => self.reference((PROTO_HTTP, "wholeBody")),
-            Body::Field(field) => apply(
+            Body::Field(top) => apply(
                 self.reference((PROTO_HTTP, "bodyField")),
-                [string(field.json[0].clone())],
+                [self.field_ref(&top.descriptor)],
             ),
         };
         let response_body = maybe(
             route
                 .response_body
                 .as_ref()
-                .map(|field| string(field.json[0].clone())),
+                .map(|top| self.field_ref(&top.descriptor)),
         );
         let query: Vec<Expr> = route
             .query
@@ -171,7 +171,7 @@ impl Emitter {
             PathSegment::Variable {
                 template, fields, ..
             } => {
-                let field = self.field_refs(fields);
+                let fields = self.field_refs(fields);
                 let template: Vec<Expr> = template
                     .iter()
                     .map(|segment| self.template_segment(segment))
@@ -179,7 +179,7 @@ impl Emitter {
                 apply(
                     self.reference((PROTO_HTTP, "variable")),
                     [record([
-                        ("fieldPath", field),
+                        ("fieldPath", fields),
                         ("template", inline_list(template)),
                     ])],
                 )
@@ -201,19 +201,22 @@ impl Emitter {
     }
 
     fn query_param(&mut self, param: &QueryParam) -> Expr {
-        let field = self.field_refs(&param.fields);
-        apply(self.reference((PROTO_HTTP, "param")), [field])
+        let fields = self.field_refs(&param.fields);
+        apply(self.reference((PROTO_HTTP, "param")), [fields])
     }
 
     /// `[ Notes.V1.ListNotesRequest.filter, … ]`: the descriptors of a
     /// path of fields from the request, each from its message's
     /// descriptor module, which the module then imports.
     fn field_refs(&mut self, fields: &[FieldRef]) -> Expr {
-        let refs: Vec<Expr> = fields
-            .iter()
-            .map(|field| self.generated_value(&field.module, field.name.clone()))
-            .collect();
+        let refs: Vec<Expr> = fields.iter().map(|field| self.field_ref(field)).collect();
         inline_list(refs)
+    }
+
+    /// `Notes.V1.Note.title`: a field's descriptor, from its message's
+    /// descriptor module, which the module then imports.
+    fn field_ref(&mut self, field: &FieldRef) -> Expr {
+        self.generated_value(&field.module, field.name.clone())
     }
 }
 

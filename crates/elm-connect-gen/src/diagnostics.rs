@@ -718,14 +718,11 @@ impl Problem {
                 "`body` is `*` for every field not in the path, or the name of a top-level \
                  singular message field of the request, or left out for no body.",
             ),
-            E::ResponseBodyField { field } => (
+            E::ResponseBodyField { field, reason } => (
                 Code::RouteResponseBody,
-                format!(
-                    "{binding} has `response_body: \"{field}\"`, but the response has no such \
-                     field."
-                ),
-                "`response_body` names a top-level field of the response, or is left out for \
-                 the whole response.",
+                format!("{binding} has `response_body: \"{field}\"`, but {reason}."),
+                "`response_body` names a top-level field of the response, a generated message, \
+                 or is left out for the whole response.",
             ),
             E::QueryField { field, reason } => (
                 Code::RouteQueryField,

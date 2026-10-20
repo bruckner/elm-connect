@@ -2119,8 +2119,8 @@ default, and is `Nothing` for a number the method has no binding of
   template }` and a parameter `Proto.Http.param fieldPath`, where `fieldPath`
   is the path of `Proto.Field.Descriptor`s from the request message
   down to the field, each from its message's descriptor module (§3.1):
-  `[ Notes.V1.ListNotesRequest.filter,
-  Notes.V1.ListNotesRequestFilter.visibility ]`. The runtime derives
+  `[ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]` for
+  `{note.name}`. The runtime derives
   the rest once, when the binding is built: the JSON path from each
   field's `jsonName`, a parameter's name from the proto names joined
   with dots, the text of the default from the last field's kind (`""`
@@ -2134,10 +2134,30 @@ default, and is `Nothing` for a number the method has no binding of
   Before, the generator computed the names, JSON paths, default text
   and omission and wrote them as positional strings
   (`Proto.Http.variable [ "name" ] [ … ] ""`, `Proto.Http.param
-  "page_size" [ "pageSize" ] (Just "0")`). `responseBody` and
-  `bodyField` still take a top-level field's JSON name. A variable of a
+  "page_size" [ "pageSize" ] (Just "0")`). A variable of a
   well-known request (`{seconds}` of a `Timestamp`) is refused
   (`route::path_field`): its JSON is not an object of its fields.
+
+- **A body field and a response body are field descriptors.**
+  *(Decided, 2026-10-19.)* `Proto.Http.bodyField
+  Notes.V1.CreateNoteRequest.note` and `responseBody = Just
+  Notes.V1.ListNotesResponse.notes`, so that every field a binding
+  names is named one way. Each is one descriptor, not a path: the
+  generator accepts as `body` only a singular message field at the top
+  of the request, and as `response_body` only a field at the top of the
+  response. The runtime reads the field's `jsonName`, the key it read
+  before, so `Proto.Internal.Binding` is unchanged. A service module
+  imports the response's descriptor module when a binding names a
+  response body; descriptor modules import no service module, so no
+  cycle forms. A body field of a well-known request (`body:
+  "struct_value"` of a `google.protobuf.Value`) or a response body of
+  a well-known response is refused (`route::body_field`,
+  `route::response_body`): its fields have no descriptor module, and
+  its JSON is not an object of its fields. grpc-gateway, Vanguard and
+  Envoy accept the shape, since each reads the field from the message
+  by reflection rather than from its JSON; the runtime here reads the
+  encoded JSON by key, so the shape is refused until someone needs it.
+  Before, both took the field's JSON name as a string.
 
 - **The implicit route.** A method without a rule has no bindings, and
   is called as `POST /<package>.<Service>/<Method>` with the request as

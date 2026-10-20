@@ -378,7 +378,7 @@ pub struct Route {
     pub body: Body,
     /// The response field the body holds, if the body is not the whole
     /// response.
-    pub response_body: Option<FieldPath>,
+    pub response_body: Option<TopField>,
     /// The query parameters, in field declaration order, depth first. Empty
     /// when the body holds every field not in the path.
     pub query: Vec<QueryParam>,
@@ -458,7 +458,17 @@ pub enum Body {
     /// `*`: the request, without the fields bound by the path.
     All,
     /// One top-level message field of the request.
-    Field(FieldPath),
+    Field(TopField),
+}
+
+/// A top-level field of a request or response: a body field or a
+/// response body.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TopField {
+    /// The field, by proto and JSON name.
+    pub field: FieldPath,
+    /// The field as generated code names its descriptor.
+    pub descriptor: FieldRef,
 }
 
 /// One query parameter: a leaf field of the request.
@@ -510,10 +520,12 @@ pub enum RouteError {
         /// Why, as a phrase.
         reason: String,
     },
-    /// `response_body` names no field of the response.
+    /// `response_body` names no field of the response it can read.
     ResponseBodyField {
         /// The `response_body` value.
         field: String,
+        /// Why, as a phrase.
+        reason: String,
     },
     /// A field that would be a query parameter has no query form.
     QueryField {
@@ -618,11 +630,17 @@ pub fn resolve(
     let body = match rule.body.as_str() {
         "" => Some(Body::None),
         "*" => Some(Body::All),
-        name => match body_field(request, name) {
-            Ok(path) => Some(Body::Field(path)),
+        body => match body_field(request, body) {
+            Ok(field) => match top_field(&field, name) {
+                Some(field) => Some(Body::Field(field)),
+                None => {
+                    unnamed = true;
+                    None
+                }
+            },
             Err(reason) => {
                 errors.push(RouteError::BodyField {
-                    field: name.to_owned(),
+                    field: body.to_owned(),
                     reason,
                 });
                 None
@@ -632,14 +650,16 @@ pub fn resolve(
 
     let response_body = match rule.response_body.as_str() {
         "" => None,
-        name => match response.get_field_by_name(name) {
-            Some(field) => Some(FieldPath {
-                proto: vec![field.name().to_owned()],
-                json: vec![field.json_name().to_owned()],
-            }),
-            None => {
+        body => match response_body(response, body) {
+            Ok(field) => {
+                let field = top_field(&field, name);
+                unnamed |= field.is_none();
+                field
+            }
+            Err(reason) => {
                 errors.push(RouteError::ResponseBodyField {
-                    field: name.to_owned(),
+                    field: body.to_owned(),
+                    reason,
                 });
                 None
             }
@@ -663,7 +683,7 @@ pub fn resolve(
         .filter(|body| **body != Body::All && request_well_known.is_none())
     {
         let skip = match body {
-            Body::Field(path) => Some(path.proto[0].clone()),
+            Body::Field(top) => Some(top.field.proto[0].clone()),
             _ => None,
         };
         let mut walk = QueryWalk {
@@ -783,8 +803,15 @@ fn path_field(
     unreachable!("a path variable names at least one field")
 }
 
-/// The top-level singular message field `name` of the request.
-fn body_field(request: &MessageDescriptor, name: &str) -> Result<FieldPath, String> {
+/// The top-level singular message field `name` of the request, of a
+/// generated message.
+fn body_field(request: &MessageDescriptor, name: &str) -> Result<FieldDescriptor, String> {
+    if well_known(request).is_some() {
+        return Err(format!(
+            "the request is `{}`, whose fields have no JSON form of their own",
+            request.full_name()
+        ));
+    }
     let Some(field) = request.get_field_by_name(name) else {
         return Err(format!("`{}` has no field `{name}`", request.full_name()));
     };
@@ -792,9 +819,31 @@ fn body_field(request: &MessageDescriptor, name: &str) -> Result<FieldPath, Stri
         return Err(format!("`{name}` is repeated"));
     }
     match field.kind() {
-        Kind::Message(_) => Ok(FieldPath::default().child(&field)),
+        Kind::Message(_) => Ok(field),
         _ => Err(format!("`{name}` is not a message")),
     }
+}
+
+/// The top-level field `name` of the response, of a generated message.
+fn response_body(response: &MessageDescriptor, name: &str) -> Result<FieldDescriptor, String> {
+    if well_known(response).is_some() {
+        return Err(format!(
+            "the response is `{}`, whose fields have no JSON form of their own",
+            response.full_name()
+        ));
+    }
+    response
+        .get_field_by_name(name)
+        .ok_or_else(|| "the response has no such field".to_owned())
+}
+
+/// `field`, a top-level field, with its descriptor as `name` names it, or
+/// `None` if it has no name.
+fn top_field(field: &FieldDescriptor, name: Namer) -> Option<TopField> {
+    Some(TopField {
+        field: FieldPath::default().child(field),
+        descriptor: name(field)?,
+    })
 }
 
 /// The message a query walk would expand `field` into: a singular,

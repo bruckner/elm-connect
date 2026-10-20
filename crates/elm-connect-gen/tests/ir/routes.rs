@@ -2,7 +2,9 @@
 //! query parameters, and the problems reported instead.
 
 use elm_connect_gen::ir::{HttpVerb, Method, ModuleName, Package};
-use elm_connect_gen::route::{Body, FieldPath, FieldRef, PathSegment, QueryParam, Route, Segment};
+use elm_connect_gen::route::{
+    Body, FieldPath, FieldRef, PathSegment, QueryParam, Route, Segment, TopField,
+};
 
 use crate::common::{package, problems, render};
 
@@ -183,8 +185,20 @@ fn bodies_and_response_bodies() {
     let package = package(MESSAGES);
     let update = &method(&package, "UpdateMessage").routes[0];
     assert_eq!(update.verb, HttpVerb::Patch);
-    assert_eq!(update.body, Body::Field(path("message", "message")));
-    assert_eq!(update.response_body, Some(path("lines", "lines")));
+    assert_eq!(
+        update.body,
+        Body::Field(TopField {
+            field: path("message", "message"),
+            descriptor: field_ref("Messages.V1.UpdateMessageRequest.message"),
+        })
+    );
+    assert_eq!(
+        update.response_body,
+        Some(TopField {
+            field: path("lines", "lines"),
+            descriptor: field_ref("Messages.V1.Message.lines"),
+        })
+    );
     let PathSegment::Variable {
         field, template, ..
     } = &update.segments[1]
@@ -601,4 +615,41 @@ service S {
         .map(|problem| problem.code().to_string())
         .collect();
     assert_eq!(codes, ["naming::invalid_field"]);
+}
+
+#[test]
+fn a_body_or_response_body_of_a_well_known_message_is_refused() {
+    // Its fields have no descriptor module to name them, and its JSON is
+    // not an object of its fields.
+    let source = r#"syntax = "proto3";
+package t.v1;
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+message Thing { string name = 1; }
+service S {
+  rpc Put(google.protobuf.Value) returns (Thing) {
+    option (google.api.http) = { post: "/v1" body: "struct_value" };
+  }
+  rpc Get(Thing) returns (google.protobuf.Timestamp) {
+    option (google.api.http) = { get: "/v1" response_body: "seconds" };
+  }
+}
+"#;
+    let files = [("t.proto", source)];
+    let messages: Vec<String> = problems(&files, &["t.proto"])
+        .iter()
+        .map(|problem| format!("{}: {}", problem.code(), problem.message()))
+        .collect();
+    assert_eq!(messages.len(), 2, "{messages:#?}");
+    assert!(
+        messages[0].starts_with("route::body_field: ")
+            && messages[0].contains("the request is `google.protobuf.Value`"),
+        "{messages:#?}"
+    );
+    assert!(
+        messages[1].starts_with("route::response_body: ")
+            && messages[1].contains("the response is `google.protobuf.Timestamp`"),
+        "{messages:#?}"
+    );
 }
