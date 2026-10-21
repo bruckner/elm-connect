@@ -19,7 +19,7 @@ repository = "https://github.com/bruckner/elm-connect"
 [workspace.dependencies]
 elm-connect-gen = { path = "crates/elm-connect-gen", version = "0.1.0" }
 clap = { version = "4.6", features = ["derive"] }
-miette = { version = "7.6", features = ["fancy"] }
+miette = "7.6"
 prost = "0.14"
 prost-reflect = "0.16"
 prost-types = "0.14"

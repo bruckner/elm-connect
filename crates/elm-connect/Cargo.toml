@@ -13,6 +13,7 @@ exclude = ["tests/"]
 [dependencies]
 clap.workspace = true
 elm-connect-gen.workspace = true
-miette.workspace = true
+# Its `main` reports errors through miette's terminal handler.
+miette = { workspace = true, features = ["fancy"] }
 protox.workspace = true
 similar.workspace = true

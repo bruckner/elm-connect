@@ -1041,3 +1041,11 @@ tag (design §8).
   each dated, with the alternatives and the reasons; the design's open
   questions (§9) and its out-of-scope list (§10) move there and to the
   roadmap.
+- `elm-connect-gen`'s documented API is the facade its two binaries use:
+  `generate`, `generate_with_imports`, `Options` and its option types,
+  `Generated`, `GeneratedFile`, `Diagnostics`, `Problem`, `Code`,
+  `ModuleName`, the `diagnostics` and `googleapis` modules, the version
+  constants, and a re-export of `prost_reflect`; the pipeline modules are
+  hidden from its documentation, and missing docs warn. The library no
+  longer turns on miette's `fancy` feature (backtraces); only the CLI
+  does.

@@ -11,7 +11,11 @@ repository.workspace = true
 exclude = ["tests/"]
 
 [dependencies]
-miette.workspace = true
+# The graphical handler, for diagnostics::render_narrow. Backtraces
+# (`fancy`) are the CLI's business. miette's `fancy-base` does not build
+# alone, and `fancy-no-syscall` would turn off the CLI's terminal
+# detection once cargo unifies the features.
+miette = { workspace = true, features = ["fancy-no-backtrace"] }
 prost.workspace = true
 # text-format prints option values in declaration lines (ir::declaration).
 prost-reflect = { workspace = true, features = ["text-format"] }
