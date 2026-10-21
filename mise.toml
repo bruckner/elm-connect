@@ -25,6 +25,10 @@ just = "1.58.0"
 # and buf generates its stubs and the example's Elm.
 go = "1.27.3"
 buf = "1.73.0"
+# The live suite's third transcoder, Envoy's gRPC-JSON transcoder: func-e
+# downloads the Envoy release the Justfile's `envoy_version` names
+# (conformance/live/envoy/, docs/envoy.md).
+"github:tetratelabs/func-e" = "1.6.0"
 
 [settings]
 # mise.lock pins each tool's exact version and, where the backend

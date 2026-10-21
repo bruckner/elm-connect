@@ -47,10 +47,11 @@ jobs:
 
   live:
     # Design section 7, live verification: the runtime against the example
-    # server over Connect and transcoding, the route fixtures under Vanguard
-    # and grpc-gateway, the Connect conformance suite (connectconformance
-    # from its GitHub release), and the browser example's build, which
-    # compiles the README's excerpts. buf generates from vendored protos and
+    # server over Connect and transcoding, the route fixtures under Vanguard,
+    # grpc-gateway and Envoy (func-e, from mise.toml, fetches Envoy), the
+    # Connect conformance suite (connectconformance from its GitHub
+    # release), and the browser example's build, which compiles the
+    # README's excerpts. buf generates from vendored protos and
     # fetches nothing; the protoc plugins are Go tools, cached with Go's
     # build cache.
     # Each cache is keyed on what pins its contents, so a change to one pin
@@ -89,6 +90,12 @@ jobs:
           # fetch-conformance.sh holds the version and the SHA-256s.
           path: conformance/live/build/connectconformance-*
           key: live-connectconformance-${{ runner.os }}-${{ hashFiles('conformance/live/fetch-conformance.sh') }}
+      - name: Cache Envoy
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # func-e installs the release envoy-version names here.
+          path: ~/.local/share/func-e
+          key: live-envoy-${{ runner.os }}-${{ hashFiles('conformance/live/envoy/envoy-version') }}
       - run: just live
 
   elm-compat:
