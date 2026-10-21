@@ -18,8 +18,7 @@ type, its builder and its readers.
 
 
 {-| One value of an enum. It is opaque, built by [`descriptor`](#descriptor)
-and read by the functions below, so that a later release can say more about a
-value without breaking code that builds or reads one.
+and read by the functions below.
 -}
 type Descriptor
     = Descriptor

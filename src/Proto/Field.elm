@@ -40,9 +40,7 @@ import Proto.Enum
 
 
 {-| A field's descriptor. It is opaque, built by [`descriptor`](#descriptor)
-and its modifiers and read by the functions below, so that a later release can
-say more about a field, as a new modifier and a new reader, without breaking
-code that builds or reads one.
+and its modifiers and read by the functions below.
 -}
 type Descriptor
     = Descriptor

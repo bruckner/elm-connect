@@ -40,7 +40,11 @@ import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 
 
-{-| A packed message and its type URL.
+{-| A packed message and its type URL. It is opaque: build one with
+[`pack`](#pack), or decode one with [`Proto.Json.any`](Proto-Json#any), and
+read it with the functions here. The package site and
+compiler errors may show it as `Proto.Internal.Any.Any`, its name inside the
+package.
 -}
 type alias Any =
     Internal.Any

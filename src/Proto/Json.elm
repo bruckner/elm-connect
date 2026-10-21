@@ -554,8 +554,7 @@ repeatedField encode values =
 
 
 {-| A map field: `Nothing` when empty, else a JSON object, keyed as
-`Json.Encode.dict` keys it. A key of `__proto__` is kept (see
-[`objectOfFields`](#objectOfFields)).
+`Json.Encode.dict` keys it. A key of `__proto__` is kept as an ordinary key.
 -}
 dictField : (k -> String) -> (v -> Value) -> Dict.Dict k v -> Maybe Value
 dictField key encode entries =
@@ -1476,7 +1475,7 @@ int64AsInt =
 
 
 {-| Decode an unsigned 64-bit integer (`uint64`, `fixed64`) as its decimal
-string: the forms [`int64`](#int64) accepts, within 0 to
+string: the forms [`int64`](#int64) accepts, within 0 to 18446744073709551615.
 -}
 uint64 : Decoder String
 uint64 =
