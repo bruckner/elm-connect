@@ -19,6 +19,13 @@ same generated code:
 The generator is written in Rust. The runtime is an Elm package,
 `bruckner/elm-connect`. Both live in this repository.
 
+The runtime is written for the browser and runs wherever elm/http
+does: a headless program (`Platform.worker` under Node, given an
+`XMLHttpRequest` of the shape the live suite's `xhr.mjs` provides)
+calls the same way. So the client sits between connect-web, the
+browser transport, and connect-node in what it can be asked to do, and
+a knob only the Node clients have can still earn its place (§5.1).
+
 ### 1.1 Why it exists
 
 The Elm ecosystem has one maintained protobuf stack
@@ -2072,6 +2079,7 @@ checkConfig : Config -> List String       -- the config's problems, [] when none
 -- Rpc.Transport: opaque
 connect, connectGet, transcode : Transport
 withMaxGetUrl : Int -> Transport -> Transport
+withReadMaxBytes, withWriteMaxBytes : Int -> Transport -> Transport
 name : Transport -> String                -- "connect" | "transcode"
 
 -- Rpc.Retry: opaque
@@ -2131,6 +2139,35 @@ it.
   `withMaxGetUrl n` POSTs a call whose GET URL would be longer than `n`
   characters, for servers and proxies that cap URL length. `name` gives
   the protocol for traces and logs.
+- `withReadMaxBytes n` refuses a successful answer whose body is longer
+  than `n` bytes of UTF-8, before decoding it, on either transport:
+  connect-go's `WithReadMaxBytes` (4 MiB by default, 0 for none) and
+  connect-node's `readMaxBytes` (none by default); connect-web, the
+  browser transport, has no such knob. No limit by default here, as in
+  connect-node: the browser has downloaded the body before the limit
+  applies, so a default would surprise without saving bandwidth. It is
+  a protocol-level knob, so it is on `Transport`, not in `Config`. The call fails with
+  `NoAnswer (ResponseTooLarge { limit, size })` (§5.4). The size is the body as
+  the browser decoded it, counted back into UTF-8 by a kernel loop
+  (`String.foldl`) rather than a recursion, so a long body cannot
+  exhaust the stack; `String.length` would count UTF-16 units. The
+  browser has received the body by then, so the limit bounds what is
+  decoded and held, not what is downloaded. An error answer is read
+  whatever its size, for its status. A limit below 1 refuses every body
+  with anything in it, and `checkConfig` reports it. *(Decided,
+  2026-10-20.)*
+- `withWriteMaxBytes n` is its twin for the request: connect-go's
+  `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
+  default. A call whose request message, as the JSON a POST sends (for
+  a GET, the same JSON before it is percent-encoded into the query; over
+  transcoding, the whole message whichever fields the binding puts in
+  the path, query or body), is longer than `n` bytes of UTF-8 is not
+  sent: every way of sending fails it with
+  `NoAnswer (RequestTooLarge { limit, size })`, checked beside the bad
+  URL and the invalid header, and never retried, since nothing was sent
+  and nothing would change. The size is the call's message, not a
+  request rewritten for `taskFromRequest`. A limit below 1 refuses
+  every call, and `checkConfig` reports it. *(Decided, 2026-10-20.)*
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
   number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
@@ -2612,10 +2649,12 @@ type Error
     = RpcStatus StatusError Response    -- the server stated an RPC status
     | HttpStatus Response               -- it answered with a failure and stated none
     | BadResponse String Response       -- it answered 2xx and the body did not decode (the problem)
-    | NoAnswer Reason                   -- nothing came back, or nothing was sent
+    | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
 
 type Reason                             -- frozen (§8.3)
     = Timeout | NetworkError | BadUrl String | InvalidHeader String
+    | RequestTooLarge { limit : Int, size : Int }
+    | ResponseTooLarge { limit : Int, size : Int }
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
@@ -2728,11 +2767,14 @@ two types shared one module, the helpers for `Code` prefixed.)
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `InvalidHeader` `Internal`. This settles whether a client timeout reads as
+  `InvalidHeader` `Internal`, `RequestTooLarge` and `ResponseTooLarge`
+  `ResourceExhausted`. This settles whether a client timeout reads as
   `DeadlineExceeded`: through `code` it does, while the constructor
   still says no answer came. `message` gives a description for those
   (`timeout`, `network error`, `bad URL: <url>`, `invalid header
-  "<name>"`, `bad response body: <problem>`), and `toString` is the code and the message for all of
+  "<name>"`, connect-es's `message size <size> is larger than
+  configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
+  `bad response body: <problem>`), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
   the whole response, so the message keeps the first 300 characters of
   it and `…`; the whole problem stays in the error. A bad URL is
@@ -2742,14 +2784,30 @@ two types shared one module, the helpers for `Code` prefixed.)
   URL stays in the error. *(Decided, 2026-10-15; the URL's printing
   2026-10-16.)*
 - `Reason` and `StatusError` are frozen (§8.3): every failure a browser
-  request can have before an answer is one of the reasons, and a later
-  kind of failure that arrives with an answer (a malformed stream
-  envelope, a failed decompression) is a `BadResponse`, whose problem
-  says what. A bad URL and an invalid header are never retried,
+  request can have before an answer is read is one of the reasons, and
+  a later kind of failure found in an answer that was read (a malformed
+  stream envelope, a failed decompression) is a `BadResponse`, whose
+  problem says what. A bad URL, an invalid header and a request over
+  the write limit are never retried,
   whatever the policy's codes: nothing was sent, and nothing would
   change. `InvalidHeader` has its home here rather than in a
   constructor of its own beside `NoAnswer`, since it is one more reason
   nothing was sent (§5.1). *(Decided, 2026-10-16.)*
+- `ResponseTooLarge { limit, size }` is the answer over the receive limit
+  (§5.1): it arrived, but was dropped before it was decoded, so it is a
+  reason no answer was read and carries no `Response`; keeping one would
+  keep the body the limit is there to drop. It was added before 1.0
+  because `Reason` freezes then. connect-go and connect-node have the
+  knob and connect-web does not, and the conformance suite tests it
+  only for servers (§7); it is kept because an Elm program is not only
+  a browser one (§1), and because server streaming will check each
+  message of a stream against the same limit, as connect-go's does.
+  Its code is `ResourceExhausted` and its message connect-es's.
+  It is retried only when a policy lists `ResourceExhausted`.
+  `RequestTooLarge { limit, size }` is the request over the send limit,
+  never sent. The two are distinct constructors, as connect-es's
+  messages are distinct, so a caller can tell a request it must shrink
+  from an answer it asked not to read. *(Decided, 2026-10-20.)*
 - The shape until 2026-10-16 was `Status { code, message, details,
   source } Response | Http Response | Transport Http.Error | Canceled`
   (2026-10-15). Review found three of the four names clashing:
@@ -3107,6 +3165,17 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `Transport Timeout`, as a Connect client gives its own deadline.
+- The receive limit is declared (`supportsMessageReceiveLimit: true`,
+  2026-10-20): the wrapper applies a request's `message_receive_limit`
+  with `withReadMaxBytes` (0 is no limit) and reports `ResponseTooLarge` as
+  `resource_exhausted`. v1.0.6 has no client-mode case that relies on
+  it (its one such suite, Server Message Size, tests servers over the
+  proto codec), so the count stays 40; the live suite's `readMaxBytes`
+  cases in `cases/notes.json` run the knob against the example server
+  over Connect and transcoding. The suite has no client feature for the
+  send limit; the `writeMaxBytes` cases there show a refused
+  call sends nothing, and a GET's limit counts the JSON before
+  it is percent-encoded.
 Workstream 3, built 2026-10-15: the example server also serves the
 route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
 the request Vanguard decoded, and `conformance/live/routes.mjs` sends
@@ -3384,9 +3453,11 @@ Within a major version:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
   proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and
   `KindMessage` the message's full name, §3.9), `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
-  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` and `Source` (a
-  failure before an answer is one of the reasons, and a new kind found
-  in an answer is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
+  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
+  `NetworkError`, `BadUrl`, `InvalidHeader`, `RequestTooLarge`,
+  `ResponseTooLarge`) and `Source` (a
+  failure before an answer is read is one of the reasons, and a new kind
+  found in an answer that was read is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
   gains waits for a major, and until then the generator drops it.
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may

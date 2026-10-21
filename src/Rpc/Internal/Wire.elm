@@ -40,7 +40,7 @@ request cfg c =
         Connect options ->
             connectRequest options cfg c
 
-        Transcode ->
+        Transcode _ ->
             case route cfg.transport c of
                 Bound _ rule ->
                     transcodeRequest rule cfg c
@@ -49,7 +49,7 @@ request cfg c =
                     connectRequest { get = False, maxGetUrl = Nothing } cfg c
 
 
-connectRequest : { get : Bool, maxGetUrl : Maybe Int } -> Settings c -> Call req res -> Request
+connectRequest : { o | get : Bool, maxGetUrl : Maybe Int } -> Settings c -> Call req res -> Request
 connectRequest options cfg ((Call fields) as c) =
     let
         url =

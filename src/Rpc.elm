@@ -73,6 +73,7 @@ application can rewrite a request before sending it with
 
 import Dict exposing (Dict)
 import Http
+import Json.Encode
 import Proto.Method exposing (Method)
 import Rpc.Call
 import Rpc.Code exposing (Code)
@@ -200,9 +201,10 @@ report what it finds there:
         problems ->
             Err (String.join "; " problems)
 
-Today it finds a `baseUrl` holding a query or a fragment, and headers a
-request cannot carry, each by its name (a value is left out, since it may be
-a credential). A call sent with such a config still fails with
+Today it finds a `baseUrl` holding a query or a fragment, headers a request
+cannot carry, each by its name (a value is left out, since it may be a
+credential), and a [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) or
+[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes) limit below 1. A call sent with such a config still fails with
 `NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
 before any call is made. Later releases may find more, so the result is read
 as a list rather than matched.
@@ -210,7 +212,7 @@ as a list rather than matched.
 -}
 checkConfig : Config -> List String
 checkConfig cfg =
-    Internal.configProblems cfg.baseUrl cfg.headers
+    Internal.configProblems cfg.transport cfg.baseUrl cfg.headers
 
 
 
@@ -222,8 +224,10 @@ checkConfig cfg =
     Notes.getNote { name = "notes/42" }
         |> Rpc.task config
 
-A call whose URL or headers cannot be sent (see [`Config`](#Config)) is not:
-it fails with `NoAnswer`, and nothing reaches elm/http.
+A call whose URL or headers cannot be sent (see [`Config`](#Config)), or whose
+request is over the transport's
+[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes), is not: it fails with
+`NoAnswer`, and nothing reaches elm/http.
 
 -}
 task : Config -> Call req res -> Task Error res
@@ -245,7 +249,7 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
         sent =
             request cfg c
     in
-    if cfg.retry == Nothing && unsendable cfg sent == Nothing then
+    if cfg.retry == Nothing && unsendable cfg c sent == Nothing then
         Internal.send (response cfg c) toMsg fields.tracker sent
 
     else
@@ -394,7 +398,10 @@ request =
 Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
 body reading as `{}`, and the response decoded from the field the binding's
 `responseBody` names when it names one. Any other answer is an error, read as
-[`Source`](Rpc-Error#Source) describes, whatever the transport.
+[`Source`](Rpc-Error#Source) describes, whatever the transport. A successful
+answer longer than the transport's
+[`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) is not decoded: it is
+`NoAnswer (ResponseTooLarge { limit, size })`.
 
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
@@ -458,7 +465,7 @@ taskFromRequest cfg c sent =
 -}
 attempt : Config -> Call req res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
 attempt cfg c sent =
-    case unsendable cfg sent of
+    case unsendable cfg c sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
@@ -469,16 +476,23 @@ attempt cfg c sent =
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
 fragment, or a header a browser refuses, on which XHR's `setRequestHeader`
-throws outside elm/http's handler and stops the program for good.
+throws outside elm/http's handler and stops the program for good; or a request
+message over the transport's write limit. The message is the call's, as JSON,
+whatever a rewritten request carries.
 -}
-unsendable : Config -> Request -> Maybe Error
-unsendable cfg sent =
+unsendable : Config -> Call req res -> Request -> Maybe Error
+unsendable cfg c sent =
     if Internal.badBaseUrl cfg.baseUrl then
         Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
 
     else
-        Internal.invalidHeader sent.headers
-            |> Maybe.map (Rpc.Error.NoAnswer << Rpc.Error.InvalidHeader)
+        case Internal.invalidHeader sent.headers of
+            Just name ->
+                Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
+
+            Nothing ->
+                Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
+                    |> Maybe.map Rpc.Error.NoAnswer
 
 
 {-| The code a failed attempt is retried by, or `Nothing` when trying again

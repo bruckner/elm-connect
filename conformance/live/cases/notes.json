@@ -797,6 +797,124 @@
     }
   },
   {
+    "name": "connect readMaxBytes refuses a larger answer",
+    "note": "A 200 answer longer than the limit is dropped before decoding: no answer is read, and its code is resource_exhausted. The trace still has the answer's status.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "readMaxBytes": 100
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": {
+          "$match": "^ResponseTooLarge \\d+ 100$"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "resource_exhausted",
+        "attempts": 1
+      }
+    }
+  },
+  {
+    "name": "connect readMaxBytes reads an error answer whatever its size",
+    "note": "The limit applies to a successful answer; an error answer is read for the status it states.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/missing"
+      },
+      "config": {
+        "readMaxBytes": 1
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "source": "ConnectBody"
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "not_found"
+      }
+    }
+  },
+  {
+    "name": "connect writeMaxBytes refuses a larger request",
+    "note": "A request message whose JSON is longer than the limit is never sent, and not retried though the policy lists resource_exhausted: nothing would change.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "writeMaxBytes": 10,
+        "retry": {
+          "attempts": 3,
+          "codes": [
+            "resource_exhausted"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "RequestTooLarge 24 10"
+      },
+      "trace": {
+        "httpStatus": null,
+        "code": "resource_exhausted",
+        "attempts": 0
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "connect useGet writeMaxBytes measures the JSON before the query",
+    "note": "Over GET the JSON is measured before it is percent-encoded into the query: {\"name\":\"notes/welcome\"} is 24 bytes, its encoding longer, and a limit of 24 sends it.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "useGet": true,
+        "writeMaxBytes": 24
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok",
+        "attempts": 1,
+        "request": {
+          "method": "GET"
+        }
+      }
+    }
+  },
+  {
     "name": "connect network error",
     "call": {
       "service": "notes.v1.NotesService",
@@ -1200,6 +1318,66 @@
           "body": null
         }
       }
+    }
+  },
+  {
+    "name": "transcode readMaxBytes refuses a larger answer",
+    "note": "As over Connect: a 2xx answer longer than the limit is dropped before decoding.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "readMaxBytes": 100
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": {
+          "$match": "^ResponseTooLarge \\d+ 100$"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "resource_exhausted",
+        "attempts": 1
+      }
+    }
+  },
+  {
+    "name": "transcode writeMaxBytes refuses a larger request",
+    "note": "As over Connect: the whole request message is measured, though the binding puts it in the path.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "writeMaxBytes": 10,
+        "retry": {
+          "attempts": 3,
+          "codes": [
+            "resource_exhausted"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "RequestTooLarge 24 10"
+      },
+      "trace": {
+        "httpStatus": null,
+        "code": "resource_exhausted",
+        "attempts": 0
+      },
+      "wire": []
     }
   },
   {

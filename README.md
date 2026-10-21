@@ -257,6 +257,20 @@ header value with a newline, where the application builds it rather
 than at the first call. A header a browser would refuse (a name that is
 not an HTTP token, a value with NUL, CR, LF or a character above
 U+00FF) is never sent: the call fails with `InvalidHeader`.
+
+`Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
+`n` bytes of UTF-8, on either transport, as connect-go's
+`WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
+dropped before decoding and the call fails with
+`NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
+an error answer is still read for its status. `withWriteMaxBytes n` caps
+the request message's JSON the same way, as connect-go's
+`WithSendMaxBytes` and connect-node's `writeMaxBytes` do: a call over it is
+never sent, and fails with `NoAnswer (RequestTooLarge { limit, size })`.
+Neither has a limit by default, as in connect-node; connect-go reads at
+most 4 MiB unless told otherwise, and connect-web, the browser
+transport, has no such knob.
+
 Errors are one type for both transports, `Rpc.Error`, defined in
 `Rpc.Error` with its readers. Every error has a code and a message,
 `Rpc.Error.code error` and `Rpc.Error.message error`, and is one of:
@@ -270,9 +284,11 @@ Errors are one type for both transports, `Rpc.Error`, defined in
 - `BadResponse`: the server answered with success, but the body did not
   decode as the response, as when the schema drifted between client
   and server; code `Internal`, the message quoting elm/json's problem.
-- `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
-  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`), a `BadUrl` or
-  an `InvalidHeader` (both `Internal`, and never sent).
+- `NoAnswer`: nothing came back, nothing was sent, or the answer was
+  refused unread: a `Timeout` (`DeadlineExceeded`), a `NetworkError`
+  (`Unavailable`), a `BadUrl` or an `InvalidHeader` (both `Internal`,
+  and never sent), or `RequestTooLarge` or `ResponseTooLarge`
+  (`ResourceExhausted`, over the send or the receive limit).
 
 The first three keep the answer itself (URL, status, headers and body),
 for errors in a shape the runtime does not read and bodies that do not

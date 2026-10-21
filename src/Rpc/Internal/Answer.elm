@@ -35,16 +35,16 @@ toResult transport ((Call fields) as c) answer =
             case ( transport, route transport c ) of
                 ( Connect _, _ ) ->
                     if metadata.statusCode == 200 then
-                        decodeBody (Method.responseDecoder fields.method) metadata raw raw
+                        within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
 
                     else
                         Err (failure metadata raw)
 
-                ( Transcode, Bound _ rule ) ->
-                    decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw)
+                ( Transcode _, Bound _ rule ) ->
+                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
 
-                ( Transcode, Implicit ) ->
-                    decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw)
+                ( Transcode _, Implicit ) ->
+                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -57,6 +57,25 @@ toResult transport ((Call fields) as c) answer =
 
         Http.NetworkError_ ->
             Err (Error.NoAnswer Error.NetworkError)
+
+
+{-| A successful answer's body read by `decode`, unless it is longer than the
+transport reads: then it is dropped unread, and the call fails with
+`ResponseTooLarge`.
+-}
+within : Transport -> String -> (() -> Result Error res) -> Result Error res
+within transport raw decode =
+    case Rpc.Internal.Transport.readMaxBytes transport of
+        Just limit ->
+            case Internal.overLimit limit raw of
+                Just size ->
+                    Err (Error.NoAnswer (Error.ResponseTooLarge { limit = limit, size = size }))
+
+                Nothing ->
+                    decode ()
+
+        Nothing ->
+            decode ()
 
 
 orEmptyObject : String -> String
