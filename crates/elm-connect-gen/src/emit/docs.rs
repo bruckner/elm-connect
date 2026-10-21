@@ -350,8 +350,8 @@ pub(super) fn enum_descriptor(enumeration: &Enum, described: &str) -> String {
 
 /// The doc of a method's call: the proto's part, then its declaration,
 /// its Connect path and its HTTP bindings as its rule writes them, and
-/// its `request` and `response` types and its descriptor, as links.
-pub(super) fn method(service: &str, method: &Method, request: &str, response: &str) -> String {
+/// its descriptor, as a link.
+pub(super) fn method(service: &str, method: &Method) -> String {
     let routes = match &method.http {
         Some(rule) => {
             let bindings = std::iter::once(rule)
@@ -367,7 +367,7 @@ pub(super) fn method(service: &str, method: &Method, request: &str, response: &s
         None => "Transcode: no HTTP rule, follows the Connect path.".to_owned(),
     };
     let head = format!(
-        "{}.\nConnect: {}.\n{routes}\nFrom {request} to {response}, described by {}.",
+        "{}.\nConnect: {}.\n{routes}\nDescribed by {}.",
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
         local(&method.descriptor_name()),

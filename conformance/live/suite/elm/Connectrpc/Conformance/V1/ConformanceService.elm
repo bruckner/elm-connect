@@ -48,7 +48,7 @@ The returned payload should only contain the request info.
 `rpc Unary(UnaryRequest) returns (UnaryResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`Connectrpc.Conformance.V1.UnaryRequest`](Connectrpc-Conformance-V1#UnaryRequest) to [`Connectrpc.Conformance.V1.UnaryResponse`](Connectrpc-Conformance-V1#UnaryResponse), described by [`descriptorUnary`](#descriptorUnary).
+Described by [`descriptorUnary`](#descriptorUnary).
 
 -}
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
@@ -66,7 +66,7 @@ return an unimplemented error when invoked.
 `rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`Connectrpc.Conformance.V1.UnimplementedRequest`](Connectrpc-Conformance-V1#UnimplementedRequest) to [`Connectrpc.Conformance.V1.UnimplementedResponse`](Connectrpc-Conformance-V1#UnimplementedResponse), described by [`descriptorUnimplemented`](#descriptorUnimplemented).
+Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
 
 -}
 unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
@@ -85,7 +85,7 @@ leverage query parameters to send data.
 `rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`Connectrpc.Conformance.V1.IdempotentUnaryRequest`](Connectrpc-Conformance-V1#IdempotentUnaryRequest) to [`Connectrpc.Conformance.V1.IdempotentUnaryResponse`](Connectrpc-Conformance-V1#IdempotentUnaryResponse), described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
+Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
 
 -}
 idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse

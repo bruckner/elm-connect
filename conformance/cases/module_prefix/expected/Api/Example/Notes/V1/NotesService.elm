@@ -28,7 +28,7 @@ elmConnectVersion_ =
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
-From [`Api.Example.Notes.V1.GetNoteRequest`](Api-Example-Notes-V1#GetNoteRequest) to [`Api.Example.Notes.V1.Note`](Api-Example-Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
+Described by [`descriptorGetNote`](#descriptorGetNote).
 -}
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =

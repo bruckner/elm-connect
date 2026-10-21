@@ -26,7 +26,7 @@ elmConnectVersion_ =
 {-| `rpc GetNote(URLPath) returns (URLPath)`.
 Connect: `POST /first.v1.Fetcher/GetNote`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`First.V1.URLPath`](First-V1#URLPath) to [`First.V1.URLPath`](First-V1#URLPath), described by [`descriptorGetNote`](#descriptorGetNote).
+Described by [`descriptorGetNote`](#descriptorGetNote).
 -}
 getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 getNote =
@@ -40,7 +40,7 @@ getNote =
 {-| `rpc HTTPGet(URLPath) returns (URLPath)`.
 Connect: `POST /first.v1.Fetcher/HTTPGet`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`First.V1.URLPath`](First-V1#URLPath) to [`First.V1.URLPath`](First-V1#URLPath), described by [`descriptorHttpGet`](#descriptorHttpGet).
+Described by [`descriptorHttpGet`](#descriptorHttpGet).
 -}
 httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 httpGet =
@@ -54,7 +54,7 @@ httpGet =
 {-| `rpc _Ping(URLPath) returns (URLPath)`.
 Connect: `POST /first.v1.Fetcher/_Ping`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`First.V1.URLPath`](First-V1#URLPath) to [`First.V1.URLPath`](First-V1#URLPath), described by [`descriptorPing`](#descriptorPing).
+Described by [`descriptorPing`](#descriptorPing).
 -}
 ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 ping =
@@ -68,7 +68,7 @@ ping =
 {-| `rpc Type(URLPath) returns (URLPath)`.
 Connect: `POST /first.v1.Fetcher/Type`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`First.V1.URLPath`](First-V1#URLPath) to [`First.V1.URLPath`](First-V1#URLPath), described by [`descriptorType_`](#descriptorType_).
+Described by [`descriptorType_`](#descriptorType_).
 -}
 type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 type_ =

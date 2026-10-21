@@ -12,7 +12,7 @@ use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
 };
-use crate::ir::{Idempotency, Method, TypeRef, WellKnown};
+use crate::ir::{Idempotency, Method, TypeRef};
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
@@ -84,12 +84,7 @@ impl Emitter {
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(
-                service,
-                method,
-                &type_link(&method.input),
-                &type_link(&method.output),
-            )),
+            doc: Some(docs::method(service, method)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -241,26 +236,6 @@ fn method_shape(ty: &TypeRef, holding: Holding) -> ValueShape<'_> {
         unreachable!("a method type that is not a message")
     }
     value_shape(ty, holding)
-}
-
-/// A method type in its call's doc: a generated message linked to its
-/// type, with the name the call's annotation gives it
-/// (`` [`Notes.V1.Note`](Notes-V1#Note) ``); `google.protobuf.Any` linked
-/// to the runtime's type; another well-known type by its proto name,
-/// since its Elm type is not one of its own.
-fn type_link(ty: &TypeRef) -> String {
-    match ty {
-        TypeRef::Message(name) => docs::link(
-            &format!("{}.{}", name.module, name.name),
-            &format!("{}#{}", docs::page(&name.module), name.name),
-        ),
-        TypeRef::WellKnown(WellKnown::Any) => docs::runtime("Proto.Any", "Any"),
-        TypeRef::WellKnown(known) => docs::code(known.proto_full_name()),
-        // A method's types are messages (`ir::Method::input`).
-        TypeRef::Scalar(_) | TypeRef::Enum { .. } => {
-            unreachable!("a method type that is not a message")
-        }
-    }
 }
 
 /// A method type's full proto name, such as `notes.v1.Note`.

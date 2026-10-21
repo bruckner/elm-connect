@@ -2208,8 +2208,9 @@ mod tests {
         "`rpc Get(A) returns (B)`.\n\
          Connect: `POST /s.v1.S/Get`.\n\
          Transcode: no HTTP rule, follows the Connect path.\n\
-         From [`S.V1.A`](S-V1#A) to [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
-         bruckner/elm-connect/latest/Proto-Any#Any), described by [`descriptorGet`](#descriptorGet).",
+         Described by [`descriptorGet`](#descriptorGet).",
+        "Holds a [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
+         bruckner/elm-connect/latest/Proto-Any#Any).",
         "[`message s.v1.M`](S-V1-M#descriptor)\n\n\
          \x20 - [`descriptor`](S-V1-M#descriptor_): The a. Required.\n\
          \x20 - [`type_`](S-V1-M#type_)\n\

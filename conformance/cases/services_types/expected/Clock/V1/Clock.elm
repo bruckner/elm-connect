@@ -33,7 +33,7 @@ elmConnectVersion_ =
 {-| `rpc Now(google.protobuf.Empty) returns (google.protobuf.Timestamp)`.
 Connect: `POST /clock.v1.Clock/Now`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.Empty` to `google.protobuf.Timestamp`, described by [`descriptorNow`](#descriptorNow).
+Described by [`descriptorNow`](#descriptorNow).
 -}
 now : () -> Rpc.Call () Time.Posix
 now =
@@ -47,7 +47,7 @@ now =
 {-| `rpc Sleep(google.protobuf.Duration) returns (google.protobuf.Empty)`.
 Connect: `POST /clock.v1.Clock/Sleep`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.Duration` to `google.protobuf.Empty`, described by [`descriptorSleep`](#descriptorSleep).
+Described by [`descriptorSleep`](#descriptorSleep).
 -}
 sleep : Duration -> Rpc.Call Duration ()
 sleep =
@@ -61,7 +61,7 @@ sleep =
 {-| `rpc Mask(google.protobuf.FieldMask) returns (google.protobuf.Struct)`.
 Connect: `POST /clock.v1.Clock/Mask`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.FieldMask` to `google.protobuf.Struct`, described by [`descriptorMask`](#descriptorMask).
+Described by [`descriptorMask`](#descriptorMask).
 -}
 mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
 mask =
@@ -75,7 +75,7 @@ mask =
 {-| `rpc Echo(google.protobuf.Value) returns (google.protobuf.ListValue)`.
 Connect: `POST /clock.v1.Clock/Echo`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.Value` to `google.protobuf.ListValue`, described by [`descriptorEcho`](#descriptorEcho).
+Described by [`descriptorEcho`](#descriptorEcho).
 -}
 echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
 echo =
@@ -89,7 +89,7 @@ echo =
 {-| `rpc Ticks(google.protobuf.Int64Value) returns (google.protobuf.UInt64Value)`.
 Connect: `POST /clock.v1.Clock/Ticks`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.Int64Value` to `google.protobuf.UInt64Value`, described by [`descriptorTicks`](#descriptorTicks).
+Described by [`descriptorTicks`](#descriptorTicks).
 -}
 ticks : Int -> Rpc.Call Int Int
 ticks =
@@ -103,7 +103,7 @@ ticks =
 {-| `rpc Count(google.protobuf.Int32Value) returns (google.protobuf.UInt32Value)`.
 Connect: `POST /clock.v1.Clock/Count`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.Int32Value` to `google.protobuf.UInt32Value`, described by [`descriptorCount`](#descriptorCount).
+Described by [`descriptorCount`](#descriptorCount).
 -}
 count : Int -> Rpc.Call Int Int
 count =
@@ -117,7 +117,7 @@ count =
 {-| `rpc Ratio(google.protobuf.DoubleValue) returns (google.protobuf.FloatValue)`.
 Connect: `POST /clock.v1.Clock/Ratio`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.DoubleValue` to `google.protobuf.FloatValue`, described by [`descriptorRatio`](#descriptorRatio).
+Described by [`descriptorRatio`](#descriptorRatio).
 -}
 ratio : Float -> Rpc.Call Float Float
 ratio =
@@ -131,7 +131,7 @@ ratio =
 {-| `rpc Name(google.protobuf.StringValue) returns (google.protobuf.BoolValue)`.
 Connect: `POST /clock.v1.Clock/Name`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.StringValue` to `google.protobuf.BoolValue`, described by [`descriptorName`](#descriptorName).
+Described by [`descriptorName`](#descriptorName).
 -}
 name : String -> Rpc.Call String Bool
 name =
@@ -145,7 +145,7 @@ name =
 {-| `rpc Raw(google.protobuf.BytesValue) returns (google.protobuf.BytesValue)`.
 Connect: `POST /clock.v1.Clock/Raw`.
 Transcode: no HTTP rule, follows the Connect path.
-From `google.protobuf.BytesValue` to `google.protobuf.BytesValue`, described by [`descriptorRaw`](#descriptorRaw).
+Described by [`descriptorRaw`](#descriptorRaw).
 -}
 raw : String -> Rpc.Call String String
 raw =
@@ -159,7 +159,7 @@ raw =
 {-| `rpc Zone(zones.v1.ZoneRequest) returns (zones.v1.Zone)`.
 Connect: `POST /clock.v1.Clock/Zone`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`Zones.V1.ZoneRequest`](Zones-V1#ZoneRequest) to [`Zones.V1.Zone`](Zones-V1#Zone), described by [`descriptorZone`](#descriptorZone).
+Described by [`descriptorZone`](#descriptorZone).
 -}
 zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
@@ -173,7 +173,7 @@ zone =
 {-| `rpc Set(Alarm) returns (Alarm)`.
 Connect: `POST /clock.v1.Clock/Set`.
 Transcode: no HTTP rule, follows the Connect path.
-From [`Clock.V1.Alarm`](Clock-V1#Alarm) to [`Clock.V1.Alarm`](Clock-V1#Alarm), described by [`descriptorSet`](#descriptorSet).
+Described by [`descriptorSet`](#descriptorSet).
 -}
 set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
 set =

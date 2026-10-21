@@ -495,7 +495,7 @@ rpc shared call =
   custom type, a member's constructor to its value; a `descriptor`
   back to its type (`` Describes [`Notes.V1.Note`](Notes-V1#Note). ``);
   codecs, defaults, typed values and wrappers to the type they name; a
-  call to its request and response types and its descriptor. A runtime
+  call to its descriptor. A runtime
   type a doc names (`Proto.Any.Any`) links to the package site by
   absolute URL, which an editor's hover makes clickable, at `latest`,
   since the site has no per-major path and `elmConnectVersion_`
@@ -1668,7 +1668,7 @@ message's descriptor sits in a module apart from its type (§3.1). The
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
-From [`Notes.V1.GetNoteRequest`](Notes-V1#GetNoteRequest) to [`Notes.V1.Note`](Notes-V1#Note), described by [`descriptorGetNote`](#descriptorGetNote).
+Described by [`descriptorGetNote`](#descriptorGetNote).
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
@@ -1723,12 +1723,13 @@ keeps.
   `google.api.http` rule writes them, the rule's own first and each
   additional binding numbered as `Rpc.Call.viaBinding` counts it, each
   with its `body` and `response_body` where set, then a line linking
-  its request and response types and its descriptor;
+  its descriptor;
   `Transcode: no HTTP rule, follows the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
-  request and response types in the line are named as the service's
-  package would write them, relative to it inside it and by full name
-  outside (`returns (google.protobuf.Empty)`). Why: the call is the
+  request and response types in the declaration line are named as the
+  service's package would write them, relative to it inside it and by
+  full name outside (`returns (google.protobuf.Empty)`); the call's
+  annotation already names their Elm types. Why: the call is the
   value a program uses, and the routes it may take were visible only as
   `Proto.Http` data in its descriptor. The descriptor carries the
   comment and the declaration line.
