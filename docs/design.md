@@ -2670,6 +2670,8 @@ type Source
     = ConnectBody                       -- {"code": "not_found", …}
     | StatusBody                        -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders                       -- grpc-status / grpc-message headers
+    | GrpcTrailers                      -- reserved: gRPC / gRPC-Web trailers
+    | ConnectEndStream                  -- reserved: Connect end-of-stream message
 
 code : Error -> Rpc.Code.Code           -- see below
 message : Error -> String
@@ -3461,7 +3463,9 @@ Within a major version:
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `InvalidHeader`, `RequestTooLarge`,
-  `ResponseTooLarge`) and `Source` (a
+  `ResponseTooLarge`) and `Source` (with `GrpcTrailers` and
+  `ConnectEndStream` reserved for server streaming, which reads a
+  status from those two places, so that it can ship as a minor; a
   failure before an answer is read is one of the reasons, and a new kind
   found in an answer that was read is a `BadResponse`, §5.4).
 - **The `elm-connect-gen` crate.** Published so that `cargo install`

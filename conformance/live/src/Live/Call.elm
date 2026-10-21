@@ -391,6 +391,12 @@ sourceToString source =
         Rpc.Error.GrpcHeaders ->
             "GrpcHeaders"
 
+        Rpc.Error.GrpcTrailers ->
+            "GrpcTrailers"
+
+        Rpc.Error.ConnectEndStream ->
+            "ConnectEndStream"
+
 
 reasonToString : Rpc.Error.Reason -> String
 reasonToString reason =

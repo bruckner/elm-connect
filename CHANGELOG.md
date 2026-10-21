@@ -1029,3 +1029,8 @@ tag (design §8).
   with its number instead of dropped, so a later release can name it
   without a major (`annotations_unknown_behavior` case). Code matching
   `Behavior` exhaustively needs the new case.
+- `Rpc.Error.Source` gains `GrpcTrailers` and `ConnectEndStream`,
+  reserved for server streaming, which reads a status from gRPC and
+  gRPC-Web trailers and from the Connect end-of-stream message; this
+  release never gives them. Code matching `Source` exhaustively needs the
+  new cases.
