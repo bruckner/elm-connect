@@ -11,9 +11,9 @@ use prost_reflect::{
 use super::comments::Comments;
 use super::graph::strongly_connected;
 use super::{
-    Annotations, Cardinality, Doc, Enum, EnumValue, Field, FieldBehavior, HttpRule, HttpVerb,
-    Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant, Package,
-    ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
+    Annotations, Cardinality, Doc, Element, Enum, EnumValue, Field, FieldBehavior, HttpRule,
+    HttpVerb, Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant,
+    Package, ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
 use super::{declaration, rename};
 use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, closest, tag};
@@ -371,6 +371,60 @@ pub fn unbound_methods(
         }
     }
     builder.diagnostics
+}
+
+/// The site of `element`'s name in `pool`, labelled `label`, or `None`
+/// when `pool` does not declare it.
+pub fn name_site(pool: &DescriptorPool, element: &Element, label: String) -> Option<Site> {
+    let message = |name: &str| pool.get_message_by_name(name);
+    let (file, path) = match element {
+        Element::Message(name) => {
+            let message = message(name)?;
+            (
+                message.parent_file(),
+                [message.path(), &[tag::MESSAGE_NAME]].concat(),
+            )
+        }
+        Element::Oneof {
+            message: owner,
+            name,
+        } => {
+            let oneof = message(owner)?
+                .oneofs()
+                .find(|oneof| oneof.name() == name)?;
+            (
+                oneof.parent_file(),
+                [oneof.path(), &[tag::ONEOF_NAME]].concat(),
+            )
+        }
+        Element::Field {
+            message: owner,
+            name,
+        } => {
+            let field = message(owner)?.get_field_by_name(name)?;
+            (
+                field.parent_file(),
+                [field.path(), &[tag::FIELD_NAME]].concat(),
+            )
+        }
+        Element::Enum(name) => {
+            let enumeration = pool.get_enum_by_name(name)?;
+            (
+                enumeration.parent_file(),
+                [enumeration.path(), &[tag::ENUM_NAME]].concat(),
+            )
+        }
+        Element::EnumValue { enumeration, name } => {
+            let value = pool
+                .get_enum_by_name(enumeration)?
+                .get_value_by_name(name)?;
+            (
+                value.parent_file(),
+                [value.path(), &[tag::ENUM_VALUE_NAME]].concat(),
+            )
+        }
+    };
+    Some(Builder::default().site(&file, &path, label))
 }
 
 /// A proto element that claims an Elm name: what it is, for labels,

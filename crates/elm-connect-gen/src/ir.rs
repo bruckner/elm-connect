@@ -46,7 +46,7 @@ mod rename;
 use std::fmt;
 
 pub(crate) use build::declared_fields;
-pub use build::{Built, build, build_with, build_with_imports, unbound_methods};
+pub use build::{Built, build, build_with, build_with_imports, name_site, unbound_methods};
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.
@@ -72,6 +72,24 @@ pub struct Package {
     pub enums: Vec<Enum>,
     /// Every service of the package, in declaration order (files by name).
     pub services: Vec<Service>,
+}
+
+/// A proto element that declares an Elm type or constructor, by the
+/// names that find it in the descriptor pool the IR was built from: what
+/// a problem found after building names to point at its source, since the
+/// IR itself keeps no source positions.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Element {
+    /// The message of this full name.
+    Message(String),
+    /// The oneof `name` of the message `message`.
+    Oneof { message: String, name: String },
+    /// The field `name` of the message `message`, a oneof member included.
+    Field { message: String, name: String },
+    /// The enum of this full name.
+    Enum(String),
+    /// The value `name` of the enum `enumeration`.
+    EnumValue { enumeration: String, name: String },
 }
 
 /// What the proto says about an element for the documentation of what it

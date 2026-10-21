@@ -826,8 +826,16 @@ impl Problem {
     /// `what` (such as "message `notes.v1.Dict`") becomes the Elm `kind`
     /// ("type" or "constructor") `name`, which the generated module also
     /// uses unqualified for `home.name`. `rename` is the option that
-    /// renames it, as its reader writes it.
-    pub fn reserved_name(what: &str, kind: &str, name: &str, home: &str, rename: &str) -> Self {
+    /// renames it, as its reader writes it. `site` is the element's name,
+    /// when it is known.
+    pub fn reserved_name(
+        what: &str,
+        kind: &str,
+        name: &str,
+        home: &str,
+        rename: &str,
+        site: Option<Site>,
+    ) -> Self {
         Problem::new(
             Code::ReservedName,
             format!(
@@ -840,7 +848,7 @@ impl Problem {
                  name in the same module takes their place and the module does not compile. \
                  Rename it with {rename}."
             ),
-            Vec::new(),
+            site.into_iter().collect(),
         )
     }
 
