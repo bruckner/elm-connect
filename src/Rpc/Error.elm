@@ -58,8 +58,8 @@ the schema, can still be read:
             Err (Rpc.Error.toString error)
 
 The constructors are fixed: a failure before an answer, or an answer refused
-before it was read, is one of the [`Reason`](#Reason)s, and one found in an
-answer that was read is a `BadResponse`.
+before it was read, is one of the [`Reason`](#Reason) constructors, and one
+found in an answer that was read is a `BadResponse`.
 
 -}
 type Error
