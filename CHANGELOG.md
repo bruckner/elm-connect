@@ -1053,3 +1053,7 @@ tag (design §8).
   homepage, documentation) and a README of their own, and each ships
   `LICENSE-MIT` and `LICENSE-APACHE`; `elm-connect-gen` ships a notice
   beside its embedded googleapis files.
+- Dependabot proposes weekly, grouped updates of the GitHub Actions, the
+  Rust dependencies, the live suite's npm packages and the example
+  server's Go modules. `mise.lock` pins the toolchain's downloads by
+  checksum, and CI installs mise itself at a pinned release.

@@ -14,6 +14,14 @@ just check      # run the gate
 
 `just` with no arguments lists every recipe.
 
+[`mise.lock`](mise.lock) records each tool's exact version and, for
+every tool but Rust (which rustup verifies) and elm-test-rs (an npm
+package), the URL and SHA-256 of its download on Linux and macOS, x64
+and arm64; mise refuses a download that does not match. After moving a
+pin in `mise.toml`, run `mise lock` and commit both files; CI installs
+with the mise release named in `.github/workflows/ci.yml`, so move that
+too when you upgrade mise.
+
 Cargo builds into `target/`, and the live suite's binaries go under it
 too. With several worktrees of the repository, set `CARGO_TARGET_DIR`
 to one directory and every recipe builds there: a `mise.toml` in the
@@ -30,7 +38,7 @@ binaries there unlocked, and `just clean` empties it for every worktree.
 (the conformance corpus among them, see
 [`conformance/README.md`](conformance/README.md)), the runtime
 package's build and Elm tests, a [zizmor](https://docs.zizmor.sh)
-audit of the GitHub Actions workflows, a
+audit of the GitHub Actions workflows and the Dependabot configuration, a
 [gitleaks](https://gitleaks.io) scan of the commit history for secrets,
 [cargo-deny](https://embarkstudios.github.io/cargo-deny/) (`just deny`:
 security advisories, licenses, duplicate versions and sources of the

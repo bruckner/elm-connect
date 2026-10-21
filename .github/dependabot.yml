@@ -1,0 +1,48 @@
+# Weekly version updates, one grouped pull request per ecosystem. The
+# toolchain in mise.toml (and mise.lock) and the Elm packages in the
+# elm.json files are not covered: Dependabot supports neither, so those
+# pins move by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # The workspace's Cargo.lock.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      cargo:
+        patterns: ["*"]
+
+  # The live suite's runner (conformance/live/package-lock.json).
+  - package-ecosystem: npm
+    directory: /conformance/live
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns: ["*"]
+
+  # The notes example's server, which the live suite runs.
+  - package-ecosystem: gomod
+    directory: /examples/notes/server
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      gomod:
+        patterns: ["*"]

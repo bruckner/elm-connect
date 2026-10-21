@@ -70,12 +70,13 @@ codec-gen:
 snippets:
     examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/compared.md examples/notes/README.md
 
-# Audit the GitHub Actions workflows for template injection, unpinned
-# or vulnerable actions, leaked credentials and the like. The audits
-# that consult GitHub run only when GH_TOKEN is set (CI sets it); without
-# one zizmor runs offline and says so.
+# Audit the GitHub Actions workflows and the Dependabot configuration for
+# template injection, unpinned or vulnerable actions, leaked credentials,
+# missing update cooldowns and the like. The audits that consult GitHub
+# run only when GH_TOKEN is set (CI runs this recipe once more with it);
+# without one zizmor runs offline and says so.
 zizmor:
-    zizmor .github/workflows
+    zizmor .
 
 # Scan the history reachable from HEAD for committed secrets. CI fetches
 # the full history so the scan covers every commit a pull request would
