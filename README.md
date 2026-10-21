@@ -159,7 +159,8 @@ users of protoc-gen-elm.
 - [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
   what gets past it.
 - [docs/agent-guide.md](docs/agent-guide.md): using the generator as an
-  agent: `check`, diagnostics and their escapes.
+  agent: `check`, diagnostics and their escapes; `elm-connect guide`
+  prints it.
 - [docs/design.md](docs/design.md): the design, with its reasons.
 - [docs/decisions.md](docs/decisions.md): what was decided, when, and
   what the alternative was.

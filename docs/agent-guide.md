@@ -3,7 +3,8 @@
 This page is for an agent, or a person, working on an application that
 uses elm-connect: changing its protos, regenerating its Elm client, or
 fixing a build. To change elm-connect itself, read
-[AGENTS.md](../AGENTS.md) instead.
+[AGENTS.md](../AGENTS.md) instead. `elm-connect guide` prints this
+page, so a reader with only the binary has it too.
 
 ## Generated files are output
 

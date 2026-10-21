@@ -3,14 +3,31 @@ use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
+use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
     Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
 };
 use miette::Report;
 
+/// What the top-level help says after the commands: where to start.
+fn start_here() -> String {
+    format!(
+        "Start here:
+  1. Generate Elm modules from the protos:
+       elm-connect gen -I proto -o src/Generated notes/v1/notes.proto
+  2. Add the runtime: the generated code imports `Proto.*` and `Rpc.*` from the
+     elm-connect runtime, read from a clone's `src/` as a source directory until
+     it is published (`elm install bruckner/elm-connect` then).
+  3. In CI, run `elm-connect check` with the same arguments; it exits 1 on drift.
+
+`elm-connect guide` prints the guide to working on a project that uses it.
+Docs: {REPOSITORY_FILES}docs"
+    )
+}
+
 /// Generate Elm clients for protobuf APIs.
 #[derive(Parser)]
-#[command(version = elm_connect_gen::VERSION)]
+#[command(version = elm_connect_gen::VERSION, after_help = start_here())]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -18,11 +35,16 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Compile .proto files and generate Elm modules from them. Nothing
-    /// under `--out` is deleted: a module these protos no longer give is
-    /// named in a warning.
+    /// Compile .proto files and generate Elm modules from them.
+    ///
+    /// Each module written is listed on stdout. Nothing under `--out` is
+    /// deleted: a module these protos no longer give is named in a
+    /// warning.
+    #[command(after_long_help = GEN_EXAMPLES)]
     Gen(GenArgs),
-    /// Generate as `gen` would, in memory, and compare with the modules
+    /// Check that the generated Elm modules are current; for CI.
+    ///
+    /// Generates as `gen` would, in memory, and compares with the modules
     /// under `--out`. Takes exactly `gen`'s arguments, `-I` included: each
     /// module's first line names its protos by their paths under the
     /// include directory. Exit status 0 when the modules are current, 1
@@ -30,8 +52,27 @@ enum Command {
     /// from these protos, but no longer given by them), and 2 when it
     /// cannot tell (bad arguments, a proto that does not compile, an
     /// unreadable directory).
+    #[command(after_long_help = CHECK_EXAMPLES)]
     Check(GenArgs),
+    /// Print the guide to working on a project that uses elm-connect.
+    ///
+    /// The guide is Markdown, for an agent or a person: regenerating, checking before and after a change, reading
+    /// a diagnostic and choosing its escape, and the application's
+    /// `elm.json`. Its links point at the docs on GitHub.
+    Guide,
 }
+
+/// What `gen --help` ends with.
+const GEN_EXAMPLES: &str = "Examples:
+  elm-connect gen -I proto -o src/Generated notes/v1/notes.proto
+  elm-connect gen -I proto -o src/Generated --rename notes.v1.Note:Memo notes/v1/notes.proto
+  elm-connect gen -I proto -o src/Generated --module-prefix Api notes/v1/notes.proto";
+
+/// What `check --help` ends with.
+const CHECK_EXAMPLES: &str = "Examples:
+  elm-connect check -I proto -o src/Generated notes/v1/notes.proto
+  elm-connect check -I proto -o src/Generated --rename notes.v1.Note:Memo notes/v1/notes.proto
+  elm-connect check -I proto -o src/Generated --module-prefix Api notes/v1/notes.proto";
 
 /// What to generate from and how: the arguments `gen` and `check` share.
 #[derive(Args)]
@@ -42,50 +83,64 @@ struct GenArgs {
     /// A directory to search for imports; repeatable. Defaults to `.`.
     #[arg(short = 'I', long = "proto-path", value_name = "DIR")]
     includes: Vec<PathBuf>,
-    /// The directory of the Elm modules: `gen` writes them there, and
-    /// `check` compares them with what it would write.
+    /// The directory of the Elm modules.
+    ///
+    /// `gen` writes them there, and `check` compares them with what it
+    /// would write.
     #[arg(short, long, value_name = "DIR")]
     out: PathBuf,
-    /// How to hold 64-bit integers: `string` (exact) or `int` (Elm's
-    /// `Int`, exact within ±(2^53 − 1); larger values fail to decode).
-    /// A field's `jstype` option overrides it.
+    /// How to hold 64-bit integers: `string` (exact) or `int`.
+    ///
+    /// `int` is Elm's `Int`, exact within ±(2^53 − 1); larger values fail
+    /// to decode. A field's `jstype` option overrides it.
     #[arg(long, value_name = "string|int", default_value = "string")]
     int64: Int64,
-    /// How to hold `bytes` fields: `string` (the base64 text as
-    /// received) or `bytes` (elm/bytes' `Bytes`; Elm's `==` finds any two
-    /// `Bytes` equal, so records holding them compare equal whatever the
-    /// bytes).
+    /// How to hold `bytes` fields: `string` (base64) or `bytes`.
+    ///
+    /// `string` is the base64 text as received. `bytes` is elm/bytes'
+    /// `Bytes`; Elm's `==` finds any two `Bytes` equal, so records holding
+    /// them compare equal whatever the bytes.
     #[arg(long, value_name = "string|bytes", default_value = "string")]
     bytes: Bytes,
-    /// What a method without a `google.api.http` rule gets: `implicit`
-    /// (a call the runtime sends over the implicit route,
-    /// `POST /<package>.<Service>/<Method>`) or `error` (a diagnostic).
+    /// What a method without a `google.api.http` rule gets: `implicit` or
+    /// `error`.
+    ///
+    /// `implicit`: a call the runtime sends over the implicit route,
+    /// `POST /<package>.<Service>/<Method>`. `error`: a diagnostic.
     #[arg(long, value_name = "implicit|error", default_value = "implicit")]
     unbound_methods: UnboundMethods,
-    /// What a client, server or bidirectional streaming method gets:
-    /// `error` (a diagnostic) or `skip` (left out of its service's
-    /// module, with a warning; the rest is generated).
+    /// What a streaming method gets: `error` or `skip`.
+    ///
+    /// A client, server or bidirectional streaming method. `error`: a
+    /// diagnostic. `skip`: left out of its service's module, with a
+    /// warning; the rest is generated.
     #[arg(long, value_name = "error|skip", default_value = "error")]
     streaming: Streaming,
-    /// What an enum value name the decoder does not know reads as:
-    /// `fail` (the decode fails) or `zero` (the zero value, as an
-    /// unknown number always does).
+    /// What an unknown enum value name decodes as: `fail` or `zero`.
+    ///
+    /// `fail`: the decode fails. `zero`: the name reads as the zero value,
+    /// as an unknown number always does.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
-    /// An Elm name for a proto element, in place of the one the naming
-    /// rules derive: `<proto full name>:<Elm name>`, such as
-    /// `notes.v1.Note:Memo`; repeatable. The proto name is a package,
-    /// service, method, message, enum, field, oneof or enum value.
+    /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
+    ///
+    /// The value is `<proto full name>:<Elm name>`, and the Elm name
+    /// replaces the one the naming rules derive; repeatable. The proto
+    /// name is a package, service, method, message, enum, field, oneof or
+    /// enum value.
     #[arg(long, value_name = "PROTO:ELM", value_parser = rename_entry)]
     rename: Vec<String>,
-    /// The module every generated module goes inside, such as
-    /// `Api.Notes`: `notes.v1` then becomes `Api.Notes.V1`, in
+    /// The module every generated module goes inside, such as `Api`.
+    ///
+    /// With `Api.Notes`, `notes.v1` becomes `Api.Notes.V1`, in
     /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
     #[arg(long, value_name = "MODULE", value_parser = module_prefix)]
     module_prefix: Option<ModuleName>,
-    /// Also generate every imported file that declares a message or enum
-    /// the given files' packages refer to, transitively, each imported
-    /// package from those files alone; without it, a reference to a
+    /// Also generate the imported files the given ones refer to.
+    ///
+    /// Generates every imported file that declares a message or enum the
+    /// given files' packages refer to, transitively, each imported package
+    /// from those files alone; without it, a reference to a
     /// package none of the given files declares is an error. A file
     /// imported only for its options (`google/api/annotations.proto`,
     /// `google/api/client.proto`) is not generated, nor are
@@ -150,16 +205,57 @@ fn module_prefix(value: &str) -> Result<ModuleName, String> {
 /// apart from drift's 1; clap exits with it on bad arguments too.
 const CHECK_ERROR: u8 = 2;
 
+/// The guide `elm-connect guide` prints. `docs/agent-guide.md` is the
+/// source; this copy sits in the crate because a published crate holds
+/// only its own files, and a test keeps the two equal.
+const GUIDE: &str = include_str!("../guide.md");
+
+/// [`GUIDE`] with its relative links made absolute, since a terminal has
+/// no page to resolve them against: `generator.md#options` and
+/// `../AGENTS.md` become links to those files on GitHub.
+fn guide() -> String {
+    let docs = format!("{REPOSITORY_FILES}docs/");
+    GUIDE
+        .split("](")
+        .enumerate()
+        .map(|(index, part)| {
+            if index == 0 || part.starts_with("https://") || part.starts_with("http://") {
+                part.to_owned()
+            } else if let Some(from_root) = part.strip_prefix("../") {
+                format!("{REPOSITORY_FILES}{from_root}")
+            } else {
+                format!("{docs}{part}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("](")
+}
+
+/// The line under a failure's diagnostics, for a reader who has nothing
+/// but the binary.
+fn diagnostics_pointer() -> String {
+    format!(
+        "Codes and their escapes: {REPOSITORY_FILES}docs/diagnostics.md; `elm-connect guide` \
+         says how to choose one."
+    )
+}
+
 fn main() -> ExitCode {
     let (result, error_status) = match Cli::parse().command {
         Command::Gen(args) => (generate(&args), ExitCode::FAILURE),
         Command::Check(args) => (check(&args), ExitCode::from(CHECK_ERROR)),
+        Command::Guide => {
+            print!("{}", guide());
+            return ExitCode::SUCCESS;
+        }
     };
     result.unwrap_or_else(|report| {
         // Problems render each under its own `Error:`, below a header
-        // counting them; any other failure is one error, named here.
+        // counting them, with a pointer to the catalogue of their codes;
+        // any other failure is one error, named here.
         if report.downcast_ref::<Diagnostics>().is_some() {
             eprintln!("{report:?}");
+            eprintln!("{}", diagnostics_pointer());
         } else {
             eprintln!("Error: {report:?}");
         }
@@ -206,13 +302,14 @@ fn check(args: &GenArgs) -> miette::Result<ExitCode> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::CommandFactory;
 
     /// `gen`'s arguments, parsed from `a.proto --out out` and `args`.
     fn gen_args(args: &[&str]) -> Result<GenArgs, clap::Error> {
         let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
         match Cli::try_parse_from(base.iter().chain(args))?.command {
             Command::Gen(args) => Ok(args),
-            Command::Check(_) => unreachable!("parsed as gen"),
+            Command::Check(_) | Command::Guide => unreachable!("parsed as gen"),
         }
     }
 
@@ -409,5 +506,49 @@ mod tests {
         assert_eq!(bytes(&["--bytes", "bytes"]).expect("parses"), Bytes::Bytes);
         assert!(bytes(&["--bytes", "base64"]).is_err());
         assert!(bytes(&["--bytes", "bytes", "--bytes", "string"]).is_err());
+    }
+
+    #[test]
+    fn the_guide_is_a_copy_of_the_agent_guide() {
+        // In the repository, `guide.md` must equal its source; a published
+        // crate has no `docs/`, and nothing to compare.
+        let source =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/agent-guide.md");
+        let Ok(source) = std::fs::read_to_string(source) else {
+            return;
+        };
+        assert!(
+            source == GUIDE,
+            "crates/elm-connect/guide.md differs from docs/agent-guide.md, its source: \
+             copy docs/agent-guide.md over it"
+        );
+    }
+
+    #[test]
+    fn the_guide_prints_its_links_absolute() {
+        let printed = guide();
+        assert!(printed.starts_with("# Using elm-connect as an agent"));
+        for link in printed.split("](").skip(1) {
+            assert!(
+                link.starts_with(REPOSITORY_FILES),
+                "a link is not absolute: {link}"
+            );
+        }
+        for expected in [
+            "](https://github.com/bruckner/elm-connect/blob/main/AGENTS.md)",
+            "](https://github.com/bruckner/elm-connect/blob/main/docs/generator.md#options)",
+            "](https://github.com/bruckner/elm-connect/blob/main/docs/diagnostics.md)",
+        ] {
+            assert!(printed.contains(expected), "{expected}");
+        }
+        assert!(Cli::try_parse_from(["elm-connect", "guide"]).is_ok());
+    }
+
+    #[test]
+    fn the_help_says_where_to_start() {
+        let help = Cli::command().render_long_help().to_string();
+        assert!(help.contains("guide"), "{help}");
+        assert!(help.contains("elm-connect gen -I proto"), "{help}");
+        assert!(help.contains("elm-connect check"), "{help}");
     }
 }

@@ -9,11 +9,12 @@ package over the Connect protocol or HTTP/JSON transcoding.
 
 ```sh
 cargo install --locked elm-connect
-elm-connect gen -I proto -o generated proto/notes/v1/notes.proto
-elm-connect check -I proto -o generated proto/notes/v1/notes.proto
+elm-connect gen -I proto -o generated notes/v1/notes.proto
+elm-connect check -I proto -o generated notes/v1/notes.proto
 ```
 
-`elm-connect --help` lists the options. The
+`elm-connect --help` says where to start and lists the options, and
+`elm-connect guide` prints the guide to working on a project with it. The
 [README](https://github.com/bruckner/elm-connect/blob/main/README.md) covers installing, the options and the Elm
 side; [`docs/diagnostics.md`](https://github.com/bruckner/elm-connect/blob/main/docs/diagnostics.md) explains every
 diagnostic code. For protoc and buf, the same generator ships as
