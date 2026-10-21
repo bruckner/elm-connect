@@ -1,6 +1,6 @@
 module Snippets.Any exposing (packed, title)
 
-{-| The README's "Any".
+{-| docs/descriptors.md's "Any".
 -}
 
 -- region any

@@ -1,0 +1,456 @@
+# Calling
+
+A generated service function applied to a request gives a call,
+`Rpc.Call req res`: data saying which method to call with what. A config,
+`Rpc.Config`, also data, says where and how. `Rpc`'s functions take both
+and send the call, or give the HTTP request it stands for without
+sending anything. This page covers the config, each way of sending, and
+what comes back.
+
+Until the package is published, its API reference is the documentation
+comments in `src/`, starting with `src/Rpc.elm`; `elm make
+--docs=docs.json` in a clone writes them as the package site would read
+them.
+
+## The runtime's modules
+
+The runtime package has two roots, `Proto` for data and `Rpc` for
+calling:
+
+| Module | Holds |
+|---|---|
+| `Rpc` | building a call, config, sending over Connect or HTTP transcoding |
+| `Rpc.Call` | a call: adjusting it and reading it back |
+| `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
+| `Rpc.Trace` | what happened when a call was sent, for logs |
+| `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
+| `Rpc.Error` | why a call failed: its kind, code, message and details |
+| `Rpc.Code` | the codes an RPC fails with |
+| `Proto.Json` | the proto3 JSON helpers generated codecs call |
+| `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
+| `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
+| `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
+| `Proto.Method` | a method's typed value (request encoder, response decoder and descriptor) and its descriptor as data, with its idempotency |
+| `Proto.Http` | a method's `google.api.http` rule as data |
+| `Proto.WellKnown` | the well-known types' typed values |
+| `Proto.Registry` | descriptors by full name |
+| `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
+| `Proto.Version` | the releases generated code can name ([install.md](install.md#versions)) |
+
+The `Proto` modules are [descriptors.md](descriptors.md)'s subject.
+
+## The config
+
+```elm src/Rpc.elm excerpt
+type alias Config =
+    { transport : Transport
+    , baseUrl : String
+    , headers : List ( String, String )
+    , timeout : Maybe Float
+    , withCredentials : Bool
+    , retry : Maybe Retry
+    }
+
+config : String -> Config
+```
+
+`Rpc.config baseUrl` is Connect with every call POSTed, no extra
+headers, no timeout, no credentials cross-origin and no retries. The
+config has no functions in it, so it can be stored in a model, compared
+with `==`, and changed with record syntax:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `transport` | `Rpc.Transport.Transport` | the protocol, with its own options (below) |
+| `baseUrl` | `String` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `NoAnswer (BadUrl url)` |
+| `headers` | `List ( String, String )` | sent with every call, before the call's own |
+| `timeout` | `Maybe Float` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond. A value that is not a positive number means no timeout |
+| `withCredentials` | `Bool` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
+| `retry` | `Maybe Rpc.Retry.Retry` | whether and when to try a failed call again (below) |
+
+A header name must be an HTTP token, and a value can hold no NUL, CR or
+LF and no character above U+00FF, which a browser refuses. A call with
+such a header is not sent: it fails with `NoAnswer (InvalidHeader
+name)`, and the header is never altered to fit.
+
+### Checking a config
+
+```elm src/Rpc.elm excerpt
+checkConfig : Config -> List String
+```
+
+`Rpc.checkConfig` reports a config's problems, one sentence each, where
+the application builds it rather than at the first call: today a
+`baseUrl` with a query or a fragment, headers a request cannot carry
+(named, without their values), and a size limit below 1.
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#check-config
+checked : Rpc.Config -> Result String Rpc.Config
+checked cfg =
+    case Rpc.checkConfig cfg of
+        [] ->
+            Ok cfg
+
+        problems ->
+            Err (String.join "; " problems)
+```
+
+Later releases may find more, so read the result as a list rather than
+matching it.
+
+## Transports
+
+```elm src/Rpc/Transport.elm excerpt
+connect : Transport
+connectGet : Transport
+transcode : Transport
+withMaxGetUrl : Int -> Transport -> Transport
+```
+
+- `Rpc.Transport.connect`: the Connect protocol, every call a POST to
+  `baseUrl/<package>.<Service>/<Method>` with the request's JSON as its
+  body and `Connect-Protocol-Version: 1`.
+- `Rpc.Transport.connectGet`: Connect, with a call of a method declared
+  `option idempotency_level = NO_SIDE_EFFECTS;` sent as a GET with the
+  request in the query (`connect=v1&encoding=json&message=…`), which
+  caches can serve. Any other call is POSTed, whatever its
+  `google.api.http` rule says. The request then appears in URLs, so in
+  browser history and in server and proxy logs.
+  `Rpc.Transport.withMaxGetUrl n` POSTs a call whose GET URL would be
+  longer than `n` characters (2048 is a common safe value).
+- `Rpc.Transport.transcode`: HTTP transcoding, by the method's
+  `google.api.http` rule: the rule's verb, the path filled from the
+  request, the query from the fields outside the path and the body, and
+  the body as the rule says. A method without a rule goes over the
+  implicit route ([transcoding.md](transcoding.md)).
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#transports
+connectGet : Rpc.Config
+connectGet =
+    let
+        base =
+            Rpc.config "https://api.example.com"
+    in
+    -- GetNote, ListNotes and Ping, declared NO_SIDE_EFFECTS, become GETs;
+    -- a GET whose URL would pass 2048 characters is POSTed instead.
+    { base
+        | transport =
+            Rpc.Transport.connectGet
+                |> Rpc.Transport.withMaxGetUrl 2048
+    }
+```
+
+Transports built alike are `==`. `Rpc.Transport.name` gives
+`"connect"` or `"transcode"`, for logs.
+
+### Size limits
+
+`Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
+`n` bytes of UTF-8, on either transport, as connect-go's
+`WithReadMaxBytes` and connect-es's `readMaxBytes` do. A body over it is
+dropped before decoding and the call fails with
+`NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
+an error answer is still read for its status. The browser has received
+the body by then, so the limit bounds what is decoded and held, not what
+is downloaded.
+
+`Rpc.Transport.withWriteMaxBytes n` caps the request message's JSON the
+same way, as connect-go's `WithSendMaxBytes` and connect-es's
+`writeMaxBytes` do: a call over it is never sent, and fails with
+`NoAnswer (RequestTooLarge { limit, size })`. Neither has a limit by
+default, and `Rpc.checkConfig` reports a limit below 1.
+
+## Retries
+
+```elm src/Rpc/Retry.elm excerpt
+on : List Code -> Retry
+withAttempts : Int -> Retry -> Retry
+withBackoff : Float -> Retry -> Retry
+withMaxBackoff : Float -> Retry -> Retry
+withoutJitter : Retry -> Retry
+allowNonIdempotent : Retry -> Retry
+```
+
+`Rpc.Retry.on codes` retries an attempt that fails with an error whose
+code is one of `codes`. Its defaults:
+
+- 3 attempts in all, the first included (`withAttempts`);
+- a wait before the second attempt of up to 200 ms (`withBackoff`),
+  doubling before each one after, never more than 30 seconds
+  (`withMaxBackoff`);
+- each wait drawn uniformly from zero to its bound, so clients that
+  failed together do not retry together (`withoutJitter` waits each
+  bound in full);
+- only calls of a method declared `NO_SIDE_EFFECTS` or `IDEMPOTENT`
+  (`option idempotency_level`).
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#retry
+retrying : Rpc.Config
+retrying =
+    let
+        base =
+            Rpc.config "https://api.example.com"
+    in
+    { base
+        | retry =
+            Rpc.Retry.on [ Rpc.Code.Unavailable, Rpc.Code.ResourceExhausted ]
+                |> Rpc.Retry.withAttempts 5
+                |> Rpc.Retry.withBackoff 500
+                |> Rpc.Retry.withMaxBackoff 10000
+                |> Just
+    }
+```
+
+Every error is judged by its code, so a network failure reads as
+`Unavailable` and a timeout as `DeadlineExceeded`. A request that timed
+out may have reached the server, so `DeadlineExceeded` belongs in the
+codes only for calls that are safe to replay, which the default keeps
+to. `allowNonIdempotent` retries calls of every method: for codes that
+say the server did nothing, such as `Unavailable` from a proxy that
+never reached it; a call with side effects that failed after the server
+acted is then made again. A call that was never sent (a bad URL, an
+invalid header) is never retried.
+
+## Adjusting one call
+
+```elm src/Rpc/Call.elm excerpt
+withHeaders : List ( String, String ) -> Call req res -> Call req res
+withTimeout : Float -> Call req res -> Call req res
+withTracker : String -> Call req res -> Call req res
+viaBinding : Int -> Call req res -> Maybe (Call req res)
+```
+
+`Rpc.Call` adjusts a call before it is sent: headers after the config's,
+a timeout in milliseconds in place of the config's, a tracker for
+cancelling, and, for transcoding, another of the rule's bindings (`0` is
+the rule's own, `1` and up its `additional_bindings`).
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#per-call
+perCall : (Result Rpc.Error Notes.V1.Note -> msg) -> Cmd msg
+perCall toMsg =
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withTimeout 10000
+        |> Rpc.Call.withHeaders [ ( "X-Request-Id", "req-7" ) ]
+        |> Rpc.Call.withTracker "note-42"
+        |> Rpc.send (Rpc.config "https://api.example.com") toMsg
+
+
+withdraw : Cmd msg
+withdraw =
+    Rpc.cancel "note-42"
+```
+
+`Rpc.Call` also reads a call back: `serviceName`, `methodName`,
+`descriptor`, `idempotency`, `requestMessage`, `requestJson` and
+`toJson`.
+
+## Sending
+
+```elm src/Rpc.elm excerpt
+task : Config -> Call req res -> Task Error res
+send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
+cancel : String -> Cmd msg
+```
+
+`Rpc.task` sends a call as a `Task`, for chaining; `Rpc.send` as a
+`Cmd`, giving the result to a message. A call whose URL or headers
+cannot be sent is not: it fails with `NoAnswer`, and nothing reaches
+elm/http.
+
+### Cancelling
+
+`Rpc.cancel tracker` aborts a call sent with `Rpc.send` and
+`Rpc.Call.withTracker` (above). A cancelled call reports nothing, as
+elm/http's requests do, so the application records that it withdrew the
+call where it cancels, and ignores a result that arrives after: an
+answer already queued when the cancel ran is still delivered.
+
+Only `Rpc.send` without a retry policy puts the tracker on its request.
+A call sent with a retry policy, or with `Rpc.task`, `Rpc.taskTraced`
+or `Rpc.sendTraced`, cannot be cancelled this way.
+
+## Errors
+
+A failed call gives `Rpc.Error`, one type for both transports, defined
+in `Rpc.Error` with its readers:
+
+```elm src/Rpc/Error.elm excerpt
+type Error
+    = RpcStatus StatusError Response
+    | HttpStatus Response
+    | BadResponse String Response
+    | NoAnswer Reason
+```
+
+- `RpcStatus`: the server stated a status: its code (an
+  `Rpc.Code.Code`), message, details and where it was read from.
+- `HttpStatus`: the server answered with a failure and stated no
+  status; the code is inferred from the HTTP status, by the table
+  Connect and gRPC share (`Rpc.Code.fromHttpStatus`: 404 is
+  `Unimplemented`; 429, 502, 503 and 504 are `Unavailable`).
+- `BadResponse`: the server answered with success, but the body did not
+  decode as the response, as when the schema drifted between client and
+  server; code `Internal`, the message quoting elm/json's problem.
+- `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
+  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
+  how a browser's CORS refusal arrives), a `BadUrl` or an
+  `InvalidHeader` (both `Internal`, and never sent), or a request or
+  answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
+  both `ResourceExhausted`).
+
+The first three keep the answer itself, an `Rpc.Response` with its URL,
+status, headers and body, for errors in a shape the runtime does not
+read and bodies that do not decode.
+
+```elm src/Rpc/Error.elm excerpt
+code : Error -> Code
+message : Error -> String
+details : Message a -> Error -> List a
+toString : Error -> String
+```
+
+Every error has a code and a message. `Rpc.Error.toString` is the two
+for logs (`not_found: no such note`). `Rpc.Error.details` gives the
+status details of one type ([descriptors.md](descriptors.md#error-details)).
+
+### Where a status comes from
+
+`StatusError.source`, an `Rpc.Error.Source`, says where the status was
+read; the runtime tries each in this order, whatever the transport:
+
+- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+- `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as
+  grpc-gateway and Vanguard send.
+- `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
+  transcoder sends an error by default, when the browser exposes them
+  ([transcoding.md](transcoding.md#errors-in-headers)).
+
+An answer with none of these is an `HttpStatus` error.
+
+## Tracing
+
+```elm src/Rpc.elm excerpt
+taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
+sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
+```
+
+A traced send gives an `Rpc.Trace` beside the result: the call's service
+and method, the transport and binding, the request sent, the last
+answer's HTTP status, headers and trailers, the error's code, the
+duration in milliseconds and the number of attempts.
+
+```elm examples/notes/elm/src/Snippets/Tracing.elm#trace
+type Msg
+    = GotNote Rpc.Trace.Trace (Result Rpc.Error Notes.V1.Note)
+
+
+traced : Rpc.Config -> Cmd Msg
+traced config =
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.sendTraced config GotNote
+
+
+log : Rpc.Trace.Trace -> String
+log trace =
+    -- {"service": "notes.v1.NotesService", "method": "GetNote", ...}
+    Json.Encode.encode 0 (Rpc.Trace.toJson trace)
+```
+
+`Rpc.Trace.toJson` writes every field under keys that stay: `service`,
+`method`, `transport`, `binding`, `request` (`method`, `url`, `headers`,
+`body`, `timeout`, `withCredentials`), `httpStatus`, `headers`,
+`trailers`, `code` (`"ok"` on success), `duration` and `attempts`. The
+request holds what was sent, the config's headers included, so a bearer
+token in them is in the JSON too. `Rpc.Trace.toString` is one line that
+leaves the request out:
+
+```text
+notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
+```
+
+## The pure halves
+
+```elm src/Rpc.elm excerpt
+request : Config -> Call req res -> Request
+response : Config -> Call req res -> Http.Response String -> Result Error res
+taskFromRequest : Config -> Call req res -> Request -> Task Error res
+```
+
+`Rpc.task` and `Rpc.send` are `Rpc.request` and `Rpc.response` over
+elm/http. `Rpc.request` gives the HTTP request a call stands for, as an
+`Rpc.Request` record (`method`, `url`, `headers`, `body`, `timeout`,
+`withCredentials`), and `Rpc.response` reads an `Http.Response String`
+as the call's answer. Both are pure, so a test can check what a call
+sends and how it reads an answer without a server
+([quickstart.md](quickstart.md#7-test-without-a-server)), and
+`Rpc.taskFromRequest` sends a request in place of the call's own and
+reads the answer as the call's, with the config's retry policy.
+
+`Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
+carries its metadata, the `trailer-` ones apart, for an application that
+reads answers through the halves.
+
+## Wrapping the sending once
+
+The config holds no functions (no interceptors, no token provider), so
+an application sends every call through one function of its own that
+builds the config from its state:
+
+```elm examples/notes/elm/src/Api.elm#wrapper
+rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc shared call =
+    Rpc.task (config shared) call
+
+
+config : Shared -> Rpc.Config
+config shared =
+    let
+        base =
+            Rpc.config shared.apiUrl
+    in
+    { base
+        | transport = shared.transport
+        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
+    }
+```
+
+Since a call is a value, a wrapper can send it again. Refreshing an
+expired token and retrying once:
+
+```elm examples/notes/elm/src/Snippets/Refresh.elm#refresh
+withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call req res -> Task Rpc.Error res
+withRefresh refresh shared call =
+    rpc shared call
+        |> Task.onError
+            (\error ->
+                if Rpc.Error.code error == Rpc.Code.Unauthenticated then
+                    refresh |> Task.andThen (\fresh -> rpc fresh call)
+
+                else
+                    Task.fail error
+            )
+```
+
+Several calls failing at once would each refresh; an application that
+cares keeps the refresh single-flight in its update. For retrying on
+codes such as `Unavailable`, the config's `retry` policy needs no
+wrapper.
+
+## Rewriting a request
+
+Anything the config cannot say is a function between `Rpc.request` and
+`Rpc.taskFromRequest`:
+
+```elm examples/notes/elm/src/Snippets/Signed.elm#signed
+signed : Rpc.Config -> Rpc.Call req res -> Task Rpc.Error res
+signed cfg call =
+    let
+        request =
+            Rpc.request cfg call
+    in
+    { request | headers = ( "X-Signature", sign request ) :: request.headers }
+        |> Rpc.taskFromRequest cfg call
+```
+
+A request's body is sent as `application/json`, which elm/http adds:
+`headers` does not list `Content-Type`.

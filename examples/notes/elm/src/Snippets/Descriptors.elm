@@ -1,6 +1,6 @@
 module Snippets.Descriptors exposing (noteFields, noteUrl)
 
-{-| The README's "Descriptors".
+{-| docs/descriptors.md's "Descriptors".
 -}
 
 -- region descriptors

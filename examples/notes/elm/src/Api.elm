@@ -1,8 +1,8 @@
 module Api exposing (Shared, config, rpc)
 
 {-| How this application sends a call: every call goes through `rpc`, which
-builds the config from the application's state. The README's "Wrapping the
-sending once" and this example's walkthrough quote it.
+builds the config from the application's state. docs/calling.md's "Wrapping
+the sending once" and this example's walkthrough quote it.
 -}
 
 import Rpc

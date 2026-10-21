@@ -55,8 +55,8 @@ README snippet's file.
 API at `http://127.0.0.1:8080` (`just example-notes 127.0.0.1:9000` for
 another address); `examples/notes/README.md` walks through it.
 
-The README's and the walkthrough's code blocks are excerpts: a block's
-fence names its file (`` ```elm examples/notes/elm/src/Api.elm#wrapper ``),
+The code blocks of the README, the `docs/` guides and the walkthrough
+are excerpts: a block's fence names its file (`` ```elm examples/notes/elm/src/Api.elm#wrapper ``),
 and `just snippets`, part of the gate, checks each against it. Change
 the file, then copy the region into the document; `examples/check-snippets.sh`
 documents the forms.
