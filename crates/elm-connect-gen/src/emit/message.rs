@@ -67,11 +67,19 @@ impl Emitter {
                 ),
             })
             .collect();
+        let mut doc = format!(
+            "A {} with every field at its default and every oneof unset.",
+            docs::local(&shape.message.elm_name)
+        );
+        if !fields.is_empty() {
+            doc.push_str(&format!(
+                " Build one from it with record update syntax, `{{ {} | … }}`: unlike a \
+                 record literal, that keeps compiling when the message gains a field.",
+                shape.message.default_name()
+            ));
+        }
         Decl::Value {
-            doc: Some(format!(
-                "A {} with every field at its default and every oneof unset.",
-                docs::local(&shape.message.elm_name)
-            )),
+            doc: Some(doc),
             name: shape.message.default_name(),
             annotation: ty(shape.message.elm_name.clone(), []),
             params: Vec::new(),

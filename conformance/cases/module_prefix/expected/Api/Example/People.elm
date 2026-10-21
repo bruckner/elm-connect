@@ -55,7 +55,7 @@ type alias User =
 -- DEFAULTS
 
 
-{-| A [`User`](#User) with every field at its default and every oneof unset.
+{-| A [`User`](#User) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUser | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultUser : User
 defaultUser =

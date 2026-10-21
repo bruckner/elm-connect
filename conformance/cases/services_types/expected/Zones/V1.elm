@@ -50,7 +50,7 @@ type alias Zone =
 -- DEFAULTS
 
 
-{-| A [`ZoneRequest`](#ZoneRequest) with every field at its default and every oneof unset.
+{-| A [`ZoneRequest`](#ZoneRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultZoneRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultZoneRequest : ZoneRequest
 defaultZoneRequest =
@@ -58,7 +58,7 @@ defaultZoneRequest =
     }
 
 
-{-| A [`Zone`](#Zone) with every field at its default and every oneof unset.
+{-| A [`Zone`](#Zone) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultZone | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultZone : Zone
 defaultZone =

@@ -201,7 +201,7 @@ type alias Sum =
 -- DEFAULTS
 
 
-{-| A [`Outer`](#Outer) with every field at its default and every oneof unset.
+{-| A [`Outer`](#Outer) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultOuter | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultOuter : Outer
 defaultOuter =
@@ -211,7 +211,7 @@ defaultOuter =
     }
 
 
-{-| A [`OuterInner`](#OuterInner) with every field at its default and every oneof unset.
+{-| A [`OuterInner`](#OuterInner) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultOuterInner | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultOuterInner : OuterInner
 defaultOuterInner =
@@ -219,7 +219,7 @@ defaultOuterInner =
     }
 
 
-{-| A [`OuterInnerDeepest`](#OuterInnerDeepest) with every field at its default and every oneof unset.
+{-| A [`OuterInnerDeepest`](#OuterInnerDeepest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultOuterInnerDeepest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultOuterInnerDeepest : OuterInnerDeepest
 defaultOuterInnerDeepest =
@@ -227,7 +227,7 @@ defaultOuterInnerDeepest =
     }
 
 
-{-| A [`Node`](#Node) with every field at its default and every oneof unset.
+{-| A [`Node`](#Node) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNode | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultNode : Node
 defaultNode =
@@ -237,7 +237,7 @@ defaultNode =
     }
 
 
-{-| A [`Person`](#Person) with every field at its default and every oneof unset.
+{-| A [`Person`](#Person) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultPerson | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultPerson : Person
 defaultPerson =
@@ -246,7 +246,7 @@ defaultPerson =
     }
 
 
-{-| A [`Company`](#Company) with every field at its default and every oneof unset.
+{-| A [`Company`](#Company) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCompany | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultCompany : Company
 defaultCompany =
@@ -255,7 +255,7 @@ defaultCompany =
     }
 
 
-{-| A [`Forest`](#Forest) with every field at its default and every oneof unset.
+{-| A [`Forest`](#Forest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultForest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultForest : Forest
 defaultForest =
@@ -263,7 +263,7 @@ defaultForest =
     }
 
 
-{-| A [`Expr`](#Expr) with every field at its default and every oneof unset.
+{-| A [`Expr`](#Expr) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultExpr | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultExpr : Expr
 defaultExpr =
@@ -271,7 +271,7 @@ defaultExpr =
     }
 
 
-{-| A [`Sum`](#Sum) with every field at its default and every oneof unset.
+{-| A [`Sum`](#Sum) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultSum | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultSum : Sum
 defaultSum =

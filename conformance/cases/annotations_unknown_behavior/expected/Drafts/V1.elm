@@ -46,7 +46,7 @@ type alias Draft =
 -- DEFAULTS
 
 
-{-| A [`Draft`](#Draft) with every field at its default and every oneof unset.
+{-| A [`Draft`](#Draft) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDraft | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultDraft : Draft
 defaultDraft =

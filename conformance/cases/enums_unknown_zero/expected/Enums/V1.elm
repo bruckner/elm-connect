@@ -85,7 +85,7 @@ type alias Task =
 -- DEFAULTS
 
 
-{-| A [`Task`](#Task) with every field at its default and every oneof unset.
+{-| A [`Task`](#Task) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTask | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultTask : Task
 defaultTask =

@@ -84,7 +84,7 @@ type alias GetEntryRequest =
 -- DEFAULTS
 
 
-{-| A [`Entry`](#Entry) with every field at its default and every oneof unset.
+{-| A [`Entry`](#Entry) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEntry | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultEntry : Entry
 defaultEntry =
@@ -93,7 +93,7 @@ defaultEntry =
     }
 
 
-{-| A [`Part`](#Part) with every field at its default and every oneof unset.
+{-| A [`Part`](#Part) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultPart | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultPart : Part
 defaultPart =
@@ -101,7 +101,7 @@ defaultPart =
     }
 
 
-{-| A [`GetEntryRequest`](#GetEntryRequest) with every field at its default and every oneof unset.
+{-| A [`GetEntryRequest`](#GetEntryRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetEntryRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultGetEntryRequest : GetEntryRequest
 defaultGetEntryRequest =

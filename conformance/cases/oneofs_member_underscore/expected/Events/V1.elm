@@ -90,7 +90,7 @@ type alias ListEventsResponse =
 -- DEFAULTS
 
 
-{-| A [`Event`](#Event) with every field at its default and every oneof unset.
+{-| A [`Event`](#Event) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEvent | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultEvent : Event
 defaultEvent =
@@ -99,7 +99,7 @@ defaultEvent =
     }
 
 
-{-| A [`ListEventsRequest`](#ListEventsRequest) with every field at its default and every oneof unset.
+{-| A [`ListEventsRequest`](#ListEventsRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListEventsRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultListEventsRequest : ListEventsRequest
 defaultListEventsRequest =
@@ -108,7 +108,7 @@ defaultListEventsRequest =
     }
 
 
-{-| A [`ListEventsResponse`](#ListEventsResponse) with every field at its default and every oneof unset.
+{-| A [`ListEventsResponse`](#ListEventsResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListEventsResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultListEventsResponse : ListEventsResponse
 defaultListEventsResponse =

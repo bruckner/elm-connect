@@ -81,7 +81,7 @@ type alias Empty =
 -- DEFAULTS
 
 
-{-| A [`Scalars`](#Scalars) with every field at its default and every oneof unset.
+{-| A [`Scalars`](#Scalars) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultScalars | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultScalars : Scalars
 defaultScalars =

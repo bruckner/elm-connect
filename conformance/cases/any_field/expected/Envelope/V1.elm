@@ -65,7 +65,7 @@ type EnvelopeBody
 -- DEFAULTS
 
 
-{-| A [`Envelope`](#Envelope) with every field at its default and every oneof unset.
+{-| A [`Envelope`](#Envelope) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEnvelope | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultEnvelope : Envelope
 defaultEnvelope =

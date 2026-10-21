@@ -100,7 +100,7 @@ type alias GetNoteRequest =
 -- DEFAULTS
 
 
-{-| A [`Memo`](#Memo) with every field at its default and every oneof unset.
+{-| A [`Memo`](#Memo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultMemo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultMemo : Memo
 defaultMemo =
@@ -111,7 +111,7 @@ defaultMemo =
     }
 
 
-{-| A [`Edit`](#Edit) with every field at its default and every oneof unset.
+{-| A [`Edit`](#Edit) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEdit | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultEdit : Edit
 defaultEdit =
@@ -119,7 +119,7 @@ defaultEdit =
     }
 
 
-{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =

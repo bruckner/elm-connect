@@ -97,7 +97,7 @@ type alias True =
 -- DEFAULTS
 
 
-{-| A [`Dict`](#Dict) with every field at its default and every oneof unset.
+{-| A [`Dict`](#Dict) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDict | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultDict : Dict
 defaultDict =
@@ -105,7 +105,7 @@ defaultDict =
     }
 
 
-{-| A [`Result`](#Result) with every field at its default and every oneof unset.
+{-| A [`Result`](#Result) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultResult | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultResult : Result
 defaultResult =

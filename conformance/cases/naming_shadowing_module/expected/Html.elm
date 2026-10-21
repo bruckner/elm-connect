@@ -43,7 +43,7 @@ type alias Attributes =
 -- DEFAULTS
 
 
-{-| A [`Attributes`](#Attributes) with every field at its default and every oneof unset.
+{-| A [`Attributes`](#Attributes) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultAttributes | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultAttributes : Attributes
 defaultAttributes =

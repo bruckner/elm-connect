@@ -94,7 +94,7 @@ type alias GetTaskRequest =
 -- DEFAULTS
 
 
-{-| A [`Task`](#Task) with every field at its default and every oneof unset.
+{-| A [`Task`](#Task) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTask | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultTask : Task
 defaultTask =
@@ -108,7 +108,7 @@ defaultTask =
     }
 
 
-{-| A [`GetTaskRequest`](#GetTaskRequest) with every field at its default and every oneof unset.
+{-| A [`GetTaskRequest`](#GetTaskRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetTaskRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultGetTaskRequest : GetTaskRequest
 defaultGetTaskRequest =

@@ -54,7 +54,7 @@ type alias Moment =
 -- DEFAULTS
 
 
-{-| A [`Moment`](#Moment) with every field at its default and every oneof unset.
+{-| A [`Moment`](#Moment) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultMoment | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultMoment : Moment
 defaultMoment =

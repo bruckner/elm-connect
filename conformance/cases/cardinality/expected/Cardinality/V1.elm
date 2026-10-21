@@ -76,7 +76,7 @@ type alias Note =
 -- DEFAULTS
 
 
-{-| A [`Author`](#Author) with every field at its default and every oneof unset.
+{-| A [`Author`](#Author) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultAuthor | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultAuthor : Author
 defaultAuthor =
@@ -84,7 +84,7 @@ defaultAuthor =
     }
 
 
-{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNote | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultNote : Note
 defaultNote =

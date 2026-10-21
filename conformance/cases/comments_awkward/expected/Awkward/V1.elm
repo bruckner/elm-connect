@@ -162,7 +162,7 @@ type alias Docs =
 -- DEFAULTS
 
 
-{-| A [`Delimiters`](#Delimiters) with every field at its default and every oneof unset.
+{-| A [`Delimiters`](#Delimiters) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDelimiters | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultDelimiters : Delimiters
 defaultDelimiters =
@@ -176,7 +176,7 @@ defaultDelimiters =
     }
 
 
-{-| A [`Docs`](#Docs) with every field at its default and every oneof unset.
+{-| A [`Docs`](#Docs) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDocs | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultDocs : Docs
 defaultDocs =

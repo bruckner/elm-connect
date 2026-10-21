@@ -46,7 +46,7 @@ type alias Bounds =
 -- DEFAULTS
 
 
-{-| A [`Bounds`](#Bounds) with every field at its default and every oneof unset.
+{-| A [`Bounds`](#Bounds) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultBounds | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultBounds : Bounds
 defaultBounds =

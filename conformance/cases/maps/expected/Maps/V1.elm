@@ -94,7 +94,7 @@ type alias Team =
 -- DEFAULTS
 
 
-{-| A [`Member`](#Member) with every field at its default and every oneof unset.
+{-| A [`Member`](#Member) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultMember | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultMember : Member
 defaultMember =
@@ -102,7 +102,7 @@ defaultMember =
     }
 
 
-{-| A [`Team`](#Team) with every field at its default and every oneof unset.
+{-| A [`Team`](#Team) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTeam | … }`: unlike a record literal, that keeps compiling when the message gains a field.
 -}
 defaultTeam : Team
 defaultTeam =
