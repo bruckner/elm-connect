@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "bruckner/elm-connect",
-    "summary": "Runtime for Elm code generated from protobuf APIs by elm-connect",
+    "summary": "Call Connect RPC and google.api.http REST APIs from protobuf-generated Elm",
     "license": "MIT",
     "version": "0.1.0",
     "exposed-modules": [

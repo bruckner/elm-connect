@@ -1,6 +1,6 @@
 module Snippets.Signed exposing (signed)
 
-{-| The README's "Rewriting a request". `sign` stands for whatever an API asks
+{-| docs/calling.md's "Rewriting a request". `sign` stands for whatever an API asks
 a request to be signed with.
 -}
 

@@ -1,6 +1,6 @@
 module Snippets.Details exposing (violations)
 
-{-| The README's error details, read with the `Google.Rpc` this example
+{-| docs/descriptors.md's error details, read with the `Google.Rpc` this example
 generates from googleapis' `google/rpc/error_details.proto`.
 -}
 

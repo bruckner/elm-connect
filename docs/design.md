@@ -905,7 +905,7 @@ just the form encoders write. *(Proposed; built.)*
   change. Generated code does not use `==` on such a field: a singular
   one is left out at its default by its width (`Proto.Json.implicitBytesField`)
   rather than through `Proto.Json.implicitField`, which would leave out every
-  value. The README's option row and `Proto.Bytes`'s documentation say
+  value. `docs/generator.md`'s option row and `Proto.Bytes`'s documentation say
   this where a user meets `Bytes`.
 - Why `String` stays the default: the trap above. A record of `String`s
   compares, tests and diffs as its users expect; one holding `Bytes`
@@ -2268,7 +2268,7 @@ multiple modules with that name. One in the … package, and another
 defined locally", or with the runtime vendored as a source directory,
 "I found multiple files in your `source-directories` with that name".
 The application renames its own module; generated modules go under
-`module_prefix` (§3.1, the README's option table); a package whose
+`module_prefix` (§3.1, `docs/generator.md`'s option table); a package whose
 module would be one of the runtime's is refused
 (`naming::reserved_module`, §3.8). An option to
 move the runtime's own modules under a prefix was considered and
@@ -3228,12 +3228,13 @@ between the two transports. Every call goes through one function,
 tree the runner compiles, `examples/notes/elm/generated`, whose drift
 `just live-gen` checks. The server's `-static` flag serves the page and
 the API from one origin; `just example-notes` builds and runs both. The
-walkthrough (`examples/notes/README.md`) and the root README quote it:
+walkthrough (`examples/notes/README.md`), the root README and the `docs/`
+guides quote it:
 each Elm, proto, JSON or YAML block names the file it is from in its
 fence (a `region` comment pair, consecutive lines, or `excerpt` for lines
 in order from a generated file), `examples/check-snippets.sh` checks
 every one in `just check`, and `just live` compiles the application and
-`src/Snippets/`, the README's examples the application does not
+`src/Snippets/`, the README's and the guides' examples the application does not
 contain. A snippet that computes something, the update mask's, has
 tests in the example's `tests/`, which `just check` runs against the
 generated notes modules. The service-module snippets of §2.1 and §4 stay illustrations:
@@ -3536,7 +3537,7 @@ Within a major version:
 - What CI checks, all told: `just check` on Linux and macOS (formatting,
   clippy, the Rust tests with the corpus, the plugin's replay and the
   lockstep test, the runtime's build and Elm tests, the README's
-  excerpts, zizmor, gitleaks, `cargo deny` and `cargo package`), with
+  and the guides' excerpts, zizmor, gitleaks, `cargo deny` and `cargo package`), with
   the toolchain mise pins, which is the crates' `rust-version`; `just
   live` on Linux (§7); and the job above per earlier Elm release.
 

@@ -1,6 +1,6 @@
 module Snippets.Refresh exposing (withRefresh)
 
-{-| The README's token refresh, a wrapper around this example's `Api.rpc`.
+{-| docs/calling.md's token refresh, a wrapper around this example's `Api.rpc`.
 -}
 
 import Api exposing (Shared, rpc)

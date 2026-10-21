@@ -24,8 +24,8 @@ server/                      the Go server (connect-go, Vanguard and grpc-gatewa
 elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService, Google.Rpc
 elm/src/Main.elm             the application
 elm/src/Api.elm              the one function every call is sent through
-elm/src/Snippets/            the root README's examples, compiled with the application
-elm/tests/                   tests of the snippets that compute (UpdateMask), run by `just check`
+elm/src/Snippets/            the examples of the root README and docs/, compiled with the application
+elm/tests/                   tests of the snippets that compute (UpdateMask) and docs/quickstart.md's offline test, run by `just check`
 elm/index.html               the page: elm.js and nothing else
 routes/                      a link to conformance/routes: the route fixtures' API, served too
 ```
@@ -44,30 +44,21 @@ builds the server and the application (`elm make --optimize` into
 the API share one origin and need no CORS. Open it, and the browser's
 network tab beside it.
 
-## Installing the generator
+## Generating
 
-There is no release yet. The CLI and the protoc plugin install from the
-repository with Cargo:
-
-```sh
-cargo install --git https://github.com/bruckner/elm-connect elm-connect
-cargo install --git https://github.com/bruckner/elm-connect protoc-gen-elm-connect
-```
-
-The CLI needs nothing else: it compiles the protos itself and carries
-`google/api/annotations.proto` and `google/api/http.proto`. The plugin
-runs under protoc or buf; this example uses buf, which takes it from
-`PATH`:
+The generator and the runtime install as
+[`docs/install.md`](../../docs/install.md) says. This example uses buf,
+which takes the plugin from `PATH`; `buf.gen.yaml` names it:
 
 ```yaml examples/notes/buf.gen.yaml
 - local: protoc-gen-elm-connect
   out: elm/generated
 ```
 
-## Generating
+From this directory, either of these generates the client:
 
 ```sh
-buf generate                                         # from this directory
+buf generate
 elm-connect gen -I proto notes/v1/notes.proto --out elm/generated
 ```
 
@@ -94,13 +85,14 @@ and `google/api/annotations.proto`, which only carry `google.api.http`,
 and `google.protobuf` maps to the runtime.
 None of them needs the network: the googleapis files are in
 `third_party/googleapis/`, and `just protos-refresh` re-exports them
-from the Buf Schema Registry at the commit its README names.
+from the Buf Schema Registry at the commit its README names. A project
+outside this repository depends on `buf.build/googleapis/googleapis`
+instead ([`docs/install.md`](../../docs/install.md#with-buf)).
 
 ## The runtime in `elm.json`
 
-The generated modules import the runtime package, `Proto.*` and `Rpc`.
-It is not on the package index yet, so this application reads it from
-the repository's `src`, beside its own sources and the generated ones:
+The application reads the runtime from this repository's `src`, beside
+its own sources and the generated ones:
 
 ```json examples/notes/elm/elm.json
 "source-directories": [
@@ -110,17 +102,9 @@ the repository's `src`, beside its own sources and the generated ones:
 ],
 ```
 
-and takes the runtime's dependencies directly:
-
-```json examples/notes/elm/elm.json excerpt
-            "elm/bytes": "1.0.8",
-            "elm/http": "2.0.0",
-            "elm/json": "1.1.4",
-            "elm/time": "1.0.0"
-```
-
-Once the package is published, `elm install bruckner/elm-connect` replaces
-the third source directory.
+and takes the runtime's dependencies directly, as
+[`docs/install.md`](../../docs/install.md#the-runtime) explains for an
+application outside the repository.
 
 ## Sending every call through one function
 

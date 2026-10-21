@@ -1,6 +1,6 @@
 module Snippets.UpdateMask exposing (changedPaths, updateMask, validMask)
 
-{-| The README's "Update masks": a field mask from two values of a message,
+{-| docs/descriptors.md's "Update masks": a field mask from two values of a message,
 and a check of a mask's paths, both by walking the message's descriptor.
 -}
 

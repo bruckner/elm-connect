@@ -1,6 +1,7 @@
 module Snippets.Sending exposing (Msg(..), config, viaConnect, viaTranscoding)
 
-{-| The README's "Using the generated client": a call sent over each transport.
+{-| The README's quick start and docs/quickstart.md's first call: a call sent
+over each transport.
 -}
 
 -- region sending

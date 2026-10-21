@@ -63,11 +63,12 @@ elm-check: codec-gen
 codec-gen:
     cargo test -p elm-connect-gen --test codec
 
-# Check that every tagged code block of the README and the notes example's
-# walkthrough is an excerpt of the file it names (examples/check-snippets.sh).
-# The excerpts compile with the example, which `example-notes-build` builds.
+# Check that every tagged code block of the README, the guides in docs/ and
+# the notes example's walkthrough is an excerpt of the file it names
+# (examples/check-snippets.sh). The excerpts compile with the example, which
+# `example-notes-build` builds; those in its tests run in `elm-check`.
 snippets:
-    examples/check-snippets.sh README.md examples/notes/README.md
+    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/compared.md examples/notes/README.md
 
 # Audit the GitHub Actions workflows for template injection, unpinned
 # or vulnerable actions, leaked credentials and the like. The audits

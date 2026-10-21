@@ -1,193 +1,52 @@
 # elm-connect
 
-Elm clients for protobuf APIs, generated from `.proto` files.
-
-One generator, one runtime, two transports:
-
-- **Connect** — the [Connect protocol](https://connectrpc.com/docs/protocol/)
-  over JSON, for servers built with connect-go, connect-es, connect-python,
-  or Envoy's Connect filter.
-- **Transcode** — REST over JSON driven by `google.api.http` annotations,
-  for servers behind grpc-gateway or Envoy's gRPC-JSON transcoder.
-
-Generated code is transport-neutral: types, JSON codecs, and one function
-per method that turns a request into a call. A call is data, and so is the
-config that says which transport to send it over.
+elm-connect generates an Elm client from `.proto` files and calls the API
+over JSON: with the [Connect protocol](https://connectrpc.com/docs/protocol/)
+(connect-go, connect-es, connect-python, or Envoy's Connect-gRPC bridge
+in front of a gRPC server), or as REST through `google.api.http` rules
+(grpc-gateway, Envoy's gRPC-JSON transcoder, Vanguard). The generated
+code is the same for both; the transport is a field of the config a call
+is sent with. A call is data, and so is the config, so what a call sends
+and how it reads the answer can be checked without a server.
 
 ## Status
 
-Design. Nothing to install yet. The design is being worked out in the open
-in [`docs/design.md`](docs/design.md); iteration happens in pull requests
-against that document before any generator code lands.
+Pre-release, version 0.1.0. The generator and the runtime work: unary
+methods over Connect and over `google.api.http` transcoding, proto3
+JSON, Elm 0.19.0 to 0.19.2. The runtime passes the unary JSON test cases
+of the official [Connect conformance suite](https://github.com/connectrpc/conformance)
+(v1.0.6), with the features declared in
+[`conformance/live/conformance.yaml`](conformance/live/conformance.yaml):
+HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
+calls and Connect GET. A live suite runs every method over Connect
+against connect-go v2.0.1 and over transcoding against Vanguard v0.5.0
+and grpc-gateway v2.32.0, with the route fixtures under both
+transcoders.
 
-The generator grew out of an in-house Elixir protoc plugin that has been
-serving a production Elm client since early 2026. This repository is the
-portable, public rewrite: the generator in Rust, the runtime as an Elm
-package.
+Nothing is on crates.io or the Elm package index yet; 1.0 is the next
+release. Streaming, binary protobuf and gRPC-Web are out of scope for
+1.x; [docs/roadmap.md](docs/roadmap.md) says what may come, and whether
+it would be a minor or a major release.
 
-## Layout
-
-```
-Cargo.toml          Rust workspace
-crates/
-  elm-connect-gen/        the shared library: IR, emitter, Elm printer
-  protoc-gen-elm-connect/ the protoc plugin
-  elm-connect/            standalone CLI (no protoc needed)
-elm.json, src/, tests/    the Elm runtime package and its tests
-conformance/
-  cases/            proto inputs and the Elm expected from them
-  harness/          Elm application the expected output compiles in
-  routes/           route fixtures: the HTTP request a call becomes
-  live/             the runtime run against a live server (`just live`)
-examples/notes/     an example API, its Go server, and a browser app on its generated client
-docs/               design and decisions
-mise.toml           toolchain pin
-Justfile            task recipes; `just` lists them
-```
-
-Both binaries generate record types, their default values and JSON
-codecs for messages whose fields are scalars, enums, messages (recursive
-ones too) or well-known types, singular, `optional`, repeated or in
-maps, and custom types for enums and oneofs, a typed value per message
-and enum holding its codecs and descriptor, and a module per service
-with a call for every unary method. Beside the package's module, each
-message and enum gets a module of its descriptor; a message's also
-holds a descriptor per field. Each package of the given files is
-generated whole, from every file declaring it; a package they only
-import is not generated, as with any protoc plugin, and a reference to
-it is an error naming the ways to add it (`buf generate
---include-imports`, the file on protoc's command line, or the CLI's
-`--include-imports`). `google.protobuf` maps to the runtime instead.
-The plugin never generates `google/api/http.proto`,
-`google/api/annotations.proto` and `google/api/field_behavior.proto`,
-which only carry the options the generator reads (`google.api.http` and
-`google.api.field_behavior`), so `buf generate --include-imports` gives
-no `Google.Api` module of their types; other files imported for their options alone, such as
-`google/api/client.proto`, it generates when buf asks for them. The
-CLI's `--include-imports` generates no file nothing refers to, so none
-of these. Other `google/api` files, such as `httpbody.proto`, generate
-when asked for or referred to.
-
-The runtime package has two roots, `Proto` for data and `Rpc` for
-calling:
-
-| Module | Holds |
-|---|---|
-| `Proto.Json` | the proto3 JSON helpers generated codecs call |
-| `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
-| `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
-| `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
-| `Proto.Method` | a method's typed value (request encoder, response decoder and descriptor) and its descriptor as data, with its idempotency |
-| `Proto.Http` | a method's `google.api.http` rule as data |
-| `Proto.WellKnown` | the well-known types' typed values |
-| `Proto.Registry` | descriptors by full name |
-| `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
-| `Rpc` | building a call, config, sending over Connect or HTTP transcoding |
-| `Rpc.Call` | a call: adjusting it and reading it back |
-| `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
-| `Rpc.Trace` | what happened when a call was sent, for logs |
-| `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
-| `Rpc.Error` | why a call failed: its kind, code, message and details |
-| `Rpc.Code` | the codes an RPC fails with |
-| `Proto.Version` | the releases generated code can name (below) |
-
-The Elm package and the two binaries share one version number and are
-released together; generate with the binary whose version matches the
-package your application installs. Every generated module names the
-release it was generated for (`elmConnectVersion_ = Proto.Version.v0_1`),
-so a mismatch is a compile error rather than a surprise at run time: if
-the compiler reports that `Proto.Version` does not expose `v0_2`, the
-generated code is from release 0.2 and the installed package is not.
-Regenerate with the binary matching the package, or install the package
-version the generated code names. A newer package of the same major
-version accepts code an older binary of that major generated. The first
-line of a generated module names the exact version that wrote it, and
-`elm-connect --version` and `protoc-gen-elm-connect --version` print
-each binary's. Design §8 has the policy.
-
-## Options
-
-Both binaries take the same options: the protoc plugin as
-`--elm-connect_opt=key=value,key=value`, the CLI as flags.
-
-| Option | CLI flag | Values | Effect |
-|---|---|---|---|
-| `int64` | `--int64` | `string` (default), `int` | How 64-bit integers are held. `string` is exact; `int` gives Elm `Int`s, and a value outside ±(2^53 − 1) fails to decode. A field's `jstype` option (`JS_NUMBER`, `JS_STRING`) overrides it. |
-| `bytes` | `--bytes` | `string` (default), `bytes` | How `bytes` fields are held. `string` is the base64 text as received; `bytes` gives elm/bytes' `Bytes` (add elm/bytes to your `elm.json`), the `BytesValue` wrapper too. `Proto.Bytes` converts either way under both. Beware: Elm's `==` does not look inside a `Bytes`, so any two compare equal: a record differing only in a `Bytes` field equals the other, `Expect.equal` passes when the bytes differ, and a check for whether your model changed misses a change to them. |
-| `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route (below). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
-| `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
-| `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. |
-| `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
-| `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
-
-A problem in the protos or the options is reported as a diagnostic with
-a code, such as `services::unbound_method`, and fails the run;
-[docs/diagnostics.md](docs/diagnostics.md) lists every code with the
-option or edit that gets past it.
-
-For example, to give `notes.v1.Note` the Elm type `Memo` and its field
-`title` the record field `heading`:
+## Install
 
 ```sh
-protoc --elm-connect_out=generated \
-  --elm-connect_opt=rename=notes.v1.Note:Memo,rename=notes.v1.Note.title:heading \
-  notes.proto
-elm-connect gen notes.proto --out generated \
-  --rename notes.v1.Note:Memo --rename notes.v1.Note.title:heading
+cargo install --locked --git https://github.com/bruckner/elm-connect elm-connect
+cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-elm-connect
 ```
 
-To generate every module inside `Api`, so `notes.v1` becomes `Api.Notes.V1`
-in `generated/Api/Notes/V1.elm`:
+The CLI, `elm-connect`, needs nothing else; the plugin runs under protoc
+or buf. The runtime is an Elm package, read from a clone's `src/` as a
+source directory until it is published (`elm install
+bruckner/elm-connect` then). [docs/install.md](docs/install.md) has a
+complete `elm.json`, googleapis for protoc and buf, and how the versions
+line up.
 
-```sh
-protoc --elm-connect_out=generated --elm-connect_opt=module_prefix=Api notes.proto
-elm-connect gen notes.proto --out generated --module-prefix Api
-```
-
-The CLI alone also takes `--include-imports`, named after buf's: it
-also generates every imported file that declares a message or enum the
-given files' packages refer to, transitively, each imported package
-from those files alone (bar `google/protobuf`, which maps to the
-runtime). A file imported only for its options, such as
-`google/api/annotations.proto` or `google/api/client.proto`, is not
-generated. Off by default, so the CLI generates what protoc and buf do
-from the same files.
-
-`elm-connect check` takes exactly `gen`'s arguments and options, `-I`
-included, since a module's first line names its protos by their paths
-under the include directory; and writes nothing: it generates in memory
-and compares with the modules under `--out`, for CI to catch generated
-code that has drifted from its protos or from the generator. It exits 0
-when they are current, 1 when a module is missing, differs (shown as a
-unified diff) or is stale, and 2 when it cannot tell (bad arguments, a
-proto that does not compile). A stale module is an `.elm` file under
-`--out` whose first line is elm-connect's `-- Generated by elm-connect`
-notice naming one of the same protos, but which generating no longer
-gives. Files without that notice are left alone, so handwritten modules
-can share the directory, and so are modules another `gen` writes there
-from other protos. `gen` deletes nothing; it warns about the stale
-modules it leaves. When the modules differ only in the version they
-name, it says which version generated them instead of printing diffs.
-
-```sh
-elm-connect check notes.proto --out generated --module-prefix Api
-```
-
-The protoc plugin cannot check, since protoc writes its files; with
-protoc or buf, run `elm-connect check` on the same protos and options,
-or regenerate and `git diff --exit-code` the output.
-
-[`docs/design.md`](docs/design.md) §3.1, §3.4, §3.7, §3.8, §3.9, §4 and §6 have the details.
-
-## Using the generated client
+## Quick start
 
 From this proto:
 
 ```proto examples/notes/proto/notes/v1/notes.proto excerpt
-package notes.v1;
-
-import "google/api/annotations.proto";
-
 service NotesService {
   rpc GetNote(GetNoteRequest) returns (Note) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -199,24 +58,20 @@ service NotesService {
 }
 ```
 
-the generator writes `Notes.V1`, the types and their codecs,
-`Notes.V1.NotesService`, one function per method, each calling through
-its method's descriptor, `descriptorGetNote`, and a module of
-descriptors per message and enum, such as `Notes.V1.Note` (below):
+`elm-connect gen -I proto notes/v1/notes.proto --out generated` writes
+`Notes.V1`, the types and their JSON codecs, and `Notes.V1.NotesService`,
+one function per method:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 ping : () -> Rpc.Call () ()
 ```
 
-Each type and descriptor is documented with the proto's comment for it
-and its one-line declaration, such as `` `string name = 1;` ``, each
-call with its Connect path and its HTTP bindings, and a package's
-module with the comment on its `package` statement.
+Each type, call and descriptor carries the proto's comment and its
+one-line declaration as its doc, so editor hover and `elm repl` show
+what the proto says.
 
-A call is data: the method, its request, and its HTTP bindings. A
-config, also data, says where to send it and how; `Rpc.task` and
-`Rpc.send` send a call with a config:
+A call goes over either transport, from the same generated code:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
 import Notes.V1
@@ -248,290 +103,75 @@ viaTranscoding =
         |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
 ```
 
-`Rpc.config` is Connect with every call POSTed; set `transport`
-(`Rpc.Transport.connect`, `connectGet` or `transcode`), `headers`,
-`timeout`, `withCredentials` or `retry` (`Rpc.Retry.on [ Unavailable ]`,
-with jittered, capped backoff) with record syntax. `Rpc.checkConfig`
-reports a config's problems, such as a `baseUrl` with a query or a
-header value with a newline, where the application builds it rather
-than at the first call. A header a browser would refuse (a name that is
-not an HTTP token, a value with NUL, CR, LF or a character above
-U+00FF) is never sent: the call fails with `InvalidHeader`.
+[docs/quickstart.md](docs/quickstart.md) goes on from here: reading the
+result, trying calls in `elm repl`, and testing without a server.
 
-`Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
-`n` bytes of UTF-8, on either transport, as connect-go's
-`WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
-dropped before decoding and the call fails with
-`NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
-an error answer is still read for its status. `withWriteMaxBytes n` caps
-the request message's JSON the same way, as connect-go's
-`WithSendMaxBytes` and connect-node's `writeMaxBytes` do: a call over it is
-never sent, and fails with `NoAnswer (RequestTooLarge { limit, size })`.
-Neither has a limit by default, as in connect-node; connect-go reads at
-most 4 MiB unless told otherwise, and connect-web, the browser
-transport, has no such knob.
+## Scope
 
-Errors are one type for both transports, `Rpc.Error`, defined in
-`Rpc.Error` with its readers. Every error has a code and a message,
-`Rpc.Error.code error` and `Rpc.Error.message error`, and is one of:
+- Unary methods only. A streaming method is a diagnostic, or is left
+  out under `streaming=skip`.
+- JSON only: proto3 JSON, no binary protobuf.
+- proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
+  a file that declares an edition is `input::editions`.
+- No streaming, no gRPC-Web.
+- No interceptors: the config is data, so an application sends every
+  call through one function of its own
+  ([docs/calling.md](docs/calling.md#wrapping-the-sending-once)).
 
-- `RpcStatus`: the server stated a status, in a Connect error body, a
-  `google.rpc.Status` body or the `grpc-status` headers: its code (an
-  `Rpc.Code.Code`), message, details and where it was read from.
-- `HttpStatus`: the server answered with a failure and stated no
-  status; the code is inferred from the HTTP status (a 404 is
-  `Unimplemented`, a 503 `Unavailable`).
-- `BadResponse`: the server answered with success, but the body did not
-  decode as the response, as when the schema drifted between client
-  and server; code `Internal`, the message quoting elm/json's problem.
-- `NoAnswer`: nothing came back, nothing was sent, or the answer was
-  refused unread: a `Timeout` (`DeadlineExceeded`), a `NetworkError`
-  (`Unavailable`), a `BadUrl` or an `InvalidHeader` (both `Internal`,
-  and never sent), or `RequestTooLarge` or `ResponseTooLarge`
-  (`ResourceExhausted`, over the send or the receive limit).
+## Compared with
 
-The first three keep the answer itself (URL, status, headers and body),
-for errors in a shape the runtime does not read and bodies that do not
-decode.
+The existing Elm protobuf stack, protoc-gen-elm with elm-protocol-buffers
+and elm-grpc (last released in 2024), is binary-first: it can generate
+proto3 JSON codecs, but its only transport is binary gRPC-Web. An OpenAPI
+export of the same protos, fed to an OpenAPI generator, gives a REST
+client but loses proto3 JSON's rules (64-bit integers as exact strings,
+enums by name or number, the well-known types' forms, oneofs, `Any`,
+status details) and cannot switch to Connect. What elm-connect adds:
 
-### Descriptors
+- one generated client, switched between Connect and `google.api.http`
+  transcoding in its config;
+- a CLI that needs no protoc, beside a plugin for protoc and buf;
+- the Connect conformance suite and live transcoders in CI, with the
+  transcoders' differences published;
+- a retry policy gated on each method's idempotency;
+- pure halves, `Rpc.request` and `Rpc.response`, for tests without a
+  server.
 
-Each message and enum also has a typed value, `Notes.V1.messageNote`
-and `Notes.V1.enumVisibility`, holding its codecs, its default and its
-descriptor: its full name and its fields (or values) as data, each
-field with its `google.api.field_behavior` and whether it is deprecated.
-The descriptor lives in a module of its own beside the package's, the
-values a program sends and receives staying in `Notes.V1`:
-`Notes.V1.Note.descriptor`, with one value per field
-(`Notes.V1.Note.title`), and `Notes.V1.Visibility.descriptor`. All are
-opaque, read through the module of their concept (`Proto.Message`,
-with `Proto.Field` for a field). `Notes.V1.registry` holds the
-descriptors of the package, of every package it imports and of the
-well-known types, by full name:
+[docs/compared.md](docs/compared.md) has the details, and a guide for
+users of protoc-gen-elm.
 
-```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
-import Notes.V1
-import Notes.V1.Note
-import Proto.Field
-import Proto.Message
-import Proto.Registry
+## Documentation
 
-
-noteUrl : String
-noteUrl =
-    -- "type.googleapis.com/notes.v1.Note"
-    Proto.Message.typeUrl Notes.V1.Note.descriptor
-
-
-noteFields : List String
-noteFields =
-    -- the proto names of Note's fields, in declaration order
-    Proto.Registry.message "notes.v1.Note" Notes.V1.registry
-        |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
-        |> Maybe.withDefault []
-```
-
-The descriptors are enough to walk a message. The example's
-`Snippets.UpdateMask` builds an update request's
-`google.protobuf.FieldMask` from the value before and after an edit,
-naming a nested message's changed fields through the registry:
-
-```elm examples/notes/elm/src/Snippets/UpdateMask.elm#update-mask-use
-{-| The `google.protobuf.FieldMask` of what changed from `before` to
-`after`, for an update request such as `UpdateNoteRequest`.
--}
-updateMask : Registry -> Message a -> a -> a -> List String
-updateMask registry message before after =
-    changedPaths registry
-        (Message.toDescriptor message)
-        (Message.encode message before)
-        (Message.encode message after)
-```
-
-### Any
-
-`Proto.Any` packs a message into a `google.protobuf.Any` with its typed
-value, and unpacks one the same way: `Nothing` when it holds another
-type, `Just (Err problem)` when it holds this type but cannot be read.
-
-```elm examples/notes/elm/src/Snippets/Any.elm#any
-import Notes.V1
-import Proto.Any
-
-
-packed : Proto.Any.Any
-packed =
-    -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
-    let
-        note =
-            Notes.V1.defaultNote
-    in
-    Proto.Any.pack Notes.V1.messageNote { note | title = "groceries" }
-
-
-title : Proto.Any.Any -> Maybe String
-title any =
-    case Proto.Any.unpack Notes.V1.messageNote any of
-        Just (Ok note) ->
-            Just note.title
-
-        _ ->
-            Nothing
-```
-
-An error's details are `Any`s, and `Rpc.Error.details` gives those of one
-type, here `google.rpc.BadRequest` from a package generated from
-`google/rpc/error_details.proto` (the notes example generates it with buf
-from googleapis):
-
-```elm examples/notes/elm/src/Snippets/Details.elm#details
-import Google.Rpc
-import Rpc
-import Rpc.Error
-
-
-violations : Rpc.Error -> List String
-violations error =
-    Rpc.Error.details Google.Rpc.messageBadRequest error
-        |> List.concatMap .fieldViolations
-        |> List.map .description
-```
-
-A Connect server sends each detail as protobuf binary, with its JSON
-beside it as `debug` when it chooses to; a detail without `debug` keeps
-its type but does not unpack (`Proto.Any.BinaryOnly`).
-
-### Wrapping the sending once
-
-The config holds no functions (no interceptors, no token provider), so
-an application sends every call through one function of its own that
-builds the config from its state:
-
-```elm examples/notes/elm/src/Api.elm#wrapper
-rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
-rpc shared call =
-    Rpc.task (config shared) call
-
-
-config : Shared -> Rpc.Config
-config shared =
-    let
-        base =
-            Rpc.config shared.apiUrl
-    in
-    { base
-        | transport = shared.transport
-        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
-    }
-```
-
-Since a call is a value, a wrapper can send it again. Refreshing an
-expired token and retrying once:
-
-```elm examples/notes/elm/src/Snippets/Refresh.elm#refresh
-withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call req res -> Task Rpc.Error res
-withRefresh refresh shared call =
-    rpc shared call
-        |> Task.onError
-            (\error ->
-                if Rpc.Error.code error == Rpc.Code.Unauthenticated then
-                    refresh |> Task.andThen (\fresh -> rpc fresh call)
-
-                else
-                    Task.fail error
-            )
-```
-
-Several calls failing at once would each refresh; an application that
-cares keeps the refresh single-flight in its update. For retrying on
-codes such as `Unavailable`, the config's `retry` policy
-(`Rpc.Retry`) needs no wrapper.
-
-### Rewriting a request
-
-`Rpc.request` gives the HTTP request a call stands for, and
-`Rpc.taskFromRequest` sends a request in its place and reads the answer
-as the call's, so anything the config cannot say is a function between
-the two:
-
-```elm examples/notes/elm/src/Snippets/Signed.elm#signed
-signed : Rpc.Config -> Rpc.Call req res -> Task Rpc.Error res
-signed cfg call =
-    let
-        request =
-            Rpc.request cfg call
-    in
-    { request | headers = ( "X-Signature", sign request ) :: request.headers }
-        |> Rpc.taskFromRequest cfg call
-```
-
-`Rpc.response` is the other half: it reads an `Http.Response String`
-as the call's answer, so both can be tested without a server.
-
-### Methods without an HTTP rule
-
-`Ping` has no `google.api.http` rule, and is generated like the
-rest. Over Connect nothing changes. Over transcoding it is sent on the
-implicit route, `POST /notes.v1.NotesService/Ping` with the request
-as its JSON body, which is the request Connect sends. Servers serve
-that route as follows:
-
-| Server | Implicit route |
-|---|---|
-| grpc-gateway | with `generate_unbound_methods=true` |
-| Envoy gRPC-JSON transcoder | with `auto_mapping: true` |
-| Vanguard | always (v0.5 serves rules only; the Connect handler mounted beside it serves the route) |
-| A Connect handler (connect-go, connect-es, …) | always: it is the Connect request |
-
-For a server that serves rules alone, generate with
-`unbound_methods=error`, and a method without a rule is a diagnostic
-rather than a call that fails at run time.
-
-### Transcoder differences the live suite found
-
-The live suite runs every route fixture against two transcoders in front
-of the same service. Where a transcoder answered other than
-`google/api/http.proto` and proto3 JSON say:
-
-- grpc-gateway v2.32.0 forwards a `google.protobuf.FieldMask` query value's
-  paths as written, so a mask sent in the query in its JSON form
-  (`mask=displayName`) reaches the service as a path no field has, and
-  the call fails.
-- grpc-gateway v2.32.0, under its default unescaping mode, answers 404 for
-  a single-segment path variable holding `%2F`;
-  `UnescapingModeAllExceptReserved` serves it.
-- Vanguard v0.5.0 rejects an empty `google.protobuf.StringValue` sent as
-  `label=` with 400 `INVALID_ARGUMENT`; fix proposed in
-  [connectrpc/vanguard-go#208](https://github.com/connectrpc/vanguard-go/pull/208).
-
-The full readings, with the differences where neither side is wrong, are
-in `conformance/live/known-divergent-gateway.json` and
-`conformance/live/known-divergent-vanguard.json`.
+- [docs/install.md](docs/install.md): the binaries, the runtime in
+  `elm.json`, googleapis, versions.
+- [docs/quickstart.md](docs/quickstart.md): from a proto to a call, in
+  `elm repl` and in a test.
+- [docs/generator.md](docs/generator.md): what a proto becomes in Elm,
+  the options, `check`, and running the plugin.
+- [docs/calling.md](docs/calling.md): configs, transports, retries,
+  errors, tracing, cancelling, and the pure halves.
+- [docs/descriptors.md](docs/descriptors.md): descriptors, the registry,
+  `Any`, error details and update masks.
+- [docs/transcoding.md](docs/transcoding.md): `google.api.http` in
+  practice, server options, and where transcoders differ.
+- [docs/compared.md](docs/compared.md): the other Elm tools and the
+  OpenAPI route.
+- [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
+  what gets past it.
+- [docs/design.md](docs/design.md): the design, with its reasons.
+- [examples/notes](examples/notes): an API, its Go server, and a browser
+  application on its generated client, with a walkthrough.
 
 ## Developing
 
 ```sh
-mise install    # Rust, Elm, elm-format, elm-test-rs, node, just, cargo-deny
+mise install    # the toolchain: Rust, Elm, elm-format, elm-test-rs, node, Go, buf, just, …
 just check      # the gate CI runs
+just live       # the runtime against the example server, and the Connect conformance suite
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
-
-**Live verification.** `just live` runs the runtime, compiled into a
-headless Elm program and driven from Node, against
-[`examples/notes`](examples/notes): a Go server answering over Connect
-(connect-go) and HTTP transcoding (Vanguard, and grpc-gateway under
-`/gateway`) from one port. Every method over both transports, errors with details, timeouts, retries and
-Connect GET and cancellation are covered; [`conformance/README.md`](conformance/README.md)
-has the case format, and CI runs it on every pull request.
-`just live` also runs the official
-[Connect conformance suite](https://github.com/connectrpc/conformance)'s
-unary JSON test cases (v1.0.6) against the runtime: all 40 pass.
-
-**The example.** [`examples/notes`](examples/notes) is also a browser
-application over either transport, with a walkthrough; `just
-example-notes` serves it. The Elm blocks above are excerpts of it, and
-`just check` fails when one drifts from its file.
+[CONTRIBUTING.md](CONTRIBUTING.md) has the workflow, and
+[`conformance/README.md`](conformance/README.md) the test layers.
 
 ## License
 
