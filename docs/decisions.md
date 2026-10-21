@@ -262,13 +262,18 @@ failing on it. Error details are `Any` values. Before, a field of
 `Rpc.Transport.withReadMaxBytes` refuses a successful answer longer
 than a limit before decoding it, and `withWriteMaxBytes` refuses to
 send a request message longer than one; neither has a default, as in
-connect-go and connect-es. They are protocol knobs, so they are on
+connect-node. connect-go reads at most 4 MiB unless told otherwise, and
+connect-web, the browser transport, has no such knob. They are protocol knobs, so they are on
 `Rpc.Transport`, not in the frozen `Config`. The failures are two new
 reasons, `ResponseTooLarge` and `RequestTooLarge`, added before 1.0
 because `Rpc.Error.Reason` freezes then, and kept apart so a caller can
 tell a request it must shrink from an answer it chose not to read. A
-default limit was the alternative; none of the Connect clients sets
-one. Where: design §5.1, §5.4.
+default limit, connect-go's 4 MiB, was the alternative; the browser has
+downloaded the body before the limit applies, so a default would
+surprise without saving bandwidth. The knob is kept though no browser
+client has one: an Elm program also runs headless under Node, between
+connect-web and connect-node, and server streaming will check each
+message against the same limit. Where: design §1, §5.1, §5.4.
 
 ### `Proto.Field.Behavior` keeps unknown numbers
 

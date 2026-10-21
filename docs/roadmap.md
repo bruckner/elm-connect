@@ -188,8 +188,10 @@ version impact.
 
 - **Client and bidirectional streaming.** A browser cannot stream a
   request body to a server, except Chrome over HTTP/2, and connect-es
-  does not offer these in browsers either. If browsers change, they
-  would be additions like server streaming.
+  does not offer these in browsers either. A headless program under
+  Node could, as connect-node's clients do; that would be a Node-only
+  addition, taken up if asked for. If browsers change, they would be
+  additions like server streaming.
 - **Interceptors.** The config is data; the pattern that replaces them
   (one function every call goes through, and the pure halves for
   rewriting a request) is in [calling.md](calling.md).
