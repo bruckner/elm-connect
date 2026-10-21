@@ -260,10 +260,15 @@ U+00FF) is never sent: the call fails with `InvalidHeader`.
 
 `Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
 `n` bytes of UTF-8, on either transport, as connect-go's
-`WithReadMaxBytes` and connect-es's `readMaxBytes` do. There is no limit
-by default. A body over it is dropped before decoding and the call fails
-with `NoAnswer (TooLarge { limit, size })`, code `ResourceExhausted`; an
-error answer is still read for its status.
+`WithReadMaxBytes` and connect-es's `readMaxBytes` do. A body over it is
+dropped before decoding and the call fails with
+`NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
+an error answer is still read for its status. `withWriteMaxBytes n` caps
+the request message's JSON the same way, as connect-go's
+`WithSendMaxBytes` and connect-es's `writeMaxBytes` do: a call over it is
+never sent, and fails with `NoAnswer (RequestTooLarge { limit, size })`.
+Neither has a limit by default.
+
 Errors are one type for both transports, `Rpc.Error`, defined in
 `Rpc.Error` with its readers. Every error has a code and a message,
 `Rpc.Error.code error` and `Rpc.Error.message error`, and is one of:
@@ -280,8 +285,8 @@ Errors are one type for both transports, `Rpc.Error`, defined in
 - `NoAnswer`: nothing came back, nothing was sent, or the answer was
   refused unread: a `Timeout` (`DeadlineExceeded`), a `NetworkError`
   (`Unavailable`), a `BadUrl` or an `InvalidHeader` (both `Internal`,
-  and never sent), or `TooLarge` (`ResourceExhausted`, over the
-  receive limit).
+  and never sent), or `RequestTooLarge` or `ResponseTooLarge`
+  (`ResourceExhausted`, over the send or the receive limit).
 
 The first three keep the answer itself (URL, status, headers and body),
 for errors in a shape the runtime does not read and bodies that do not

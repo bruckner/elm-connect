@@ -177,6 +177,7 @@ suite =
         , transports
         , configs
         , receiveLimits
+        , sendLimits
         , headerRules
         , bodies
         , traces
@@ -563,12 +564,13 @@ responses =
                         ]
         , test "an error without a stated status has the code the Connect clients give it" <|
             \_ ->
-                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), NoAnswer (TooLarge { limit = 10, size = 11 }), BadResponse "oops" blank ]
+                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), NoAnswer (RequestTooLarge { limit = 10, size = 11 }), NoAnswer (ResponseTooLarge { limit = 10, size = 11 }), BadResponse "oops" blank ]
                     |> List.map (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal
                         [ ( DeadlineExceeded, "timeout" )
                         , ( Unavailable, "network error" )
                         , ( Internal, "bad URL: ::" )
+                        , ( ResourceExhausted, "message size 11 is larger than configured writeMaxBytes 10" )
                         , ( ResourceExhausted, "message size 11 is larger than configured readMaxBytes 10" )
                         , ( Internal, "bad response body: oops" )
                         ]
@@ -595,7 +597,8 @@ responses =
                 , NoAnswer Timeout
                 , NoAnswer NetworkError
                 , NoAnswer (BadUrl "::")
-                , NoAnswer (TooLarge { limit = 10, size = 11 })
+                , NoAnswer (RequestTooLarge { limit = 10, size = 11 })
+                , NoAnswer (ResponseTooLarge { limit = 10, size = 11 })
                 , BadResponse "oops" blank
                 ]
                     |> List.map Rpc.Error.toString
@@ -607,6 +610,7 @@ responses =
                         , "deadline_exceeded: timeout"
                         , "unavailable: network error"
                         , "internal: bad URL: ::"
+                        , "resource_exhausted: message size 11 is larger than configured writeMaxBytes 10"
                         , "resource_exhausted: message size 11 is larger than configured readMaxBytes 10"
                         , "internal: bad response body: oops"
                         ]
@@ -920,7 +924,7 @@ receiveLimits =
                         (List.concat
                             (List.repeat 3
                                 [ Ok "é"
-                                , Err ( NoAnswer (TooLarge { limit = 13, size = 14 }), ResourceExhausted, "message size 14 is larger than configured readMaxBytes 13" )
+                                , Err ( NoAnswer (ResponseTooLarge { limit = 13, size = 14 }), ResourceExhausted, "message size 14 is larger than configured readMaxBytes 13" )
                                 ]
                             )
                         )
@@ -949,6 +953,57 @@ receiveLimits =
                 ( List.map (Rpc.Transport.withReadMaxBytes 10 >> Rpc.Transport.name) [ Rpc.Transport.connect, Rpc.Transport.transcode ]
                 , Rpc.request (limited (Rpc.Transport.withMaxGetUrl 30 Rpc.Transport.connectGet) 10) (getNote { name = "x" })
                     == Rpc.request (getting (Just 30)) (getNote { name = "x" })
+                )
+                    |> Expect.equal ( [ "connect", "transcode" ], True )
+        ]
+
+
+sendLimits : Test
+sendLimits =
+    let
+        -- {"name":"é"}: 12 UTF-16 units, 13 bytes of UTF-8.
+        call =
+            getNote { name = "é" }
+
+        json =
+            Json.Encode.encode 0 (Rpc.Call.requestJson call)
+
+        refused transport limit =
+            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) json
+                |> Maybe.map (\reason -> ( reason, Rpc.Error.code (NoAnswer reason), Rpc.Error.message (NoAnswer reason) ))
+    in
+    describe "withWriteMaxBytes"
+        [ test "the request measured is the JSON a POST sends" <|
+            \_ ->
+                ( Rpc.request base call |> .body |> Rpc.Body.toText, String.length json )
+                    |> Expect.equal ( Just json, 12 )
+        , test "a request at the limit is sent, one byte over is refused with both sizes" <|
+            \_ ->
+                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> List.concatMap (\transport -> [ refused transport 13, refused transport 12 ])
+                    |> Expect.equal
+                        (List.concat
+                            (List.repeat 3
+                                [ Nothing
+                                , Just ( RequestTooLarge { limit = 12, size = 13 }, ResourceExhausted, "message size 13 is larger than configured writeMaxBytes 12" )
+                                ]
+                            )
+                        )
+        , test "every transport starts with no limit" <|
+            \_ ->
+                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (String.repeat 100000 "x"))
+                    |> Expect.equal [ Nothing, Nothing, Nothing ]
+        , test "checkConfig reports a limit below 1, not one of 1 or more" <|
+            \_ ->
+                [ 0, -1, 1, 1000000 ]
+                    |> List.map (\limit -> Rpc.checkConfig { base | transport = Rpc.Transport.withWriteMaxBytes limit Rpc.Transport.transcode } |> List.length)
+                    |> Expect.equal [ 1, 1, 0, 0 ]
+        , test "the knob keeps the protocol and its other options" <|
+            \_ ->
+                ( List.map (Rpc.Transport.withWriteMaxBytes 10 >> Rpc.Transport.name) [ Rpc.Transport.connect, Rpc.Transport.transcode ]
+                , Rpc.request { base | transport = Rpc.Transport.withWriteMaxBytes 10 (Rpc.Transport.withMaxGetUrl 30 Rpc.Transport.connectGet) } call
+                    == Rpc.request (getting (Just 30)) call
                 )
                     |> Expect.equal ( [ "connect", "transcode" ], True )
         ]

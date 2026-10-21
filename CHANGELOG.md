@@ -1006,9 +1006,12 @@ tag (design §8).
   created on Windows (design §3.7).
 - `Rpc.Transport.withReadMaxBytes` refuses a successful answer whose body
   is longer than a limit, in bytes of UTF-8, before decoding it, as
-  connect-go's `WithReadMaxBytes` and connect-es's `readMaxBytes` do (no
-  limit by default). The call fails with the new
-  `Rpc.Error.NoAnswer (TooLarge { limit, size })`, code
-  `ResourceExhausted`; code matching `Reason` exhaustively needs the new
-  case. `Rpc.checkConfig` reports a limit below 1, and the Connect
-  conformance config declares `supportsMessageReceiveLimit`.
+  connect-go's `WithReadMaxBytes` and connect-es's `readMaxBytes` do, and
+  `withWriteMaxBytes` refuses to send a request message whose JSON is,
+  as connect-go's `WithSendMaxBytes` and connect-es's `writeMaxBytes` do
+  (no limit by default). The call fails with the new
+  `Rpc.Error.NoAnswer (ResponseTooLarge { limit, size })` or
+  `NoAnswer (RequestTooLarge { limit, size })`, code `ResourceExhausted`;
+  code matching `Reason` exhaustively needs the new cases.
+  `Rpc.checkConfig` reports a limit below 1, and the Connect conformance
+  config declares `supportsMessageReceiveLimit`.

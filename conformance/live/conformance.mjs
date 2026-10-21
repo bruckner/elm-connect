@@ -197,13 +197,14 @@ function detail(json) {
 }
 
 // The error a call that got no answer stands for. A timeout is the client's
-// own deadline passing, and `TooLarge <size> <limit>` an answer over the
-// receive limit, dropped unread; anything else did not get an answer the
-// runtime could read as one.
+// own deadline passing, `ResponseTooLarge <size> <limit>` an answer over the
+// receive limit, dropped unread, and `RequestTooLarge <size> <limit>` a
+// request over the send limit, never sent; anything else did not get an
+// answer the runtime could read as one.
 function noAnswerError(problem) {
   if (problem === "Timeout") return { code: Code.DEADLINE_EXCEEDED, message: "Timeout" };
   if (problem === "NetworkError") return { code: Code.UNAVAILABLE, message: "NetworkError" };
-  if (problem.startsWith("TooLarge ")) return { code: Code.RESOURCE_EXHAUSTED, message: problem };
+  if (/^(Request|Response)TooLarge /.test(problem)) return { code: Code.RESOURCE_EXHAUSTED, message: problem };
   return { code: Code.UNKNOWN, message: problem };
 }
 

@@ -317,6 +317,7 @@ An **envelope**, what the runner sends:
     "useGet": false,
     "maxGetUrl": null,
     "readMaxBytes": null,
+    "writeMaxBytes": null,
     "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
   },
   "binding": null,
@@ -334,8 +335,9 @@ An **envelope**, what the runner sends:
 own, `Rpc.Call.withHeaders`, sent after the config's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
-(`Rpc.Transport.connectGet`, `withMaxGetUrl`); `readMaxBytes` applies
-`Rpc.Transport.withReadMaxBytes` to either transport. `retry` builds an
+(`Rpc.Transport.connectGet`, `withMaxGetUrl`); `readMaxBytes` and
+`writeMaxBytes` apply `Rpc.Transport.withReadMaxBytes` and
+`withWriteMaxBytes` to either transport. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
 `jitter` (default false, so a case's waits are the bounds it states).
@@ -388,7 +390,8 @@ error was read from: `statusCode`, `statusText` and `body`),
 `{"badResponse": {"problem", "response"}}` for a successful answer whose
 body did not decode (elm/json's problem, and the answer as above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
-`InvalidHeader <name>`, `TooLarge <size> <limit>`) for an
+`InvalidHeader <name>`, `RequestTooLarge <size> <limit>`,
+`ResponseTooLarge <size> <limit>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
@@ -473,7 +476,7 @@ answer's headers itself; with `sendTraced` it reports the `Trace`'s
 way a repeated header is one value, joined with `", "` as elm/http gives
 it, which the suite accepts. A call with no answer is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-`TooLarge` as `resource_exhausted`, anything else, and a bad response, as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
+`RequestTooLarge` and `ResponseTooLarge` as `resource_exhausted`, anything else, and a bad response, as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure

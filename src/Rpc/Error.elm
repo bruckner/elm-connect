@@ -79,7 +79,11 @@ type Error
   - `InvalidHeader`: a header, named here, that a request cannot carry: its
     name is not an HTTP token, or its value holds NUL, CR, LF or a character
     above U+00FF. Nothing was sent.
-  - `TooLarge`: a successful answer's body was longer, in UTF-8 bytes
+  - `RequestTooLarge`: the request message, as JSON, was longer in UTF-8
+    bytes (`size`) than the transport sends (`limit`,
+    [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes)). Nothing was
+    sent.
+  - `ResponseTooLarge`: a successful answer's body was longer, in UTF-8 bytes
     (`size`), than the transport reads (`limit`,
     [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes)). The body was
     dropped without decoding, so the error keeps no `Response`.
@@ -93,7 +97,8 @@ type Reason
     | NetworkError
     | BadUrl String
     | InvalidHeader String
-    | TooLarge { limit : Int, size : Int }
+    | RequestTooLarge { limit : Int, size : Int }
+    | ResponseTooLarge { limit : Int, size : Int }
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -136,8 +141,8 @@ type Source
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus).
   - `BadResponse`: `Internal`.
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL or an invalid header `Internal`, a body over the
-    limit `ResourceExhausted`.
+    `Unavailable`, a bad URL or an invalid header `Internal`, a request or a
+    response over its limit `ResourceExhausted`.
 
 -}
 code : Error -> Code
@@ -164,7 +169,10 @@ code error =
         NoAnswer (InvalidHeader _) ->
             Code.Internal
 
-        NoAnswer (TooLarge _) ->
+        NoAnswer (RequestTooLarge _) ->
+            Code.ResourceExhausted
+
+        NoAnswer (ResponseTooLarge _) ->
             Code.ResourceExhausted
 
 
@@ -177,8 +185,9 @@ code error =
     application never shows, so the message keeps its first 300 characters,
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
-    `invalid header "<name>"` or, as connect-es words it,
-    `message size <size> is larger than configured readMaxBytes <limit>`. A bad URL is printed as its scheme, host and
+    `invalid header "<name>"` or, as connect-es words them,
+    `message size <size> is larger than configured writeMaxBytes <limit>`
+    for a request and `… readMaxBytes <limit>` for a response. A bad URL is printed as its scheme, host and
     path, without the user and password a URL can hold, and without its query
     and fragment, which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
@@ -214,7 +223,10 @@ message error =
         NoAnswer (InvalidHeader name) ->
             "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
 
-        NoAnswer (TooLarge { limit, size }) ->
+        NoAnswer (RequestTooLarge { limit, size }) ->
+            "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit
+
+        NoAnswer (ResponseTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
 
 

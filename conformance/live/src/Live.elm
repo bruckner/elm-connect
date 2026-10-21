@@ -253,7 +253,7 @@ oneOfNames what names =
 config : Transport -> Decoder Rpc.Config
 config t =
     Decode.map8
-        (\baseUrl headers timeout withCredentials useGet maxGetUrl readMaxBytes retry ->
+        (\baseUrl headers timeout withCredentials useGet maxGetUrl withLimits retry ->
             { transport =
                 (case t of
                     Connect ->
@@ -262,7 +262,7 @@ config t =
                     Transcode ->
                         Rpc.Transport.transcode
                 )
-                    |> (Maybe.map Rpc.Transport.withReadMaxBytes readMaxBytes |> Maybe.withDefault identity)
+                    |> withLimits
             , baseUrl = baseUrl
             , headers = headers
             , timeout = timeout
@@ -276,8 +276,23 @@ config t =
         (optional "withCredentials" Decode.bool False)
         (optional "useGet" Decode.bool False)
         (optional "maxGetUrl" (Decode.nullable Decode.int) Nothing)
-        (optional "readMaxBytes" (Decode.nullable Decode.int) Nothing)
+        limits
         (optional "retry" (Decode.nullable retryPolicy) Nothing)
+
+
+{-| The size limits `readMaxBytes` and `writeMaxBytes` set, applied to a
+transport.
+-}
+limits : Decoder (Rpc.Transport.Transport -> Rpc.Transport.Transport)
+limits =
+    let
+        limit name knob =
+            optional name (Decode.nullable Decode.int) Nothing
+                |> Decode.map (Maybe.map knob >> Maybe.withDefault identity)
+    in
+    Decode.map2 (>>)
+        (limit "readMaxBytes" Rpc.Transport.withReadMaxBytes)
+        (limit "writeMaxBytes" Rpc.Transport.withWriteMaxBytes)
 
 
 pair : Decoder ( String, String )

@@ -61,7 +61,7 @@ toResult transport ((Call fields) as c) answer =
 
 {-| A successful answer's body read by `decode`, unless it is longer than the
 transport reads: then it is dropped unread, and the call fails with
-`TooLarge`.
+`ResponseTooLarge`.
 -}
 within : Transport -> String -> (() -> Result Error res) -> Result Error res
 within transport raw decode =
@@ -69,7 +69,7 @@ within transport raw decode =
         Just limit ->
             case Internal.overLimit limit raw of
                 Just size ->
-                    Err (Error.NoAnswer (Error.TooLarge { limit = limit, size = size }))
+                    Err (Error.NoAnswer (Error.ResponseTooLarge { limit = limit, size = size }))
 
                 Nothing ->
                     decode ()

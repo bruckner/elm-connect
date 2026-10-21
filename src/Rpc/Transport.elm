@@ -1,6 +1,6 @@
 module Rpc.Transport exposing
     ( Transport, connect, connectGet, transcode
-    , withMaxGetUrl, withReadMaxBytes
+    , withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
     , name
     )
 
@@ -16,7 +16,7 @@ It is data, like the rest of a config: transports built alike are `==`.
 
 # Options
 
-@docs withMaxGetUrl, withReadMaxBytes
+@docs withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
 
 
 # Reading
@@ -40,7 +40,7 @@ POSTed, as connect-es does by default.
 -}
 connect : Transport
 connect =
-    Internal.Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing }
+    Internal.Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }
 
 
 {-| Connect, with a call of a method without side effects
@@ -54,7 +54,7 @@ proxy logs. Servers and proxies cap URL length too;
 -}
 connectGet : Transport
 connectGet =
-    Internal.Connect { get = True, maxGetUrl = Nothing, readMaxBytes = Nothing }
+    Internal.Connect { get = True, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }
 
 
 {-| HTTP transcoding, by the method's `google.api.http` rule. A method without
@@ -64,7 +64,7 @@ serve: the request Connect would POST.
 -}
 transcode : Transport
 transcode =
-    Internal.Transcode { readMaxBytes = Nothing }
+    Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing }
 
 
 {-| POST a call whose GET URL would be longer than this many characters, for
@@ -83,7 +83,7 @@ withMaxGetUrl limit transport =
 
 {-| Refuse a successful answer whose body is longer than this many bytes of
 UTF-8, before decoding it: the call fails with
-[`NoAnswer (TooLarge { limit, size })`](Rpc-Error#Reason), whose code is
+[`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code is
 `ResourceExhausted`, as connect-go's `WithReadMaxBytes` and connect-es's
 `readMaxBytes` fail it. Every transport starts with no limit. It is a
 protocol-level option, so it lives on the transport rather than in the
@@ -106,6 +106,29 @@ withReadMaxBytes limit transport =
 
         Internal.Transcode options ->
             Internal.Transcode { options | readMaxBytes = Just limit }
+
+
+{-| Refuse to send a call whose request message is longer than this many bytes
+of UTF-8, as its JSON: the body of a POST, or for a GET the JSON before it is
+percent-encoded into the query. The call fails with
+[`NoAnswer (RequestTooLarge { limit, size })`](Rpc-Error#Reason), whose code
+is `ResourceExhausted`, as connect-go's `WithSendMaxBytes` and connect-es's
+`writeMaxBytes` fail it, and nothing is sent. Every transport starts with no
+limit. Over transcoding the whole message is measured, whichever of its fields
+the binding puts in the path, the query or the body.
+
+A limit below 1 refuses every call, and
+[`Rpc.checkConfig`](Rpc#checkConfig) reports it.
+
+-}
+withWriteMaxBytes : Int -> Transport -> Transport
+withWriteMaxBytes limit transport =
+    case transport of
+        Internal.Connect options ->
+            Internal.Connect { options | writeMaxBytes = Just limit }
+
+        Internal.Transcode options ->
+            Internal.Transcode { options | writeMaxBytes = Just limit }
 
 
 {-| The protocol's name, for traces and logs: `"connect"` (with GET or

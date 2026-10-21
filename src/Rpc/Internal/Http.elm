@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Http
 import Json.Encode
 import Rpc.Body
+import Rpc.Error as Error
 import Rpc.Internal.Transport as Transport exposing (Transport)
 import Rpc.Request exposing (Request)
 import Task exposing (Task)
@@ -344,17 +345,22 @@ configProblems transport baseUrl headers =
                     Nothing
             )
             headers
-        ++ (case Transport.readMaxBytes transport of
-                Just limit ->
-                    if limit < 1 then
-                        [ "readMaxBytes " ++ String.fromInt limit ++ " is below 1, so every response with a body is refused" ]
+        ++ belowOne "readMaxBytes" "every response with a body is refused" (Transport.readMaxBytes transport)
+        ++ belowOne "writeMaxBytes" "every call is refused unsent" (Transport.writeMaxBytes transport)
 
-                    else
-                        []
 
-                Nothing ->
-                    []
-           )
+belowOne : String -> String -> Maybe Int -> List String
+belowOne knob consequence setting =
+    case setting of
+        Just limit ->
+            if limit < 1 then
+                [ knob ++ " " ++ String.fromInt limit ++ " is below 1, so " ++ consequence ]
+
+            else
+                []
+
+        Nothing ->
+            []
 
 
 quote : String -> String
@@ -476,12 +482,12 @@ insertJoined key value =
         )
 
 
-{-| The size of a successful answer's body, in UTF-8 bytes, when it is over
-`limit`; `Nothing` when it is within it. A limit below 0 is read as 0, so an
-empty body is never refused.
+{-| The size of a text (an answer's body, a request's JSON), in UTF-8 bytes,
+when it is over `limit`; `Nothing` when it is within it. A limit below 0 is
+read as 0, so an empty text is never refused.
 
-A body is at least one byte of UTF-8 per UTF-16 unit of its JavaScript string
-and at most three, so a body that fits whatever it holds is never counted.
+A text is at least one byte of UTF-8 per UTF-16 unit of its JavaScript string
+and at most three, so a text that fits whatever it holds is never counted.
 
 -}
 overLimit : Int -> String -> Maybe Int
@@ -533,3 +539,16 @@ utf8Width code =
 
     else
         3
+
+
+{-| Why a call whose request message is `json` must not be sent over a
+transport: its UTF-8 length is over the transport's write limit.
+-}
+requestTooLarge : Transport -> String -> Maybe Error.Reason
+requestTooLarge transport json =
+    Transport.writeMaxBytes transport
+        |> Maybe.andThen
+            (\limit ->
+                overLimit limit json
+                    |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
+            )
