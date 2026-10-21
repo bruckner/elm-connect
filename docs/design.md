@@ -1198,6 +1198,37 @@ Built *(Proposed in its details)*:
   package's problem covers the modules inside it. Escape: `rename`. An
   option to accept them, for output that never reaches Windows, may
   come if asked; it is not built.
+- **The refusals kept for 1.0.** *(Decided, 2026-10-21.)* Each of these
+  stays a refusal, because any name the generator invented in its place
+  would be unpredictable, or would depend on what else the protos
+  declare, so that adding a message in a minor release of an API could
+  silently rename an existing type. Each has an escape, and an escape
+  added later is additive:
+  - a name with no letter before its first digit, or only underscores
+    (`_1x`, `_`): `naming::invalid_field`, `invalid_method`,
+    `invalid_type`, `invalid_service`, or `invalid_module` for a package
+    segment; escape `rename`, but for a oneof member's descriptor value,
+    which follows the proto name: rename the member in the proto;
+  - a file without a package: `naming::invalid_module`; escape: declare
+    a package;
+  - names that collide after casing (`display_name` beside `oneof
+    displayName`, `Book` beside `book`, `GetNote` beside `get_note`, a
+    service module beside a package's): the `naming::*_collision`
+    codes; escape `rename` one of them;
+  - a oneof beside a nested type of the same name (`oneof kind` and
+    `message Kind`, both `XKind`): `naming::type_collision`; escape
+    `rename` the oneof, which renames its type;
+  - module names that differ only in case (`ShopItem`, `Shopitem`):
+    `naming::module_collision` on every OS; escape `rename`;
+  - reserved names: a type or constructor its module uses for a
+    library's (`naming::reserved_name`), a module of the runtime or of
+    its dependencies, or a Windows device name (`naming::reserved_module`);
+    escape `rename`, and for a module `module_prefix`.
+
+  Two module names compile and are warnings instead: one in the
+  runtime's namespaces (`naming::runtime_namespace`) and one of an
+  application's elm/* packages (`naming::shadowing_module`), both
+  escaped by `module_prefix` or `rename` (§3.1).
 
 Built, as the `naming` and `naming_collision` cases show:
 
