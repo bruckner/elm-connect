@@ -38,9 +38,7 @@ import Proto.Field as Field
 
 
 {-| A message type whose Elm values are `a`. It is opaque: built by
-[`message`](#message) and read by the functions below, so that what it carries
-can grow (another encoding's codecs, say) as a new modifier, without breaking
-code generated before.
+[`message`](#message) and read by the functions below.
 -}
 type Message a
     = Message
@@ -100,8 +98,7 @@ toDescriptor (Message m) =
 
 {-| A message type's descriptor: its full name, its fields, and the names of
 its oneofs. It is opaque, built by [`descriptor`](#descriptor) and read by the
-functions below, so that a later release can say more about a message without
-breaking code that builds or reads one.
+functions below.
 
 A descriptor is faithful to the proto, not to the Elm the generator makes of
 it: a singular message field is

@@ -90,8 +90,9 @@ fn referenced_files(file: &FileDescriptor) -> Vec<FileDescriptor> {
 
 /// Compiles `files` against the `includes` search path (`.` if empty),
 /// then protox's bundled `google/protobuf` files and the googleapis files
-/// elm-connect embeds (`google/api/annotations.proto` and
-/// `google/api/http.proto`), so `google.api.http` needs no googleapis
+/// elm-connect embeds (`google/api/annotations.proto`,
+/// `google/api/http.proto` and `google/api/field_behavior.proto`), so
+/// `google.api.http` and `google.api.field_behavior` need no googleapis
 /// checkout.
 ///
 /// A compile error comes back as a `Report` carrying the proto source and the

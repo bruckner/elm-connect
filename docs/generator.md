@@ -18,7 +18,7 @@ otherwise.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value |
+| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field |
 | `string`, `bool` | `String`, `Bool` |
 | `int32`, `uint32`, `sint32`, `fixed32`, `sfixed32` | `Int` |
 | `double`, `float` | `Float` |

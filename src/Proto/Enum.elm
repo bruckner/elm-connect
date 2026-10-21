@@ -43,8 +43,7 @@ import Proto.EnumValue as EnumValue
 
 
 {-| An enum type whose Elm values are `a`. It is opaque: built by
-[`enum`](#enum) and read by the functions below, so that what it carries can
-grow as a new modifier without breaking code generated before.
+[`enum`](#enum) and read by the functions below.
 
 The names and numbers below come from the descriptor and the codecs, which
 read every declared name and number, aliases (`allow_alias`) included.
@@ -187,9 +186,7 @@ find matches list =
 
 
 {-| An enum type's descriptor: its full name and its values. It is opaque,
-built by [`descriptor`](#descriptor) and read by the functions below, so that
-a later release can say more about an enum without breaking code that builds
-or reads one.
+built by [`descriptor`](#descriptor) and read by the functions below.
 -}
 type Descriptor
     = Descriptor

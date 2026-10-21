@@ -281,6 +281,8 @@ by the table the Connect protocol and gRPC's HTTP mapping share: 400 is
 429, 502, 503 and 504 `Unavailable`, and every other status `Unknown`.
 
 It is not the inverse of [`toHttpStatus`](#toHttpStatus), which says why.
+A REST server's bare 404 thus reads as `Unimplemented`; see
+[`Rpc.Error.code`](Rpc-Error#code).
 
 -}
 fromHttpStatus : Int -> Code

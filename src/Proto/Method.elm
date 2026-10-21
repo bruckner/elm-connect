@@ -46,13 +46,12 @@ import Proto.Http exposing (Binding)
 
 
 {-| A method taking a `req` and answering a `res`. It is opaque: built by
-[`method`](#method) and read by the functions below, so that what it carries
-can grow as a new modifier without breaking code generated before.
+[`method`](#method) and read by the functions below.
 
-A method carries only what the wire needs. The types'
+It holds what sending a call needs: the request's encoder, the response's
+decoder and the method's descriptor. The types'
 [`Message`](Proto-Message#Message) values, with their defaults and field
-trees, are not part of it, so a program that only sends calls does not keep
-them.
+trees, are not part of it.
 
 -}
 type Method req res
@@ -116,8 +115,7 @@ toDescriptor (Method m) =
 
 {-| A method's descriptor: its service and name, its idempotency, its types
 and its HTTP bindings. It is opaque, built by [`descriptor`](#descriptor) and
-read by the functions below, so that a later release can say more about a
-method without breaking code that builds or reads one.
+read by the functions below.
 -}
 type Descriptor
     = Descriptor

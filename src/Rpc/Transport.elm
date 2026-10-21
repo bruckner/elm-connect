@@ -29,7 +29,9 @@ import Rpc.Internal.Transport as Internal
 
 
 {-| A transport. It is opaque: pick one of the values below and give it to a
-[`Rpc.Config`](Rpc#Config).
+[`Rpc.Config`](Rpc#Config). The package site and compiler errors may show it
+as `Rpc.Internal.Transport.Transport`, its name inside the package; that
+module is not exposed.
 -}
 type alias Transport =
     Internal.Transport
@@ -67,9 +69,14 @@ transcode =
     Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing }
 
 
-{-| POST a call whose GET URL would be longer than this many characters, for
-servers and proxies that cap URL length (2048 is a common safe value). Only
-[`connectGet`](#connectGet) sends a GET, so the others are unchanged.
+{-| POST a call whose GET URL, the whole of it with its query, would be longer
+than this many characters, for servers and proxies that cap URL length (2048
+is a common safe value). Only [`connectGet`](#connectGet) sends a GET, so the
+others are unchanged.
+
+    Rpc.Transport.connectGet
+        |> Rpc.Transport.withMaxGetUrl 2048
+
 -}
 withMaxGetUrl : Int -> Transport -> Transport
 withMaxGetUrl limit transport =
@@ -85,10 +92,11 @@ withMaxGetUrl limit transport =
 UTF-8, before decoding it: the call fails with
 [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code is
 `ResourceExhausted`, as connect-go's `WithReadMaxBytes` and connect-node's
-`readMaxBytes` fail it. Every transport starts with no limit. It is a
-protocol-level option, so it lives on the transport rather than in the
-[`Config`](Rpc#Config). An answer that is an error is read whatever its size,
-for the status it states.
+`readMaxBytes` fail it. Every transport starts with no limit. An answer that
+is an error is read whatever its size, for the status it states.
+
+    Rpc.Transport.connect
+        |> Rpc.Transport.withReadMaxBytes 1000000
 
 The size is that of the body as the browser decoded it, written back as
 UTF-8, so it is the bytes on the wire for any body that is UTF-8. The

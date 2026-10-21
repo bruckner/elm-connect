@@ -58,8 +58,8 @@ the schema, can still be read:
             Err (Rpc.Error.toString error)
 
 The constructors are fixed: a failure before an answer, or an answer refused
-before it was read, is one of the [`Reason`](#Reason)s, and one found in an
-answer that was read is a `BadResponse`.
+before it was read, is one of the [`Reason`](#Reason) constructors, and one
+found in an answer that was read is a `BadResponse`.
 
 -}
 type Error
@@ -127,8 +127,8 @@ type alias StatusError =
 
 An answer with none of these is an `HttpStatus` error.
 
-Two more are reserved, so that a release that reads streams can give them
-without a major; this release never gives them:
+Two more are reserved for streaming calls, which this release does not make,
+so it never gives them; a `case` on a `Source` covers them all the same:
 
   - `GrpcTrailers`: the `grpc-status` and `grpc-message` trailers that end a
     gRPC or gRPC-Web response.
@@ -153,6 +153,13 @@ type Source
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
     `Unavailable`, a bad URL or an invalid header `Internal`, a request or a
     response over its limit `ResourceExhausted`.
+
+An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
+reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
+servers send a status with every error, but over transcoding a hand-written
+REST server's bare 404 usually means "not found": such a server should send a
+`google.rpc.Status` body (`{"code": 5, "message": …}`) so the code reads as
+`NotFound`.
 
 -}
 code : Error -> Code
@@ -197,9 +204,10 @@ code error =
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"` or, as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
-    for a request and `… readMaxBytes <limit>` for a response. A bad URL is printed as its scheme, host and
-    path, without the user and password a URL can hold, and without its query
-    and fragment, which over Connect's GET hold the request:
+    for a request and `… readMaxBytes <limit>` for a response, both in
+    bytes. A bad URL is printed as its scheme, host and path, without the
+    user and password a URL can hold, and without its query and fragment,
+    which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
     stays in the error. An invalid header is named, its value left out, since
     it may be a credential.

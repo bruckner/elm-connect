@@ -24,7 +24,9 @@ import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Internal.Binding as Internal
 
 
-{-| One binding of a method's `google.api.http` rule.
+{-| One binding of a method's `google.api.http` rule, built by
+[`binding`](#binding). It is opaque; the package site and compiler errors may
+show it as `Proto.Internal.Binding.Binding`, its name inside the package.
 -}
 type alias Binding =
     Internal.Binding
@@ -63,7 +65,9 @@ binding rule =
         }
 
 
-{-| One segment of a path template.
+{-| One segment of a path template. It is opaque; the package site and
+compiler errors may show it as `Proto.Internal.Binding.Segment`, its name
+inside the package.
 -}
 type alias Segment =
     Internal.Segment
@@ -85,7 +89,7 @@ message fields: `[ Notes.V1.GetNoteRequest.name ]` for `{name}`, or
 
 The value is read from the request's JSON by each field's JSON name. A variable
 matching one segment (`{name}`, `{name=*}`) is percent-encoded with `/`
-escaped as `%2F`; any other keeps its `/`s. A value absent from the request's
+escaped as `%2F`; any other keeps each `/` as it is. A value absent from the request's
 JSON, or `null` there, as under an unset message, is the text of the field's
 proto3 default, read from the last descriptor's kind: `""` for a string or
 bytes, `false`, `0` for any number, and an enum's zero value's name. Proto3
@@ -113,7 +117,9 @@ doubleWildcard =
     Internal.DoubleWildcard
 
 
-{-| What a request body holds.
+{-| What a request body holds. It is opaque; the package site and compiler
+errors may show it as `Proto.Internal.Binding.Body`, its name inside the
+package.
 -}
 type alias Body =
     Internal.Body
@@ -142,7 +148,9 @@ bodyField field =
     Internal.BodyField (Proto.Field.jsonName field)
 
 
-{-| One query parameter.
+{-| One query parameter, built by [`param`](#param). It is opaque; the
+package site and compiler errors may show it as
+`Proto.Internal.Binding.Param`, its name inside the package.
 -}
 type alias Param =
     Internal.Param
