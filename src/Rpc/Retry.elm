@@ -31,7 +31,19 @@ import Rpc.Internal.Retry as Internal
 
 
 {-| A retry policy. It is opaque: start one with [`on`](#on), adjust it with
-the functions below, and give it to a [`Rpc.Config`](Rpc#Config).
+the functions below, and give it to a [`Rpc.Config`](Rpc#Config):
+
+    { config
+        | retry =
+            Rpc.Retry.on [ Rpc.Code.Unavailable ]
+                |> Rpc.Retry.withAttempts 4
+                |> Just
+    }
+
+The package site and compiler errors may show it as
+`Rpc.Internal.Retry.Retry`, its name inside the package; that module is not
+exposed.
+
 -}
 type alias Retry =
     Internal.Retry
@@ -52,8 +64,8 @@ bad URL or an invalid header is never retried, whatever its code: nothing was
 sent, and nothing would change.
 
 Each wait is drawn uniformly from zero to its bound ("full jitter"), so
-clients that failed together do not retry together; the draw is seeded from
-the clock the loop reads, so it needs no `Random` command.
+clients that failed together do not retry together. The application gives no
+`Random` seed or command for it.
 
 -}
 on : List Code -> Retry
@@ -68,7 +80,8 @@ on codes =
         }
 
 
-{-| How many attempts in all, the first included: `1` never retries.
+{-| How many attempts in all, the first included: `1` never retries, and
+neither does a number below it.
 -}
 withAttempts : Int -> Retry -> Retry
 withAttempts attempts (Internal.Retry policy) =
@@ -86,7 +99,7 @@ withBackoff ms (Internal.Retry policy) =
 
 {-| The longest wait in milliseconds, however many attempts came before. A
 wait is never longer than 2^31 − 1 ms (about 24.8 days) whatever this says,
-since `Process.sleep` runs a longer one at once.
+and a value that is not a positive number waits not at all.
 -}
 withMaxBackoff : Float -> Retry -> Retry
 withMaxBackoff ms (Internal.Retry policy) =

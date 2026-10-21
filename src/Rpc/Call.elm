@@ -39,7 +39,13 @@ per-call adjustments made to it. Generated code builds one per method with
 
 It is opaque, and the same type as [`Rpc.Call`](Rpc#Call): adjust one with
 the functions below and send it with [`Rpc.send`](Rpc#send) or
-[`Rpc.task`](Rpc#task).
+[`Rpc.task`](Rpc#task). The package site and compiler errors may show it as
+`Rpc.Internal.Call.Call`, its name inside the package; that module is not
+exposed, and the type stays opaque.
+
+A call holds functions, its method's encoder and decoder, so `==` on two
+calls fails at run time, and the debugger cannot import or export a history
+whose messages hold one. Compare [`toJson`](#toJson) instead.
 
 -}
 type alias Call req res =
@@ -50,19 +56,31 @@ type alias Call req res =
 -- ADJUSTING A CALL
 
 
-{-| Headers to send with this call, after the config's. They are held to the
-rule for the config's headers ([`Rpc.Config`](Rpc#Config)): a call with a name
-that is not an HTTP token, or a value holding NUL, CR, LF or a character above
-U+00FF, is not sent, and fails with `NoAnswer (InvalidHeader name)`.
+{-| Headers to send with this call, after the config's.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withHeaders [ ( "X-Request-Id", "req-7" ) ]
+
+They are held to the rule for the config's headers
+([`Rpc.Config`](Rpc#Config)): a call with a name that is not an HTTP token,
+or a value holding NUL, CR, LF or a character above U+00FF, is not sent, and
+fails with `NoAnswer (InvalidHeader name)`.
+
 -}
 withHeaders : List ( String, String ) -> Call req res -> Call req res
 withHeaders extra (Internal.Call c) =
     Internal.Call { c | headers = c.headers ++ extra }
 
 
-{-| A timeout for this call in milliseconds, in place of the config's. One
-that is not a positive number (`0`, a negative number, NaN or infinity) is
-ignored, and the config's applies.
+{-| A timeout for this call in milliseconds, in place of the config's.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withTimeout 10000
+
+One that is not a positive number (`0`, a negative number, NaN or infinity)
+is ignored, and the config's applies. With a retry policy, the timeout
+applies to each attempt.
+
 -}
 withTimeout : Float -> Call req res -> Call req res
 withTimeout ms (Internal.Call c) =
@@ -83,6 +101,12 @@ is the rule's own, which a call takes unless told otherwise, and `1` and up
 its `additional_bindings` in order. `Nothing` when the method has no binding
 of that number; a method without a rule has none, and its call goes over the
 implicit route. Connect has no use for bindings and ignores the choice.
+
+    Notes.getNote { name = "users/7/notes/42" }
+        |> Rpc.Call.viaBinding 1
+        |> Maybe.map (Rpc.send config GotNote)
+        |> Maybe.withDefault Cmd.none
+
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Internal.Call c) =
@@ -154,6 +178,13 @@ requestJson (Internal.Call c) =
 {-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
 deduplication keys or a queue of calls to send later. Per-call adjustments are
 not included.
+
+Two calls of one method with equal requests give the same JSON, so compare
+calls by this, as `==` on the calls themselves fails at run time:
+
+    Json.Encode.encode 0 (Rpc.Call.toJson a)
+        == Json.Encode.encode 0 (Rpc.Call.toJson b)
+
 -}
 toJson : Call req res -> Value
 toJson c =

@@ -40,7 +40,9 @@ import Rpc.Request exposing (Request)
 
 
 {-| A trace. It is opaque: a traced send gives you one, and the functions
-below read it.
+below read it. The package site and compiler errors may show it as
+`Rpc.Internal.Trace.Trace`, its name inside the package; that module is not
+exposed.
 -}
 type alias Trace =
     Internal.Trace
@@ -125,7 +127,7 @@ code (Internal.Trace t) =
 
 
 {-| Milliseconds from before the first attempt to after the last, by
-`Time.now`.
+`Time.now`, the waits between retries included.
 -}
 duration : Trace -> Float
 duration (Internal.Trace t) =
@@ -133,7 +135,9 @@ duration (Internal.Trace t) =
 
 
 {-| How many times the call was sent, retries included: `0` when it was not
-sent at all, for a bad `baseUrl` or a header a request cannot carry.
+sent at all, for a bad `baseUrl`, a header a request cannot carry or a
+request over the transport's
+[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes).
 -}
 attempts : Trace -> Int
 attempts (Internal.Trace t) =
@@ -166,8 +170,9 @@ attempts (Internal.Trace t) =
 `service` and `method` are the keys [`Rpc.Call.toJson`](Rpc-Call#toJson) gives
 a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
-(`"not_found"`), `"ok"` on success; `binding`, `httpStatus`, the body and the
-timeout are `null` when absent.
+(`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
+are in milliseconds; `binding`, `httpStatus`, the body and the timeout are
+`null` when absent.
 
 The request holds what was sent, the config's headers included, so a bearer
 token in them is in the JSON too; [`toString`](#toString) leaves the request

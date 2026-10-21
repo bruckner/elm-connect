@@ -22,6 +22,11 @@ request gives a [`Call`](#Call): data saying what to call with what. A
 both and send the call as a `Task` or a `Cmd`, or give the HTTP request it
 stands for and read the answer, without sending anything.
 
+A call holds its method's encoder and decoder, which are functions, so `==`
+on two calls fails at run time, and the debugger cannot import or export a
+history whose messages hold one. Compare calls by
+[`Rpc.Call.toJson`](Rpc-Call#toJson) instead.
+
 An application usually wraps the sending once, deriving the config from its
 own state:
 
@@ -204,7 +209,8 @@ report what it finds there:
 Today it finds a `baseUrl` holding a query or a fragment, headers a request
 cannot carry, each by its name (a value is left out, since it may be a
 credential), and a [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) or
-[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes) limit below 1. A call sent with such a config still fails with
+[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes) limit below 1. A call
+sent with such a config still fails with
 `NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
 before any call is made. Later releases may find more, so the result is read
 as a list rather than matched.
@@ -219,10 +225,16 @@ checkConfig cfg =
 -- SENDING
 
 
-{-| Send a call.
+{-| Send a call as a `Task`.
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.task config
+
+With a `retry` policy in the config ([`Rpc.Retry`](Rpc-Retry)), a failed
+attempt is sent again as the policy says, and the task ends with the last
+attempt's result. A task ignores the call's tracker
+([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), so [`cancel`](#cancel)
+cannot stop it.
 
 A call whose URL or headers cannot be sent (see [`Config`](#Config)), or whose
 request is over the transport's
@@ -241,6 +253,11 @@ into [`task`](#task):
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.send config GotNote
+
+The config's retry policy applies as it does to [`task`](#task). The call's
+tracker is put on its request, so [`cancel`](#cancel) can stop it, only when
+the config has no retry policy; with one, the call runs until the policy
+stops it.
 
 -}
 send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
@@ -297,7 +314,19 @@ cancel =
 -- TRACING
 
 
-{-| Send a call, and say what happened along with the result.
+{-| Send a call as a `Task` that never fails, giving a
+[`Trace`](Rpc-Trace#Trace) of what happened beside the result.
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.taskTraced config
+        |> Task.perform GotNote
+
+The config's retry policy applies as it does to [`task`](#task), and the
+trace counts every attempt ([`Rpc.Trace.attempts`](Rpc-Trace#attempts)) and
+the milliseconds from before the first to after the last, waits included
+([`Rpc.Trace.duration`](Rpc-Trace#duration)). The call's tracker is ignored,
+so [`cancel`](#cancel) cannot stop it.
+
 -}
 taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
 taskTraced cfg c =
@@ -322,10 +351,15 @@ taskTraced cfg c =
             )
 
 
-{-| Send a call, giving what happened and the result to `toMsg`.
+{-| Send a call, giving its [`Trace`](Rpc-Trace#Trace) and the result to
+`toMsg`.
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.sendTraced config GotNote
+
+It is [`taskTraced`](#taskTraced) as a command: the config's retry policy
+applies, and the call's tracker is ignored, so [`cancel`](#cancel) cannot
+stop it.
 
 -}
 sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
@@ -371,9 +405,9 @@ as its body and `Connect-Protocol-Version: 1`. With
 [`connectGet`](Rpc-Transport#connectGet), a call of an
 `IdempotencyNoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
-would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows. A timeout is sent as `Connect-Timeout-Ms`,
-rounded up to a whole millisecond. The config's headers come first, then the
-call's.
+would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows.
+A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
+The config's headers come first, then the call's.
 
 Over transcoding, the request is the binding's method, the path filled from the
 request, the query from the fields outside the path and the body, and the body
@@ -443,8 +477,9 @@ splitTrailers =
 
 
 {-| Send a request in place of the one a call would send, and read the answer as
-the call's. The config's retry policy applies. A request whose URL or headers
-cannot be sent is not, as with [`task`](#task).
+the call's. The config's retry policy applies, and the call's tracker is
+ignored, as with [`task`](#task). A request whose URL or headers cannot be
+sent is not.
 -}
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 taskFromRequest cfg c sent =
