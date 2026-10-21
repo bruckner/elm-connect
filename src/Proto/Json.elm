@@ -919,7 +919,8 @@ int64Dict =
 
 
 {-| Decode a map with unsigned 64-bit integer keys (`uint64`, `fixed64`): the
-keys [`int64Dict`](#int64Dict) accepts, within 0 to 18446744073709551615.
+keys [`int64Dict`](#int64Dict) accepts, within 0 to 18446744073709551615
+(2^64 - 1).
 -}
 uint64Dict : Decoder a -> Decoder (Dict.Dict String a)
 uint64Dict =
@@ -1475,7 +1476,8 @@ int64AsInt =
 
 
 {-| Decode an unsigned 64-bit integer (`uint64`, `fixed64`) as its decimal
-string: the forms [`int64`](#int64) accepts, within 0 to 18446744073709551615.
+string: the forms [`int64`](#int64) accepts, within 0 to 18446744073709551615
+(2^64 - 1).
 -}
 uint64 : Decoder String
 uint64 =
