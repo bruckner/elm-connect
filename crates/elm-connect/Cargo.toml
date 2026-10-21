@@ -6,6 +6,11 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://github.com/bruckner/elm-connect/tree/main/docs"
+readme = "README.md"
+keywords.workspace = true
+categories = ["command-line-utilities", "development-tools", "web-programming"]
 # The integration tests run from the repository, reading its conformance
 # corpus and runtime outside the crate, so they are not published.
 exclude = ["tests/"]
@@ -13,6 +18,7 @@ exclude = ["tests/"]
 [dependencies]
 clap.workspace = true
 elm-connect-gen.workspace = true
-miette.workspace = true
+# Its `main` reports errors through miette's terminal handler.
+miette = { workspace = true, features = ["fancy"] }
 protox.workspace = true
 similar.workspace = true

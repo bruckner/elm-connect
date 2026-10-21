@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/bruckner/elm-connect/security/advisories/new
+    about: Report it privately, not in an issue; SECURITY.md says how it is handled.

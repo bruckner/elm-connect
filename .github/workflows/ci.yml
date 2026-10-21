@@ -27,6 +27,9 @@ jobs:
           persist-credentials: false
           fetch-depth: 0 # full history for `just gitleaks`
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          # The mise release that wrote mise.lock; move the two together.
+          version: 2026.9.4
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Cache Elm's packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -34,8 +37,12 @@ jobs:
           path: ~/.elm
           key: check-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
       - run: just check
+      # zizmor again, with the token its online audits need (the gate's
+      # run is offline); only this step sees it, and it has only
+      # `contents: read`.
+      - name: zizmor (online audits)
+        run: just zizmor
         env:
-          # For zizmor's online audits; the token has only `contents: read`.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   live:
@@ -55,6 +62,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          # The mise release that wrote mise.lock; move the two together.
+          version: 2026.9.4
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Cache Go modules and builds
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -127,6 +137,8 @@ jobs:
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
         if: matrix.elm.tests
         with:
+          # The mise release that wrote mise.lock; move the two together.
+          version: 2026.9.4
           install_args: rust node npm:elm-test-rs
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         if: matrix.elm.tests

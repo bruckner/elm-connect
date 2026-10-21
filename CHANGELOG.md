@@ -1041,3 +1041,25 @@ tag (design §8).
   each dated, with the alternatives and the reasons; the design's open
   questions (§9) and its out-of-scope list (§10) move there and to the
   roadmap.
+- `elm-connect-gen`'s documented API is the facade its two binaries use:
+  `generate`, `generate_with_imports`, `Options` and its option types,
+  `Generated`, `GeneratedFile`, `Diagnostics`, `Problem`, `Code`,
+  `ModuleName`, the `diagnostics` and `googleapis` modules, the version
+  constants, and a re-export of `prost_reflect`; the pipeline modules are
+  hidden from its documentation, and missing docs warn. The library no
+  longer turns on miette's `fancy` feature (backtraces); only the CLI
+  does.
+- The three crates carry crates.io metadata (keywords, categories,
+  homepage, documentation) and a README of their own, and each ships
+  `LICENSE-MIT` and `LICENSE-APACHE`; `elm-connect-gen` ships a notice
+  beside its embedded googleapis files.
+- Dependabot proposes weekly, grouped updates of the GitHub Actions, the
+  Rust dependencies, the live suite's npm packages and the example
+  server's Go modules. `mise.lock` pins the toolchain's downloads by
+  checksum, and CI installs mise itself at a pinned release.
+- `SECURITY.md` (supported versions, private reporting, scope),
+  `SUPPORT.md`, a Code of Conduct (Contributor Covenant 2.1), issue
+  forms for bugs, feature requests and questions, and a pull request
+  template. CONTRIBUTING says how to propose a change, what a pull
+  request carries, how review works, and that each worktree builds into
+  its own `target/`.

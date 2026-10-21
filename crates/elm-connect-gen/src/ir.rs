@@ -16,7 +16,7 @@
 //!   namespace are unique: record fields within a message, types within a
 //!   module, constructors within a module, method values within a service,
 //!   and module names across the build (every package's and every
-//!   service's). A clash is a diagnostic from [`build`], never a silent
+//!   service's). A clash is a diagnostic from `build`, never a silent
 //!   rename.
 //! - Nested messages and enums are flattened into their package, their Elm
 //!   names prefixed by the enclosing message's (`Outer.Inner` becomes

@@ -1,25 +1,40 @@
-//! Descriptors to Elm: a descriptor pool becomes a typed intermediate
-//! representation ([`ir`]) under the Elm naming rules ([`naming`]), the
-//! emitter ([`emit`]) turns each package of it into an Elm syntax tree
-//! ([`elm`]), and the printer turns that into source. What has no Elm form
-//! is reported instead ([`diagnostics`]). [`generate`] runs the whole way.
+//! Descriptors to Elm: the library behind `protoc-gen-elm-connect` and the
+//! `elm-connect` CLI. [`generate`] takes a [`prost_reflect::DescriptorPool`]
+//! and the [`Options`], and returns the Elm modules ([`Generated`]) or every
+//! problem found ([`Diagnostics`]); [`diagnostics`] renders those, and
+//! [`googleapis`] supplies the `google/api` files the generator embeds.
 //!
-//! This crate is published so that `cargo install` can build the binaries;
+//! The crate is published so that `cargo install` can build the binaries;
 //! its API is not covered by elm-connect's compatibility contract (design
-//! §8), and may change in any release.
+//! §8), and may change in any release. The items named here are the ones
+//! the two binaries use; the pipeline modules behind them are public only
+//! for the repository's tests, and hidden from the documentation.
+
+#![warn(missing_docs)]
 
 pub mod diagnostics;
+#[doc(hidden)]
 pub mod elm;
+#[doc(hidden)]
 pub mod emit;
 pub mod googleapis;
+#[doc(hidden)]
 pub mod ir;
+#[doc(hidden)]
 pub mod naming;
+#[doc(hidden)]
 pub mod options;
+#[doc(hidden)]
 pub mod route;
+
+/// The descriptor library [`generate`] reads, re-exported so that a caller
+/// builds its [`DescriptorPool`] with the same version.
+pub use prost_reflect;
 
 use prost_reflect::DescriptorPool;
 
-use crate::diagnostics::Diagnostics;
+pub use crate::diagnostics::{Code, Diagnostics, Problem};
+pub use crate::ir::ModuleName;
 pub use crate::options::{
     Bytes, EnumUnknown, Int64, Options, Spelling, Streaming, UnboundMethods, parse_module_prefix,
     parse_rename,

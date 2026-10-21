@@ -3,9 +3,8 @@ use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
-use elm_connect_gen::ir::ModuleName;
 use elm_connect_gen::{
-    Bytes, EnumUnknown, Generated, Int64, Options, Spelling, Streaming, UnboundMethods,
+    Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
 };
 use miette::Report;
 

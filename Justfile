@@ -7,8 +7,8 @@
 elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests"
 
 # Cargo's build directory, which the live suite's binaries share
-# (target/live). CARGO_TARGET_DIR moves it, as it does for cargo, so several
-# worktrees can build into one directory instead of each carrying its own.
+# (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
+# point several worktrees at one directory (CONTRIBUTING.md says why).
 target := absolute_path(env("CARGO_TARGET_DIR", "target"))
 
 [private]
@@ -70,12 +70,13 @@ codec-gen:
 snippets:
     examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/compared.md examples/notes/README.md
 
-# Audit the GitHub Actions workflows for template injection, unpinned
-# or vulnerable actions, leaked credentials and the like. The audits
-# that consult GitHub run only when GH_TOKEN is set (CI sets it); without
-# one zizmor runs offline and says so.
+# Audit the GitHub Actions workflows and the Dependabot configuration for
+# template injection, unpinned or vulnerable actions, leaked credentials,
+# missing update cooldowns and the like. The audits that consult GitHub
+# run only when GH_TOKEN is set (CI runs this recipe once more with it);
+# without one zizmor runs offline and says so.
 zizmor:
-    zizmor .github/workflows
+    zizmor .
 
 # Scan the history reachable from HEAD for committed secrets. CI fetches
 # the full history so the scan covers every commit a pull request would
@@ -241,7 +242,7 @@ example-notes-build:
 example-notes addr="127.0.0.1:8080": example-notes-build
     {{target}}/live/bin/notes-server -addr {{addr}} -static examples/notes/elm/dist
 
-# Remove build output (the cargo build directory, shared or not).
+# Remove build output (the cargo build directory and the Elm builds).
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated

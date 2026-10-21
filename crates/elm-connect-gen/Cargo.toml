@@ -6,12 +6,21 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/elm-connect-gen"
+readme = "README.md"
+keywords.workspace = true
+categories = ["development-tools", "web-programming"]
 # The integration tests run from the repository, reading its conformance
 # corpus and runtime outside the crate, so they are not published.
 exclude = ["tests/"]
 
 [dependencies]
-miette.workspace = true
+# The graphical handler, for diagnostics::render_narrow. Backtraces
+# (`fancy`) are the CLI's business. miette's `fancy-base` does not build
+# alone, and `fancy-no-syscall` would turn off the CLI's terminal
+# detection once cargo unifies the features.
+miette = { workspace = true, features = ["fancy-no-backtrace"] }
 prost.workspace = true
 # text-format prints option values in declaration lines (ir::declaration).
 prost-reflect = { workspace = true, features = ["text-format"] }

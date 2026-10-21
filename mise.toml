@@ -27,5 +27,9 @@ go = "1.27.3"
 buf = "1.73.0"
 
 [settings]
+# mise.lock pins each tool's exact version and, where the backend
+# provides one, the checksum of its download for every platform CI and
+# development use; `mise lock` refreshes it after a pin moves.
+lockfile = true
 # Newer mise runs npm tools via a node launcher; elm-test-rs's native binary breaks that (SyntaxError).
 npm.package_manager = "npm"
