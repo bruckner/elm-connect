@@ -686,6 +686,17 @@ rpc shared call =
   value name with the conventional prefix stripped:
   `enum Status { STATUS_UNSPECIFIED = 0; STATUS_ACTIVE = 1; }` →
   `StatusUnspecified | StatusActive`. *(Decided.)*
+- **A nested enum's prefix.** *(Decided, 2026-10-21.)* The conventional
+  prefix is the enum's own name in `UPPER_SNAKE_CASE`, as the protobuf
+  style guide, buf's `ENUM_VALUE_PREFIX` lint rule and AIP-126 write
+  it, and for a nested enum its whole nesting path is accepted as well:
+  the longer of the two the value starts with is stripped, so in
+  `message Note { enum Kind { … } }` both `KIND_DRAFT` and
+  `NOTE_KIND_DRAFT` → `NoteKindDraft` (`nesting` case). Before, only the
+  own name was stripped, and `NOTE_KIND_DRAFT` became
+  `NoteKindNoteKindDraft`. Two values that stripping makes one
+  constructor (`KIND_DRAFT` beside `NOTE_KIND_DRAFT`) are
+  `naming::constructor_collision`, with `rename` the escape.
 - Encoding uses the proto name string. Decoding accepts the name and
   also the integer form, as the JSON spec allows. *(Decided.)*
 - **Unknown values.** *(Decided, 2026-10-11.)* An unknown **number**
@@ -1190,7 +1201,10 @@ Built, as the `naming` and `naming_collision` cases show:
   `SHAPE_V3_MESH` → `ShapeV3Mesh`. A value without the conventional
   prefix gains the enum's name (`CUBE` → `ShapeCube`); the prefix of a
   multi-word enum is matched word by word (`HTTP_METHOD_GET` →
-  `HttpMethodGet`).
+  `HttpMethodGet`), and a nested enum's prefix may be its own name or
+  its whole path (`Outer.Inner.Kind`: `KIND_DRAFT` and
+  `OUTER_INNER_KIND_PUBLISHED` → `OuterInnerKindDraft`,
+  `OuterInnerKindPublished`; §3.3).
 - An enum claims one constructor per number: an alias (§3.3) has no
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.

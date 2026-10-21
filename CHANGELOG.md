@@ -995,3 +995,7 @@ tag (design §8).
   accepted, and `elmConnectVersion_` was `naming::value_collision`. A
   value the generator adds later ends in `_`, so it cannot collide with
   a renamed name either (design §3.1, §3.7).
+- A nested enum's values drop its whole nesting path as a prefix as well
+  as its own name, the longer that matches: in `Note.Kind`,
+  `NOTE_KIND_DRAFT` becomes `NoteKindDraft` (was `NoteKindNoteKindDraft`),
+  as `KIND_DRAFT` does (design §3.3).

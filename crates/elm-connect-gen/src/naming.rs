@@ -289,17 +289,28 @@ pub fn field_name(proto_name: &str) -> Result<String, NameError> {
 
 /// The constructor for an enum value: the enum's Elm name followed by the
 /// value name in PascalCase, with the conventional prefix stripped.
+/// `enum_path` is the enum's proto name after the names of the messages
+/// enclosing it, outermost first (`["Note", "Kind"]`).
 ///
 /// The prefix is the enum's own proto name in `UPPER_SNAKE_CASE`, so
 /// `Status` + `STATUS_ACTIVE` and `Status` + `ACTIVE` both become
-/// `StatusActive`. It is matched word by word, ignoring case and
+/// `StatusActive`, or, for a nested enum, its whole path, so the values
+/// `NOTE_KIND_DRAFT` and `KIND_DRAFT` of `Note.Kind` both become
+/// `NoteKindDraft`; the longer of the two that the value starts with is
+/// stripped. A prefix is matched word by word, ignoring case and
 /// underscores, so `HttpMethod` + `HTTP_METHOD_GET` becomes
 /// `HttpMethodGet`. A value that is nothing but the prefix keeps it. A
 /// value name without lowercase letters (the proto convention) is
 /// lowercased before casing, so `STATUS_ACTIVE` gives `Active`, not
 /// `ACTIVE`.
-pub fn enum_constructor(enum_elm_name: &str, enum_proto_name: &str, value_name: &str) -> String {
-    let stripped = strip_enum_prefix(enum_proto_name, value_name);
+pub fn enum_constructor(enum_elm_name: &str, enum_path: &[&str], value_name: &str) -> String {
+    let own = enum_path.last().copied().unwrap_or_default();
+    let by_path = strip_enum_prefix(&enum_path.concat(), value_name);
+    let stripped = if by_path.len() < value_name.len() {
+        by_path
+    } else {
+        strip_enum_prefix(own, value_name)
+    };
     let value = if stripped.chars().any(|c| c.is_ascii_lowercase()) {
         pascal_case(stripped)
     } else {
@@ -559,10 +570,10 @@ fn check_upper(converted: String) -> Result<String, NameError> {
     }
 }
 
-/// `value_name` without the enum's `UPPER_SNAKE_CASE` prefix and the
-/// underscore after it, when it has one and something follows it.
-fn strip_enum_prefix<'a>(enum_proto_name: &str, value_name: &'a str) -> &'a str {
-    let target: String = enum_proto_name
+/// `value_name` without `prefix` in `UPPER_SNAKE_CASE` and the underscore
+/// after it, when it has it and something follows it.
+fn strip_enum_prefix<'a>(prefix: &str, value_name: &'a str) -> &'a str {
+    let target: String = prefix
         .chars()
         .filter(|&c| c != '_')
         .map(|c| c.to_ascii_uppercase())
@@ -869,37 +880,69 @@ mod tests {
 
     #[test]
     fn enum_constructors() {
-        let cases = [
-            ("Status", "Status", "STATUS_ACTIVE", "StatusActive"),
-            ("Status", "Status", "ACTIVE", "StatusActive"),
+        let cases: [(&str, &[&str], &str, &str); 19] = [
+            ("Status", &["Status"], "STATUS_ACTIVE", "StatusActive"),
+            ("Status", &["Status"], "ACTIVE", "StatusActive"),
             (
                 "Status",
-                "Status",
+                &["Status"],
                 "STATUS_UNSPECIFIED",
                 "StatusUnspecified",
             ),
-            ("Status", "Status", "STATUS", "StatusStatus"),
-            ("Status", "Status", "STATUSES_ON", "StatusStatusesOn"),
+            ("Status", &["Status"], "STATUS", "StatusStatus"),
+            ("Status", &["Status"], "STATUSES_ON", "StatusStatusesOn"),
             (
                 "HttpMethod",
-                "HttpMethod",
+                &["HttpMethod"],
                 "HTTP_METHOD_GET",
                 "HttpMethodGet",
             ),
-            ("HttpMethod", "HttpMethod", "GET", "HttpMethodGet"),
+            ("HttpMethod", &["HttpMethod"], "GET", "HttpMethodGet"),
             (
                 "HTTPMethod",
-                "HTTPMethod",
+                &["HTTPMethod"],
                 "HTTPMETHOD_GET",
                 "HTTPMethodGet",
             ),
-            ("NoteKind", "Kind", "KIND_DRAFT", "NoteKindDraft"),
-            ("Color", "Color", "COLOR_LIGHT_BLUE", "ColorLightBlue"),
-            ("Color", "Color", "lightBlue", "ColorLightBlue"),
-            ("Color", "Color", "COLOR_2D", "Color2d"),
+            ("NoteKind", &["Note", "Kind"], "KIND_DRAFT", "NoteKindDraft"),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_KIND_DRAFT",
+                "NoteKindDraft",
+            ),
+            ("NoteKind", &["Note", "Kind"], "DRAFT", "NoteKindDraft"),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_KIND",
+                "NoteKindNoteKind",
+            ),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_DRAFT",
+                "NoteKindNoteDraft",
+            ),
+            (
+                "OuterInnerKind",
+                &["Outer", "Inner", "Kind"],
+                "OUTER_INNER_KIND_DRAFT",
+                "OuterInnerKindDraft",
+            ),
+            (
+                "OuterInnerKind",
+                &["Outer", "Inner", "Kind"],
+                "INNER_KIND_DRAFT",
+                "OuterInnerKindInnerKindDraft",
+            ),
+            ("KindKind", &["Kind", "Kind"], "KIND_KIND_ON", "KindKindOn"),
+            ("Color", &["Color"], "COLOR_LIGHT_BLUE", "ColorLightBlue"),
+            ("Color", &["Color"], "lightBlue", "ColorLightBlue"),
+            ("Color", &["Color"], "COLOR_2D", "Color2d"),
         ];
-        for (elm, proto, value, expected) in cases {
-            assert_eq!(enum_constructor(elm, proto, value), expected, "{value}");
+        for (elm, path, value, expected) in cases {
+            assert_eq!(enum_constructor(elm, path, value), expected, "{value}");
         }
     }
 

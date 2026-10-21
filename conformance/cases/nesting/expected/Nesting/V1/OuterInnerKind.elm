@@ -18,12 +18,16 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| `enum nesting.v1.Outer.Inner.Kind`
+{-| A nested enum's values drop the enum's own name or its whole path
+as a prefix, whichever they start with: both are `OuterInnerKind…`.
+
+`enum nesting.v1.Outer.Inner.Kind`
 
 Describes [`Nesting.V1.OuterInnerKind`](Nesting-V1#OuterInnerKind).
 
   - `KIND_UNSPECIFIED = 0;`
   - `KIND_DRAFT = 1;`
+  - `OUTER_INNER_KIND_PUBLISHED = 2;`
 
 -}
 descriptor : Proto.Enum.Descriptor
@@ -31,4 +35,5 @@ descriptor =
     Proto.Enum.descriptor "nesting.v1.Outer.Inner.Kind"
         [ Proto.EnumValue.descriptor "KIND_UNSPECIFIED" 0
         , Proto.EnumValue.descriptor "KIND_DRAFT" 1
+        , Proto.EnumValue.descriptor "OUTER_INNER_KIND_PUBLISHED" 2
         ]

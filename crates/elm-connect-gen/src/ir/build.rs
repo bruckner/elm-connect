@@ -545,18 +545,25 @@ impl Builder {
     }
 
     /// The constructor of the value `value_name` of the enum
-    /// `enum_full_name` (whose proto name is `enum_proto_name` and Elm name
-    /// `enum_elm_name`): its rename, or the naming rule's.
+    /// `enum_full_name` in `package` (whose Elm name is `enum_elm_name`):
+    /// its rename, or the naming rule's.
     fn enum_constructor(
         &self,
         enum_full_name: &str,
         enum_elm_name: &str,
-        enum_proto_name: &str,
+        package: &str,
         value_name: &str,
     ) -> String {
         match self.renames.get(&format!("{enum_full_name}.{value_name}")) {
             Some(given) => given.clone(),
-            None => naming::enum_constructor(enum_elm_name, enum_proto_name, value_name),
+            None => {
+                let nested = enum_full_name
+                    .strip_prefix(package)
+                    .and_then(|name| name.strip_prefix('.'))
+                    .unwrap_or(enum_full_name);
+                let path: Vec<&str> = nested.split('.').collect();
+                naming::enum_constructor(enum_elm_name, &path, value_name)
+            }
         }
     }
 
@@ -1346,12 +1353,8 @@ impl Builder {
                 first.aliases.push(value.name().to_owned());
                 continue;
             }
-            let elm_ctor = self.enum_constructor(
-                enumeration.full_name(),
-                &elm_name,
-                enumeration.name(),
-                value.name(),
-            );
+            let elm_ctor =
+                self.enum_constructor(enumeration.full_name(), &elm_name, package, value.name());
             let what = format!("enum value `{}`", value.name());
             let origin = self.origin(
                 file,
@@ -1775,8 +1778,8 @@ impl Builder {
         type_path: &[i32],
         kind: Kind,
     ) -> Option<TypeRef> {
-        // For an enum, its proto name and the name of its zero value.
-        let (full_name, package, defining_file, enum_names) = match kind {
+        // For an enum, the name of its zero value.
+        let (full_name, package, defining_file, enum_zero) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
             Kind::Float => return Some(TypeRef::Scalar(ScalarKind::Float)),
             Kind::Int32 => return Some(TypeRef::Scalar(ScalarKind::Int32)),
@@ -1805,11 +1808,11 @@ impl Builder {
                     target.full_name().to_owned(),
                     target.package_name().to_owned(),
                     target.parent_file().name().to_owned(),
-                    Some((target.name().to_owned(), zero)),
+                    Some(zero),
                 )
             }
         };
-        let is_message = enum_names.is_none();
+        let is_message = enum_zero.is_none();
 
         if package == WELL_KNOWN_PACKAGE {
             let name = full_name
@@ -1843,6 +1846,8 @@ impl Builder {
         // A type in a generated package with no name, or whose package has
         // no module name, was reported already.
         let name = self.types.get(&full_name)?.clone();
+        let zero_ctor = enum_zero
+            .map(|zero_value| self.enum_constructor(&full_name, &name.name, &package, &zero_value));
         let site = self.site(
             file,
             type_path,
@@ -1853,12 +1858,9 @@ impl Builder {
             to_package: package,
             site,
         });
-        Some(match enum_names {
+        Some(match zero_ctor {
             None => TypeRef::Message(name),
-            Some((enum_name, zero_value)) => TypeRef::Enum {
-                zero_ctor: self.enum_constructor(&full_name, &name.name, &enum_name, &zero_value),
-                name,
-            },
+            Some(zero_ctor) => TypeRef::Enum { zero_ctor, name },
         })
     }
 

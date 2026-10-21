@@ -7,9 +7,12 @@ package nesting.v1;
 
 message Outer {
   message Inner {
+    // A nested enum's values drop the enum's own name or its whole path
+    // as a prefix, whichever they start with: both are `OuterInnerKind…`.
     enum Kind {
       KIND_UNSPECIFIED = 0;
       KIND_DRAFT = 1;
+      OUTER_INNER_KIND_PUBLISHED = 2;
     }
     message Deepest {
       Kind kind = 1;
