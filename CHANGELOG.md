@@ -1078,6 +1078,7 @@ tag (design §8).
   says to compare `Rpc.Call.toJson` rather than `==`, `Rpc.Error.code`
   says how a bare REST 404 reads, and `Proto.Json.uint64` states its
   range again. Notes on why a type is shaped as it is now live only in
-  the design. A generated message's `default…` value says to build the
-  message from it by record update, which keeps compiling when the
-  message gains a field, rather than as a record literal.
+  the design. The generator's documentation and the quickstart say to
+  build a message from its `default…` value by record update, which
+  keeps compiling when the message gains a field, rather than as a
+  record literal.

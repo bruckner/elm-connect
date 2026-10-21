@@ -42,7 +42,7 @@ type alias Line =
 -- DEFAULTS
 
 
-{-| A [`Line`](#Line) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultLine | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Line`](#Line) with every field at its default and every oneof unset.
 -}
 defaultLine : Line
 defaultLine =

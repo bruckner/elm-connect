@@ -80,7 +80,7 @@ type CountersLimit
 -- DEFAULTS
 
 
-{-| A [`Counters`](#Counters) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCounters | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Counters`](#Counters) with every field at its default and every oneof unset.
 -}
 defaultCounters : Counters
 defaultCounters =

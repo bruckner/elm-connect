@@ -100,6 +100,11 @@ viaTranscoding =
         |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
 ```
 
+A message is a record, so build one from its default by record update,
+`{ defaultNote | title = "Milk" }`, rather than as a full record literal:
+the update keeps compiling when the message gains a field
+([generator.md](generator.md#what-a-proto-becomes)).
+
 `Rpc.task` gives a `Task` instead, for chaining calls.
 
 ## 5. Read the result

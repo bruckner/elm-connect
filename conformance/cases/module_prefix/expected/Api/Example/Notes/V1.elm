@@ -59,7 +59,7 @@ type alias GetNoteRequest =
 -- DEFAULTS
 
 
-{-| A [`Note`](#Note) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNote | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -69,7 +69,7 @@ defaultNote =
     }
 
 
-{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =

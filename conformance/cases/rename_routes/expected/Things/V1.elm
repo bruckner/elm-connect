@@ -69,7 +69,7 @@ type alias GetThingRequest =
 -- DEFAULTS
 
 
-{-| A [`Thing`](#Thing) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultThing | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Thing`](#Thing) with every field at its default and every oneof unset.
 -}
 defaultThing : Thing
 defaultThing =
@@ -77,7 +77,7 @@ defaultThing =
     }
 
 
-{-| A [`Criteria`](#Criteria) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCriteria | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Criteria`](#Criteria) with every field at its default and every oneof unset.
 -}
 defaultCriteria : Criteria
 defaultCriteria =
@@ -85,7 +85,7 @@ defaultCriteria =
     }
 
 
-{-| A [`GetThingRequest`](#GetThingRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetThingRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetThingRequest`](#GetThingRequest) with every field at its default and every oneof unset.
 -}
 defaultGetThingRequest : GetThingRequest
 defaultGetThingRequest =

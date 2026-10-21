@@ -100,7 +100,7 @@ type LinkTarget
 -- DEFAULTS
 
 
-{-| A [`URLPath`](#URLPath) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultURLPath | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`URLPath`](#URLPath) with every field at its default and every oneof unset.
 -}
 defaultURLPath : URLPath
 defaultURLPath =
@@ -121,7 +121,7 @@ defaultURLPath =
     }
 
 
-{-| A [`Link`](#Link) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultLink | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Link`](#Link) with every field at its default and every oneof unset.
 -}
 defaultLink : Link
 defaultLink =

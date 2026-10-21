@@ -122,7 +122,7 @@ type EventWhen
 -- DEFAULTS
 
 
-{-| A [`Event`](#Event) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEvent | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Event`](#Event) with every field at its default and every oneof unset.
 -}
 defaultEvent : Event
 defaultEvent =

@@ -246,7 +246,7 @@ type alias UpdateResourceRequest =
 -- DEFAULTS
 
 
-{-| A [`GetMessageRequest`](#GetMessageRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetMessageRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetMessageRequest`](#GetMessageRequest) with every field at its default and every oneof unset.
 -}
 defaultGetMessageRequest : GetMessageRequest
 defaultGetMessageRequest =
@@ -258,7 +258,7 @@ defaultGetMessageRequest =
     }
 
 
-{-| A [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetMessageRequestSubMessage | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) with every field at its default and every oneof unset.
 -}
 defaultGetMessageRequestSubMessage : GetMessageRequestSubMessage
 defaultGetMessageRequestSubMessage =
@@ -266,7 +266,7 @@ defaultGetMessageRequestSubMessage =
     }
 
 
-{-| A [`Message`](#Message) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultMessage | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Message`](#Message) with every field at its default and every oneof unset.
 -}
 defaultMessage : Message
 defaultMessage =
@@ -275,7 +275,7 @@ defaultMessage =
     }
 
 
-{-| A [`UpdateMessageRequest`](#UpdateMessageRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUpdateMessageRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UpdateMessageRequest`](#UpdateMessageRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateMessageRequest : UpdateMessageRequest
 defaultUpdateMessageRequest =
@@ -284,7 +284,7 @@ defaultUpdateMessageRequest =
     }
 
 
-{-| A [`Everything`](#Everything) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultEverything | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Everything`](#Everything) with every field at its default and every oneof unset.
 -}
 defaultEverything : Everything
 defaultEverything =
@@ -312,7 +312,7 @@ defaultEverything =
     }
 
 
-{-| A [`Inner`](#Inner) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultInner | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Inner`](#Inner) with every field at its default and every oneof unset.
 -}
 defaultInner : Inner
 defaultInner =
@@ -321,7 +321,7 @@ defaultInner =
     }
 
 
-{-| A [`Deep`](#Deep) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDeep | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Deep`](#Deep) with every field at its default and every oneof unset.
 -}
 defaultDeep : Deep
 defaultDeep =
@@ -330,7 +330,7 @@ defaultDeep =
     }
 
 
-{-| A [`FileRequest`](#FileRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultFileRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`FileRequest`](#FileRequest) with every field at its default and every oneof unset.
 -}
 defaultFileRequest : FileRequest
 defaultFileRequest =
@@ -338,7 +338,7 @@ defaultFileRequest =
     }
 
 
-{-| A [`Resource`](#Resource) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultResource | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Resource`](#Resource) with every field at its default and every oneof unset.
 -}
 defaultResource : Resource
 defaultResource =
@@ -350,7 +350,7 @@ defaultResource =
     }
 
 
-{-| A [`UpdateResourceRequest`](#UpdateResourceRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUpdateResourceRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UpdateResourceRequest`](#UpdateResourceRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateResourceRequest : UpdateResourceRequest
 defaultUpdateResourceRequest =

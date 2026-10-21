@@ -463,7 +463,7 @@ type alias LocalizedMessage =
 -- DEFAULTS
 
 
-{-| A [`ErrorInfo`](#ErrorInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultErrorInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ErrorInfo`](#ErrorInfo) with every field at its default and every oneof unset.
 -}
 defaultErrorInfo : ErrorInfo
 defaultErrorInfo =
@@ -473,7 +473,7 @@ defaultErrorInfo =
     }
 
 
-{-| A [`RetryInfo`](#RetryInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultRetryInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`RetryInfo`](#RetryInfo) with every field at its default and every oneof unset.
 -}
 defaultRetryInfo : RetryInfo
 defaultRetryInfo =
@@ -481,7 +481,7 @@ defaultRetryInfo =
     }
 
 
-{-| A [`DebugInfo`](#DebugInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDebugInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`DebugInfo`](#DebugInfo) with every field at its default and every oneof unset.
 -}
 defaultDebugInfo : DebugInfo
 defaultDebugInfo =
@@ -490,7 +490,7 @@ defaultDebugInfo =
     }
 
 
-{-| A [`QuotaFailure`](#QuotaFailure) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultQuotaFailure | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`QuotaFailure`](#QuotaFailure) with every field at its default and every oneof unset.
 -}
 defaultQuotaFailure : QuotaFailure
 defaultQuotaFailure =
@@ -498,7 +498,7 @@ defaultQuotaFailure =
     }
 
 
-{-| A [`QuotaFailureViolation`](#QuotaFailureViolation) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultQuotaFailureViolation | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`QuotaFailureViolation`](#QuotaFailureViolation) with every field at its default and every oneof unset.
 -}
 defaultQuotaFailureViolation : QuotaFailureViolation
 defaultQuotaFailureViolation =
@@ -513,7 +513,7 @@ defaultQuotaFailureViolation =
     }
 
 
-{-| A [`PreconditionFailure`](#PreconditionFailure) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultPreconditionFailure | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`PreconditionFailure`](#PreconditionFailure) with every field at its default and every oneof unset.
 -}
 defaultPreconditionFailure : PreconditionFailure
 defaultPreconditionFailure =
@@ -521,7 +521,7 @@ defaultPreconditionFailure =
     }
 
 
-{-| A [`PreconditionFailureViolation`](#PreconditionFailureViolation) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultPreconditionFailureViolation | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`PreconditionFailureViolation`](#PreconditionFailureViolation) with every field at its default and every oneof unset.
 -}
 defaultPreconditionFailureViolation : PreconditionFailureViolation
 defaultPreconditionFailureViolation =
@@ -531,7 +531,7 @@ defaultPreconditionFailureViolation =
     }
 
 
-{-| A [`BadRequest`](#BadRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultBadRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`BadRequest`](#BadRequest) with every field at its default and every oneof unset.
 -}
 defaultBadRequest : BadRequest
 defaultBadRequest =
@@ -539,7 +539,7 @@ defaultBadRequest =
     }
 
 
-{-| A [`BadRequestFieldViolation`](#BadRequestFieldViolation) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultBadRequestFieldViolation | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`BadRequestFieldViolation`](#BadRequestFieldViolation) with every field at its default and every oneof unset.
 -}
 defaultBadRequestFieldViolation : BadRequestFieldViolation
 defaultBadRequestFieldViolation =
@@ -550,7 +550,7 @@ defaultBadRequestFieldViolation =
     }
 
 
-{-| A [`RequestInfo`](#RequestInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultRequestInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`RequestInfo`](#RequestInfo) with every field at its default and every oneof unset.
 -}
 defaultRequestInfo : RequestInfo
 defaultRequestInfo =
@@ -559,7 +559,7 @@ defaultRequestInfo =
     }
 
 
-{-| A [`ResourceInfo`](#ResourceInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultResourceInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ResourceInfo`](#ResourceInfo) with every field at its default and every oneof unset.
 -}
 defaultResourceInfo : ResourceInfo
 defaultResourceInfo =
@@ -570,7 +570,7 @@ defaultResourceInfo =
     }
 
 
-{-| A [`Help`](#Help) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultHelp | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Help`](#Help) with every field at its default and every oneof unset.
 -}
 defaultHelp : Help
 defaultHelp =
@@ -578,7 +578,7 @@ defaultHelp =
     }
 
 
-{-| A [`HelpLink`](#HelpLink) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultHelpLink | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`HelpLink`](#HelpLink) with every field at its default and every oneof unset.
 -}
 defaultHelpLink : HelpLink
 defaultHelpLink =
@@ -587,7 +587,7 @@ defaultHelpLink =
     }
 
 
-{-| A [`LocalizedMessage`](#LocalizedMessage) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultLocalizedMessage | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`LocalizedMessage`](#LocalizedMessage) with every field at its default and every oneof unset.
 -}
 defaultLocalizedMessage : LocalizedMessage
 defaultLocalizedMessage =

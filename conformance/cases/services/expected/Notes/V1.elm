@@ -193,7 +193,7 @@ type alias Summary =
 -- DEFAULTS
 
 
-{-| A [`Note`](#Note) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNote | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -204,7 +204,7 @@ defaultNote =
     }
 
 
-{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
@@ -212,7 +212,7 @@ defaultGetNoteRequest =
     }
 
 
-{-| A [`ListNotesRequest`](#ListNotesRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListNotesRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ListNotesRequest`](#ListNotesRequest) with every field at its default and every oneof unset.
 -}
 defaultListNotesRequest : ListNotesRequest
 defaultListNotesRequest =
@@ -226,7 +226,7 @@ defaultListNotesRequest =
     }
 
 
-{-| A [`ListNotesRequestFilter`](#ListNotesRequestFilter) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListNotesRequestFilter | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ListNotesRequestFilter`](#ListNotesRequestFilter) with every field at its default and every oneof unset.
 -}
 defaultListNotesRequestFilter : ListNotesRequestFilter
 defaultListNotesRequestFilter =
@@ -235,7 +235,7 @@ defaultListNotesRequestFilter =
     }
 
 
-{-| A [`ListNotesResponse`](#ListNotesResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListNotesResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ListNotesResponse`](#ListNotesResponse) with every field at its default and every oneof unset.
 -}
 defaultListNotesResponse : ListNotesResponse
 defaultListNotesResponse =
@@ -244,7 +244,7 @@ defaultListNotesResponse =
     }
 
 
-{-| A [`CreateNoteRequest`](#CreateNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCreateNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`CreateNoteRequest`](#CreateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultCreateNoteRequest : CreateNoteRequest
 defaultCreateNoteRequest =
@@ -253,7 +253,7 @@ defaultCreateNoteRequest =
     }
 
 
-{-| A [`UpdateNoteRequest`](#UpdateNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUpdateNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UpdateNoteRequest`](#UpdateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateNoteRequest : UpdateNoteRequest
 defaultUpdateNoteRequest =
@@ -262,7 +262,7 @@ defaultUpdateNoteRequest =
     }
 
 
-{-| A [`DeleteNoteRequest`](#DeleteNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDeleteNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`DeleteNoteRequest`](#DeleteNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultDeleteNoteRequest : DeleteNoteRequest
 defaultDeleteNoteRequest =
@@ -271,7 +271,7 @@ defaultDeleteNoteRequest =
     }
 
 
-{-| A [`ArchiveNoteRequest`](#ArchiveNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultArchiveNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ArchiveNoteRequest`](#ArchiveNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultArchiveNoteRequest : ArchiveNoteRequest
 defaultArchiveNoteRequest =
@@ -280,7 +280,7 @@ defaultArchiveNoteRequest =
     }
 
 
-{-| A [`ReadFileRequest`](#ReadFileRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultReadFileRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ReadFileRequest`](#ReadFileRequest) with every field at its default and every oneof unset.
 -}
 defaultReadFileRequest : ReadFileRequest
 defaultReadFileRequest =
@@ -288,7 +288,7 @@ defaultReadFileRequest =
     }
 
 
-{-| A [`Summary`](#Summary) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultSummary | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Summary`](#Summary) with every field at its default and every oneof unset.
 -}
 defaultSummary : Summary
 defaultSummary =

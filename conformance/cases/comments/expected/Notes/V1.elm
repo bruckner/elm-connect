@@ -207,7 +207,7 @@ type alias CreateNoteRequest =
 -- DEFAULTS
 
 
-{-| A [`Note`](#Note) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNote | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
 -}
 defaultNote : Note
 defaultNote =
@@ -223,7 +223,7 @@ defaultNote =
     }
 
 
-{-| A [`NoteEdit`](#NoteEdit) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNoteEdit | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`NoteEdit`](#NoteEdit) with every field at its default and every oneof unset.
 -}
 defaultNoteEdit : NoteEdit
 defaultNoteEdit =
@@ -231,7 +231,7 @@ defaultNoteEdit =
     }
 
 
-{-| A [`Draft`](#Draft) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultDraft | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Draft`](#Draft) with every field at its default and every oneof unset.
 -}
 defaultDraft : Draft
 defaultDraft =
@@ -239,7 +239,7 @@ defaultDraft =
     }
 
 
-{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultGetNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
@@ -247,7 +247,7 @@ defaultGetNoteRequest =
     }
 
 
-{-| A [`ListNotesRequest`](#ListNotesRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListNotesRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ListNotesRequest`](#ListNotesRequest) with every field at its default and every oneof unset.
 -}
 defaultListNotesRequest : ListNotesRequest
 defaultListNotesRequest =
@@ -255,7 +255,7 @@ defaultListNotesRequest =
     }
 
 
-{-| A [`ListNotesResponse`](#ListNotesResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultListNotesResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ListNotesResponse`](#ListNotesResponse) with every field at its default and every oneof unset.
 -}
 defaultListNotesResponse : ListNotesResponse
 defaultListNotesResponse =
@@ -263,7 +263,7 @@ defaultListNotesResponse =
     }
 
 
-{-| A [`CreateNoteRequest`](#CreateNoteRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCreateNoteRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`CreateNoteRequest`](#CreateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultCreateNoteRequest : CreateNoteRequest
 defaultCreateNoteRequest =

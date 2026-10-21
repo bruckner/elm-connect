@@ -138,7 +138,7 @@ type ChoiceValue
 -- DEFAULTS
 
 
-{-| A [`Created`](#Created) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultCreated | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Created`](#Created) with every field at its default and every oneof unset.
 -}
 defaultCreated : Created
 defaultCreated =
@@ -146,7 +146,7 @@ defaultCreated =
     }
 
 
-{-| A [`NoteEvent`](#NoteEvent) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultNoteEvent | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`NoteEvent`](#NoteEvent) with every field at its default and every oneof unset.
 -}
 defaultNoteEvent : NoteEvent
 defaultNoteEvent =
@@ -157,7 +157,7 @@ defaultNoteEvent =
     }
 
 
-{-| A [`Choice`](#Choice) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultChoice | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Choice`](#Choice) with every field at its default and every oneof unset.
 -}
 defaultChoice : Choice
 defaultChoice =

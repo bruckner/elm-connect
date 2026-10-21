@@ -42,7 +42,7 @@ type alias Alarm =
 -- DEFAULTS
 
 
-{-| A [`Alarm`](#Alarm) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultAlarm | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Alarm`](#Alarm) with every field at its default and every oneof unset.
 -}
 defaultAlarm : Alarm
 defaultAlarm =

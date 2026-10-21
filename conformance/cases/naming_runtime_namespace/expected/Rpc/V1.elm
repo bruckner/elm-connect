@@ -42,7 +42,7 @@ type alias Ping =
 -- DEFAULTS
 
 
-{-| A [`Ping`](#Ping) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultPing | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Ping`](#Ping) with every field at its default and every oneof unset.
 -}
 defaultPing : Ping
 defaultPing =

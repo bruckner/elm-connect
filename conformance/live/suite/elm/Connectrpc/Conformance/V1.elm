@@ -1354,7 +1354,7 @@ type alias TestCaseExpandedSize =
 -- DEFAULTS
 
 
-{-| A [`ClientCompatRequest`](#ClientCompatRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientCompatRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientCompatRequest`](#ClientCompatRequest) with every field at its default and every oneof unset.
 -}
 defaultClientCompatRequest : ClientCompatRequest
 defaultClientCompatRequest =
@@ -1381,7 +1381,7 @@ defaultClientCompatRequest =
     }
 
 
-{-| A [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientCompatRequestCancel | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) with every field at its default and every oneof unset.
 -}
 defaultClientCompatRequestCancel : ClientCompatRequestCancel
 defaultClientCompatRequestCancel =
@@ -1389,7 +1389,7 @@ defaultClientCompatRequestCancel =
     }
 
 
-{-| A [`ClientCompatResponse`](#ClientCompatResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientCompatResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientCompatResponse`](#ClientCompatResponse) with every field at its default and every oneof unset.
 -}
 defaultClientCompatResponse : ClientCompatResponse
 defaultClientCompatResponse =
@@ -1398,7 +1398,7 @@ defaultClientCompatResponse =
     }
 
 
-{-| A [`ClientResponseResult`](#ClientResponseResult) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientResponseResult | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientResponseResult`](#ClientResponseResult) with every field at its default and every oneof unset.
 -}
 defaultClientResponseResult : ClientResponseResult
 defaultClientResponseResult =
@@ -1412,7 +1412,7 @@ defaultClientResponseResult =
     }
 
 
-{-| A [`ClientErrorResult`](#ClientErrorResult) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientErrorResult | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientErrorResult`](#ClientErrorResult) with every field at its default and every oneof unset.
 -}
 defaultClientErrorResult : ClientErrorResult
 defaultClientErrorResult =
@@ -1420,7 +1420,7 @@ defaultClientErrorResult =
     }
 
 
-{-| A [`WireDetails`](#WireDetails) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultWireDetails | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`WireDetails`](#WireDetails) with every field at its default and every oneof unset.
 -}
 defaultWireDetails : WireDetails
 defaultWireDetails =
@@ -1431,7 +1431,7 @@ defaultWireDetails =
     }
 
 
-{-| A [`Config`](#Config) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultConfig | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Config`](#Config) with every field at its default and every oneof unset.
 -}
 defaultConfig : Config
 defaultConfig =
@@ -1441,7 +1441,7 @@ defaultConfig =
     }
 
 
-{-| A [`Features`](#Features) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultFeatures | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Features`](#Features) with every field at its default and every oneof unset.
 -}
 defaultFeatures : Features
 defaultFeatures =
@@ -1460,7 +1460,7 @@ defaultFeatures =
     }
 
 
-{-| A [`ConfigCase`](#ConfigCase) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultConfigCase | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ConfigCase`](#ConfigCase) with every field at its default and every oneof unset.
 -}
 defaultConfigCase : ConfigCase
 defaultConfigCase =
@@ -1475,7 +1475,7 @@ defaultConfigCase =
     }
 
 
-{-| A [`TLSCreds`](#TLSCreds) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTLSCreds | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`TLSCreds`](#TLSCreds) with every field at its default and every oneof unset.
 -}
 defaultTLSCreds : TLSCreds
 defaultTLSCreds =
@@ -1484,7 +1484,7 @@ defaultTLSCreds =
     }
 
 
-{-| A [`ServerCompatRequest`](#ServerCompatRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultServerCompatRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ServerCompatRequest`](#ServerCompatRequest) with every field at its default and every oneof unset.
 -}
 defaultServerCompatRequest : ServerCompatRequest
 defaultServerCompatRequest =
@@ -1497,7 +1497,7 @@ defaultServerCompatRequest =
     }
 
 
-{-| A [`ServerCompatResponse`](#ServerCompatResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultServerCompatResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ServerCompatResponse`](#ServerCompatResponse) with every field at its default and every oneof unset.
 -}
 defaultServerCompatResponse : ServerCompatResponse
 defaultServerCompatResponse =
@@ -1507,7 +1507,7 @@ defaultServerCompatResponse =
     }
 
 
-{-| A [`UnaryResponseDefinition`](#UnaryResponseDefinition) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUnaryResponseDefinition | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UnaryResponseDefinition`](#UnaryResponseDefinition) with every field at its default and every oneof unset.
 -}
 defaultUnaryResponseDefinition : UnaryResponseDefinition
 defaultUnaryResponseDefinition =
@@ -1519,7 +1519,7 @@ defaultUnaryResponseDefinition =
     }
 
 
-{-| A [`StreamResponseDefinition`](#StreamResponseDefinition) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultStreamResponseDefinition | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`StreamResponseDefinition`](#StreamResponseDefinition) with every field at its default and every oneof unset.
 -}
 defaultStreamResponseDefinition : StreamResponseDefinition
 defaultStreamResponseDefinition =
@@ -1532,7 +1532,7 @@ defaultStreamResponseDefinition =
     }
 
 
-{-| A [`UnaryRequest`](#UnaryRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUnaryRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UnaryRequest`](#UnaryRequest) with every field at its default and every oneof unset.
 -}
 defaultUnaryRequest : UnaryRequest
 defaultUnaryRequest =
@@ -1541,7 +1541,7 @@ defaultUnaryRequest =
     }
 
 
-{-| A [`UnaryResponse`](#UnaryResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultUnaryResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`UnaryResponse`](#UnaryResponse) with every field at its default and every oneof unset.
 -}
 defaultUnaryResponse : UnaryResponse
 defaultUnaryResponse =
@@ -1549,7 +1549,7 @@ defaultUnaryResponse =
     }
 
 
-{-| A [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultIdempotentUnaryRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) with every field at its default and every oneof unset.
 -}
 defaultIdempotentUnaryRequest : IdempotentUnaryRequest
 defaultIdempotentUnaryRequest =
@@ -1558,7 +1558,7 @@ defaultIdempotentUnaryRequest =
     }
 
 
-{-| A [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultIdempotentUnaryResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) with every field at its default and every oneof unset.
 -}
 defaultIdempotentUnaryResponse : IdempotentUnaryResponse
 defaultIdempotentUnaryResponse =
@@ -1566,7 +1566,7 @@ defaultIdempotentUnaryResponse =
     }
 
 
-{-| A [`ServerStreamRequest`](#ServerStreamRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultServerStreamRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ServerStreamRequest`](#ServerStreamRequest) with every field at its default and every oneof unset.
 -}
 defaultServerStreamRequest : ServerStreamRequest
 defaultServerStreamRequest =
@@ -1575,7 +1575,7 @@ defaultServerStreamRequest =
     }
 
 
-{-| A [`ServerStreamResponse`](#ServerStreamResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultServerStreamResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ServerStreamResponse`](#ServerStreamResponse) with every field at its default and every oneof unset.
 -}
 defaultServerStreamResponse : ServerStreamResponse
 defaultServerStreamResponse =
@@ -1583,7 +1583,7 @@ defaultServerStreamResponse =
     }
 
 
-{-| A [`ClientStreamRequest`](#ClientStreamRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientStreamRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientStreamRequest`](#ClientStreamRequest) with every field at its default and every oneof unset.
 -}
 defaultClientStreamRequest : ClientStreamRequest
 defaultClientStreamRequest =
@@ -1592,7 +1592,7 @@ defaultClientStreamRequest =
     }
 
 
-{-| A [`ClientStreamResponse`](#ClientStreamResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultClientStreamResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ClientStreamResponse`](#ClientStreamResponse) with every field at its default and every oneof unset.
 -}
 defaultClientStreamResponse : ClientStreamResponse
 defaultClientStreamResponse =
@@ -1600,7 +1600,7 @@ defaultClientStreamResponse =
     }
 
 
-{-| A [`BidiStreamRequest`](#BidiStreamRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultBidiStreamRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`BidiStreamRequest`](#BidiStreamRequest) with every field at its default and every oneof unset.
 -}
 defaultBidiStreamRequest : BidiStreamRequest
 defaultBidiStreamRequest =
@@ -1610,7 +1610,7 @@ defaultBidiStreamRequest =
     }
 
 
-{-| A [`BidiStreamResponse`](#BidiStreamResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultBidiStreamResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`BidiStreamResponse`](#BidiStreamResponse) with every field at its default and every oneof unset.
 -}
 defaultBidiStreamResponse : BidiStreamResponse
 defaultBidiStreamResponse =
@@ -1632,7 +1632,7 @@ defaultUnimplementedResponse =
     {}
 
 
-{-| A [`ConformancePayload`](#ConformancePayload) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultConformancePayload | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ConformancePayload`](#ConformancePayload) with every field at its default and every oneof unset.
 -}
 defaultConformancePayload : ConformancePayload
 defaultConformancePayload =
@@ -1641,7 +1641,7 @@ defaultConformancePayload =
     }
 
 
-{-| A [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultConformancePayloadRequestInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) with every field at its default and every oneof unset.
 -}
 defaultConformancePayloadRequestInfo : ConformancePayloadRequestInfo
 defaultConformancePayloadRequestInfo =
@@ -1652,7 +1652,7 @@ defaultConformancePayloadRequestInfo =
     }
 
 
-{-| A [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultConformancePayloadConnectGetInfo | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) with every field at its default and every oneof unset.
 -}
 defaultConformancePayloadConnectGetInfo : ConformancePayloadConnectGetInfo
 defaultConformancePayloadConnectGetInfo =
@@ -1660,7 +1660,7 @@ defaultConformancePayloadConnectGetInfo =
     }
 
 
-{-| A [`Error`](#Error) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultError | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Error`](#Error) with every field at its default and every oneof unset.
 -}
 defaultError : Error
 defaultError =
@@ -1670,7 +1670,7 @@ defaultError =
     }
 
 
-{-| A [`Header`](#Header) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultHeader | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`Header`](#Header) with every field at its default and every oneof unset.
 -}
 defaultHeader : Header
 defaultHeader =
@@ -1679,7 +1679,7 @@ defaultHeader =
     }
 
 
-{-| A [`RawHTTPRequest`](#RawHTTPRequest) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultRawHTTPRequest | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`RawHTTPRequest`](#RawHTTPRequest) with every field at its default and every oneof unset.
 -}
 defaultRawHTTPRequest : RawHTTPRequest
 defaultRawHTTPRequest =
@@ -1692,7 +1692,7 @@ defaultRawHTTPRequest =
     }
 
 
-{-| A [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultRawHTTPRequestEncodedQueryParam | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) with every field at its default and every oneof unset.
 -}
 defaultRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam
 defaultRawHTTPRequestEncodedQueryParam =
@@ -1702,7 +1702,7 @@ defaultRawHTTPRequestEncodedQueryParam =
     }
 
 
-{-| A [`MessageContents`](#MessageContents) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultMessageContents | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`MessageContents`](#MessageContents) with every field at its default and every oneof unset.
 -}
 defaultMessageContents : MessageContents
 defaultMessageContents =
@@ -1711,7 +1711,7 @@ defaultMessageContents =
     }
 
 
-{-| A [`StreamContents`](#StreamContents) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultStreamContents | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`StreamContents`](#StreamContents) with every field at its default and every oneof unset.
 -}
 defaultStreamContents : StreamContents
 defaultStreamContents =
@@ -1719,7 +1719,7 @@ defaultStreamContents =
     }
 
 
-{-| A [`StreamContentsStreamItem`](#StreamContentsStreamItem) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultStreamContentsStreamItem | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`StreamContentsStreamItem`](#StreamContentsStreamItem) with every field at its default and every oneof unset.
 -}
 defaultStreamContentsStreamItem : StreamContentsStreamItem
 defaultStreamContentsStreamItem =
@@ -1729,7 +1729,7 @@ defaultStreamContentsStreamItem =
     }
 
 
-{-| A [`RawHTTPResponse`](#RawHTTPResponse) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultRawHTTPResponse | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`RawHTTPResponse`](#RawHTTPResponse) with every field at its default and every oneof unset.
 -}
 defaultRawHTTPResponse : RawHTTPResponse
 defaultRawHTTPResponse =
@@ -1740,7 +1740,7 @@ defaultRawHTTPResponse =
     }
 
 
-{-| A [`TestSuite`](#TestSuite) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTestSuite | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`TestSuite`](#TestSuite) with every field at its default and every oneof unset.
 -}
 defaultTestSuite : TestSuite
 defaultTestSuite =
@@ -1759,7 +1759,7 @@ defaultTestSuite =
     }
 
 
-{-| A [`TestCase`](#TestCase) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTestCase | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`TestCase`](#TestCase) with every field at its default and every oneof unset.
 -}
 defaultTestCase : TestCase
 defaultTestCase =
@@ -1770,7 +1770,7 @@ defaultTestCase =
     }
 
 
-{-| A [`TestCaseExpandedSize`](#TestCaseExpandedSize) with every field at its default and every oneof unset. Build one from it with record update syntax, `{ defaultTestCaseExpandedSize | … }`: unlike a record literal, that keeps compiling when the message gains a field.
+{-| A [`TestCaseExpandedSize`](#TestCaseExpandedSize) with every field at its default and every oneof unset.
 -}
 defaultTestCaseExpandedSize : TestCaseExpandedSize
 defaultTestCaseExpandedSize =
