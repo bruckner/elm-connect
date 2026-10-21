@@ -109,7 +109,8 @@ codes! {
     /// module's code uses unqualified for a library's.
     ReservedName => "naming::reserved_name",
     /// A generated module takes the name of a module of the runtime
-    /// package or of a package it depends on.
+    /// package or of a package it depends on, or has a segment Windows
+    /// reserves as a file name.
     ReservedModule => "naming::reserved_module",
     /// Generated modules are named `Rpc` or `Proto` or sit inside one, the
     /// runtime's namespaces, where it may add modules in any release: a
@@ -731,6 +732,34 @@ impl Problem {
                 "An application that depends on {owner} cannot define a module of the same \
                  name: every `import {module}`, in the generated code or the application's, \
                  becomes ambiguous. Move the module with {escapes}."
+            ),
+            vec![site],
+        )
+    }
+
+    /// `what` (such as "message `notes.v1.Con`") becomes the Elm module
+    /// `module`, whose segment `segment` is a device name Windows reserves
+    /// as a file name. `rename` is the option that renames it.
+    pub fn windows_device_module(
+        what: &str,
+        module: &str,
+        segment: &str,
+        rename: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::ReservedModule,
+            format!(
+                "The {what} becomes the Elm module `{module}`, and `{segment}` is a reserved \
+                 file name on Windows."
+            ),
+            format!(
+                "Each module is written to a file named for it (`Notes.V1.Note` to \
+                 `Notes/V1/Note.elm`), and Windows reserves `CON`, `PRN`, `AUX`, `NUL`, \
+                 `COM1` to `COM9` and `LPT1` to `LPT9` as file names in any case and with any \
+                 extension, so `{segment}.elm` or a directory `{segment}` cannot be created \
+                 there and git refuses to check it out. It is refused on every OS so that \
+                 generated code can be checked out anywhere. Rename it with {rename}."
             ),
             vec![site],
         )

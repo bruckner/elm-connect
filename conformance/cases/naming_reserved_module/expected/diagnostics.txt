@@ -1,5 +1,24 @@
 naming::reserved_module
 
+  × The package `devices.aux` becomes the Elm module `Devices.Aux`, and `Aux`
+  │ is a reserved file name on Windows.
+   ╭─[devices.proto:5:1]
+ 4 │ // Windows, in any case.
+ 5 │ package devices.aux;
+   · ──────────┬─────────
+   ·           ╰── package `devices.aux` becomes `Devices.Aux`
+ 6 │
+   ╰────
+  help: Each module is written to a file named for it (`Notes.V1.Note` to
+        `Notes/V1/Note.elm`), and Windows reserves `CON`, `PRN`, `AUX`, `NUL`,
+        `COM1` to `COM9` and `LPT1` to `LPT9` as file names in any case and
+        with any extension, so `Aux.elm` or a directory `Aux` cannot be
+        created there and git refuses to check it out. It is refused on every
+        OS so that generated code can be checked out anywhere. Rename it with
+        `rename=devices.aux:<Elm name>`.
+
+naming::reserved_module
+
   × The package `json.decode` becomes the Elm module `Json.Decode`, which is a
   │ module of elm/json.
    ╭─[json/decode.proto:4:1]
@@ -80,3 +99,22 @@ naming::reserved_module
         Rpc.Call`, in the generated code or the application's, becomes
         ambiguous. Move the module with `rename=rpc.Call:<Elm name>` or
         `module_prefix=<Elm module>`.
+
+naming::reserved_module
+
+  × The message `windows.v1.Con` becomes the Elm module `Windows.V1.Con`, and
+  │ `Con` is a reserved file name on Windows.
+   ╭─[windows.proto:7:9]
+ 6 │
+ 7 │ message Con {
+   ·         ─┬─
+   ·          ╰── message `windows.v1.Con` becomes `Windows.V1.Con`
+ 8 │   string text = 1;
+   ╰────
+  help: Each module is written to a file named for it (`Notes.V1.Note` to
+        `Notes/V1/Note.elm`), and Windows reserves `CON`, `PRN`, `AUX`, `NUL`,
+        `COM1` to `COM9` and `LPT1` to `LPT9` as file names in any case and
+        with any extension, so `Con.elm` or a directory `Con` cannot be
+        created there and git refuses to check it out. It is refused on every
+        OS so that generated code can be checked out anywhere. Rename it with
+        `rename=windows.v1.Con:<Elm name>`.

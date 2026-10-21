@@ -118,6 +118,24 @@ pub fn reserved_module(module: &str) -> Option<&'static str> {
         .map(|(package, _)| *package)
 }
 
+/// The segment of `module` that is a device name Windows reserves as a
+/// file name, in any case and with any extension (`CON`, `PRN`, `AUX`,
+/// `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`): a module `Notes.V1.Con`
+/// is written to `Notes/V1/Con.elm`, which Windows cannot create and git
+/// refuses to check out there.
+pub fn windows_device_segment(module: &str) -> Option<&str> {
+    module.split('.').find(|segment| {
+        let upper = segment.to_ascii_uppercase();
+        match upper.as_bytes() {
+            [a, b, c] => matches!(&[*a, *b, *c], b"CON" | b"PRN" | b"AUX" | b"NUL"),
+            [a, b, c, digit] => {
+                matches!(&[*a, *b, *c], b"COM" | b"LPT") && (b'1'..=b'9').contains(digit)
+            }
+            _ => false,
+        }
+    })
+}
+
 /// The runtime package's namespaces: the module names it may take in any
 /// release, a minor or patch one included (design §8.3). A generated
 /// module named for one of them or inside one is the user's risk.
@@ -645,6 +663,25 @@ mod tests {
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
         assert_eq!(reserved_module("Html"), None);
+    }
+
+    #[test]
+    fn windows_device_names_are_found_in_any_segment() {
+        assert_eq!(windows_device_segment("Notes.V1.Con"), Some("Con"));
+        assert_eq!(windows_device_segment("Shop.Aux.V1"), Some("Aux"));
+        assert_eq!(windows_device_segment("NUL"), Some("NUL"));
+        assert_eq!(windows_device_segment("A.Com1"), Some("Com1"));
+        assert_eq!(windows_device_segment("A.LPT9.B"), Some("LPT9"));
+        for module in [
+            "Notes.V1",
+            "A.Com0",
+            "A.Com10",
+            "A.Console",
+            "A.Conn",
+            "A.Lpt",
+        ] {
+            assert_eq!(windows_device_segment(module), None, "{module}");
+        }
     }
 
     #[test]

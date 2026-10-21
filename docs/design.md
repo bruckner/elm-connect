@@ -1187,6 +1187,17 @@ Built *(Proposed in its details)*:
   name, so one naming rule names both.)*
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
+- **Windows device names.** *(Decided, 2026-10-21.)* A module path
+  segment that is, ignoring case, `CON`, `PRN`, `AUX`, `NUL`, `COM1` to
+  `COM9` or `LPT1` to `LPT9` is `naming::reserved_module` on every OS,
+  as case-only module collisions are (§3.8): each segment is a
+  directory or a file (`Notes.V1.Con` is `Notes/V1/Con.elm`), Windows
+  reserves those names whatever the extension, so the file cannot be
+  created there, and git refuses to check it out. A message `Con` and a
+  package `devices.aux` are refused (`naming_reserved_module` case); a
+  package's problem covers the modules inside it. Escape: `rename`. An
+  option to accept them, for output that never reaches Windows, may
+  come if asked; it is not built.
 
 Built, as the `naming` and `naming_collision` cases show:
 

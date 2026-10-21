@@ -999,3 +999,8 @@ tag (design §8).
   as its own name, the longer that matches: in `Note.Kind`,
   `NOTE_KIND_DRAFT` becomes `NoteKindDraft` (was `NoteKindNoteKindDraft`),
   as `KIND_DRAFT` does (design §3.3).
+- A generated module with a segment Windows reserves as a file name
+  (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, in any
+  case: a message `Con`, a package `devices.aux`) is
+  `naming::reserved_module` on every OS, since `Con.elm` cannot be
+  created on Windows (design §3.7).

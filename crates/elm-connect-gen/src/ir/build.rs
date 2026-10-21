@@ -486,6 +486,8 @@ struct Builder {
     /// The first generated module name of each lowercase spelling, with
     /// the site that claimed it, so no two differ only in case.
     module_cases: HashMap<String, (String, Site)>,
+    /// The generated modules reported for a segment Windows reserves.
+    device_modules: HashSet<String>,
     /// The generated modules in the runtime's namespaces, for the one
     /// warning that lists them.
     runtime_namespace: BTreeSet<String>,
@@ -1116,8 +1118,9 @@ impl Builder {
     }
 
     /// Claims `module` for `origin`, the proto element `proto`: reported
-    /// when it is a module the runtime or a package it depends on already
-    /// has, when another generated module has it, or when another's name
+    /// when a segment of it is a file name Windows reserves, when it is a
+    /// module the runtime or a package it depends on already has, when
+    /// another generated module has it, or when another's name
     /// differs from it only in case, since its file is then the same file
     /// on a file system that ignores case. A module in the runtime's
     /// namespaces is noted for their warning, and one an application's
@@ -1129,6 +1132,27 @@ impl Builder {
             self.spelling.rename(proto),
             self.spelling.module_prefix()
         );
+        if let Some(segment) = naming::windows_device_segment(&name) {
+            // A type's or service's module inside a package module that
+            // was reported for its own segment is that problem, not another.
+            let parent = name.rsplit_once('.').map(|(parent, _)| parent);
+            if parent.is_some_and(|parent| self.device_modules.contains(parent)) {
+                return;
+            }
+            self.device_modules.insert(name.clone());
+            let site = Site {
+                label: format!("{} becomes `{name}`", origin.what),
+                ..origin.site
+            };
+            self.diagnostics.push(Problem::windows_device_module(
+                &origin.what,
+                &name,
+                segment,
+                &self.spelling.rename(proto),
+                site,
+            ));
+            return;
+        }
         if let Some(owner) = naming::reserved_module(&name) {
             let site = Site {
                 label: format!("{} becomes `{name}`", origin.what),
