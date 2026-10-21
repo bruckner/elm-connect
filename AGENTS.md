@@ -1,0 +1,148 @@
+# Working on elm-connect
+
+This is the working agreement for an agent, or a person, about to
+change this repository. [CONTRIBUTING.md](CONTRIBUTING.md) is the
+contributor's guide, and everything it says applies: the gate, branches
+and pull requests, docs riding with the change, code comments, commit
+messages. This file does not repeat it; it adds what is worth keeping in
+working memory while you work. [ARCHITECTURE.md](ARCHITECTURE.md) maps
+the code. To use the generator on someone else's project instead, read
+[docs/agent-guide.md](docs/agent-guide.md).
+
+## Layout
+
+- `crates/`: the generator. `elm-connect-gen` is the library (IR,
+  emitter, Elm printer, diagnostics); `protoc-gen-elm-connect` is the
+  protoc plugin; `elm-connect` is the CLI, which compiles protos itself
+  with protox and has `gen` and `check`.
+- `src/`: the Elm runtime, `Proto.*` and `Rpc.*`. The package is this
+  repository: `elm.json` is at the root.
+- `tests/`: the runtime's Elm tests, unit and fuzz, and the Elm replay
+  of the route fixtures and properties.
+- `conformance/`: `cases/` is the golden corpus; `codec/` and `routes/`
+  are the proto sources of the codec round trips and the route
+  fixtures; `live/` is the live suite and the Connect conformance
+  suite's wrapper; `harness/` compiles the corpus.
+  [conformance/README.md](conformance/README.md) describes each.
+- `examples/notes/`: an API, its Go server and a browser application on
+  its generated client; the live suite runs against that server.
+- `docs/`: the user guides, [design.md](docs/design.md) (the design
+  contract), [decisions.md](docs/decisions.md) and
+  [roadmap.md](docs/roadmap.md).
+
+Run every tool through `mise exec --` (or with mise activated), so the
+pinned versions run: an `elm` elsewhere on `PATH` may be another
+release.
+
+## The gate
+
+`just check` is the bar for a pull request, and CI runs it on Linux
+and macOS. In order:
+
+- `fmt-check`: `cargo fmt --check` and `elm-format --validate`
+  (`just fmt` fixes both).
+- `clippy`: every crate and target, warnings as errors.
+- `test`: `cargo test --workspace`, which includes the corpus, the
+  route fixtures and properties, the codec round trips, the plugin's
+  replay of the corpus, the lockstep test and the diagnostics catalogue.
+- `elm-check`: the runtime built with `--docs` (every exposed value
+  documented), its Elm tests, and the notes example's Elm tests.
+- `snippets`: every tagged code block in the README, the guides and the
+  example's walkthrough is an excerpt of the file it names.
+- `zizmor`: an audit of the workflows and the Dependabot config.
+- `gitleaks`: a scan of the history for secrets.
+- `deny`: `cargo deny` over the Rust dependencies.
+- `package`: `cargo package`, which refuses uncommitted changes, so
+  commit before running the gate.
+
+`just live` is separate: it needs Go and the network, and CI runs it as
+its own job. Run it before a pull request that touches
+`examples/notes/`, `conformance/live/`, how the runtime sends a call or
+reads an answer, or anything that changes generated code, since it
+regenerates the example's and the conformance suite's Elm and fails on
+drift.
+
+## The corpus is the review surface
+
+A generator change shows up as a diff in
+`conformance/cases/*/expected`. `just bless` rewrites the corpus and the
+Elm replay of the route fixtures and properties (`tests/Routes`,
+`tests/RouteFixtures.elm`, `tests/RouteProperties.elm`) from the
+current generator. Read the whole diff before committing it: it is what
+users will get, and a reviewer reads it line by line. A new behaviour
+gets a new case (`conformance/README.md` says how to add one).
+
+Generated code also lives in `examples/notes/elm/generated/` and
+`conformance/live/suite/`. `just live-gen` and `just live-conformance-gen`
+regenerate them in place and then fail if they differ from what is
+committed; stage what they wrote and run them again.
+
+`just bless`, `just live-gen` and `just live-conformance-gen` delete
+and rewrite whole trees. Stage files by name, after reading `git
+status`; never `git add -A` or `git add .`.
+
+## Doc strings and rationale
+
+A doc string on an exposed module speaks to the user: what a value is,
+how to get one, what it promises. The maintainer's reasons go in an
+`Internal` module's docs, [docs/design.md](docs/design.md),
+[docs/decisions.md](docs/decisions.md) or the commit message
+(CONTRIBUTING.md, "Code comments"). The same holds for the doc comments
+the generator writes into generated modules.
+
+## Versioning
+
+The runtime and the generator are one version in lockstep: the Cargo
+workspace and `elm.json` carry the same number, and every generated
+module names the release's `Proto.Version` value, so a mismatched pair
+fails to compile ([design §8](docs/design.md);
+`crates/elm-connect-gen/tests/lockstep.rs` holds them together). A
+release's magnitude is the largest any surface needs.
+
+For the runtime, Elm's own rules decide: a new constructor on an
+exposed union, or a new field in an exposed record alias, is a major,
+since users match on unions exhaustively and build records whole; a new
+function or module is a minor. Design §8.3 lists which types are opaque
+(they can grow) and which are frozen. For the generator, the options
+and diagnostic codes are additive within a major, and the same protos
+with the same options must keep giving the same modules, types and
+values. [docs/roadmap.md](docs/roadmap.md) gives each planned feature
+its verdict; check it before proposing something.
+
+## History
+
+Keep the branch linear: when `main` moves, `git rebase origin/main`
+and `git push --force-with-lease`; never merge `main` into the branch.
+Pull requests land on `main` as merge commits, which a ruleset
+enforces. A pull request carries its `CHANGELOG.md` bullet under
+Unreleased when a user of the package or the binaries would notice the
+change; repository-only changes carry none.
+
+## What never goes in
+
+- The names of private applications the author tests against. Say "an
+  application".
+- Personal data or secrets: names, email addresses, tokens.
+- googleapis protos beyond the vendored ones: the three files the
+  generator embeds (`crates/elm-connect-gen/googleapis/`) and the
+  example's copies, which `just protos-refresh` maintains. The runtime
+  package ships no generated `Google.*` modules (the roadmap has the
+  entry).
+
+## Where to start
+
+- **A generator change**: the IR (`crates/elm-connect-gen/src/ir.rs`,
+  `ir/`, `naming.rs`, `route.rs`), then the emitter (`emit.rs`,
+  `emit/`), then a corpus case and `just bless`. A new diagnostic code
+  needs a row in [docs/diagnostics.md](docs/diagnostics.md);
+  `crates/elm-connect-gen/tests/catalogue.rs` fails without it.
+- **A runtime change**: `src/Rpc.elm`, `src/Rpc/`, `src/Proto/` and
+  their tests under `tests/`. Keep the one-way import rule (no `Proto`
+  module imports an `Rpc` one; design §3.1, rule 7). A change to how a
+  call is sent or read also runs through `conformance/live/`
+  (`src/Live/*.elm`, `run.mjs`, the Connect conformance wrapper
+  `conformance.mjs`) and needs `just live`.
+- **A docs change**: `docs/`, the README and
+  `examples/notes/README.md`. A tagged code block is an excerpt that
+  `just snippets` checks: change the file it names first, then copy the
+  region.
