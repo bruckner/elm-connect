@@ -5,7 +5,8 @@ module First.V1 exposing (..)
 
 {-| Names starting with capitals or underscores (design section 3.7): the
 leading run of capitals is lowercased, keeping its last letter when a
-lowercase letter follows. Types keep their names as written.
+lowercase letter follows, and taking a lone `s` after it with it (a
+plural acronym). Types keep their names as written.
 -}
 
 import First.V1.Link
@@ -41,7 +42,10 @@ elmConnectVersion_ =
   - [`internal`](First-V1-URLPath#internal)
   - [`displayName`](First-V1-URLPath#displayName)
   - [`type_`](First-V1-URLPath#type_)
-  - [`iDs`](First-V1-URLPath#iDs): `ID` + `s` reads as `I` + `Ds`.
+  - [`ids`](First-V1-URLPath#ids): Plural acronyms: `ids`, `urls`, `apis`, `uuids`.
+  - [`urls`](First-V1-URLPath#urls)
+  - [`apis`](First-V1-URLPath#apis)
+  - [`uuids`](First-V1-URLPath#uuids)
 
 -}
 type alias URLPath =
@@ -55,7 +59,10 @@ type alias URLPath =
     , internal : String
     , displayName : String
     , type_ : String
-    , iDs : List String
+    , ids : List String
+    , urls : List String
+    , apis : List String
+    , uuids : List String
     }
 
 
@@ -107,7 +114,10 @@ defaultURLPath =
     , internal = ""
     , displayName = ""
     , type_ = ""
-    , iDs = []
+    , ids = []
+    , urls = []
+    , apis = []
+    , uuids = []
     }
 
 
@@ -175,7 +185,10 @@ encodeURLPath value =
         , ( "Internal", Proto.Json.implicitField "" Json.Encode.string value.internal )
         , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
         , ( "Type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
-        , ( "IDs", Proto.Json.repeatedField Json.Encode.string value.iDs )
+        , ( "IDs", Proto.Json.repeatedField Json.Encode.string value.ids )
+        , ( "URLs", Proto.Json.repeatedField Json.Encode.string value.urls )
+        , ( "APIs", Proto.Json.repeatedField Json.Encode.string value.apis )
+        , ( "UUIDs", Proto.Json.repeatedField Json.Encode.string value.uuids )
         ]
 
 
@@ -227,6 +240,9 @@ decodeURLPath =
         |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
         |> Proto.Json.field "Type" "" Json.Decode.string
         |> Proto.Json.field "IDs" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "URLs" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "APIs" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "UUIDs" [] (Json.Decode.list Json.Decode.string)
 
 
 {-| Decodes a [`Link`](#Link) from proto3 JSON.

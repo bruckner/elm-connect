@@ -28,6 +28,9 @@ macro_rules! runtime_package {
     };
 }
 
+/// The runtime package's name.
+pub const RUNTIME_PACKAGE: &str = runtime_package!();
+
 /// The runtime package's documentation on the package site, to which a
 /// module's page name and an anchor are appended
 /// (`Proto-Message#Descriptor`). It names `latest` because the site has
@@ -115,6 +118,97 @@ pub fn reserved_module(module: &str) -> Option<&'static str> {
         .map(|(package, _)| *package)
 }
 
+/// The segment of `module` that is a device name Windows reserves as a
+/// file name, in any case and with any extension (`CON`, `PRN`, `AUX`,
+/// `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`): a module `Notes.V1.Con`
+/// is written to `Notes/V1/Con.elm`, which Windows cannot create and git
+/// refuses to check out there.
+pub fn windows_device_segment(module: &str) -> Option<&str> {
+    module.split('.').find(|segment| {
+        let upper = segment.to_ascii_uppercase();
+        match upper.as_bytes() {
+            [a, b, c] => matches!(&[*a, *b, *c], b"CON" | b"PRN" | b"AUX" | b"NUL"),
+            [a, b, c, digit] => {
+                matches!(&[*a, *b, *c], b"COM" | b"LPT") && (b'1'..=b'9').contains(digit)
+            }
+            _ => false,
+        }
+    })
+}
+
+/// The runtime package's namespaces: the module names it may take in any
+/// release, a minor or patch one included (design §8.3). A generated
+/// module named for one of them or inside one is the user's risk.
+pub const RUNTIME_NAMESPACES: [&str; 2] = ["Rpc", "Proto"];
+
+/// Whether `module` is one of [`RUNTIME_NAMESPACES`] or inside one
+/// (`Proto`, `Rpc.V1`, `Proto.Notes.V1`).
+pub fn in_runtime_namespace(module: &str) -> bool {
+    RUNTIME_NAMESPACES.iter().any(|root| {
+        module
+            .strip_prefix(root)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with('.'))
+    })
+}
+
+/// The elm/* packages an application commonly depends on beside the
+/// runtime, each with its exposed modules (at elm/html 1.0.1,
+/// elm/browser 1.0.2, elm/url 1.0.0, elm/svg 1.0.1, elm/file 1.0.5,
+/// elm/random 1.0.0, elm/regex 1.0.0, elm/parser 1.1.0 and
+/// elm/virtual-dom 1.0.5). Generated code imports none of them, so a
+/// generated module of the same name compiles, but an application that
+/// depends on its package cannot import it: the import is ambiguous.
+pub const APPLICATION_MODULES: [(&str, &[&str]); 9] = [
+    (
+        "elm/html",
+        &[
+            "Html",
+            "Html.Attributes",
+            "Html.Events",
+            "Html.Keyed",
+            "Html.Lazy",
+        ],
+    ),
+    (
+        "elm/browser",
+        &[
+            "Browser",
+            "Browser.Dom",
+            "Browser.Events",
+            "Browser.Navigation",
+        ],
+    ),
+    (
+        "elm/url",
+        &["Url", "Url.Builder", "Url.Parser", "Url.Parser.Query"],
+    ),
+    (
+        "elm/svg",
+        &[
+            "Svg",
+            "Svg.Attributes",
+            "Svg.Events",
+            "Svg.Keyed",
+            "Svg.Lazy",
+        ],
+    ),
+    ("elm/file", &["File", "File.Select", "File.Download"]),
+    ("elm/random", &["Random"]),
+    ("elm/regex", &["Regex"]),
+    ("elm/parser", &["Parser", "Parser.Advanced"]),
+    ("elm/virtual-dom", &["VirtualDom"]),
+];
+
+/// The package among [`APPLICATION_MODULES`] that has a module named
+/// `module`, which a generated module of that name shadows for an
+/// application depending on it.
+pub fn shadowed_module(module: &str) -> Option<&'static str> {
+    APPLICATION_MODULES
+        .iter()
+        .find(|(_, modules)| modules.contains(&module))
+        .map(|(package, _)| *package)
+}
+
 /// Why a proto name has no Elm spelling.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NameError {
@@ -183,8 +277,9 @@ pub fn nested_type_name(enclosing_elm_name: &str, proto_name: &str) -> String {
 /// `displayName`). Then the leading run of uppercase letters is
 /// lowercased, except that a run followed by a lowercase letter keeps its
 /// last letter, which starts the next word (`Label` becomes `label`, `ID`
-/// `id`, `URLPath` `urlPath`, `XCoord` `xCoord`). The rule cannot tell
-/// `ID` + `s` from `I` + `Ds`, so `IDs` becomes `iDs`. An Elm reserved
+/// `id`, `URLPath` `urlPath`, `XCoord` `xCoord`). A run followed by a lone `s` is a
+/// plural acronym and is lowercased with it (`IDs` becomes `ids`, `URLs`
+/// `urls`), at the cost of `XIs` becoming `xis`. An Elm reserved
 /// word gains a trailing underscore (`Type` becomes `type_`). A name with
 /// no letter before its first digit (`_1x`) or with nothing but
 /// underscores has no Elm name.
@@ -212,17 +307,28 @@ pub fn field_name(proto_name: &str) -> Result<String, NameError> {
 
 /// The constructor for an enum value: the enum's Elm name followed by the
 /// value name in PascalCase, with the conventional prefix stripped.
+/// `enum_path` is the enum's proto name after the names of the messages
+/// enclosing it, outermost first (`["Note", "Kind"]`).
 ///
 /// The prefix is the enum's own proto name in `UPPER_SNAKE_CASE`, so
 /// `Status` + `STATUS_ACTIVE` and `Status` + `ACTIVE` both become
-/// `StatusActive`. It is matched word by word, ignoring case and
+/// `StatusActive`, or, for a nested enum, its whole path, so the values
+/// `NOTE_KIND_DRAFT` and `KIND_DRAFT` of `Note.Kind` both become
+/// `NoteKindDraft`; the longer of the two that the value starts with is
+/// stripped. A prefix is matched word by word, ignoring case and
 /// underscores, so `HttpMethod` + `HTTP_METHOD_GET` becomes
 /// `HttpMethodGet`. A value that is nothing but the prefix keeps it. A
 /// value name without lowercase letters (the proto convention) is
 /// lowercased before casing, so `STATUS_ACTIVE` gives `Active`, not
 /// `ACTIVE`.
-pub fn enum_constructor(enum_elm_name: &str, enum_proto_name: &str, value_name: &str) -> String {
-    let stripped = strip_enum_prefix(enum_proto_name, value_name);
+pub fn enum_constructor(enum_elm_name: &str, enum_path: &[&str], value_name: &str) -> String {
+    let own = enum_path.last().copied().unwrap_or_default();
+    let by_path = strip_enum_prefix(&enum_path.concat(), value_name);
+    let stripped = if by_path.len() < value_name.len() {
+        by_path
+    } else {
+        strip_enum_prefix(own, value_name)
+    };
     let value = if stripped.chars().any(|c| c.is_ascii_lowercase()) {
         pascal_case(stripped)
     } else {
@@ -389,8 +495,7 @@ pub const REGISTRY: &str = "registry";
 /// underscore marks it as the generator's own, as with a recursive
 /// message's wrapper (`Node_`): a derived value name drops underscores,
 /// and only the reserved-word escape adds one, so no proto name derives to
-/// it. Only a `rename` can give a method this name, and that is
-/// `naming::value_collision`.
+/// it, and a `rename` to a value cannot end in `_`.
 pub const VERSION_VALUE: &str = "elmConnectVersion_";
 
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
@@ -445,11 +550,22 @@ pub fn pascal_case(name: &str) -> String {
 }
 
 /// `name` with its leading run of ASCII uppercase letters lowercased,
-/// except the run's last letter when a lowercase letter follows it.
+/// except the run's last letter when a lowercase letter follows it. A run
+/// of two or more followed by a lone `s` (then the end, an uppercase
+/// letter, a digit or `_`) is a plural acronym, lowercased with its `s`
+/// (`IDs` becomes `ids`, `URLsSeen` `urlsSeen`), so `XIs` becomes `xis`.
 fn lower_leading_run(name: &str) -> String {
-    let run = name.bytes().take_while(u8::is_ascii_uppercase).count();
-    let followed_by_lower = name.as_bytes().get(run).is_some_and(u8::is_ascii_lowercase);
-    let lowered = if run > 1 && followed_by_lower {
+    let bytes = name.as_bytes();
+    let run = bytes.iter().take_while(|b| b.is_ascii_uppercase()).count();
+    let followed_by_lower = bytes.get(run).is_some_and(u8::is_ascii_lowercase);
+    let plural = run > 1
+        && bytes.get(run) == Some(&b's')
+        && bytes
+            .get(run + 1)
+            .is_none_or(|&b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_');
+    let lowered = if plural {
+        run + 1
+    } else if run > 1 && followed_by_lower {
         run - 1
     } else {
         run
@@ -472,10 +588,10 @@ fn check_upper(converted: String) -> Result<String, NameError> {
     }
 }
 
-/// `value_name` without the enum's `UPPER_SNAKE_CASE` prefix and the
-/// underscore after it, when it has one and something follows it.
-fn strip_enum_prefix<'a>(enum_proto_name: &str, value_name: &'a str) -> &'a str {
-    let target: String = enum_proto_name
+/// `value_name` without `prefix` in `UPPER_SNAKE_CASE` and the underscore
+/// after it, when it has it and something follows it.
+fn strip_enum_prefix<'a>(prefix: &str, value_name: &'a str) -> &'a str {
+    let target: String = prefix
         .chars()
         .filter(|&c| c != '_')
         .map(|c| c.to_ascii_uppercase())
@@ -546,6 +662,54 @@ mod tests {
         assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
+        assert_eq!(reserved_module("Html"), None);
+    }
+
+    #[test]
+    fn windows_device_names_are_found_in_any_segment() {
+        assert_eq!(windows_device_segment("Notes.V1.Con"), Some("Con"));
+        assert_eq!(windows_device_segment("Shop.Aux.V1"), Some("Aux"));
+        assert_eq!(windows_device_segment("NUL"), Some("NUL"));
+        assert_eq!(windows_device_segment("A.Com1"), Some("Com1"));
+        assert_eq!(windows_device_segment("A.LPT9.B"), Some("LPT9"));
+        for module in [
+            "Notes.V1",
+            "A.Com0",
+            "A.Com10",
+            "A.Console",
+            "A.Conn",
+            "A.Lpt",
+        ] {
+            assert_eq!(windows_device_segment(module), None, "{module}");
+        }
+    }
+
+    #[test]
+    fn the_runtime_namespaces_hold_its_modules() {
+        for module in RUNTIME_MODULES {
+            assert!(in_runtime_namespace(module), "{module}");
+        }
+        for module in ["Proto", "Rpc", "Rpc.V1", "Proto.Notes", "Proto.Notes.V1"] {
+            assert!(in_runtime_namespace(module), "{module}");
+        }
+        for module in ["Protocol", "Rpcs.V1", "Notes.Proto", "Api.Rpc"] {
+            assert!(!in_runtime_namespace(module), "{module}");
+        }
+    }
+
+    #[test]
+    fn shadowed_modules_name_their_package() {
+        assert_eq!(shadowed_module("Html"), Some("elm/html"));
+        assert_eq!(shadowed_module("Url.Parser.Query"), Some("elm/url"));
+        assert_eq!(shadowed_module("VirtualDom"), Some("elm/virtual-dom"));
+        assert_eq!(shadowed_module("Html.V1"), None);
+        assert_eq!(shadowed_module("Time"), None);
+        for (_, modules) in APPLICATION_MODULES {
+            for module in modules {
+                assert_eq!(reserved_module(module), None, "{module}");
+                assert!(ModuleName::parse(module).is_some(), "{module}");
+            }
+        }
     }
 
     #[test]
@@ -710,8 +874,16 @@ mod tests {
             ("display_name", "displayName"),
             ("Type", "type_"),
             ("V2", "v2"),
-            // `ID` + `s` reads as `I` + `Ds`: a rename gives it another name.
-            ("IDs", "iDs"),
+            // A run followed by a lone `s` is a plural acronym.
+            ("IDs", "ids"),
+            ("URLs", "urls"),
+            ("APIs", "apis"),
+            ("UUIDs", "uuids"),
+            ("IDsSeen", "idsSeen"),
+            ("IDs2", "ids2"),
+            ("IDsseen", "iDsseen"),
+            ("XIs", "xis"),
+            ("Is", "is"),
         ];
         for (proto, expected) in cases {
             assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
@@ -745,37 +917,69 @@ mod tests {
 
     #[test]
     fn enum_constructors() {
-        let cases = [
-            ("Status", "Status", "STATUS_ACTIVE", "StatusActive"),
-            ("Status", "Status", "ACTIVE", "StatusActive"),
+        let cases: [(&str, &[&str], &str, &str); 19] = [
+            ("Status", &["Status"], "STATUS_ACTIVE", "StatusActive"),
+            ("Status", &["Status"], "ACTIVE", "StatusActive"),
             (
                 "Status",
-                "Status",
+                &["Status"],
                 "STATUS_UNSPECIFIED",
                 "StatusUnspecified",
             ),
-            ("Status", "Status", "STATUS", "StatusStatus"),
-            ("Status", "Status", "STATUSES_ON", "StatusStatusesOn"),
+            ("Status", &["Status"], "STATUS", "StatusStatus"),
+            ("Status", &["Status"], "STATUSES_ON", "StatusStatusesOn"),
             (
                 "HttpMethod",
-                "HttpMethod",
+                &["HttpMethod"],
                 "HTTP_METHOD_GET",
                 "HttpMethodGet",
             ),
-            ("HttpMethod", "HttpMethod", "GET", "HttpMethodGet"),
+            ("HttpMethod", &["HttpMethod"], "GET", "HttpMethodGet"),
             (
                 "HTTPMethod",
-                "HTTPMethod",
+                &["HTTPMethod"],
                 "HTTPMETHOD_GET",
                 "HTTPMethodGet",
             ),
-            ("NoteKind", "Kind", "KIND_DRAFT", "NoteKindDraft"),
-            ("Color", "Color", "COLOR_LIGHT_BLUE", "ColorLightBlue"),
-            ("Color", "Color", "lightBlue", "ColorLightBlue"),
-            ("Color", "Color", "COLOR_2D", "Color2d"),
+            ("NoteKind", &["Note", "Kind"], "KIND_DRAFT", "NoteKindDraft"),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_KIND_DRAFT",
+                "NoteKindDraft",
+            ),
+            ("NoteKind", &["Note", "Kind"], "DRAFT", "NoteKindDraft"),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_KIND",
+                "NoteKindNoteKind",
+            ),
+            (
+                "NoteKind",
+                &["Note", "Kind"],
+                "NOTE_DRAFT",
+                "NoteKindNoteDraft",
+            ),
+            (
+                "OuterInnerKind",
+                &["Outer", "Inner", "Kind"],
+                "OUTER_INNER_KIND_DRAFT",
+                "OuterInnerKindDraft",
+            ),
+            (
+                "OuterInnerKind",
+                &["Outer", "Inner", "Kind"],
+                "INNER_KIND_DRAFT",
+                "OuterInnerKindInnerKindDraft",
+            ),
+            ("KindKind", &["Kind", "Kind"], "KIND_KIND_ON", "KindKindOn"),
+            ("Color", &["Color"], "COLOR_LIGHT_BLUE", "ColorLightBlue"),
+            ("Color", &["Color"], "lightBlue", "ColorLightBlue"),
+            ("Color", &["Color"], "COLOR_2D", "Color2d"),
         ];
-        for (elm, proto, value, expected) in cases {
-            assert_eq!(enum_constructor(elm, proto, value), expected, "{value}");
+        for (elm, path, value, expected) in cases {
+            assert_eq!(enum_constructor(elm, path, value), expected, "{value}");
         }
     }
 

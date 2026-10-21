@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+// A package segment is a directory, and `Aux` is a reserved file name on
+// Windows, in any case.
+package devices.aux;
+
+message Port {
+  string text = 1;
+}

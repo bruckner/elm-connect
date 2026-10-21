@@ -10,9 +10,11 @@
 //! when it is known, and a problem without it still renders, naming the
 //! proto elements by their full names.
 //!
-//! Most problems are errors, which fail the run. A few are warnings: what
-//! an option told the generator to leave out (`streaming=skip`), reported
-//! beside a successful run so the omission is never silent.
+//! Most problems are errors, which fail the run. A few are warnings,
+//! reported beside a successful run: what an option told the generator to
+//! leave out (`streaming=skip`), so the omission is never silent, and a
+//! module name that compiles but is a risk to the application (one in the
+//! runtime's namespaces, or one an elm/* package has).
 
 mod spans;
 
@@ -96,10 +98,9 @@ codes! {
     /// package become the same Elm constructor.
     ConstructorCollision => "naming::constructor_collision",
     /// Two methods of a service get the same Elm value name, a method gets
-    /// another method's descriptor's name, two fields of a message (or one
-    /// and the message's descriptor) get the same value name in its
-    /// descriptor module, or a method or field gets the name of the value
-    /// every generated module defines.
+    /// another method's descriptor's name, or two fields of a message (or
+    /// one and the message's descriptor) get the same value name in its
+    /// descriptor module.
     ValueCollision => "naming::value_collision",
     /// Two generated modules, each a package's, a service's or a type's
     /// descriptor module, get the same Elm module name.
@@ -108,8 +109,17 @@ codes! {
     /// module's code uses unqualified for a library's.
     ReservedName => "naming::reserved_name",
     /// A generated module takes the name of a module of the runtime
-    /// package or of a package it depends on.
+    /// package or of a package it depends on, or has a segment Windows
+    /// reserves as a file name.
     ReservedModule => "naming::reserved_module",
+    /// Generated modules are named `Rpc` or `Proto` or sit inside one, the
+    /// runtime's namespaces, where it may add modules in any release: a
+    /// warning.
+    RuntimeNamespace => "naming::runtime_namespace",
+    /// A generated module takes the name of a module of an elm/* package
+    /// an application commonly depends on (`Html`), which that application
+    /// then cannot import: a warning.
+    ShadowingModule => "naming::shadowing_module",
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown => "types::unsupported_well_known",
     /// A method streams requests or responses.
@@ -621,27 +631,6 @@ impl Problem {
         )
     }
 
-    /// A `rename` gives `what` (such as "method `notes.v1.Notes.Get`" or
-    /// "field `title`") the name `elm_name`, the value every generated
-    /// module defines to name the release it was generated for. No proto
-    /// name derives to it.
-    pub fn reserved_value(what: &str, elm_name: &str, site: Site, rename: &str) -> Self {
-        Problem::new(
-            Code::ValueCollision,
-            format!(
-                "The {what} is renamed to the Elm value `{elm_name}`, which every generated \
-                 module defines already."
-            ),
-            format!(
-                "Every generated module defines `elmConnectVersion_`, which names the release of \
-                 the generator it came from, so no method or field can take that name in the \
-                 module that defines it. Give it another name in its \
-                 {rename}."
-            ),
-            vec![site],
-        )
-    }
-
     /// Two fields or oneof members of `message` become the same Elm value
     /// `elm_name` in the message's descriptor module.
     pub fn field_value_collision(
@@ -746,6 +735,87 @@ impl Problem {
             ),
             vec![site],
         )
+    }
+
+    /// `what` (such as "message `notes.v1.Con`") becomes the Elm module
+    /// `module`, whose segment `segment` is a device name Windows reserves
+    /// as a file name. `rename` is the option that renames it.
+    pub fn windows_device_module(
+        what: &str,
+        module: &str,
+        segment: &str,
+        rename: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::ReservedModule,
+            format!(
+                "The {what} becomes the Elm module `{module}`, and `{segment}` is a reserved \
+                 file name on Windows."
+            ),
+            format!(
+                "Each module is written to a file named for it (`Notes.V1.Note` to \
+                 `Notes/V1/Note.elm`), and Windows reserves `CON`, `PRN`, `AUX`, `NUL`, \
+                 `COM1` to `COM9` and `LPT1` to `LPT9` as file names in any case and with any \
+                 extension, so `{segment}.elm` or a directory `{segment}` cannot be created \
+                 there and git refuses to check it out. It is refused on every OS so that \
+                 generated code can be checked out anywhere. Rename it with {rename}."
+            ),
+            vec![site],
+        )
+    }
+
+    /// The generated modules `modules`, sorted, are named for the runtime's
+    /// namespaces or sit inside them; `module_prefix` and `rename` are the
+    /// options that move them, as their reader writes them. A warning.
+    pub fn runtime_namespace(modules: &[String], module_prefix: &str, rename: &str) -> Self {
+        let names: Vec<String> = modules.iter().map(|module| format!("`{module}`")).collect();
+        let (subject, verb) = match names.as_slice() {
+            [_] => ("module", "is"),
+            _ => ("modules", "are"),
+        };
+        Problem::new(
+            Code::RuntimeNamespace,
+            format!(
+                "The generated {subject} {} {verb} in a namespace of the runtime package \
+                 {}.",
+                join_words(&names),
+                crate::naming::RUNTIME_PACKAGE
+            ),
+            format!(
+                "The runtime package's modules are named `Rpc` and `Proto` or sit inside them, \
+                 and it may add modules there in any release, a minor or patch one included. \
+                 A generated module there compiles today, but one the runtime adds later of the \
+                 same name makes every import of it ambiguous. Move them with {module_prefix}, \
+                 or rename their packages with {rename}."
+            ),
+            Vec::new(),
+        )
+        .warning()
+    }
+
+    /// `what` (such as "package `html`") becomes the Elm module `module`,
+    /// a module of `owner` (such as "elm/html"), which an application
+    /// depending on it then cannot import. `escapes` names the options
+    /// that move it. A warning.
+    pub fn shadowing_module(
+        what: &str,
+        module: &str,
+        owner: &str,
+        escapes: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::ShadowingModule,
+            format!("The {what} becomes the Elm module `{module}`, which is a module of {owner}."),
+            format!(
+                "Generated code does not import {owner}, so this compiles, but an application \
+                 that depends on {owner} cannot import `{module}`: the import is ambiguous. \
+                 Move the module with {escapes}."
+            ),
+            vec![site],
+        )
+        .warning()
     }
 
     /// `what` (such as "message `notes.v1.Dict`") becomes the Elm `kind`

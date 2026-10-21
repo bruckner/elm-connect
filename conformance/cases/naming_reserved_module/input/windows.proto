@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+// A message's descriptor module is a file named for it, and `Con.elm`
+// is a reserved file name on Windows.
+package windows.v1;
+
+message Con {
+  string text = 1;
+}

@@ -1,3 +1,19 @@
+options::invalid_rename
+
+  × The rename of `profile.v1.Profile.version` gives `elmConnectVersion_`,
+  │ which a field cannot be named.
+    ╭─[profile.proto:14:10]
+ 13 │   // which a field's rename cannot take, ending in `_`.
+ 14 │   string version = 3;
+    ·          ───┬───
+    ·             ╰── a field here
+ 15 │ }
+    ╰────
+  help: `profile.v1.Profile.version` is a field, which becomes an Elm record
+        field, and a rename's name is used as it is, so it must be an ASCII
+        lowercase letter followed by letters, digits or underscores, not
+        ending in an underscore, and not an Elm reserved word.
+
 naming::value_collision
 
   × The descriptor module of `profile.v1.Profile` would define the Elm value
@@ -20,19 +36,3 @@ naming::value_collision
         two fields whose values meet cannot both be defined. That name comes
         from `rename=profile.v1.Profile.display_name:nickname`: give it
         another there, or rename the other one in the proto.
-
-naming::value_collision
-
-  × The field `version` is renamed to the Elm value `elmConnectVersion_`,
-  │ which every generated module defines already.
-    ╭─[profile.proto:13:10]
- 12 │   // Renamed to the value every generated module defines (options.txt).
- 13 │   string version = 3;
-    ·          ───┬───
-    ·             ╰── field `version` is renamed to `elmConnectVersion_`
- 14 │ }
-    ╰────
-  help: Every generated module defines `elmConnectVersion_`, which names the
-        release of the generator it came from, so no method or field can take
-        that name in the module that defines it. Give it another name in its
-        `rename=profile.v1.Profile.version:<Elm name>`.

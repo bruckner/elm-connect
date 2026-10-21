@@ -375,9 +375,10 @@ rpc shared call =
   generator adds to a descriptor module later ends in `_`, as
   `elmConnectVersion_` does: a field's derived name ends in `_` only as
   the escape of one of the fourteen reserved words (`type_`) or as
-  `descriptor_`, so a later addition that avoids those fifteen cannot
-  collide with a field, and adding one breaks no proto that generates
-  without a `rename` to a name ending in `_`.
+  `descriptor_`, and a `rename` of a field, oneof or method to a name
+  ending in `_` is `options::invalid_rename` (§3.7), so a later
+  addition that avoids those fifteen cannot collide with a field, and
+  adding one breaks no proto that generates.
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
   diagnostic naming the files involved. *(Proposed.)* Alternative: fold
@@ -399,6 +400,34 @@ rpc shared call =
   A file-level `elm_package` file option (like `java_package` or
   `go_package`), if one is added, composes under the prefix: with both, a
   package's module is `<module_prefix>.<elm_package>`.
+- **The runtime's namespaces.** *(Decided, 2026-10-21.)* The runtime's
+  modules are `Rpc` and `Proto` and modules inside them, and it may add
+  more there in any release (§8.3). A generated module that takes one
+  of its modules' names is `naming::reserved_module`, an error. Any
+  other generated module named `Rpc` or `Proto` or inside one (`Rpc.V1`
+  from `package rpc.v1`, `Proto.Notes` from `package proto.notes`,
+  every module under `module_prefix=Proto`) generates, with one
+  `naming::runtime_namespace` warning per run listing them in sorted
+  order: it compiles today, and a module the runtime adds later of the
+  same name would make every import of it ambiguous. That is the
+  user's risk, which `module_prefix` or a `rename` of the package
+  avoids (`naming_runtime_namespace` and `module_prefix_runtime`
+  cases). Why a warning and not an error: the root `Proto` is the
+  runtime's, but nothing is wrong with the output until the runtime
+  takes the name, and an application may accept that risk.
+- **Modules of an application's packages.** *(Decided, 2026-10-21.)* A
+  generated module named like a module of elm/html, elm/browser,
+  elm/url, elm/svg, elm/file, elm/random, elm/regex, elm/parser or
+  elm/virtual-dom (a fixed list of their exposed modules,
+  `naming::APPLICATION_MODULES`, beside the dependencies'
+  `DEPENDENCY_MODULES`) generates with a `naming::shadowing_module`
+  warning, one per module (`naming_shadowing_module` case). Generated
+  code imports none of those packages, so the module compiles, but an
+  application that depends on the package cannot import it: Elm reports
+  the import as ambiguous. A warning, not an error, because an
+  application that never imports the package's module (a worker that
+  never imports `Html`) is fine. Escape: `rename` the package or type,
+  or `module_prefix`.
 - Only packages with a requested file are generated: protoc's
   `file_to_generate`, or the files named to the CLI. *(Decided,
   2026-10-15.)* Each is generated in full, from every compiled file that
@@ -657,6 +686,17 @@ rpc shared call =
   value name with the conventional prefix stripped:
   `enum Status { STATUS_UNSPECIFIED = 0; STATUS_ACTIVE = 1; }` →
   `StatusUnspecified | StatusActive`. *(Decided.)*
+- **A nested enum's prefix.** *(Decided, 2026-10-21.)* The conventional
+  prefix is the enum's own name in `UPPER_SNAKE_CASE`, as the protobuf
+  style guide, buf's `ENUM_VALUE_PREFIX` lint rule and AIP-126 write
+  it, and for a nested enum its whole nesting path is accepted as well:
+  the longer of the two the value starts with is stripped, so in
+  `message Note { enum Kind { … } }` both `KIND_DRAFT` and
+  `NOTE_KIND_DRAFT` → `NoteKindDraft` (`nesting` case). Before, only the
+  own name was stripped, and `NOTE_KIND_DRAFT` became
+  `NoteKindNoteKindDraft`. Two values that stripping makes one
+  constructor (`KIND_DRAFT` beside `NOTE_KIND_DRAFT`) are
+  `naming::constructor_collision`, with `rename` the escape.
 - Encoding uses the proto name string. Decoding accepts the name and
   also the integer form, as the JSON spec allows. *(Decided.)*
 - **Unknown values.** *(Decided, 2026-10-11.)* An unknown **number**
@@ -1111,9 +1151,14 @@ Built *(Proposed in its details)*:
   that a run followed by a lowercase letter keeps its last letter, which
   starts the next word. `Label` → `label`, `ID` → `id`, `URLPath` →
   `urlPath`, `HTTPRequest` → `httpRequest`, `XCoord` → `xCoord`,
-  `_internal` → `internal`, `__Label` → `label`. The rule cannot tell
-  `ID` + `s` from `I` + `Ds`, so `IDs` → `iDs`; a `rename` gives it
-  another name, and the rule does not special-case it. Methods, oneofs
+  `_internal` → `internal`, `__Label` → `label`. A run of two or more
+  followed by a lone `s` (then the end, an uppercase letter, a digit or
+  `_`) is a plural acronym, lowercased with its `s`: `IDs` → `ids`,
+  `URLs` → `urls`, `APIs` → `apis`, `UUIDs` → `uuids`, `IDsSeen` →
+  `idsSeen`. *(Decided, 2026-10-21.)* The rule cannot tell `ID` + `s`
+  from `X` + `Is`, so `XIs` → `xis` too; that misreading is accepted,
+  and a `rename` gives such a name another. Before, `IDs` became `iDs`
+  (`URLs` `urLs`). Methods, oneofs
   and oneof members' descriptor values follow the same rule (`HTTPGet` →
   `httpGet`, `_Ping` → `ping`); types, enum constructors, modules and
   services do not (a message `URLPath` stays `URLPath`), and neither
@@ -1142,6 +1187,48 @@ Built *(Proposed in its details)*:
   name, so one naming rule names both.)*
 - Type names that collide after nested-message flattening are a
   diagnostic. *(Decided.)*
+- **Windows device names.** *(Decided, 2026-10-21.)* A module path
+  segment that is, ignoring case, `CON`, `PRN`, `AUX`, `NUL`, `COM1` to
+  `COM9` or `LPT1` to `LPT9` is `naming::reserved_module` on every OS,
+  as case-only module collisions are (§3.8): each segment is a
+  directory or a file (`Notes.V1.Con` is `Notes/V1/Con.elm`), Windows
+  reserves those names whatever the extension, so the file cannot be
+  created there, and git refuses to check it out. A message `Con` and a
+  package `devices.aux` are refused (`naming_reserved_module` case); a
+  package's problem covers the modules inside it. Escape: `rename`. An
+  option to accept them, for output that never reaches Windows, may
+  come if asked; it is not built.
+- **The refusals kept for 1.0.** *(Decided, 2026-10-21.)* Each of these
+  stays a refusal, because any name the generator invented in its place
+  would be unpredictable, or would depend on what else the protos
+  declare, so that adding a message in a minor release of an API could
+  silently rename an existing type. Each has an escape, and an escape
+  added later is additive:
+  - a name with no letter before its first digit, or only underscores
+    (`_1x`, `_`): `naming::invalid_field`, `invalid_method`,
+    `invalid_type`, `invalid_service`, or `invalid_module` for a package
+    segment; escape `rename`, but for a oneof member's descriptor value,
+    which follows the proto name: rename the member in the proto;
+  - a file without a package: `naming::invalid_module`; escape: declare
+    a package;
+  - names that collide after casing (`display_name` beside `oneof
+    displayName`, `Book` beside `book`, `GetNote` beside `get_note`, a
+    service module beside a package's): the `naming::*_collision`
+    codes; escape `rename` one of them;
+  - a oneof beside a nested type of the same name (`oneof kind` and
+    `message Kind`, both `XKind`): `naming::type_collision`; escape
+    `rename` the oneof, which renames its type;
+  - module names that differ only in case (`ShopItem`, `Shopitem`):
+    `naming::module_collision` on every OS; escape `rename`;
+  - reserved names: a type or constructor its module uses for a
+    library's (`naming::reserved_name`), a module of the runtime or of
+    its dependencies, or a Windows device name (`naming::reserved_module`);
+    escape `rename`, and for a module `module_prefix`.
+
+  Two module names compile and are warnings instead: one in the
+  runtime's namespaces (`naming::runtime_namespace`) and one of an
+  application's elm/* packages (`naming::shadowing_module`), both
+  escaped by `module_prefix` or `rename` (§3.1).
 
 Built, as the `naming` and `naming_collision` cases show:
 
@@ -1156,7 +1243,10 @@ Built, as the `naming` and `naming_collision` cases show:
   `SHAPE_V3_MESH` → `ShapeV3Mesh`. A value without the conventional
   prefix gains the enum's name (`CUBE` → `ShapeCube`); the prefix of a
   multi-word enum is matched word by word (`HTTP_METHOD_GET` →
-  `HttpMethodGet`).
+  `HttpMethodGet`), and a nested enum's prefix may be its own name or
+  its whole path (`Outer.Inner.Kind`: `KIND_DRAFT` and
+  `OUTER_INNER_KIND_PUBLISHED` → `OuterInnerKindDraft`,
+  `OuterInnerKindPublished`; §3.3).
 - An enum claims one constructor per number: an alias (§3.3) has no
   constructor, so its would-be name (`PRIORITY_LOW` beside `LOW`, both
   `PriorityLow`) is not a collision.
@@ -1181,8 +1271,8 @@ Built, as the `naming` and `naming_collision` cases show:
   underscores (`_1x`) has a constructor but no value, and is
   `naming::invalid_field` (`oneofs_member_invalid` case). A renamed
   field that meets another field's or a member's name is
-  `naming::value_collision`, naming both; a field renamed to
-  `elmConnectVersion_` likewise (`descriptors_value_collision` case).
+  `naming::value_collision`, naming both (`descriptors_value_collision`
+  case).
   A field named like a value Elm imports by default (`max`, `min`,
   `always`) needs nothing: a descriptor module's own top-level value
   shadows the default import (`descriptors_default_names` case). A
@@ -1236,8 +1326,15 @@ one segment) an ASCII uppercase letter followed by letters, digits or
 underscores; a type or constructor an ASCII uppercase letter followed
 by letters and digits, with no underscore, so it cannot meet a
 recursive wrapper's (`Node_`); a value or record field an ASCII
-lowercase letter followed by letters, digits or underscores, and not a
-reserved word. An enum value alias has no constructor of its own to
+lowercase letter followed by letters, digits or underscores, not ending
+in an underscore, and not a reserved word. *(No trailing underscore:
+decided 2026-10-21.)* A derived value ends in `_` only as the
+reserved-word escape (`type_`) or `descriptor_`, and the generator's
+own values end in one (`elmConnectVersion_`), so the promise of §3.1
+that a value it adds later cannot collide holds for renamed names too
+(`rename_invalid` case). Before, `foo_` and `get_` were accepted, and a
+rename to `elmConnectVersion_` was `naming::value_collision`. An enum
+value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
 `options::unknown_rename`, which suggests the closest full name they
@@ -1366,7 +1463,10 @@ case names it):
   `Dict` in a package without a map field compiles and is left alone
   (`naming_reserved_unused` case), and gains the diagnostic with its
   first map field. Both are errors, not warnings, as the output would
-  not compile. A `rename` to such a name is the same problem. Escape:
+  not compile. A module that compiles but is a risk to the application,
+  one inside the runtime's namespaces or one an elm/* package an
+  application uses has, is a warning instead (`naming::runtime_namespace`,
+  `naming::shadowing_module`, §3.1). A `rename` to such a name is the same problem. Escape:
   `rename=`, and for a module `module_prefix=` (§3.7, §3.1); the help
   writes them as the front end in use takes them (`--rename` and
   `--module-prefix` from the CLI). Qualifying the library names in an
@@ -3215,9 +3315,9 @@ kept compiling the same way.
 - The trailing underscore marks the name as the generator's own, as it
   does a recursive message's wrapper (`Node_`, §3.2): a derived value
   name drops underscores when casing, and only the reserved-word escape
-  adds one, so no proto name derives to `elmConnectVersion_`. Only a
-  deliberate `rename` can give a method that name, and that is
-  `naming::value_collision`.
+  adds one, so no proto name derives to `elmConnectVersion_`, and a
+  `rename` to a value cannot end in `_` (`options::invalid_rename`,
+  §3.7).
 - A value is added at every minor release, and every value of a major
   is kept until the next major removes them all. So a runtime newer
   than the generated code, within its major, compiles it; an older
@@ -3254,6 +3354,11 @@ Within a major version:
   pinned by the route fixtures, the conformance corpus and the live
   suite, the Connect conformance suite among it (§7). A fix that makes
   a wrong encoding right is a patch, though it changes what is sent.
+- **The runtime's namespaces are the runtime's.** Any release, a minor
+  or a patch one included, may add modules named `Rpc.*` or `Proto.*`.
+  A generated module there (`naming::runtime_namespace`, §3.1) is the
+  user's risk: a later release's module of the same name makes every
+  import of it ambiguous, and that is not a break of this contract.
 - **The CLI's and the plugin's options, and diagnostic codes.**
   Additive: options, values and codes are added, and none is removed or
   changes meaning. A diagnostic's text, help and rendering are not a

@@ -1,0 +1,11 @@
+// A package named like a module of elm/html generates, since generated
+// code does not import elm/html, with a warning: an application that
+// depends on elm/html cannot import `Html`. Its descriptor module
+// `Html.Attributes` is one of elm/html's too.
+syntax = "proto3";
+
+package html;
+
+message Attributes {
+  string class = 1;
+}

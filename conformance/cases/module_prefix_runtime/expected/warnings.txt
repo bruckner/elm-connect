@@ -1,0 +1,10 @@
+naming::runtime_namespace
+
+  ⚠ The generated modules `Proto.Notes.V1` and `Proto.Notes.V1.Note` are in a
+  │ namespace of the runtime package bruckner/elm-connect.
+  help: The runtime package's modules are named `Rpc` and `Proto` or sit
+        inside them, and it may add modules there in any release, a minor or
+        patch one included. A generated module there compiles today, but one
+        the runtime adds later of the same name makes every import of it
+        ambiguous. Move them with `module_prefix=<Elm module>`, or rename
+        their packages with `rename=<package>:<Elm name>`.

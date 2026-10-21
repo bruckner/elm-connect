@@ -40,9 +40,9 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 /// skipped. Every method must be unary, and its request and response types
 /// are held to the same rule.
 ///
-/// On any problem, returns every problem found instead.
+/// On any error, returns every error found instead.
 ///
-/// This is [`build_with`] under the default options, which give no
+/// This is [`build_with`] under the default options, without its
 /// warnings.
 pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, Diagnostics> {
     build_with(pool, generate, &Options::default()).map(|built| built.packages)
@@ -53,7 +53,8 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
 pub struct Built {
     /// One package per proto package, as [`build`] gives them.
     pub packages: Vec<Package>,
-    /// The warnings, in the order found: what `options` left out.
+    /// The warnings, in the order found: what `options` left out, and the
+    /// module names that compile but put the application at risk.
     pub warnings: Diagnostics,
 }
 
@@ -198,6 +199,14 @@ pub fn build_with_imports(
 
     mark_cycles(&mut packages);
     builder.check_import_cycles(&by_package);
+    if !builder.runtime_namespace.is_empty() {
+        let modules: Vec<String> = builder.runtime_namespace.iter().cloned().collect();
+        builder.diagnostics.push(Problem::runtime_namespace(
+            &modules,
+            builder.spelling.module_prefix(),
+            &builder.spelling.rename("<package>"),
+        ));
+    }
 
     let (errors, warnings) = builder.diagnostics.split_warnings();
     assert!(
@@ -477,6 +486,11 @@ struct Builder {
     /// The first generated module name of each lowercase spelling, with
     /// the site that claimed it, so no two differ only in case.
     module_cases: HashMap<String, (String, Site)>,
+    /// The generated modules reported for a segment Windows reserves.
+    device_modules: HashSet<String>,
+    /// The generated modules in the runtime's namespaces, for the one
+    /// warning that lists them.
+    runtime_namespace: BTreeSet<String>,
     /// How the options are written, for the escapes a problem names.
     spelling: Spelling,
     types: HashMap<String, TypeName>,
@@ -533,18 +547,25 @@ impl Builder {
     }
 
     /// The constructor of the value `value_name` of the enum
-    /// `enum_full_name` (whose proto name is `enum_proto_name` and Elm name
-    /// `enum_elm_name`): its rename, or the naming rule's.
+    /// `enum_full_name` in `package` (whose Elm name is `enum_elm_name`):
+    /// its rename, or the naming rule's.
     fn enum_constructor(
         &self,
         enum_full_name: &str,
         enum_elm_name: &str,
-        enum_proto_name: &str,
+        package: &str,
         value_name: &str,
     ) -> String {
         match self.renames.get(&format!("{enum_full_name}.{value_name}")) {
             Some(given) => given.clone(),
-            None => naming::enum_constructor(enum_elm_name, enum_proto_name, value_name),
+            None => {
+                let nested = enum_full_name
+                    .strip_prefix(package)
+                    .and_then(|name| name.strip_prefix('.'))
+                    .unwrap_or(enum_full_name);
+                let path: Vec<&str> = nested.split('.').collect();
+                naming::enum_constructor(enum_elm_name, &path, value_name)
+            }
         }
     }
 
@@ -1046,19 +1067,6 @@ impl Builder {
             doc,
         };
 
-        if built.elm_name == naming::VERSION_VALUE {
-            let site = self.site(
-                file,
-                &[path, &[tag::METHOD_NAME]].concat(),
-                format!("method `{full_name}` is renamed to `{}`", built.elm_name),
-            );
-            self.diagnostics.push(Problem::reserved_value(
-                &format!("method `{full_name}`"),
-                &built.elm_name,
-                site,
-                &self.spelling.rename(full_name),
-            ));
-        }
         let service = method.parent_service();
         let what = format!("method `{full_name}`");
         let origin = self.origin(file, path, tag::METHOD_NAME, what, Some(full_name));
@@ -1110,10 +1118,13 @@ impl Builder {
     }
 
     /// Claims `module` for `origin`, the proto element `proto`: reported
-    /// when it is a module the runtime or a package it depends on already
-    /// has, when another generated module has it, or when another's name
+    /// when a segment of it is a file name Windows reserves, when it is a
+    /// module the runtime or a package it depends on already has, when
+    /// another generated module has it, or when another's name
     /// differs from it only in case, since its file is then the same file
-    /// on a file system that ignores case.
+    /// on a file system that ignores case. A module in the runtime's
+    /// namespaces is noted for their warning, and one an application's
+    /// elm/* package has is warned of.
     fn claim_module(&mut self, module: &ModuleName, origin: Origin, proto: &str) {
         let name = module.to_string();
         let escapes = format!(
@@ -1121,6 +1132,27 @@ impl Builder {
             self.spelling.rename(proto),
             self.spelling.module_prefix()
         );
+        if let Some(segment) = naming::windows_device_segment(&name) {
+            // A type's or service's module inside a package module that
+            // was reported for its own segment is that problem, not another.
+            let parent = name.rsplit_once('.').map(|(parent, _)| parent);
+            if parent.is_some_and(|parent| self.device_modules.contains(parent)) {
+                return;
+            }
+            self.device_modules.insert(name.clone());
+            let site = Site {
+                label: format!("{} becomes `{name}`", origin.what),
+                ..origin.site
+            };
+            self.diagnostics.push(Problem::windows_device_module(
+                &origin.what,
+                &name,
+                segment,
+                &self.spelling.rename(proto),
+                site,
+            ));
+            return;
+        }
         if let Some(owner) = naming::reserved_module(&name) {
             let site = Site {
                 label: format!("{} becomes `{name}`", origin.what),
@@ -1134,6 +1166,22 @@ impl Builder {
                 site,
             ));
             return;
+        }
+        if naming::in_runtime_namespace(&name) {
+            self.runtime_namespace.insert(name.clone());
+        }
+        if let Some(owner) = naming::shadowed_module(&name) {
+            let site = Site {
+                label: format!("{} becomes `{name}`", origin.what),
+                ..origin.site.clone()
+            };
+            self.diagnostics.push(Problem::shadowing_module(
+                &origin.what,
+                &name,
+                owner,
+                &escapes,
+                site,
+            ));
         }
         let folded = name.to_lowercase();
         let other = self
@@ -1225,7 +1273,8 @@ impl Builder {
     /// Claims `name`, the Elm value of the descriptor of a field or oneof
     /// member of `message` in its descriptor module, for `origin`. The
     /// module also defines `descriptor` (claimed first, by the message)
-    /// and [`naming::VERSION_VALUE`], which only a rename can give a field.
+    /// and [`naming::VERSION_VALUE`], which no field's value can be: a
+    /// derived name ends in `_` only as an escape, and a rename never does.
     fn claim_field_value(
         &mut self,
         values: &mut Namespace,
@@ -1233,19 +1282,6 @@ impl Builder {
         name: &str,
         origin: Origin,
     ) {
-        if name == naming::VERSION_VALUE {
-            let site = Site {
-                label: format!("{} is renamed to `{name}`", origin.what),
-                ..origin.site
-            };
-            self.diagnostics.push(Problem::reserved_value(
-                &origin.what,
-                name,
-                site,
-                &self.rename_of(origin.proto.as_deref()),
-            ));
-            return;
-        }
         if let Some(Clash {
             first,
             second,
@@ -1341,12 +1377,8 @@ impl Builder {
                 first.aliases.push(value.name().to_owned());
                 continue;
             }
-            let elm_ctor = self.enum_constructor(
-                enumeration.full_name(),
-                &elm_name,
-                enumeration.name(),
-                value.name(),
-            );
+            let elm_ctor =
+                self.enum_constructor(enumeration.full_name(), &elm_name, package, value.name());
             let what = format!("enum value `{}`", value.name());
             let origin = self.origin(
                 file,
@@ -1770,8 +1802,8 @@ impl Builder {
         type_path: &[i32],
         kind: Kind,
     ) -> Option<TypeRef> {
-        // For an enum, its proto name and the name of its zero value.
-        let (full_name, package, defining_file, enum_names) = match kind {
+        // For an enum, the name of its zero value.
+        let (full_name, package, defining_file, enum_zero) = match kind {
             Kind::Double => return Some(TypeRef::Scalar(ScalarKind::Double)),
             Kind::Float => return Some(TypeRef::Scalar(ScalarKind::Float)),
             Kind::Int32 => return Some(TypeRef::Scalar(ScalarKind::Int32)),
@@ -1800,11 +1832,11 @@ impl Builder {
                     target.full_name().to_owned(),
                     target.package_name().to_owned(),
                     target.parent_file().name().to_owned(),
-                    Some((target.name().to_owned(), zero)),
+                    Some(zero),
                 )
             }
         };
-        let is_message = enum_names.is_none();
+        let is_message = enum_zero.is_none();
 
         if package == WELL_KNOWN_PACKAGE {
             let name = full_name
@@ -1838,6 +1870,8 @@ impl Builder {
         // A type in a generated package with no name, or whose package has
         // no module name, was reported already.
         let name = self.types.get(&full_name)?.clone();
+        let zero_ctor = enum_zero
+            .map(|zero_value| self.enum_constructor(&full_name, &name.name, &package, &zero_value));
         let site = self.site(
             file,
             type_path,
@@ -1848,12 +1882,9 @@ impl Builder {
             to_package: package,
             site,
         });
-        Some(match enum_names {
+        Some(match zero_ctor {
             None => TypeRef::Message(name),
-            Some((enum_name, zero_value)) => TypeRef::Enum {
-                zero_ctor: self.enum_constructor(&full_name, &name.name, &enum_name, &zero_value),
-                name,
-            },
+            Some(zero_ctor) => TypeRef::Enum { zero_ctor, name },
         })
     }
 

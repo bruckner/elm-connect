@@ -36,7 +36,10 @@ descriptor =
         , internal
         , displayName
         , type_
-        , iDs
+        , ids
+        , urls
+        , apis
+        , uuids
         ]
 
 
@@ -110,11 +113,32 @@ type_ =
     Proto.Field.descriptor "Type" "Type" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| `ID` + `s` reads as `I` + `Ds`.
+{-| Plural acronyms: `ids`, `urls`, `apis`, `uuids`.
 
 `repeated string IDs = 12;`
 
 -}
-iDs : Proto.Field.Descriptor
-iDs =
+ids : Proto.Field.Descriptor
+ids =
     Proto.Field.descriptor "IDs" "IDs" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+{-| `repeated string URLs = 13;`
+-}
+urls : Proto.Field.Descriptor
+urls =
+    Proto.Field.descriptor "URLs" "URLs" 13 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+{-| `repeated string APIs = 14;`
+-}
+apis : Proto.Field.Descriptor
+apis =
+    Proto.Field.descriptor "APIs" "APIs" 14 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+{-| `repeated string UUIDs = 15;`
+-}
+uuids : Proto.Field.Descriptor
+uuids =
+    Proto.Field.descriptor "UUIDs" "UUIDs" 15 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)

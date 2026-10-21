@@ -977,3 +977,30 @@ tag (design §8).
 - Generated docs link to each other (a type to its descriptor, a field
   item to its descriptor value, a call to its types and descriptor, a
   codec to its type) and to the runtime's types on the package site.
+- A record field, oneof or method whose name starts with a plural acronym
+  is lowercased with its `s`: `IDs` becomes `ids` (was `iDs`), `URLs`
+  `urls`, `APIs` `apis`, `UUIDs` `uuids` (design §3.7).
+- A generated module named `Rpc` or `Proto` or inside one (`Rpc.V1`,
+  `Proto.Notes`, every module under `module_prefix=Proto`), other than
+  one of the runtime's own modules, which stays an error, is a
+  `naming::runtime_namespace` warning: the runtime may add modules there
+  in any release (design §3.1, §8.3).
+- A generated module named like a module of elm/html, elm/browser,
+  elm/url, elm/svg, elm/file, elm/random, elm/regex, elm/parser or
+  elm/virtual-dom (`Html`, `Url.Parser`) is a `naming::shadowing_module`
+  warning: it compiles, but an application depending on that package
+  cannot import it (design §3.1).
+- A `rename` of a field, oneof or method to a name ending in `_`
+  (`foo_`, `elmConnectVersion_`) is `options::invalid_rename`; it was
+  accepted, and `elmConnectVersion_` was `naming::value_collision`. A
+  value the generator adds later ends in `_`, so it cannot collide with
+  a renamed name either (design §3.1, §3.7).
+- A nested enum's values drop its whole nesting path as a prefix as well
+  as its own name, the longer that matches: in `Note.Kind`,
+  `NOTE_KIND_DRAFT` becomes `NoteKindDraft` (was `NoteKindNoteKindDraft`),
+  as `KIND_DRAFT` does (design §3.3).
+- A generated module with a segment Windows reserves as a file name
+  (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, in any
+  case: a message `Con`, a package `devices.aux`) is
+  `naming::reserved_module` on every OS, since `Con.elm` cannot be
+  created on Windows (design §3.7).

@@ -778,6 +778,28 @@ message StatusActive {}
 }
 
 #[test]
+fn constructor_collision_after_stripping_a_nested_enums_prefixes() {
+    let source = r#"
+syntax = "proto3";
+package t;
+message Note {
+  enum Kind { KIND_UNSPECIFIED = 0; KIND_DRAFT = 1; NOTE_KIND_DRAFT = 2; }
+}
+"#;
+    let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
+    // The own-name prefix and the path prefix both leave `Draft`, so the
+    // two values are both `NoteKindDraft`.
+    assert_eq!(codes(&diagnostics), [Code::ConstructorCollision]);
+    let problem = diagnostics.iter().next().unwrap();
+    assert!(
+        problem.message().contains("`NoteKindDraft`"),
+        "{}",
+        problem.message()
+    );
+    assert_eq!(problem.sites().len(), 2);
+}
+
+#[test]
 fn oneof_member_named_unset_collides_with_the_unset_case() {
     let source = r#"
 syntax = "proto3";

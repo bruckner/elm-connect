@@ -1,0 +1,8 @@
+// `proto.notes` is `Proto.Notes`, in the runtime's other namespace.
+syntax = "proto3";
+
+package proto.notes;
+
+message Note {
+  string title = 1;
+}

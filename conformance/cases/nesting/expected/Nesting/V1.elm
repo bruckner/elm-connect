@@ -39,15 +39,20 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| [`enum nesting.v1.Outer.Inner.Kind`](Nesting-V1-OuterInnerKind#descriptor)
+{-| A nested enum's values drop the enum's own name or its whole path
+as a prefix, whichever they start with: both are `OuterInnerKind…`.
+
+[`enum nesting.v1.Outer.Inner.Kind`](Nesting-V1-OuterInnerKind#descriptor)
 
   - `OuterInnerKindUnspecified` (`KIND_UNSPECIFIED`)
   - `OuterInnerKindDraft` (`KIND_DRAFT`)
+  - `OuterInnerKindPublished` (`OUTER_INNER_KIND_PUBLISHED`)
 
 -}
 type OuterInnerKind
     = OuterInnerKindUnspecified
     | OuterInnerKindDraft
+    | OuterInnerKindPublished
 
 
 {-| [`message nesting.v1.Outer`](Nesting-V1-Outer#descriptor)
@@ -389,6 +394,9 @@ encodeOuterInnerKind value =
         OuterInnerKindDraft ->
             Json.Encode.string "KIND_DRAFT"
 
+        OuterInnerKindPublished ->
+            Json.Encode.string "OUTER_INNER_KIND_PUBLISHED"
+
 
 {-| Encodes a [`Outer`](#Outer) as proto3 JSON.
 -}
@@ -525,6 +533,7 @@ decodeOuterInnerKind =
         OuterInnerKindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, OuterInnerKindUnspecified )
         , ( "KIND_DRAFT", 1, OuterInnerKindDraft )
+        , ( "OUTER_INNER_KIND_PUBLISHED", 2, OuterInnerKindPublished )
         ]
 
 
