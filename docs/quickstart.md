@@ -229,6 +229,8 @@ suite =
 
 - [calling.md](calling.md): headers, timeouts, retries, Connect GET, the
   errors in full, tracing and cancelling.
+- [Outside the browser](calling.md#outside-the-browser): running a
+  generated client under Node, against a real server.
 - [The notes example](../examples/notes/README.md): a browser
   application on this API, its server, and what each call looks like in
   the network tab.

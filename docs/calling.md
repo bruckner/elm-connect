@@ -271,6 +271,26 @@ Only `Rpc.send` without a retry policy puts the tracker on its request.
 A call sent with a retry policy, or with `Rpc.task`, `Rpc.taskTraced`
 or `Rpc.sendTraced`, cannot be cancelled this way.
 
+## Outside the browser
+
+The runtime runs wherever elm/http does. elm/http sends through the
+browser's `XMLHttpRequest`, and Node has none, so a headless program (a
+`Platform.worker` driven over ports) brings one: the `xhr2` package from
+npm, or a copy of [`conformance/live/xhr.mjs`](../conformance/live/xhr.mjs),
+which every suite in this repository runs the runtime through. That file
+is the subset elm/http uses, over `node:http`: HTTP only, no TLS. Unlike
+a browser it forbids no request header, so a program under Node can send
+what a browser refuses.
+
+[`conformance/live`](../conformance/live) is the worked example. Its
+`src/Live.elm` takes a call over one port, sends it with `Rpc.task`, and
+answers over another; `run.mjs` installs the shim on `globalThis` and
+drives the compiled program against a running server. A generated
+client can be tested against a real server the same way, which elm-test
+cannot do: a test there never runs a task. Under Node, as in the browser,
+the receive limit applies after the body has arrived; a shim that watched
+the bytes could stop sooner, and this one does not.
+
 ## Errors
 
 A failed call gives `Rpc.Error`, one type for both transports, defined
