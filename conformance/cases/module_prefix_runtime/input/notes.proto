@@ -1,0 +1,10 @@
+// Under `module_prefix=Proto` (options.txt), every generated module sits
+// in a namespace of the runtime: it generates, with one warning listing
+// the modules.
+syntax = "proto3";
+
+package notes.v1;
+
+message Note {
+  string title = 1;
+}

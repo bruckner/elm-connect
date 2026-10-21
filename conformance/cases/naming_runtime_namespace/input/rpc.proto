@@ -1,0 +1,14 @@
+// A package whose module sits in a namespace of the runtime, `Rpc` or
+// `Proto`, generates, with one warning listing every such module: the
+// runtime may add a module of the same name in any release.
+syntax = "proto3";
+
+package rpc.v1;
+
+message Ping {
+  string text = 1;
+}
+
+service Pinger {
+  rpc Send(Ping) returns (Ping);
+}

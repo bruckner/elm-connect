@@ -10,9 +10,11 @@
 //! when it is known, and a problem without it still renders, naming the
 //! proto elements by their full names.
 //!
-//! Most problems are errors, which fail the run. A few are warnings: what
-//! an option told the generator to leave out (`streaming=skip`), reported
-//! beside a successful run so the omission is never silent.
+//! Most problems are errors, which fail the run. A few are warnings,
+//! reported beside a successful run: what an option told the generator to
+//! leave out (`streaming=skip`), so the omission is never silent, and a
+//! module name that compiles but is a risk to the application (one in the
+//! runtime's namespaces).
 
 mod spans;
 
@@ -110,6 +112,10 @@ codes! {
     /// A generated module takes the name of a module of the runtime
     /// package or of a package it depends on.
     ReservedModule => "naming::reserved_module",
+    /// Generated modules are named `Rpc` or `Proto` or sit inside one, the
+    /// runtime's namespaces, where it may add modules in any release: a
+    /// warning.
+    RuntimeNamespace => "naming::runtime_namespace",
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown => "types::unsupported_well_known",
     /// A method streams requests or responses.
@@ -746,6 +752,35 @@ impl Problem {
             ),
             vec![site],
         )
+    }
+
+    /// The generated modules `modules`, sorted, are named for the runtime's
+    /// namespaces or sit inside them; `module_prefix` and `rename` are the
+    /// options that move them, as their reader writes them. A warning.
+    pub fn runtime_namespace(modules: &[String], module_prefix: &str, rename: &str) -> Self {
+        let names: Vec<String> = modules.iter().map(|module| format!("`{module}`")).collect();
+        let (subject, verb) = match names.as_slice() {
+            [_] => ("module", "is"),
+            _ => ("modules", "are"),
+        };
+        Problem::new(
+            Code::RuntimeNamespace,
+            format!(
+                "The generated {subject} {} {verb} in a namespace of the runtime package \
+                 {}.",
+                join_words(&names),
+                crate::naming::RUNTIME_PACKAGE
+            ),
+            format!(
+                "The runtime package's modules are named `Rpc` and `Proto` or sit inside them, \
+                 and it may add modules there in any release, a minor or patch one included. \
+                 A generated module there compiles today, but one the runtime adds later of the \
+                 same name makes every import of it ambiguous. Move them with {module_prefix}, \
+                 or rename their packages with {rename}."
+            ),
+            Vec::new(),
+        )
+        .warning()
     }
 
     /// `what` (such as "message `notes.v1.Dict`") becomes the Elm `kind`

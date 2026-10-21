@@ -40,9 +40,9 @@ const WELL_KNOWN_PACKAGE: &str = "google.protobuf";
 /// skipped. Every method must be unary, and its request and response types
 /// are held to the same rule.
 ///
-/// On any problem, returns every problem found instead.
+/// On any error, returns every error found instead.
 ///
-/// This is [`build_with`] under the default options, which give no
+/// This is [`build_with`] under the default options, without its
 /// warnings.
 pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, Diagnostics> {
     build_with(pool, generate, &Options::default()).map(|built| built.packages)
@@ -53,7 +53,8 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
 pub struct Built {
     /// One package per proto package, as [`build`] gives them.
     pub packages: Vec<Package>,
-    /// The warnings, in the order found: what `options` left out.
+    /// The warnings, in the order found: what `options` left out, and the
+    /// module names that compile but put the application at risk.
     pub warnings: Diagnostics,
 }
 
@@ -198,6 +199,14 @@ pub fn build_with_imports(
 
     mark_cycles(&mut packages);
     builder.check_import_cycles(&by_package);
+    if !builder.runtime_namespace.is_empty() {
+        let modules: Vec<String> = builder.runtime_namespace.iter().cloned().collect();
+        builder.diagnostics.push(Problem::runtime_namespace(
+            &modules,
+            builder.spelling.module_prefix(),
+            &builder.spelling.rename("<package>"),
+        ));
+    }
 
     let (errors, warnings) = builder.diagnostics.split_warnings();
     assert!(
@@ -477,6 +486,9 @@ struct Builder {
     /// The first generated module name of each lowercase spelling, with
     /// the site that claimed it, so no two differ only in case.
     module_cases: HashMap<String, (String, Site)>,
+    /// The generated modules in the runtime's namespaces, for the one
+    /// warning that lists them.
+    runtime_namespace: BTreeSet<String>,
     /// How the options are written, for the escapes a problem names.
     spelling: Spelling,
     types: HashMap<String, TypeName>,
@@ -1113,7 +1125,8 @@ impl Builder {
     /// when it is a module the runtime or a package it depends on already
     /// has, when another generated module has it, or when another's name
     /// differs from it only in case, since its file is then the same file
-    /// on a file system that ignores case.
+    /// on a file system that ignores case. A module in the runtime's
+    /// namespaces is noted for their warning.
     fn claim_module(&mut self, module: &ModuleName, origin: Origin, proto: &str) {
         let name = module.to_string();
         let escapes = format!(
@@ -1134,6 +1147,9 @@ impl Builder {
                 site,
             ));
             return;
+        }
+        if naming::in_runtime_namespace(&name) {
+            self.runtime_namespace.insert(name.clone());
         }
         let folded = name.to_lowercase();
         let other = self

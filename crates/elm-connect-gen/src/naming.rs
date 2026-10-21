@@ -28,6 +28,9 @@ macro_rules! runtime_package {
     };
 }
 
+/// The runtime package's name.
+pub const RUNTIME_PACKAGE: &str = runtime_package!();
+
 /// The runtime package's documentation on the package site, to which a
 /// module's page name and an anchor are appended
 /// (`Proto-Message#Descriptor`). It names `latest` because the site has
@@ -113,6 +116,21 @@ pub fn reserved_module(module: &str) -> Option<&'static str> {
         .iter()
         .find(|(_, modules)| modules.contains(&module))
         .map(|(package, _)| *package)
+}
+
+/// The runtime package's namespaces: the module names it may take in any
+/// release, a minor or patch one included (design §8.3). A generated
+/// module named for one of them or inside one is the user's risk.
+pub const RUNTIME_NAMESPACES: [&str; 2] = ["Rpc", "Proto"];
+
+/// Whether `module` is one of [`RUNTIME_NAMESPACES`] or inside one
+/// (`Proto`, `Rpc.V1`, `Proto.Notes.V1`).
+pub fn in_runtime_namespace(module: &str) -> bool {
+    RUNTIME_NAMESPACES.iter().any(|root| {
+        module
+            .strip_prefix(root)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with('.'))
+    })
 }
 
 /// Why a proto name has no Elm spelling.
@@ -558,6 +576,19 @@ mod tests {
         assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
+    }
+
+    #[test]
+    fn the_runtime_namespaces_hold_its_modules() {
+        for module in RUNTIME_MODULES {
+            assert!(in_runtime_namespace(module), "{module}");
+        }
+        for module in ["Proto", "Rpc", "Rpc.V1", "Proto.Notes", "Proto.Notes.V1"] {
+            assert!(in_runtime_namespace(module), "{module}");
+        }
+        for module in ["Protocol", "Rpcs.V1", "Notes.Proto", "Api.Rpc"] {
+            assert!(!in_runtime_namespace(module), "{module}");
+        }
     }
 
     #[test]

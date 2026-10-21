@@ -41,6 +41,7 @@ parameter), the row says which test covers it instead.
 | `naming::module_collision` | Two generated modules (a package's, a service's, or a message's or enum's descriptor module) get the same Elm module name, or names that differ only in case. | `--rename` / `rename=` one of them, or rename it in the proto. |
 | `naming::reserved_name` | A generated type or constructor takes a name the module also uses unqualified for one of elm/core's or the runtime's (`String`, `Maybe`, `Nothing`). | `--rename` / `rename=` it. |
 | `naming::reserved_module` | A generated module takes the name of a module of the runtime package or of a package it depends on (`Time`, `Json.Decode`, `Proto.Json`). | `--rename` / `rename=` it, or `--module-prefix Api` / `module_prefix=Api` to move every module. |
+| `naming::runtime_namespace` | A warning, beside a successful run: generated modules are named `Rpc` or `Proto` or sit inside them (`Rpc.V1`, `Proto.Notes`, or any module under `module_prefix=Proto`), the runtime's namespaces, where it may add modules in any release. One per run, listing the modules. | `--module-prefix Api` / `module_prefix=Api`, or `--rename` / `rename=` the packages. |
 | **`types::`** | **A proto type with no Elm form.** | |
 | `types::unsupported_well_known` | A field, request or response uses a `google.protobuf` type elm-connect has no mapping for, such as `Api` or `Type`. | None: use a supported well-known type or a message of your own. |
 | **`services::`** | **A method the generator refuses, or leaves out, as a method.** | |

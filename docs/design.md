@@ -399,6 +399,21 @@ rpc shared call =
   A file-level `elm_package` file option (like `java_package` or
   `go_package`), if one is added, composes under the prefix: with both, a
   package's module is `<module_prefix>.<elm_package>`.
+- **The runtime's namespaces.** *(Decided, 2026-10-21.)* The runtime's
+  modules are `Rpc` and `Proto` and modules inside them, and it may add
+  more there in any release (§8.3). A generated module that takes one
+  of its modules' names is `naming::reserved_module`, an error. Any
+  other generated module named `Rpc` or `Proto` or inside one (`Rpc.V1`
+  from `package rpc.v1`, `Proto.Notes` from `package proto.notes`,
+  every module under `module_prefix=Proto`) generates, with one
+  `naming::runtime_namespace` warning per run listing them in sorted
+  order: it compiles today, and a module the runtime adds later of the
+  same name would make every import of it ambiguous. That is the
+  user's risk, which `module_prefix` or a `rename` of the package
+  avoids (`naming_runtime_namespace` and `module_prefix_runtime`
+  cases). Why a warning and not an error: the root `Proto` is the
+  runtime's, but nothing is wrong with the output until the runtime
+  takes the name, and an application may accept that risk.
 - Only packages with a requested file are generated: protoc's
   `file_to_generate`, or the files named to the CLI. *(Decided,
   2026-10-15.)* Each is generated in full, from every compiled file that
@@ -3259,6 +3274,11 @@ Within a major version:
   pinned by the route fixtures, the conformance corpus and the live
   suite, the Connect conformance suite among it (§7). A fix that makes
   a wrong encoding right is a patch, though it changes what is sent.
+- **The runtime's namespaces are the runtime's.** Any release, a minor
+  or a patch one included, may add modules named `Rpc.*` or `Proto.*`.
+  A generated module there (`naming::runtime_namespace`, §3.1) is the
+  user's risk: a later release's module of the same name makes every
+  import of it ambiguous, and that is not a break of this contract.
 - **The CLI's and the plugin's options, and diagnostic codes.**
   Additive: options, values and codes are added, and none is removed or
   changes meaning. A diagnostic's text, help and rendering are not a

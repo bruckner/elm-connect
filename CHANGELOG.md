@@ -980,3 +980,8 @@ tag (design §8).
 - A record field, oneof or method whose name starts with a plural acronym
   is lowercased with its `s`: `IDs` becomes `ids` (was `iDs`), `URLs`
   `urls`, `APIs` `apis`, `UUIDs` `uuids` (design §3.7).
+- A generated module named `Rpc` or `Proto` or inside one (`Rpc.V1`,
+  `Proto.Notes`, every module under `module_prefix=Proto`), other than
+  one of the runtime's own modules, which stays an error, is a
+  `naming::runtime_namespace` warning: the runtime may add modules there
+  in any release (design §3.1, §8.3).
