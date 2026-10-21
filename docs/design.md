@@ -3257,8 +3257,9 @@ calls it makes are the suite's.
 Workstream 5: the `live` job caches Go's modules and
 build cache, npm's downloads, Elm's packages and the `connectconformance`
 binary, each keyed on the files that pin it (`go.sum`;
-`package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and runs
-`just live`, which builds the example.
+`package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and
+Envoy's release, keyed on `conformance/live/envoy/envoy-version`, and
+runs `just live`, which builds the example.
 
 grpc-gateway: the example server mounts grpc-gateway
 v2.32.0 under `/gateway` beside Vanguard, in front of the same service,
@@ -3321,21 +3322,59 @@ asserts.
   as unset, and passes the gRPC response headers on as
   `Grpc-Metadata-*`.
 
-What is now verified live, against connect-go, Vanguard and
-grpc-gateway: every method of the example API over both transports, from
-Node in CI (transcoding under both transcoders) and by hand from the
-example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
+Envoy: `just live-envoy` (part of `just live`, and of CI's `live` job)
+runs Envoy 1.40.0's gRPC-JSON transcoder through func-e, which mise
+pins, in front of the example server, calling it over gRPC
+(`conformance/live/envoy/envoy.yaml`; the walkthrough is
+`docs/envoy.md`). Two listeners differ only in `convert_grpc_status`:
+the transcode cases of `cases/notes.json`, `cases/transcode.json` and
+the route fixtures run against the one that writes a
+`google.rpc.Status` body, and `cases/envoy.json` against Envoy's default,
+the error in `grpc-status` and `grpc-message` headers with no body,
+which the runtime reads as `GrpcHeaders`, without details.
+
+- Envoy reads the rules from a descriptor set buf builds from the
+  example's protos, so no binding is served apart:
+  `known-divergent-envoy.json` has `servedApart: null`, and `routes.mjs`
+  runs every fixture at the root without reading the server's layers.
+- Envoy passes a request no method matches, or one with a query
+  parameter naming no field, to the server untranscoded, where the
+  server's own transcoder would answer; the config sets
+  `reject_unknown_method` and `reject_unknown_query_parameters`, so
+  Envoy answers them (404 and 400, plain text). The canned answers of
+  the cases are reached past Envoy, at the server (`run.mjs --origin`).
+- Envoy's default `url_unescape_spec`, `ALL_CHARACTERS_EXCEPT_RESERVED`,
+  leaves `%2B` and `%3A` encoded in a multi-segment variable, against
+  http.proto; the config sets `ALL_CHARACTERS_EXCEPT_SLASH`, which
+  agrees.
+- A verb and path registered twice (the two pairs above) are marked
+  ambiguous by Envoy's path matcher and served by neither binding, with
+  no warning: five fixtures get 404. Envoy is wrong to stay silent; no
+  router can serve that rule whole.
+- Envoy answers the `HEAD` binding with its JSON body after the
+  headers, which Node's HTTP parser refuses, so the runtime reports
+  `NetworkError`. Envoy's bug by RFC 9110.
+- As under the others, a path value under an unset message reaches the
+  service as a set, empty message.
+- Where Envoy agrees and another does not: an empty `StringValue` as
+  `label=`, and a `FieldMask` in the query in its JSON form.
+- Also seen: Envoy writes its own HTTP/1.1 reason phrase, `Unknown` for
+  a status it has no name for, which becomes an `HttpStatus` error's
+  message; and the header-only form carries no details.
+
+What is now verified live, against connect-go, Vanguard, grpc-gateway
+and Envoy: every method of the example API over both transports, from
+Node in CI (transcoding under all three transcoders) and by hand from
+the example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
 retries, timeouts, `withCredentials`, trackers and Connect GET; an
 answer's headers and trailers reaching the application through the
 halves and the `Trace`; the error reader's four sources with details;
-the transcoding request builder on every route fixture, under both
-transcoders; the Connect conformance suite's unary JSON cases;
+the transcoding request builder on every route fixture, under all three
+transcoders; the error reader's header-only form against Envoy; the Connect conformance suite's unary JSON cases;
 `taskFromRequest` with a rewritten request; and cancellation, through
 the halves and through `send` (§5.2). Not live: `response_body`
 (§5.3).
 
-A documented and verified example for Envoy's gRPC-JSON transcoder in
-front of the same service, run by the live suite, is on the roadmap.
 Recorded for later: a pass of small, well-documented examples for learning from (medium priority, 2026-10-15): the notes
 example was meant to double as the implementation to consult, and
 serves verification well, but carrying both transports, the error

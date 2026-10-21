@@ -152,10 +152,10 @@ Each layer proves one thing and has a known gap. A path that starts with
   with no reference implementation.
 - **The live suite** (`conformance/live/`, `just live`): the runtime,
   compiled into a headless program driven from Node, against the example
-  server over Connect, and over transcoding under Vanguard and under
-  grpc-gateway, each with a known-divergent file of where that
-  transcoder answers differently (§7, "Live verification"). Gap: no
-  Envoy.
+  server over Connect, and over transcoding under Vanguard, under
+  grpc-gateway and under Envoy (`docs/envoy.md`), each with a
+  known-divergent file of where that transcoder answers differently (§7,
+  "Live verification").
 - **The Connect conformance suite** (`conformance/live/conformance.mjs`,
   `conformance/live/src/Live/Conformance.elm`): connectconformance's
   unary JSON cases over HTTP/1.1, through the pure halves and through

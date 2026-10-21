@@ -364,3 +364,25 @@ that name no longer breaks the decode of a map, a `Struct` or an `Any`
 holding it. The alternative was to document the gap under older
 versions; raising the floor closes it at the source. Where: design
 §3.4.
+
+## Verification
+
+### Envoy through func-e, pinned through mise, in CI
+
+*2026-10-21.*
+
+The live suite runs Envoy's gRPC-JSON transcoder as its third
+transcoder, locally and in CI's `live` job. func-e, pinned in
+`mise.toml` with its checksums in `mise.lock`, downloads the Envoy
+release that `conformance/live/envoy/envoy-version` names and runs it;
+CI caches the download on that file. The alternatives were Docker,
+which runs Envoy's own builds and can pin an image by digest, but is
+not on GitHub's macOS runners and is heavy to run locally, and
+Homebrew, which installs whatever Envoy it has that day and runs on
+macOS only. func-e takes the same pinned version on Linux and macOS
+without a daemon, and joins the toolchain the rest of the repository
+already installs with mise. The cost accepted: the Envoy binary comes
+from Tetrate's archive, checked against the digest in Tetrate's own
+index, and the macOS build is Tetrate's, not the Envoy project's. Envoy
+stays in CI unless the job's time grows out of proportion. Where:
+design §7, docs/envoy.md.

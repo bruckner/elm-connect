@@ -1082,3 +1082,10 @@ tag (design §8).
   build a message from its `default…` value by record update, which
   keeps compiling when the message gains a field, rather than as a
   record literal.
+- The live suite runs under Envoy's gRPC-JSON transcoder too, Envoy
+  1.40.0 through func-e (pinned in `mise.toml`), locally and in CI:
+  the transcoding cases and the route fixtures with errors converted to
+  a `google.rpc.Status` body, and Envoy's default errors in
+  `grpc-status` headers, which the runtime reads as `GrpcHeaders`.
+  Divergences are in `known-divergent-envoy.json`; `docs/envoy.md`
+  walks through the config.

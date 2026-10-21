@@ -442,3 +442,16 @@ query parameter, a `FieldMask` in the query, a `/` in a single-segment
 path variable, among others, is recorded in
 `conformance/live/known-divergent-gateway.json` with a reading of who is
 right.
+
+## Behind Envoy
+
+The same server also runs behind Envoy's gRPC-JSON transcoder, which
+reads the rules from a descriptor set of these protos and calls the
+service over gRPC, as grpc-gateway does, but from outside the server.
+[docs/envoy.md](../../docs/envoy.md) walks through the config
+(`conformance/live/envoy/envoy.yaml`), runs it with func-e, and shows
+what an error looks like with Envoy's `convert_grpc_status` on and off:
+
+```sh
+just live-envoy
+```

@@ -68,7 +68,7 @@ codec-gen:
 # (examples/check-snippets.sh). The excerpts compile with the example, which
 # `example-notes-build` builds; those in its tests run in `elm-check`.
 snippets:
-    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/compared.md examples/notes/README.md
+    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/envoy.md docs/compared.md examples/notes/README.md
 
 # Audit the GitHub Actions workflows and the Dependabot configuration for
 # template injection, unpinned or vulnerable actions, leaked credentials,
