@@ -147,7 +147,7 @@ Transports built alike are `==`. `Rpc.Transport.name` gives
 
 `Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
 `n` bytes of UTF-8, on either transport, as connect-go's
-`WithReadMaxBytes` and connect-es's `readMaxBytes` do. A body over it is
+`WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
 `NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
 an error answer is still read for its status. The browser has received
@@ -155,10 +155,12 @@ the body by then, so the limit bounds what is decoded and held, not what
 is downloaded.
 
 `Rpc.Transport.withWriteMaxBytes n` caps the request message's JSON the
-same way, as connect-go's `WithSendMaxBytes` and connect-es's
+same way, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` do: a call over it is never sent, and fails with
 `NoAnswer (RequestTooLarge { limit, size })`. Neither has a limit by
-default, and `Rpc.checkConfig` reports a limit below 1.
+default, as in connect-node; connect-go reads at most 4 MiB unless told
+otherwise, and connect-web, the browser transport, has no such knob.
+`Rpc.checkConfig` reports a limit below 1.
 
 ## Retries
 
