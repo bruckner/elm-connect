@@ -3,6 +3,7 @@ use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
+use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
     Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
 };
@@ -31,6 +32,12 @@ enum Command {
     /// cannot tell (bad arguments, a proto that does not compile, an
     /// unreadable directory).
     Check(GenArgs),
+    /// Print the guide to working on a project that uses elm-connect.
+    ///
+    /// The guide is Markdown, for an agent or a person: regenerating, checking before and after a change, reading
+    /// a diagnostic and choosing its escape, and the application's
+    /// `elm.json`. Its links point at the docs on GitHub.
+    Guide,
 }
 
 /// What to generate from and how: the arguments `gen` and `check` share.
@@ -150,10 +157,40 @@ fn module_prefix(value: &str) -> Result<ModuleName, String> {
 /// apart from drift's 1; clap exits with it on bad arguments too.
 const CHECK_ERROR: u8 = 2;
 
+/// The guide `elm-connect guide` prints. `docs/agent-guide.md` is the
+/// source; this copy sits in the crate because a published crate holds
+/// only its own files, and a test keeps the two equal.
+const GUIDE: &str = include_str!("../guide.md");
+
+/// [`GUIDE`] with its relative links made absolute, since a terminal has
+/// no page to resolve them against: `generator.md#options` and
+/// `../AGENTS.md` become links to those files on GitHub.
+fn guide() -> String {
+    let docs = format!("{REPOSITORY_FILES}docs/");
+    GUIDE
+        .split("](")
+        .enumerate()
+        .map(|(index, part)| {
+            if index == 0 || part.starts_with("https://") || part.starts_with("http://") {
+                part.to_owned()
+            } else if let Some(from_root) = part.strip_prefix("../") {
+                format!("{REPOSITORY_FILES}{from_root}")
+            } else {
+                format!("{docs}{part}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("](")
+}
+
 fn main() -> ExitCode {
     let (result, error_status) = match Cli::parse().command {
         Command::Gen(args) => (generate(&args), ExitCode::FAILURE),
         Command::Check(args) => (check(&args), ExitCode::from(CHECK_ERROR)),
+        Command::Guide => {
+            print!("{}", guide());
+            return ExitCode::SUCCESS;
+        }
     };
     result.unwrap_or_else(|report| {
         // Problems render each under its own `Error:`, below a header
@@ -212,7 +249,7 @@ mod tests {
         let base = ["elm-connect", "gen", "a.proto", "--out", "out"];
         match Cli::try_parse_from(base.iter().chain(args))?.command {
             Command::Gen(args) => Ok(args),
-            Command::Check(_) => unreachable!("parsed as gen"),
+            Command::Check(_) | Command::Guide => unreachable!("parsed as gen"),
         }
     }
 
@@ -409,5 +446,41 @@ mod tests {
         assert_eq!(bytes(&["--bytes", "bytes"]).expect("parses"), Bytes::Bytes);
         assert!(bytes(&["--bytes", "base64"]).is_err());
         assert!(bytes(&["--bytes", "bytes", "--bytes", "string"]).is_err());
+    }
+
+    #[test]
+    fn the_guide_is_a_copy_of_the_agent_guide() {
+        // In the repository, `guide.md` must equal its source; a published
+        // crate has no `docs/`, and nothing to compare.
+        let source =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/agent-guide.md");
+        let Ok(source) = std::fs::read_to_string(source) else {
+            return;
+        };
+        assert!(
+            source == GUIDE,
+            "crates/elm-connect/guide.md differs from docs/agent-guide.md, its source: \
+             copy docs/agent-guide.md over it"
+        );
+    }
+
+    #[test]
+    fn the_guide_prints_its_links_absolute() {
+        let printed = guide();
+        assert!(printed.starts_with("# Using elm-connect as an agent"));
+        for link in printed.split("](").skip(1) {
+            assert!(
+                link.starts_with(REPOSITORY_FILES),
+                "a link is not absolute: {link}"
+            );
+        }
+        for expected in [
+            "](https://github.com/bruckner/elm-connect/blob/main/AGENTS.md)",
+            "](https://github.com/bruckner/elm-connect/blob/main/docs/generator.md#options)",
+            "](https://github.com/bruckner/elm-connect/blob/main/docs/diagnostics.md)",
+        ] {
+            assert!(printed.contains(expected), "{expected}");
+        }
+        assert!(Cli::try_parse_from(["elm-connect", "guide"]).is_ok());
     }
 }

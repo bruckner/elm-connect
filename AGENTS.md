@@ -14,7 +14,8 @@ the code. To use the generator on someone else's project instead, read
 - `crates/`: the generator. `elm-connect-gen` is the library (IR,
   emitter, Elm printer, diagnostics); `protoc-gen-elm-connect` is the
   protoc plugin; `elm-connect` is the CLI, which compiles protos itself
-  with protox and has `gen` and `check`.
+  with protox and has `gen`, `check` and `guide` (which prints
+  `docs/agent-guide.md` from its copy in the crate).
 - `src/`: the Elm runtime, `Proto.*` and `Rpc.*`. The package is this
   repository: `elm.json` is at the root.
 - `tests/`: the runtime's Elm tests, unit and fuzz, and the Elm replay

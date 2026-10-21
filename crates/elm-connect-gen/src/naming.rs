@@ -43,6 +43,14 @@ pub const RUNTIME_DOCS: &str = concat!(
     "/latest/"
 );
 
+/// The repository's files on GitHub, to which a path from the repository
+/// root is appended (`docs/diagnostics.md`): where the binaries point a
+/// reader at the docs pages, whose relative links mean nothing on a
+/// terminal. It names `main`, as [`RUNTIME_DOCS`] names `latest`: the
+/// pages are kept current there, and a build from a commit has no release
+/// tag to pin them to.
+pub const REPOSITORY_FILES: &str = "https://github.com/bruckner/elm-connect/blob/main/";
+
 /// The runtime package's exposed modules, as its `elm.json` lists them.
 pub const RUNTIME_MODULES: [&str; 25] = [
     "Rpc",
