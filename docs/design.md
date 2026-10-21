@@ -162,6 +162,28 @@ import Rpc
 
 
 
+-- CALLS
+
+
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
@@ -195,28 +217,6 @@ descriptorSummarize =
         "Summarize"
         …
         []   -- no rule: the implicit route
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeSummarizeRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )
 ```
 
 Application code applies a method to its request and sends the call
@@ -446,6 +446,96 @@ rpc shared call =
   A reference to another generated package is qualified with its module
   (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
   plainly, without an alias or an exposing list (`packages` case).
+- **Comments and declaration lines.** *(Decided, 2026-10-20.)* The
+  declaration a proto element becomes is documented with the proto's
+  comment for it and the element's one-line declaration, as a reader of
+  Java's, C++'s or protobuf-es's generated code finds them (a method's
+  and a service's: §4). Every doc gives the comment first and the
+  declaration after it. A message's record alias carries its comment,
+  `` `message notes.v1.Note` `` and an item per record field: the Elm
+  name, the field's comment, then its `google.api.field_behavior` as
+  words (`` `title`: The title, shown first. Required. ``; `Output
+  only.`, `Input only.`, `Immutable.`, `Identifier.`, `Unordered.`;
+  `OPTIONAL` and `NON_EMPTY_DEFAULT` are not written), a oneof's item
+  its comment and its custom type's name. The field's full declaration
+  is on its descriptor value, so the list stays readable. An enum's
+  custom type carries its comment, `` `enum notes.v1.Visibility` `` and
+  an item per constructor with its value's proto name and its aliases'
+  (`` `VisibilityPublic` (`VISIBILITY_PUBLIC`, also `VISIBILITY_OPEN`) ``),
+  the value's comment and `Deprecated.` if it is (values are not broken
+  out of their enum's doc; the numbers are on the descriptor); a oneof's
+  custom type its comment, `` `oneof kind` of `notes.v1.NoteEvent` ``
+  and an item per constructor, shaped as a field's. A descriptor's doc
+  is the comment and the declaration line, nothing more: the module
+  name says whose it is. A field's descriptor value carries the field's
+  comment and line, `, in oneof kind` for a member (so a field's comment
+  is in both places), and an enum's descriptor every declared name with
+  its line and comment; codecs, defaults and typed values get one
+  sentence naming their type, and no proto text, and `registry` two
+  saying what it holds and resolves. A deprecated element's
+  doc starts with `Deprecated.`, a field's item with it. A comment of
+  several paragraphs stays whole in its item, which makes the list
+  loose (blank lines between items), as Markdown does.
+  Modules carry docs too. A package's module has the package's
+  comment: each file's leading comment on its `package` statement or,
+  where that has none, on its `syntax` statement, where a file's
+  overview often sits (a trailing comment on either line is left out),
+  as paragraphs in file order, a comment that several files repeat
+  written once; a package with none has no module doc. A service's
+  module has the service's comment and its declaration (§4). A
+  descriptor module has one line naming what it holds
+  (`` The descriptor of `notes.v1.Note` and its fields. ``,
+  `` The descriptor of `notes.v1.Visibility`. ``); the message's
+  comment stays on its `descriptor`.
+  The docs link to each other as the package site and elm-doc-preview
+  resolve links, `#name` within a module and `Module-Name#name` (dots
+  as dashes) to another: a type's declaration line to its descriptor
+  module's `descriptor` (`` [`message notes.v1.Note`](Notes-V1-Note#descriptor) ``),
+  each field item's name to its descriptor value, a oneof item to its
+  custom type, a member's constructor to its value; a `descriptor`
+  back to its type (`` Describes [`Notes.V1.Note`](Notes-V1#Note). ``);
+  codecs, defaults, typed values and wrappers to the type they name; a
+  call to its descriptor. A runtime
+  type a doc names (`Proto.Any.Any`) links to the package site by
+  absolute URL, which an editor's hover makes clickable, at `latest`,
+  since the site has no per-major path and `elmConnectVersion_`
+  already pins the minor version.
+  The comment is the leading comment, then the trailing one as a
+  paragraph of its own; detached comments are left out, as
+  protoc-gen-go and Java leave them out. Each line loses the space
+  after `//` and trailing whitespace, and blank lines stay as paragraph
+  breaks. A declaration line is rebuilt from the descriptor in canonical
+  spacing, never copied from the source and never a body: the type by
+  keyword or full name, `map<K, V>`, `optional` only for a proto3
+  optional field, and the options in brackets as a proto writes them,
+  `json_name` (when set) first and custom options in parentheses
+  (`[json_name = "heading", (google.api.field_behavior) = REQUIRED]`),
+  each value in protobuf's text format on one line. Why the line: it
+  says what the Elm type does not (the field number, the proto type
+  behind an `Int` or a `String`, the options), in one line rather than
+  the body Java and C++ print for a message. Elm comments nest, so
+  `{-` and `-}` in a comment are written `{ -` and `- }`. elm-format
+  re-renders a doc comment's Markdown, and generated code must be in
+  its form (`elm-format --validate`, §7), so the printer puts every doc
+  comment there: it ports the Markdown parser elm-format 0.8.8 vendors
+  and its printer (`elm::markdown`), and repeats them until the text
+  stops changing. Lists become `  - ` and `1.  `, emphasis `_` and
+  `**`, setext headings `#`, a bare URL `<url>`; `\`, `` ` ``, `_` and
+  `*` in text are escaped; tabs become spaces; lines are never
+  reflowed. Where elm-format would lose text, the printer keeps it
+  instead in a form elm-format leaves alone: code elm-format would
+  format as Elm (indented, or fenced without a language or as `elm`) is
+  fenced as `text`, since a proto comment's code is not Elm and
+  formatting it as Elm rewrites it (`GET /v1/notes` becomes
+  `GET / v1 / notes`); a line starting `@docs`, which elm-format would
+  read as a list of names, sets `@docs` as code; a heading after the
+  first block of a list item, which elm-format would move out of the
+  list, becomes strong text; a link reference definition it cannot
+  read back is kept as code; an empty code block, on which elm-format
+  fails, is dropped. Each comment is settled on its own before it is
+  placed among the declaration's items, so a fence it leaves open
+  cannot take in what follows (`comments` and `comments_awkward`
+  cases).
 
 ### 3.2 Messages
 
@@ -1467,8 +1557,9 @@ registry =
   registry keeps every tree in it, and every program pays for the
   trees' source size, so a property joins the trees only when a use
   needs it: behavior for update masks and forms, deprecation for
-  tooling. Comments, proto2 default values, extensions in general and
-  a method's streaming kind are not in them.
+  tooling. Comments (which are in the documentation, §3.1), proto2
+  default values, extensions in general and a method's streaming kind
+  are not in them.
 - `Proto.Enum` derives names and numbers (`toName`, `fromName`,
   `toNumber`, `fromNumber`) from the descriptor and the codecs: the
   encoder writes a value's name, the decoder reads every declared name
@@ -1563,15 +1654,41 @@ registry =
 ## 4. Calls  *(Decided, 2026-10-13; built)*
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding a descriptors section with
-each method's `Proto.Method.Descriptor` and then a calls
-section with one function per method from its request to an
-`Rpc.Call` (§5.2). The `services` conformance case pins the output:
+beside the package's `Notes.V1`, holding a calls section with one
+function per method from its request to an `Rpc.Call` (§5.2) and then
+a descriptors section with each method's `Proto.Method.Descriptor`:
+what a program uses comes first and its description after, as a
+message's descriptor sits in a module apart from its type (§3.1). The
+`services` conformance case pins the output:
 
 ```elm
+-- CALLS
+
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
+Described by [`descriptorGetNote`](#descriptorGetNote).
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -1595,19 +1712,6 @@ descriptorGetNote =
             }
         , Proto.Http.binding { … }   -- the additional binding
         ]
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
 ```
 
 Both applications put one argument per line however short their
@@ -1616,6 +1720,26 @@ them; the emitter asks the printer for that layout, which elm-format
 keeps.
 *(Decided, 2026-10-16.)*
 
+- **A method's documentation shows its routes.** *(Decided,
+  2026-10-20.)* A call's doc comment gives the method's comment
+  (§3.1), then its declaration line, its Connect path on a line of its
+  own and its HTTP bindings as its `google.api.http` rule writes them,
+  each with its `body` and `response_body` where set: one binding on
+  the Transcode line, several as a list numbered as
+  `Rpc.Call.viaBinding` counts them, binding 0 the rule's own; then, as
+  a paragraph of its own, a line linking its descriptor;
+  `Transcode: no HTTP rule, follows the Connect path.` for a method
+  without a rule, and `Deprecated.` first for a deprecated method. The
+  request and response types in the declaration line are named as the
+  service's package would write them, relative to it inside it and by
+  full name outside (`returns (google.protobuf.Empty)`); the call's
+  annotation already names their Elm types. Why: the call is the
+  value a program uses, and the routes it may take were visible only as
+  `Proto.Http` data in its descriptor. The descriptor carries the
+  comment and the declaration line.
+  A service has no declaration of its own, so its module's
+  documentation carries its comment and `` `service
+  notes.v1.NotesService` ``.
 - The service module imports `Rpc`, `Proto.Method` (for the method
   and its descriptor), `Proto.Http` (for the bindings), the descriptor
   modules of the messages its bindings' fields belong to
@@ -3301,6 +3425,11 @@ the pre-1.0 work.
 Streaming (both transports), binary protobuf, gRPC-web, proto2,
 interceptors (§9), server generation. Each has a sentence above
 saying why; none is a permanent no.
+
+Leaving comments out *(Recorded 2026-10-20; not built)*: a
+`comments=off` option, for an API whose proto comments are internal,
+would generate the declaration lines and sentences without the proto's
+comments. It is additive (§8.3), so it waits for someone to need it.
 
 Emitting the runtime *(Proposed; not built)*: an option for the
 generator to write the runtime's own modules (`Proto.*`, `Rpc`,

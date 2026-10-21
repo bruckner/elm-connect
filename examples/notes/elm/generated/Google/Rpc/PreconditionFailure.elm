@@ -3,6 +3,9 @@
 
 module Google.Rpc.PreconditionFailure exposing (..)
 
+{-| The descriptor of `google.rpc.PreconditionFailure` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,16 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.PreconditionFailure`: its full name and its fields, in declaration order.
+{-| Describes what preconditions have failed.
+
+For example, if an RPC failed because it required the Terms of Service to be
+acknowledged, it could list the terms of service violation in the
+PreconditionFailure message.
+
+`message google.rpc.PreconditionFailure`
+
+Describes [`Google.Rpc.PreconditionFailure`](Google-Rpc#PreconditionFailure).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +36,10 @@ descriptor =
         ]
 
 
-{-| The field `violations` of `google.rpc.PreconditionFailure`.
+{-| Describes all precondition violations.
+
+`repeated google.rpc.PreconditionFailure.Violation violations = 1;`
+
 -}
 violations : Proto.Field.Descriptor
 violations =

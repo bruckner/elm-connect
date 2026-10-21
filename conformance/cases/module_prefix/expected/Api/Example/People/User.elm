@@ -3,6 +3,9 @@
 
 module Api.Example.People.User exposing (..)
 
+{-| The descriptor of `users.v1.User` and its fields.
+-}
+
 import Api.Example.People.Role
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `users.v1.User`: its full name and its fields, in declaration order.
+{-| `message users.v1.User`
+
+Describes [`Api.Example.People.User`](Api-Example-People#User).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,14 +32,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `users.v1.User`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `role` of `users.v1.User`.
+{-| `users.v1.Role role = 2;`
 -}
 role : Proto.Field.Descriptor
 role =

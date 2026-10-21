@@ -3,6 +3,9 @@
 
 module Scalars.V1.Empty exposing (..)
 
+{-| The descriptor of `scalars.v1.Empty`.
+-}
+
 import Proto.Message
 import Proto.Version
 
@@ -14,7 +17,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `scalars.v1.Empty`: its full name and its fields, in declaration order.
+{-| `message scalars.v1.Empty`
+
+Describes [`Scalars.V1.Empty`](Scalars-V1#Empty).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

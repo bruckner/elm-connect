@@ -3,6 +3,9 @@
 
 module Unused.V1.Dict exposing (..)
 
+{-| The descriptor of `unused.v1.Dict` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,14 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `unused.v1.Dict`: its full name and its fields, in declaration order.
+{-| Names of elm/core types and constructors that this module's code does
+not use unqualified: no field is a map, so `Dict` is free, and `Result`,
+`Order`, `Never`, `Cmd`, `True` and `Char` are never used. Each compiles.
+
+`message unused.v1.Dict`
+
+Describes [`Unused.V1.Dict`](Unused-V1#Dict).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +34,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `unused.v1.Dict`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

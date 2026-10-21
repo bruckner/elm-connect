@@ -224,17 +224,22 @@ fn merge_imports(imports: &[Import]) -> Vec<String> {
         .collect()
 }
 
-/// `{-| doc -}` as elm-format closes it: `-}` on the line after a single
-/// paragraph, and after a blank line when there are several blocks.
+/// `{-| doc -}` as elm-format prints it: the Markdown in elm-format's
+/// form ([`super::markdown::canonical`]), its first line after `{-| `,
+/// then `-}` on a line of its own.
 fn doc_comment(doc: &str) -> String {
-    let doc: Vec<&str> = doc.trim_end().lines().map(str::trim_end).collect();
-    let doc = doc.join("\n");
-    let close = if doc.contains("\n\n") {
-        "\n\n-}"
-    } else {
-        "\n-}"
+    let content = super::markdown::canonical(doc);
+    let mut lines = content.lines();
+    let Some(first) = lines.next() else {
+        return "{-| -}".to_owned();
     };
-    format!("{{-| {doc}{close}")
+    let mut out = format!("{{-| {first}").trim_end().to_owned();
+    for line in lines {
+        out.push('\n');
+        out.push_str(line);
+    }
+    out.push_str("\n-}");
+    out
 }
 
 fn with_doc(doc: Option<&str>, decl: String) -> String {

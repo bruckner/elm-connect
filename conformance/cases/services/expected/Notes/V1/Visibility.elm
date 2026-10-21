@@ -3,6 +3,9 @@
 
 module Notes.V1.Visibility exposing (..)
 
+{-| The descriptor of `notes.v1.Visibility`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,14 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `notes.v1.Visibility`: its full name and its values, in declaration order.
+{-| `enum notes.v1.Visibility`
+
+Describes [`Notes.V1.Visibility`](Notes-V1#Visibility).
+
+  - `VISIBILITY_UNSPECIFIED = 0;`
+  - `VISIBILITY_PRIVATE = 1;`
+  - `VISIBILITY_PUBLIC = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

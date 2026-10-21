@@ -3,6 +3,9 @@
 
 module Things.V1.ThingService exposing (..)
 
+{-| `service things.v1.ThingService`
+-}
+
 import Proto.Http
 import Proto.Method
 import Proto.Version
@@ -20,9 +23,31 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetThing(GetThingRequest) returns (Thing)`.
+Connect: `POST /things.v1.ThingService/GetThing`.
+Transcode: `GET /v1/{name=things/*}`.
+
+Described by [`descriptorGetThing`](#descriptorGetThing).
+
+-}
+getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
+getThing =
+    Rpc.call
+        (Proto.Method.method Things.V1.encodeGetThingRequest
+            Things.V1.decodeThing
+            descriptorGetThing
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetThing(GetThingRequest) returns (Thing)`
+-}
 descriptorGetThing : Proto.Method.Descriptor
 descriptorGetThing =
     Proto.Method.descriptor "things.v1.ThingService"
@@ -48,16 +73,3 @@ descriptorGetThing =
                 ]
             }
         ]
-
-
-
--- CALLS
-
-
-getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
-getThing =
-    Rpc.call
-        (Proto.Method.method Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
-            descriptorGetThing
-        )

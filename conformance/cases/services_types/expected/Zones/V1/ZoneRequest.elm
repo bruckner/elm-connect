@@ -3,6 +3,9 @@
 
 module Zones.V1.ZoneRequest exposing (..)
 
+{-| The descriptor of `zones.v1.ZoneRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `zones.v1.ZoneRequest`: its full name and its fields, in declaration order.
+{-| `message zones.v1.ZoneRequest`
+
+Describes [`Zones.V1.ZoneRequest`](Zones-V1#ZoneRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `zones.v1.ZoneRequest`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

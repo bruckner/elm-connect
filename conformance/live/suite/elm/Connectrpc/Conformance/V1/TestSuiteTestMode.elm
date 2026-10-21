@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.TestSuiteTestMode exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.TestSuite.TestMode`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,20 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.TestSuite.TestMode`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.TestSuite.TestMode`
+
+Describes [`Connectrpc.Conformance.V1.TestSuiteTestMode`](Connectrpc-Conformance-V1#TestSuiteTestMode).
+
+  - `TEST_MODE_UNSPECIFIED = 0;` Used when the test suite does not apply to a particular mode. Such tests
+    are run, regardless of the current test mode, to verify both clients and
+    servers under test.
+  - `TEST_MODE_CLIENT = 1;` Indicates tests that are intended to be used only for a client-under-test.
+    These cases can induce very particular and/or aberrant responses from the
+    reference server, to verify how the client reacts to such responses.
+  - `TEST_MODE_SERVER = 2;` Indicates tests that are intended to be used only for a server-under-test.
+    These cases can induce very particular and/or aberrant requests from the
+    reference client, to verify how the server reacts to such requests.
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

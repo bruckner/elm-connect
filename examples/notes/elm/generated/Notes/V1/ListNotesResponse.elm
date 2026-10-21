@@ -3,6 +3,9 @@
 
 module Notes.V1.ListNotesResponse exposing (..)
 
+{-| The descriptor of `notes.v1.ListNotesResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ListNotesResponse`: its full name and its fields, in declaration order.
+{-| `message notes.v1.ListNotesResponse`
+
+Describes [`Notes.V1.ListNotesResponse`](Notes-V1#ListNotesResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,20 @@ descriptor =
         ]
 
 
-{-| The field `notes` of `notes.v1.ListNotesResponse`.
+{-| In name order.
+
+`repeated notes.v1.Note notes = 1;`
+
 -}
 notes : Proto.Field.Descriptor
 notes =
     Proto.Field.descriptor "notes" "notes" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "notes.v1.Note")
 
 
-{-| The field `next_page_token` of `notes.v1.ListNotesResponse`.
+{-| Empty on the last page.
+
+`string next_page_token = 2;`
+
 -}
 nextPageToken : Proto.Field.Descriptor
 nextPageToken =

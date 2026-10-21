@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ConformancePayloadConnectGetInfo exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`
+
+Describes [`Connectrpc.Conformance.V1.ConformancePayloadConnectGetInfo`](Connectrpc-Conformance-V1#ConformancePayloadConnectGetInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,10 @@ descriptor =
         ]
 
 
-{-| The field `query_params` of `connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo`.
+{-| The query params observed in the request URL.
+
+`repeated connectrpc.conformance.v1.Header query_params = 1;`
+
 -}
 queryParams : Proto.Field.Descriptor
 queryParams =

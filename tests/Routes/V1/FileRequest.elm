@@ -3,6 +3,9 @@
 
 module Routes.V1.FileRequest exposing (..)
 
+{-| The descriptor of `routes.v1.FileRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.FileRequest`: its full name and its fields, in declaration order.
+{-| `message routes.v1.FileRequest`
+
+Describes [`Routes.V1.FileRequest`](Routes-V1#FileRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `path` of `routes.v1.FileRequest`.
+{-| `string path = 1;`
 -}
 path : Proto.Field.Descriptor
 path =

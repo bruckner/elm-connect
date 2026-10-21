@@ -3,6 +3,9 @@
 
 module Google.Rpc.QuotaFailure exposing (..)
 
+{-| The descriptor of `google.rpc.QuotaFailure` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,22 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.QuotaFailure`: its full name and its fields, in declaration order.
+{-| Describes how a quota check failed.
+
+For example if a daily limit was exceeded for the calling project,
+a service could respond with a QuotaFailure detail containing the project
+id and the description of the quota limit that was exceeded. If the
+calling project hasn't enabled the service in the developer console, then
+a service could respond with the project id and set `service_disabled`
+to true.
+
+Also see RetryInfo and Help types for other details about handling a
+quota failure.
+
+`message google.rpc.QuotaFailure`
+
+Describes [`Google.Rpc.QuotaFailure`](Google-Rpc#QuotaFailure).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +42,10 @@ descriptor =
         ]
 
 
-{-| The field `violations` of `google.rpc.QuotaFailure`.
+{-| Describes all quota violations.
+
+`repeated google.rpc.QuotaFailure.Violation violations = 1;`
+
 -}
 violations : Proto.Field.Descriptor
 violations =

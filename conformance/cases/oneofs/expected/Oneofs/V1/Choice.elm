@@ -3,6 +3,9 @@
 
 module Oneofs.V1.Choice exposing (..)
 
+{-| The descriptor of `oneofs.v1.Choice` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `oneofs.v1.Choice`: its full name and its fields, in declaration order.
+{-| A message whose only content is a oneof.
+
+`message oneofs.v1.Choice`
+
+Describes [`Oneofs.V1.Choice`](Oneofs-V1#Choice).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,7 +33,7 @@ descriptor =
         ]
 
 
-{-| The field `number` of `oneofs.v1.Choice`, a member of the oneof `value`.
+{-| `double number = 1;`, in oneof `value`
 -}
 number : Proto.Field.Descriptor
 number =
@@ -33,7 +41,7 @@ number =
         |> Proto.Field.inOneof "value"
 
 
-{-| The field `text` of `oneofs.v1.Choice`, a member of the oneof `value`.
+{-| `string text = 2 [json_name = "label"];`, in oneof `value`
 -}
 text : Proto.Field.Descriptor
 text =

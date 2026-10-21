@@ -3,6 +3,9 @@
 
 module Google.Rpc.ResourceInfo exposing (..)
 
+{-| The descriptor of `google.rpc.ResourceInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.ResourceInfo`: its full name and its fields, in declaration order.
+{-| Describes the resource that is being accessed.
+
+`message google.rpc.ResourceInfo`
+
+Describes [`Google.Rpc.ResourceInfo`](Google-Rpc#ResourceInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,28 +35,49 @@ descriptor =
         ]
 
 
-{-| The field `resource_type` of `google.rpc.ResourceInfo`.
+{-| A name for the type of resource being accessed, e.g. "sql table",
+"cloud storage bucket", "file", "Google calendar"; or the type URL
+of the resource: e.g. "type.googleapis.com/google.pubsub.v1.Topic".
+
+`string resource_type = 1;`
+
 -}
 resourceType : Proto.Field.Descriptor
 resourceType =
     Proto.Field.descriptor "resource_type" "resourceType" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `resource_name` of `google.rpc.ResourceInfo`.
+{-| The name of the resource being accessed. For example, a shared calendar
+name: "example.com\_4fghdhgsrgh@group.calendar.google.com", if the current
+error is
+[google.rpc.Code.PERMISSION\_DENIED][google.rpc.Code.PERMISSION_DENIED].
+
+`string resource_name = 2;`
+
 -}
 resourceName : Proto.Field.Descriptor
 resourceName =
     Proto.Field.descriptor "resource_name" "resourceName" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `owner` of `google.rpc.ResourceInfo`.
+{-| The owner of the resource (optional).
+For example, "user:<owner email>" or "project:<Google developer project
+id>".
+
+`string owner = 3;`
+
 -}
 owner : Proto.Field.Descriptor
 owner =
     Proto.Field.descriptor "owner" "owner" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `description` of `google.rpc.ResourceInfo`.
+{-| Describes what error is encountered when accessing this resource.
+For example, updating a cloud project may require the `writer` permission
+on the developer console project.
+
+`string description = 4;`
+
 -}
 description : Proto.Field.Descriptor
 description =

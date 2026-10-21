@@ -138,10 +138,9 @@ pub enum Decl {
         ///
         /// elm-format re-renders doc comments as Markdown (lists become
         /// `  - item`, `*em*` becomes `_em_`, and code blocks are
-        /// formatted as Elm), so the text must already be in that
-        /// canonical form; the printer only trims trailing whitespace and
-        /// places `-}`: on the next line for a single paragraph, after a
-        /// blank line when the text has several blocks.
+        /// formatted as Elm); the printer puts the text in that form
+        /// ([`super::markdown`]), so any Markdown will do, and writes
+        /// `{-` and `-}` in it apart.
         doc: Option<String>,
         /// The value name.
         name: String,

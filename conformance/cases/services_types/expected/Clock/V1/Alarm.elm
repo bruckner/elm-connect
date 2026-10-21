@@ -3,6 +3,9 @@
 
 module Clock.V1.Alarm exposing (..)
 
+{-| The descriptor of `clock.v1.Alarm` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `clock.v1.Alarm`: its full name and its fields, in declaration order.
+{-| `message clock.v1.Alarm`
+
+Describes [`Clock.V1.Alarm`](Clock-V1#Alarm).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `at` of `clock.v1.Alarm`.
+{-| `google.protobuf.Timestamp at = 1;`
 -}
 at : Proto.Field.Descriptor
 at =

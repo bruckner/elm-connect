@@ -3,6 +3,9 @@
 
 module Naming.V1.Tag exposing (..)
 
+{-| The descriptor of `naming.v1.Tag` and its fields.
+-}
+
 import Naming.V1.HttpMethod
 import Naming.V1.Shape
 import Proto.Field
@@ -17,7 +20,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `naming.v1.Tag`: its full name and its fields, in declaration order.
+{-| `message naming.v1.Tag`
+
+Describes [`Naming.V1.Tag`](Naming-V1#Tag).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -36,70 +42,83 @@ descriptor =
         ]
 
 
-{-| The field `type` of `naming.v1.Tag`.
+{-| Elm reserved words gain a trailing underscore; the wire keeps the
+proto name.
+
+`string type = 1;`
+
 -}
 type_ : Proto.Field.Descriptor
 type_ =
     Proto.Field.descriptor "type" "type" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `if` of `naming.v1.Tag`.
+{-| `bool if = 2;`
 -}
 if_ : Proto.Field.Descriptor
 if_ =
     Proto.Field.descriptor "if" "if" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `port` of `naming.v1.Tag`.
+{-| `int32 port = 3;`
 -}
 port_ : Proto.Field.Descriptor
 port_ =
     Proto.Field.descriptor "port" "port" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `alias` of `naming.v1.Tag`.
+{-| A word Elm does not reserve keeps its name.
+
+`string alias = 4;`
+
 -}
 alias : Proto.Field.Descriptor
 alias =
     Proto.Field.descriptor "alias" "alias" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `display_name` of `naming.v1.Tag`.
+{-| `json_name` changes the wire name only.
+
+`string display_name = 5 [json_name = "screenName"];`
+
 -}
 displayName : Proto.Field.Descriptor
 displayName =
     Proto.Field.descriptor "display_name" "screenName" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `http_url` of `naming.v1.Tag`.
+{-| Digits and acronyms are cased as written.
+
+`string http_url = 6;`
+
 -}
 httpUrl : Proto.Field.Descriptor
 httpUrl =
     Proto.Field.descriptor "http_url" "httpUrl" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `v2_count` of `naming.v1.Tag`.
+{-| `int32 v2_count = 7;`
 -}
 v2Count : Proto.Field.Descriptor
 v2Count =
     Proto.Field.descriptor "v2_count" "v2Count" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `shape` of `naming.v1.Tag`.
+{-| `naming.v1.Shape shape = 8;`
 -}
 shape : Proto.Field.Descriptor
 shape =
     Proto.Field.descriptor "shape" "shape" 8 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Naming.V1.Shape.descriptor)
 
 
-{-| The field `method` of `naming.v1.Tag`.
+{-| `naming.v1.HttpMethod method = 9;`
 -}
 method : Proto.Field.Descriptor
 method =
     Proto.Field.descriptor "method" "method" 9 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Naming.V1.HttpMethod.descriptor)
 
 
-{-| The field `then` of `naming.v1.Tag`, a member of the oneof `case`.
+{-| `string then = 10;`, in oneof `case`
 -}
 then_ : Proto.Field.Descriptor
 then_ =
@@ -107,7 +126,7 @@ then_ =
         |> Proto.Field.inOneof "case"
 
 
-{-| The field `of` of `naming.v1.Tag`, a member of the oneof `case`.
+{-| `int32 of = 11;`, in oneof `case`
 -}
 of_ : Proto.Field.Descriptor
 of_ =

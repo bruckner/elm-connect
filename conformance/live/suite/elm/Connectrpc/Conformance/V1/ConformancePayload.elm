@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ConformancePayload exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ConformancePayload` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ConformancePayload`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.ConformancePayload`
+
+Describes [`Connectrpc.Conformance.V1.ConformancePayload`](Connectrpc-Conformance-V1#ConformancePayload).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,21 @@ descriptor =
         ]
 
 
-{-| The field `data` of `connectrpc.conformance.v1.ConformancePayload`.
+{-| Any response data specified in the response definition to the server should be
+echoed back here.
+
+`bytes data = 1;`
+
 -}
 data : Proto.Field.Descriptor
 data =
     Proto.Field.descriptor "data" "data" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `request_info` of `connectrpc.conformance.v1.ConformancePayload`.
+{-| Echoes back information about the request stream observed so far.
+
+`connectrpc.conformance.v1.ConformancePayload.RequestInfo request_info = 2;`
+
 -}
 requestInfo : Proto.Field.Descriptor
 requestInfo =

@@ -3,6 +3,9 @@
 
 module Naming.V1.HttpMethod exposing (..)
 
+{-| The descriptor of `naming.v1.HttpMethod`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,16 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `naming.v1.HttpMethod`: its full name and its values, in declaration order.
+{-| A multi-word enum name: its prefix is matched word by word.
+
+`enum naming.v1.HttpMethod`
+
+Describes [`Naming.V1.HttpMethod`](Naming-V1#HttpMethod).
+
+  - `HTTP_METHOD_UNSPECIFIED = 0;`
+  - `HTTP_METHOD_GET = 1;`
+  - `POST = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

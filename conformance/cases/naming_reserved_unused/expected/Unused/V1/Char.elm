@@ -3,6 +3,9 @@
 
 module Unused.V1.Char exposing (..)
 
+{-| The descriptor of `unused.v1.Char`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `unused.v1.Char`: its full name and its values, in declaration order.
+{-| `enum unused.v1.Char`
+
+Describes [`Unused.V1.Char`](Unused-V1#Char).
+
+  - `CHAR_UNSPECIFIED = 0;`
+  - `CHAR_A = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

@@ -3,6 +3,9 @@
 
 module Routes.V1.Deep exposing (..)
 
+{-| The descriptor of `routes.v1.Deep` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.Deep`: its full name and its fields, in declaration order.
+{-| `message routes.v1.Deep`
+
+Describes [`Routes.V1.Deep`](Routes-V1#Deep).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,14 @@ descriptor =
         ]
 
 
-{-| The field `b` of `routes.v1.Deep`.
+{-| `int32 b = 1;`
 -}
 b : Proto.Field.Descriptor
 b =
     Proto.Field.descriptor "b" "b" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `c` of `routes.v1.Deep`.
+{-| `repeated string c = 2;`
 -}
 c : Proto.Field.Descriptor
 c =

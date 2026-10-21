@@ -3,6 +3,9 @@
 
 module Envelope.V1.Relay exposing (..)
 
+{-| `service envelope.v1.Relay`
+-}
+
 import Envelope.V1
 import Proto.Any
 import Proto.Json
@@ -19,9 +22,47 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`.
+Connect: `POST /envelope.v1.Relay/Forward`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorForward`](#descriptorForward).
+
+-}
+forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
+forward =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeAny
+            Proto.Json.any
+            descriptorForward
+        )
+
+
+{-| `rpc Send(Envelope) returns (Envelope)`.
+Connect: `POST /envelope.v1.Relay/Send`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorSend`](#descriptorSend).
+
+-}
+send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
+send =
+    Rpc.call
+        (Proto.Method.method Envelope.V1.encodeEnvelope
+            Envelope.V1.decodeEnvelope
+            descriptorSend
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`
+-}
 descriptorForward : Proto.Method.Descriptor
 descriptorForward =
     Proto.Method.descriptor "envelope.v1.Relay"
@@ -32,6 +73,8 @@ descriptorForward =
         []
 
 
+{-| `rpc Send(Envelope) returns (Envelope)`
+-}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "envelope.v1.Relay"
@@ -40,25 +83,3 @@ descriptorSend =
         "envelope.v1.Envelope"
         "envelope.v1.Envelope"
         []
-
-
-
--- CALLS
-
-
-forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
-forward =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeAny
-            Proto.Json.any
-            descriptorForward
-        )
-
-
-send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
-send =
-    Rpc.call
-        (Proto.Method.method Envelope.V1.encodeEnvelope
-            Envelope.V1.decodeEnvelope
-            descriptorSend
-        )

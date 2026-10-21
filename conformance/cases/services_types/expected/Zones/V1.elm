@@ -24,11 +24,22 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message zones.v1.ZoneRequest`](Zones-V1-ZoneRequest#descriptor)
+
+  - [`name`](Zones-V1-ZoneRequest#name)
+
+-}
 type alias ZoneRequest =
     { name : String
     }
 
 
+{-| [`message zones.v1.Zone`](Zones-V1-Zone#descriptor)
+
+  - [`name`](Zones-V1-Zone#name)
+  - [`offsetSeconds`](Zones-V1-Zone#offsetSeconds)
+
+-}
 type alias Zone =
     { name : String
     , offsetSeconds : Int
@@ -39,12 +50,16 @@ type alias Zone =
 -- DEFAULTS
 
 
+{-| A [`ZoneRequest`](#ZoneRequest) with every field at its default and every oneof unset.
+-}
 defaultZoneRequest : ZoneRequest
 defaultZoneRequest =
     { name = ""
     }
 
 
+{-| A [`Zone`](#Zone) with every field at its default and every oneof unset.
+-}
 defaultZone : Zone
 defaultZone =
     { name = ""
@@ -56,11 +71,15 @@ defaultZone =
 -- TYPED VALUES
 
 
+{-| The typed value of [`ZoneRequest`](#ZoneRequest): its codecs, default and descriptor together.
+-}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
     Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
 
 
+{-| The typed value of [`Zone`](#Zone): its codecs, default and descriptor together.
+-}
 messageZone : Proto.Message.Message Zone
 messageZone =
     Proto.Message.message encodeZone decodeZone defaultZone Zones.V1.Zone.descriptor
@@ -70,6 +89,8 @@ messageZone =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -86,6 +107,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON.
+-}
 encodeZoneRequest : ZoneRequest -> Json.Encode.Value
 encodeZoneRequest value =
     Proto.Json.objectOfFields
@@ -93,6 +116,8 @@ encodeZoneRequest value =
         ]
 
 
+{-| Encodes a [`Zone`](#Zone) as proto3 JSON.
+-}
 encodeZone : Zone -> Json.Encode.Value
 encodeZone value =
     Proto.Json.objectOfFields
@@ -105,12 +130,16 @@ encodeZone value =
 -- DECODERS
 
 
+{-| Decodes a [`ZoneRequest`](#ZoneRequest) from proto3 JSON.
+-}
 decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
     Json.Decode.succeed ZoneRequest
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a [`Zone`](#Zone) from proto3 JSON.
+-}
 decodeZone : Json.Decode.Decoder Zone
 decodeZone =
     Json.Decode.succeed Zone

@@ -504,7 +504,7 @@ fn custom_type() {
 }
 
 #[test]
-fn doc_comments_close_after_a_blank_line_when_there_are_several_blocks() {
+fn doc_comments_are_in_elm_formats_markdown() {
     let value = |doc: &str| Decl::Value {
         doc: Some(doc.into()),
         name: "x".into(),
@@ -516,9 +516,20 @@ fn doc_comments_close_after_a_blank_line_when_there_are_several_blocks() {
         print_decl(&value("One.\n")),
         "{-| One.\n-}\nx : Int\nx =\n    1"
     );
+    // Several blocks close after a blank line; code is fenced as text.
     assert_eq!(
         print_decl(&value("One.  \n\n    code\n")),
-        "{-| One.\n\n    code\n\n-}\nx : Int\nx =\n    1"
+        "{-| One.\n\n```text\ncode\n```\n\n-}\nx : Int\nx =\n    1"
+    );
+    // A first block other than a paragraph starts after blank lines.
+    assert_eq!(
+        print_decl(&value("* a\n* b")),
+        "{-|\n\n  - a\n  - b\n\n-}\nx : Int\nx =\n    1"
+    );
+    // Nothing in a doc comment opens or closes an Elm comment.
+    assert_eq!(
+        print_decl(&value("a -} b {- c")),
+        "{-| a - } b { - c\n-}\nx : Int\nx =\n    1"
     );
 }
 

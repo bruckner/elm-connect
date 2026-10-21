@@ -3,6 +3,9 @@
 
 module Int64Option.V1.Counters exposing (..)
 
+{-| The descriptor of `int64_option.v1.Counters` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `int64_option.v1.Counters`: its full name and its fields, in declaration order.
+{-| `message int64_option.v1.Counters`
+
+Describes [`Int64Option.V1.Counters`](Int64Option-V1#Counters).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -37,91 +43,100 @@ descriptor =
         ]
 
 
-{-| The field `int64_value` of `int64_option.v1.Counters`.
+{-| `int64 int64_value = 1;`
 -}
 int64Value : Proto.Field.Descriptor
 int64Value =
     Proto.Field.descriptor "int64_value" "int64Value" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `uint64_value` of `int64_option.v1.Counters`.
+{-| `uint64 uint64_value = 2;`
 -}
 uint64Value : Proto.Field.Descriptor
 uint64Value =
     Proto.Field.descriptor "uint64_value" "uint64Value" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
 
 
-{-| The field `sint64_value` of `int64_option.v1.Counters`.
+{-| `sint64 sint64_value = 3;`
 -}
 sint64Value : Proto.Field.Descriptor
 sint64Value =
     Proto.Field.descriptor "sint64_value" "sint64Value" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint64)
 
 
-{-| The field `fixed64_value` of `int64_option.v1.Counters`.
+{-| `fixed64 fixed64_value = 4;`
 -}
 fixed64Value : Proto.Field.Descriptor
 fixed64Value =
     Proto.Field.descriptor "fixed64_value" "fixed64Value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
 
 
-{-| The field `sfixed64_value` of `int64_option.v1.Counters`.
+{-| `sfixed64 sfixed64_value = 5;`
 -}
 sfixed64Value : Proto.Field.Descriptor
 sfixed64Value =
     Proto.Field.descriptor "sfixed64_value" "sfixed64Value" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
 
 
-{-| The field `exact_id` of `int64_option.v1.Counters`.
+{-| JS\_STRING keeps a field a String under the option.
+
+`int64 exact_id = 6 [jstype = JS_STRING];`
+
 -}
 exactId : Proto.Field.Descriptor
 exactId =
     Proto.Field.descriptor "exact_id" "exactId" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `normal` of `int64_option.v1.Counters`.
+{-| JS\_NORMAL defers to the option.
+
+`int64 normal = 7 [jstype = JS_NORMAL];`
+
 -}
 normal : Proto.Field.Descriptor
 normal =
     Proto.Field.descriptor "normal" "normal" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `maybe_count` of `int64_option.v1.Counters`.
+{-| `optional int64 maybe_count = 8;`
 -}
 maybeCount : Proto.Field.Descriptor
 maybeCount =
     Proto.Field.descriptor "maybe_count" "maybeCount" 8 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `samples` of `int64_option.v1.Counters`.
+{-| `repeated int64 samples = 9;`
 -}
 samples : Proto.Field.Descriptor
 samples =
     Proto.Field.descriptor "samples" "samples" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `exact_samples` of `int64_option.v1.Counters`.
+{-| `repeated uint64 exact_samples = 10 [jstype = JS_STRING];`
 -}
 exactSamples : Proto.Field.Descriptor
 exactSamples =
     Proto.Field.descriptor "exact_samples" "exactSamples" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarUint64)
 
 
-{-| The field `by_id` of `int64_option.v1.Counters`.
+{-| Map keys stay strings, whatever the option; values follow it.
+
+`map<int64, int64> by_id = 11;`
+
 -}
 byId : Proto.Field.Descriptor
 byId =
     Proto.Field.descriptor "by_id" "byId" 11 (Proto.Field.CardinalityMap Proto.Field.ScalarInt64) (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `wrapped` of `int64_option.v1.Counters`.
+{-| `google.protobuf.Int64Value wrapped = 12;`
 -}
 wrapped : Proto.Field.Descriptor
 wrapped =
     Proto.Field.descriptor "wrapped" "wrapped" 12 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int64Value")
 
 
-{-| The field `at_most` of `int64_option.v1.Counters`, a member of the oneof `limit`.
+{-| `int64 at_most = 13;`, in oneof `limit`
 -}
 atMost : Proto.Field.Descriptor
 atMost =
@@ -129,7 +144,7 @@ atMost =
         |> Proto.Field.inOneof "limit"
 
 
-{-| The field `exactly` of `int64_option.v1.Counters`, a member of the oneof `limit`.
+{-| `int64 exactly = 14 [jstype = JS_STRING];`, in oneof `limit`
 -}
 exactly : Proto.Field.Descriptor
 exactly =

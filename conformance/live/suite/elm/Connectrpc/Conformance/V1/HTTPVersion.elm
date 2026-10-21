@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.HTTPVersion exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.HTTPVersion`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,15 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.HTTPVersion`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.HTTPVersion`
+
+Describes [`Connectrpc.Conformance.V1.HTTPVersion`](Connectrpc-Conformance-V1#HTTPVersion).
+
+  - `HTTP_VERSION_UNSPECIFIED = 0;`
+  - `HTTP_VERSION_1 = 1;`
+  - `HTTP_VERSION_2 = 2;`
+  - `HTTP_VERSION_3 = 3;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

@@ -3,6 +3,9 @@
 
 module Enums.V1.Priority exposing (..)
 
+{-| The descriptor of `enums.v1.Priority`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,24 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `enums.v1.Priority`: its full name and its values, in declaration order.
+{-| Values without the conventional prefix, a negative number, and
+aliases: names sharing a number are one constructor, named for the
+first declared, which the encoder writes; the decoder reads them all.
+PRIORITY\_LOW would be the constructor PriorityLow, like LOW; as an
+alias it claims no name, so the two do not collide.
+
+`enum enums.v1.Priority`
+
+Describes [`Enums.V1.Priority`](Enums-V1#Priority).
+
+  - `NONE = 0;`
+  - `LOW = 1;`
+  - `HIGH = 2;`
+  - `URGENT = 2;`
+  - `BELOW_ZERO = -1;`
+  - `PRIORITY_LOW = 1;`
+  - `UNSET = 0;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

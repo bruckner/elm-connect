@@ -3,6 +3,9 @@
 
 module Notes.Api.Edit exposing (..)
 
+{-| The descriptor of `notes.v1.Note.Revision` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note.Revision`: its full name and its fields, in declaration order.
+{-| `message notes.v1.Note.Revision`
+
+Describes [`Notes.Api.Edit`](Notes-Api#Edit).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `number` of `notes.v1.Note.Revision`.
+{-| `int32 number = 1;`
 -}
 number : Proto.Field.Descriptor
 number =

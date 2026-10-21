@@ -3,6 +3,9 @@
 
 module Scalars.V1.Scalars exposing (..)
 
+{-| The descriptor of `scalars.v1.Scalars` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `scalars.v1.Scalars`: its full name and its fields, in declaration order.
+{-| `message scalars.v1.Scalars`
+
+Describes [`Scalars.V1.Scalars`](Scalars-V1#Scalars).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -40,119 +46,126 @@ descriptor =
         ]
 
 
-{-| The field `double_value` of `scalars.v1.Scalars`.
+{-| `double double_value = 1;`
 -}
 doubleValue : Proto.Field.Descriptor
 doubleValue =
     Proto.Field.descriptor "double_value" "doubleValue" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarDouble)
 
 
-{-| The field `float_value` of `scalars.v1.Scalars`.
+{-| `float float_value = 2;`
 -}
 floatValue : Proto.Field.Descriptor
 floatValue =
     Proto.Field.descriptor "float_value" "floatValue" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFloat)
 
 
-{-| The field `int32_value` of `scalars.v1.Scalars`.
+{-| `int32 int32_value = 3;`
 -}
 int32Value : Proto.Field.Descriptor
 int32Value =
     Proto.Field.descriptor "int32_value" "int32Value" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `int64_value` of `scalars.v1.Scalars`.
+{-| `int64 int64_value = 4;`
 -}
 int64Value : Proto.Field.Descriptor
 int64Value =
     Proto.Field.descriptor "int64_value" "int64Value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `uint32_value` of `scalars.v1.Scalars`.
+{-| `uint32 uint32_value = 5;`
 -}
 uint32Value : Proto.Field.Descriptor
 uint32Value =
     Proto.Field.descriptor "uint32_value" "uint32Value" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `uint64_value` of `scalars.v1.Scalars`.
+{-| `uint64 uint64_value = 6;`
 -}
 uint64Value : Proto.Field.Descriptor
 uint64Value =
     Proto.Field.descriptor "uint64_value" "uint64Value" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint64)
 
 
-{-| The field `sint32_value` of `scalars.v1.Scalars`.
+{-| `sint32 sint32_value = 7;`
 -}
 sint32Value : Proto.Field.Descriptor
 sint32Value =
     Proto.Field.descriptor "sint32_value" "sint32Value" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint32)
 
 
-{-| The field `sint64_value` of `scalars.v1.Scalars`.
+{-| `sint64 sint64_value = 8;`
 -}
 sint64Value : Proto.Field.Descriptor
 sint64Value =
     Proto.Field.descriptor "sint64_value" "sint64Value" 8 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSint64)
 
 
-{-| The field `fixed32_value` of `scalars.v1.Scalars`.
+{-| `fixed32 fixed32_value = 9;`
 -}
 fixed32Value : Proto.Field.Descriptor
 fixed32Value =
     Proto.Field.descriptor "fixed32_value" "fixed32Value" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed32)
 
 
-{-| The field `fixed64_value` of `scalars.v1.Scalars`.
+{-| `fixed64 fixed64_value = 10;`
 -}
 fixed64Value : Proto.Field.Descriptor
 fixed64Value =
     Proto.Field.descriptor "fixed64_value" "fixed64Value" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
 
 
-{-| The field `sfixed32_value` of `scalars.v1.Scalars`.
+{-| `sfixed32 sfixed32_value = 11;`
 -}
 sfixed32Value : Proto.Field.Descriptor
 sfixed32Value =
     Proto.Field.descriptor "sfixed32_value" "sfixed32Value" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed32)
 
 
-{-| The field `sfixed64_value` of `scalars.v1.Scalars`.
+{-| `sfixed64 sfixed64_value = 12;`
 -}
 sfixed64Value : Proto.Field.Descriptor
 sfixed64Value =
     Proto.Field.descriptor "sfixed64_value" "sfixed64Value" 12 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
 
 
-{-| The field `bool_value` of `scalars.v1.Scalars`.
+{-| `bool bool_value = 13;`
 -}
 boolValue : Proto.Field.Descriptor
 boolValue =
     Proto.Field.descriptor "bool_value" "boolValue" 13 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `string_value` of `scalars.v1.Scalars`.
+{-| An explicit json\_name changes the wire name, never the Elm name.
+
+`string string_value = 14 [json_name = "text"];`
+
 -}
 stringValue : Proto.Field.Descriptor
 stringValue =
     Proto.Field.descriptor "string_value" "text" 14 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `bytes_value` of `scalars.v1.Scalars`.
+{-| `bytes bytes_value = 15;`
 -}
 bytesValue : Proto.Field.Descriptor
 bytesValue =
     Proto.Field.descriptor "bytes_value" "bytesValue" 15 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `small_count` of `scalars.v1.Scalars`.
+{-| jstype overrides the int64 option per field: JS\_NUMBER makes an Int
+decoded within ±(2^53 − 1), JS\_STRING (the default here) a String.
+
+`int64 small_count = 16 [jstype = JS_NUMBER];`
+
 -}
 smallCount : Proto.Field.Descriptor
 smallCount =
     Proto.Field.descriptor "small_count" "smallCount" 16 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `exact_total` of `scalars.v1.Scalars`.
+{-| `uint64 exact_total = 17 [jstype = JS_STRING];`
 -}
 exactTotal : Proto.Field.Descriptor
 exactTotal =

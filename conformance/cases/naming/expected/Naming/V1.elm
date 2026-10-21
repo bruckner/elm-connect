@@ -3,6 +3,9 @@
 
 module Naming.V1 exposing (..)
 
+{-| The naming rules of design section 3.7.
+-}
+
 import Json.Decode
 import Json.Encode
 import Naming.V1.HttpMethod
@@ -26,6 +29,17 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| Values with the conventional prefix lose it; values without it gain
+the enum's name; digits stay as written.
+
+[`enum naming.v1.Shape`](Naming-V1-Shape#descriptor)
+
+  - `ShapeUnspecified` (`SHAPE_UNSPECIFIED`)
+  - `Shape2d` (`SHAPE_2D`)
+  - `ShapeCube` (`CUBE`)
+  - `ShapeV3Mesh` (`SHAPE_V3_MESH`)
+
+-}
 type Shape
     = ShapeUnspecified
     | Shape2d
@@ -33,12 +47,36 @@ type Shape
     | ShapeV3Mesh
 
 
+{-| A multi-word enum name: its prefix is matched word by word.
+
+[`enum naming.v1.HttpMethod`](Naming-V1-HttpMethod#descriptor)
+
+  - `HttpMethodUnspecified` (`HTTP_METHOD_UNSPECIFIED`)
+  - `HttpMethodGet` (`HTTP_METHOD_GET`)
+  - `HttpMethodPost` (`POST`)
+
+-}
 type HttpMethod
     = HttpMethodUnspecified
     | HttpMethodGet
     | HttpMethodPost
 
 
+{-| [`message naming.v1.Tag`](Naming-V1-Tag#descriptor)
+
+  - [`type_`](Naming-V1-Tag#type_): Elm reserved words gain a trailing underscore; the wire keeps the
+    proto name.
+  - [`if_`](Naming-V1-Tag#if_)
+  - [`port_`](Naming-V1-Tag#port_)
+  - [`alias`](Naming-V1-Tag#alias): A word Elm does not reserve keeps its name.
+  - [`displayName`](Naming-V1-Tag#displayName): `json_name` changes the wire name only.
+  - [`httpUrl`](Naming-V1-Tag#httpUrl): Digits and acronyms are cased as written.
+  - [`v2Count`](Naming-V1-Tag#v2Count)
+  - [`shape`](Naming-V1-Tag#shape)
+  - [`method`](Naming-V1-Tag#method)
+  - `case_`: A oneof named by a reserved word, with reserved-word members. See [`TagCase`](#TagCase).
+
+-}
 type alias Tag =
     { type_ : String
     , if_ : Bool
@@ -53,6 +91,15 @@ type alias Tag =
     }
 
 
+{-| A oneof named by a reserved word, with reserved-word members.
+
+`oneof case` of `naming.v1.Tag`
+
+  - `TagCaseUnset`: none of the fields is set.
+  - [`TagCaseThen`](Naming-V1-Tag#then_)
+  - [`TagCaseOf`](Naming-V1-Tag#of_)
+
+-}
 type TagCase
     = TagCaseUnset
     | TagCaseThen String
@@ -63,6 +110,8 @@ type TagCase
 -- DEFAULTS
 
 
+{-| A [`Tag`](#Tag) with every field at its default and every oneof unset.
+-}
 defaultTag : Tag
 defaultTag =
     { type_ = ""
@@ -82,16 +131,22 @@ defaultTag =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Shape`](#Shape): its codecs, zero value and descriptor together.
+-}
 enumShape : Proto.Enum.Enum Shape
 enumShape =
     Proto.Enum.enum encodeShape decodeShape ShapeUnspecified Naming.V1.Shape.descriptor
 
 
+{-| The typed value of [`HttpMethod`](#HttpMethod): its codecs, zero value and descriptor together.
+-}
 enumHttpMethod : Proto.Enum.Enum HttpMethod
 enumHttpMethod =
     Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified Naming.V1.HttpMethod.descriptor
 
 
+{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+-}
 messageTag : Proto.Message.Message Tag
 messageTag =
     Proto.Message.message encodeTag decodeTag defaultTag Naming.V1.Tag.descriptor
@@ -101,6 +156,8 @@ messageTag =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -118,6 +175,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Shape`](#Shape) as proto3 JSON.
+-}
 encodeShape : Shape -> Json.Encode.Value
 encodeShape value =
     case value of
@@ -134,6 +193,8 @@ encodeShape value =
             Json.Encode.string "SHAPE_V3_MESH"
 
 
+{-| Encodes a [`HttpMethod`](#HttpMethod) as proto3 JSON.
+-}
 encodeHttpMethod : HttpMethod -> Json.Encode.Value
 encodeHttpMethod value =
     case value of
@@ -147,6 +208,8 @@ encodeHttpMethod value =
             Json.Encode.string "POST"
 
 
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
+-}
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
     Proto.Json.objectOfFields
@@ -164,6 +227,8 @@ encodeTag value =
         )
 
 
+{-| Encodes a [`TagCase`](#TagCase) as the members of its message's JSON object.
+-}
 encodeTagCase : TagCase -> List ( String, Maybe Json.Encode.Value )
 encodeTagCase value =
     case value of
@@ -183,6 +248,8 @@ encodeTagCase value =
 -- DECODERS
 
 
+{-| Decodes a [`Shape`](#Shape) from proto3 JSON.
+-}
 decodeShape : Json.Decode.Decoder Shape
 decodeShape =
     Proto.Json.enum "Shape"
@@ -194,6 +261,8 @@ decodeShape =
         ]
 
 
+{-| Decodes a [`HttpMethod`](#HttpMethod) from proto3 JSON.
+-}
 decodeHttpMethod : Json.Decode.Decoder HttpMethod
 decodeHttpMethod =
     Proto.Json.enum "HttpMethod"
@@ -204,6 +273,8 @@ decodeHttpMethod =
         ]
 
 
+{-| Decodes a [`Tag`](#Tag) from proto3 JSON.
+-}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag
@@ -219,6 +290,8 @@ decodeTag =
         |> Proto.Json.oneof decodeTagCase
 
 
+{-| Decodes a [`TagCase`](#TagCase) from the members of its message's JSON object.
+-}
 decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
     Proto.Json.members "case"

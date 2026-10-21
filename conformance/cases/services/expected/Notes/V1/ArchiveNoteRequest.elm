@@ -3,6 +3,9 @@
 
 module Notes.V1.ArchiveNoteRequest exposing (..)
 
+{-| The descriptor of `notes.v1.ArchiveNoteRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ArchiveNoteRequest`: its full name and its fields, in declaration order.
+{-| `message notes.v1.ArchiveNoteRequest`
+
+Describes [`Notes.V1.ArchiveNoteRequest`](Notes-V1#ArchiveNoteRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,14 @@ descriptor =
         ]
 
 
-{-| The field `name` of `notes.v1.ArchiveNoteRequest`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `reason` of `notes.v1.ArchiveNoteRequest`.
+{-| `string reason = 2;`
 -}
 reason : Proto.Field.Descriptor
 reason =

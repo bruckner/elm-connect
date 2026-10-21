@@ -3,6 +3,9 @@
 
 module First.V1.Fetcher exposing (..)
 
+{-| `service first.v1.Fetcher`
+-}
+
 import First.V1
 import Proto.Method
 import Proto.Version
@@ -17,9 +20,79 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetNote(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/GetNote`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorGetNote`](#descriptorGetNote).
+
+-}
+getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+getNote =
+    Rpc.call
+        (Proto.Method.method First.V1.encodeURLPath
+            First.V1.decodeURLPath
+            descriptorGetNote
+        )
+
+
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/HTTPGet`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorHttpGet`](#descriptorHttpGet).
+
+-}
+httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+httpGet =
+    Rpc.call
+        (Proto.Method.method First.V1.encodeURLPath
+            First.V1.decodeURLPath
+            descriptorHttpGet
+        )
+
+
+{-| `rpc _Ping(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/_Ping`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorPing`](#descriptorPing).
+
+-}
+ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+ping =
+    Rpc.call
+        (Proto.Method.method First.V1.encodeURLPath
+            First.V1.decodeURLPath
+            descriptorPing
+        )
+
+
+{-| `rpc Type(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/Type`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorType_`](#descriptorType_).
+
+-}
+type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+type_ =
+    Rpc.call
+        (Proto.Method.method First.V1.encodeURLPath
+            First.V1.decodeURLPath
+            descriptorType_
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetNote(URLPath) returns (URLPath)`
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -30,6 +103,8 @@ descriptorGetNote =
         []
 
 
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`
+-}
 descriptorHttpGet : Proto.Method.Descriptor
 descriptorHttpGet =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -40,6 +115,8 @@ descriptorHttpGet =
         []
 
 
+{-| `rpc _Ping(URLPath) returns (URLPath)`
+-}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -50,6 +127,8 @@ descriptorPing =
         []
 
 
+{-| `rpc Type(URLPath) returns (URLPath)`
+-}
 descriptorType_ : Proto.Method.Descriptor
 descriptorType_ =
     Proto.Method.descriptor "first.v1.Fetcher"
@@ -58,43 +137,3 @@ descriptorType_ =
         "first.v1.URLPath"
         "first.v1.URLPath"
         []
-
-
-
--- CALLS
-
-
-getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
-getNote =
-    Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorGetNote
-        )
-
-
-httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
-httpGet =
-    Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorHttpGet
-        )
-
-
-ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
-ping =
-    Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorPing
-        )
-
-
-type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
-type_ =
-    Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorType_
-        )

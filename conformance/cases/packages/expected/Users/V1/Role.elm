@@ -3,6 +3,9 @@
 
 module Users.V1.Role exposing (..)
 
+{-| The descriptor of `users.v1.Role`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `users.v1.Role`: its full name and its values, in declaration order.
+{-| `enum users.v1.Role`
+
+Describes [`Users.V1.Role`](Users-V1#Role).
+
+  - `ROLE_UNSPECIFIED = 0;`
+  - `ROLE_EDITOR = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

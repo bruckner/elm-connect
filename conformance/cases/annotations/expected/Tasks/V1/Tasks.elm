@@ -3,6 +3,9 @@
 
 module Tasks.V1.Tasks exposing (..)
 
+{-| `service tasks.v1.Tasks`
+-}
+
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -17,9 +20,63 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetTask(GetTaskRequest) returns (Task)`.
+Connect: `POST /tasks.v1.Tasks/GetTask`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorGetTask`](#descriptorGetTask).
+
+-}
+getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
+getTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorGetTask
+        )
+
+
+{-| `rpc PutTask(Task) returns (Task)`.
+Connect: `POST /tasks.v1.Tasks/PutTask`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorPutTask`](#descriptorPutTask).
+
+-}
+putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
+putTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeTask
+            Tasks.V1.decodeTask
+            descriptorPutTask
+        )
+
+
+{-| `rpc CloseTask(GetTaskRequest) returns (Task)`.
+Connect: `POST /tasks.v1.Tasks/CloseTask`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorCloseTask`](#descriptorCloseTask).
+
+-}
+closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
+closeTask =
+    Rpc.call
+        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
+            Tasks.V1.decodeTask
+            descriptorCloseTask
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetTask(GetTaskRequest) returns (Task)`
+-}
 descriptorGetTask : Proto.Method.Descriptor
 descriptorGetTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -30,6 +87,8 @@ descriptorGetTask =
         []
 
 
+{-| `rpc PutTask(Task) returns (Task)`
+-}
 descriptorPutTask : Proto.Method.Descriptor
 descriptorPutTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -40,6 +99,8 @@ descriptorPutTask =
         []
 
 
+{-| `rpc CloseTask(GetTaskRequest) returns (Task)`
+-}
 descriptorCloseTask : Proto.Method.Descriptor
 descriptorCloseTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
@@ -48,34 +109,3 @@ descriptorCloseTask =
         "tasks.v1.GetTaskRequest"
         "tasks.v1.Task"
         []
-
-
-
--- CALLS
-
-
-getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
-getTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
-            descriptorGetTask
-        )
-
-
-putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
-putTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeTask
-            Tasks.V1.decodeTask
-            descriptorPutTask
-        )
-
-
-closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
-closeTask =
-    Rpc.call
-        (Proto.Method.method Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
-            descriptorCloseTask
-        )

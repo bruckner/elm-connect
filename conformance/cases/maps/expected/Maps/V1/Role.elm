@@ -3,6 +3,9 @@
 
 module Maps.V1.Role exposing (..)
 
+{-| The descriptor of `maps.v1.Role`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `maps.v1.Role`: its full name and its values, in declaration order.
+{-| `enum maps.v1.Role`
+
+Describes [`Maps.V1.Role`](Maps-V1#Role).
+
+  - `ROLE_UNSPECIFIED = 0;`
+  - `ROLE_OWNER = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

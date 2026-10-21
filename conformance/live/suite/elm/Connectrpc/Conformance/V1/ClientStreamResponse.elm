@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ClientStreamResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ClientStreamResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ClientStreamResponse`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.ClientStreamResponse`
+
+Describes [`Connectrpc.Conformance.V1.ClientStreamResponse`](Connectrpc-Conformance-V1#ClientStreamResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,10 @@ descriptor =
         ]
 
 
-{-| The field `payload` of `connectrpc.conformance.v1.ClientStreamResponse`.
+{-| The conformance payload to respond with
+
+`connectrpc.conformance.v1.ConformancePayload payload = 1;`
+
 -}
 payload : Proto.Field.Descriptor
 payload =

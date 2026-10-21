@@ -3,6 +3,9 @@
 
 module Enums.V1.Status exposing (..)
 
+{-| The descriptor of `enums.v1.Status`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,14 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `enums.v1.Status`: its full name and its values, in declaration order.
+{-| `enum enums.v1.Status`
+
+Describes [`Enums.V1.Status`](Enums-V1#Status).
+
+  - `STATUS_UNSPECIFIED = 0;`
+  - `STATUS_ACTIVE = 1;`
+  - `STATUS_ARCHIVED = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

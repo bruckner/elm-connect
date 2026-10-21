@@ -3,6 +3,9 @@
 
 module Cardinality.V1.Author exposing (..)
 
+{-| The descriptor of `cardinality.v1.Author` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `cardinality.v1.Author`: its full name and its fields, in declaration order.
+{-| `message cardinality.v1.Author`
+
+Describes [`Cardinality.V1.Author`](Cardinality-V1#Author).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `cardinality.v1.Author`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

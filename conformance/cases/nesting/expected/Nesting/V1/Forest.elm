@@ -3,6 +3,9 @@
 
 module Nesting.V1.Forest exposing (..)
 
+{-| The descriptor of `nesting.v1.Forest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Forest`: its full name and its fields, in declaration order.
+{-| Off any cycle, referring to a recursive message: no wrapper needed.
+
+`message nesting.v1.Forest`
+
+Describes [`Nesting.V1.Forest`](Nesting-V1#Forest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +32,7 @@ descriptor =
         ]
 
 
-{-| The field `trees` of `nesting.v1.Forest`.
+{-| `repeated nesting.v1.Node trees = 1;`
 -}
 trees : Proto.Field.Descriptor
 trees =

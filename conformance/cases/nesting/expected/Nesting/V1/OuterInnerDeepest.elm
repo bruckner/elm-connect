@@ -3,6 +3,9 @@
 
 module Nesting.V1.OuterInnerDeepest exposing (..)
 
+{-| The descriptor of `nesting.v1.Outer.Inner.Deepest` and its fields.
+-}
+
 import Nesting.V1.OuterInnerKind
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Outer.Inner.Deepest`: its full name and its fields, in declaration order.
+{-| `message nesting.v1.Outer.Inner.Deepest`
+
+Describes [`Nesting.V1.OuterInnerDeepest`](Nesting-V1#OuterInnerDeepest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,7 +31,7 @@ descriptor =
         ]
 
 
-{-| The field `kind` of `nesting.v1.Outer.Inner.Deepest`.
+{-| `nesting.v1.Outer.Inner.Kind kind = 1;`
 -}
 kind : Proto.Field.Descriptor
 kind =

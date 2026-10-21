@@ -3,6 +3,9 @@
 
 module Nesting.V1.Node exposing (..)
 
+{-| The descriptor of `nesting.v1.Node` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Node`: its full name and its fields, in declaration order.
+{-| A message that refers to itself.
+
+`message nesting.v1.Node`
+
+Describes [`Nesting.V1.Node`](Nesting-V1#Node).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +34,24 @@ descriptor =
         ]
 
 
-{-| The field `label` of `nesting.v1.Node`.
+{-| `string label = 1;`
 -}
 label : Proto.Field.Descriptor
 label =
     Proto.Field.descriptor "label" "label" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `children` of `nesting.v1.Node`.
+{-| `repeated nesting.v1.Node children = 2;`
 -}
 children : Proto.Field.Descriptor
 children =
     Proto.Field.descriptor "children" "children" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "nesting.v1.Node")
 
 
-{-| The field `by_name` of `nesting.v1.Node`.
+{-| A map value closes the cycle too.
+
+`map<string, nesting.v1.Node> by_name = 3;`
+
 -}
 byName : Proto.Field.Descriptor
 byName =

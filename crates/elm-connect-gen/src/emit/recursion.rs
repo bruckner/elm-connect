@@ -1,7 +1,7 @@
 //! A recursive message's wrapper: its custom type, encoder and decoder
 //! (design §3.2).
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, docs};
 use crate::elm::ast::{Decl, Pattern, Type, Variant};
 use crate::elm::build::{apply, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, Wrapper};
@@ -11,7 +11,11 @@ impl Emitter {
     /// `type Node_ = Node_ Node`.
     pub(super) fn wrapper_type(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
         Decl::CustomType {
-            doc: None,
+            doc: Some(format!(
+                "A {} where a cycle of fields leads back to it, since Elm rejects a \
+                 recursive type alias.",
+                docs::local(&message.elm_name)
+            )),
             name: wrapper.elm_name.clone(),
             type_params: Vec::new(),
             variants: vec![Variant {
@@ -25,7 +29,10 @@ impl Emitter {
     pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Encodes a {} as proto3 JSON.",
+                docs::local(&wrapper.elm_name)
+            )),
             name: wrapper.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(wrapper.elm_name.clone(), [])),
@@ -46,7 +53,10 @@ impl Emitter {
         let annotation =
             self.library_type(JSON_DECODE, "Decoder", [ty(wrapper.elm_name.clone(), [])]);
         Decl::Value {
-            doc: None,
+            doc: Some(format!(
+                "Decodes a {} from proto3 JSON.",
+                docs::local(&wrapper.elm_name)
+            )),
             name: wrapper.decoder_name(),
             annotation,
             params: Vec::new(),

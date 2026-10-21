@@ -3,6 +3,9 @@
 
 module Tasks.V1.Task exposing (..)
 
+{-| The descriptor of `tasks.v1.Task` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `tasks.v1.Task`: its full name and its fields, in declaration order.
+{-| `message tasks.v1.Task`
+
+Describes [`Tasks.V1.Task`](Tasks-V1#Task).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -32,7 +38,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `tasks.v1.Task`.
+{-| `string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
 -}
 name : Proto.Field.Descriptor
 name =
@@ -40,7 +46,7 @@ name =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
 
 
-{-| The field `title` of `tasks.v1.Task`.
+{-| `string title = 2 [(google.api.field_behavior) = REQUIRED];`
 -}
 title : Proto.Field.Descriptor
 title =
@@ -48,7 +54,7 @@ title =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
 
 
-{-| The field `state` of `tasks.v1.Task`.
+{-| `tasks.v1.State state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];`
 -}
 state : Proto.Field.Descriptor
 state =
@@ -56,7 +62,7 @@ state =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
 
 
-{-| The field `labels` of `tasks.v1.Task`.
+{-| `repeated string labels = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
 -}
 labels : Proto.Field.Descriptor
 labels =
@@ -64,7 +70,10 @@ labels =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
 
 
-{-| The field `owner` of `tasks.v1.Task`.
+{-| Deprecated.
+
+`string owner = 5 [deprecated = true, (google.api.field_behavior) = OPTIONAL, (google.api.field_behavior) = IMMUTABLE];`
+
 -}
 owner : Proto.Field.Descriptor
 owner =
@@ -73,14 +82,14 @@ owner =
         |> Proto.Field.withDeprecated
 
 
-{-| The field `notes` of `tasks.v1.Task`.
+{-| `string notes = 6;`
 -}
 notes : Proto.Field.Descriptor
 notes =
     Proto.Field.descriptor "notes" "notes" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `date` of `tasks.v1.Task`, a member of the oneof `due`.
+{-| `string date = 7 [(google.api.field_behavior) = INPUT_ONLY];`, in oneof `due`
 -}
 date : Proto.Field.Descriptor
 date =
@@ -89,7 +98,10 @@ date =
         |> Proto.Field.withBehavior [ Proto.Field.BehaviorInputOnly ]
 
 
-{-| The field `never` of `tasks.v1.Task`, a member of the oneof `due`.
+{-| Deprecated.
+
+`string never = 8 [deprecated = true];`, in oneof `due`
+
 -}
 never : Proto.Field.Descriptor
 never =

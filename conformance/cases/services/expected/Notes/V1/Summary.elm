@@ -3,6 +3,9 @@
 
 module Notes.V1.Summary exposing (..)
 
+{-| The descriptor of `notes.v1.Summary` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Summary`: its full name and its fields, in declaration order.
+{-| `message notes.v1.Summary`
+
+Describes [`Notes.V1.Summary`](Notes-V1#Summary).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `text` of `notes.v1.Summary`.
+{-| `string text = 1;`
 -}
 text : Proto.Field.Descriptor
 text =

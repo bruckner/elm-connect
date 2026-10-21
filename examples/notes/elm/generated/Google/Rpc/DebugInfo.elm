@@ -3,6 +3,9 @@
 
 module Google.Rpc.DebugInfo exposing (..)
 
+{-| The descriptor of `google.rpc.DebugInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.DebugInfo`: its full name and its fields, in declaration order.
+{-| Describes additional debugging info.
+
+`message google.rpc.DebugInfo`
+
+Describes [`Google.Rpc.DebugInfo`](Google-Rpc#DebugInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +33,20 @@ descriptor =
         ]
 
 
-{-| The field `stack_entries` of `google.rpc.DebugInfo`.
+{-| The stack trace entries indicating where the error occurred.
+
+`repeated string stack_entries = 1;`
+
 -}
 stackEntries : Proto.Field.Descriptor
 stackEntries =
     Proto.Field.descriptor "stack_entries" "stackEntries" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `detail` of `google.rpc.DebugInfo`.
+{-| Additional debugging information provided by the server.
+
+`string detail = 2;`
+
 -}
 detail : Proto.Field.Descriptor
 detail =

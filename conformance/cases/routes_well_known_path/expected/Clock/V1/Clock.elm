@@ -3,6 +3,9 @@
 
 module Clock.V1.Clock exposing (..)
 
+{-| `service clock.v1.Clock`
+-}
+
 import Clock.V1
 import Clock.V1.Moment
 import Proto.Http
@@ -19,9 +22,79 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/GetMoment`.
+Transcode: `GET /v1/at/{at}`.
+
+Described by [`descriptorGetMoment`](#descriptorGetMoment).
+
+-}
+getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+getMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorGetMoment
+        )
+
+
+{-| `rpc MaskMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/MaskMoment`.
+Transcode: `GET /v1/at/{at}/mask/{mask}`.
+
+Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
+
+-}
+maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+maskMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorMaskMoment
+        )
+
+
+{-| `rpc CountMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/CountMoment`.
+Transcode: `GET /v1/count/{count}/seen/{seen}`.
+
+Described by [`descriptorCountMoment`](#descriptorCountMoment).
+
+-}
+countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+countMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorCountMoment
+        )
+
+
+{-| `rpc WaitMoment(Moment) returns (Moment)`.
+Connect: `POST /clock.v1.Clock/WaitMoment`.
+Transcode: `POST /v1/wait/{wait}` body `*`.
+
+Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
+
+-}
+waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+waitMoment =
+    Rpc.call
+        (Proto.Method.method Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
+            descriptorWaitMoment
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetMoment(Moment) returns (Moment)`
+-}
 descriptorGetMoment : Proto.Method.Descriptor
 descriptorGetMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -53,6 +126,8 @@ descriptorGetMoment =
         ]
 
 
+{-| `rpc MaskMoment(Moment) returns (Moment)`
+-}
 descriptorMaskMoment : Proto.Method.Descriptor
 descriptorMaskMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -88,6 +163,8 @@ descriptorMaskMoment =
         ]
 
 
+{-| `rpc CountMoment(Moment) returns (Moment)`
+-}
 descriptorCountMoment : Proto.Method.Descriptor
 descriptorCountMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -123,6 +200,8 @@ descriptorCountMoment =
         ]
 
 
+{-| `rpc WaitMoment(Moment) returns (Moment)`
+-}
 descriptorWaitMoment : Proto.Method.Descriptor
 descriptorWaitMoment =
     Proto.Method.descriptor "clock.v1.Clock"
@@ -146,43 +225,3 @@ descriptorWaitMoment =
             , query = []
             }
         ]
-
-
-
--- CALLS
-
-
-getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-getMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorGetMoment
-        )
-
-
-maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-maskMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorMaskMoment
-        )
-
-
-countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-countMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorCountMoment
-        )
-
-
-waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
-waitMoment =
-    Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorWaitMoment
-        )

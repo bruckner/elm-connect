@@ -3,6 +3,9 @@
 
 module Notes.V1.Tag exposing (..)
 
+{-| The descriptor of `notes.v1.Tag` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Tag`: its full name and its fields, in declaration order.
+{-| `message notes.v1.Tag`
+
+Describes [`Notes.V1.Tag`](Notes-V1#Tag).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `label` of `notes.v1.Tag`.
+{-| `string label = 1;`
 -}
 label : Proto.Field.Descriptor
 label =

@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+// Comments that Markdown, elm-format or Elm itself would read as more than
+// text: comment delimiters, `@docs`, emphasis, lists of every marker,
+// headings, code blocks indented and fenced, tables, HTML, links, tabs, a
+// 200-character line, non-ASCII, a comment of whitespace alone and
+// detached comments, which must not appear; in a service's module doc
+// and a method's doc too.
+package awkward.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// Detached, before the first message: left out.
+
+// Closes and opens Elm comments: -} and {- and {-| and -}-}.
+// @docs encode, decode
+// Emphasis with *stars* and _underscores_, **strong** and __strong__;
+// snake_case_names, a glob notes/* and 2*3*4 arithmetic.
+message Delimiters {
+  // * a star item
+  // * another
+  //
+  // - a dash item
+  //   continued
+  // + a plus item
+  //
+  // 1. first
+  // 2. second
+  // 3) third
+  string lists = 1;
+  // # A heading
+  //
+  // Setext heading
+  // ==============
+  //
+  // ---
+  //
+  // > A quote
+  // > on two lines.
+  string blocks = 2;
+  // Indented code:
+  //
+  //     rpc Get(Request) returns (Response);
+  //     x = 1
+  //
+  // Fenced, with no language:
+  //
+  // ```
+  // GET /v1/{name=notes/*}
+  // ```
+  //
+  // Fenced as Elm, which elm-format would reformat:
+  //
+  // ```elm
+  // x = { a = 1 }
+  // ```
+  //
+  // Fenced as proto:
+  //
+  // ```proto
+  // message M { int32 x = 1; }
+  // ```
+  string code = 3;
+  // | a | b |
+  // |---|---|
+  // | 1 | 2 |
+  //
+  // A pipe | in text, <b>HTML</b> &amp; an entity, <div>a block</div>,
+  // [a link](https://example.com/a_b), https://example.com/bare_url and
+  // [a reference][ref].
+  //
+  // [ref]: https://example.com "Title"
+  string inline = 4;
+  // Trailing spaces end this line  
+  // and a	tab	sits here.
+  // A line of two hundred characters, which elm-format leaves as it is rather than wrapping it, since it reflows no paragraph of a doc comment at all, however long it runs: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  // Non-ASCII: café, naïve, “quotes”, — and ✓.
+  string text = 5;
+  //   
+  string whitespace_only = 6;
+
+  // Detached, inside a message: left out.
+
+  // ```
+  // A fence that never closes.
+  string unclosed = 7;
+}
+
+// Lines that start like Markdown inside an enum's values.
+enum Marks {
+  // # not a heading in proto
+  MARKS_UNSPECIFIED = 0;
+  // 1. one
+  // 2. two
+  MARKS_LIST = 1;
+  MARKS_DELIMITED = 2; // Trailing: -} {-
+}
+
+// @docs at the start.
+message Docs {
+  // @docs field
+  string field = 1;
+}
+
+// A service whose comment closes an Elm comment -} and lists names:
+// @docs ping
+//
+// # A heading in a module doc
+service AwkwardService {
+
+  // Detached, before a method: left out.
+
+  // ```
+  // HEAD /v1/{name=*}
+  //
+  // An unclosed fence in a method's comment.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      custom: {
+        kind: "HEAD"
+        path: "/v1/ping"
+      }
+    };
+  }
+}

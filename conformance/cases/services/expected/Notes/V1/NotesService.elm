@@ -3,6 +3,9 @@
 
 module Notes.V1.NotesService exposing (..)
 
+{-| `service notes.v1.NotesService`
+-}
+
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -29,9 +32,180 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
+Described by [`descriptorGetNote`](#descriptorGetNote).
+
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+        )
+
+
+{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
+Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+
+Described by [`descriptorListNotes`](#descriptorListNotes).
+
+-}
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+        )
+
+
+{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
+
+Described by [`descriptorCreateNote`](#descriptorCreateNote).
+
+-}
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+        )
+
+
+{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/UpdateNote`.
+Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
+
+Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
+
+-}
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
+            descriptorUpdateNote
+        )
+
+
+{-| `rpc ReplaceNote(Note) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/ReplaceNote`.
+Transcode: `PUT /v1/{name=notes/*}` body `*`.
+
+Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+
+-}
+replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeNote
+            Notes.V1.decodeNote
+            descriptorReplaceNote
+        )
+
+
+{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/DeleteNote`.
+Transcode: `DELETE /v1/{name=notes/*}`.
+
+Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
+
+-}
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
+deleteNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
+            descriptorDeleteNote
+        )
+
+
+{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/ArchiveNote`.
+Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
+
+Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
+
+-}
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
+            descriptorArchiveNote
+        )
+
+
+{-| `rpc ReadFile(ReadFileRequest) returns (Summary)`.
+Connect: `POST /notes.v1.NotesService/ReadFile`.
+Transcode: `HEAD /v1/{path=files/**}`.
+
+Described by [`descriptorReadFile`](#descriptorReadFile).
+
+-}
+readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
+readFile =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeReadFileRequest
+            Notes.V1.decodeSummary
+            descriptorReadFile
+        )
+
+
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/Ping`.
+Transcode: `GET /v1/ping`.
+
+Described by [`descriptorPing`](#descriptorPing).
+
+-}
+ping : () -> Rpc.Call () ()
+ping =
+    Rpc.call
+        (Proto.Method.method Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+        )
+
+
+{-| No HTTP rule: called over the implicit route.
+
+`rpc Summarize(GetNoteRequest) returns (Summary)`.
+Connect: `POST /notes.v1.NotesService/Summarize`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorSummarize`](#descriptorSummarize).
+
+-}
+summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
+summarize =
+    Rpc.call
+        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
+            descriptorSummarize
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`
+-}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -70,6 +244,8 @@ descriptorGetNote =
         ]
 
 
+{-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
+-}
 descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -103,6 +279,8 @@ descriptorListNotes =
         ]
 
 
+{-| `rpc CreateNote(CreateNoteRequest) returns (Note)`
+-}
 descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -128,6 +306,8 @@ descriptorCreateNote =
         ]
 
 
+{-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`
+-}
 descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -154,6 +334,8 @@ descriptorUpdateNote =
         ]
 
 
+{-| `rpc ReplaceNote(Note) returns (Note)`
+-}
 descriptorReplaceNote : Proto.Method.Descriptor
 descriptorReplaceNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -178,6 +360,8 @@ descriptorReplaceNote =
         ]
 
 
+{-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`
+-}
 descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -204,6 +388,8 @@ descriptorDeleteNote =
         ]
 
 
+{-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`
+-}
 descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -228,6 +414,8 @@ descriptorArchiveNote =
         ]
 
 
+{-| `rpc ReadFile(ReadFileRequest) returns (Summary)`
+-}
 descriptorReadFile : Proto.Method.Descriptor
 descriptorReadFile =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -252,6 +440,8 @@ descriptorReadFile =
         ]
 
 
+{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
+-}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -273,6 +463,11 @@ descriptorPing =
         ]
 
 
+{-| No HTTP rule: called over the implicit route.
+
+`rpc Summarize(GetNoteRequest) returns (Summary)`
+
+-}
 descriptorSummarize : Proto.Method.Descriptor
 descriptorSummarize =
     Proto.Method.descriptor "notes.v1.NotesService"
@@ -281,97 +476,3 @@ descriptorSummarize =
         "notes.v1.GetNoteRequest"
         "notes.v1.Summary"
         []
-
-
-
--- CALLS
-
-
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
-        )
-
-
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
-listNotes =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            descriptorListNotes
-        )
-
-
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
-createNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            descriptorCreateNote
-        )
-
-
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
-updateNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            descriptorUpdateNote
-        )
-
-
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
-replaceNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            descriptorReplaceNote
-        )
-
-
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
-deleteNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
-            descriptorDeleteNote
-        )
-
-
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
-archiveNote =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
-            descriptorArchiveNote
-        )
-
-
-readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
-readFile =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeReadFileRequest
-            Notes.V1.decodeSummary
-            descriptorReadFile
-        )
-
-
-ping : () -> Rpc.Call () ()
-ping =
-    Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
-        )
-
-
-summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
-summarize =
-    Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeSummary
-            descriptorSummarize
-        )

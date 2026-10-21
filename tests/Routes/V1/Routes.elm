@@ -3,6 +3,9 @@
 
 module Routes.V1.Routes exposing (..)
 
+{-| `service routes.v1.Routes`
+-}
+
 import Proto.Http
 import Proto.Method
 import Proto.Version
@@ -28,9 +31,239 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| google/api/http.proto's GET examples, as one rule and its bindings.
+
+`rpc GetMessage(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/GetMessage`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=messages/*}`;
+  - binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`;
+  - binding 2: `GET /v1/messages/{message_id}`;
+  - binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
+
+Described by [`descriptorGetMessage`](#descriptorGetMessage).
+
+-}
+getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+getMessage =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorGetMessage
+        )
+
+
+{-| google/api/http.proto's body examples.
+
+`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/UpdateMessage`.
+Transcode: `PATCH /v1/messages/{message_id}` body `message`.
+
+Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
+
+-}
+updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
+updateMessage =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUpdateMessage
+        )
+
+
+{-| `rpc UpdateMessageWhole(Message) returns (Message)`.
+Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
+Transcode: `PATCH /v1/messages/{message_id}` body `*`.
+
+Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
+
+-}
+updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
+updateMessageWhole =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeMessage
+            Routes.V1.decodeMessage
+            descriptorUpdateMessageWhole
+        )
+
+
+{-| `rpc PostSub(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/PostSub`.
+Transcode: `POST /v1/subs/{sub.subfield}` body `*`.
+
+Described by [`descriptorPostSub`](#descriptorPostSub).
+
+-}
+postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+postSub =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorPostSub
+        )
+
+
+{-| `rpc Query(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Query`.
+Transcode: `GET /v1/query`.
+
+Described by [`descriptorQuery`](#descriptorQuery).
+
+-}
+query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+query =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorQuery
+        )
+
+
+{-| `rpc Single(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Single`.
+Transcode: `GET /v1/single/{name}`.
+
+Described by [`descriptorSingle`](#descriptorSingle).
+
+-}
+single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+single =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorSingle
+        )
+
+
+{-| `rpc Multi(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Multi`.
+Transcode: `GET /v1/{name=things/*}`.
+
+Described by [`descriptorMulti`](#descriptorMulti).
+
+-}
+multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+multi =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorMulti
+        )
+
+
+{-| `rpc Typed(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/Typed`.
+Transcode: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
+
+Described by [`descriptorTyped`](#descriptorTyped).
+
+-}
+typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+typed =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorTyped
+        )
+
+
+{-| `rpc Files(FileRequest) returns (FileRequest)`.
+Connect: `POST /routes.v1.Routes/Files`.
+Transcode: `GET /v1/{path=files/**}`.
+
+Described by [`descriptorFiles`](#descriptorFiles).
+
+-}
+files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+files =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorFiles
+        )
+
+
+{-| `rpc Cancel(Resource) returns (Resource)`.
+Connect: `POST /routes.v1.Routes/Cancel`.
+Transcode: `POST /v1/{name=operations/*}:cancel` body `*`.
+
+Described by [`descriptorCancel`](#descriptorCancel).
+
+-}
+cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
+cancel =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeResource
+            Routes.V1.decodeResource
+            descriptorCancel
+        )
+
+
+{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`.
+Connect: `POST /routes.v1.Routes/UpdateResource`.
+Transcode: `PATCH /v1/{resource.name=resources/*}` body `resource`.
+
+Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
+
+-}
+updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
+updateResource =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
+            Routes.V1.decodeResource
+            descriptorUpdateResource
+        )
+
+
+{-| `rpc Head(FileRequest) returns (FileRequest)`.
+Connect: `POST /routes.v1.Routes/Head`.
+Transcode: `HEAD /v1/{path=files/**}`.
+
+Described by [`descriptorHead`](#descriptorHead).
+
+-}
+head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+head =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorHead
+        )
+
+
+{-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
+request as its body, as grpc-gateway (generate\_unbound\_methods),
+Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+
+`rpc Unbound(GetMessageRequest) returns (Message)`.
+Connect: `POST /routes.v1.Routes/Unbound`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorUnbound`](#descriptorUnbound).
+
+-}
+unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+unbound =
+    Rpc.call
+        (Proto.Method.method Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUnbound
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| google/api/http.proto's GET examples, as one rule and its bindings.
+
+`rpc GetMessage(GetMessageRequest) returns (Message)`
+
+-}
 descriptorGetMessage : Proto.Method.Descriptor
 descriptorGetMessage =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -127,6 +360,11 @@ descriptorGetMessage =
         ]
 
 
+{-| google/api/http.proto's body examples.
+
+`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`
+
+-}
 descriptorUpdateMessage : Proto.Method.Descriptor
 descriptorUpdateMessage =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -152,6 +390,8 @@ descriptorUpdateMessage =
         ]
 
 
+{-| `rpc UpdateMessageWhole(Message) returns (Message)`
+-}
 descriptorUpdateMessageWhole : Proto.Method.Descriptor
 descriptorUpdateMessageWhole =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -177,6 +417,8 @@ descriptorUpdateMessageWhole =
         ]
 
 
+{-| `rpc PostSub(GetMessageRequest) returns (Message)`
+-}
 descriptorPostSub : Proto.Method.Descriptor
 descriptorPostSub =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -202,6 +444,8 @@ descriptorPostSub =
         ]
 
 
+{-| `rpc Query(Everything) returns (Everything)`
+-}
 descriptorQuery : Proto.Method.Descriptor
 descriptorQuery =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -248,6 +492,8 @@ descriptorQuery =
         ]
 
 
+{-| `rpc Single(Everything) returns (Everything)`
+-}
 descriptorSingle : Proto.Method.Descriptor
 descriptorSingle =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -297,6 +543,8 @@ descriptorSingle =
         ]
 
 
+{-| `rpc Multi(Everything) returns (Everything)`
+-}
 descriptorMulti : Proto.Method.Descriptor
 descriptorMulti =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -345,6 +593,8 @@ descriptorMulti =
         ]
 
 
+{-| `rpc Typed(Everything) returns (Everything)`
+-}
 descriptorTyped : Proto.Method.Descriptor
 descriptorTyped =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -406,6 +656,8 @@ descriptorTyped =
         ]
 
 
+{-| `rpc Files(FileRequest) returns (FileRequest)`
+-}
 descriptorFiles : Proto.Method.Descriptor
 descriptorFiles =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -430,6 +682,8 @@ descriptorFiles =
         ]
 
 
+{-| `rpc Cancel(Resource) returns (Resource)`
+-}
 descriptorCancel : Proto.Method.Descriptor
 descriptorCancel =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -454,6 +708,8 @@ descriptorCancel =
         ]
 
 
+{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`
+-}
 descriptorUpdateResource : Proto.Method.Descriptor
 descriptorUpdateResource =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -480,6 +736,8 @@ descriptorUpdateResource =
         ]
 
 
+{-| `rpc Head(FileRequest) returns (FileRequest)`
+-}
 descriptorHead : Proto.Method.Descriptor
 descriptorHead =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -504,6 +762,13 @@ descriptorHead =
         ]
 
 
+{-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
+request as its body, as grpc-gateway (generate\_unbound\_methods),
+Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+
+`rpc Unbound(GetMessageRequest) returns (Message)`
+
+-}
 descriptorUnbound : Proto.Method.Descriptor
 descriptorUnbound =
     Proto.Method.descriptor "routes.v1.Routes"
@@ -512,124 +777,3 @@ descriptorUnbound =
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
         []
-
-
-
--- CALLS
-
-
-getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-getMessage =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorGetMessage
-        )
-
-
-updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
-updateMessage =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUpdateMessage
-        )
-
-
-updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
-updateMessageWhole =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
-            descriptorUpdateMessageWhole
-        )
-
-
-postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-postSub =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorPostSub
-        )
-
-
-query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-query =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorQuery
-        )
-
-
-single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-single =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorSingle
-        )
-
-
-multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-multi =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorMulti
-        )
-
-
-typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
-typed =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorTyped
-        )
-
-
-files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
-files =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorFiles
-        )
-
-
-cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
-cancel =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeResource
-            Routes.V1.decodeResource
-            descriptorCancel
-        )
-
-
-updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
-updateResource =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
-            descriptorUpdateResource
-        )
-
-
-head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
-head =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorHead
-        )
-
-
-unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
-unbound =
-    Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUnbound
-        )

@@ -40,3 +40,21 @@ The protos themselves are vendored, unmodified, in
 `buf.build/connectrpc/conformance` module at the commit labelled v1.0.6
 (its README.md names it), with the module's license in
 `conformance/live/suite/proto/LICENSE`.
+
+## elm-format's Markdown parser and printer
+
+`crates/elm-connect-gen/src/elm/markdown.rs` ports two parts of
+[elm-format](https://github.com/avh4/elm-format) 0.8.8 to Rust so that
+generated doc comments are already in the form `elm-format` prints
+(`docs/design.md` §3.1): the Markdown parser it vendors as
+`elm-format-markdown` (a fork of John MacFarlane's Cheapskate) and its
+Markdown printer, `ElmFormat.Render.Markdown`. The port departs from them
+where elm-format would lose or rewrite text; the file's doc comment lists
+each departure.
+
+The parser is Copyright (c) 2013 John MacFarlane and Copyright (c) 2017
+Aaron VonderHaar; the printer is Copyright (c) 2015-2023 Aaron VonderHaar
+and the elm-format contributors. Both are licensed under the BSD 3-Clause
+License; copies are in
+[`crates/elm-connect-gen/third_party/elm-format/`](crates/elm-connect-gen/third_party/elm-format/),
+which ships inside the `elm-connect-gen` crate.

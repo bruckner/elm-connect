@@ -72,6 +72,11 @@
 //!   descriptor modules' values, so a program using it keeps no codecs),
 //!   then the registries of the packages its module imports and the
 //!   well-known types', so it is transitive.
+//! - A declaration a proto element becomes is documented with what the
+//!   proto says about it: its comment and its one-line declaration, as
+//!   [`docs`] lays them out; a method's call with its Connect path and
+//!   HTTP bindings too, a service's in its module's documentation; codecs,
+//!   defaults, typed values and method descriptors with one sentence.
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
@@ -137,6 +142,7 @@
 //!   through `Json.Decode.lazy` too (design §3.2).
 
 mod descriptor;
+mod docs;
 mod enumeration;
 mod field;
 mod message;
@@ -248,7 +254,9 @@ pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics>
     if !reserved.is_empty() {
         return Err(reserved);
     }
-    Ok(emitter.module(package, decls))
+    let mut module = emitter.module(package, decls);
+    module.doc = docs::package(package);
+    Ok(module)
 }
 
 /// The descriptor modules of `package`: one per enum, then one per
@@ -258,14 +266,21 @@ pub fn emit_descriptor_modules(package: &Package, options: &Options) -> Vec<Modu
     let mut modules = Vec::new();
     for enumeration in &package.enums {
         let mut emitter = Emitter::new(&enumeration.descriptor_module(&package.module), options);
-        let decls = emitter.enum_descriptor_module(enumeration);
-        modules.push(emitter.module(package, decls));
+        let decls = emitter.enum_descriptor_module(&package.module, enumeration);
+        let mut module = emitter.module(package, decls);
+        module.doc = Some(docs::enum_descriptor_module(enumeration));
+        modules.push(module);
     }
     for message in &package.messages {
         let shape = message_shape(message, &by_name, Holding::of(options));
         let mut emitter = Emitter::new(&message.descriptor_module(&package.module), options);
-        let decls = emitter.message_descriptor_module(&shape);
-        modules.push(emitter.module(package, decls));
+        let decls = emitter.message_descriptor_module(&package.module, &shape);
+        let mut module = emitter.module(package, decls);
+        module.doc = Some(docs::message_descriptor_module(
+            message,
+            !shape.record().is_empty(),
+        ));
+        modules.push(module);
     }
     modules
 }
@@ -280,22 +295,25 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
         .collect()
 }
 
-/// The Elm module of `service`, one of `package`'s: a descriptor and a
-/// call per method, in two sections.
+/// The Elm module of `service`, one of `package`'s: a call and a
+/// descriptor per method, in two sections, the calls a program uses
+/// first.
 pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
+        decls.push(Decl::Comment("CALLS".into()));
+        for method in &service.methods {
+            decls.push(emitter.method(&service.proto_full_name, method));
+        }
         decls.push(Decl::Comment("DESCRIPTORS".into()));
         for method in &service.methods {
             decls.push(emitter.method_descriptor(&service.proto_full_name, method));
         }
-        decls.push(Decl::Comment("CALLS".into()));
-        for method in &service.methods {
-            decls.push(emitter.method(method));
-        }
     }
-    emitter.module(package, decls)
+    let mut module = emitter.module(package, decls);
+    module.doc = Some(docs::service(service));
+    module
 }
 
 /// A message whose every field and oneof member has a shape.
@@ -453,13 +471,13 @@ impl Emitter {
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         for enumeration in &package.enums {
-            types.push(self.enum_type(enumeration));
+            types.push(self.enum_type(&package.module, enumeration));
             values.push(self.enum_record(&package.module, enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
         }
         for shape in &messages {
-            types.push(self.message_alias(shape));
+            types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
             encoders.push(self.message_encoder(shape));
@@ -470,7 +488,7 @@ impl Emitter {
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
-                types.push(self.oneof_type(oneof));
+                types.push(self.oneof_type(&package.module, shape.message, oneof));
                 encoders.push(self.oneof_encoder(oneof));
                 decoders.push(self.oneof_decoder(oneof));
             }
@@ -648,6 +666,7 @@ mod tests {
             proto_name: "t.v1".into(),
             module: IrModule::new(vec!["T".into(), "V1".into()]).expect("valid"),
             files: vec!["a.proto".into(), "b.proto".into()],
+            comments: Vec::new(),
             messages,
             enums: Vec::new(),
             services: Vec::new(),
@@ -661,6 +680,7 @@ mod tests {
             fields,
             oneofs: Vec::new(),
             wrapper: None,
+            doc: crate::ir::Doc::default(),
         }
     }
 
@@ -675,6 +695,7 @@ mod tests {
             cyclic: false,
             jstype: crate::ir::JsType::Normal,
             annotations: crate::ir::Annotations::default(),
+            doc: crate::ir::Doc::default(),
         }
     }
 
@@ -711,6 +732,7 @@ mod tests {
             proto_full_name: "t.v1.S".into(),
             module: IrModule::new(vec!["T".into(), "V1".into(), "S".into()]).expect("valid"),
             methods: Vec::new(),
+            doc: crate::ir::Doc::default(),
         };
         let module = emit_service(&package(Vec::new()), &service, &Options::default());
         assert!(matches!(
@@ -982,6 +1004,7 @@ mod tests {
             idempotency: crate::ir::Idempotency::Unknown,
             http: None,
             routes: Vec::new(),
+            doc: crate::ir::Doc::default(),
         };
         let service = Service {
             proto_full_name: "t.v1.S".into(),
@@ -1003,6 +1026,7 @@ mod tests {
                     TypeRef::WellKnown(WellKnown::Any),
                 ),
             ],
+            doc: crate::ir::Doc::default(),
         };
         let options = Options {
             int64: Int64::Int,
@@ -1030,7 +1054,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(sections, ["DESCRIPTORS", "CALLS"]);
+        assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",

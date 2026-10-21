@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.RawHTTPRequestEncodedQueryParam exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`
+
+Describes [`Connectrpc.Conformance.V1.RawHTTPRequestEncodedQueryParam`](Connectrpc-Conformance-V1#RawHTTPRequestEncodedQueryParam).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +32,31 @@ descriptor =
         ]
 
 
-{-| The field `name` of `connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`.
+{-| Query param name.
+
+`string name = 1;`
+
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `value` of `connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`.
+{-| Query param value.
+
+`connectrpc.conformance.v1.MessageContents value = 2;`
+
 -}
 value : Proto.Field.Descriptor
 value =
     Proto.Field.descriptor "value" "value" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.MessageContents")
 
 
-{-| The field `base64_encode` of `connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam`.
+{-| If true, the message contents will be base64-encoded and the
+resulting string used as the query parameter value.
+
+`bool base64_encode = 3;`
+
 -}
 base64Encode : Proto.Field.Descriptor
 base64Encode =

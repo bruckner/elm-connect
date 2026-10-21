@@ -3,6 +3,9 @@
 
 module Notes.V1.Note exposing (..)
 
+{-| The descriptor of `notes.v1.Note` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
+{-| `message notes.v1.Note`
+
+Describes [`Notes.V1.Note`](Notes-V1#Note).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,14 @@ descriptor =
         ]
 
 
-{-| The field `title` of `notes.v1.Note`.
+{-| `string title = 1;`
 -}
 title : Proto.Field.Descriptor
 title =
     Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `tags` of `notes.v1.Note`.
+{-| `repeated notes.v1.Tag tags = 2;`
 -}
 tags : Proto.Field.Descriptor
 tags =

@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+// Each file of a package adds its comment to the package module's doc,
+// in file order.
+package notes.v1; // A trailing comment on the package line is left out.

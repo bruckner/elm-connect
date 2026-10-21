@@ -3,6 +3,9 @@
 
 module Maps.V1.Member exposing (..)
 
+{-| The descriptor of `maps.v1.Member` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `maps.v1.Member`: its full name and its fields, in declaration order.
+{-| `message maps.v1.Member`
+
+Describes [`Maps.V1.Member`](Maps-V1#Member).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `maps.v1.Member`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

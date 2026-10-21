@@ -3,6 +3,9 @@
 
 module Events.V1.ListEventsResponse exposing (..)
 
+{-| The descriptor of `events.v1.ListEventsResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `events.v1.ListEventsResponse`: its full name and its fields, in declaration order.
+{-| `message events.v1.ListEventsResponse`
+
+Describes [`Events.V1.ListEventsResponse`](Events-V1#ListEventsResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `events` of `events.v1.ListEventsResponse`.
+{-| `repeated events.v1.Event events = 1;`
 -}
 events : Proto.Field.Descriptor
 events =

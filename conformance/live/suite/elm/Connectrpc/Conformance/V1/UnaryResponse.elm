@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnaryResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnaryResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.UnaryResponse`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.UnaryResponse`
+
+Describes [`Connectrpc.Conformance.V1.UnaryResponse`](Connectrpc-Conformance-V1#UnaryResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,10 @@ descriptor =
         ]
 
 
-{-| The field `payload` of `connectrpc.conformance.v1.UnaryResponse`.
+{-| The conformance payload to respond with.
+
+`connectrpc.conformance.v1.ConformancePayload payload = 1;`
+
 -}
 payload : Proto.Field.Descriptor
 payload =

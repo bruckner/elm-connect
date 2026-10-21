@@ -3,6 +3,9 @@
 
 module Clock.V1.Moment exposing (..)
 
+{-| The descriptor of `clock.v1.Moment` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `clock.v1.Moment`: its full name and its fields, in declaration order.
+{-| `message clock.v1.Moment`
+
+Describes [`Clock.V1.Moment`](Clock-V1#Moment).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,42 +35,42 @@ descriptor =
         ]
 
 
-{-| The field `at` of `clock.v1.Moment`.
+{-| `google.protobuf.Timestamp at = 1;`
 -}
 at : Proto.Field.Descriptor
 at =
     Proto.Field.descriptor "at" "at" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
 
 
-{-| The field `mask` of `clock.v1.Moment`.
+{-| `google.protobuf.FieldMask mask = 2;`
 -}
 mask : Proto.Field.Descriptor
 mask =
     Proto.Field.descriptor "mask" "mask" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.FieldMask")
 
 
-{-| The field `count` of `clock.v1.Moment`.
+{-| `google.protobuf.Int32Value count = 3;`
 -}
 count : Proto.Field.Descriptor
 count =
     Proto.Field.descriptor "count" "count" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Int32Value")
 
 
-{-| The field `seen` of `clock.v1.Moment`.
+{-| `google.protobuf.BoolValue seen = 4;`
 -}
 seen : Proto.Field.Descriptor
 seen =
     Proto.Field.descriptor "seen" "seen" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BoolValue")
 
 
-{-| The field `wait` of `clock.v1.Moment`.
+{-| `google.protobuf.Duration wait = 5;`
 -}
 wait : Proto.Field.Descriptor
 wait =
     Proto.Field.descriptor "wait" "wait" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Duration")
 
 
-{-| The field `note` of `clock.v1.Moment`.
+{-| `string note = 6;`
 -}
 note : Proto.Field.Descriptor
 note =

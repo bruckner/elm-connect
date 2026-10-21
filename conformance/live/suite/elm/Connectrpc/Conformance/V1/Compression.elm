@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Compression exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Compression`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,18 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.Compression`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.Compression`
+
+Describes [`Connectrpc.Conformance.V1.Compression`](Connectrpc-Conformance-V1#Compression).
+
+  - `COMPRESSION_UNSPECIFIED = 0;`
+  - `COMPRESSION_IDENTITY = 1;`
+  - `COMPRESSION_GZIP = 2;`
+  - `COMPRESSION_BR = 3;`
+  - `COMPRESSION_ZSTD = 4;`
+  - `COMPRESSION_DEFLATE = 5;`
+  - `COMPRESSION_SNAPPY = 6;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

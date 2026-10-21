@@ -3,6 +3,9 @@
 
 module Oneofs.V1.NoteEvent exposing (..)
 
+{-| The descriptor of `oneofs.v1.NoteEvent` and its fields.
+-}
+
 import Oneofs.V1.Color
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `oneofs.v1.NoteEvent`: its full name and its fields, in declaration order.
+{-| `message oneofs.v1.NoteEvent`
+
+Describes [`Oneofs.V1.NoteEvent`](Oneofs-V1#NoteEvent).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -34,14 +40,14 @@ descriptor =
         ]
 
 
-{-| The field `id` of `oneofs.v1.NoteEvent`.
+{-| `string id = 1;`
 -}
 id : Proto.Field.Descriptor
 id =
     Proto.Field.descriptor "id" "id" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `created` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| `oneofs.v1.Created created = 2;`, in oneof `kind`
 -}
 created : Proto.Field.Descriptor
 created =
@@ -49,7 +55,7 @@ created =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `title_changed` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| `string title_changed = 3;`, in oneof `kind`
 -}
 titleChanged : Proto.Field.Descriptor
 titleChanged =
@@ -57,7 +63,7 @@ titleChanged =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `recolored` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| `oneofs.v1.Color recolored = 4;`, in oneof `kind`
 -}
 recolored : Proto.Field.Descriptor
 recolored =
@@ -65,7 +71,7 @@ recolored =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `deleted_at` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| `int64 deleted_at = 5;`, in oneof `kind`
 -}
 deletedAt : Proto.Field.Descriptor
 deletedAt =
@@ -73,7 +79,10 @@ deletedAt =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `archived` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| Empty members carry nothing: constructors without an argument.
+
+`google.protobuf.Empty archived = 9;`, in oneof `kind`
+
 -}
 archived : Proto.Field.Descriptor
 archived =
@@ -81,7 +90,7 @@ archived =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `cleared_all` of `oneofs.v1.NoteEvent`, a member of the oneof `kind`.
+{-| `google.protobuf.Empty cleared_all = 10;`, in oneof `kind`
 -}
 clearedAll : Proto.Field.Descriptor
 clearedAll =
@@ -89,7 +98,7 @@ clearedAll =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `user` of `oneofs.v1.NoteEvent`, a member of the oneof `source`.
+{-| `string user = 6;`, in oneof `source`
 -}
 user : Proto.Field.Descriptor
 user =
@@ -97,7 +106,7 @@ user =
         |> Proto.Field.inOneof "source"
 
 
-{-| The field `automated` of `oneofs.v1.NoteEvent`, a member of the oneof `source`.
+{-| `bool automated = 7;`, in oneof `source`
 -}
 automated : Proto.Field.Descriptor
 automated =
@@ -105,7 +114,7 @@ automated =
         |> Proto.Field.inOneof "source"
 
 
-{-| The field `tags` of `oneofs.v1.NoteEvent`.
+{-| `repeated string tags = 8;`
 -}
 tags : Proto.Field.Descriptor
 tags =

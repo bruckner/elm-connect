@@ -3,6 +3,9 @@
 
 module Naming.V1.Shape exposing (..)
 
+{-| The descriptor of `naming.v1.Shape`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,18 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `naming.v1.Shape`: its full name and its values, in declaration order.
+{-| Values with the conventional prefix lose it; values without it gain
+the enum's name; digits stay as written.
+
+`enum naming.v1.Shape`
+
+Describes [`Naming.V1.Shape`](Naming-V1#Shape).
+
+  - `SHAPE_UNSPECIFIED = 0;`
+  - `SHAPE_2D = 1;`
+  - `CUBE = 2;`
+  - `SHAPE_V3_MESH = 3;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

@@ -3,6 +3,9 @@
 
 module Nesting.V1.OuterInnerKind exposing (..)
 
+{-| The descriptor of `nesting.v1.Outer.Inner.Kind`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `nesting.v1.Outer.Inner.Kind`: its full name and its values, in declaration order.
+{-| `enum nesting.v1.Outer.Inner.Kind`
+
+Describes [`Nesting.V1.OuterInnerKind`](Nesting-V1#OuterInnerKind).
+
+  - `KIND_UNSPECIFIED = 0;`
+  - `KIND_DRAFT = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

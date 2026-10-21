@@ -3,6 +3,9 @@
 
 module Things.V1.GetThingRequest exposing (..)
 
+{-| The descriptor of `things.v1.GetThingRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `things.v1.GetThingRequest`: its full name and its fields, in declaration order.
+{-| `name` is renamed to `resource` and `page_size` to `limit`
+(options.txt): the route names their descriptors by the new names.
+
+`message things.v1.GetThingRequest`
+
+Describes [`Things.V1.GetThingRequest`](Things-V1#GetThingRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +35,21 @@ descriptor =
         ]
 
 
-{-| The field `name` of `things.v1.GetThingRequest`.
+{-| `string name = 1;`
 -}
 resource : Proto.Field.Descriptor
 resource =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `page_size` of `things.v1.GetThingRequest`.
+{-| `int32 page_size = 2;`
 -}
 limit : Proto.Field.Descriptor
 limit =
     Proto.Field.descriptor "page_size" "pageSize" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `filter` of `things.v1.GetThingRequest`.
+{-| `things.v1.Filter filter = 3;`
 -}
 filter : Proto.Field.Descriptor
 filter =

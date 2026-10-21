@@ -3,6 +3,9 @@
 
 module Users.V1 exposing (..)
 
+{-| The package another package refers to: it generates on its own.
+-}
+
 import Json.Decode
 import Json.Encode
 import Proto.Enum
@@ -25,11 +28,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`enum users.v1.Role`](Users-V1-Role#descriptor)
+
+  - `RoleUnspecified` (`ROLE_UNSPECIFIED`)
+  - `RoleEditor` (`ROLE_EDITOR`)
+
+-}
 type Role
     = RoleUnspecified
     | RoleEditor
 
 
+{-| [`message users.v1.User`](Users-V1-User#descriptor)
+
+  - [`name`](Users-V1-User#name)
+  - [`role`](Users-V1-User#role)
+
+-}
 type alias User =
     { name : String
     , role : Role
@@ -40,6 +55,8 @@ type alias User =
 -- DEFAULTS
 
 
+{-| A [`User`](#User) with every field at its default and every oneof unset.
+-}
 defaultUser : User
 defaultUser =
     { name = ""
@@ -51,11 +68,15 @@ defaultUser =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Role`](#Role): its codecs, zero value and descriptor together.
+-}
 enumRole : Proto.Enum.Enum Role
 enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Users.V1.Role.descriptor
 
 
+{-| The typed value of [`User`](#User): its codecs, default and descriptor together.
+-}
 messageUser : Proto.Message.Message User
 messageUser =
     Proto.Message.message encodeUser decodeUser defaultUser Users.V1.User.descriptor
@@ -65,6 +86,8 @@ messageUser =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -81,6 +104,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Role`](#Role) as proto3 JSON.
+-}
 encodeRole : Role -> Json.Encode.Value
 encodeRole value =
     case value of
@@ -91,6 +116,8 @@ encodeRole value =
             Json.Encode.string "ROLE_EDITOR"
 
 
+{-| Encodes a [`User`](#User) as proto3 JSON.
+-}
 encodeUser : User -> Json.Encode.Value
 encodeUser value =
     Proto.Json.objectOfFields
@@ -103,6 +130,8 @@ encodeUser value =
 -- DECODERS
 
 
+{-| Decodes a [`Role`](#Role) from proto3 JSON.
+-}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
     Proto.Json.enum "Role"
@@ -112,6 +141,8 @@ decodeRole =
         ]
 
 
+{-| Decodes a [`User`](#User) from proto3 JSON.
+-}
 decodeUser : Json.Decode.Decoder User
 decodeUser =
     Json.Decode.succeed User

@@ -3,6 +3,11 @@
 
 module First.V1 exposing (..)
 
+{-| Names starting with capitals or underscores (design section 3.7): the
+leading run of capitals is lowercased, keeping its last letter when a
+lowercase letter follows. Types keep their names as written.
+-}
+
 import First.V1.Link
 import First.V1.URLPath
 import Json.Decode
@@ -24,6 +29,21 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message first.v1.URLPath`](First-V1-URLPath#descriptor)
+
+  - [`label`](First-V1-URLPath#label)
+  - [`id`](First-V1-URLPath#id)
+  - [`url`](First-V1-URLPath#url)
+  - [`urlPath`](First-V1-URLPath#urlPath)
+  - [`httpRequest`](First-V1-URLPath#httpRequest)
+  - [`xCoord`](First-V1-URLPath#xCoord)
+  - [`abcDef`](First-V1-URLPath#abcDef)
+  - [`internal`](First-V1-URLPath#internal)
+  - [`displayName`](First-V1-URLPath#displayName)
+  - [`type_`](First-V1-URLPath#type_)
+  - [`iDs`](First-V1-URLPath#iDs): `ID` + `s` reads as `I` + `Ds`.
+
+-}
 type alias URLPath =
     { label : String
     , id : String
@@ -39,12 +59,30 @@ type alias URLPath =
     }
 
 
+{-| `__Label` has the JSON name `Label`, so protoc refuses it beside a
+field `Label`. A oneof named `Target` is the record field `target`; its
+member `URL` has the constructor `LinkTargetURL` and the descriptor
+value `url`.
+
+[`message first.v1.Link`](First-V1-Link#descriptor)
+
+  - [`label`](First-V1-Link#label)
+  - `target`: See [`LinkTarget`](#LinkTarget).
+
+-}
 type alias Link =
     { label : String
     , target : LinkTarget
     }
 
 
+{-| `oneof Target` of `first.v1.Link`
+
+  - `LinkTargetUnset`: none of the fields is set.
+  - [`LinkTargetURL`](First-V1-Link#url)
+  - [`LinkTargetCount`](First-V1-Link#count)
+
+-}
 type LinkTarget
     = LinkTargetUnset
     | LinkTargetURL String
@@ -55,6 +93,8 @@ type LinkTarget
 -- DEFAULTS
 
 
+{-| A [`URLPath`](#URLPath) with every field at its default and every oneof unset.
+-}
 defaultURLPath : URLPath
 defaultURLPath =
     { label = ""
@@ -71,6 +111,8 @@ defaultURLPath =
     }
 
 
+{-| A [`Link`](#Link) with every field at its default and every oneof unset.
+-}
 defaultLink : Link
 defaultLink =
     { label = ""
@@ -82,11 +124,15 @@ defaultLink =
 -- TYPED VALUES
 
 
+{-| The typed value of [`URLPath`](#URLPath): its codecs, default and descriptor together.
+-}
 messageURLPath : Proto.Message.Message URLPath
 messageURLPath =
     Proto.Message.message encodeURLPath decodeURLPath defaultURLPath First.V1.URLPath.descriptor
 
 
+{-| The typed value of [`Link`](#Link): its codecs, default and descriptor together.
+-}
 messageLink : Proto.Message.Message Link
 messageLink =
     Proto.Message.message encodeLink decodeLink defaultLink First.V1.Link.descriptor
@@ -96,6 +142,8 @@ messageLink =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -112,6 +160,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
+-}
 encodeURLPath : URLPath -> Json.Encode.Value
 encodeURLPath value =
     Proto.Json.objectOfFields
@@ -129,6 +179,8 @@ encodeURLPath value =
         ]
 
 
+{-| Encodes a [`Link`](#Link) as proto3 JSON.
+-}
 encodeLink : Link -> Json.Encode.Value
 encodeLink value =
     Proto.Json.objectOfFields
@@ -138,6 +190,8 @@ encodeLink value =
         )
 
 
+{-| Encodes a [`LinkTarget`](#LinkTarget) as the members of its message's JSON object.
+-}
 encodeLinkTarget : LinkTarget -> List ( String, Maybe Json.Encode.Value )
 encodeLinkTarget value =
     case value of
@@ -157,6 +211,8 @@ encodeLinkTarget value =
 -- DECODERS
 
 
+{-| Decodes a [`URLPath`](#URLPath) from proto3 JSON.
+-}
 decodeURLPath : Json.Decode.Decoder URLPath
 decodeURLPath =
     Json.Decode.succeed URLPath
@@ -173,6 +229,8 @@ decodeURLPath =
         |> Proto.Json.field "IDs" [] (Json.Decode.list Json.Decode.string)
 
 
+{-| Decodes a [`Link`](#Link) from proto3 JSON.
+-}
 decodeLink : Json.Decode.Decoder Link
 decodeLink =
     Json.Decode.succeed Link
@@ -180,6 +238,8 @@ decodeLink =
         |> Proto.Json.oneof decodeLinkTarget
 
 
+{-| Decodes a [`LinkTarget`](#LinkTarget) from the members of its message's JSON object.
+-}
 decodeLinkTarget : Json.Decode.Decoder LinkTarget
 decodeLinkTarget =
     Proto.Json.members "Target"

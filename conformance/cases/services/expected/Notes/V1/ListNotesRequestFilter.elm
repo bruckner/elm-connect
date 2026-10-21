@@ -3,6 +3,9 @@
 
 module Notes.V1.ListNotesRequestFilter exposing (..)
 
+{-| The descriptor of `notes.v1.ListNotesRequest.Filter` and its fields.
+-}
+
 import Notes.V1.Visibility
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.ListNotesRequest.Filter`: its full name and its fields, in declaration order.
+{-| `message notes.v1.ListNotesRequest.Filter`
+
+Describes [`Notes.V1.ListNotesRequestFilter`](Notes-V1#ListNotesRequestFilter).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,14 +32,14 @@ descriptor =
         ]
 
 
-{-| The field `visibility` of `notes.v1.ListNotesRequest.Filter`.
+{-| `notes.v1.Visibility visibility = 1;`
 -}
 visibility : Proto.Field.Descriptor
 visibility =
     Proto.Field.descriptor "visibility" "visibility" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.V1.Visibility.descriptor)
 
 
-{-| The field `since` of `notes.v1.ListNotesRequest.Filter`.
+{-| `google.protobuf.Timestamp since = 2;`
 -}
 since : Proto.Field.Descriptor
 since =

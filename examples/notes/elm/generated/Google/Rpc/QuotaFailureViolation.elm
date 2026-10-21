@@ -3,6 +3,9 @@
 
 module Google.Rpc.QuotaFailureViolation exposing (..)
 
+{-| The descriptor of `google.rpc.QuotaFailure.Violation` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.QuotaFailure.Violation`: its full name and its fields, in declaration order.
+{-| A message type used to describe a single quota violation. For example, a
+daily quota or a custom quota that was exceeded.
+
+`message google.rpc.QuotaFailure.Violation`
+
+Describes [`Google.Rpc.QuotaFailureViolation`](Google-Rpc#QuotaFailureViolation).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -31,56 +40,135 @@ descriptor =
         ]
 
 
-{-| The field `subject` of `google.rpc.QuotaFailure.Violation`.
+{-| The subject on which the quota check failed.
+For example, "clientip:<ip address of client>" or "project:<Google
+developer project id>".
+
+`string subject = 1;`
+
 -}
 subject : Proto.Field.Descriptor
 subject =
     Proto.Field.descriptor "subject" "subject" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `description` of `google.rpc.QuotaFailure.Violation`.
+{-| A description of how the quota check failed. Clients can use this
+description to find more about the quota configuration in the service's
+public documentation, or find the relevant quota limit to adjust through
+developer console.
+
+For example: "Service disabled" or "Daily Limit for read operations
+exceeded".
+
+`string description = 2;`
+
 -}
 description : Proto.Field.Descriptor
 description =
     Proto.Field.descriptor "description" "description" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `api_service` of `google.rpc.QuotaFailure.Violation`.
+{-| The API Service from which the `QuotaFailure.Violation` orginates. In
+some cases, Quota issues originate from an API Service other than the one
+that was called. In other words, a dependency of the called API Service
+could be the cause of the `QuotaFailure`, and this field would have the
+dependency API service name.
+
+For example, if the called API is Kubernetes Engine API
+(container.googleapis.com), and a quota violation occurs in the
+Kubernetes Engine API itself, this field would be
+"container.googleapis.com". On the other hand, if the quota violation
+occurs when the Kubernetes Engine API creates VMs in the Compute Engine
+API (compute.googleapis.com), this field would be
+"compute.googleapis.com".
+
+`string api_service = 3;`
+
 -}
 apiService : Proto.Field.Descriptor
 apiService =
     Proto.Field.descriptor "api_service" "apiService" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `quota_metric` of `google.rpc.QuotaFailure.Violation`.
+{-| The metric of the violated quota. A quota metric is a named counter to
+measure usage, such as API requests or CPUs. When an activity occurs in a
+service, such as Virtual Machine allocation, one or more quota metrics
+may be affected.
+
+For example, "compute.googleapis.com/cpus\_per\_vm\_family",
+"storage.googleapis.com/internet\_egress\_bandwidth".
+
+`string quota_metric = 4;`
+
 -}
 quotaMetric : Proto.Field.Descriptor
 quotaMetric =
     Proto.Field.descriptor "quota_metric" "quotaMetric" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `quota_id` of `google.rpc.QuotaFailure.Violation`.
+{-| The id of the violated quota. Also know as "limit name", this is the
+unique identifier of a quota in the context of an API service.
+
+For example, "CPUS-PER-VM-FAMILY-per-project-region".
+
+`string quota_id = 5;`
+
 -}
 quotaId : Proto.Field.Descriptor
 quotaId =
     Proto.Field.descriptor "quota_id" "quotaId" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `quota_dimensions` of `google.rpc.QuotaFailure.Violation`.
+{-| The dimensions of the violated quota. Every non-global quota is enforced
+on a set of dimensions. While quota metric defines what to count, the
+dimensions specify for what aspects the counter should be increased.
+
+For example, the quota "CPUs per region per VM family" enforces a limit
+on the metric "compute.googleapis.com/cpus\_per\_vm\_family" on dimensions
+"region" and "vm\_family". And if the violation occurred in region
+"us-central1" and for VM family "n1", the quota\_dimensions would be,
+
+{
+"region": "us-central1",
+"vm\_family": "n1",
+}
+
+When a quota is enforced globally, the quota\_dimensions would always be
+empty.
+
+`map<string, string> quota_dimensions = 6;`
+
 -}
 quotaDimensions : Proto.Field.Descriptor
 quotaDimensions =
     Proto.Field.descriptor "quota_dimensions" "quotaDimensions" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `quota_value` of `google.rpc.QuotaFailure.Violation`.
+{-| The enforced quota value at the time of the `QuotaFailure`.
+
+For example, if the enforced quota value at the time of the
+`QuotaFailure` on the number of CPUs is "10", then the value of this
+field would reflect this quantity.
+
+`int64 quota_value = 7;`
+
 -}
 quotaValue : Proto.Field.Descriptor
 quotaValue =
     Proto.Field.descriptor "quota_value" "quotaValue" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `future_quota_value` of `google.rpc.QuotaFailure.Violation`.
+{-| The new quota value being rolled out at the time of the violation. At the
+completion of the rollout, this value will be enforced in place of
+quota\_value. If no rollout is in progress at the time of the violation,
+this field is not set.
+
+For example, if at the time of the violation a rollout is in progress
+changing the number of CPUs quota from 10 to 20, 20 would be the value of
+this field.
+
+`optional int64 future_quota_value = 8;`
+
 -}
 futureQuotaValue : Proto.Field.Descriptor
 futureQuotaValue =

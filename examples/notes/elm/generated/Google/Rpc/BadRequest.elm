@@ -3,6 +3,9 @@
 
 module Google.Rpc.BadRequest exposing (..)
 
+{-| The descriptor of `google.rpc.BadRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.BadRequest`: its full name and its fields, in declaration order.
+{-| Describes violations in a client request. This error type focuses on the
+syntactic aspects of the request.
+
+`message google.rpc.BadRequest`
+
+Describes [`Google.Rpc.BadRequest`](Google-Rpc#BadRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +33,10 @@ descriptor =
         ]
 
 
-{-| The field `field_violations` of `google.rpc.BadRequest`.
+{-| Describes all violations in a client request.
+
+`repeated google.rpc.BadRequest.FieldViolation field_violations = 1;`
+
 -}
 fieldViolations : Proto.Field.Descriptor
 fieldViolations =

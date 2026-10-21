@@ -3,6 +3,9 @@
 
 module Chat.V1.Chat exposing (..)
 
+{-| `service chat.v1.Chat`
+-}
+
 import Chat.V1
 import Proto.Method
 import Proto.Version
@@ -17,9 +20,31 @@ elmConnectVersion_ =
 
 
 
+-- CALLS
+
+
+{-| `rpc Send(Line) returns (Line)`.
+Connect: `POST /chat.v1.Chat/Send`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Described by [`descriptorSend`](#descriptorSend).
+
+-}
+send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
+send =
+    Rpc.call
+        (Proto.Method.method Chat.V1.encodeLine
+            Chat.V1.decodeLine
+            descriptorSend
+        )
+
+
+
 -- DESCRIPTORS
 
 
+{-| `rpc Send(Line) returns (Line)`
+-}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
     Proto.Method.descriptor "chat.v1.Chat"
@@ -28,16 +53,3 @@ descriptorSend =
         "chat.v1.Line"
         "chat.v1.Line"
         []
-
-
-
--- CALLS
-
-
-send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
-send =
-    Rpc.call
-        (Proto.Method.method Chat.V1.encodeLine
-            Chat.V1.decodeLine
-            descriptorSend
-        )

@@ -3,6 +3,9 @@
 
 module Tasks.V1.State exposing (..)
 
+{-| The descriptor of `tasks.v1.State`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,14 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `tasks.v1.State`: its full name and its values, in declaration order.
+{-| `enum tasks.v1.State`
+
+Describes [`Tasks.V1.State`](Tasks-V1#State).
+
+  - `STATE_UNSPECIFIED = 0;`
+  - `STATE_OPEN = 1;`
+  - `STATE_STALE = 2 [deprecated = true];` Deprecated.
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

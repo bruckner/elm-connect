@@ -3,6 +3,12 @@
 
 module Api.Example.Notes.V1 exposing (..)
 
+{-| Under `module_prefix`, every generated module goes inside the prefix:
+package modules, a renamed one too (`users.v1` is renamed `People`), and
+service modules inside theirs. References and imports between them use
+the prefixed names; the runtime's modules are not prefixed.
+-}
+
 import Api.Example.Notes.V1.GetNoteRequest
 import Api.Example.Notes.V1.Note
 import Api.Example.People
@@ -25,6 +31,13 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message notes.v1.Note`](Api-Example-Notes-V1-Note#descriptor)
+
+  - [`name`](Api-Example-Notes-V1-Note#name)
+  - [`author`](Api-Example-Notes-V1-Note#author)
+  - [`requiredRole`](Api-Example-Notes-V1-Note#requiredRole)
+
+-}
 type alias Note =
     { name : String
     , author : Maybe Api.Example.People.User
@@ -32,6 +45,11 @@ type alias Note =
     }
 
 
+{-| [`message notes.v1.GetNoteRequest`](Api-Example-Notes-V1-GetNoteRequest#descriptor)
+
+  - [`name`](Api-Example-Notes-V1-GetNoteRequest#name)
+
+-}
 type alias GetNoteRequest =
     { name : String
     }
@@ -41,6 +59,8 @@ type alias GetNoteRequest =
 -- DEFAULTS
 
 
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { name = ""
@@ -49,6 +69,8 @@ defaultNote =
     }
 
 
+{-| A [`GetNoteRequest`](#GetNoteRequest) with every field at its default and every oneof unset.
+-}
 defaultGetNoteRequest : GetNoteRequest
 defaultGetNoteRequest =
     { name = ""
@@ -59,11 +81,15 @@ defaultGetNoteRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Api.Example.Notes.V1.Note.descriptor
 
 
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+-}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
     Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Api.Example.Notes.V1.GetNoteRequest.descriptor
@@ -73,6 +99,8 @@ messageGetNoteRequest =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -89,6 +117,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -98,6 +128,8 @@ encodeNote value =
         ]
 
 
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
+-}
 encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
 encodeGetNoteRequest value =
     Proto.Json.objectOfFields
@@ -109,6 +141,8 @@ encodeGetNoteRequest value =
 -- DECODERS
 
 
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -117,6 +151,8 @@ decodeNote =
         |> Proto.Json.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
 
 
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
+-}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest

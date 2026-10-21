@@ -3,6 +3,11 @@
 
 module Chat.V1 exposing (..)
 
+{-| Under `streaming=skip`, streaming methods are left out, each a warning,
+and the rest is generated. A service whose every method streams is left
+with no methods, and so gets no module.
+-}
+
 import Chat.V1.Line
 import Json.Decode
 import Json.Encode
@@ -23,6 +28,11 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message chat.v1.Line`](Chat-V1-Line#descriptor)
+
+  - [`text`](Chat-V1-Line#text)
+
+-}
 type alias Line =
     { text : String
     }
@@ -32,6 +42,8 @@ type alias Line =
 -- DEFAULTS
 
 
+{-| A [`Line`](#Line) with every field at its default and every oneof unset.
+-}
 defaultLine : Line
 defaultLine =
     { text = ""
@@ -42,6 +54,8 @@ defaultLine =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Line`](#Line): its codecs, default and descriptor together.
+-}
 messageLine : Proto.Message.Message Line
 messageLine =
     Proto.Message.message encodeLine decodeLine defaultLine Chat.V1.Line.descriptor
@@ -51,6 +65,8 @@ messageLine =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -66,6 +82,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Line`](#Line) as proto3 JSON.
+-}
 encodeLine : Line -> Json.Encode.Value
 encodeLine value =
     Proto.Json.objectOfFields
@@ -77,6 +95,8 @@ encodeLine value =
 -- DECODERS
 
 
+{-| Decodes a [`Line`](#Line) from proto3 JSON.
+-}
 decodeLine : Json.Decode.Decoder Line
 decodeLine =
     Json.Decode.succeed Line

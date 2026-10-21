@@ -3,6 +3,12 @@
 
 module Maps.V1 exposing (..)
 
+{-| Maps: `Dict String V` for string and 64-bit integer keys, `Dict Int V`
+for 32-bit integer keys, read from and written as decimal strings, and
+`List ( Bool, V )` for bool keys, which Elm's `Dict` cannot hold. Each
+integer key kind has a decoder that checks its range.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -27,16 +33,45 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`enum maps.v1.Role`](Maps-V1-Role#descriptor)
+
+  - `RoleUnspecified` (`ROLE_UNSPECIFIED`)
+  - `RoleOwner` (`ROLE_OWNER`)
+
+-}
 type Role
     = RoleUnspecified
     | RoleOwner
 
 
+{-| [`message maps.v1.Member`](Maps-V1-Member#descriptor)
+
+  - [`name`](Maps-V1-Member#name)
+
+-}
 type alias Member =
     { name : String
     }
 
 
+{-| [`message maps.v1.Team`](Maps-V1-Team#descriptor)
+
+  - [`labels`](Maps-V1-Team#labels)
+  - [`bySeat`](Maps-V1-Team#bySeat)
+  - [`scores`](Maps-V1-Team#scores)
+  - [`flags`](Maps-V1-Team#flags)
+  - [`totals`](Maps-V1-Team#totals)
+  - [`byId`](Maps-V1-Team#byId): 64-bit keys stay strings, like 64-bit values.
+  - [`counts`](Maps-V1-Team#counts)
+  - [`members`](Maps-V1-Team#members): Message and enum values.
+  - [`roles`](Maps-V1-Team#roles)
+  - [`byFlag`](Maps-V1-Team#byFlag): Bool keys: an association list of at most two pairs.
+  - [`byOffset`](Maps-V1-Team#byOffset): The remaining key kinds.
+  - [`deltas`](Maps-V1-Team#deltas)
+  - [`byHash`](Maps-V1-Team#byHash)
+  - [`byStamp`](Maps-V1-Team#byStamp)
+
+-}
 type alias Team =
     { labels : Dict String String
     , bySeat : Dict Int String
@@ -59,12 +94,16 @@ type alias Team =
 -- DEFAULTS
 
 
+{-| A [`Member`](#Member) with every field at its default and every oneof unset.
+-}
 defaultMember : Member
 defaultMember =
     { name = ""
     }
 
 
+{-| A [`Team`](#Team) with every field at its default and every oneof unset.
+-}
 defaultTeam : Team
 defaultTeam =
     { labels = Dict.empty
@@ -88,16 +127,22 @@ defaultTeam =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Role`](#Role): its codecs, zero value and descriptor together.
+-}
 enumRole : Proto.Enum.Enum Role
 enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Maps.V1.Role.descriptor
 
 
+{-| The typed value of [`Member`](#Member): its codecs, default and descriptor together.
+-}
 messageMember : Proto.Message.Message Member
 messageMember =
     Proto.Message.message encodeMember decodeMember defaultMember Maps.V1.Member.descriptor
 
 
+{-| The typed value of [`Team`](#Team): its codecs, default and descriptor together.
+-}
 messageTeam : Proto.Message.Message Team
 messageTeam =
     Proto.Message.message encodeTeam decodeTeam defaultTeam Maps.V1.Team.descriptor
@@ -107,6 +152,8 @@ messageTeam =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -124,6 +171,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Role`](#Role) as proto3 JSON.
+-}
 encodeRole : Role -> Json.Encode.Value
 encodeRole value =
     case value of
@@ -134,6 +183,8 @@ encodeRole value =
             Json.Encode.string "ROLE_OWNER"
 
 
+{-| Encodes a [`Member`](#Member) as proto3 JSON.
+-}
 encodeMember : Member -> Json.Encode.Value
 encodeMember value =
     Proto.Json.objectOfFields
@@ -141,6 +192,8 @@ encodeMember value =
         ]
 
 
+{-| Encodes a [`Team`](#Team) as proto3 JSON.
+-}
 encodeTeam : Team -> Json.Encode.Value
 encodeTeam value =
     Proto.Json.objectOfFields
@@ -165,6 +218,8 @@ encodeTeam value =
 -- DECODERS
 
 
+{-| Decodes a [`Role`](#Role) from proto3 JSON.
+-}
 decodeRole : Json.Decode.Decoder Role
 decodeRole =
     Proto.Json.enum "Role"
@@ -174,12 +229,16 @@ decodeRole =
         ]
 
 
+{-| Decodes a [`Member`](#Member) from proto3 JSON.
+-}
 decodeMember : Json.Decode.Decoder Member
 decodeMember =
     Json.Decode.succeed Member
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a [`Team`](#Team) from proto3 JSON.
+-}
 decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
     Json.Decode.succeed Team

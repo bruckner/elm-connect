@@ -3,6 +3,11 @@
 
 module Int64Option.V1 exposing (..)
 
+{-| Generated with the `int64=int` option (options.txt): 64-bit integers are
+Elm Ints, decoded only within ±(2^53 − 1) and encoded as decimal
+strings, wherever they appear, unless a field's jstype says otherwise.
+-}
+
 import Dict exposing (Dict)
 import Int64Option.V1.Counters
 import Json.Decode
@@ -24,6 +29,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message int64_option.v1.Counters`](Int64Option-V1-Counters#descriptor)
+
+  - [`int64Value`](Int64Option-V1-Counters#int64Value)
+  - [`uint64Value`](Int64Option-V1-Counters#uint64Value)
+  - [`sint64Value`](Int64Option-V1-Counters#sint64Value)
+  - [`fixed64Value`](Int64Option-V1-Counters#fixed64Value)
+  - [`sfixed64Value`](Int64Option-V1-Counters#sfixed64Value)
+  - [`exactId`](Int64Option-V1-Counters#exactId): JS\_STRING keeps a field a String under the option.
+  - [`normal`](Int64Option-V1-Counters#normal): JS\_NORMAL defers to the option.
+  - [`maybeCount`](Int64Option-V1-Counters#maybeCount)
+  - [`samples`](Int64Option-V1-Counters#samples)
+  - [`exactSamples`](Int64Option-V1-Counters#exactSamples)
+  - [`byId`](Int64Option-V1-Counters#byId): Map keys stay strings, whatever the option; values follow it.
+  - [`wrapped`](Int64Option-V1-Counters#wrapped)
+  - `limit`: See [`CountersLimit`](#CountersLimit).
+
+-}
 type alias Counters =
     { int64Value : Int
     , uint64Value : Int
@@ -41,6 +63,13 @@ type alias Counters =
     }
 
 
+{-| `oneof limit` of `int64_option.v1.Counters`
+
+  - `CountersLimitUnset`: none of the fields is set.
+  - [`CountersLimitAtMost`](Int64Option-V1-Counters#atMost)
+  - [`CountersLimitExactly`](Int64Option-V1-Counters#exactly)
+
+-}
 type CountersLimit
     = CountersLimitUnset
     | CountersLimitAtMost Int
@@ -51,6 +80,8 @@ type CountersLimit
 -- DEFAULTS
 
 
+{-| A [`Counters`](#Counters) with every field at its default and every oneof unset.
+-}
 defaultCounters : Counters
 defaultCounters =
     { int64Value = 0
@@ -73,6 +104,8 @@ defaultCounters =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Counters`](#Counters): its codecs, default and descriptor together.
+-}
 messageCounters : Proto.Message.Message Counters
 messageCounters =
     Proto.Message.message encodeCounters decodeCounters defaultCounters Int64Option.V1.Counters.descriptor
@@ -82,6 +115,8 @@ messageCounters =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -97,6 +132,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Counters`](#Counters) as proto3 JSON.
+-}
 encodeCounters : Counters -> Json.Encode.Value
 encodeCounters value =
     Proto.Json.objectOfFields
@@ -117,6 +154,8 @@ encodeCounters value =
         )
 
 
+{-| Encodes a [`CountersLimit`](#CountersLimit) as the members of its message's JSON object.
+-}
 encodeCountersLimit : CountersLimit -> List ( String, Maybe Json.Encode.Value )
 encodeCountersLimit value =
     case value of
@@ -136,6 +175,8 @@ encodeCountersLimit value =
 -- DECODERS
 
 
+{-| Decodes a [`Counters`](#Counters) from proto3 JSON.
+-}
 decodeCounters : Json.Decode.Decoder Counters
 decodeCounters =
     Json.Decode.succeed Counters
@@ -154,6 +195,8 @@ decodeCounters =
         |> Proto.Json.oneof decodeCountersLimit
 
 
+{-| Decodes a [`CountersLimit`](#CountersLimit) from the members of its message's JSON object.
+-}
 decodeCountersLimit : Json.Decode.Decoder CountersLimit
 decodeCountersLimit =
     Proto.Json.members "limit"

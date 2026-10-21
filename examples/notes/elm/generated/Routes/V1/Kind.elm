@@ -3,6 +3,9 @@
 
 module Routes.V1.Kind exposing (..)
 
+{-| The descriptor of `routes.v1.Kind`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,14 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `routes.v1.Kind`: its full name and its values, in declaration order.
+{-| `enum routes.v1.Kind`
+
+Describes [`Routes.V1.Kind`](Routes-V1#Kind).
+
+  - `KIND_UNSPECIFIED = 0;`
+  - `KIND_TEXT = 1;`
+  - `KIND_IMAGE = 2;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

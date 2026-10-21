@@ -3,6 +3,9 @@
 
 module First.V1.Link exposing (..)
 
+{-| The descriptor of `first.v1.Link` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,15 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `first.v1.Link`: its full name and its fields, in declaration order.
+{-| `__Label` has the JSON name `Label`, so protoc refuses it beside a
+field `Label`. A oneof named `Target` is the record field `target`; its
+member `URL` has the constructor `LinkTargetURL` and the descriptor
+value `url`.
+
+`message first.v1.Link`
+
+Describes [`First.V1.Link`](First-V1#Link).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,14 +37,14 @@ descriptor =
         ]
 
 
-{-| The field `__Label` of `first.v1.Link`.
+{-| `string __Label = 9;`
 -}
 label : Proto.Field.Descriptor
 label =
     Proto.Field.descriptor "__Label" "Label" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `URL` of `first.v1.Link`, a member of the oneof `Target`.
+{-| `string URL = 1;`, in oneof `Target`
 -}
 url : Proto.Field.Descriptor
 url =
@@ -41,7 +52,7 @@ url =
         |> Proto.Field.inOneof "Target"
 
 
-{-| The field `Count` of `first.v1.Link`, a member of the oneof `Target`.
+{-| `int32 Count = 2;`, in oneof `Target`
 -}
 count : Proto.Field.Descriptor
 count =

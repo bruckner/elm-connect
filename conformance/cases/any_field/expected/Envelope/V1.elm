@@ -3,6 +3,11 @@
 
 module Envelope.V1 exposing (..)
 
+{-| `google.protobuf.Any` is the runtime's `Proto.Any.Any`: a message
+field, so singular it is a `Maybe`; repeated, a map value and a oneof
+member hold it bare. A method may take or return one.
+-}
+
 import Dict exposing (Dict)
 import Envelope.V1.Envelope
 import Json.Decode
@@ -25,6 +30,15 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message envelope.v1.Envelope`](Envelope-V1-Envelope#descriptor)
+
+  - [`id`](Envelope-V1-Envelope#id)
+  - [`payload`](Envelope-V1-Envelope#payload)
+  - [`attachments`](Envelope-V1-Envelope#attachments)
+  - [`headers`](Envelope-V1-Envelope#headers)
+  - `body`: See [`EnvelopeBody`](#EnvelopeBody).
+
+-}
 type alias Envelope =
     { id : String
     , payload : Maybe Proto.Any.Any
@@ -34,6 +48,13 @@ type alias Envelope =
     }
 
 
+{-| `oneof body` of `envelope.v1.Envelope`
+
+  - `EnvelopeBodyUnset`: none of the fields is set.
+  - [`EnvelopeBodyPacked`](Envelope-V1-Envelope#packed)
+  - [`EnvelopeBodyText`](Envelope-V1-Envelope#text)
+
+-}
 type EnvelopeBody
     = EnvelopeBodyUnset
     | EnvelopeBodyPacked Proto.Any.Any
@@ -44,6 +65,8 @@ type EnvelopeBody
 -- DEFAULTS
 
 
+{-| A [`Envelope`](#Envelope) with every field at its default and every oneof unset.
+-}
 defaultEnvelope : Envelope
 defaultEnvelope =
     { id = ""
@@ -58,6 +81,8 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Envelope`](#Envelope): its codecs, default and descriptor together.
+-}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
     Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope Envelope.V1.Envelope.descriptor
@@ -67,6 +92,8 @@ messageEnvelope =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -82,6 +109,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Envelope`](#Envelope) as proto3 JSON.
+-}
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
     Proto.Json.objectOfFields
@@ -94,6 +123,8 @@ encodeEnvelope value =
         )
 
 
+{-| Encodes a [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
+-}
 encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
 encodeEnvelopeBody value =
     case value of
@@ -113,6 +144,8 @@ encodeEnvelopeBody value =
 -- DECODERS
 
 
+{-| Decodes a [`Envelope`](#Envelope) from proto3 JSON.
+-}
 decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
     Json.Decode.succeed Envelope
@@ -123,6 +156,8 @@ decodeEnvelope =
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
+{-| Decodes a [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.
+-}
 decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBody =
     Proto.Json.members "body"

@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.StreamType exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.StreamType`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,17 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.StreamType`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.StreamType`
+
+Describes [`Connectrpc.Conformance.V1.StreamType`](Connectrpc-Conformance-V1#StreamType).
+
+  - `STREAM_TYPE_UNSPECIFIED = 0;`
+  - `STREAM_TYPE_UNARY = 1;`
+  - `STREAM_TYPE_CLIENT_STREAM = 2;`
+  - `STREAM_TYPE_SERVER_STREAM = 3;`
+  - `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4;`
+  - `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

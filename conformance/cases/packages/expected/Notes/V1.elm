@@ -3,6 +3,10 @@
 
 module Notes.V1 exposing (..)
 
+{-| A package referring to another: every reference is qualified with the
+other module's name, which the module imports.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -25,6 +29,16 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message notes.v1.Note`](Notes-V1-Note#descriptor)
+
+  - [`title`](Notes-V1-Note#title)
+  - [`author`](Notes-V1-Note#author)
+  - [`requiredRole`](Notes-V1-Note#requiredRole): A plain enum field reads absence as the other module's zero value.
+  - [`readers`](Notes-V1-Note#readers)
+  - [`roles`](Notes-V1-Note#roles)
+  - `owner`: See [`NoteOwner`](#NoteOwner).
+
+-}
 type alias Note =
     { title : String
     , author : Maybe Users.V1.User
@@ -35,6 +49,13 @@ type alias Note =
     }
 
 
+{-| `oneof owner` of `notes.v1.Note`
+
+  - `NoteOwnerUnset`: none of the fields is set.
+  - [`NoteOwnerUser`](Notes-V1-Note#user)
+  - [`NoteOwnerTeam`](Notes-V1-Note#team)
+
+-}
 type NoteOwner
     = NoteOwnerUnset
     | NoteOwnerUser Users.V1.User
@@ -45,6 +66,8 @@ type NoteOwner
 -- DEFAULTS
 
 
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { title = ""
@@ -60,6 +83,8 @@ defaultNote =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
@@ -69,6 +94,8 @@ messageNote =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -84,6 +111,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -97,6 +126,8 @@ encodeNote value =
         )
 
 
+{-| Encodes a [`NoteOwner`](#NoteOwner) as the members of its message's JSON object.
+-}
 encodeNoteOwner : NoteOwner -> List ( String, Maybe Json.Encode.Value )
 encodeNoteOwner value =
     case value of
@@ -116,6 +147,8 @@ encodeNoteOwner value =
 -- DECODERS
 
 
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -127,6 +160,8 @@ decodeNote =
         |> Proto.Json.oneof decodeNoteOwner
 
 
+{-| Decodes a [`NoteOwner`](#NoteOwner) from the members of its message's JSON object.
+-}
 decodeNoteOwner : Json.Decode.Decoder NoteOwner
 decodeNoteOwner =
     Proto.Json.members "owner"

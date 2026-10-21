@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Protocol exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Protocol`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,17 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.Protocol`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.Protocol`
+
+Describes [`Connectrpc.Conformance.V1.Protocol`](Connectrpc-Conformance-V1#Protocol).
+
+  - `PROTOCOL_UNSPECIFIED = 0;`
+  - `PROTOCOL_CONNECT = 1;`
+  - `PROTOCOL_GRPC = 2;`
+  - `PROTOCOL_GRPC_WEB = 3;` TODO: Support add'l protocols:
+    PROTOCOL\_GRPC\_WEB\_TEXT = 4;
+    PROTOCOL\_REST\_TRANSCODING = 5;
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

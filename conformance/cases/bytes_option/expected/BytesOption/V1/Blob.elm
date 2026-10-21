@@ -3,6 +3,9 @@
 
 module BytesOption.V1.Blob exposing (..)
 
+{-| The descriptor of `bytes_option.v1.Blob` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `bytes_option.v1.Blob`: its full name and its fields, in declaration order.
+{-| `message bytes_option.v1.Blob`
+
+Describes [`BytesOption.V1.Blob`](BytesOption-V1#Blob).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -32,49 +38,52 @@ descriptor =
         ]
 
 
-{-| The field `data` of `bytes_option.v1.Blob`.
+{-| `bytes data = 1;`
 -}
 data : Proto.Field.Descriptor
 data =
     Proto.Field.descriptor "data" "data" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `maybe_data` of `bytes_option.v1.Blob`.
+{-| `optional bytes maybe_data = 2;`
 -}
 maybeData : Proto.Field.Descriptor
 maybeData =
     Proto.Field.descriptor "maybe_data" "maybeData" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `chunks` of `bytes_option.v1.Blob`.
+{-| `repeated bytes chunks = 3;`
 -}
 chunks : Proto.Field.Descriptor
 chunks =
     Proto.Field.descriptor "chunks" "chunks" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `by_name` of `bytes_option.v1.Blob`.
+{-| Map keys cannot be bytes; values follow the option.
+
+`map<string, bytes> by_name = 4;`
+
 -}
 byName : Proto.Field.Descriptor
 byName =
     Proto.Field.descriptor "by_name" "byName" 4 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `wrapped` of `bytes_option.v1.Blob`.
+{-| `google.protobuf.BytesValue wrapped = 5;`
 -}
 wrapped : Proto.Field.Descriptor
 wrapped =
     Proto.Field.descriptor "wrapped" "wrapped" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.BytesValue")
 
 
-{-| The field `wrapped_chunks` of `bytes_option.v1.Blob`.
+{-| `repeated google.protobuf.BytesValue wrapped_chunks = 6;`
 -}
 wrappedChunks : Proto.Field.Descriptor
 wrappedChunks =
     Proto.Field.descriptor "wrapped_chunks" "wrappedChunks" 6 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.BytesValue")
 
 
-{-| The field `inline` of `bytes_option.v1.Blob`, a member of the oneof `source`.
+{-| `bytes inline = 7;`, in oneof `source`
 -}
 inline : Proto.Field.Descriptor
 inline =
@@ -82,7 +91,7 @@ inline =
         |> Proto.Field.inOneof "source"
 
 
-{-| The field `url` of `bytes_option.v1.Blob`, a member of the oneof `source`.
+{-| `string url = 8;`, in oneof `source`
 -}
 url : Proto.Field.Descriptor
 url =
@@ -90,7 +99,10 @@ url =
         |> Proto.Field.inOneof "source"
 
 
-{-| The field `name` of `bytes_option.v1.Blob`.
+{-| Other scalars are unchanged.
+
+`string name = 9;`
+
 -}
 name : Proto.Field.Descriptor
 name =

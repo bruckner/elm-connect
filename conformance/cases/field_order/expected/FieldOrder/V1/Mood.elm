@@ -3,6 +3,9 @@
 
 module FieldOrder.V1.Mood exposing (..)
 
+{-| The descriptor of `field_order.v1.Mood`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `field_order.v1.Mood`: its full name and its values, in declaration order.
+{-| `enum field_order.v1.Mood`
+
+Describes [`FieldOrder.V1.Mood`](FieldOrder-V1#Mood).
+
+  - `MOOD_UNSPECIFIED = 0;`
+  - `MOOD_CALM = 1;`
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

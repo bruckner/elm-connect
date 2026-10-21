@@ -25,16 +25,39 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message things.v1.Thing`](Things-V1-Thing#descriptor)
+
+  - [`name`](Things-V1-Thing#name)
+
+-}
 type alias Thing =
     { name : String
     }
 
 
+{-| Renamed to `Criteria` (options.txt), so its descriptor module is
+`Things.V1.Criteria`; `state` is renamed to `status`.
+
+[`message things.v1.Filter`](Things-V1-Criteria#descriptor)
+
+  - [`status`](Things-V1-Criteria#status)
+
+-}
 type alias Criteria =
     { status : String
     }
 
 
+{-| `name` is renamed to `resource` and `page_size` to `limit`
+(options.txt): the route names their descriptors by the new names.
+
+[`message things.v1.GetThingRequest`](Things-V1-GetThingRequest#descriptor)
+
+  - [`resource`](Things-V1-GetThingRequest#resource)
+  - [`limit`](Things-V1-GetThingRequest#limit)
+  - [`filter`](Things-V1-GetThingRequest#filter)
+
+-}
 type alias GetThingRequest =
     { resource : String
     , limit : Int
@@ -46,18 +69,24 @@ type alias GetThingRequest =
 -- DEFAULTS
 
 
+{-| A [`Thing`](#Thing) with every field at its default and every oneof unset.
+-}
 defaultThing : Thing
 defaultThing =
     { name = ""
     }
 
 
+{-| A [`Criteria`](#Criteria) with every field at its default and every oneof unset.
+-}
 defaultCriteria : Criteria
 defaultCriteria =
     { status = ""
     }
 
 
+{-| A [`GetThingRequest`](#GetThingRequest) with every field at its default and every oneof unset.
+-}
 defaultGetThingRequest : GetThingRequest
 defaultGetThingRequest =
     { resource = ""
@@ -70,16 +99,22 @@ defaultGetThingRequest =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Thing`](#Thing): its codecs, default and descriptor together.
+-}
 messageThing : Proto.Message.Message Thing
 messageThing =
     Proto.Message.message encodeThing decodeThing defaultThing Things.V1.Thing.descriptor
 
 
+{-| The typed value of [`Criteria`](#Criteria): its codecs, default and descriptor together.
+-}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
     Proto.Message.message encodeCriteria decodeCriteria defaultCriteria Things.V1.Criteria.descriptor
 
 
+{-| The typed value of [`GetThingRequest`](#GetThingRequest): its codecs, default and descriptor together.
+-}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =
     Proto.Message.message encodeGetThingRequest decodeGetThingRequest defaultGetThingRequest Things.V1.GetThingRequest.descriptor
@@ -89,6 +124,8 @@ messageGetThingRequest =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -106,6 +143,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Thing`](#Thing) as proto3 JSON.
+-}
 encodeThing : Thing -> Json.Encode.Value
 encodeThing value =
     Proto.Json.objectOfFields
@@ -113,6 +152,8 @@ encodeThing value =
         ]
 
 
+{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
+-}
 encodeCriteria : Criteria -> Json.Encode.Value
 encodeCriteria value =
     Proto.Json.objectOfFields
@@ -120,6 +161,8 @@ encodeCriteria value =
         ]
 
 
+{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
+-}
 encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
 encodeGetThingRequest value =
     Proto.Json.objectOfFields
@@ -133,18 +176,24 @@ encodeGetThingRequest value =
 -- DECODERS
 
 
+{-| Decodes a [`Thing`](#Thing) from proto3 JSON.
+-}
 decodeThing : Json.Decode.Decoder Thing
 decodeThing =
     Json.Decode.succeed Thing
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a [`Criteria`](#Criteria) from proto3 JSON.
+-}
 decodeCriteria : Json.Decode.Decoder Criteria
 decodeCriteria =
     Json.Decode.succeed Criteria
         |> Proto.Json.field "state" "" Json.Decode.string
 
 
+{-| Decodes a [`GetThingRequest`](#GetThingRequest) from proto3 JSON.
+-}
 decodeGetThingRequest : Json.Decode.Decoder GetThingRequest
 decodeGetThingRequest =
     Json.Decode.succeed GetThingRequest

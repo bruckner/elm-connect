@@ -3,6 +3,9 @@
 
 module Catalog.V1.Part exposing (..)
 
+{-| The descriptor of `catalog.v1.Part` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `catalog.v1.Part`: its full name and its fields, in declaration order.
+{-| A oneof member named `descriptor` takes `descriptor_` too.
+
+`message catalog.v1.Part`
+
+Describes [`Catalog.V1.Part`](Catalog-V1#Part).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,7 +33,7 @@ descriptor =
         ]
 
 
-{-| The field `descriptor` of `catalog.v1.Part`, a member of the oneof `kind`.
+{-| `string descriptor = 1;`, in oneof `kind`
 -}
 descriptor_ : Proto.Field.Descriptor
 descriptor_ =
@@ -33,7 +41,7 @@ descriptor_ =
         |> Proto.Field.inOneof "kind"
 
 
-{-| The field `count` of `catalog.v1.Part`, a member of the oneof `kind`.
+{-| `int32 count = 2;`, in oneof `kind`
 -}
 count : Proto.Field.Descriptor
 count =

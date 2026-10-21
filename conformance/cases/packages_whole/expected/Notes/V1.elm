@@ -3,6 +3,13 @@
 
 module Notes.V1 exposing (..)
 
+{-| A requested package is generated whole: `Tag` is declared in a file of
+`notes.v1` that is only imported, and is in the module all the same.
+
+Compiled but not requested; its package is, so it is generated.
+
+-}
+
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note
@@ -24,12 +31,23 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message notes.v1.Note`](Notes-V1-Note#descriptor)
+
+  - [`title`](Notes-V1-Note#title)
+  - [`tags`](Notes-V1-Note#tags)
+
+-}
 type alias Note =
     { title : String
     , tags : List Tag
     }
 
 
+{-| [`message notes.v1.Tag`](Notes-V1-Tag#descriptor)
+
+  - [`label`](Notes-V1-Tag#label)
+
+-}
 type alias Tag =
     { label : String
     }
@@ -39,6 +57,8 @@ type alias Tag =
 -- DEFAULTS
 
 
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { title = ""
@@ -46,6 +66,8 @@ defaultNote =
     }
 
 
+{-| A [`Tag`](#Tag) with every field at its default and every oneof unset.
+-}
 defaultTag : Tag
 defaultTag =
     { label = ""
@@ -56,11 +78,15 @@ defaultTag =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
+{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+-}
 messageTag : Proto.Message.Message Tag
 messageTag =
     Proto.Message.message encodeTag decodeTag defaultTag Notes.V1.Tag.descriptor
@@ -70,6 +96,8 @@ messageTag =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -86,6 +114,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -94,6 +124,8 @@ encodeNote value =
         ]
 
 
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
+-}
 encodeTag : Tag -> Json.Encode.Value
 encodeTag value =
     Proto.Json.objectOfFields
@@ -105,6 +137,8 @@ encodeTag value =
 -- DECODERS
 
 
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
@@ -112,6 +146,8 @@ decodeNote =
         |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
 
 
+{-| Decodes a [`Tag`](#Tag) from proto3 JSON.
+-}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag

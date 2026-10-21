@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ServerCompatRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ServerCompatRequest` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.HTTPVersion
 import Connectrpc.Conformance.V1.Protocol
 import Proto.Field
@@ -17,7 +20,25 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ServerCompatRequest`: its full name and its fields, in declaration order.
+{-| Describes one configuration for an RPC server. The server is
+expected to expose the connectrpc.conformance.v1.ConformanceService
+RPC service. The configuration does not include a port. The
+process should pick an available port, which is typically
+done by using port zero (0) when creating a network listener
+so that the OS selects an available ephemeral port.
+
+These properties are read from stdin. Once the server is
+listening, details about the server, in the form of a
+ServerCompatResponse, are written to stdout.
+
+Each test process is expected to start only one RPC server.
+When testing multiple configurations, multiple test processes
+will be started, each with different properties.
+
+`message connectrpc.conformance.v1.ServerCompatRequest`
+
+Describes [`Connectrpc.Conformance.V1.ServerCompatRequest`](Connectrpc-Conformance-V1#ServerCompatRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -31,42 +52,94 @@ descriptor =
         ]
 
 
-{-| The field `protocol` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| Signals to the server that it must support at least this protocol. Note
+that it is fine to support others.
+For example if `PROTOCOL_CONNECT` is specified, the server _must_ support
+at least Connect, but _may_ also support gRPC or gRPC-web.
+
+`connectrpc.conformance.v1.Protocol protocol = 1;`
+
 -}
 protocol : Proto.Field.Descriptor
 protocol =
     Proto.Field.descriptor "protocol" "protocol" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.Protocol.descriptor)
 
 
-{-| The field `http_version` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| Signals to the server the minimum HTTP version to support. As with
+`protocol`, it is fine to support other versions. For example, if
+`HTTP_VERSION_2` is specified, the server _must_ support HTTP/2, but _may_ also
+support HTTP/1.1 or HTTP/3.
+
+`connectrpc.conformance.v1.HTTPVersion http_version = 2;`
+
 -}
 httpVersion : Proto.Field.Descriptor
 httpVersion =
     Proto.Field.descriptor "http_version" "httpVersion" 2 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Connectrpc.Conformance.V1.HTTPVersion.descriptor)
 
 
-{-| The field `use_tls` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| If true, generate a certificate that clients will be configured to trust
+when connecting and return it in the `pem_cert` field of the `ServerCompatResponse`.
+The certificate can be any TLS certificate where the subject matches the
+value sent back in the `host` field of the `ServerCompatResponse`.
+Self-signed certificates (and `localhost` as the subject) are allowed.
+If false, the server should not use TLS and instead use
+a plain-text/unencrypted socket.
+
+`bool use_tls = 4;`
+
 -}
 useTls : Proto.Field.Descriptor
 useTls =
     Proto.Field.descriptor "use_tls" "useTls" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `client_tls_cert` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| If non-empty, the clients will use certificates to authenticate
+themselves. This value is a PEM-encoded cert that should be
+trusted by the server. When non-empty, the server should require
+that clients provide certificates and they should validate that
+the certificate presented is valid.
+
+This will always be empty if use\_tls is false.
+
+`bytes client_tls_cert = 5;`
+
 -}
 clientTlsCert : Proto.Field.Descriptor
 clientTlsCert =
     Proto.Field.descriptor "client_tls_cert" "clientTlsCert" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBytes)
 
 
-{-| The field `message_receive_limit` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| If non-zero, indicates the maximum size in bytes for a message.
+If the client sends anything larger, the server should reject it.
+
+`uint32 message_receive_limit = 6;`
+
 -}
 messageReceiveLimit : Proto.Field.Descriptor
 messageReceiveLimit =
     Proto.Field.descriptor "message_receive_limit" "messageReceiveLimit" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `server_creds` of `connectrpc.conformance.v1.ServerCompatRequest`.
+{-| If use\_tls is true, this provides details for a self-signed TLS
+cert that the server may use.
+
+The provided certificate is only good for loopback communication:
+it uses "localhost" and "127.0.0.1" as the IP and DNS names in
+the certificate's subject. If the server needs a different subject
+or the client is in an environment where configuring trust of a
+self-signed certificate is difficult or infeasible.
+
+If the server implementation chooses to use these credentials,
+it must echo back the certificate in the ServerCompatResponse and
+should also leave the host field empty or explicitly set to
+"127.0.0.1".
+
+If it chooses to use a different certificate and key, it must send
+back the corresponding certificate in the ServerCompatResponse.
+
+`connectrpc.conformance.v1.TLSCreds server_creds = 7;`
+
 -}
 serverCreds : Proto.Field.Descriptor
 serverCreds =

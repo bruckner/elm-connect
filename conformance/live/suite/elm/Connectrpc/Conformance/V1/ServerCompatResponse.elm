@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.ServerCompatResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.ServerCompatResponse` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.ServerCompatResponse`: its full name and its fields, in declaration order.
+{-| The outcome of one ServerCompatRequest.
+
+`message connectrpc.conformance.v1.ServerCompatResponse`
+
+Describes [`Connectrpc.Conformance.V1.ServerCompatResponse`](Connectrpc-Conformance-V1#ServerCompatResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +34,34 @@ descriptor =
         ]
 
 
-{-| The field `host` of `connectrpc.conformance.v1.ServerCompatResponse`.
+{-| The host where the server is running. This should usually be `127.0.0.1`,
+unless your program actually starts a remote server to which the client
+should connect.
+
+`string host = 1;`
+
 -}
 host : Proto.Field.Descriptor
 host =
     Proto.Field.descriptor "host" "host" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `port` of `connectrpc.conformance.v1.ServerCompatResponse`.
+{-| The port where the server is listening.
+
+`uint32 port = 2;`
+
 -}
 port_ : Proto.Field.Descriptor
 port_ =
     Proto.Field.descriptor "port" "port" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `pem_cert` of `connectrpc.conformance.v1.ServerCompatResponse`.
+{-| The TLS certificate, in PEM format, if `use_tls` was set
+to `true`. Clients will verify this certificate when connecting via TLS.
+If `use_tls` was set to `false`, this should always be empty.
+
+`bytes pem_cert = 3;`
+
 -}
 pemCert : Proto.Field.Descriptor
 pemCert =

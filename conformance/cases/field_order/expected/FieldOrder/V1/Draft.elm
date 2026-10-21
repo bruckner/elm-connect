@@ -3,6 +3,9 @@
 
 module FieldOrder.V1.Draft exposing (..)
 
+{-| The descriptor of `field_order.v1.Draft` and its fields.
+-}
+
 import FieldOrder.V1.Mood
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `field_order.v1.Draft`: its full name and its fields, in declaration order.
+{-| `message field_order.v1.Draft`
+
+Describes [`FieldOrder.V1.Draft`](FieldOrder-V1#Draft).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -30,14 +36,14 @@ descriptor =
         ]
 
 
-{-| The field `title` of `field_order.v1.Draft`.
+{-| `string title = 4;`
 -}
 title : Proto.Field.Descriptor
 title =
     Proto.Field.descriptor "title" "title" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `text` of `field_order.v1.Draft`, a member of the oneof `body`.
+{-| `string text = 8;`, in oneof `body`
 -}
 text : Proto.Field.Descriptor
 text =
@@ -45,7 +51,7 @@ text =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `blob` of `field_order.v1.Draft`, a member of the oneof `body`.
+{-| `bytes blob = 1;`, in oneof `body`
 -}
 blob : Proto.Field.Descriptor
 blob =
@@ -53,21 +59,21 @@ blob =
         |> Proto.Field.inOneof "body"
 
 
-{-| The field `mood` of `field_order.v1.Draft`.
+{-| `field_order.v1.Mood mood = 6;`
 -}
 mood : Proto.Field.Descriptor
 mood =
     Proto.Field.descriptor "mood" "mood" 6 Proto.Field.CardinalitySingular (Proto.Field.KindEnum FieldOrder.V1.Mood.descriptor)
 
 
-{-| The field `margin` of `field_order.v1.Draft`.
+{-| `field_order.v1.Draft.Margin margin = 3;`
 -}
 margin : Proto.Field.Descriptor
 margin =
     Proto.Field.descriptor "margin" "margin" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "field_order.v1.Draft.Margin")
 
 
-{-| The field `tags` of `field_order.v1.Draft`.
+{-| `repeated string tags = 2;`
 -}
 tags : Proto.Field.Descriptor
 tags =

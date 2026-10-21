@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.StreamContents exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.StreamContents` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.StreamContents`: its full name and its fields, in declaration order.
+{-| StreamContents represents a sequence of messages in a request body.
+
+`message connectrpc.conformance.v1.StreamContents`
+
+Describes [`Connectrpc.Conformance.V1.StreamContents`](Connectrpc-Conformance-V1#StreamContents).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +32,10 @@ descriptor =
         ]
 
 
-{-| The field `items` of `connectrpc.conformance.v1.StreamContents`.
+{-| The messages in the stream.
+
+`repeated connectrpc.conformance.v1.StreamContents.StreamItem items = 1;`
+
 -}
 items : Proto.Field.Descriptor
 items =

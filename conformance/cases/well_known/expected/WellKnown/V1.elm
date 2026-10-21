@@ -3,6 +3,12 @@
 
 module WellKnown.V1 exposing (..)
 
+{-| Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
+runtime's Duration, FieldMask as its paths, Empty as () without
+presence, Struct and ListValue as a Dict and a List of JSON values,
+Value as a Maybe of JSON, and the wrappers as a Maybe of their scalar.
+-}
+
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -26,6 +32,41 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message well_known.v1.Event`](WellKnown-V1-Event#descriptor)
+
+  - [`createdAt`](WellKnown-V1-Event#createdAt): Message types: a singular field has presence.
+  - [`timeout`](WellKnown-V1-Event#timeout)
+  - [`updateMask`](WellKnown-V1-Event#updateMask)
+  - [`marker`](WellKnown-V1-Event#marker): Empty carries nothing, presence included: (), never Maybe ().
+  - [`metadata`](WellKnown-V1-Event#metadata): Struct and ListValue are a Dict and a List of JSON values, with
+    presence like any message. Value is any JSON, with presence too,
+    `optional` or not: Nothing when absent, Just null when null.
+  - [`payload`](WellKnown-V1-Event#payload)
+  - [`items`](WellKnown-V1-Event#items)
+  - [`ratio`](WellKnown-V1-Event#ratio): Wrappers: a Maybe of the scalar, never a Maybe of a record.
+  - [`weight`](WellKnown-V1-Event#weight)
+  - [`bigCount`](WellKnown-V1-Event#bigCount)
+  - [`bigTotal`](WellKnown-V1-Event#bigTotal)
+  - [`count`](WellKnown-V1-Event#count)
+  - [`total`](WellKnown-V1-Event#total)
+  - [`enabled`](WellKnown-V1-Event#enabled)
+  - [`nickname`](WellKnown-V1-Event#nickname)
+  - [`avatar`](WellKnown-V1-Event#avatar)
+  - [`history`](WellKnown-V1-Event#history): Repeated and map values, and a oneof member.
+  - [`limits`](WellKnown-V1-Event#limits)
+  - [`values`](WellKnown-V1-Event#values)
+  - [`counts`](WellKnown-V1-Event#counts)
+  - [`acked`](WellKnown-V1-Event#acked)
+  - [`pings`](WellKnown-V1-Event#pings)
+  - [`seen`](WellKnown-V1-Event#seen)
+  - [`records`](WellKnown-V1-Event#records)
+  - [`columns`](WellKnown-V1-Event#columns)
+  - [`lastValue`](WellKnown-V1-Event#lastValue): An optional Value is the same Maybe; its JSON name differs, so it
+    decodes with valueFieldEither. A map of Value holds it bare.
+  - [`settings`](WellKnown-V1-Event#settings)
+  - `when`: See [`EventWhen`](#EventWhen).
+
+-}
 type alias Event =
     { createdAt : Maybe Time.Posix
     , timeout : Maybe Duration
@@ -58,6 +99,16 @@ type alias Event =
     }
 
 
+{-| `oneof when` of `well_known.v1.Event`
+
+  - `EventWhenUnset`: none of the fields is set.
+  - [`EventWhenAt`](WellKnown-V1-Event#at)
+  - [`EventWhenAfter`](WellKnown-V1-Event#after)
+  - [`EventWhenWhenever`](WellKnown-V1-Event#whenever)
+  - [`EventWhenSchedule`](WellKnown-V1-Event#schedule)
+  - [`EventWhenDates`](WellKnown-V1-Event#dates)
+
+-}
 type EventWhen
     = EventWhenUnset
     | EventWhenAt Time.Posix
@@ -71,6 +122,8 @@ type EventWhen
 -- DEFAULTS
 
 
+{-| A [`Event`](#Event) with every field at its default and every oneof unset.
+-}
 defaultEvent : Event
 defaultEvent =
     { createdAt = Nothing
@@ -108,6 +161,8 @@ defaultEvent =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Event`](#Event): its codecs, default and descriptor together.
+-}
 messageEvent : Proto.Message.Message Event
 messageEvent =
     Proto.Message.message encodeEvent decodeEvent defaultEvent WellKnown.V1.Event.descriptor
@@ -117,6 +172,8 @@ messageEvent =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -132,6 +189,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Event`](#Event) as proto3 JSON.
+-}
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
     Proto.Json.objectOfFields
@@ -167,6 +226,8 @@ encodeEvent value =
         )
 
 
+{-| Encodes a [`EventWhen`](#EventWhen) as the members of its message's JSON object.
+-}
 encodeEventWhen : EventWhen -> List ( String, Maybe Json.Encode.Value )
 encodeEventWhen value =
     case value of
@@ -198,6 +259,8 @@ encodeEventWhen value =
 -- DECODERS
 
 
+{-| Decodes a [`Event`](#Event) from proto3 JSON.
+-}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Json.Decode.succeed Event
@@ -231,6 +294,8 @@ decodeEvent =
         |> Proto.Json.oneof decodeEventWhen
 
 
+{-| Decodes a [`EventWhen`](#EventWhen) from the members of its message's JSON object.
+-}
 decodeEventWhen : Json.Decode.Decoder EventWhen
 decodeEventWhen =
     Proto.Json.members "when"

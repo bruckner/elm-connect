@@ -3,6 +3,9 @@
 
 module Range.V1.Bounds exposing (..)
 
+{-| The descriptor of `range.v1.Bounds` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,15 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `range.v1.Bounds`: its full name and its fields, in declaration order.
+{-| Fields named like values Elm imports by default (`Basics.max`,
+`Basics.min`, `Basics.always`): their descriptor values in
+`Range.V1.Bounds` are top-level values of that module, which Elm lets
+shadow a default import.
+
+`message range.v1.Bounds`
+
+Describes [`Range.V1.Bounds`](Range-V1#Bounds).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +37,21 @@ descriptor =
         ]
 
 
-{-| The field `max` of `range.v1.Bounds`.
+{-| `int32 max = 1;`
 -}
 max : Proto.Field.Descriptor
 max =
     Proto.Field.descriptor "max" "max" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `min` of `range.v1.Bounds`.
+{-| `int32 min = 2;`
 -}
 min : Proto.Field.Descriptor
 min =
     Proto.Field.descriptor "min" "min" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `always` of `range.v1.Bounds`.
+{-| `bool always = 3;`
 -}
 always : Proto.Field.Descriptor
 always =

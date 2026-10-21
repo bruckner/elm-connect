@@ -209,6 +209,11 @@ getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.N
 ping : () -> Rpc.Call () ()
 ```
 
+Each type and descriptor is documented with the proto's comment for it
+and its one-line declaration, such as `` `string name = 1;` ``, each
+call with its Connect path and its HTTP bindings, and a package's
+module with the comment on its `package` statement.
+
 A call is data: the method, its request, and its HTTP bindings. A
 config, also data, says where to send it and how; `Rpc.task` and
 `Rpc.send` send a call with a config:
@@ -523,8 +528,9 @@ at your option. The Elm package is published to the package index under
 MIT, since `elm.json` carries a single license identifier; that is one of
 the two options and changes nothing about your choice.
 
-The generator embeds two files from googleapis, under the Apache License
-2.0; see [THIRD_PARTY.md](THIRD_PARTY.md).
+The generator embeds files from googleapis, under the Apache License
+2.0, and ports elm-format's Markdown parser and printer, under the BSD
+3-Clause License; see [THIRD_PARTY.md](THIRD_PARTY.md).
 
 Unless you explicitly state otherwise, any contribution intentionally
 submitted for inclusion in this work by you shall be dual-licensed as

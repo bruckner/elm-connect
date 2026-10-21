@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.BidiStreamRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.BidiStreamRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.BidiStreamRequest`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.BidiStreamRequest`
+
+Describes [`Connectrpc.Conformance.V1.BidiStreamRequest`](Connectrpc-Conformance-V1#BidiStreamRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +32,44 @@ descriptor =
         ]
 
 
-{-| The field `response_definition` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| Tells the server how to reply; required in the first message
+in the stream. Should be ignored in subsequent messages.
+
+`connectrpc.conformance.v1.StreamResponseDefinition response_definition = 1;`
+
 -}
 responseDefinition : Proto.Field.Descriptor
 responseDefinition =
     Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.StreamResponseDefinition")
 
 
-{-| The field `full_duplex` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| Tells the server whether it should wait for each request
+before sending a response.
+
+If true, it indicates the server should effectively interleave the
+stream so messages are sent in request->response pairs.
+
+If false, then the response stream will be sent once all request messages
+are finished sending with the only delays between messages
+being the optional fixed milliseconds defined in the response
+definition.
+
+This field is only relevant in the first message in the stream
+and should be ignored in subsequent messages.
+
+`bool full_duplex = 2;`
+
 -}
 fullDuplex : Proto.Field.Descriptor
 fullDuplex =
     Proto.Field.descriptor "full_duplex" "fullDuplex" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `request_data` of `connectrpc.conformance.v1.BidiStreamRequest`.
+{-| Additional data for subsequent messages in the stream. Also
+used to pad the request size to test large request messages.
+
+`bytes request_data = 3;`
+
 -}
 requestData : Proto.Field.Descriptor
 requestData =

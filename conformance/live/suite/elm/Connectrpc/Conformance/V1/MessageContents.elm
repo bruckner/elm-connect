@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.MessageContents exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.MessageContents` and its fields.
+-}
+
 import Connectrpc.Conformance.V1.Compression
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.MessageContents`: its full name and its fields, in declaration order.
+{-| MessageContents represents a message in a request body.
+
+`message connectrpc.conformance.v1.MessageContents`
+
+Describes [`Connectrpc.Conformance.V1.MessageContents`](Connectrpc-Conformance-V1#MessageContents).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,7 +36,10 @@ descriptor =
         ]
 
 
-{-| The field `binary` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`.
+{-| Arbitrary bytes.
+
+`bytes binary = 1;`, in oneof `data`
+
 -}
 binary : Proto.Field.Descriptor
 binary =
@@ -36,7 +47,10 @@ binary =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `text` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`.
+{-| Arbitrary text.
+
+`string text = 2;`, in oneof `data`
+
 -}
 text : Proto.Field.Descriptor
 text =
@@ -44,7 +58,12 @@ text =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `binary_message` of `connectrpc.conformance.v1.MessageContents`, a member of the oneof `data`.
+{-| An actual message. The message inside the Any will be
+serialized to the protobuf binary formats, and the
+resulting bytes will be the contents.
+
+`google.protobuf.Any binary_message = 3;`, in oneof `data`
+
 -}
 binaryMessage : Proto.Field.Descriptor
 binaryMessage =
@@ -52,7 +71,11 @@ binaryMessage =
         |> Proto.Field.inOneof "data"
 
 
-{-| The field `compression` of `connectrpc.conformance.v1.MessageContents`.
+{-| If specified and not identity, the above data will be
+compressed using the given algorithm.
+
+`connectrpc.conformance.v1.Compression compression = 4;`
+
 -}
 compression : Proto.Field.Descriptor
 compression =

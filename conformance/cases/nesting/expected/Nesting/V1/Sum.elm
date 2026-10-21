@@ -3,6 +3,9 @@
 
 module Nesting.V1.Sum exposing (..)
 
+{-| The descriptor of `nesting.v1.Sum` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `nesting.v1.Sum`: its full name and its fields, in declaration order.
+{-| `message nesting.v1.Sum`
+
+Describes [`Nesting.V1.Sum`](Nesting-V1#Sum).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `terms` of `nesting.v1.Sum`.
+{-| `repeated nesting.v1.Expr terms = 1;`
 -}
 terms : Proto.Field.Descriptor
 terms =

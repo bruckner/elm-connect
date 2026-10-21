@@ -3,6 +3,10 @@
 
 module Cardinality.V1 exposing (..)
 
+{-| Presence and repetition: proto3 `optional` scalars and messages,
+singular message fields, and repeated scalars and messages.
+-}
+
 import Cardinality.V1.Author
 import Cardinality.V1.Note
 import Json.Decode
@@ -24,11 +28,33 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message cardinality.v1.Author`](Cardinality-V1-Author#descriptor)
+
+  - [`name`](Cardinality-V1-Author#name)
+
+-}
 type alias Author =
     { name : String
     }
 
 
+{-| [`message cardinality.v1.Note`](Cardinality-V1-Note#descriptor)
+
+  - [`subtitle`](Cardinality-V1-Note#subtitle): Scalars with explicit presence become `Maybe`.
+  - [`stars`](Cardinality-V1-Note#stars)
+  - [`score`](Cardinality-V1-Note#score)
+  - [`views`](Cardinality-V1-Note#views)
+  - [`author`](Cardinality-V1-Note#author): A singular message field has presence too, `optional` or not.
+  - [`editor`](Cardinality-V1-Note#editor)
+  - [`tags`](Cardinality-V1-Note#tags): Repeated fields become lists.
+  - [`counts`](Cardinality-V1-Note#counts)
+  - [`weights`](Cardinality-V1-Note#weights)
+  - [`reviewers`](Cardinality-V1-Note#reviewers)
+  - [`relatedLinks`](Cardinality-V1-Note#relatedLinks): A JSON name that differs from the proto name: parsers accept both.
+  - [`isDraft`](Cardinality-V1-Note#isDraft)
+  - [`title`](Cardinality-V1-Note#title): A one-word name: the JSON name is the proto name.
+
+-}
 type alias Note =
     { subtitle : Maybe String
     , stars : Maybe Int
@@ -50,12 +76,16 @@ type alias Note =
 -- DEFAULTS
 
 
+{-| A [`Author`](#Author) with every field at its default and every oneof unset.
+-}
 defaultAuthor : Author
 defaultAuthor =
     { name = ""
     }
 
 
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+-}
 defaultNote : Note
 defaultNote =
     { subtitle = Nothing
@@ -78,11 +108,15 @@ defaultNote =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Author`](#Author): its codecs, default and descriptor together.
+-}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
     Proto.Message.message encodeAuthor decodeAuthor defaultAuthor Cardinality.V1.Author.descriptor
 
 
+{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+-}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Cardinality.V1.Note.descriptor
@@ -92,6 +126,8 @@ messageNote =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -108,6 +144,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Author`](#Author) as proto3 JSON.
+-}
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
     Proto.Json.objectOfFields
@@ -115,6 +153,8 @@ encodeAuthor value =
         ]
 
 
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
+-}
 encodeNote : Note -> Json.Encode.Value
 encodeNote value =
     Proto.Json.objectOfFields
@@ -138,12 +178,16 @@ encodeNote value =
 -- DECODERS
 
 
+{-| Decodes a [`Author`](#Author) from proto3 JSON.
+-}
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
     Json.Decode.succeed Author
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
+-}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note

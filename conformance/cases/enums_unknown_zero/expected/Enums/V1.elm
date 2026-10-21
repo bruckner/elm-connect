@@ -3,6 +3,11 @@
 
 module Enums.V1 exposing (..)
 
+{-| The enums case under enum\_unknown=zero: the same protos, and the same
+output but for each decoder, which is Proto.Json.enumOrZero, reading an
+unknown name as the zero value as it does an unknown number.
+-}
+
 import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task
@@ -26,12 +31,33 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`enum enums.v1.Status`](Enums-V1-Status#descriptor)
+
+  - `StatusUnspecified` (`STATUS_UNSPECIFIED`)
+  - `StatusActive` (`STATUS_ACTIVE`)
+  - `StatusArchived` (`STATUS_ARCHIVED`)
+
+-}
 type Status
     = StatusUnspecified
     | StatusActive
     | StatusArchived
 
 
+{-| Values without the conventional prefix, a negative number, and
+aliases: names sharing a number are one constructor, named for the
+first declared, which the encoder writes; the decoder reads them all.
+PRIORITY\_LOW would be the constructor PriorityLow, like LOW; as an
+alias it claims no name, so the two do not collide.
+
+[`enum enums.v1.Priority`](Enums-V1-Priority#descriptor)
+
+  - `PriorityNone` (`NONE`, also `UNSET`)
+  - `PriorityLow` (`LOW`, also `PRIORITY_LOW`)
+  - `PriorityHigh` (`HIGH`, also `URGENT`)
+  - `PriorityBelowZero` (`BELOW_ZERO`)
+
+-}
 type Priority
     = PriorityNone
     | PriorityLow
@@ -39,6 +65,14 @@ type Priority
     | PriorityBelowZero
 
 
+{-| [`message enums.v1.Task`](Enums-V1-Task#descriptor)
+
+  - [`status`](Enums-V1-Task#status): Without presence, an enum field reads absence as its zero value.
+  - [`priority`](Enums-V1-Task#priority): With presence, it is a Maybe.
+  - [`history`](Enums-V1-Task#history)
+  - [`previousStatus`](Enums-V1-Task#previousStatus)
+
+-}
 type alias Task =
     { status : Status
     , priority : Maybe Priority
@@ -51,6 +85,8 @@ type alias Task =
 -- DEFAULTS
 
 
+{-| A [`Task`](#Task) with every field at its default and every oneof unset.
+-}
 defaultTask : Task
 defaultTask =
     { status = StatusUnspecified
@@ -64,16 +100,22 @@ defaultTask =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Status`](#Status): its codecs, zero value and descriptor together.
+-}
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
     Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Enums.V1.Status.descriptor
 
 
+{-| The typed value of [`Priority`](#Priority): its codecs, zero value and descriptor together.
+-}
 enumPriority : Proto.Enum.Enum Priority
 enumPriority =
     Proto.Enum.enum encodePriority decodePriority PriorityNone Enums.V1.Priority.descriptor
 
 
+{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
+-}
 messageTask : Proto.Message.Message Task
 messageTask =
     Proto.Message.message encodeTask decodeTask defaultTask Enums.V1.Task.descriptor
@@ -83,6 +125,8 @@ messageTask =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -100,6 +144,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Status`](#Status) as proto3 JSON.
+-}
 encodeStatus : Status -> Json.Encode.Value
 encodeStatus value =
     case value of
@@ -113,6 +159,8 @@ encodeStatus value =
             Json.Encode.string "STATUS_ARCHIVED"
 
 
+{-| Encodes a [`Priority`](#Priority) as proto3 JSON.
+-}
 encodePriority : Priority -> Json.Encode.Value
 encodePriority value =
     case value of
@@ -129,6 +177,8 @@ encodePriority value =
             Json.Encode.string "BELOW_ZERO"
 
 
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
+-}
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
     Proto.Json.objectOfFields
@@ -143,6 +193,8 @@ encodeTask value =
 -- DECODERS
 
 
+{-| Decodes a [`Status`](#Status) from proto3 JSON.
+-}
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
     Proto.Json.enumOrZero "Status"
@@ -153,6 +205,8 @@ decodeStatus =
         ]
 
 
+{-| Decodes a [`Priority`](#Priority) from proto3 JSON.
+-}
 decodePriority : Json.Decode.Decoder Priority
 decodePriority =
     Proto.Json.enumOrZero "Priority"
@@ -167,6 +221,8 @@ decodePriority =
         ]
 
 
+{-| Decodes a [`Task`](#Task) from proto3 JSON.
+-}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Json.Decode.succeed Task

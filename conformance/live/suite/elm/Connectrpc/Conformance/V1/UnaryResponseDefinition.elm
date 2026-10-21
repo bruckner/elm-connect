@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnaryResponseDefinition exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnaryResponseDefinition` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.UnaryResponseDefinition`: its full name and its fields, in declaration order.
+{-| A definition of a response to be sent from a single-response endpoint.
+Can be used to define a response for unary or client-streaming calls.
+
+`message connectrpc.conformance.v1.UnaryResponseDefinition`
+
+Describes [`Connectrpc.Conformance.V1.UnaryResponseDefinition`](Connectrpc-Conformance-V1#UnaryResponseDefinition).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,14 +38,20 @@ descriptor =
         ]
 
 
-{-| The field `response_headers` of `connectrpc.conformance.v1.UnaryResponseDefinition`.
+{-| Response headers to send
+
+`repeated connectrpc.conformance.v1.Header response_headers = 1;`
+
 -}
 responseHeaders : Proto.Field.Descriptor
 responseHeaders =
     Proto.Field.descriptor "response_headers" "responseHeaders" 1 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `response_data` of `connectrpc.conformance.v1.UnaryResponseDefinition`, a member of the oneof `response`.
+{-| Response data to send
+
+`bytes response_data = 2;`, in oneof `response`
+
 -}
 responseData : Proto.Field.Descriptor
 responseData =
@@ -44,7 +59,12 @@ responseData =
         |> Proto.Field.inOneof "response"
 
 
-{-| The field `error` of `connectrpc.conformance.v1.UnaryResponseDefinition`, a member of the oneof `response`.
+{-| Error to raise instead of response message
+Servers should build a RequestInfo and append it to the details of the
+requested error.
+
+`connectrpc.conformance.v1.Error error = 3;`, in oneof `response`
+
 -}
 error : Proto.Field.Descriptor
 error =
@@ -52,21 +72,34 @@ error =
         |> Proto.Field.inOneof "response"
 
 
-{-| The field `response_trailers` of `connectrpc.conformance.v1.UnaryResponseDefinition`.
+{-| Response trailers to send - together with the error if present
+
+`repeated connectrpc.conformance.v1.Header response_trailers = 4;`
+
 -}
 responseTrailers : Proto.Field.Descriptor
 responseTrailers =
     Proto.Field.descriptor "response_trailers" "responseTrailers" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "connectrpc.conformance.v1.Header")
 
 
-{-| The field `response_delay_ms` of `connectrpc.conformance.v1.UnaryResponseDefinition`.
+{-| Wait this many milliseconds before sending a response message
+
+`uint32 response_delay_ms = 6;`
+
 -}
 responseDelayMs : Proto.Field.Descriptor
 responseDelayMs =
     Proto.Field.descriptor "response_delay_ms" "responseDelayMs" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarUint32)
 
 
-{-| The field `raw_response` of `connectrpc.conformance.v1.UnaryResponseDefinition`.
+{-| This field is only used by the reference server. If you are implementing a
+server under test, you can ignore this field or respond with an error if the
+server receives a request where it is set.
+
+For test definitions, this field should be used instead of the above fields.
+
+`connectrpc.conformance.v1.RawHTTPResponse raw_response = 5;`
+
 -}
 rawResponse : Proto.Field.Descriptor
 rawResponse =

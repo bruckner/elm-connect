@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnaryRequest exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnaryRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.UnaryRequest`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.UnaryRequest`
+
+Describes [`Connectrpc.Conformance.V1.UnaryRequest`](Connectrpc-Conformance-V1#UnaryRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,20 @@ descriptor =
         ]
 
 
-{-| The field `response_definition` of `connectrpc.conformance.v1.UnaryRequest`.
+{-| The response definition which should be returned in the conformance payload
+
+`connectrpc.conformance.v1.UnaryResponseDefinition response_definition = 1;`
+
 -}
 responseDefinition : Proto.Field.Descriptor
 responseDefinition =
     Proto.Field.descriptor "response_definition" "responseDefinition" 1 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "connectrpc.conformance.v1.UnaryResponseDefinition")
 
 
-{-| The field `request_data` of `connectrpc.conformance.v1.UnaryRequest`.
+{-| Additional data. Only used to pad the request size to test large request messages.
+
+`bytes request_data = 2;`
+
 -}
 requestData : Proto.Field.Descriptor
 requestData =

@@ -20,6 +20,26 @@ pub const ELM_RESERVED_WORDS: [&str; 14] = [
     "exposing", "as", "port",
 ];
 
+/// The runtime package's name, as its `elm.json` gives it; a macro so the
+/// strings built from it are constants.
+macro_rules! runtime_package {
+    () => {
+        "bruckner/elm-connect"
+    };
+}
+
+/// The runtime package's documentation on the package site, to which a
+/// module's page name and an anchor are appended
+/// (`Proto-Message#Descriptor`). It names `latest` because the site has
+/// no path for a major or minor version, only for an exact release, and
+/// generated code is not tied to one: its `elmConnectVersion_` pins the
+/// minor version it was generated for.
+pub const RUNTIME_DOCS: &str = concat!(
+    "https://package.elm-lang.org/packages/",
+    runtime_package!(),
+    "/latest/"
+);
+
 /// The runtime package's exposed modules, as its `elm.json` lists them.
 pub const RUNTIME_MODULES: [&str; 25] = [
     "Rpc",
@@ -87,7 +107,7 @@ pub const DEPENDENCY_MODULES: [(&str, &[&str]); 5] = [
 /// name, since every import of it would be ambiguous.
 pub fn reserved_module(module: &str) -> Option<&'static str> {
     if RUNTIME_MODULES.contains(&module) {
-        return Some("the runtime package bruckner/elm-connect");
+        return Some(concat!("the runtime package ", runtime_package!()));
     }
     DEPENDENCY_MODULES
         .iter()

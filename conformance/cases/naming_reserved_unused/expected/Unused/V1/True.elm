@@ -3,6 +3,9 @@
 
 module Unused.V1.True exposing (..)
 
+{-| The descriptor of `unused.v1.True`.
+-}
+
 import Proto.Message
 import Proto.Version
 
@@ -14,7 +17,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `unused.v1.True`: its full name and its fields, in declaration order.
+{-| `message unused.v1.True`
+
+Describes [`Unused.V1.True`](Unused-V1#True).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

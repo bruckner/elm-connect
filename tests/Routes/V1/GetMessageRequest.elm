@@ -3,6 +3,9 @@
 
 module Routes.V1.GetMessageRequest exposing (..)
 
+{-| The descriptor of `routes.v1.GetMessageRequest` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.GetMessageRequest`: its full name and its fields, in declaration order.
+{-| The messages of google/api/http.proto's examples.
+
+`message routes.v1.GetMessageRequest`
+
+Describes [`Routes.V1.GetMessageRequest`](Routes-V1#GetMessageRequest).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -28,35 +36,35 @@ descriptor =
         ]
 
 
-{-| The field `message_id` of `routes.v1.GetMessageRequest`.
+{-| `string message_id = 1;`
 -}
 messageId : Proto.Field.Descriptor
 messageId =
     Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `revision` of `routes.v1.GetMessageRequest`.
+{-| `int64 revision = 2;`
 -}
 revision : Proto.Field.Descriptor
 revision =
     Proto.Field.descriptor "revision" "revision" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `sub` of `routes.v1.GetMessageRequest`.
+{-| `routes.v1.GetMessageRequest.SubMessage sub = 3;`
 -}
 sub : Proto.Field.Descriptor
 sub =
     Proto.Field.descriptor "sub" "sub" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "routes.v1.GetMessageRequest.SubMessage")
 
 
-{-| The field `user_id` of `routes.v1.GetMessageRequest`.
+{-| `string user_id = 4;`
 -}
 userId : Proto.Field.Descriptor
 userId =
     Proto.Field.descriptor "user_id" "userId" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `name` of `routes.v1.GetMessageRequest`.
+{-| `string name = 5;`
 -}
 name : Proto.Field.Descriptor
 name =

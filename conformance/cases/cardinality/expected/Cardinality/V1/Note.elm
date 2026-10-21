@@ -3,6 +3,9 @@
 
 module Cardinality.V1.Note exposing (..)
 
+{-| The descriptor of `cardinality.v1.Note` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `cardinality.v1.Note`: its full name and its fields, in declaration order.
+{-| `message cardinality.v1.Note`
+
+Describes [`Cardinality.V1.Note`](Cardinality-V1#Note).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -36,91 +42,106 @@ descriptor =
         ]
 
 
-{-| The field `subtitle` of `cardinality.v1.Note`.
+{-| Scalars with explicit presence become `Maybe`.
+
+`optional string subtitle = 1;`
+
 -}
 subtitle : Proto.Field.Descriptor
 subtitle =
     Proto.Field.descriptor "subtitle" "subtitle" 1 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `stars` of `cardinality.v1.Note`.
+{-| `optional int32 stars = 2;`
 -}
 stars : Proto.Field.Descriptor
 stars =
     Proto.Field.descriptor "stars" "stars" 2 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `score` of `cardinality.v1.Note`.
+{-| `optional double score = 3;`
 -}
 score : Proto.Field.Descriptor
 score =
     Proto.Field.descriptor "score" "score" 3 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarDouble)
 
 
-{-| The field `views` of `cardinality.v1.Note`.
+{-| `optional int64 views = 4;`
 -}
 views : Proto.Field.Descriptor
 views =
     Proto.Field.descriptor "views" "views" 4 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarInt64)
 
 
-{-| The field `author` of `cardinality.v1.Note`.
+{-| A singular message field has presence too, `optional` or not.
+
+`cardinality.v1.Author author = 5;`
+
 -}
 author : Proto.Field.Descriptor
 author =
     Proto.Field.descriptor "author" "author" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cardinality.v1.Author")
 
 
-{-| The field `editor` of `cardinality.v1.Note`.
+{-| `optional cardinality.v1.Author editor = 6;`
 -}
 editor : Proto.Field.Descriptor
 editor =
     Proto.Field.descriptor "editor" "editor" 6 Proto.Field.CardinalityOptional (Proto.Field.KindMessage "cardinality.v1.Author")
 
 
-{-| The field `tags` of `cardinality.v1.Note`.
+{-| Repeated fields become lists.
+
+`repeated string tags = 7;`
+
 -}
 tags : Proto.Field.Descriptor
 tags =
     Proto.Field.descriptor "tags" "tags" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `counts` of `cardinality.v1.Note`.
+{-| `repeated int32 counts = 8;`
 -}
 counts : Proto.Field.Descriptor
 counts =
     Proto.Field.descriptor "counts" "counts" 8 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
 
 
-{-| The field `weights` of `cardinality.v1.Note`.
+{-| `repeated float weights = 9;`
 -}
 weights : Proto.Field.Descriptor
 weights =
     Proto.Field.descriptor "weights" "weights" 9 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFloat)
 
 
-{-| The field `reviewers` of `cardinality.v1.Note`.
+{-| `repeated cardinality.v1.Author reviewers = 10;`
 -}
 reviewers : Proto.Field.Descriptor
 reviewers =
     Proto.Field.descriptor "reviewers" "reviewers" 10 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "cardinality.v1.Author")
 
 
-{-| The field `related_links` of `cardinality.v1.Note`.
+{-| A JSON name that differs from the proto name: parsers accept both.
+
+`repeated string related_links = 12;`
+
 -}
 relatedLinks : Proto.Field.Descriptor
 relatedLinks =
     Proto.Field.descriptor "related_links" "relatedLinks" 12 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `is_draft` of `cardinality.v1.Note`.
+{-| `optional bool is_draft = 13;`
 -}
 isDraft : Proto.Field.Descriptor
 isDraft =
     Proto.Field.descriptor "is_draft" "isDraft" 13 Proto.Field.CardinalityOptional (Proto.Field.KindScalar Proto.Field.ScalarBool)
 
 
-{-| The field `title` of `cardinality.v1.Note`.
+{-| A one-word name: the JSON name is the proto name.
+
+`string title = 11;`
+
 -}
 title : Proto.Field.Descriptor
 title =

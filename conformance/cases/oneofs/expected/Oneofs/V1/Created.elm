@@ -3,6 +3,9 @@
 
 module Oneofs.V1.Created exposing (..)
 
+{-| The descriptor of `oneofs.v1.Created` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `oneofs.v1.Created`: its full name and its fields, in declaration order.
+{-| `message oneofs.v1.Created`
+
+Describes [`Oneofs.V1.Created`](Oneofs-V1#Created).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `title` of `oneofs.v1.Created`.
+{-| `string title = 1;`
 -}
 title : Proto.Field.Descriptor
 title =

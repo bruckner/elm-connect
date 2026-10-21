@@ -1077,6 +1077,61 @@ fn random_module() -> Module {
     }
 }
 
+/// Doc comments the printer puts in elm-format's Markdown: every construct
+/// elm-format rewrites, and every hazard the printer departs from it on
+/// (`elm::markdown`), as proto comments may hold them.
+const DOCS: &[&str] = &[
+    "Items:\n\n* one\n* two\n\nMixed:\n\n+ one\n- two\n\n  continued",
+    "Steps:\n\n3. three\n4) four\n\n10. ten\n11. eleven",
+    "Some *em*, _em_, **strong**, __strong__, ***both***.",
+    "snake_case, 2*3*4, notes/* and a \\ backslash and a ` tick",
+    "Intro.\n\nHeading\n=======\n\n## Sub ##\n\nText.",
+    "# A heading first",
+    "Indented:\n\n    GET /v1/notes\n    x = 1\n\nAfter.",
+    "```\nGET /v1/{name=notes/*}\n```\n\n```elm\nx = { a = 1 }\n```\n\n~~~proto\nmessage M {}\n~~~",
+    "Empty:\n\n```text\n```",
+    "```\nunclosed",
+    "* item\n```elm\nx = 1\n```\n``` \nnever closed, then blank lines\n\n\n\n\n\n\n\n\n\n",
+    "~~~\n```\n~~~",
+    "| a | b |\n|---|---|\n| 1 | 2 |\n\na | b",
+    "line one  \nline two\twith a tab",
+    "<b>bold</b> &amp; <div>x</div>\n\n<div>\nblock\n</div>",
+    "[text](https://example.com/a_b), https://example.com/bare and <https://a.b>",
+    "[text][r]\n\n[r]: https://example.com \"T\"\n\n[s]: /u junk",
+    "Text.\n@docs foo, bar\nmore\n\n  @docs indented",
+    "Closes -} and opens {- and {-| and -}-}.",
+    "-} at the start",
+    "> quoted\n> text\n>\n> # heading",
+    "- item\n\n  # heading in an item\n\n  Setext in an item\n  ---",
+    "a\n\n***\n\nb\n\n- - -",
+    "A line of two hundred characters, which elm-format leaves as it is rather than \
+     wrapping it, since it reflows no paragraph of a doc comment at all, however long \
+     it runs: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "Non-ASCII: café, naïve, “quotes”, — and ✓.",
+];
+
+/// A module whose doc and values' docs are [`DOCS`].
+fn docs_module() -> Module {
+    Module {
+        header: None,
+        name: ModuleName::new("Gen.Docs"),
+        doc: Some(DOCS[0].to_owned()),
+        exposing: Exposing::All,
+        imports: vec![],
+        decls: DOCS
+            .iter()
+            .enumerate()
+            .map(|(index, doc)| Decl::Value {
+                doc: Some((*doc).to_owned()),
+                name: format!("doc{index}"),
+                annotation: int_t(),
+                params: Vec::new(),
+                body: int(i64::try_from(index).expect("few")),
+            })
+            .collect(),
+    }
+}
+
 fn corpus() -> Vec<(String, String)> {
     [
         types_module(),
@@ -1084,6 +1139,7 @@ fn corpus() -> Vec<(String, String)> {
         exprs_module(),
         bare_module(),
         random_module(),
+        docs_module(),
     ]
     .iter()
     .map(|m| (m.name.to_string(), print_module(m)))

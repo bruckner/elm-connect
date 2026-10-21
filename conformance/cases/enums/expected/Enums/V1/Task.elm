@@ -3,6 +3,9 @@
 
 module Enums.V1.Task exposing (..)
 
+{-| The descriptor of `enums.v1.Task` and its fields.
+-}
+
 import Enums.V1.Priority
 import Enums.V1.Status
 import Proto.Field
@@ -17,7 +20,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `enums.v1.Task`: its full name and its fields, in declaration order.
+{-| `message enums.v1.Task`
+
+Describes [`Enums.V1.Task`](Enums-V1#Task).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -29,28 +35,34 @@ descriptor =
         ]
 
 
-{-| The field `status` of `enums.v1.Task`.
+{-| Without presence, an enum field reads absence as its zero value.
+
+`enums.v1.Status status = 1;`
+
 -}
 status : Proto.Field.Descriptor
 status =
     Proto.Field.descriptor "status" "status" 1 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Enums.V1.Status.descriptor)
 
 
-{-| The field `priority` of `enums.v1.Task`.
+{-| With presence, it is a Maybe.
+
+`optional enums.v1.Priority priority = 2;`
+
 -}
 priority : Proto.Field.Descriptor
 priority =
     Proto.Field.descriptor "priority" "priority" 2 Proto.Field.CardinalityOptional (Proto.Field.KindEnum Enums.V1.Priority.descriptor)
 
 
-{-| The field `history` of `enums.v1.Task`.
+{-| `repeated enums.v1.Status history = 3;`
 -}
 history : Proto.Field.Descriptor
 history =
     Proto.Field.descriptor "history" "history" 3 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Enums.V1.Status.descriptor)
 
 
-{-| The field `previous_status` of `enums.v1.Task`.
+{-| `enums.v1.Status previous_status = 4;`
 -}
 previousStatus : Proto.Field.Descriptor
 previousStatus =

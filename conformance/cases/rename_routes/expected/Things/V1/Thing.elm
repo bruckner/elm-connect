@@ -3,6 +3,9 @@
 
 module Things.V1.Thing exposing (..)
 
+{-| The descriptor of `things.v1.Thing` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `things.v1.Thing`: its full name and its fields, in declaration order.
+{-| `message things.v1.Thing`
+
+Describes [`Things.V1.Thing`](Things-V1#Thing).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `name` of `things.v1.Thing`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =

@@ -3,6 +3,11 @@
 
 module Clock.V1 exposing (..)
 
+{-| Path variables of well-known types whose JSON is one string or scalar:
+the variable's text is that JSON value, and the field is not repeated
+in the query.
+-}
+
 import Clock.V1.Moment
 import Json.Decode
 import Json.Encode
@@ -25,6 +30,16 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`message clock.v1.Moment`](Clock-V1-Moment#descriptor)
+
+  - [`at`](Clock-V1-Moment#at)
+  - [`mask`](Clock-V1-Moment#mask)
+  - [`count`](Clock-V1-Moment#count)
+  - [`seen`](Clock-V1-Moment#seen)
+  - [`wait`](Clock-V1-Moment#wait)
+  - [`note`](Clock-V1-Moment#note)
+
+-}
 type alias Moment =
     { at : Maybe Time.Posix
     , mask : Maybe (List String)
@@ -39,6 +54,8 @@ type alias Moment =
 -- DEFAULTS
 
 
+{-| A [`Moment`](#Moment) with every field at its default and every oneof unset.
+-}
 defaultMoment : Moment
 defaultMoment =
     { at = Nothing
@@ -54,6 +71,8 @@ defaultMoment =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Moment`](#Moment): its codecs, default and descriptor together.
+-}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
     Proto.Message.message encodeMoment decodeMoment defaultMoment Clock.V1.Moment.descriptor
@@ -63,6 +82,8 @@ messageMoment =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -78,6 +99,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON.
+-}
 encodeMoment : Moment -> Json.Encode.Value
 encodeMoment value =
     Proto.Json.objectOfFields
@@ -94,6 +117,8 @@ encodeMoment value =
 -- DECODERS
 
 
+{-| Decodes a [`Moment`](#Moment) from proto3 JSON.
+-}
 decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
     Json.Decode.succeed Moment

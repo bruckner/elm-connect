@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.UnimplementedResponse exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.UnimplementedResponse`.
+-}
+
 import Proto.Message
 import Proto.Version
 
@@ -14,7 +17,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `connectrpc.conformance.v1.UnimplementedResponse`: its full name and its fields, in declaration order.
+{-| `message connectrpc.conformance.v1.UnimplementedResponse`
+
+Describes [`Connectrpc.Conformance.V1.UnimplementedResponse`](Connectrpc-Conformance-V1#UnimplementedResponse).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =

@@ -3,6 +3,9 @@
 
 module Routes.V1.GetMessageRequestSubMessage exposing (..)
 
+{-| The descriptor of `routes.v1.GetMessageRequest.SubMessage` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.GetMessageRequest.SubMessage`: its full name and its fields, in declaration order.
+{-| `message routes.v1.GetMessageRequest.SubMessage`
+
+Describes [`Routes.V1.GetMessageRequestSubMessage`](Routes-V1#GetMessageRequestSubMessage).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -24,7 +30,7 @@ descriptor =
         ]
 
 
-{-| The field `subfield` of `routes.v1.GetMessageRequest.SubMessage`.
+{-| `string subfield = 1;`
 -}
 subfield : Proto.Field.Descriptor
 subfield =

@@ -3,6 +3,11 @@
 
 module Oneofs.V1 exposing (..)
 
+{-| Oneofs: a custom type per oneof whose first constructor is the unset
+case, held in one record field. Encoded as the set member alone;
+decoded from the one member present and not null, else unset.
+-}
+
 import Json.Decode
 import Json.Encode
 import Oneofs.V1.Choice
@@ -27,16 +32,36 @@ elmConnectVersion_ =
 -- TYPES
 
 
+{-| [`enum oneofs.v1.Color`](Oneofs-V1-Color#descriptor)
+
+  - `ColorUnspecified` (`COLOR_UNSPECIFIED`)
+  - `ColorRed` (`COLOR_RED`)
+
+-}
 type Color
     = ColorUnspecified
     | ColorRed
 
 
+{-| [`message oneofs.v1.Created`](Oneofs-V1-Created#descriptor)
+
+  - [`title`](Oneofs-V1-Created#title)
+
+-}
 type alias Created =
     { title : String
     }
 
 
+{-| [`message oneofs.v1.NoteEvent`](Oneofs-V1-NoteEvent#descriptor)
+
+  - [`id`](Oneofs-V1-NoteEvent#id)
+  - `kind`: Members of message, scalar and enum types; a multi-word member is
+    also read under its proto name. See [`NoteEventKind`](#NoteEventKind).
+  - `source`: A second oneof in the same message. See [`NoteEventSource`](#NoteEventSource).
+  - [`tags`](Oneofs-V1-NoteEvent#tags)
+
+-}
 type alias NoteEvent =
     { id : String
     , kind : NoteEventKind
@@ -45,6 +70,20 @@ type alias NoteEvent =
     }
 
 
+{-| Members of message, scalar and enum types; a multi-word member is
+also read under its proto name.
+
+`oneof kind` of `oneofs.v1.NoteEvent`
+
+  - `NoteEventKindUnset`: none of the fields is set.
+  - [`NoteEventKindCreated`](Oneofs-V1-NoteEvent#created)
+  - [`NoteEventKindTitleChanged`](Oneofs-V1-NoteEvent#titleChanged)
+  - [`NoteEventKindRecolored`](Oneofs-V1-NoteEvent#recolored)
+  - [`NoteEventKindDeletedAt`](Oneofs-V1-NoteEvent#deletedAt)
+  - [`NoteEventKindArchived`](Oneofs-V1-NoteEvent#archived): Empty members carry nothing: constructors without an argument.
+  - [`NoteEventKindClearedAll`](Oneofs-V1-NoteEvent#clearedAll)
+
+-}
 type NoteEventKind
     = NoteEventKindUnset
     | NoteEventKindCreated Created
@@ -55,17 +94,40 @@ type NoteEventKind
     | NoteEventKindClearedAll
 
 
+{-| A second oneof in the same message.
+
+`oneof source` of `oneofs.v1.NoteEvent`
+
+  - `NoteEventSourceUnset`: none of the fields is set.
+  - [`NoteEventSourceUser`](Oneofs-V1-NoteEvent#user)
+  - [`NoteEventSourceAutomated`](Oneofs-V1-NoteEvent#automated)
+
+-}
 type NoteEventSource
     = NoteEventSourceUnset
     | NoteEventSourceUser String
     | NoteEventSourceAutomated Bool
 
 
+{-| A message whose only content is a oneof.
+
+[`message oneofs.v1.Choice`](Oneofs-V1-Choice#descriptor)
+
+  - `value`: See [`ChoiceValue`](#ChoiceValue).
+
+-}
 type alias Choice =
     { value : ChoiceValue
     }
 
 
+{-| `oneof value` of `oneofs.v1.Choice`
+
+  - `ChoiceValueUnset`: none of the fields is set.
+  - [`ChoiceValueNumber`](Oneofs-V1-Choice#number)
+  - [`ChoiceValueText`](Oneofs-V1-Choice#text)
+
+-}
 type ChoiceValue
     = ChoiceValueUnset
     | ChoiceValueNumber Float
@@ -76,12 +138,16 @@ type ChoiceValue
 -- DEFAULTS
 
 
+{-| A [`Created`](#Created) with every field at its default and every oneof unset.
+-}
 defaultCreated : Created
 defaultCreated =
     { title = ""
     }
 
 
+{-| A [`NoteEvent`](#NoteEvent) with every field at its default and every oneof unset.
+-}
 defaultNoteEvent : NoteEvent
 defaultNoteEvent =
     { id = ""
@@ -91,6 +157,8 @@ defaultNoteEvent =
     }
 
 
+{-| A [`Choice`](#Choice) with every field at its default and every oneof unset.
+-}
 defaultChoice : Choice
 defaultChoice =
     { value = ChoiceValueUnset
@@ -101,21 +169,29 @@ defaultChoice =
 -- TYPED VALUES
 
 
+{-| The typed value of [`Color`](#Color): its codecs, zero value and descriptor together.
+-}
 enumColor : Proto.Enum.Enum Color
 enumColor =
     Proto.Enum.enum encodeColor decodeColor ColorUnspecified Oneofs.V1.Color.descriptor
 
 
+{-| The typed value of [`Created`](#Created): its codecs, default and descriptor together.
+-}
 messageCreated : Proto.Message.Message Created
 messageCreated =
     Proto.Message.message encodeCreated decodeCreated defaultCreated Oneofs.V1.Created.descriptor
 
 
+{-| The typed value of [`NoteEvent`](#NoteEvent): its codecs, default and descriptor together.
+-}
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
     Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent Oneofs.V1.NoteEvent.descriptor
 
 
+{-| The typed value of [`Choice`](#Choice): its codecs, default and descriptor together.
+-}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
     Proto.Message.message encodeChoice decodeChoice defaultChoice Oneofs.V1.Choice.descriptor
@@ -125,6 +201,8 @@ messageChoice =
 -- REGISTRY
 
 
+{-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://package.elm-lang.org/packages/bruckner/elm-connect/latest/Proto-Any#Any).
+-}
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.union
@@ -143,6 +221,8 @@ registry =
 -- ENCODERS
 
 
+{-| Encodes a [`Color`](#Color) as proto3 JSON.
+-}
 encodeColor : Color -> Json.Encode.Value
 encodeColor value =
     case value of
@@ -153,6 +233,8 @@ encodeColor value =
             Json.Encode.string "COLOR_RED"
 
 
+{-| Encodes a [`Created`](#Created) as proto3 JSON.
+-}
 encodeCreated : Created -> Json.Encode.Value
 encodeCreated value =
     Proto.Json.objectOfFields
@@ -160,6 +242,8 @@ encodeCreated value =
         ]
 
 
+{-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON.
+-}
 encodeNoteEvent : NoteEvent -> Json.Encode.Value
 encodeNoteEvent value =
     Proto.Json.objectOfFields
@@ -171,6 +255,8 @@ encodeNoteEvent value =
         )
 
 
+{-| Encodes a [`NoteEventKind`](#NoteEventKind) as the members of its message's JSON object.
+-}
 encodeNoteEventKind : NoteEventKind -> List ( String, Maybe Json.Encode.Value )
 encodeNoteEventKind value =
     case value of
@@ -202,6 +288,8 @@ encodeNoteEventKind value =
             ]
 
 
+{-| Encodes a [`NoteEventSource`](#NoteEventSource) as the members of its message's JSON object.
+-}
 encodeNoteEventSource : NoteEventSource -> List ( String, Maybe Json.Encode.Value )
 encodeNoteEventSource value =
     case value of
@@ -217,11 +305,15 @@ encodeNoteEventSource value =
             ]
 
 
+{-| Encodes a [`Choice`](#Choice) as proto3 JSON.
+-}
 encodeChoice : Choice -> Json.Encode.Value
 encodeChoice value =
     Proto.Json.objectOfFields (encodeChoiceValue value.value)
 
 
+{-| Encodes a [`ChoiceValue`](#ChoiceValue) as the members of its message's JSON object.
+-}
 encodeChoiceValue : ChoiceValue -> List ( String, Maybe Json.Encode.Value )
 encodeChoiceValue value =
     case value of
@@ -241,6 +333,8 @@ encodeChoiceValue value =
 -- DECODERS
 
 
+{-| Decodes a [`Color`](#Color) from proto3 JSON.
+-}
 decodeColor : Json.Decode.Decoder Color
 decodeColor =
     Proto.Json.enum "Color"
@@ -250,12 +344,16 @@ decodeColor =
         ]
 
 
+{-| Decodes a [`Created`](#Created) from proto3 JSON.
+-}
 decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
     Json.Decode.succeed Created
         |> Proto.Json.field "title" "" Json.Decode.string
 
 
+{-| Decodes a [`NoteEvent`](#NoteEvent) from proto3 JSON.
+-}
 decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
     Json.Decode.succeed NoteEvent
@@ -265,6 +363,8 @@ decodeNoteEvent =
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
+{-| Decodes a [`NoteEventKind`](#NoteEventKind) from the members of its message's JSON object.
+-}
 decodeNoteEventKind : Json.Decode.Decoder NoteEventKind
 decodeNoteEventKind =
     Proto.Json.members "kind"
@@ -278,6 +378,8 @@ decodeNoteEventKind =
         ]
 
 
+{-| Decodes a [`NoteEventSource`](#NoteEventSource) from the members of its message's JSON object.
+-}
 decodeNoteEventSource : Json.Decode.Decoder NoteEventSource
 decodeNoteEventSource =
     Proto.Json.members "source"
@@ -287,12 +389,16 @@ decodeNoteEventSource =
         ]
 
 
+{-| Decodes a [`Choice`](#Choice) from proto3 JSON.
+-}
 decodeChoice : Json.Decode.Decoder Choice
 decodeChoice =
     Json.Decode.succeed Choice
         |> Proto.Json.oneof decodeChoiceValue
 
 
+{-| Decodes a [`ChoiceValue`](#ChoiceValue) from the members of its message's JSON object.
+-}
 decodeChoiceValue : Json.Decode.Decoder ChoiceValue
 decodeChoiceValue =
     Proto.Json.members "value"

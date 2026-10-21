@@ -3,6 +3,9 @@
 
 module Google.Rpc.RequestInfo exposing (..)
 
+{-| The descriptor of `google.rpc.RequestInfo` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,13 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.RequestInfo`: its full name and its fields, in declaration order.
+{-| Contains metadata about the request that clients can attach when filing a bug
+or providing other forms of feedback.
+
+`message google.rpc.RequestInfo`
+
+Describes [`Google.Rpc.RequestInfo`](Google-Rpc#RequestInfo).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +34,22 @@ descriptor =
         ]
 
 
-{-| The field `request_id` of `google.rpc.RequestInfo`.
+{-| An opaque string that should only be interpreted by the service generating
+it. For example, it can be used to identify requests in the service's logs.
+
+`string request_id = 1;`
+
 -}
 requestId : Proto.Field.Descriptor
 requestId =
     Proto.Field.descriptor "request_id" "requestId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `serving_data` of `google.rpc.RequestInfo`.
+{-| Any data that was used to serve this request. For example, an encrypted
+stack trace that can be sent back to the service provider for debugging.
+
+`string serving_data = 2;`
+
 -}
 servingData : Proto.Field.Descriptor
 servingData =

@@ -3,6 +3,9 @@
 
 module Api.Example.Notes.V1.Note exposing (..)
 
+{-| The descriptor of `notes.v1.Note` and its fields.
+-}
+
 import Api.Example.People.Role
 import Proto.Field
 import Proto.Message
@@ -16,7 +19,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `notes.v1.Note`: its full name and its fields, in declaration order.
+{-| `message notes.v1.Note`
+
+Describes [`Api.Example.Notes.V1.Note`](Api-Example-Notes-V1#Note).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -27,21 +33,21 @@ descriptor =
         ]
 
 
-{-| The field `name` of `notes.v1.Note`.
+{-| `string name = 1;`
 -}
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `author` of `notes.v1.Note`.
+{-| `users.v1.User author = 2;`
 -}
 author : Proto.Field.Descriptor
 author =
     Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
 
 
-{-| The field `required_role` of `notes.v1.Note`.
+{-| `users.v1.Role required_role = 3;`
 -}
 requiredRole : Proto.Field.Descriptor
 requiredRole =

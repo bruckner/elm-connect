@@ -3,6 +3,9 @@
 
 module Routes.V1.Message exposing (..)
 
+{-| The descriptor of `routes.v1.Message` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,10 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `routes.v1.Message`: its full name and its fields, in declaration order.
+{-| `message routes.v1.Message`
+
+Describes [`Routes.V1.Message`](Routes-V1#Message).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -25,14 +31,14 @@ descriptor =
         ]
 
 
-{-| The field `message_id` of `routes.v1.Message`.
+{-| `string message_id = 1;`
 -}
 messageId : Proto.Field.Descriptor
 messageId =
     Proto.Field.descriptor "message_id" "messageId" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `text` of `routes.v1.Message`.
+{-| `string text = 2;`
 -}
 text : Proto.Field.Descriptor
 text =

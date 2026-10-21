@@ -3,6 +3,9 @@
 
 module Connectrpc.Conformance.V1.Codec exposing (..)
 
+{-| The descriptor of `connectrpc.conformance.v1.Codec`.
+-}
+
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Version
@@ -15,7 +18,15 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the enum `connectrpc.conformance.v1.Codec`: its full name and its values, in declaration order.
+{-| `enum connectrpc.conformance.v1.Codec`
+
+Describes [`Connectrpc.Conformance.V1.Codec`](Connectrpc-Conformance-V1#Codec).
+
+  - `CODEC_UNSPECIFIED = 0;`
+  - `CODEC_PROTO = 1;`
+  - `CODEC_JSON = 2;`
+  - `CODEC_TEXT = 3 [deprecated = true];` Deprecated. not used; will be ignored
+
 -}
 descriptor : Proto.Enum.Descriptor
 descriptor =

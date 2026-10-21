@@ -3,6 +3,9 @@
 
 module Google.Rpc.PreconditionFailureViolation exposing (..)
 
+{-| The descriptor of `google.rpc.PreconditionFailure.Violation` and its fields.
+-}
+
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -15,7 +18,12 @@ elmConnectVersion_ =
     Proto.Version.v0_1
 
 
-{-| What the proto says about the message `google.rpc.PreconditionFailure.Violation`: its full name and its fields, in declaration order.
+{-| A message type used to describe a single precondition failure.
+
+`message google.rpc.PreconditionFailure.Violation`
+
+Describes [`Google.Rpc.PreconditionFailureViolation`](Google-Rpc#PreconditionFailureViolation).
+
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
@@ -26,21 +34,37 @@ descriptor =
         ]
 
 
-{-| The field `type` of `google.rpc.PreconditionFailure.Violation`.
+{-| The type of PreconditionFailure. We recommend using a service-specific
+enum type to define the supported precondition violation subjects. For
+example, "TOS" for "Terms of Service violation".
+
+`string type = 1;`
+
 -}
 type_ : Proto.Field.Descriptor
 type_ =
     Proto.Field.descriptor "type" "type" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `subject` of `google.rpc.PreconditionFailure.Violation`.
+{-| The subject, relative to the type, that failed.
+For example, "google.com/cloud" relative to the "TOS" type would indicate
+which terms of service is being referenced.
+
+`string subject = 2;`
+
 -}
 subject : Proto.Field.Descriptor
 subject =
     Proto.Field.descriptor "subject" "subject" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
 
-{-| The field `description` of `google.rpc.PreconditionFailure.Violation`.
+{-| A description of how the precondition failed. Developers can use this
+description to understand how to fix the failure.
+
+For example: "Terms of service not accepted".
+
+`string description = 3;`
+
 -}
 description : Proto.Field.Descriptor
 description =
