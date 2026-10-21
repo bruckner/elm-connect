@@ -271,7 +271,13 @@ impl Emitter {
             let behavior: Vec<Expr> = annotations
                 .behavior
                 .iter()
-                .map(|behavior| self.reference((PROTO_FIELD, behavior_constructor(*behavior))))
+                .map(|behavior| match behavior_constructor(*behavior) {
+                    Ok(name) => self.reference((PROTO_FIELD, name)),
+                    Err(number) => apply(
+                        self.reference((PROTO_FIELD, "BehaviorUnknown")),
+                        [int(number.into())],
+                    ),
+                })
                 .collect();
             let modifier = apply(
                 self.reference((PROTO_FIELD, "withBehavior")),
@@ -387,9 +393,10 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
     fields
 }
 
-/// The `Proto.Field.Behavior` constructor of a field behavior.
-fn behavior_constructor(behavior: FieldBehavior) -> &'static str {
-    match behavior {
+/// The `Proto.Field.Behavior` constructor of a field behavior this release
+/// names, or the number of one it does not, which `BehaviorUnknown` holds.
+fn behavior_constructor(behavior: FieldBehavior) -> Result<&'static str, i32> {
+    Ok(match behavior {
         FieldBehavior::Optional => "BehaviorOptional",
         FieldBehavior::Required => "BehaviorRequired",
         FieldBehavior::OutputOnly => "BehaviorOutputOnly",
@@ -398,7 +405,8 @@ fn behavior_constructor(behavior: FieldBehavior) -> &'static str {
         FieldBehavior::UnorderedList => "BehaviorUnorderedList",
         FieldBehavior::NonEmptyDefault => "BehaviorNonEmptyDefault",
         FieldBehavior::Identifier => "BehaviorIdentifier",
-    }
+        FieldBehavior::Unknown(number) => return Err(number),
+    })
 }
 
 /// The `Proto.Field.Scalar` constructor of a proto scalar.

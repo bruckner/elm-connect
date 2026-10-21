@@ -1024,3 +1024,8 @@ tag (design §8).
   for an application outside this repository, and the quick start an
   offline elm-test of a call. The package's `elm.json` summary names
   Connect and `google.api.http`.
+- `Proto.Field.Behavior` gains `BehaviorUnknown Int`: a
+  `google.api.field_behavior` number this release does not name is kept
+  with its number instead of dropped, so a later release can name it
+  without a major (`annotations_unknown_behavior` case). Code matching
+  `Behavior` exhaustively needs the new case.

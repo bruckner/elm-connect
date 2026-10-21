@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// A `google.api.field_behavior` number this release does not name is kept
+// as `Proto.Field.BehaviorUnknown` with the number, in its place among the
+// named ones; the unspecified zero is dropped.
+package drafts.v1;
+
+import "google/api/field_behavior.proto";
+
+message Draft {
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (google.api.field_behavior) = FUTURE
+  ];
+  string body = 2 [(google.api.field_behavior) = FUTURE];
+  string owner = 3 [
+    (google.api.field_behavior) = BELOW_ZERO,
+    (google.api.field_behavior) = FIELD_BEHAVIOR_UNSPECIFIED,
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
