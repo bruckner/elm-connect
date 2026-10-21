@@ -1034,3 +1034,6 @@ tag (design §8).
   gRPC-Web trailers and from the Connect end-of-stream message; this
   release never gives them. Code matching `Source` exhaustively needs the
   new cases.
+- `docs/roadmap.md` lists what may come after 1.0, each item with
+  whether it would be a minor or a major release, and what is not
+  planned and why.
