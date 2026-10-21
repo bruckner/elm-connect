@@ -92,6 +92,8 @@ A browser shows a cross-origin answer's headers to the page only when
 the server lists them in `Access-Control-Expose-Headers`. Without
 `grpc-status` there, the error has no status to read, and is an
 `HttpStatus` error with the code inferred from the HTTP status.
+[envoy.md](envoy.md#a-page-on-another-origin) configures Envoy's CORS
+filter so.
 
 ## Request headers and metadata
 

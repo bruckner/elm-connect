@@ -107,13 +107,68 @@ One route passes the server's canned answers (`/status/<n>/`,
 `/grpc-status/<code>/`) and `/healthz` through with the transcoder
 disabled for it; they are the live suite's, not part of a deployment.
 
-A page served from another origin needs Envoy's CORS filter too, with
-`grpc-status` and `grpc-message` in `expose_headers` when errors travel
-in headers; without them the browser hides the status and the error is
-an `HttpStatus` one ([transcoding.md](transcoding.md#errors-in-headers)).
-The live suite calls from Node, where CORS does not apply, so the
-config has none; this is from Envoy's documentation, not the live
-suite.
+### A page on another origin
+
+An Elm page served from another origin than the API calls it across
+origins, so the browser asks Envoy first (a preflight `OPTIONS`) and
+hides any answer Envoy does not mark for the page's origin. Both
+listeners run Envoy's CORS filter ahead of the transcoder, which would
+otherwise answer the preflight as a path no method matches, and share
+one policy on the virtual host:
+
+```yaml conformance/live/envoy/envoy.yaml#cors
+# What a page served from another origin needs: the
+# CORS filter answers its preflight and marks each
+# response for the origins listed here.
+typed_per_filter_config:
+  envoy.filters.http.cors:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+    # The origins of the pages that call the API, an
+    # example value: a deployment lists its own.
+    allow_origin_string_match:
+      - exact: http://example.test
+    # The methods of the rules under transcoding. A
+    # `custom` rule's kind is added here; HEAD needs no
+    # preflight.
+    allow_methods: GET, POST, PUT, PATCH, DELETE
+    # What the runtime sends: content-type with a JSON
+    # body, and the headers an application adds (the
+    # config's `headers`, Rpc.Call.withHeaders), here an
+    # example pair. "*" would allow any, but a browser
+    # does not take "*" for authorization, nor at all
+    # for a call with credentials, and a list keeps to
+    # the headers the API reads.
+    allow_headers: content-type, authorization, x-request-id
+    # A page reads a header only when it is exposed:
+    # these carry a gRPC error that has no body (the
+    # grpc_headers listener).
+    expose_headers: grpc-status, grpc-message, grpc-status-details-bin
+```
+
+- `allow_origin_string_match`: the origins of the pages, exactly. A
+  preflight from any other origin passes the filter unanswered and gets
+  the transcoder's 404, with no CORS headers, so the browser refuses
+  the call.
+- `allow_methods`: the methods of `GET`, `POST`, `PUT`, `PATCH` and
+  `DELETE` rules; a service with a `custom` rule adds its kind.
+- `allow_headers`: `content-type`, which every call with a body sends
+  as `application/json`, and the headers the application adds. List
+  them rather than `*`: a browser never lets `*` cover
+  `authorization`, nor anything on a call with credentials
+  (`withCredentials`, which also needs `allow_credentials: true`).
+- `expose_headers`: without them the browser hides `grpc-status` and
+  `grpc-message`, and an error from the `grpc_headers` listener, which
+  has no body, is an `HttpStatus` one
+  ([transcoding.md](transcoding.md#errors-in-headers)).
+
+The live suite calls from Node, where CORS does not apply, so it does
+not exercise the block. It was checked by hand against Envoy 1.40.0
+on both listeners: a preflight from `http://example.test` gets 200 with
+`access-control-allow-origin`, `-allow-methods`, `-allow-headers` and
+`-expose-headers`, a `GET` with
+that `Origin` gets its answer with `access-control-allow-origin` and
+`access-control-expose-headers` (an error on `grpc_headers` included),
+and a preflight from another origin gets 404 without them.
 
 ## Running it
 

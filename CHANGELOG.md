@@ -1088,7 +1088,8 @@ tag (design §8).
   a `google.rpc.Status` body, and Envoy's default errors in
   `grpc-status` headers, which the runtime reads as `GrpcHeaders`.
   Divergences are in `known-divergent-envoy.json`; `docs/envoy.md`
-  walks through the config.
+  walks through the config, whose CORS filter lets a page on another
+  origin call it and read `grpc-status` errors.
 - The generator warns of two bindings with one HTTP method and one
   path shape (`/v1/{name=messages/*}` beside `/v1/messages/{id}`),
   which no router serves together: `route::ambiguous_binding`, one per
