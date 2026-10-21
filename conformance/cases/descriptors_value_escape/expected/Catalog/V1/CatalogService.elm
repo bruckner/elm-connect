@@ -33,6 +33,7 @@ elmConnectVersion_ =
 `rpc GetEntry(GetEntryRequest) returns (Entry)`.
 Connect: `POST /catalog.v1.CatalogService/GetEntry`.
 Transcode: `GET /v1/{name=entries/*}`.
+
 Described by [`descriptorGetEntry`](#descriptorGetEntry).
 
 -}

@@ -48,6 +48,7 @@ The returned payload should only contain the request info.
 `rpc Unary(UnaryRequest) returns (UnaryResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorUnary`](#descriptorUnary).
 
 -}
@@ -66,6 +67,7 @@ return an unimplemented error when invoked.
 `rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
 
 -}
@@ -85,6 +87,7 @@ leverage query parameters to send data.
 `rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
 
 -}

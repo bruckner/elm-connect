@@ -2207,7 +2207,13 @@ mod tests {
         "Encodes a [`Node_`](#Node_) as proto3 JSON.",
         "`rpc Get(A) returns (B)`.\n\
          Connect: `POST /s.v1.S/Get`.\n\
-         Transcode: no HTTP rule, follows the Connect path.\n\
+         Transcode: no HTTP rule, follows the Connect path.\n\n\
+         Described by [`descriptorGet`](#descriptorGet).",
+        "`rpc Get(A) returns (B)`.\n\
+         Connect: `POST /s.v1.S/Get`.\n\
+         Transcode:\n\n\
+         \x20 - binding 0: `GET /v1/a`;\n\
+         \x20 - binding 1: `GET /v1/b`, body `*`.\n\n\
          Described by [`descriptorGet`](#descriptorGet).",
         "Holds a [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
          bruckner/elm-connect/latest/Proto-Any#Any).",

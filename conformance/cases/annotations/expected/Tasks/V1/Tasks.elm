@@ -26,7 +26,9 @@ elmConnectVersion_ =
 {-| `rpc GetTask(GetTaskRequest) returns (Task)`.
 Connect: `POST /tasks.v1.Tasks/GetTask`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorGetTask`](#descriptorGetTask).
+
 -}
 getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 getTask =
@@ -40,7 +42,9 @@ getTask =
 {-| `rpc PutTask(Task) returns (Task)`.
 Connect: `POST /tasks.v1.Tasks/PutTask`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorPutTask`](#descriptorPutTask).
+
 -}
 putTask : Tasks.V1.Task -> Rpc.Call Tasks.V1.Task Tasks.V1.Task
 putTask =
@@ -54,7 +58,9 @@ putTask =
 {-| `rpc CloseTask(GetTaskRequest) returns (Task)`.
 Connect: `POST /tasks.v1.Tasks/CloseTask`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorCloseTask`](#descriptorCloseTask).
+
 -}
 closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Tasks.V1.GetTaskRequest Tasks.V1.Task
 closeTask =

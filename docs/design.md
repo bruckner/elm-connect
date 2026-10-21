@@ -1667,7 +1667,11 @@ message's descriptor sits in a module apart from its type (§3.1). The
 
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
 Described by [`descriptorGetNote`](#descriptorGetNote).
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
@@ -1718,12 +1722,12 @@ keeps.
 
 - **A method's documentation shows its routes.** *(Decided,
   2026-10-20.)* A call's doc comment gives the method's comment
-  (§3.1), then its declaration line, its Connect path on a line of its own and its HTTP
-  bindings as its
-  `google.api.http` rule writes them, the rule's own first and each
-  additional binding numbered as `Rpc.Call.viaBinding` counts it, each
-  with its `body` and `response_body` where set, then a line linking
-  its descriptor;
+  (§3.1), then its declaration line, its Connect path on a line of its
+  own and its HTTP bindings as its `google.api.http` rule writes them,
+  each with its `body` and `response_body` where set: one binding on
+  the Transcode line, several as a list numbered as
+  `Rpc.Call.viaBinding` counts them, binding 0 the rule's own; then, as
+  a paragraph of its own, a line linking its descriptor;
   `Transcode: no HTTP rule, follows the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the declaration line are named as the

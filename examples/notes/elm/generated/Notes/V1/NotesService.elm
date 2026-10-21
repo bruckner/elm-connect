@@ -50,6 +50,7 @@ detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
 `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
+
 Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
@@ -67,6 +68,7 @@ getNote =
 `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/notes`.
+
 Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
@@ -86,6 +88,7 @@ A name already taken is ALREADY\_EXISTS.
 `rpc CreateNote(CreateNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
+
 Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
@@ -103,6 +106,7 @@ createNote =
 `rpc UpdateNote(UpdateNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
+
 Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 
 -}
@@ -120,6 +124,7 @@ updateNote =
 `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`.
 Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
+
 Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 
 -}
@@ -137,6 +142,7 @@ deleteNote =
 `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
+
 Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 
 -}
@@ -155,6 +161,7 @@ the implicit route, `POST /notes.v1.NotesService/Ping`.
 `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorPing`](#descriptorPing).
 
 -}

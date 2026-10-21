@@ -29,7 +29,9 @@ elmConnectVersion_ =
 {-| `rpc GetThing(GetThingRequest) returns (Thing)`.
 Connect: `POST /things.v1.ThingService/GetThing`.
 Transcode: `GET /v1/{name=things/*}`.
+
 Described by [`descriptorGetThing`](#descriptorGetThing).
+
 -}
 getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
 getThing =

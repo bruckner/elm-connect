@@ -39,7 +39,11 @@ elmConnectVersion_ =
 
 `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
 Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
@@ -57,6 +61,7 @@ getNote =
 `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+
 Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
@@ -74,6 +79,7 @@ listNotes =
 `rpc CreateNote(CreateNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
+
 Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
@@ -93,6 +99,7 @@ Replaces a note: the body is the whole request.
 `rpc ReplaceNote(Note) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
+
 Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 
 -}
@@ -110,6 +117,7 @@ replaceNote =
 `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorPing`](#descriptorPing).
 
 -}

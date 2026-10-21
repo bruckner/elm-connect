@@ -37,8 +37,13 @@ elmConnectVersion_ =
 
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`; binding 1: `GET /v1/{name=users/*/notes/*}`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
 Described by [`descriptorGetNote`](#descriptorGetNote).
+
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
@@ -52,7 +57,9 @@ getNote =
 {-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+
 Described by [`descriptorListNotes`](#descriptorListNotes).
+
 -}
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
@@ -66,7 +73,9 @@ listNotes =
 {-| `rpc CreateNote(CreateNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
+
 Described by [`descriptorCreateNote`](#descriptorCreateNote).
+
 -}
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
@@ -80,7 +89,9 @@ createNote =
 {-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
+
 Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
+
 -}
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
@@ -94,7 +105,9 @@ updateNote =
 {-| `rpc ReplaceNote(Note) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
+
 Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+
 -}
 replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
 replaceNote =
@@ -108,7 +121,9 @@ replaceNote =
 {-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`.
 Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
+
 Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
+
 -}
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
 deleteNote =
@@ -122,7 +137,9 @@ deleteNote =
 {-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
+
 Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
+
 -}
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
@@ -136,7 +153,9 @@ archiveNote =
 {-| `rpc ReadFile(ReadFileRequest) returns (Summary)`.
 Connect: `POST /notes.v1.NotesService/ReadFile`.
 Transcode: `HEAD /v1/{path=files/**}`.
+
 Described by [`descriptorReadFile`](#descriptorReadFile).
+
 -}
 readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
 readFile =
@@ -150,7 +169,9 @@ readFile =
 {-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: `GET /v1/ping`.
+
 Described by [`descriptorPing`](#descriptorPing).
+
 -}
 ping : () -> Rpc.Call () ()
 ping =
@@ -166,6 +187,7 @@ ping =
 `rpc Summarize(GetNoteRequest) returns (Summary)`.
 Connect: `POST /notes.v1.NotesService/Summarize`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorSummarize`](#descriptorSummarize).
 
 -}

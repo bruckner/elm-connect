@@ -26,7 +26,9 @@ elmConnectVersion_ =
 {-| `rpc GetNote(GetNoteRequest) returns (Note)`.
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: no HTTP rule, follows the Connect path.
+
 Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
+
 -}
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =

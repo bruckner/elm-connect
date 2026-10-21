@@ -349,30 +349,46 @@ pub(super) fn enum_descriptor(enumeration: &Enum, described: &str) -> String {
 }
 
 /// The doc of a method's call: the proto's part, then its declaration,
-/// its Connect path and its HTTP bindings as its rule writes them, and
-/// its descriptor, as a link.
+/// its Connect path and its HTTP bindings as its rule writes them (one
+/// on the Transcode line; several as a list, numbered as
+/// `Rpc.Call.viaBinding` counts them), and its descriptor, as a link in
+/// a paragraph of its own.
 pub(super) fn method(service: &str, method: &Method) -> String {
-    let routes = match &method.http {
-        Some(rule) => {
-            let bindings = std::iter::once(rule)
-                .chain(&rule.additional_bindings)
-                .enumerate()
-                .map(|(index, rule)| match index {
-                    0 => binding(rule),
-                    n => format!("binding {n}: {}", binding(rule)),
-                })
-                .collect::<Vec<_>>();
-            format!("Transcode: {}.", bindings.join("; "))
+    let (transcode, bindings) = match &method.http {
+        Some(rule) if rule.additional_bindings.is_empty() => {
+            (format!("Transcode: {}.", binding(rule)), String::new())
         }
-        None => "Transcode: no HTTP rule, follows the Connect path.".to_owned(),
+        Some(rule) => {
+            let rules: Vec<_> = std::iter::once(rule)
+                .chain(&rule.additional_bindings)
+                .collect();
+            let last = rules.len() - 1;
+            let items = rules
+                .iter()
+                .enumerate()
+                .map(|(index, rule)| {
+                    let end = if index == last { '.' } else { ';' };
+                    item(&format!("binding {index}: {}{end}", binding(rule)), &[])
+                })
+                .collect();
+            ("Transcode:".to_owned(), list(items))
+        }
+        None => (
+            "Transcode: no HTTP rule, follows the Connect path.".to_owned(),
+            String::new(),
+        ),
     };
     let head = format!(
-        "{}.\nConnect: {}.\n{routes}\nDescribed by {}.",
+        "{}.\nConnect: {}.\n{transcode}",
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
-        local(&method.descriptor_name()),
     );
-    paragraphs(proto_part(&method.doc).into_iter().chain([head]))
+    let described = format!("Described by {}.", local(&method.descriptor_name()));
+    paragraphs(
+        proto_part(&method.doc)
+            .into_iter()
+            .chain([head, bindings, described]),
+    )
 }
 
 /// One binding of an HTTP rule: `` `GET /v1/{name=notes/*}` ``, then its
