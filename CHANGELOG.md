@@ -1095,3 +1095,11 @@ tag (design §8).
   path shape (`/v1/{name=messages/*}` beside `/v1/messages/{id}`),
   which no router serves together: `route::ambiguous_binding`, one per
   pair, with the `routes_ambiguous_binding` conformance case.
+- `options::unknown_rename` says which part of a mistyped rename failed
+  and where: the longest prefix that resolves, the kind of element it is
+  and the member it lacks (`library.v1.Book` is a message, and has no
+  field, oneof or nested message or enum `pageCount`), sited on its
+  declaration, with a did-you-mean among its members only; that the
+  element's package is not generated, and how to generate it; or, when
+  nothing resolves, the generated packages. The `rename_unknown`
+  conformance case pins each.

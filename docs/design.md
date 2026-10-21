@@ -1351,8 +1351,12 @@ rename to `elmConnectVersion_` was `naming::value_collision`. An enum
 value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
-`options::unknown_rename`, which suggests the closest full name they
-have (`suggestions` case). Names that collide after renaming are the
+`options::unknown_rename`. It names the longest prefix of the name that
+resolves, what kind of element that is, and the member it lacks, sited
+on that element's declaration, with a suggestion among that element's
+members only; or that the element's package is not generated, and how
+to generate it; or, when nothing resolves, the generated packages, with
+a suggestion among them (`suggestions` and `rename_unknown` cases). Names that collide after renaming are the
 `naming::*_collision` diagnostics, as before, and each `naming::*` help
 text names the escape, the `rename` of the element at fault by its proto
 full name (of a collision's second claimant, when renaming it would part

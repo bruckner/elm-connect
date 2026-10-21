@@ -1,22 +1,32 @@
 options::unknown_rename
 
-  × The rename of `library.v1.Bok` names nothing elm-connect generates.
-  help: Did you mean `library.v1.Book`? A rename names a package, service,
-        method, message, enum, field, oneof or enum value of a generated
-        package by its proto full name, as the proto declares it
-        (`notes.v1.Note.page_count`, not `pageCount`): nested names dotted
-        (`notes.v1.Note.Revision`), an enum value under its enum
+  × `library.v1` is a package, and has no service, message or enum `Bok`.
+   ╭─[library.proto:5:1]
+ 4 │
+ 5 │ package library.v1;
+   · ─────────┬─────────
+   ·          ╰── the package here
+ 6 │
+   ╰────
+  help: Did you mean `library.v1.Book`? A rename names an element by its proto
+        full name, as declared (`notes.v1.Note.page_count`, not `pageCount`),
+        nested names dotted, an enum value under its enum
         (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
 
 options::unknown_rename
 
-  × The rename of `library.v1.Book.pageCount` names nothing elm-connect
-  │ generates.
-  help: Did you mean `library.v1.Book.page_count`? A rename names a package,
-        service, method, message, enum, field, oneof or enum value of a
-        generated package by its proto full name, as the proto declares it
-        (`notes.v1.Note.page_count`, not `pageCount`): nested names dotted
-        (`notes.v1.Note.Revision`), an enum value under its enum
+  × `library.v1.Book` is a message, and has no field, oneof or nested message
+  │ or enum `pageCount`.
+    ╭─[library.proto:9:9]
+  8 │
+  9 │ message Book {
+    ·         ──┬─
+    ·           ╰── the message here
+ 10 │   string name = 1;
+    ╰────
+  help: Did you mean `library.v1.Book.page_count`? A rename names an element
+        by its proto full name, as declared (`notes.v1.Note.page_count`, not
+        `pageCount`), nested names dotted, an enum value under its enum
         (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
 
 route::path_field
