@@ -237,6 +237,75 @@ from the HTTP status: a path no method matches is 404
 phrase, `Unknown` for a status it has no name for, so a 418 from the
 service arrives with the message `Unknown` (`cases/envoy.json`).
 
+### Envoy's own errors as Connect errors
+
+A deployment can give Envoy's own answers (404 for a path no method
+matches, 400 for an unknown query parameter, 503 when the service is
+unreachable) the Connect error shape, `{"code": "not_found", "message":
+"…"}`, with a Lua filter. The runtime reads either shape, a Connect
+error body or a `google.rpc.Status` one, on every transport
+(`src/Rpc/Internal/Answer.elm`), so such an answer arrives as an `RpcStatus`
+error with source `ConnectBody` and the text as its message. The cost:
+the filter replaces every error body that is neither gRPC's nor JSON,
+so a plain-text answer a deployment wants kept has to be excluded in the
+script. It is not in the example config; it was run against Envoy
+1.40.0 on both listeners, where a path no method matches came back as
+404 `{"code":"unimplemented","message":"Could not resolve /nowhere/v1/notes/welcome to a method."}`
+and read as `Rpc.Code.Unimplemented` from a `ConnectBody`; the
+service's own errors and its successes passed unchanged.
+
+```yaml
+# Before the transcoder in http_filters, so that its own answers pass
+# through this filter too.
+- name: envoy.filters.http.lua
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+    default_source_code:
+      inline_string: |
+        -- Connect's code for an HTTP status, as Rpc.Code.fromHttpStatus
+        -- reads one.
+        local codes = {
+          [400] = "internal", [401] = "unauthenticated",
+          [403] = "permission_denied", [404] = "unimplemented",
+          [429] = "unavailable", [502] = "unavailable",
+          [503] = "unavailable", [504] = "unavailable",
+        }
+
+        local function json_string(text)
+          local escaped = text:gsub('[%c"\\]', function(c)
+            return string.format("\\u%04x", c:byte())
+          end)
+          return '"' .. escaped .. '"'
+        end
+
+        -- An error that is neither gRPC's (grpc-status) nor JSON
+        -- becomes a Connect error body, its text the message.
+        function envoy_on_response(response)
+          local headers = response:headers()
+          local status = tonumber(headers:get(":status"))
+          local content_type = headers:get("content-type") or ""
+          if status < 400 or headers:get("grpc-status") ~= nil
+              or content_type:sub(1, 16) == "application/json" then
+            return
+          end
+          local body = response:body(true)
+          local json = '{"code":"' .. (codes[status] or "unknown")
+            .. '","message":'
+            .. json_string(body:getBytes(0, body:length())) .. '}'
+          body:setBytes(json)
+          -- Fetched again: body() waits for the whole body, after which
+          -- the earlier headers object is out of scope.
+          headers = response:headers()
+          headers:replace("content-type", "application/json")
+          headers:replace("content-length", tostring(#json))
+        end
+```
+
+The code follows the HTTP status by Connect's table, the one
+`Rpc.Code.fromHttpStatus` implements, so the code is the one the runtime
+would infer anyway; what the filter adds is the JSON shape and the text
+as a message a client can show.
+
 Headers the call sends reach the service as gRPC metadata, by name, and
 the service's response metadata comes back as headers (the
 `x-echo` case of `cases/notes.json`): unlike grpc-gateway, Envoy needs
