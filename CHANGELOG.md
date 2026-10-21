@@ -1037,3 +1037,7 @@ tag (design §8).
 - `docs/roadmap.md` lists what may come after 1.0, each item with
   whether it would be a minor or a major release, and what is not
   planned and why.
+- `docs/decisions.md` records the settled design questions by topic,
+  each dated, with the alternatives and the reasons; the design's open
+  questions (§9) and its out-of-scope list (§10) move there and to the
+  roadmap.

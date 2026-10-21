@@ -3570,59 +3570,11 @@ can.
 
 ## 9. Open questions, collected
 
-1. *(Closed 2026-10-13.)* `Any` (§3.5): `Proto.Any` packs and
-   unpacks through the typed values (§3.9), describes through a
-   registry, and holds a payload that arrived only as binary rather
-   than failing on it; `Rpc` error details are `Any`s (§5.4).
-
-Settled 2026-10-13, with the client's shape (§2, §4, §5): whether to
-fuse method and route for transcoding, and how to name additional
-bindings. A call is data built per method, carrying every binding, so
-there is nothing to fuse, and `Rpc.Call.viaBinding n` picks a binding
-without a name for it. Route presence left the type with them: a
-method without a rule takes the implicit route, and
-`unbound_methods=error` is the strict form. The config is data, so
-interceptors, a token provider and a logger in it were rejected: a
-function in a config makes it impossible to compare (Elm 0.19 throws
-on `==` over functions), to keep safely in a model or under
-`Html.Lazy`, and to print or build per call with record syntax, and
-each use of one maps onto data (headers, timeout, retry), onto
-update-time handling (logging from the `Trace`, token refresh
-single-flight in the application's shell) or onto the pure halves
-(rewriting a request between `Rpc.request` and `Rpc.taskFromRequest`).
-If hooks are wanted after all, an opaque `Rpc.Client` built from a
-`Config` plus hooks can be added beside `Rpc.task : Config -> …`
-without breaking it.
-
-Recorded 2026-10-16: a retry policy does not read `Retry-After` (a 429
-or 503's seconds) or a `google.rpc.RetryInfo` detail. Honouring either
-is additive, a modifier of the opaque `Rpc.Retry` (§5.1).
-
-Recorded 2026-10-16: a streaming design spike comes before 1.0. It is a
-spec-only pass that writes the streaming section against the runtime's
-API as reshaped on 2026-10-16 (opaque types, `Rpc.Error`, plain
-`cancel`) and lists every point where it would have wanted a 1.0
-surface to differ. Its outcome is open, and it may pull streaming into
-the pre-1.0 work.
+The questions this section collected are settled, and recorded with
+their reasons in [decisions.md](decisions.md).
 
 ## 10. Out of scope but recorded
 
-Streaming (both transports), binary protobuf, gRPC-web, proto2,
-interceptors (§9), server generation. Each has a sentence above
-saying why; none is a permanent no.
-
-Leaving comments out *(Recorded 2026-10-20; not built)*: a
-`comments=off` option, for an API whose proto comments are internal,
-would generate the declaration lines and sentences without the proto's
-comments. It is additive (§8.3), so it waits for someone to need it.
-
-Emitting the runtime *(Proposed; not built)*: an option for the
-generator to write the runtime's own modules (`Proto.*`, `Rpc`,
-`Rpc.*`) beside the generated code, from a copy of `src/` embedded in
-the binary at build time. Before 1.0 the package is not on the package
-index (§8.1), so an application vendors the runtime by hand; this would
-make vendoring one flag, and under lockstep exact: the runtime written
-is the one released with the generator, so the sentinel (§8.2) always
-matches. What it would need settling: whether `check` treats the
-emitted runtime as generated (it would carry the notice), and how an
-application that later installs the package drops the copy.
+What 1.0 leaves out, and what may come after it, is in
+[roadmap.md](roadmap.md), each item with whether it would be a minor or
+a major release.
