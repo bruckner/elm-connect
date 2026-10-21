@@ -4,6 +4,8 @@ The generator turns `.proto` files into Elm modules. It comes as two
 binaries with the same options and the same output: `elm-connect`, a CLI
 that compiles the protos itself, and `protoc-gen-elm-connect`, a plugin
 for protoc and buf. [install.md](install.md) installs them.
+`elm-connect --help` says where to start, and `elm-connect guide` prints
+the [agent guide](agent-guide.md), for a reader with only the binary.
 
 ## What a proto becomes
 
