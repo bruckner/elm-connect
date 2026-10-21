@@ -1,0 +1,31 @@
+naming::shadowing_module
+
+  ⚠ The package `html` becomes the Elm module `Html`, which is a module of
+  │ elm/html.
+   ╭─[html.proto:7:1]
+ 6 │
+ 7 │ package html;
+   · ──────┬──────
+   ·       ╰── package `html` becomes `Html`
+ 8 │
+   ╰────
+  help: Generated code does not import elm/html, so this compiles, but an
+        application that depends on elm/html cannot import `Html`: the import
+        is ambiguous. Move the module with `rename=html:<Elm name>` or
+        `module_prefix=<Elm module>`.
+
+naming::shadowing_module
+
+  ⚠ The message `html.Attributes` becomes the Elm module `Html.Attributes`,
+  │ which is a module of elm/html.
+    ╭─[html.proto:9:9]
+  8 │
+  9 │ message Attributes {
+    ·         ─────┬────
+    ·              ╰── message `html.Attributes` becomes `Html.Attributes`
+ 10 │   string class = 1;
+    ╰────
+  help: Generated code does not import elm/html, so this compiles, but an
+        application that depends on elm/html cannot import `Html.Attributes`:
+        the import is ambiguous. Move the module with
+        `rename=html.Attributes:<Elm name>` or `module_prefix=<Elm module>`.

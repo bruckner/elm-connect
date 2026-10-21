@@ -14,7 +14,7 @@
 //! reported beside a successful run: what an option told the generator to
 //! leave out (`streaming=skip`), so the omission is never silent, and a
 //! module name that compiles but is a risk to the application (one in the
-//! runtime's namespaces).
+//! runtime's namespaces, or one an elm/* package has).
 
 mod spans;
 
@@ -116,6 +116,10 @@ codes! {
     /// runtime's namespaces, where it may add modules in any release: a
     /// warning.
     RuntimeNamespace => "naming::runtime_namespace",
+    /// A generated module takes the name of a module of an elm/* package
+    /// an application commonly depends on (`Html`), which that application
+    /// then cannot import: a warning.
+    ShadowingModule => "naming::shadowing_module",
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown => "types::unsupported_well_known",
     /// A method streams requests or responses.
@@ -779,6 +783,30 @@ impl Problem {
                  or rename their packages with {rename}."
             ),
             Vec::new(),
+        )
+        .warning()
+    }
+
+    /// `what` (such as "package `html`") becomes the Elm module `module`,
+    /// a module of `owner` (such as "elm/html"), which an application
+    /// depending on it then cannot import. `escapes` names the options
+    /// that move it. A warning.
+    pub fn shadowing_module(
+        what: &str,
+        module: &str,
+        owner: &str,
+        escapes: &str,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::ShadowingModule,
+            format!("The {what} becomes the Elm module `{module}`, which is a module of {owner}."),
+            format!(
+                "Generated code does not import {owner}, so this compiles, but an application \
+                 that depends on {owner} cannot import `{module}`: the import is ambiguous. \
+                 Move the module with {escapes}."
+            ),
+            vec![site],
         )
         .warning()
     }

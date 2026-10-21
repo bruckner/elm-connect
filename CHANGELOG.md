@@ -985,3 +985,8 @@ tag (design §8).
   one of the runtime's own modules, which stays an error, is a
   `naming::runtime_namespace` warning: the runtime may add modules there
   in any release (design §3.1, §8.3).
+- A generated module named like a module of elm/html, elm/browser,
+  elm/url, elm/svg, elm/file, elm/random, elm/regex, elm/parser or
+  elm/virtual-dom (`Html`, `Url.Parser`) is a `naming::shadowing_module`
+  warning: it compiles, but an application depending on that package
+  cannot import it (design §3.1).

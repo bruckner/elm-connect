@@ -414,6 +414,19 @@ rpc shared call =
   cases). Why a warning and not an error: the root `Proto` is the
   runtime's, but nothing is wrong with the output until the runtime
   takes the name, and an application may accept that risk.
+- **Modules of an application's packages.** *(Decided, 2026-10-21.)* A
+  generated module named like a module of elm/html, elm/browser,
+  elm/url, elm/svg, elm/file, elm/random, elm/regex, elm/parser or
+  elm/virtual-dom (a fixed list of their exposed modules,
+  `naming::APPLICATION_MODULES`, beside the dependencies'
+  `DEPENDENCY_MODULES`) generates with a `naming::shadowing_module`
+  warning, one per module (`naming_shadowing_module` case). Generated
+  code imports none of those packages, so the module compiles, but an
+  application that depends on the package cannot import it: Elm reports
+  the import as ambiguous. A warning, not an error, because an
+  application that never imports the package's module (a worker that
+  never imports `Html`) is fine. Escape: `rename` the package or type,
+  or `module_prefix`.
 - Only packages with a requested file are generated: protoc's
   `file_to_generate`, or the files named to the CLI. *(Decided,
   2026-10-15.)* Each is generated in full, from every compiled file that
@@ -1386,7 +1399,10 @@ case names it):
   `Dict` in a package without a map field compiles and is left alone
   (`naming_reserved_unused` case), and gains the diagnostic with its
   first map field. Both are errors, not warnings, as the output would
-  not compile. A `rename` to such a name is the same problem. Escape:
+  not compile. A module that compiles but is a risk to the application,
+  one inside the runtime's namespaces or one an elm/* package an
+  application uses has, is a warning instead (`naming::runtime_namespace`,
+  `naming::shadowing_module`, §3.1). A `rename` to such a name is the same problem. Escape:
   `rename=`, and for a module `module_prefix=` (§3.7, §3.1); the help
   writes them as the front end in use takes them (`--rename` and
   `--module-prefix` from the CLI). Qualifying the library names in an

@@ -133,6 +133,64 @@ pub fn in_runtime_namespace(module: &str) -> bool {
     })
 }
 
+/// The elm/* packages an application commonly depends on beside the
+/// runtime, each with its exposed modules (at elm/html 1.0.1,
+/// elm/browser 1.0.2, elm/url 1.0.0, elm/svg 1.0.1, elm/file 1.0.5,
+/// elm/random 1.0.0, elm/regex 1.0.0, elm/parser 1.1.0 and
+/// elm/virtual-dom 1.0.5). Generated code imports none of them, so a
+/// generated module of the same name compiles, but an application that
+/// depends on its package cannot import it: the import is ambiguous.
+pub const APPLICATION_MODULES: [(&str, &[&str]); 9] = [
+    (
+        "elm/html",
+        &[
+            "Html",
+            "Html.Attributes",
+            "Html.Events",
+            "Html.Keyed",
+            "Html.Lazy",
+        ],
+    ),
+    (
+        "elm/browser",
+        &[
+            "Browser",
+            "Browser.Dom",
+            "Browser.Events",
+            "Browser.Navigation",
+        ],
+    ),
+    (
+        "elm/url",
+        &["Url", "Url.Builder", "Url.Parser", "Url.Parser.Query"],
+    ),
+    (
+        "elm/svg",
+        &[
+            "Svg",
+            "Svg.Attributes",
+            "Svg.Events",
+            "Svg.Keyed",
+            "Svg.Lazy",
+        ],
+    ),
+    ("elm/file", &["File", "File.Select", "File.Download"]),
+    ("elm/random", &["Random"]),
+    ("elm/regex", &["Regex"]),
+    ("elm/parser", &["Parser", "Parser.Advanced"]),
+    ("elm/virtual-dom", &["VirtualDom"]),
+];
+
+/// The package among [`APPLICATION_MODULES`] that has a module named
+/// `module`, which a generated module of that name shadows for an
+/// application depending on it.
+pub fn shadowed_module(module: &str) -> Option<&'static str> {
+    APPLICATION_MODULES
+        .iter()
+        .find(|(_, modules)| modules.contains(&module))
+        .map(|(package, _)| *package)
+}
+
 /// Why a proto name has no Elm spelling.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum NameError {
@@ -576,6 +634,7 @@ mod tests {
         assert_eq!(reserved_module("Proto.Descriptor"), None);
         assert_eq!(reserved_module("Notes.V1"), None);
         assert_eq!(reserved_module("Proto.Notes"), None);
+        assert_eq!(reserved_module("Html"), None);
     }
 
     #[test]
@@ -588,6 +647,21 @@ mod tests {
         }
         for module in ["Protocol", "Rpcs.V1", "Notes.Proto", "Api.Rpc"] {
             assert!(!in_runtime_namespace(module), "{module}");
+        }
+    }
+
+    #[test]
+    fn shadowed_modules_name_their_package() {
+        assert_eq!(shadowed_module("Html"), Some("elm/html"));
+        assert_eq!(shadowed_module("Url.Parser.Query"), Some("elm/url"));
+        assert_eq!(shadowed_module("VirtualDom"), Some("elm/virtual-dom"));
+        assert_eq!(shadowed_module("Html.V1"), None);
+        assert_eq!(shadowed_module("Time"), None);
+        for (_, modules) in APPLICATION_MODULES {
+            for module in modules {
+                assert_eq!(reserved_module(module), None, "{module}");
+                assert!(ModuleName::parse(module).is_some(), "{module}");
+            }
         }
     }
 

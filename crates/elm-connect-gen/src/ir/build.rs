@@ -1126,7 +1126,8 @@ impl Builder {
     /// has, when another generated module has it, or when another's name
     /// differs from it only in case, since its file is then the same file
     /// on a file system that ignores case. A module in the runtime's
-    /// namespaces is noted for their warning.
+    /// namespaces is noted for their warning, and one an application's
+    /// elm/* package has is warned of.
     fn claim_module(&mut self, module: &ModuleName, origin: Origin, proto: &str) {
         let name = module.to_string();
         let escapes = format!(
@@ -1150,6 +1151,19 @@ impl Builder {
         }
         if naming::in_runtime_namespace(&name) {
             self.runtime_namespace.insert(name.clone());
+        }
+        if let Some(owner) = naming::shadowed_module(&name) {
+            let site = Site {
+                label: format!("{} becomes `{name}`", origin.what),
+                ..origin.site.clone()
+            };
+            self.diagnostics.push(Problem::shadowing_module(
+                &origin.what,
+                &name,
+                owner,
+                &escapes,
+                site,
+            ));
         }
         let folded = name.to_lowercase();
         let other = self
