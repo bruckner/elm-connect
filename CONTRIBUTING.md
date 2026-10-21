@@ -1,11 +1,28 @@
 # Contributing to elm-connect
 
+Thanks for helping. Everyone taking part follows the
+[Code of Conduct](CODE_OF_CONDUCT.md). Questions go to an issue, as
+[SUPPORT.md](SUPPORT.md) describes; security problems go through
+[SECURITY.md](SECURITY.md), never a public issue.
+
+## Proposing a change
+
+Open an issue before a change of shape: anything that changes the
+generated code, the runtime package's exposed API, an option, a
+diagnostic, or a decision recorded in [`docs/design.md`](docs/design.md).
+Agreeing on the shape there is cheaper than reworking a pull request.
+Check the roadmap (`docs/roadmap.md`) first; it says which features are
+planned and which would need a major release. A bug fix, a
+documentation fix or a test can go straight to a pull request.
+
 ## Getting set up
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
 elm-format, elm-test-rs, node, just, zizmor, gitleaks and cargo-deny,
 and Go and buf for the live suite. The Rust it pins is also the
-workspace's minimum supported version (`rust-version`). From the repository root:
+workspace's minimum supported Rust version (`rust-version`): the MSRV
+is the pinned toolchain, a pull request that moves the pin moves the
+MSRV with it, and the CHANGELOG says so. From the repository root:
 
 ```sh
 mise install    # install the pinned toolchain
@@ -18,18 +35,18 @@ just check      # run the gate
 every tool but Rust (which rustup verifies) and elm-test-rs (an npm
 package), the URL and SHA-256 of its download on Linux and macOS, x64
 and arm64; mise refuses a download that does not match. After moving a
-pin in `mise.toml`, run `mise lock` and commit both files; CI installs
+pin in `mise.toml`, run `mise lock` (with `GITHUB_TOKEN` set, or
+GitHub's API rate limit leaves entries out) and commit both files; CI installs
 with the mise release named in `.github/workflows/ci.yml`, so move that
 too when you upgrade mise.
 
-Cargo builds into `target/`, and the live suite's binaries go under it
-too. With several worktrees of the repository, set `CARGO_TARGET_DIR`
-to one directory and every recipe builds there: a `mise.toml` in the
-directory holding the worktrees (`[env]` `CARGO_TARGET_DIR =
-"{{config_root}}/.cargo-target"`) does it for all of them, or the
-gitignored `mise.local.toml` for one. Cargo serialises its own builds
-on that directory; run one `just live` at a time, since it writes its
-binaries there unlocked, and `just clean` empties it for every worktree.
+Cargo builds into the worktree's own `target/`, and the live suite's
+binaries go under it too. Keep it that way with several worktrees of the
+repository: give each its own `target/` and do not set
+`CARGO_TARGET_DIR` to a directory they share. A shared directory lets
+two worktrees' builds produce test binaries of the same names, so one
+worktree's `just bless` can run against the other's generator and
+rewrite the corpus with output that is not its own.
 
 ## The gate
 
@@ -76,6 +93,36 @@ Work on a branch off `main` and open a pull request; nothing lands on
 merge commits from pull requests whose checks pass, and cannot be
 force-pushed or deleted. Keep each commit one logical change, so the history
 reads as a sequence of reasons.
+
+Keep the branch's own history linear. When `main` moves, rebase the
+branch onto it and push with `git push --force-with-lease`; do not merge
+`main` into the branch. Squash fixups into the commit they fix before
+asking for review, so each commit still reads as one change.
+
+A pull request carries, besides the change itself (the
+[pull request template](.github/PULL_REQUEST_TEMPLATE.md) lists them):
+
+- a passing `just check`, and `just live` where the change touches what
+  it covers (see "The gate");
+- tests for the behaviour it adds or fixes;
+- a `CHANGELOG.md` bullet under Unreleased for each user-visible change;
+- an update to `docs/design.md` wherever a statement there becomes true
+  or false, and to the README or the page under `docs/` that describes
+  the behaviour;
+- if generated code changes, the conformance corpus re-blessed with
+  `just bless` ([`conformance/README.md`](conformance/README.md)) and its
+  diff reviewed line by line: the corpus is how a reviewer sees what
+  users will get.
+
+The maintainer reviews every pull request. Reviews are best effort, with
+no fixed response time; if a pull request has heard nothing for two
+weeks, a comment on it is a welcome reminder. Expect questions about
+naming and the generated code's shape: they are part of the public
+surface, and hard to change after a release. A pull request merges once
+its checks pass and the review's points are settled.
+
+No sign-off (DCO) is needed; the license terms below cover
+contributions.
 
 ## The design
 

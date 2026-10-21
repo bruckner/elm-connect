@@ -1,0 +1,32 @@
+name: Question
+description: Ask how to do something, or why elm-connect behaves as it does.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SUPPORT.md says what makes a question quick to answer. Answers
+        are best effort.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: The generator's (`--version`), the Elm package's, and whether you run the CLI, protoc or buf.
+  - type: textarea
+    id: proto
+    attributes:
+      label: Proto and options
+      description: The proto, or a minimal one, and the options you generate with.
+      render: protobuf
+  - type: textarea
+    id: generated
+    attributes:
+      label: Generated excerpt
+      description: The generated code or diagnostic the question is about, if any.
+      render: elm

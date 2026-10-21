@@ -1,0 +1,29 @@
+name: Feature request
+description: Something elm-connect does not do yet.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read [the roadmap](https://github.com/bruckner/elm-connect/blob/main/docs/roadmap.md)
+        first: it lists what is planned, what would need a major
+        release, and what browsers rule out (client and bidirectional
+        streaming among them). If your request is there, say so and add
+        what it would let you build.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The application's need, before any particular solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: The generated code or runtime API you have in mind, if any; a sketch is enough.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today instead
+      description: Workarounds you use, or other tools that do this.

@@ -1,0 +1,54 @@
+name: Bug report
+description: The generator or the runtime package does something wrong.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A security problem goes through
+        [Report a vulnerability](https://github.com/bruckner/elm-connect/security/advisories/new)
+        instead; see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: The diagnostic, the generated code or the `Rpc.Error`, as text.
+    validations:
+      required: true
+  - type: input
+    id: generator-version
+    attributes:
+      label: Generator version
+      description: "`elm-connect --version` or `protoc-gen-elm-connect --version`, and whether you run the CLI, protoc or buf."
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Elm package version
+      description: "`bruckner/elm-connect` as your `elm.json` lists it (or the commit, if you vendor `src/`), and your Elm compiler's version."
+  - type: textarea
+    id: proto
+    attributes:
+      label: Proto
+      description: The proto, or the smallest one that shows the problem.
+      render: protobuf
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      description: The CLI flags, `--elm-connect_opt=` value or `buf.gen.yaml` you generate with.
+      render: shell
+  - type: textarea
+    id: generated
+    attributes:
+      label: Generated excerpt
+      description: The part of the generated Elm that is wrong, if any.
+      render: elm
+  - type: textarea
+    id: server
+    attributes:
+      label: Server and transport
+      description: For a call that fails, the server (connect-go, Envoy, grpc-gateway, …) and the transport (Connect or transcoding).

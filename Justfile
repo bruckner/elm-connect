@@ -7,8 +7,8 @@
 elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests"
 
 # Cargo's build directory, which the live suite's binaries share
-# (target/live). CARGO_TARGET_DIR moves it, as it does for cargo, so several
-# worktrees can build into one directory instead of each carrying its own.
+# (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
+# point several worktrees at one directory (CONTRIBUTING.md says why).
 target := absolute_path(env("CARGO_TARGET_DIR", "target"))
 
 [private]
@@ -242,7 +242,7 @@ example-notes-build:
 example-notes addr="127.0.0.1:8080": example-notes-build
     {{target}}/live/bin/notes-server -addr {{addr}} -static examples/notes/elm/dist
 
-# Remove build output (the cargo build directory, shared or not).
+# Remove build output (the cargo build directory and the Elm builds).
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated

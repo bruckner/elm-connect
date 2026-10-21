@@ -1057,3 +1057,9 @@ tag (design §8).
   Rust dependencies, the live suite's npm packages and the example
   server's Go modules. `mise.lock` pins the toolchain's downloads by
   checksum, and CI installs mise itself at a pinned release.
+- `SECURITY.md` (supported versions, private reporting, scope),
+  `SUPPORT.md`, a Code of Conduct (Contributor Covenant 2.1), issue
+  forms for bugs, feature requests and questions, and a pull request
+  template. CONTRIBUTING says how to propose a change, what a pull
+  request carries, how review works, and that each worktree builds into
+  its own `target/`.
