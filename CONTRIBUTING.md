@@ -5,6 +5,9 @@ Thanks for helping. Everyone taking part follows the
 [SUPPORT.md](SUPPORT.md) describes; security problems go through
 [SECURITY.md](SECURITY.md), never a public issue.
 
+An agent changing this repository starts with [AGENTS.md](AGENTS.md),
+the working agreement; [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
+
 ## Proposing a change
 
 Open an issue before a change of shape: anything that changes the

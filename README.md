@@ -158,11 +158,15 @@ users of protoc-gen-elm.
   OpenAPI route.
 - [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
   what gets past it.
+- [docs/agent-guide.md](docs/agent-guide.md): using the generator as an
+  agent: `check`, diagnostics and their escapes.
 - [docs/design.md](docs/design.md): the design, with its reasons.
 - [docs/decisions.md](docs/decisions.md): what was decided, when, and
   what the alternative was.
 - [docs/roadmap.md](docs/roadmap.md): what 1.0 leaves out and what may
   come after it.
+- [ARCHITECTURE.md](ARCHITECTURE.md): the generator's pipeline, the
+  runtime's layers and the test layers, for changing them.
 - [examples/notes](examples/notes): an API, its Go server, and a browser
   application on its generated client, with a walkthrough.
 
