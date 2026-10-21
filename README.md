@@ -159,6 +159,10 @@ users of protoc-gen-elm.
 - [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
   what gets past it.
 - [docs/design.md](docs/design.md): the design, with its reasons.
+- [docs/decisions.md](docs/decisions.md): what was decided, when, and
+  what the alternative was.
+- [docs/roadmap.md](docs/roadmap.md): what 1.0 leaves out and what may
+  come after it.
 - [examples/notes](examples/notes): an API, its Go server, and a browser
   application on its generated client, with a walkthrough.
 
