@@ -68,7 +68,7 @@ codec-gen:
 # (examples/check-snippets.sh). The excerpts compile with the example, which
 # `example-notes-build` builds; those in its tests run in `elm-check`.
 snippets:
-    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/compared.md examples/notes/README.md
+    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/envoy.md docs/compared.md examples/notes/README.md
 
 # Audit the GitHub Actions workflows and the Dependabot configuration for
 # template injection, unpinned or vulnerable actions, leaked credentials,
@@ -121,17 +121,99 @@ bless:
 # against the example server over Connect and over transcoding, then the
 # route fixtures against its routes.v1 echo service under Vanguard; then the
 # transcoding cases and the route fixtures again under grpc-gateway, which
-# the server mounts at /gateway; then the Connect conformance suite. Not
-# part of `check`: it needs Go, and the network for Go's modules, npm's
-# packages and connectconformance (buf generates from vendored protos); CI
-# runs it as its own job. It builds the browser example too, so the README's
-# excerpts of it compile.
-live: live-gen live-build example-notes-build && live-conformance
+# the server mounts at /gateway; then under Envoy (live-envoy); then the
+# Connect conformance suite. Not part of `check`: it needs Go, and the
+# network for Go's modules, npm's packages, Envoy and connectconformance
+# (buf generates from vendored protos); CI runs it as its own job. It builds
+# the browser example too, so the README's excerpts of it compile.
+live: live-gen live-build example-notes-build && live-envoy live-conformance
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
+
+# Envoy, the live suite's third transcoder: the release func-e runs (one
+# line in conformance/live/envoy/envoy-version, which CI's cache is keyed
+# on) and the loopback ports `live-envoy` uses, the example server's and
+# Envoy's. Move a port here when another program holds it.
+envoy_version := trim(read("conformance/live/envoy/envoy-version"))
+envoy_origin_port := "18080"
+envoy_port := "18081"
+envoy_headers_port := "18082"
+envoy_admin_port := "18090"
+
+# The live suite under Envoy's gRPC-JSON transcoder (docs/envoy.md): build
+# the example's descriptor set with buf, start the example server and Envoy
+# (conformance/live/envoy/envoy.yaml, with the ports above), and run the
+# transcoding cases and the route fixtures against the listener that turns
+# errors into a google.rpc.Status body, and cases/envoy.json against the one
+# that leaves them in grpc-status headers. Both stop however the runs end.
+live-envoy: live-build envoy-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    live="{{target}}/live"
+    (cd examples/notes && buf build --as-file-descriptor-set -o "$live/notes.binpb")
+    sed -e 's/port_value: 18080/port_value: {{envoy_origin_port}}/' \
+        -e 's/port_value: 18081/port_value: {{envoy_port}}/' \
+        -e 's/port_value: 18082/port_value: {{envoy_headers_port}}/' \
+        -e 's/port_value: 18090/port_value: {{envoy_admin_port}}/' \
+        -e "s|proto_descriptor: target/live/notes.binpb|proto_descriptor: $live/notes.binpb|" \
+        conformance/live/envoy/envoy.yaml > "$live/envoy.yaml"
+    "$live/bin/notes-server" -addr 127.0.0.1:{{envoy_origin_port}} > "$live/envoy-origin.log" 2>&1 &
+    server=$!
+    ENVOY_VERSION={{envoy_version}} func-e run -c "$live/envoy.yaml" --log-level warn > "$live/envoy.log" 2>&1 &
+    envoy=$!
+    stop() {
+        status=$?
+        kill "$envoy" "$server" 2> /dev/null || true
+        wait 2> /dev/null || true
+        if [ "$status" -ne 0 ]; then tail -n 50 "$live/envoy-origin.log" "$live/envoy.log"; fi
+    }
+    trap stop EXIT
+    # /healthz passes through Envoy to the server, so an answer on each
+    # listener means both are up.
+    for port in {{envoy_port}} {{envoy_headers_port}}; do
+        for attempt in $(seq 150); do
+            curl -fs --max-time 2 -o /dev/null "http://127.0.0.1:$port/healthz" && break
+            kill -0 "$server" 2> /dev/null || { echo "the example server exited"; exit 1; }
+            kill -0 "$envoy" 2> /dev/null || { echo "Envoy exited"; exit 1; }
+            [ "$attempt" -lt 150 ] || { echo "Envoy is not answering on $port"; exit 1; }
+            sleep 0.2
+        done
+    done
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+    node conformance/live/routes.mjs --server http://127.0.0.1:{{envoy_port}} --known conformance/live/known-divergent-envoy.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_headers_port}} conformance/live/cases/envoy.json
+
+# Install the pinned Envoy with func-e unless it is installed. func-e checks
+# the archive against the SHA-256 that Tetrate's index lists, but hashes
+# only the bytes its unpacker has read when the tar stream ends, which is
+# sometimes all of the archive and sometimes not (the last 20 bytes of
+# 1.40.0's), so a right archive fails the check now and then, and the binary
+# it unpacked is left in place, unchecked. So when func-e's install fails,
+# remove what it left, and fetch, check against the same index's digest and
+# unpack the archive here.
+[private]
+envoy-install:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export ENVOY_VERSION={{envoy_version}}
+    func-e run --version > /dev/null 2>&1 && exit 0
+    dir="${FUNC_E_DATA_HOME:-$HOME/.local/share/func-e}/envoy-versions/$ENVOY_VERSION"
+    rm -rf "$dir"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    curl -fsSL -o "$tmp/versions.json" "${ENVOY_VERSIONS_URL:-https://archive.tetratelabs.io/envoy/envoy-versions.json}"
+    platform="${FUNC_E_PLATFORM:-$(go env GOOS)/$(go env GOARCH)}"
+    url="$(node -e 'const v = require(process.argv[1]); console.log(v.versions[process.argv[2]].tarballs[process.argv[3]])' "$tmp/versions.json" "$ENVOY_VERSION" "$platform")"
+    sum="$(node -e 'console.log(require(process.argv[1]).sha256sums[process.argv[2]])' "$tmp/versions.json" "${url##*/}")"
+    echo "func-e could not install Envoy $ENVOY_VERSION; fetching $url"
+    curl -fsSL -o "$tmp/envoy.tar.xz" "$url"
+    echo "$sum  $tmp/envoy.tar.xz" | shasum -a 256 -c -
+    mkdir -p "$dir"
+    tar -xJf "$tmp/envoy.tar.xz" -C "$dir" --strip-components 1
+    func-e run --version > /dev/null
 
 # Regenerate the example's Go stubs, grpc-gateway's proxies (two templates;
 # buf.gen.gateway.yaml says why) and the Elm client with buf, and fail if

@@ -1082,3 +1082,16 @@ tag (design §8).
   build a message from its `default…` value by record update, which
   keeps compiling when the message gains a field, rather than as a
   record literal.
+- The live suite runs under Envoy's gRPC-JSON transcoder too, Envoy
+  1.40.0 through func-e (pinned in `mise.toml`), locally and in CI:
+  the transcoding cases and the route fixtures with errors converted to
+  a `google.rpc.Status` body, and Envoy's default errors in
+  `grpc-status` headers, which the runtime reads as `GrpcHeaders`.
+  Divergences are in `known-divergent-envoy.json`; `docs/envoy.md`
+  walks through the config, whose CORS filter lets a page on another
+  origin call it and read `grpc-status` errors, and gives a Lua filter
+  that turns Envoy's own plain-text errors into Connect error bodies.
+- The generator warns of two bindings with one HTTP method and one
+  path shape (`/v1/{name=messages/*}` beside `/v1/messages/{id}`),
+  which no router serves together: `route::ambiguous_binding`, one per
+  pair, with the `routes_ambiguous_binding` conformance case.

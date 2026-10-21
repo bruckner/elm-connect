@@ -1,0 +1,79 @@
+route::ambiguous_binding
+
+  ⚠ Additional binding 1 of `msgs.v1.Messages.GetMessage` (`GET /v1/messages/
+  │ {id}`) matches the same requests as the HTTP rule of
+  │ `msgs.v1.Messages.GetMessage` (`GET /v1/{name=messages/*}`): both are
+  │ `GET /v1/messages/*`.
+    ╭─[messages.proto:28:33]
+ 27 │       get: "/v1/{name=messages/*}"
+ 28 │       additional_bindings {get: "/v1/messages/{id}"}
+    ·                                 ─────────┬─────────
+    ·                                          ╰── this path
+ 29 │     };
+    ╰────
+  help: `google/api/http.proto` does not say which of two such bindings serves
+        a request, and no router serves both: Envoy's transcoder answers
+        neither (docs/envoy.md), Vanguard refuses the second, and grpc-gateway
+        lets one of them win. The client cannot tell which it faces and sends
+        its method's binding regardless. Give one of them a different path or
+        HTTP method.
+
+route::ambiguous_binding
+
+  ⚠ The HTTP rule of `msgs.v1.Messages.CheckById` (`HEAD /v1/messages/
+  │ {id}:check`) matches the same requests as the HTTP rule of
+  │ `msgs.v1.Messages.CheckMessage` (`HEAD /v1/{name=messages/*}:check`): both
+  │ are `HEAD /v1/messages/*:check`.
+    ╭─[messages.proto:58:35]
+ 57 │     option (google.api.http) = {
+ 58 │       custom: {kind: "HEAD" path: "/v1/messages/{id}:check"}
+    ·                                   ────────────┬────────────
+    ·                                               ╰── this path
+ 59 │     };
+    ╰────
+  help: `google/api/http.proto` does not say which of two such bindings serves
+        a request, and no router serves both: Envoy's transcoder answers
+        neither (docs/envoy.md), Vanguard refuses the second, and grpc-gateway
+        lets one of them win. The client cannot tell which it faces and sends
+        its method's binding regardless. Give one of them a different path or
+        HTTP method.
+
+route::ambiguous_binding
+
+  ⚠ The HTTP rule of `msgs.v1.Messages.Touch` (`POST /msgs.v1.Messages/
+  │ ListMessages`) matches the same requests as the implicit route of
+  │ `msgs.v1.Messages.ListMessages` (`POST /msgs.v1.Messages/ListMessages`):
+  │ both are `POST /msgs.v1.Messages/ListMessages`.
+    ╭─[messages.proto:65:13]
+ 64 │     option (google.api.http) = {
+ 65 │       post: "/msgs.v1.Messages/ListMessages"
+    ·             ────────────────┬───────────────
+    ·                             ╰── this path
+ 66 │       body: "*"
+    ╰────
+  help: `google/api/http.proto` does not say which of two such bindings serves
+        a request, and no router serves both: Envoy's transcoder answers
+        neither (docs/envoy.md), Vanguard refuses the second, and grpc-gateway
+        lets one of them win. The client cannot tell which it faces and sends
+        its method's binding regardless. Give one of them a different path or
+        HTTP method.
+
+route::ambiguous_binding
+
+  ⚠ The HTTP rule of `msgs.v1.Archive.ListArchived` (`GET /v1/messages`)
+  │ matches the same requests as the HTTP rule of
+  │ `msgs.v1.Messages.ListMessages` (`GET /v1/messages`): both are `GET /v1/
+  │ messages`.
+    ╭─[messages.proto:74:38]
+ 73 │   rpc ListArchived(MessageRequest) returns (Message) {
+ 74 │     option (google.api.http) = {get: "/v1/messages"};
+    ·                                      ───────┬──────
+    ·                                             ╰── this path
+ 75 │   }
+    ╰────
+  help: `google/api/http.proto` does not say which of two such bindings serves
+        a request, and no router serves both: Envoy's transcoder answers
+        neither (docs/envoy.md), Vanguard refuses the second, and grpc-gateway
+        lets one of them win. The client cannot tell which it faces and sends
+        its method's binding regardless. Give one of them a different path or
+        HTTP method.

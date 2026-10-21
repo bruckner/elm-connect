@@ -31,6 +31,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use elm_connect_gen::diagnostics::Code;
 use elm_connect_gen::elm::ast::{Decl, Exposing, Expr, Import, Module, ModuleName};
 use elm_connect_gen::elm::build::{
     apply, int, list, qualified, record, string, tuple2, ty_qualified, var,
@@ -718,6 +719,29 @@ fn the_elm_replay_is_current() {
     let methods = methods(&pool);
     let generated = generate(&pool, &["routes.proto"], &Options::default())
         .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    // The fixtures hold two pairs of bindings no router serves together,
+    // to pin what the client sends for each: those two warnings, and no
+    // other.
+    let warnings: Vec<(Code, &str)> = generated
+        .warnings
+        .iter()
+        .map(|problem| (problem.code(), problem.message()))
+        .collect();
+    let expected = [
+        "Additional binding 2 of `routes.v1.Routes.GetMessage`",
+        "The HTTP rule of `routes.v1.Routes.UpdateMessageWhole`",
+    ];
+    assert!(
+        warnings.len() == expected.len()
+            && warnings
+                .iter()
+                .zip(expected)
+                .all(|((code, message), start)| {
+                    *code == Code::AmbiguousBinding && message.starts_with(start)
+                }),
+        "routes.proto warns of other than its two ambiguous pairs:\n{}",
+        elm_connect_gen::diagnostics::render_narrow(&generated.warnings)
+    );
     let cases: Vec<Case> = fixtures().iter().map(Case::of_fixture).collect();
     let fixtures = elm_connect_gen::elm::print::print_module(&replay_module(
         "RouteFixtures",

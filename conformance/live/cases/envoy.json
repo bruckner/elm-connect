@@ -1,0 +1,95 @@
+[
+  {
+    "name": "envoy headers GetNote",
+    "note": "Run against Envoy's listener with convert_grpc_status off (conformance/live/envoy/envoy.yaml); a success is as under the other.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" }
+    },
+    "expect": {
+      "result": { "ok": { "name": "notes/welcome", "title": "Welcome" } },
+      "trace": { "httpStatus": 200, "code": "ok" }
+    }
+  },
+  {
+    "name": "envoy headers NOT_FOUND: grpc-status headers and no body",
+    "note": "Envoy maps the code to its HTTP status and forwards grpc-status and grpc-message as headers, with an empty body; the runtime reads the error from the headers.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/missing" }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/missing does not exist",
+          "details": [],
+          "source": "GrpcHeaders"
+        }
+      },
+      "trace": { "httpStatus": 404, "code": "not_found" },
+      "wire": [{ "status": 404, "responseBody": "" }]
+    }
+  },
+  {
+    "name": "envoy headers INVALID_ARGUMENT: the details are not forwarded",
+    "note": "The server sends a BadRequest detail; with convert_grpc_status off Envoy forwards only grpc-status and grpc-message, so the error has no details.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "transcode",
+      "request": { "note": { "body": "untitled" } }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "details": [],
+          "source": "GrpcHeaders"
+        }
+      },
+      "trace": { "httpStatus": 400 },
+      "wire": [{ "status": 400, "responseBody": "" }]
+    }
+  },
+  {
+    "name": "envoy a path no method matches",
+    "note": "With reject_unknown_method Envoy answers 404 and a plain-text body itself instead of passing the request on; the runtime infers the code from the status.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/nowhere" }
+    },
+    "expect": {
+      "result": {
+        "error": { "code": "unimplemented", "message": "Not Found", "details": [], "source": "HttpStatus" }
+      },
+      "trace": { "httpStatus": 404 },
+      "wire": [{ "status": 404, "responseBody": "Could not resolve /nowhere/v1/notes/welcome to a method." }]
+    }
+  },
+  {
+    "name": "envoy replaces a status's reason phrase it does not know",
+    "note": "The server answers 418 I'm a teapot; Envoy's HTTP/1.1 codec writes its own reason phrase, Unknown for a status it has no name for, and the runtime's message for an error without a body is the reason phrase.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "transcode",
+      "request": { "name": "notes/welcome" },
+      "config": { "baseUrl": "{server}/status/418" }
+    },
+    "expect": {
+      "result": {
+        "error": { "code": "unknown", "message": "Unknown", "details": [], "source": "HttpStatus" }
+      },
+      "trace": { "httpStatus": 418 }
+    }
+  }
+]

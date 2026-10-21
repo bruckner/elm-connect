@@ -154,6 +154,8 @@ users of protoc-gen-elm.
   `Any`, error details and update masks.
 - [docs/transcoding.md](docs/transcoding.md): `google.api.http` in
   practice, server options, and where transcoders differ.
+- [docs/envoy.md](docs/envoy.md): the notes example behind Envoy's
+  gRPC-JSON transcoder, run with func-e and tested live.
 - [docs/compared.md](docs/compared.md): the other Elm tools and the
   OpenAPI route.
 - [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and

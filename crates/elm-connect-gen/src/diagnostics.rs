@@ -12,9 +12,10 @@
 //!
 //! Most problems are errors, which fail the run. A few are warnings,
 //! reported beside a successful run: what an option told the generator to
-//! leave out (`streaming=skip`), so the omission is never silent, and a
+//! leave out (`streaming=skip`), so the omission is never silent, a
 //! module name that compiles but is a risk to the application (one in the
-//! runtime's namespaces, or one an elm/* package has).
+//! runtime's namespaces, or one an elm/* package has), and two HTTP
+//! bindings that match the same requests.
 
 mod spans;
 
@@ -140,6 +141,10 @@ codes! {
     RouteResponseBody => "route::response_body",
     /// A request field that would be a query parameter has no query form.
     RouteQueryField => "route::query_field",
+    /// Two bindings of the generated methods have one HTTP method and one
+    /// path shape, so they match the same requests and no router serves
+    /// both: a warning.
+    AmbiguousBinding => "route::ambiguous_binding",
     /// A generated package refers to a type in a package not generated.
     NotGenerated => "generate::not_generated",
     /// Generated packages refer to each other in a cycle.
@@ -965,6 +970,30 @@ impl Problem {
         Problem::new(code, message, help, vec![site])
     }
 
+    /// The binding `second` matches the same requests as the binding
+    /// `first`: both are `shape`, an HTTP method and a path shape
+    /// ([`crate::route::Route::shape`]). Each binding is named in the
+    /// middle of a sentence, with its method and path ("additional binding
+    /// 2 of `routes.v1.Routes.GetMessage` (`GET /v1/messages/{id}`)").
+    /// `site` is the second binding's, if it has one in the protos. A
+    /// warning.
+    pub fn ambiguous_binding(first: &str, second: &str, shape: &str, site: Option<Site>) -> Self {
+        Problem::new(
+            Code::AmbiguousBinding,
+            format!(
+                "{} matches the same requests as {first}: both are `{shape}`.",
+                capitalized(second)
+            ),
+            "`google/api/http.proto` does not say which of two such bindings serves a request, \
+             and no router serves both: Envoy's transcoder answers neither (docs/envoy.md), \
+             Vanguard refuses the second, and grpc-gateway lets one of them win. The client \
+             cannot tell which it faces and sends its method's binding regardless. Give one \
+             of them a different path or HTTP method.",
+            site.into_iter().collect(),
+        )
+        .warning()
+    }
+
     /// The method `method`'s name becomes `converted`, which is not an Elm
     /// value name.
     pub fn invalid_method(method: &str, converted: &str, site: Site, rename: &str) -> Self {
@@ -1260,6 +1289,15 @@ fn join_alternatives(words: &[String]) -> String {
         [] => String::new(),
         [only] => only.clone(),
         [init @ .., last] => format!("{} or {last}", init.join(", ")),
+    }
+}
+
+/// `text` with its first letter capitalized, to begin a sentence.
+fn capitalized(text: &str) -> String {
+    let mut chars = text.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
     }
 }
 

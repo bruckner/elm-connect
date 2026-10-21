@@ -22,7 +22,7 @@ documentation fix or a test can go straight to a pull request.
 
 [`mise.toml`](mise.toml) pins the whole toolchain: Rust, Elm,
 elm-format, elm-test-rs, node, just, zizmor, gitleaks and cargo-deny,
-and Go and buf for the live suite. The Rust it pins is also the
+and Go, buf and func-e (which fetches Envoy) for the live suite. The Rust it pins is also the
 workspace's minimum supported Rust version (`rust-version`): the MSRV
 is the pinned toolchain, a pull request that moves the pin moves the
 MSRV with it, and the CHANGELOG says so. From the repository root:

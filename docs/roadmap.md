@@ -151,15 +151,6 @@ A retry policy waits by its own backoff. Honouring the server's
 error detail, would be a new setting on the opaque `Rpc.Retry`: a
 minor.
 
-## Envoy in the live suite, and an Envoy example
-
-The live suite runs against connect-go, Vanguard and grpc-gateway. A
-documented example with Envoy's gRPC-JSON transcoder in front of the
-same service, run by the live suite with its differences recorded as
-the other transcoders' are, would exercise Envoy's header-only errors
-(`grpc-status` headers and no body, which the runtime already reads as
-`Rpc.Error.GrpcHeaders`) against a real Envoy. No version impact.
-
 ## Prebuilt binaries, an npm wrapper and the Buf plugin
 
 Today the CLI and the plugin are installed with `cargo install`.

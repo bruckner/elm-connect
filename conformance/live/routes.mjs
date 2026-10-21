@@ -18,7 +18,8 @@
 // divergence is the transcoder's, never the request's. One that starts
 // agreeing fails until its entry is removed. The bindings the transcoder cannot serve beside the
 // others are listed there too, and must match the server's GET
-// <prefix>/routes/layers. Its probes are requests the runtime does not make
+// <prefix>/routes/layers, unless the file says null (Envoy's: it serves
+// every binding it can at the root). Its probes are requests the runtime does not make
 // (an unknown query parameter, a verb without a route), sent with fetch,
 // whose answers must match the ones recorded, so that where the transcoders
 // differ beyond the fixtures is asserted too.
@@ -452,11 +453,14 @@ export async function runFixtures(runner, url, { log = console.log, known } = {}
   const failed = [];
 
   // Where each binding is served, and the bindings served apart, which
-  // must be the ones the known-divergent file lists.
-  const layers = await (await fetch(`${url}/routes/layers`)).json();
+  // must be the ones the known-divergent file lists. A file whose
+  // servedApart is null is for a transcoder that reads every binding from a
+  // descriptor of its own (Envoy), not the server's layers: every fixture
+  // runs at the root.
+  const layers = known.servedApart === null ? [] : await (await fetch(`${url}/routes/layers`)).json();
   const prefixes = new Map(layers.map((b) => [`${b.method} ${b.binding}`, b.prefix]));
   const apart = layers.filter((b) => b.layer > 0).map((b) => `${b.method} ${b.binding} ${b.prefix}`);
-  const listed = known.servedApart.map((b) => `${b.method} ${b.binding} ${b.prefix}`);
+  const listed = (known.servedApart ?? []).map((b) => `${b.method} ${b.binding} ${b.prefix}`);
   if (JSON.stringify(apart.sort()) !== JSON.stringify(listed.sort())) {
     failed.push("served apart");
     log(`FAIL  bindings served apart\n        known-divergent ${JSON.stringify(listed)}\n        server          ${JSON.stringify(apart)}`);

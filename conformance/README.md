@@ -279,6 +279,12 @@ live/
                       where Vanguard and the fixtures part
   known-divergent-gateway.json
                       where grpc-gateway and the fixtures part
+  known-divergent-envoy.json
+                      where Envoy and the fixtures part
+  envoy/envoy.yaml    Envoy's gRPC-JSON transcoder in front of the example
+                      server (docs/envoy.md)
+  envoy/envoy-version the Envoy release func-e runs
+  cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
   build/              the compiled program (gitignored)
 ```
 
@@ -287,6 +293,7 @@ just live                                     # regenerate, build, start the ser
 node conformance/live/run.mjs --server http://127.0.0.1:8080 conformance/live/cases/notes.json
 node conformance/live/run.mjs --serve target/live/bin/notes-server --print conformance/live/cases/notes.json
 node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json
+node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 conformance/live/cases/transcode.json
 ```
 
 `just live` regenerates the example with buf and fails if the output
@@ -296,9 +303,12 @@ under `CARGO_TARGET_DIR` when that is set) and `Live.elm`
 `--print` prints each result instead of checking it. `--prefix` adds a
 path to the server's URL for the cases' `baseUrl`: the server serves
 transcoding twice, by Vanguard at its root and by grpc-gateway under
-`/gateway`, and `just live` runs the transcoding cases under both.
-`--transport` runs only the cases of one transport; the transcode cases
-of `notes.json` make the notes they change, so they run alone.
+`/gateway`, and `just live` runs the transcoding cases under both, and
+under Envoy (below). `--transport` runs only the cases of one
+transport; the transcode cases of `notes.json` make the notes they
+change, so they run alone. `--origin` names the example server when
+`--server` is a proxy in front of it, as Envoy is: `{server}` in a case
+(below) then stands for the origin, not the proxy.
 
 An **envelope**, what the runner sends:
 
@@ -419,8 +429,9 @@ A **case file** is a JSON array of cases, run in order:
 
 `call` is an envelope without `id` (the case's name) whose `baseUrl`
 defaults to the server's with `--prefix`, `{server}` standing for the
-server's without it in one given: the canned answers (`/status/<n>/`,
-`/grpc-status/<code>/`) are the server's own, under no transcoder.
+server's without it (or `--origin`) in one given: the canned answers
+(`/status/<n>/`, `/grpc-status/<code>/`) are the server's own, under no
+transcoder.
 `expect` is matched against the result: an object matches when each of
 its keys does, other keys ignored; an array element by element, with
 the same length; anything else by equality. `{"$match": "<regex>"}`
@@ -530,11 +541,13 @@ fixture through the runner (`transport` `transcode`, the fixture's
 node conformance/live/routes.mjs --serve target/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
 node conformance/live/routes.mjs --serve target/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
 node conformance/live/routes.mjs --server http://127.0.0.1:8080
+node conformance/live/routes.mjs --server http://127.0.0.1:18081 --known conformance/live/known-divergent-envoy.json
 ```
 
 Each transcoder has its known-divergent file: Vanguard's
-(`known-divergent-vanguard.json`, the default) and grpc-gateway's
-(`known-divergent-gateway.json`, run with `--prefix /gateway`). Vanguard
+(`known-divergent-vanguard.json`, the default), grpc-gateway's
+(`known-divergent-gateway.json`, run with `--prefix /gateway`) and
+Envoy's (`known-divergent-envoy.json`, below). Vanguard
 will not serve two routes for one verb and path, and
 protoc-gen-grpc-gateway will not generate two bindings with one verb and
 path template, so the server serves a binding the transcoder refuses on
@@ -548,9 +561,43 @@ who is right, and `observed`, matched against the result as a case's
 unknown query parameter, a verb without a route, `PATCH` without an
 update mask), sent with `fetch` as written (`request`: `method`, `path`
 under the prefix, `body`), whose `observed` is matched against `{status,
-body}`, the body parsed as JSON. The probes are the same in both files and
-record where the two transcoders answer differently. A listed fixture
+body}`, the body parsed as JSON. The probes are the same in every file and
+record where the transcoders answer differently. A listed fixture
 passes while that answer holds and its request (verb, path, query, body
 and headers) is still the fixture's, so an entry excuses the
 transcoder's answer and never the request; it fails once it agrees, until
 its entry is removed; a probe fails when its answer changes.
+
+### Envoy
+
+Envoy's gRPC-JSON transcoder is the third transcoder (`docs/envoy.md`
+walks through it). `just live-envoy`, part of `just live`, builds the
+example's descriptor set with buf, starts the example server and Envoy
+1.40.0 (`envoy/envoy-version`) through func-e, which mise pins, with
+`envoy/envoy.yaml`: one listener converts gRPC errors to a
+`google.rpc.Status` body (`convert_grpc_status: true`), the other leaves
+them in `grpc-status` headers, Envoy's default. It runs the transcoding
+cases of `notes.json` and `transcode.json` (with `--origin`) and the
+route fixtures against the first, and `cases/envoy.json`, the errors in
+headers and Envoy's own answers, against the second. Envoy calls the
+server over gRPC and answers itself what no method matches
+(`reject_unknown_method`, `reject_unknown_query_parameters`), so the
+server's own transcoders never answer in its place.
+
+Envoy reads every binding from its descriptor set and serves each it
+can at the root, so `known-divergent-envoy.json` has `servedApart`
+`null`: `routes.mjs` then runs every fixture at the root and does not
+read the server's `routes/layers`. Envoy serves neither binding of a
+verb and path registered twice, without a word, and five fixtures are
+404 under it; the file records them, and the probes' answers.
+
+func-e fetches Envoy from Tetrate's archive and checks it against the
+SHA-256 listed in the same archive's index (`envoy-versions.json`), so
+the suite trusts Tetrate's archive and index; the repository pins
+func-e's own download by checksum in `mise.lock`, but not Envoy's.
+Envoy's project publishes Linux binaries only; the macOS build is
+Tetrate's. func-e 1.6.0 sometimes fails a right archive (it hashes only
+what its unpacker has read), and then leaves the unpacked binary in
+place, unchecked; the Justfile's `envoy-install` removes it and fetches,
+checks and unpacks the archive itself, against the same digest. CI
+caches `~/.local/share/func-e`, keyed on `envoy-version`.

@@ -1,0 +1,119 @@
+{
+  "description": "Where Envoy's gRPC-JSON transcoder and the route fixtures part, found by routes.mjs on 2026-10-21 against Envoy 1.40.0 (through func-e) with conformance/live/envoy/envoy.yaml, transcoding to gRPC on connect-go v2.0.1 (conformance/README.md, design section 7). The fields are known-divergent-vanguard.json's, but for servedApart, which is null: Envoy reads every binding from its own descriptor set and serves each it can at the root, so the server's layers do not apply. fixtures: those whose live call does not agree with the fixture, `observed` matched against the runner's result; probes: the requests the other files probe, with Envoy's answers.",
+  "servedApart": null,
+  "fixtures": [
+    {
+      "file": "http_proto.json",
+      "fixture": "a variable with a multi-segment template",
+      "url": "GET /v1/messages/123456",
+      "answer": "404 Could not resolve /v1/messages/123456 to a method.",
+      "reading": "Envoy's, in part; the rule cannot be served whole. GetMessage's binding 0, GET /v1/{name=messages/*}, and binding 2, GET /v1/messages/{message_id}, match the same paths. Envoy's path matcher (grpc-httpjson-transcoding) marks a verb and path registered twice as ambiguous and then matches neither, without a word at startup, where Vanguard refuses the second and grpc-gateway lets one win. The runtime builds binding 0's request as the fixture says.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+      }
+    },
+    {
+      "file": "http_proto.json",
+      "fixture": "fields outside the path become query parameters",
+      "url": "GET /v1/messages/123456?revision=2&sub.subfield=foo",
+      "answer": "404 Could not resolve /v1/messages/123456 to a method.",
+      "reading": "As above: binding 2 is the other half of the pair Envoy serves neither of.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+      }
+    },
+    {
+      "file": "http_proto.json",
+      "fixture": "a body field",
+      "url": "PATCH /v1/messages/123456 with body {\"text\":\"Hi!\"}",
+      "answer": "404 Could not resolve /v1/messages/123456 to a method.",
+      "reading": "Envoy's, in part, as above: UpdateMessage and UpdateMessageWhole both have PATCH /v1/messages/{message_id}, and Envoy serves neither.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+      }
+    },
+    {
+      "file": "http_proto.json",
+      "fixture": "body * holds every field not in the path",
+      "url": "PATCH /v1/messages/123456 with body {\"text\":\"Hi!\"}",
+      "answer": "404 Could not resolve /v1/messages/123456 to a method.",
+      "reading": "As above: UpdateMessageWhole is the other method of the pair.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+      }
+    },
+    {
+      "file": "bodies.json",
+      "fixture": "an unset body field is an empty object",
+      "url": "PATCH /v1/messages/1 with body {}",
+      "answer": "404 Could not resolve /v1/messages/1 to a method.",
+      "reading": "As above: UpdateMessage's route is the pair Envoy serves neither of, so the fixture's own question (a body of {} reads as the field set and empty, known-divergent-vanguard.json) is not reached.",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+      }
+    },
+    {
+      "file": "encoding.json",
+      "fixture": "a custom HTTP method",
+      "url": "HEAD /v1/files/a",
+      "answer": "200 with Content-Length: 18 and the body {\"path\":\"files/a\"} after the headers",
+      "reading": "Envoy's. An answer to HEAD has no body (RFC 9110 section 9.3.2), but the transcoder writes the method's JSON after the headers. Node's HTTP parser, under the runner's XMLHttpRequest, reads those bytes as the start of the next answer and fails the exchange, so the runtime reports a network error; a browser may drop the bytes instead (not verified). The route and the request are right: the server receives files/a.",
+      "observed": {
+        "result": { "noAnswer": "NetworkError" }
+      }
+    },
+    {
+      "file": "query.json",
+      "fixture": "a path value under an unset message is its default; defaults are written",
+      "url": "DELETE /v1/typed/0/false/KIND_UNSPECIFIED/0/0",
+      "answer": "200, echoing inner and inner.deep set and empty",
+      "reading": "Neither is wrong; the wire cannot say it. As under Vanguard (known-divergent-vanguard.json): a path segment sets its field and every message on the way, so no path leaves inner unset.",
+      "observed": {
+        "trace": { "httpStatus": 200 },
+        "result": { "ok": { "inner": { "deep": {} } } }
+      }
+    }
+  ],
+  "probes": [
+    {
+      "name": "an unknown query parameter",
+      "request": { "method": "GET", "path": "/v1/notes?page_size=1&bogus=1" },
+      "observed": {
+        "status": 400,
+        "body": "Could not find field \"bogus\" in the type \"notes.v1.ListNotesRequest\"."
+      },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. With reject_unknown_query_parameters Envoy rejects it, in plain text; by default it passes the request to the server untranscoded, which here would put the server's own transcoder in Envoy's place."
+    },
+    {
+      "name": "a verb the path has no route for",
+      "request": { "method": "PUT", "path": "/v1/notes" },
+      "observed": { "status": 404, "body": "Could not resolve /v1/notes to a method." },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. With reject_unknown_method Envoy answers 404 in plain text, which the runtime reads as UNIMPLEMENTED from the status; by default it passes the request on."
+    },
+    {
+      "name": "PATCH without an update mask",
+      "request": {
+        "method": "PATCH",
+        "path": "/v1/resources/r1",
+        "body": { "name": "resources/r1", "displayName": "R" }
+      },
+      "observed": {
+        "status": 200,
+        "body": {
+          "displayName": {
+            "$json": {
+              "resource": { "name": "resources/r1", "displayName": "R" },
+              "updateMask": { "$absent": true }
+            }
+          }
+        }
+      },
+      "reading": "Neither is wrong; see known-divergent-vanguard.json. Envoy, like Vanguard, passes the request as sent, with no update_mask."
+    }
+  ]
+}

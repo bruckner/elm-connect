@@ -1,0 +1,175 @@
+# Envoy in front of the notes example server, transcoding HTTP/JSON to gRPC
+# with its gRPC-JSON transcoder (docs/envoy.md walks through it).
+#
+#   :18081  errors converted to a google.rpc.Status JSON body
+#           (convert_grpc_status: true)
+#   :18082  errors left as Envoy forwards them by default: HTTP status and
+#           grpc-status / grpc-message headers, no body
+#   :18080  the example server (`notes-server -addr 127.0.0.1:18080`), which
+#           Envoy calls over gRPC on HTTP/2 without TLS
+#
+# The descriptor set is built by buf from the example's protos with their
+# imports (`just live-envoy` writes it; by hand, from examples/notes:
+# `buf build --as-file-descriptor-set -o ../../target/live/notes.binpb`).
+# Run from the repository root, since the path below is relative to it:
+#
+#   ENVOY_VERSION=$(cat conformance/live/envoy/envoy-version) \
+#     func-e run -c conformance/live/envoy/envoy.yaml
+#
+# `just live-envoy` writes a copy with its own ports and paths.
+
+admin:
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 18090 }
+
+static_resources:
+  listeners:
+    - name: status_body
+      address:
+        socket_address: { address: 127.0.0.1, port_value: 18081 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: status_body
+                route_config: &routes
+                  virtual_hosts:
+                    - name: notes
+                      domains: ["*"]
+                      # region cors
+                      # What a page served from another origin needs: the
+                      # CORS filter answers its preflight and marks each
+                      # response for the origins listed here.
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          # The origins of the pages that call the API, an
+                          # example value: a deployment lists its own.
+                          allow_origin_string_match:
+                            - exact: http://example.test
+                          # The methods of the rules under transcoding. A
+                          # `custom` rule's kind is added here; HEAD needs no
+                          # preflight.
+                          allow_methods: GET, POST, PUT, PATCH, DELETE
+                          # What the runtime sends: content-type with a JSON
+                          # body, and the headers an application adds (the
+                          # config's `headers`, Rpc.Call.withHeaders), here an
+                          # example pair. "*" would allow any, but a browser
+                          # does not take "*" for authorization, nor at all
+                          # for a call with credentials, and a list keeps to
+                          # the headers the API reads.
+                          allow_headers: content-type, authorization, x-request-id
+                          # A page reads a header only when it is exposed:
+                          # these carry a gRPC error that has no body (the
+                          # grpc_headers listener).
+                          expose_headers: grpc-status, grpc-message, grpc-status-details-bin
+                      # endregion cors
+                      routes:
+                        # The server's own canned answers (/status/<n>/,
+                        # /grpc-status/<code>/) and /healthz are not gRPC
+                        # methods: they pass through untranscoded.
+                        - match: { safe_regex: { regex: "/(status|grpc-status)/.*|/healthz" } }
+                          route: { cluster: notes }
+                          typed_per_filter_config:
+                            envoy.filters.http.grpc_json_transcoder:
+                              "@type": type.googleapis.com/envoy.config.route.v3.FilterConfig
+                              disabled: true
+                        - match: { prefix: "/" }
+                          route: { cluster: notes }
+                http_filters:
+                  # Before the transcoder, which would otherwise answer a
+                  # preflight (OPTIONS) as an unknown method.
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                  - name: envoy.filters.http.grpc_json_transcoder
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+                      # region transcoder
+                      proto_descriptor: target/live/notes.binpb
+                      services: [notes.v1.NotesService, routes.v1.Routes]
+                      # POST /<package>.<Service>/<Method> for every method,
+                      # the implicit route a method without a rule is called at.
+                      auto_mapping: true
+                      # Decode a path variable as google.api.http says: every
+                      # percent-encoded byte but a slash in a multi-segment
+                      # variable. Envoy's default keeps the reserved
+                      # characters encoded (%2B stays %2B), and the runtime
+                      # encodes every reserved character it sends.
+                      url_unescape_spec: ALL_CHARACTERS_EXCEPT_SLASH
+                      # A gRPC error becomes a google.rpc.Status JSON body,
+                      # details included, under the HTTP status of its code.
+                      convert_grpc_status: true
+                      # What the generated decoders read: proto3 JSON with
+                      # lowerCamelCase names, defaults left out, enums by
+                      # name. These are Envoy's defaults, written out.
+                      print_options:
+                        add_whitespace: false
+                        always_print_primitive_fields: false
+                        always_print_enums_as_ints: false
+                        preserve_proto_field_names: false
+                      # Envoy passes a request no method matches, or one
+                      # with a query parameter that names no field, through
+                      # to the server untranscoded; this server would then
+                      # answer it with its own transcoder in Envoy's place.
+                      # Envoy answers both itself here (404 and 400).
+                      request_validation_options:
+                        reject_unknown_method: true
+                        reject_unknown_query_parameters: true
+                      # endregion transcoder
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+    - name: grpc_headers
+      address:
+        socket_address: { address: 127.0.0.1, port_value: 18082 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: grpc_headers
+                route_config: *routes
+                http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                  - name: envoy.filters.http.grpc_json_transcoder
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+                      proto_descriptor: target/live/notes.binpb
+                      services: [notes.v1.NotesService, routes.v1.Routes]
+                      auto_mapping: true
+                      url_unescape_spec: ALL_CHARACTERS_EXCEPT_SLASH
+                      # Envoy's default: a gRPC error is the HTTP status of
+                      # its code and grpc-status / grpc-message headers,
+                      # with no body.
+                      convert_grpc_status: false
+                      request_validation_options:
+                        reject_unknown_method: true
+                        reject_unknown_query_parameters: true
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: notes
+      type: STATIC
+      connect_timeout: 1s
+      load_assignment:
+        cluster_name: notes
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: 127.0.0.1, port_value: 18080 }
+      # region h2c
+      # gRPC needs HTTP/2; the server speaks it without TLS (h2c).
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      # endregion h2c
