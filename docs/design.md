@@ -1111,9 +1111,14 @@ Built *(Proposed in its details)*:
   that a run followed by a lowercase letter keeps its last letter, which
   starts the next word. `Label` → `label`, `ID` → `id`, `URLPath` →
   `urlPath`, `HTTPRequest` → `httpRequest`, `XCoord` → `xCoord`,
-  `_internal` → `internal`, `__Label` → `label`. The rule cannot tell
-  `ID` + `s` from `I` + `Ds`, so `IDs` → `iDs`; a `rename` gives it
-  another name, and the rule does not special-case it. Methods, oneofs
+  `_internal` → `internal`, `__Label` → `label`. A run of two or more
+  followed by a lone `s` (then the end, an uppercase letter, a digit or
+  `_`) is a plural acronym, lowercased with its `s`: `IDs` → `ids`,
+  `URLs` → `urls`, `APIs` → `apis`, `UUIDs` → `uuids`, `IDsSeen` →
+  `idsSeen`. *(Decided, 2026-10-21.)* The rule cannot tell `ID` + `s`
+  from `X` + `Is`, so `XIs` → `xis` too; that misreading is accepted,
+  and a `rename` gives such a name another. Before, `IDs` became `iDs`
+  (`URLs` `urLs`). Methods, oneofs
   and oneof members' descriptor values follow the same rule (`HTTPGet` →
   `httpGet`, `_Ping` → `ping`); types, enum constructors, modules and
   services do not (a message `URLPath` stays `URLPath`), and neither

@@ -977,3 +977,6 @@ tag (design §8).
 - Generated docs link to each other (a type to its descriptor, a field
   item to its descriptor value, a call to its types and descriptor, a
   codec to its type) and to the runtime's types on the package site.
+- A record field, oneof or method whose name starts with a plural acronym
+  is lowercased with its `s`: `IDs` becomes `ids` (was `iDs`), `URLs`
+  `urls`, `APIs` `apis`, `UUIDs` `uuids` (design §3.7).

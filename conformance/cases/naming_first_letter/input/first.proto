@@ -1,6 +1,7 @@
 // Names starting with capitals or underscores (design section 3.7): the
 // leading run of capitals is lowercased, keeping its last letter when a
-// lowercase letter follows. Types keep their names as written.
+// lowercase letter follows, and taking a lone `s` after it with it (a
+// plural acronym). Types keep their names as written.
 syntax = "proto3";
 
 package first.v1;
@@ -16,8 +17,11 @@ message URLPath {
   string _internal = 8;
   string display_name = 10;
   string Type = 11;
-  // `ID` + `s` reads as `I` + `Ds`.
+  // Plural acronyms: `ids`, `urls`, `apis`, `uuids`.
   repeated string IDs = 12;
+  repeated string URLs = 13;
+  repeated string APIs = 14;
+  repeated string UUIDs = 15;
 }
 
 // `__Label` has the JSON name `Label`, so protoc refuses it beside a

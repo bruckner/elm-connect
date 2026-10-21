@@ -183,8 +183,9 @@ pub fn nested_type_name(enclosing_elm_name: &str, proto_name: &str) -> String {
 /// `displayName`). Then the leading run of uppercase letters is
 /// lowercased, except that a run followed by a lowercase letter keeps its
 /// last letter, which starts the next word (`Label` becomes `label`, `ID`
-/// `id`, `URLPath` `urlPath`, `XCoord` `xCoord`). The rule cannot tell
-/// `ID` + `s` from `I` + `Ds`, so `IDs` becomes `iDs`. An Elm reserved
+/// `id`, `URLPath` `urlPath`, `XCoord` `xCoord`). A run followed by a lone `s` is a
+/// plural acronym and is lowercased with it (`IDs` becomes `ids`, `URLs`
+/// `urls`), at the cost of `XIs` becoming `xis`. An Elm reserved
 /// word gains a trailing underscore (`Type` becomes `type_`). A name with
 /// no letter before its first digit (`_1x`) or with nothing but
 /// underscores has no Elm name.
@@ -445,11 +446,22 @@ pub fn pascal_case(name: &str) -> String {
 }
 
 /// `name` with its leading run of ASCII uppercase letters lowercased,
-/// except the run's last letter when a lowercase letter follows it.
+/// except the run's last letter when a lowercase letter follows it. A run
+/// of two or more followed by a lone `s` (then the end, an uppercase
+/// letter, a digit or `_`) is a plural acronym, lowercased with its `s`
+/// (`IDs` becomes `ids`, `URLsSeen` `urlsSeen`), so `XIs` becomes `xis`.
 fn lower_leading_run(name: &str) -> String {
-    let run = name.bytes().take_while(u8::is_ascii_uppercase).count();
-    let followed_by_lower = name.as_bytes().get(run).is_some_and(u8::is_ascii_lowercase);
-    let lowered = if run > 1 && followed_by_lower {
+    let bytes = name.as_bytes();
+    let run = bytes.iter().take_while(|b| b.is_ascii_uppercase()).count();
+    let followed_by_lower = bytes.get(run).is_some_and(u8::is_ascii_lowercase);
+    let plural = run > 1
+        && bytes.get(run) == Some(&b's')
+        && bytes
+            .get(run + 1)
+            .is_none_or(|&b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_');
+    let lowered = if plural {
+        run + 1
+    } else if run > 1 && followed_by_lower {
         run - 1
     } else {
         run
@@ -710,8 +722,16 @@ mod tests {
             ("display_name", "displayName"),
             ("Type", "type_"),
             ("V2", "v2"),
-            // `ID` + `s` reads as `I` + `Ds`: a rename gives it another name.
-            ("IDs", "iDs"),
+            // A run followed by a lone `s` is a plural acronym.
+            ("IDs", "ids"),
+            ("URLs", "urls"),
+            ("APIs", "apis"),
+            ("UUIDs", "uuids"),
+            ("IDsSeen", "idsSeen"),
+            ("IDs2", "ids2"),
+            ("IDsseen", "iDsseen"),
+            ("XIs", "xis"),
+            ("Is", "is"),
         ];
         for (proto, expected) in cases {
             assert_eq!(field_name(proto).as_deref(), Ok(expected), "{proto}");
