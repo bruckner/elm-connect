@@ -9,8 +9,8 @@ module Rpc exposing
 
 {-| Call RPCs: unary and JSON-encoded, over the
 [Connect protocol](https://connectrpc.com/docs/protocol/) as connect-go,
-connect-es, connect-python and Envoy's Connect filter serve it, or over HTTP
-transcoding, the REST mapping `google.api.http` rules describe, as
+connect-es, connect-python and Envoy's Connect-gRPC bridge serve it, or over
+HTTP transcoding, the REST mapping `google.api.http` rules describe, as
 grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it.
 
     Notes.V1.NotesService.getNote { name = "notes/42" }
