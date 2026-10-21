@@ -1,5 +1,6 @@
 // Renames that fail (options.txt): Elm names the renamed element cannot
-// take, a proto name that names nothing generated, and an enum value
+// take (a field's `status_` among them: a value's rename cannot end in
+// `_`), a proto name that names nothing generated, and an enum value
 // alias, which has no constructor of its own.
 syntax = "proto3";
 

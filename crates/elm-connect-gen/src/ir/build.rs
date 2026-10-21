@@ -1058,19 +1058,6 @@ impl Builder {
             doc,
         };
 
-        if built.elm_name == naming::VERSION_VALUE {
-            let site = self.site(
-                file,
-                &[path, &[tag::METHOD_NAME]].concat(),
-                format!("method `{full_name}` is renamed to `{}`", built.elm_name),
-            );
-            self.diagnostics.push(Problem::reserved_value(
-                &format!("method `{full_name}`"),
-                &built.elm_name,
-                site,
-                &self.spelling.rename(full_name),
-            ));
-        }
         let service = method.parent_service();
         let what = format!("method `{full_name}`");
         let origin = self.origin(file, path, tag::METHOD_NAME, what, Some(full_name));
@@ -1255,7 +1242,8 @@ impl Builder {
     /// Claims `name`, the Elm value of the descriptor of a field or oneof
     /// member of `message` in its descriptor module, for `origin`. The
     /// module also defines `descriptor` (claimed first, by the message)
-    /// and [`naming::VERSION_VALUE`], which only a rename can give a field.
+    /// and [`naming::VERSION_VALUE`], which no field's value can be: a
+    /// derived name ends in `_` only as an escape, and a rename never does.
     fn claim_field_value(
         &mut self,
         values: &mut Namespace,
@@ -1263,19 +1251,6 @@ impl Builder {
         name: &str,
         origin: Origin,
     ) {
-        if name == naming::VERSION_VALUE {
-            let site = Site {
-                label: format!("{} is renamed to `{name}`", origin.what),
-                ..origin.site
-            };
-            self.diagnostics.push(Problem::reserved_value(
-                &origin.what,
-                name,
-                site,
-                &self.rename_of(origin.proto.as_deref()),
-            ));
-            return;
-        }
         if let Some(Clash {
             first,
             second,

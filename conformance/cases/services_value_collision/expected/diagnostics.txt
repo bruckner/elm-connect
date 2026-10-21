@@ -1,3 +1,19 @@
+options::invalid_rename
+
+  × The rename of `settings.v1.SettingsService.Version` gives
+  │ `elmConnectVersion_`, which a method cannot be named.
+    ╭─[settings.proto:21:7]
+ 20 │   // rename cannot end in `_`.
+ 21 │   rpc Version(Settings) returns (Settings);
+    ·       ───┬───
+    ·          ╰── a method here
+ 22 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
+    ╰────
+  help: `settings.v1.SettingsService.Version` is a method, which becomes an
+        Elm value, and a rename's name is used as it is, so it must be an
+        ASCII lowercase letter followed by letters, digits or underscores, not
+        ending in an underscore, and not an Elm reserved word.
+
 naming::value_collision
 
   × The service `settings.v1.SettingsService` has two methods that both become
@@ -22,22 +38,6 @@ naming::value_collision
 
 naming::value_collision
 
-  × The method `settings.v1.SettingsService.Version` is renamed to the Elm
-  │ value `elmConnectVersion_`, which every generated module defines already.
-    ╭─[settings.proto:20:7]
- 19 │   // But a rename can give a method that name (options.txt).
- 20 │   rpc Version(Settings) returns (Settings);
-    ·       ───┬───
-    ·          ╰── method `settings.v1.SettingsService.Version` is renamed to `elmConnectVersion_`
- 21 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
-    ╰────
-  help: Every generated module defines `elmConnectVersion_`, which names the
-        release of the generator it came from, so no method or field can take
-        that name in the module that defines it. Give it another name in its
-        `rename=settings.v1.SettingsService.Version:<Elm name>`.
-
-naming::value_collision
-
   × The service `settings.v1.SettingsService` has a method that becomes the
   │ Elm value `descriptorDefaultSettings`, which is another method's
   │ descriptor.
@@ -52,13 +52,14 @@ naming::value_collision
  16 │   // `elmConnectVersion` is fine: the value every generated module
  17 │   // defines is `elmConnectVersion_`, which no method name derives to.
  18 │   rpc ElmConnectVersion(Settings) returns (Settings);
- 19 │   // But a rename can give a method that name (options.txt).
- 20 │   rpc Version(Settings) returns (Settings);
- 21 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
- 22 │   rpc DescriptorDefaultSettings(Settings) returns (Settings);
+ 19 │   // Nor can a rename give a method that name (options.txt): a value's
+ 20 │   // rename cannot end in `_`.
+ 21 │   rpc Version(Settings) returns (Settings);
+ 22 │   // `descriptorDefaultSettings` is the descriptor of `DefaultSettings`.
+ 23 │   rpc DescriptorDefaultSettings(Settings) returns (Settings);
     ·       ────────────┬────────────
     ·                   ╰── and so does method `settings.v1.SettingsService.DescriptorDefaultSettings`
- 23 │ }
+ 24 │ }
     ╰────
   help: A service's module defines two values per method: its call, its name
         with its leading capitals lowercased and underscores dropped, and its

@@ -98,10 +98,9 @@ codes! {
     /// package become the same Elm constructor.
     ConstructorCollision => "naming::constructor_collision",
     /// Two methods of a service get the same Elm value name, a method gets
-    /// another method's descriptor's name, two fields of a message (or one
-    /// and the message's descriptor) get the same value name in its
-    /// descriptor module, or a method or field gets the name of the value
-    /// every generated module defines.
+    /// another method's descriptor's name, or two fields of a message (or
+    /// one and the message's descriptor) get the same value name in its
+    /// descriptor module.
     ValueCollision => "naming::value_collision",
     /// Two generated modules, each a package's, a service's or a type's
     /// descriptor module, get the same Elm module name.
@@ -628,27 +627,6 @@ impl Problem {
                 )
             ),
             vec![first, second],
-        )
-    }
-
-    /// A `rename` gives `what` (such as "method `notes.v1.Notes.Get`" or
-    /// "field `title`") the name `elm_name`, the value every generated
-    /// module defines to name the release it was generated for. No proto
-    /// name derives to it.
-    pub fn reserved_value(what: &str, elm_name: &str, site: Site, rename: &str) -> Self {
-        Problem::new(
-            Code::ValueCollision,
-            format!(
-                "The {what} is renamed to the Elm value `{elm_name}`, which every generated \
-                 module defines already."
-            ),
-            format!(
-                "Every generated module defines `elmConnectVersion_`, which names the release of \
-                 the generator it came from, so no method or field can take that name in the \
-                 module that defines it. Give it another name in its \
-                 {rename}."
-            ),
-            vec![site],
         )
     }
 

@@ -56,7 +56,8 @@ impl Role {
         const PASCAL: &str = "an ASCII uppercase letter followed by letters and digits \
                               (PascalCase)";
         const VALUE: &str = "an ASCII lowercase letter followed by letters, digits or \
-                             underscores, and not an Elm reserved word";
+                             underscores, not ending in an underscore, and not an Elm \
+                             reserved word";
         Some(match self {
             Role::Package => (
                 "an Elm module name",
@@ -79,7 +80,9 @@ impl Role {
     /// Whether `elm` is a name this role can take. Types and constructors
     /// take no underscore: the generator's own names have none, so the
     /// wrapper of a recursive message (`Node_`, design §3.2) cannot meet
-    /// one.
+    /// one. Values and record fields do not end in one: a value the
+    /// generator adds ends in `_` (`elmConnectVersion_`, design §3.1), and
+    /// a derived name does only as an escape (`type_`, `descriptor_`).
     pub(super) fn accepts(self, elm: &str) -> bool {
         let segment = |name: &str| ModuleName::new(vec![name.to_owned()]).is_some();
         let pascal = |name: &str| {
@@ -91,6 +94,7 @@ impl Role {
             let mut chars = name.chars();
             chars.next().is_some_and(|c| c.is_ascii_lowercase())
                 && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+                && !name.ends_with('_')
                 && !ELM_RESERVED_WORDS.contains(&name)
         };
         match self {

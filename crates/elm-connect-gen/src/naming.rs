@@ -466,8 +466,7 @@ pub const REGISTRY: &str = "registry";
 /// underscore marks it as the generator's own, as with a recursive
 /// message's wrapper (`Node_`): a derived value name drops underscores,
 /// and only the reserved-word escape adds one, so no proto name derives to
-/// it. Only a `rename` can give a method this name, and that is
-/// `naming::value_collision`.
+/// it, and a `rename` to a value cannot end in `_`.
 pub const VERSION_VALUE: &str = "elmConnectVersion_";
 
 /// The parameter an encoder binds the value it encodes to. Elm rejects a

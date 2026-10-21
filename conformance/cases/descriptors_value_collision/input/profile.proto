@@ -9,6 +9,7 @@ message Profile {
   oneof alias {
     string nickname = 2;
   }
-  // Renamed to the value every generated module defines (options.txt).
+  // Renamed to the value every generated module defines (options.txt),
+  // which a field's rename cannot take, ending in `_`.
   string version = 3;
 }

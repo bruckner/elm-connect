@@ -375,9 +375,10 @@ rpc shared call =
   generator adds to a descriptor module later ends in `_`, as
   `elmConnectVersion_` does: a field's derived name ends in `_` only as
   the escape of one of the fourteen reserved words (`type_`) or as
-  `descriptor_`, so a later addition that avoids those fifteen cannot
-  collide with a field, and adding one breaks no proto that generates
-  without a `rename` to a name ending in `_`.
+  `descriptor_`, and a `rename` of a field, oneof or method to a name
+  ending in `_` is `options::invalid_rename` (§3.7), so a later
+  addition that avoids those fifteen cannot collide with a field, and
+  adding one breaks no proto that generates.
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
   diagnostic naming the files involved. *(Proposed.)* Alternative: fold
@@ -1214,8 +1215,8 @@ Built, as the `naming` and `naming_collision` cases show:
   underscores (`_1x`) has a constructor but no value, and is
   `naming::invalid_field` (`oneofs_member_invalid` case). A renamed
   field that meets another field's or a member's name is
-  `naming::value_collision`, naming both; a field renamed to
-  `elmConnectVersion_` likewise (`descriptors_value_collision` case).
+  `naming::value_collision`, naming both (`descriptors_value_collision`
+  case).
   A field named like a value Elm imports by default (`max`, `min`,
   `always`) needs nothing: a descriptor module's own top-level value
   shadows the default import (`descriptors_default_names` case). A
@@ -1269,8 +1270,15 @@ one segment) an ASCII uppercase letter followed by letters, digits or
 underscores; a type or constructor an ASCII uppercase letter followed
 by letters and digits, with no underscore, so it cannot meet a
 recursive wrapper's (`Node_`); a value or record field an ASCII
-lowercase letter followed by letters, digits or underscores, and not a
-reserved word. An enum value alias has no constructor of its own to
+lowercase letter followed by letters, digits or underscores, not ending
+in an underscore, and not a reserved word. *(No trailing underscore:
+decided 2026-10-21.)* A derived value ends in `_` only as the
+reserved-word escape (`type_`) or `descriptor_`, and the generator's
+own values end in one (`elmConnectVersion_`), so the promise of §3.1
+that a value it adds later cannot collide holds for renamed names too
+(`rename_invalid` case). Before, `foo_` and `get_` were accepted, and a
+rename to `elmConnectVersion_` was `naming::value_collision`. An enum
+value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
 `options::unknown_rename`, which suggests the closest full name they
@@ -3251,9 +3259,9 @@ kept compiling the same way.
 - The trailing underscore marks the name as the generator's own, as it
   does a recursive message's wrapper (`Node_`, §3.2): a derived value
   name drops underscores when casing, and only the reserved-word escape
-  adds one, so no proto name derives to `elmConnectVersion_`. Only a
-  deliberate `rename` can give a method that name, and that is
-  `naming::value_collision`.
+  adds one, so no proto name derives to `elmConnectVersion_`, and a
+  `rename` to a value cannot end in `_` (`options::invalid_rename`,
+  §3.7).
 - A value is added at every minor release, and every value of a major
   is kept until the next major removes them all. So a runtime newer
   than the generated code, within its major, compiles it; an older

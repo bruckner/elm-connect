@@ -990,3 +990,8 @@ tag (design §8).
   elm/virtual-dom (`Html`, `Url.Parser`) is a `naming::shadowing_module`
   warning: it compiles, but an application depending on that package
   cannot import it (design §3.1).
+- A `rename` of a field, oneof or method to a name ending in `_`
+  (`foo_`, `elmConnectVersion_`) is `options::invalid_rename`; it was
+  accepted, and `elmConnectVersion_` was `naming::value_collision`. A
+  value the generator adds later ends in `_`, so it cannot collide with
+  a renamed name either (design §3.1, §3.7).
