@@ -1049,3 +1049,7 @@ tag (design §8).
   hidden from its documentation, and missing docs warn. The library no
   longer turns on miette's `fancy` feature (backtraces); only the CLI
   does.
+- The three crates carry crates.io metadata (keywords, categories,
+  homepage, documentation) and a README of their own, and each ships
+  `LICENSE-MIT` and `LICENSE-APACHE`; `elm-connect-gen` ships a notice
+  beside its embedded googleapis files.

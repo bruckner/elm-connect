@@ -14,7 +14,10 @@ embeds them so that protos importing `google/api/annotations.proto` or
 They are Copyright Google LLC and licensed under the Apache License,
 Version 2.0; a copy of the license is in [LICENSE-APACHE](LICENSE-APACHE)
 and at <http://www.apache.org/licenses/LICENSE-2.0>. Each file carries
-its own copyright and license header.
+its own copyright and license header. The crate ships this notice beside
+them, in
+[`crates/elm-connect-gen/googleapis/NOTICE.md`](crates/elm-connect-gen/googleapis/NOTICE.md),
+and its own copy of the license.
 
 The notes example vendors three googleapis files,
 `examples/notes/third_party/googleapis/google/api/annotations.proto`,

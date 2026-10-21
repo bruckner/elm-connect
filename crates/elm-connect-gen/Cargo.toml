@@ -6,6 +6,11 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/elm-connect-gen"
+readme = "README.md"
+keywords.workspace = true
+categories = ["development-tools", "web-programming"]
 # The integration tests run from the repository, reading its conformance
 # corpus and runtime outside the crate, so they are not published.
 exclude = ["tests/"]
