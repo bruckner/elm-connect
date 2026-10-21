@@ -127,11 +127,21 @@ type alias StatusError =
 
 An answer with none of these is an `HttpStatus` error.
 
+Two more are reserved, so that a release that reads streams can give them
+without a major; this release never gives them:
+
+  - `GrpcTrailers`: the `grpc-status` and `grpc-message` trailers that end a
+    gRPC or gRPC-Web response.
+  - `ConnectEndStream`: the error in the end-of-stream message of a Connect
+    stream.
+
 -}
 type Source
     = ConnectBody
     | StatusBody
     | GrpcHeaders
+    | GrpcTrailers
+    | ConnectEndStream
 
 
 {-| An error's code, as the Connect clients give it:

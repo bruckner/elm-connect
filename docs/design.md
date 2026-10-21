@@ -1652,14 +1652,17 @@ registry =
   unspecified zero: `BehaviorOptional`, `BehaviorRequired`,
   `BehaviorOutputOnly`, `BehaviorInputOnly`, `BehaviorImmutable`,
   `BehaviorUnorderedList`, `BehaviorNonEmptyDefault`,
-  `BehaviorIdentifier`. The prefix keeps them apart from
+  `BehaviorIdentifier`, and `BehaviorUnknown Int` for a number this
+  release does not name, since `google.api.FieldBehavior` keeps growing
+  (2020, 2021, 2023) and the union is frozen (§8.3). The prefix keeps them apart from
   `CardinalityOptional` and `CardinalityRequired`, which mean something
   else (§3.1). The CLI embeds `google/api/field_behavior.proto` (§4,
   with the `google.api.http` files), so a proto importing it compiles
   without a googleapis checkout; both binaries read the extension when
   the descriptor pool has it, which it does exactly when a proto
-  imports it, and a number this release does not know is dropped.
-  *(Decided, 2026-10-16.)*
+  imports it; a number this release does not name is kept as
+  `BehaviorUnknown` and the unspecified zero is dropped.
+  *(Decided, 2026-10-16; `BehaviorUnknown` 2026-10-21.)*
 - **Descriptor data is added sparingly.** A program that uses the
   registry keeps every tree in it, and every program pays for the
   trees' source size, so a property joins the trees only when a use
@@ -2667,6 +2670,8 @@ type Source
     = ConnectBody                       -- {"code": "not_found", …}
     | StatusBody                        -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders                       -- grpc-status / grpc-message headers
+    | GrpcTrailers                      -- reserved: gRPC / gRPC-Web trailers
+    | ConnectEndStream                  -- reserved: Connect end-of-stream message
 
 code : Error -> Rpc.Code.Code           -- see below
 message : Error -> String
@@ -3453,13 +3458,16 @@ Within a major version:
   frozen within a major, since users match on them exhaustively:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
   proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and
-  `KindMessage` the message's full name, §3.9), `Scalar` and `Behavior`, `Proto.Method.Idempotency`,
+  `KindMessage` the message's full name, §3.9), `Scalar`, `Behavior` (with
+  `BehaviorUnknown Int` holding a number this release does not name, so
+  that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `InvalidHeader`, `RequestTooLarge`,
-  `ResponseTooLarge`) and `Source` (a
+  `ResponseTooLarge`) and `Source` (with `GrpcTrailers` and
+  `ConnectEndStream` reserved for server streaming, which reads a
+  status from those two places, so that it can ship as a minor; a
   failure before an answer is read is one of the reasons, and a new kind
-  found in an answer that was read is a `BadResponse`, §5.4); a value `google.api.FieldBehavior`
-  gains waits for a major, and until then the generator drops it.
+  found in an answer that was read is a `BadResponse`, §5.4).
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.

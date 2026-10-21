@@ -399,6 +399,12 @@ sourceToString source =
         Rpc.Error.GrpcHeaders ->
             "the grpc-status header"
 
+        Rpc.Error.GrpcTrailers ->
+            "the grpc-status trailer"
+
+        Rpc.Error.ConnectEndStream ->
+            "a Connect end-of-stream message"
+
 
 
 -- endregion error

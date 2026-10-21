@@ -123,9 +123,9 @@ API says about a field's contract (not its presence on the wire):
   - `BehaviorNonEmptyDefault`: the server gives a value of its own when it is
     unset.
   - `BehaviorIdentifier`: the field is the resource's name.
-
-A value `google.api.FieldBehavior` gains after this release is dropped by the
-generator until a release adds it here.
+  - `BehaviorUnknown`: the number of a `google.api.FieldBehavior` value this
+    release does not name. A later release may name it; until then, matching
+    on the number is how an application reads that behavior.
 
 -}
 type Behavior
@@ -137,6 +137,7 @@ type Behavior
     | BehaviorUnorderedList
     | BehaviorNonEmptyDefault
     | BehaviorIdentifier
+    | BehaviorUnknown Int
 
 
 {-| A field: its proto name (`page_size`), its name in proto3 JSON

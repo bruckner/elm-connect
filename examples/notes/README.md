@@ -223,6 +223,12 @@ sourceToString source =
 
         Rpc.Error.GrpcHeaders ->
             "the grpc-status header"
+
+        Rpc.Error.GrpcTrailers ->
+            "the grpc-status trailer"
+
+        Rpc.Error.ConnectEndStream ->
+            "a Connect end-of-stream message"
 ```
 
 Over Connect the error arrives as a Connect error body

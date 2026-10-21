@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// A stand-in for a later `google/api/field_behavior.proto` that names
+// values this release does not: on the include path, it wins over the copy
+// the generator embeds.
+package google.api;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  repeated google.api.FieldBehavior field_behavior = 1052 [packed = false];
+}
+
+enum FieldBehavior {
+  FIELD_BEHAVIOR_UNSPECIFIED = 0;
+  OPTIONAL = 1;
+  REQUIRED = 2;
+  OUTPUT_ONLY = 3;
+  INPUT_ONLY = 4;
+  IMMUTABLE = 5;
+  UNORDERED_LIST = 6;
+  NON_EMPTY_DEFAULT = 7;
+  IDENTIFIER = 8;
+  FUTURE = 99;
+  BELOW_ZERO = -1;
+}

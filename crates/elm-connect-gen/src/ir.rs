@@ -441,11 +441,13 @@ pub enum FieldBehavior {
     NonEmptyDefault,
     /// `IDENTIFIER`.
     Identifier,
+    /// A number this release does not name, kept as the proto gives it.
+    Unknown(i32),
 }
 
 impl FieldBehavior {
-    /// The value of this number, or `None` for the unspecified zero and
-    /// for a number this release does not know.
+    /// The value of this number, [`FieldBehavior::Unknown`] for a number
+    /// this release does not name, or `None` for the unspecified zero.
     pub fn from_number(number: i32) -> Option<Self> {
         Some(match number {
             1 => FieldBehavior::Optional,
@@ -456,7 +458,8 @@ impl FieldBehavior {
             6 => FieldBehavior::UnorderedList,
             7 => FieldBehavior::NonEmptyDefault,
             8 => FieldBehavior::Identifier,
-            _ => return None,
+            0 => return None,
+            other => FieldBehavior::Unknown(other),
         })
     }
 }

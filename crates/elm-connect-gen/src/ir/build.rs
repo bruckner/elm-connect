@@ -2106,8 +2106,8 @@ const FIELD_BEHAVIOR_EXTENSION: &str = "google.api.field_behavior";
 /// [`http_rule`] reads `google.api.http`: from the options as the pool
 /// decoded them, so a pool without `google/api/field_behavior.proto` has no
 /// behavior to find, and neither has a proto that does not import it.
-/// The unspecified zero and numbers this release does not know are
-/// dropped.
+/// The unspecified zero is dropped; a number this release does not name
+/// is kept as [`FieldBehavior::Unknown`].
 fn annotations(field: &FieldDescriptor) -> Annotations {
     let deprecated = field
         .field_descriptor_proto()

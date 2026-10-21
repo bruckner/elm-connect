@@ -228,7 +228,11 @@ fn behavior_words(behavior: &[FieldBehavior]) -> String {
             FieldBehavior::Immutable => Some("Immutable."),
             FieldBehavior::Identifier => Some("Identifier."),
             FieldBehavior::UnorderedList => Some("Unordered."),
-            FieldBehavior::Optional | FieldBehavior::NonEmptyDefault => None,
+            // A number this release does not name has no word; the descriptor
+            // value still carries it.
+            FieldBehavior::Optional
+            | FieldBehavior::NonEmptyDefault
+            | FieldBehavior::Unknown(_) => None,
         })
         .collect::<Vec<_>>()
         .join(" ")
