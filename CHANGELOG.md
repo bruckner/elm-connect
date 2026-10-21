@@ -1015,3 +1015,12 @@ tag (design §8).
   code matching `Reason` exhaustively needs the new cases.
   `Rpc.checkConfig` reports a limit below 1, and the Connect conformance
   config declares `supportsMessageReceiveLimit`.
+- The README is the project's front page: what it is, its status, how to
+  install it, a quick start, its scope and how it compares. The
+  generator's and the runtime's manuals move to guides in `docs/`
+  (`install.md`, `quickstart.md`, `generator.md`, `calling.md`,
+  `descriptors.md`, `transcoding.md`, `compared.md`), whose code blocks
+  `just snippets` checks too; the install guide has a complete `elm.json`
+  for an application outside this repository, and the quick start an
+  offline elm-test of a call. The package's `elm.json` summary names
+  Connect and `google.api.http`.
