@@ -67,6 +67,10 @@ getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.N
 ping : () -> Rpc.Call () ()
 ```
 
+Each type, call and descriptor carries the proto's comment and its
+one-line declaration as its doc, so editor hover and `elm repl` show
+what the proto says.
+
 A call goes over either transport, from the same generated code:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
