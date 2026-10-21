@@ -199,6 +199,7 @@ pub fn build_with_imports(
 
     mark_cycles(&mut packages);
     builder.check_import_cycles(&by_package);
+    builder.check_ambiguous_bindings(pool, &packages);
     if !builder.runtime_namespace.is_empty() {
         let modules: Vec<String> = builder.runtime_namespace.iter().cloned().collect();
         builder.diagnostics.push(Problem::runtime_namespace(
@@ -231,24 +232,6 @@ fn route_literal(
     error: &route::RouteError,
 ) -> (&'static str, Vec<String>) {
     use route::RouteError as E;
-    // As the text format writes the string in double quotes, so that a
-    // value with escapes (`"GET\r\n"`) is found as written.
-    let quoted = |text: &str| {
-        let mut out = String::from("\"");
-        for c in text.chars() {
-            match c {
-                '\n' => out.push_str("\\n"),
-                '\r' => out.push_str("\\r"),
-                '\t' => out.push_str("\\t"),
-                '"' => out.push_str("\\\""),
-                '\\' => out.push_str("\\\\"),
-                c if c.is_control() => out.push_str(&format!("\\{:03o}", u32::from(c))),
-                c => out.push(c),
-            }
-        }
-        out.push('"');
-        out
-    };
     let mut within = vec!["additional_bindings".to_owned(); index];
     let label = match error {
         E::NoPattern | E::QueryField { .. } => {
@@ -270,15 +253,7 @@ fn route_literal(
         | E::UnboundWildcard { .. }
         | E::PathField { .. }
         | E::PathFieldTwice { .. } => {
-            let key = match &binding.verb {
-                HttpVerb::Get => "get",
-                HttpVerb::Put => "put",
-                HttpVerb::Post => "post",
-                HttpVerb::Delete => "delete",
-                HttpVerb::Patch => "patch",
-                HttpVerb::Custom(_) => "path",
-            };
-            within.extend([key.to_owned(), quoted(&binding.template)]);
+            within = path_within(index, binding);
             "this path"
         }
         E::BodyField { field, .. } => {
@@ -291,6 +266,42 @@ fn route_literal(
         }
     };
     (label, within)
+}
+
+/// The literals that find the path of the binding `binding` (the rule
+/// itself at `index` 0, else its additional binding `index`) in the
+/// rule's text (see [`Site::within`]).
+fn path_within(index: usize, binding: &HttpRule) -> Vec<String> {
+    let key = match &binding.verb {
+        HttpVerb::Get => "get",
+        HttpVerb::Put => "put",
+        HttpVerb::Post => "post",
+        HttpVerb::Delete => "delete",
+        HttpVerb::Patch => "patch",
+        HttpVerb::Custom(_) => "path",
+    };
+    let mut within = vec!["additional_bindings".to_owned(); index];
+    within.extend([key.to_owned(), quoted(&binding.template)]);
+    within
+}
+
+/// `text` as the text format writes a string, in double quotes, so that a
+/// value with escapes (`"GET\r\n"`) is found as written.
+fn quoted(text: &str) -> String {
+    let mut out = String::from("\"");
+    for c in text.chars() {
+        match c {
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if c.is_control() => out.push_str(&format!("\\{:03o}", u32::from(c))),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 /// The files of every package to generate, by package name, each
@@ -924,6 +935,95 @@ impl Builder {
             }
         }
         (!failed).then_some(routes)
+    }
+
+    /// A `route::ambiguous_binding` warning for each pair of bindings of
+    /// `packages` (built from `pool`) with one HTTP method and one path
+    /// shape: the rules, their additional bindings, and the implicit
+    /// `POST /<package>.<Service>/<Method>` route of every method, which a
+    /// rule can take too. Implicit routes come first, so the second of a
+    /// pair, where the warning points, is a binding written in the protos.
+    fn check_ambiguous_bindings(&mut self, pool: &DescriptorPool, packages: &[Package]) {
+        struct Binding {
+            /// As the middle of a sentence names it, with its method and
+            /// path.
+            what: String,
+            /// The HTTP method and path shape.
+            shape: String,
+            /// Where the protos write it, for a written binding.
+            at: Option<(FileDescriptor, Vec<i32>, Vec<String>)>,
+        }
+        let services = || packages.iter().flat_map(|package| &package.services);
+        let mut bindings = Vec::new();
+        for service in services() {
+            for method in &service.methods {
+                let path = format!("/{}/{}", service.proto_full_name, method.proto_name);
+                bindings.push(Binding {
+                    what: format!(
+                        "the implicit route of `{}.{}` (`POST {path}`)",
+                        service.proto_full_name, method.proto_name
+                    ),
+                    shape: format!("POST {path}"),
+                    at: None,
+                });
+            }
+        }
+        for service in services() {
+            let descriptor = pool.get_service_by_name(&service.proto_full_name);
+            for method in &service.methods {
+                let Some(rule) = &method.http else {
+                    continue;
+                };
+                let full_name = format!("{}.{}", service.proto_full_name, method.proto_name);
+                let written = std::iter::once(rule).chain(&rule.additional_bindings);
+                for (index, (route, binding)) in method.routes.iter().zip(written).enumerate() {
+                    let verb = binding.verb.as_str();
+                    let what = match index {
+                        0 => format!("the HTTP rule of `{full_name}`"),
+                        n => format!("additional binding {n} of `{full_name}`"),
+                    };
+                    let at = descriptor
+                        .as_ref()
+                        .and_then(|service| {
+                            service.methods().find(|m| m.name() == method.proto_name)
+                        })
+                        .map(|descriptor| {
+                            let path = [
+                                descriptor.path(),
+                                &[tag::METHOD_OPTIONS, tag::METHOD_OPTIONS_HTTP],
+                            ]
+                            .concat();
+                            (descriptor.parent_file(), path, path_within(index, binding))
+                        });
+                    bindings.push(Binding {
+                        what: format!("{what} (`{verb} {}`)", binding.template),
+                        shape: format!("{verb} {}", route.shape()),
+                        at,
+                    });
+                }
+            }
+        }
+
+        let mut by_shape: HashMap<&str, Vec<usize>> = HashMap::new();
+        let mut pairs = Vec::new();
+        for (second, binding) in bindings.iter().enumerate() {
+            let earlier = by_shape.entry(binding.shape.as_str()).or_default();
+            pairs.extend(earlier.iter().map(|&first| (first, second)));
+            earlier.push(second);
+        }
+        for (first, second) in pairs {
+            let (first, second) = (&bindings[first], &bindings[second]);
+            let site = second.at.as_ref().map(|(file, path, within)| Site {
+                within: within.clone(),
+                ..self.site_within(file, path, "this path".into())
+            });
+            self.diagnostics.push(Problem::ambiguous_binding(
+                &first.what,
+                &second.what,
+                &second.shape,
+                site,
+            ));
+        }
     }
 
     /// A field of a generated message as generated code names its

@@ -388,6 +388,47 @@ pub struct Route {
     pub query: Vec<QueryParam>,
 }
 
+impl Route {
+    /// The route's path shape: its path with each variable written as
+    /// what it matches, `*` for one segment (`{x}`, `{x=*}`), `**` for
+    /// any number (`{x=**}`), and its own template's shape for a variable
+    /// with one (`{name=messages/*}` is `messages/*`), and the custom verb
+    /// kept. Two routes of one HTTP method and one shape match the same
+    /// requests, so `/v1/{name=messages/*}` and `/v1/messages/{id}` are
+    /// both `/v1/messages/*`.
+    pub fn shape(&self) -> String {
+        let mut shape = String::new();
+        for segment in &self.segments {
+            match segment {
+                PathSegment::Literal(text) => {
+                    shape.push('/');
+                    shape.push_str(text);
+                }
+                PathSegment::Variable { template, .. } if template.is_empty() => {
+                    shape.push_str("/*");
+                }
+                PathSegment::Variable { template, .. } => {
+                    for segment in template {
+                        shape.push('/');
+                        shape.push_str(match segment {
+                            Segment::Literal(text) => text,
+                            Segment::DoubleWildcard => "**",
+                            // A variable's template holds no variables
+                            // (`parse_template`).
+                            Segment::Wildcard | Segment::Variable { .. } => "*",
+                        });
+                    }
+                }
+            }
+        }
+        if let Some(verb) = &self.custom_verb {
+            shape.push(':');
+            shape.push_str(verb);
+        }
+        shape
+    }
+}
+
 /// One path segment of a [`Route`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PathSegment {

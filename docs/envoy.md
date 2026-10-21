@@ -204,8 +204,9 @@ records each answer, with a reading):
   not in the path"; bodies.json "an unset body field is an empty
   object"). Vanguard refuses the second binding and grpc-gateway lets
   one win; no router serves that rule whole, but Envoy's silence is
-  the surprise. Check a service's rules for such pairs before putting
-  Envoy in front of it.
+  the surprise. The generator reports each such pair as the warning
+  `route::ambiguous_binding`, so a service's rules need no check by
+  hand before Envoy goes in front of it.
 - A custom `HEAD` binding (encoding.json "a custom HTTP method"): Envoy
   transcodes the request right but writes the response body after the
   headers, which an answer to `HEAD` must not have. Node's HTTP parser

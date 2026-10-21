@@ -1,0 +1,76 @@
+// Bindings of one HTTP method and one path shape match the same requests,
+// and no router serves both: each pair generates, with a warning. The
+// shape writes a variable as what it matches, so `/v1/{name=messages/*}`
+// and `/v1/messages/{id}` are both `/v1/messages/*`; a custom kind is
+// compared as the method it names, and a custom verb (`:check`) is kept.
+// Paths of another shape, or of another method, do not warn.
+syntax = "proto3";
+
+package msgs.v1;
+
+import "google/api/annotations.proto";
+
+message MessageRequest {
+  string name = 1;
+  string id = 2;
+  string sub = 3;
+}
+
+message Message {
+  string name = 1;
+}
+
+service Messages {
+  // Different text, one shape: warns.
+  rpc GetMessage(MessageRequest) returns (Message) {
+    option (google.api.http) = {
+      get: "/v1/{name=messages/*}"
+      additional_bindings {get: "/v1/messages/{id}"}
+    };
+  }
+
+  // One more segment: another shape, no warning.
+  rpc GetSub(MessageRequest) returns (Message) {
+    option (google.api.http) = {get: "/v1/messages/{id}/{sub}"};
+  }
+
+  // GetMessage's template under another method: no warning.
+  rpc UpdateMessage(MessageRequest) returns (Message) {
+    option (google.api.http) = {
+      patch: "/v1/{name=messages/*}"
+      body: "*"
+    };
+  }
+
+  rpc ListMessages(MessageRequest) returns (Message) {
+    option (google.api.http) = {get: "/v1/messages"};
+  }
+
+  // Two custom kinds of one method and shape: warns.
+  rpc CheckMessage(MessageRequest) returns (Message) {
+    option (google.api.http) = {
+      custom: {kind: "HEAD" path: "/v1/{name=messages/*}:check"}
+    };
+  }
+
+  rpc CheckById(MessageRequest) returns (Message) {
+    option (google.api.http) = {
+      custom: {kind: "HEAD" path: "/v1/messages/{id}:check"}
+    };
+  }
+
+  // A rule on another method's implicit route: warns.
+  rpc Touch(MessageRequest) returns (Message) {
+    option (google.api.http) = {
+      post: "/msgs.v1.Messages/ListMessages"
+      body: "*"
+    };
+  }
+}
+
+service Archive {
+  // The same binding as `Messages.ListMessages`, in another service: warns.
+  rpc ListArchived(MessageRequest) returns (Message) {
+    option (google.api.http) = {get: "/v1/messages"};
+  }
+}

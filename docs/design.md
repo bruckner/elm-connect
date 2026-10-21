@@ -1445,7 +1445,12 @@ case names it):
   request field with no query form, a rule without a path, nested
   additional bindings (§4, §5.3; with `services_invalid`). No escape
   yet; a `route` skip, leaving such a method out as `streaming=skip`
-  does, would be one.
+  does, would be one. Two bindings of the generated methods with one
+  HTTP method and one path shape (each variable written as what it
+  matches, so `/v1/{name=messages/*}` and `/v1/messages/{id}` are both
+  `/v1/messages/*`; implicit routes included) match the same requests,
+  which no router serves both of, and generate with a
+  `route::ambiguous_binding` warning (`routes_ambiguous_binding` case).
 - **Method values that collide**: two methods of one service whose
   values have one name (`GetSettings` and `Get_Settings`), or a method
   named for another's descriptor (`DescriptorDefaultSettings` beside

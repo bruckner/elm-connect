@@ -48,13 +48,14 @@ parameter), the row says which test covers it instead.
 | **`services::`** | **A method the generator refuses, or leaves out, as a method.** | |
 | `services::streaming` | A method streams requests, responses or both. An error; a warning, beside a successful run, under `streaming=skip`, which leaves the method out. | `--streaming skip` / `streaming=skip`. |
 | `services::unbound_method` | A method has no `google.api.http` rule, under `unbound_methods=error`. | Add a rule, or `--unbound-methods implicit` / `unbound_methods=implicit` (the default) if the server serves the implicit route. |
-| **`route::`** | **A `google.api.http` rule that does not resolve.** | |
+| **`route::`** | **A `google.api.http` rule that does not resolve, or that no router serves beside another.** | |
 | `route::rule` | A rule has no path, a `custom` kind that is not an HTTP method a browser sends, or additional bindings nested in an additional binding. | Fix the rule. |
 | `route::template` | A path template does not parse, or has a wildcard outside a variable. | Fix the template. |
 | `route::path_field` | A path variable names no non-repeated scalar, enum or well-known field with a one-value JSON form (`Timestamp`, `Duration`, `FieldMask`, a wrapper) of the request, runs through a well-known type (`{at.seconds}`), or names a field twice. | Fix the variable's field path. |
 | `route::body_field` | `body` names no top-level singular message field of the request. | `body: "*"`, a message field's name, or no `body`. |
 | `route::response_body` | `response_body` names no top-level field of the response. | A field of the response, or no `response_body`. |
 | `route::query_field` | A request field that would be a query parameter has no query form, such as a message that is not a well-known type with a string form. | Send the field in the body (`body: "*"`, or a body field holding it), or move it out of the request. |
+| `route::ambiguous_binding` | A warning, beside a successful run: two bindings of the generated methods (rules, additional bindings, and every method's implicit `POST /<package>.<Service>/<Method>` route) have one HTTP method (a `custom` rule's kind) and one path shape, the template with each variable written as what it matches (`*`, `**`, or its own template), so `/v1/{name=messages/*}` and `/v1/messages/{id}` are both `/v1/messages/*`. They match the same requests, and no router serves both: Envoy answers neither ([envoy.md](envoy.md#where-envoy-and-the-fixtures-part)), Vanguard refuses the second, grpc-gateway lets one win. One per pair, at the second. | Give one of them a different path or HTTP method. |
 | **`generate::`** | **The set of packages to generate, and the graph between them.** | |
 | `generate::not_generated` | A generated package refers to a type of a package that is not generated. | `--include-imports` on the CLI; with protoc, name the file on the command line; with buf, `buf generate --include-imports`. |
 | `generate::import_cycle` | Generated packages refer to each other in a cycle, which Elm modules cannot. | Move the types that refer to each other into one package. |

@@ -146,7 +146,8 @@ other than `google/api/http.proto` and proto3 JSON say:
   [connectrpc/vanguard-go#208](https://github.com/connectrpc/vanguard-go/pull/208),
   is merged, but not in a release as of 2026-10-20.
 - Envoy 1.40.0 serves neither of two bindings with one verb and path
-  shape, without a warning, and answers a `HEAD` binding with a body
+  shape, without a warning (the generator warns of such pairs,
+  `route::ambiguous_binding`), and answers a `HEAD` binding with a body
   ([envoy.md](envoy.md#where-envoy-and-the-fixtures-part)).
 
 Where neither side is wrong, the transcoders still answer differently:
