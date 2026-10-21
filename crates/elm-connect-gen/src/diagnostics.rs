@@ -17,6 +17,7 @@
 //! runtime's namespaces, or one an elm/* package has), and two HTTP
 //! bindings that match the same requests.
 
+mod field_names;
 mod spans;
 
 use std::collections::HashMap;
@@ -29,6 +30,7 @@ use miette::{
     SourceCode,
 };
 
+pub use field_names::{FieldNameConflict, field_name_conflict_names, field_name_conflicts};
 pub use spans::{Columns, LineColSpan, Spans, tag};
 
 /// Declares [`Code`], its rendering and [`Code::ALL`] from one list, so
@@ -66,6 +68,10 @@ codes! {
     Editions => "input::editions",
     /// A file's name cannot be written into a generated module's header.
     FileName => "input::file_name",
+    /// Two fields of a message have names that are the same once
+    /// lowercased without underscores (`aB` and `ab`), which the protobuf
+    /// front end refuses although protoc accepts them.
+    FieldNameConflict => "input::field_name_conflict",
     /// The plugin parameter names an option that does not exist, gives a
     /// known option a value it does not take, or holds a pair without
     /// `=`.
@@ -1303,6 +1309,41 @@ impl Problem {
              generated from, which a newline or another control character in a name would \
              break. Rename the file.",
             Vec::new(),
+        )
+    }
+
+    /// The fields `first` and `second` of `message` (its full name, when
+    /// it is known), in `file`, have names that are the same once
+    /// lowercased without underscores, which the descriptor library
+    /// refuses. `spelling` writes the `rename` option as the front end
+    /// takes it.
+    pub fn field_name_conflict(
+        file: &str,
+        message: Option<&str>,
+        first: &str,
+        second: &str,
+        spelling: Spelling,
+        sites: Vec<Site>,
+    ) -> Self {
+        let of = match message {
+            Some(message) => format!("the message `{message}`"),
+            None => format!("a message in `{file}`"),
+        };
+        Problem::new(
+            Code::FieldNameConflict,
+            format!(
+                "The fields `{first}` and `{second}` of {of} have names that are the same once \
+                 lowercased without underscores, and elm-connect cannot read the file."
+            ),
+            format!(
+                "elm-connect builds its descriptors with prost-reflect, which refuses two such \
+                 fields in one message of a file that is not proto2. It refuses the file before \
+                 any option applies, so {} cannot help: rename one of the fields in the proto. \
+                 protoc accepts the file, since it compares the fields' JSON names, which \
+                 differ.",
+                spelling.rename_key()
+            ),
+            sites,
         )
     }
 

@@ -1244,6 +1244,21 @@ In detail:
   application's elm/* packages (`naming::shadowing_module`), both
   escaped by `module_prefix` or `rename` (§3.1).
 
+- **Field names the front end refuses.** *(Decided, 2026-10-21.)* Two
+  fields of one message whose names are the same once lowercased
+  without underscores (`aB` and `ab`, `ID` and `id`, `ID` and `Id`)
+  never reach the naming rules: prost-reflect, which both binaries build
+  their descriptors with, refuses them in any file but a proto2 one,
+  while protoc accepts them, since it compares only the fields' JSON
+  names. The refusal comes before any option applies, so `rename`
+  cannot help; the escape is renaming a field in the proto. It is
+  `input::field_name_conflict`, in elm-connect's words, rather than the
+  library's uncoded text, since codes freeze at 1.0 (§8.3). Accepting
+  such fields as protoc does, once the library's rule matches protoc's,
+  turns an error into output, a minor ([roadmap](roadmap.md)); those
+  whose Elm names are the same (`ID` and `id`, both `id`) would then be
+  `naming::field_collision`, as a field and a oneof are today.
+
 As the `naming` and `naming_collision` cases show:
 
 - The reserved words are the fourteen of Elm 0.19.2's parser (`if`,

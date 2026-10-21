@@ -14,11 +14,14 @@
 use std::io::{self, IsTerminal, Read, Write};
 use std::process::ExitCode;
 
-use elm_connect_gen::diagnostics::{Diagnostics, Problem, Site, render_narrow};
+use elm_connect_gen::diagnostics::{
+    Diagnostics, Problem, Site, field_name_conflict_names, field_name_conflicts, render_narrow,
+};
 use elm_connect_gen::naming::REPOSITORY_FILES;
-use elm_connect_gen::{Options, VERSION, generate, googleapis};
+use elm_connect_gen::{Options, Spelling, VERSION, generate, googleapis};
 use prost::Message;
-use prost_reflect::DescriptorPool;
+use prost_reflect::{DescriptorError, DescriptorPool};
+use prost_types::FileDescriptorProto;
 use prost_types::compiler::code_generator_response::{Feature, File};
 use prost_types::compiler::{CodeGeneratorRequest, CodeGeneratorResponse};
 
@@ -78,14 +81,71 @@ fn editions(raw: &RawProtoFiles) -> Diagnostics {
     diagnostics
 }
 
-/// The descriptor pool of `raw`'s files, with extension options kept.
-fn pool(raw: &RawProtoFiles) -> Result<DescriptorPool, String> {
+/// The descriptor pool of `raw`'s files, with extension options kept, or
+/// the error building it, rendered: `input::field_name_conflict` for the
+/// one refusal of protos protoc accepts, the library's own text for any
+/// other.
+fn pool(raw: &RawProtoFiles, spelling: Spelling) -> Result<DescriptorPool, String> {
     let mut pool = DescriptorPool::new();
     for file in &raw.proto_file {
-        pool.decode_file_descriptor_proto(file.as_slice())
-            .map_err(|err| err.to_string())?;
+        if let Err(err) = pool.decode_file_descriptor_proto(file.as_slice()) {
+            return Err(match field_name_conflict(raw, &err, spelling) {
+                Some(mut diagnostics) => {
+                    diagnostics.locate();
+                    render_narrow(&diagnostics)
+                }
+                None => format!("elm-connect: reading the descriptors: {err}"),
+            });
+        }
     }
     Ok(pool)
+}
+
+/// `err` as `input::field_name_conflict`, when it is the refusal of two
+/// fields of a message whose names are the same once lowercased without
+/// underscores: at both fields' names, found from the error's path in the
+/// file it names.
+fn field_name_conflict(
+    raw: &RawProtoFiles,
+    err: &DescriptorError,
+    spelling: Spelling,
+) -> Option<Diagnostics> {
+    let text = err.to_string();
+    let (first, second) = field_name_conflict_names(&text)?;
+    let name = err.file().unwrap_or_default();
+    let file = raw
+        .proto_file
+        .iter()
+        .filter_map(|bytes| FileDescriptorProto::decode(bytes.as_slice()).ok())
+        .find(|file| file.name() == name);
+    let conflicts = file
+        .as_ref()
+        .map(|file| field_name_conflicts(file, first, second))
+        .unwrap_or_default();
+    let conflict = conflicts
+        .iter()
+        .find(|conflict| Some(conflict.path.as_slice()) == err.path())
+        .or(conflicts.first());
+    let problem = match conflict {
+        Some(conflict) => Problem::field_name_conflict(
+            name,
+            Some(&conflict.message),
+            first,
+            second,
+            spelling,
+            conflict.sites.clone(),
+        ),
+        None => {
+            let site = Site {
+                file: name.to_owned(),
+                span: None,
+                label: format!("field `{second}`"),
+                within: Vec::new(),
+            };
+            Problem::field_name_conflict(name, None, first, second, spelling, vec![site])
+        }
+    };
+    Some(Diagnostics::from(problem))
 }
 
 /// Answers one plugin request, given its encoded bytes, with the warnings
@@ -132,12 +192,9 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
         let error = render_narrow(&unsupported);
         return (response(Some(error), Vec::new()), String::new());
     }
-    let pool = match pool(&raw) {
+    let pool = match pool(&raw, options.spelling) {
         Ok(pool) => pool,
-        Err(err) => {
-            let error = format!("elm-connect: reading the descriptors: {err}");
-            return (response(Some(error), Vec::new()), String::new());
-        }
+        Err(error) => return (response(Some(error), Vec::new()), String::new()),
     };
     // `buf generate --include-imports` asks for every import, the
     // googleapis files that only carry `google.api.http` among them; they
@@ -497,7 +554,7 @@ mod tests {
     fn extension_options_survive_the_request() {
         let request = request_for(&[("notes.proto", NOTES)], &["notes.proto"]);
         let raw = RawProtoFiles::decode(request.as_slice()).expect("the files");
-        let pool = pool(&raw).expect("a pool");
+        let pool = pool(&raw, Spelling::Parameter).expect("a pool");
         let packages = elm_connect_gen::ir::build(&pool, &["notes.proto"]).expect("the IR builds");
         let method = &packages[0].services[0].methods[0];
         let rule = method.http.as_ref().expect("the rule survives");
@@ -602,7 +659,7 @@ message Task {
             &["google/api/field_behavior.proto", "tasks.proto"],
         );
         let raw = RawProtoFiles::decode(request.as_slice()).expect("the files");
-        let pool = pool(&raw).expect("a pool");
+        let pool = pool(&raw, Spelling::Parameter).expect("a pool");
         let packages = elm_connect_gen::ir::build(&pool, &["tasks.proto"]).expect("the IR builds");
         let annotations = &packages[0].messages[0].fields[0].annotations;
         assert_eq!(
@@ -715,6 +772,32 @@ service Uploads {
             Some(Feature::Proto3Optional as u64),
             "editions are not claimed"
         );
+    }
+
+    #[test]
+    fn fields_the_descriptor_library_refuses_get_a_code() {
+        // protox's checks refuse the file too, so it is parsed alone, with
+        // source info, as protoc would send it.
+        let source =
+            "syntax = \"proto3\";\npackage p.v1;\nmessage M { string aB = 1; string ab = 2; }\n";
+        let file = protox::file::File::from_source("p.proto", source).expect("parses");
+        let request = CodeGeneratorRequest {
+            file_to_generate: vec!["p.proto".into()],
+            proto_file: vec![file.file_descriptor_proto().clone()],
+            ..CodeGeneratorRequest::default()
+        };
+
+        let (response, warnings) = run(&request.encode_to_vec());
+        let error = response.error.expect("an error");
+        assert!(error.starts_with("input::field_name_conflict\n"), "{error}");
+        assert!(
+            error.contains("p.proto:3:20: The fields `aB` and `ab` of the message `p.v1.M`"),
+            "{error}"
+        );
+        assert!(error.contains("p.proto:3:35: and field `ab`"), "{error}");
+        assert!(error.contains("`rename` cannot help"), "{error}");
+        assert!(response.file.is_empty());
+        assert_eq!(warnings, "");
     }
 
     #[test]

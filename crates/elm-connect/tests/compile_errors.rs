@@ -77,6 +77,34 @@ fn an_editions_file_is_refused_in_elm_connects_words() {
 }
 
 #[test]
+fn fields_the_descriptor_library_refuses_get_a_code() {
+    let dir = inputs(
+        "cli-field-name-conflict",
+        &[(
+            "p.proto",
+            "syntax = \"proto3\"; package p.v1;\nmessage M { string aB = 1; string ab = 2; }\n",
+        )],
+    );
+    let report = elm_connect::compile(&[PathBuf::from("p.proto")], std::slice::from_ref(&dir))
+        .expect_err("prost-reflect refuses `aB` beside `ab`");
+    let rendered = render(&report);
+    assert_eq!(
+        report.code().map(|code| code.to_string()).as_deref(),
+        Some("input::field_name_conflict")
+    );
+    assert!(
+        report
+            .to_string()
+            .starts_with("The fields `aB` and `ab` of the message `p.v1.M` have names"),
+        "{report}"
+    );
+    assert!(rendered.contains("╭─[p.proto:2:20]"), "{rendered}");
+    assert!(rendered.contains("first defined here"), "{rendered}");
+    assert!(rendered.contains("defined again here"), "{rendered}");
+    assert!(rendered.contains("`--rename` cannot help"), "{rendered}");
+}
+
+#[test]
 fn other_syntax_errors_stay_protoxs() {
     let dir = inputs(
         "cli-edition-word",
