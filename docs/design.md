@@ -19,6 +19,13 @@ same generated code:
 The generator is written in Rust. The runtime is an Elm package,
 `bruckner/elm-connect`. Both live in this repository.
 
+The runtime is written for the browser and runs wherever elm/http
+does: a headless program (`Platform.worker` under Node, given an
+`XMLHttpRequest` of the shape the live suite's `xhr.mjs` provides)
+calls the same way. So the client sits between connect-web, the
+browser transport, and connect-node in what it can be asked to do, and
+a knob only the Node clients have can still earn its place (§5.1).
+
 ### 1.1 Why it exists
 
 The Elm ecosystem has one maintained protobuf stack
@@ -2134,9 +2141,12 @@ it.
   the protocol for traces and logs.
 - `withReadMaxBytes n` refuses a successful answer whose body is longer
   than `n` bytes of UTF-8, before decoding it, on either transport:
-  connect-go's `WithReadMaxBytes` and connect-es's `readMaxBytes`, and
-  like them no limit by default. It is a protocol-level knob, so it is
-  on `Transport`, not in `Config`. The call fails with
+  connect-go's `WithReadMaxBytes` (4 MiB by default, 0 for none) and
+  connect-node's `readMaxBytes` (none by default); connect-web, the
+  browser transport, has no such knob. No limit by default here, as in
+  connect-node: the browser has downloaded the body before the limit
+  applies, so a default would surprise without saving bandwidth. It is
+  a protocol-level knob, so it is on `Transport`, not in `Config`. The call fails with
   `NoAnswer (ResponseTooLarge { limit, size })` (§5.4). The size is the body as
   the browser decoded it, counted back into UTF-8 by a kernel loop
   (`String.foldl`) rather than a recursion, so a long body cannot
@@ -2147,7 +2157,7 @@ it.
   with anything in it, and `checkConfig` reports it. *(Decided,
   2026-10-20.)*
 - `withWriteMaxBytes n` is its twin for the request: connect-go's
-  `WithSendMaxBytes` and connect-es's `writeMaxBytes`, no limit by
+  `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
   default. A call whose request message, as the JSON a POST sends (for
   a GET, the same JSON before it is percent-encoded into the query; over
   transcoding, the whole message whichever fields the binding puts in
@@ -2787,8 +2797,12 @@ two types shared one module, the helpers for `Code` prefixed.)
   (§5.1): it arrived, but was dropped before it was decoded, so it is a
   reason no answer was read and carries no `Response`; keeping one would
   keep the body the limit is there to drop. It was added before 1.0
-  because `Reason` freezes then, and the Connect clients all have the
-  knob. Its code is `ResourceExhausted` and its message connect-es's.
+  because `Reason` freezes then. connect-go and connect-node have the
+  knob and connect-web does not, and the conformance suite tests it
+  only for servers (§7); it is kept because an Elm program is not only
+  a browser one (§1), and because server streaming will check each
+  message of a stream against the same limit, as connect-go's does.
+  Its code is `ResourceExhausted` and its message connect-es's.
   It is retried only when a policy lists `ResourceExhausted`.
   `RequestTooLarge { limit, size }` is the request over the send limit,
   never sent. The two are distinct constructors, as connect-es's

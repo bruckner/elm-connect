@@ -84,7 +84,7 @@ withMaxGetUrl limit transport =
 {-| Refuse a successful answer whose body is longer than this many bytes of
 UTF-8, before decoding it: the call fails with
 [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code is
-`ResourceExhausted`, as connect-go's `WithReadMaxBytes` and connect-es's
+`ResourceExhausted`, as connect-go's `WithReadMaxBytes` and connect-node's
 `readMaxBytes` fail it. Every transport starts with no limit. It is a
 protocol-level option, so it lives on the transport rather than in the
 [`Config`](Rpc#Config). An answer that is an error is read whatever its size,
@@ -112,7 +112,7 @@ withReadMaxBytes limit transport =
 of UTF-8, as its JSON: the body of a POST, or for a GET the JSON before it is
 percent-encoded into the query. The call fails with
 [`NoAnswer (RequestTooLarge { limit, size })`](Rpc-Error#Reason), whose code
-is `ResourceExhausted`, as connect-go's `WithSendMaxBytes` and connect-es's
+is `ResourceExhausted`, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` fail it, and nothing is sent. Every transport starts with no
 limit. Over transcoding the whole message is measured, whichever of its fields
 the binding puts in the path, the query or the body.

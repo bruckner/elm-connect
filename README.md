@@ -260,14 +260,16 @@ U+00FF) is never sent: the call fails with `InvalidHeader`.
 
 `Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
 `n` bytes of UTF-8, on either transport, as connect-go's
-`WithReadMaxBytes` and connect-es's `readMaxBytes` do. A body over it is
+`WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
 `NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
 an error answer is still read for its status. `withWriteMaxBytes n` caps
 the request message's JSON the same way, as connect-go's
-`WithSendMaxBytes` and connect-es's `writeMaxBytes` do: a call over it is
+`WithSendMaxBytes` and connect-node's `writeMaxBytes` do: a call over it is
 never sent, and fails with `NoAnswer (RequestTooLarge { limit, size })`.
-Neither has a limit by default.
+Neither has a limit by default, as in connect-node; connect-go reads at
+most 4 MiB unless told otherwise, and connect-web, the browser
+transport, has no such knob.
 
 Errors are one type for both transports, `Rpc.Error`, defined in
 `Rpc.Error` with its readers. Every error has a code and a message,
