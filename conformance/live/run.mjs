@@ -14,10 +14,12 @@
 //   node run.mjs --server http://127.0.0.1:8080 cases/notes.json
 //   node run.mjs --serve path/to/server cases/notes.json   # starts it on a free port
 //   node run.mjs --serve path/to/server --prefix /gateway --transport transcode cases/notes.json
+//   node run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 cases/transcode.json
 //
 // --prefix runs the cases against the server's base URL with the prefix
 // added (grpc-gateway's, under /gateway), and --transport only the cases
-// sent over that transport.
+// sent over that transport. --origin names the example server when --server
+// is a proxy in front of it (Envoy), for the cases' canned answers.
 //
 // Formats: conformance/README.md, "Live verification".
 
@@ -182,13 +184,15 @@ async function main(argv) {
     else if (arg === "--print") args.print = true;
     else if (arg === "--prefix") args.prefix = argv[++i];
     else if (arg === "--transport") args.transport = argv[++i];
+    else if (arg === "--origin") args.origin = argv[++i];
     else args.files.push(arg);
   }
   if ((!args.server && !args.serve) || args.files.length === 0) {
-    console.error("usage: run.mjs (--server URL | --serve BINARY) [--elm build/elm.js] [--prefix /PATH] [--transport T] [--print] CASES.json ...");
+    console.error("usage: run.mjs (--server URL | --serve BINARY) [--origin URL] [--elm build/elm.js] [--prefix /PATH] [--transport T] [--print] CASES.json ...");
     process.exit(2);
   }
   const server = args.serve ? await serve(args.serve) : { url: args.server, stop: async () => {} };
+  const origin = args.origin ?? server.url;
   let failed = [];
   try {
     const runner = await createRunner({ elm: args.elm });
@@ -197,11 +201,11 @@ async function main(argv) {
       const baseUrl = server.url + args.prefix;
       if (args.print) {
         for (const c of cases.filter((c) => !c.skip)) {
-          const result = await runner.call(envelopeOf(c, baseUrl, server.url));
+          const result = await runner.call(envelopeOf(c, baseUrl, origin));
           console.log(JSON.stringify(result));
         }
       } else {
-        failed = failed.concat(await runCases(runner, cases, baseUrl, { server: server.url }));
+        failed = failed.concat(await runCases(runner, cases, baseUrl, { server: origin }));
       }
     }
   } finally {
