@@ -15,6 +15,7 @@ use std::io::{self, IsTerminal, Read, Write};
 use std::process::ExitCode;
 
 use elm_connect_gen::diagnostics::{Diagnostics, Problem, Site, render_narrow};
+use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{Options, VERSION, generate, googleapis};
 use prost::Message;
 use prost_reflect::DescriptorPool;
@@ -192,6 +193,8 @@ A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
 Options go in the plugin parameter, comma-separated `key=value` pairs:
 int64, bytes, unbound_methods, streaming, enum_unknown, rename (repeatable)
 and module_prefix. To generate without protoc, use the `elm-connect` CLI.
+To work with the generated code, run `elm-connect guide` or read
+{REPOSITORY_FILES}docs/agent-guide.md.
 
 Usage: protoc-gen-elm-connect [--version | --help]
 "

@@ -1063,3 +1063,11 @@ tag (design §8).
   template. CONTRIBUTING says how to propose a change, what a pull
   request carries, how review works, and that each worktree builds into
   its own `target/`.
+- `elm-connect guide` prints the agent guide (`docs/agent-guide.md`) as
+  Markdown, its links made absolute. `elm-connect --help` ends with where
+  to start (generate, the runtime, `check` in CI) and the docs; each
+  command and long option has a one-line summary for `-h` and its full
+  text for `--help`; `gen --help` and `check --help` end with examples.
+  A run that fails on diagnostics ends with a line pointing at
+  `docs/diagnostics.md` and the guide, and the plugin's `--help` names
+  the guide.
