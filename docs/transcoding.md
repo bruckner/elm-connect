@@ -5,6 +5,8 @@ method's `google.api.http` rule describes, for a server behind
 grpc-gateway, Envoy's gRPC-JSON transcoder or Vanguard. This page says
 what the runtime sends, what it reads back, which server options it
 works with, and where the transcoders it is tested against differ.
+The `google.api.http` grammar and the other documents involved are
+listed in [specs.md](specs.md).
 
 What the live suite checks, it says so; the rest comes from the
 transcoders' documentation and source, cited by option name so it can be

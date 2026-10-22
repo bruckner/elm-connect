@@ -1117,3 +1117,9 @@ tag (design §8).
   accepts the file. The CLI keeps the snippet; the plugin gives each
   field's `file:line:col`. Before, the CLI printed prost-reflect's text
   with no code and the plugin `reading the descriptors: …`.
+- The documentation has an entrypoint, `docs/README.md`, mapping every
+  page, and `docs/specs.md` lists the specifications elm-connect
+  implements, with links and where each meets the code.
+  `docs/agent-guide.md` is now `docs/guide.md`, a guide for anyone
+  working on a project that uses elm-connect, agent or not;
+  `elm-connect guide` prints it under its new title.

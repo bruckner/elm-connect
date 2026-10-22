@@ -5,7 +5,9 @@ binaries with the same options and the same output: `elm-connect`, a CLI
 that compiles the protos itself, and `protoc-gen-elm-connect`, a plugin
 for protoc and buf. [install.md](install.md) installs them.
 `elm-connect --help` says where to start, and `elm-connect guide` prints
-the [agent guide](agent-guide.md), for a reader with only the binary.
+the [guide](guide.md), for a reader with only the binary.
+The protobuf language and the JSON mapping the generator follows are
+listed, with links, in [specs.md](specs.md).
 
 ## What a proto becomes
 

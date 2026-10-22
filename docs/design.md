@@ -21,6 +21,8 @@ same generated code:
 
 The generator is written in Rust. The runtime is an Elm package,
 `bruckner/elm-connect`. Both live in this repository.
+The specifications behind both transports are listed in
+[specs.md](specs.md).
 
 The runtime is written for the browser and runs wherever elm/http
 does: a headless program (`Platform.worker` under Node, given an

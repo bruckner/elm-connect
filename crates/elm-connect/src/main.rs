@@ -205,7 +205,7 @@ fn module_prefix(value: &str) -> Result<ModuleName, String> {
 /// apart from drift's 1; clap exits with it on bad arguments too.
 const CHECK_ERROR: u8 = 2;
 
-/// The guide `elm-connect guide` prints. `docs/agent-guide.md` is the
+/// The guide `elm-connect guide` prints. `docs/guide.md` is the
 /// source; this copy sits in the crate because a published crate holds
 /// only its own files, and a test keeps the two equal.
 const GUIDE: &str = include_str!("../guide.md");
@@ -509,25 +509,24 @@ mod tests {
     }
 
     #[test]
-    fn the_guide_is_a_copy_of_the_agent_guide() {
+    fn the_guide_is_a_copy_of_its_source() {
         // In the repository, `guide.md` must equal its source; a published
         // crate has no `docs/`, and nothing to compare.
-        let source =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/agent-guide.md");
+        let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide.md");
         let Ok(source) = std::fs::read_to_string(source) else {
             return;
         };
         assert!(
             source == GUIDE,
-            "crates/elm-connect/guide.md differs from docs/agent-guide.md, its source: \
-             copy docs/agent-guide.md over it"
+            "crates/elm-connect/guide.md differs from docs/guide.md, its source: \
+             copy docs/guide.md over it"
         );
     }
 
     #[test]
     fn the_guide_prints_its_links_absolute() {
         let printed = guide();
-        assert!(printed.starts_with("# Using elm-connect as an agent"));
+        assert!(printed.starts_with("# Using elm-connect"));
         for link in printed.split("](").skip(1) {
             assert!(
                 link.starts_with(REPOSITORY_FILES),

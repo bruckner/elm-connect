@@ -172,7 +172,7 @@ text: a machine-readable output of each problem's code, site and help,
 and `elm-connect --explain <code>` printing what a code means and its
 escape, as [diagnostics.md](diagnostics.md) lists them. Additive flags:
 a minor. (`elm-connect guide`, printing the
-[agent guide](agent-guide.md), is built.)
+[guide](guide.md), is built.)
 
 ## Consolidating the test suites
 

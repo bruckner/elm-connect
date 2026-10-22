@@ -6,6 +6,8 @@ A generated service function applied to a request gives a call,
 and send the call, or give the HTTP request it stands for without
 sending anything. This page covers the config, each way of sending, and
 what comes back.
+The Connect protocol and the other documents the transports follow are
+listed in [specs.md](specs.md).
 
 Until the package is published, its API reference is the documentation
 comments in `src/`, starting with `src/Rpc.elm`; `elm make
