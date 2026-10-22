@@ -1,0 +1,153 @@
+options::unknown_rename
+
+  × `google.protobuf.Timestamp` is a message of `google.protobuf`, which is
+  │ not generated.
+  help: A rename reaches only the generated packages, and elm-connect never
+        generates `google.protobuf`: its well-known types map to the runtime's
+        Elm types, whose names are fixed.
+
+options::unknown_rename
+
+  × `google.type.Date` is a message of `google.type`, which is not generated.
+  help: A rename reaches only the generated packages, and only packages with a
+        file to generate are generated. To generate `google.type`, add
+        `google/type/date.proto` to the files to generate: with buf, run `buf
+        generate --include-imports`; with protoc, name `google/type/
+        date.proto` on the command line; with the elm-connect CLI, pass
+        `--include-imports`.
+
+options::unknown_rename
+
+  × `google.type.Date` is a message of `google.type`, which is not generated
+  │ (in the rename of `google.type.Date.yeer`).
+  help: A rename reaches only the generated packages, and only packages with a
+        file to generate are generated. To generate `google.type`, add
+        `google/type/date.proto` to the files to generate: with buf, run `buf
+        generate --include-imports`; with protoc, name `google/type/
+        date.proto` on the command line; with the elm-connect CLI, pass
+        `--include-imports`.
+
+options::unknown_rename
+
+  × `libary.v1` names nothing elm-connect generates; the generated packages
+  │ are `library.v1` and `users.v1`.
+  help: Did you mean `library.v1`? A rename names an element by its proto full
+        name, as declared (`notes.v1.Note.page_count`, not `pageCount`),
+        nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `libary.v1.Book` names nothing elm-connect generates; the generated
+  │ packages are `library.v1` and `users.v1`.
+  help: Did you mean `library.v1.Book`? A rename names an element by its proto
+        full name, as declared (`notes.v1.Note.page_count`, not `pageCount`),
+        nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1` is a package, and has no service, message or enum `Bok`.
+   ╭─[library.proto:6:1]
+ 5 │
+ 6 │ package library.v1;
+   · ─────────┬─────────
+   ·          ╰── the package here
+ 7 │
+   ╰────
+  help: Did you mean `library.v1.Book`? A rename names an element by its proto
+        full name, as declared (`notes.v1.Note.page_count`, not `pageCount`),
+        nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1` is a package, and has no service, message or enum `Bok` (in
+  │ the rename of `library.v1.Bok.name`).
+   ╭─[library.proto:6:1]
+ 5 │
+ 6 │ package library.v1;
+   · ─────────┬─────────
+   ·          ╰── the package here
+ 7 │
+   ╰────
+  help: Did you mean `library.v1.Book.name`? A rename names an element by its
+        proto full name, as declared (`notes.v1.Note.page_count`, not
+        `pageCount`), nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1.Book` is a message, and has no field, oneof or nested message
+  │ or enum `pageCount`.
+    ╭─[library.proto:17:9]
+ 16 │
+ 17 │ message Book {
+    ·         ──┬─
+    ·           ╰── the message here
+ 18 │   string name = 1;
+    ╰────
+  help: Did you mean `library.v1.Book.page_count`? A rename names an element
+        by its proto full name, as declared (`notes.v1.Note.page_count`, not
+        `pageCount`), nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1.Book.page_count` is a field, and nothing under a field can be
+  │ renamed (in the rename of `library.v1.Book.page_count.value`).
+    ╭─[library.proto:19:9]
+ 18 │   string name = 1;
+ 19 │   int32 page_count = 2;
+    ·         ─────┬────
+    ·              ╰── the field here
+ 20 │   Format format = 3;
+    ╰────
+  help: A rename names an element by its proto full name, as declared
+        (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1.Format` is an enum, and has no value `FORMAT_EBOK`.
+    ╭─[library.proto:12:6]
+ 11 │
+ 12 │ enum Format {
+    ·      ───┬──
+    ·         ╰── the enum here
+ 13 │   FORMAT_UNSPECIFIED = 0;
+    ╰────
+  help: Did you mean `library.v1.Format.FORMAT_EBOOK`? A rename names an
+        element by its proto full name, as declared
+        (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `library.v1.Library` is a service, and has no method `GetBok`.
+    ╭─[library.proto:28:9]
+ 27 │
+ 28 │ service Library {
+    ·         ───┬───
+    ·            ╰── the service here
+ 29 │   rpc GetBook(GetBookRequest) returns (Book);
+    ╰────
+  help: Did you mean `library.v1.Library.GetBook`? A rename names an element
+        by its proto full name, as declared (`notes.v1.Note.page_count`, not
+        `pageCount`), nested names dotted, an enum value under its enum
+        (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+
+options::unknown_rename
+
+  × `users.v1.User` is a message, and has no field, oneof or nested message or
+  │ enum `GetUser`.
+   ╭─[users.proto:5:9]
+ 4 │
+ 5 │ message User {
+   ·         ──┬─
+   ·           ╰── the message here
+ 6 │   string name = 1;
+   ╰────
+  help: A rename names an element by its proto full name, as declared
+        (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).

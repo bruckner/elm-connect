@@ -16,12 +16,17 @@ options::invalid_rename
 
 options::unknown_rename
 
-  × The rename of `notes.v1.Missing` names nothing elm-connect generates.
-  help: A rename names a package, service, method, message, enum, field, oneof
-        or enum value of a generated package by its proto full name, as the
-        proto declares it (`notes.v1.Note.page_count`, not `pageCount`):
-        nested names dotted (`notes.v1.Note.Revision`), an enum value under
-        its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+  × `notes.v1` is a package, and has no service, message or enum `Missing`.
+   ╭─[notes.proto:7:1]
+ 6 │
+ 7 │ package notes.v1;
+   · ────────┬────────
+   ·         ╰── the package here
+ 8 │
+   ╰────
+  help: A rename names an element by its proto full name, as declared
+        (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
 
 options::invalid_rename
 
@@ -40,12 +45,18 @@ options::invalid_rename
 
 options::unknown_rename
 
-  × The rename of `notes.v1.Note.missing` names nothing elm-connect generates.
-  help: A rename names a package, service, method, message, enum, field, oneof
-        or enum value of a generated package by its proto full name, as the
-        proto declares it (`notes.v1.Note.page_count`, not `pageCount`):
-        nested names dotted (`notes.v1.Note.Revision`), an enum value under
-        its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
+  × `notes.v1.Note` is a message, and has no field, oneof or nested message or
+  │ enum `missing`.
+    ╭─[notes.proto:16:9]
+ 15 │
+ 16 │ message Note {
+    ·         ──┬─
+    ·           ╰── the message here
+ 17 │   string title = 1;
+    ╰────
+  help: A rename names an element by its proto full name, as declared
+        (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an
+        enum value under its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).
 
 options::invalid_rename
 

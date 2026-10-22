@@ -1066,21 +1066,99 @@ impl Problem {
         )
     }
 
-    /// The `rename` of `proto` names nothing that is generated;
-    /// `suggestion` is the generated element's full name it most likely
-    /// meant, if any is close.
-    pub fn unknown_rename(proto: &str, suggestion: Option<&str>) -> Self {
+    /// The `rename` of `proto` names nothing, and no prefix of it names an
+    /// element: `packages` are the generated packages, and `suggestion` the
+    /// name it most likely meant, if any is close.
+    pub fn unknown_rename(proto: &str, packages: &[String], suggestion: Option<&str>) -> Self {
+        let quoted: Vec<String> = packages.iter().map(|p| format!("`{p}`")).collect();
+        let generated = match quoted.as_slice() {
+            [] => "no package is generated".to_owned(),
+            [only] => format!("the generated package is {only}"),
+            _ => format!("the generated packages are {}", join_words(&quoted)),
+        };
         Problem::new(
             Code::UnknownRename,
-            format!("The rename of `{proto}` names nothing elm-connect generates."),
+            format!("`{proto}` names nothing elm-connect generates; {generated}."),
+            format!("{}{RENAME_PATH_HELP}", did_you_mean(suggestion)),
+            Vec::new(),
+        )
+    }
+
+    /// The `rename` of `proto` reaches `element`, which is `what` ("a
+    /// message") and has `members` ("method"), but names `missing` under
+    /// it, which it does not have; `suggestion` is the full name most
+    /// likely meant. `site` is the element's declaration.
+    pub fn unknown_rename_member(
+        proto: &str,
+        element: &str,
+        what: &str,
+        members: &str,
+        missing: &str,
+        suggestion: Option<&str>,
+        site: Site,
+    ) -> Self {
+        Problem::new(
+            Code::UnknownRename,
             format!(
-                "{}A rename names a package, service, method, message, enum, field, oneof or \
-                 enum value of a generated package by its proto full name, as the proto \
-                 declares it (`notes.v1.Note.page_count`, not `pageCount`): nested names \
-                 dotted (`notes.v1.Note.Revision`), an enum value under its enum \
-                 (`notes.v1.Visibility.VISIBILITY_PUBLIC`).",
-                did_you_mean(suggestion)
+                "`{element}` is {what}, and has no {members} `{missing}`{}.",
+                renaming(proto, &format!("{element}.{missing}"))
             ),
+            format!("{}{RENAME_PATH_HELP}", did_you_mean(suggestion)),
+            vec![site],
+        )
+    }
+
+    /// The `rename` of `proto` names something under `element`, which is
+    /// `what` ("a field") and has nothing under it. `site` is its
+    /// declaration.
+    pub fn unknown_rename_leaf(proto: &str, element: &str, what: &str, site: Site) -> Self {
+        Problem::new(
+            Code::UnknownRename,
+            format!(
+                "`{element}` is {what}, and nothing under {what} can be renamed{}.",
+                renaming(proto, element)
+            ),
+            RENAME_PATH_HELP,
+            vec![site],
+        )
+    }
+
+    /// The `rename` of `proto` names `element`, or something under it,
+    /// which is `what` ("a message") of `package`, declared in `file`, and
+    /// `package` is not generated.
+    pub fn rename_not_generated(
+        proto: &str,
+        element: &str,
+        what: &str,
+        package: &str,
+        file: &str,
+    ) -> Self {
+        let of = if element == package {
+            String::new()
+        } else {
+            format!(" of `{package}`")
+        };
+        let help = if package == "google.protobuf" {
+            "A rename reaches only the generated packages, and elm-connect never generates \
+             `google.protobuf`: its well-known types map to the runtime's Elm types, whose \
+             names are fixed."
+                .to_owned()
+        } else {
+            format!(
+                "A rename reaches only the generated packages, and only packages with a file \
+                 to generate are generated. To generate `{package}`, add `{file}` to the \
+                 files to generate: with buf, run `buf generate --include-imports`; with \
+                 protoc, name `{file}` on the command line; with the elm-connect CLI, pass \
+                 `--include-imports`."
+            )
+        };
+        Problem::new(
+            Code::UnknownRename,
+            format!(
+                "`{element}` is {what}{of}, which is not generated{}.",
+                renaming(proto, element)
+            ),
+            help,
             Vec::new(),
         )
     }
@@ -1282,6 +1360,23 @@ fn rename_escape(renamed: Option<&str>, default: String) -> String {
 const OPTION_KEYS_HELP: &str = "The plugin parameter is comma-separated `key=value` pairs, and \
      its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `rename` \
      and `module_prefix`.";
+
+/// How a rename writes the element it names, as a rename problem's help
+/// ends.
+const RENAME_PATH_HELP: &str = "A rename names an element by its proto full name, as declared \
+     (`notes.v1.Note.page_count`, not `pageCount`), nested names dotted, an enum value under \
+     its enum (`notes.v1.Visibility.VISIBILITY_PUBLIC`).";
+
+/// " (in the rename of `proto`)", naming the rename a problem is about when its
+/// message names only `named`, a part of it; empty when `named` is all of
+/// it.
+fn renaming(proto: &str, named: &str) -> String {
+    if proto == named {
+        String::new()
+    } else {
+        format!(" (in the rename of `{proto}`)")
+    }
+}
 
 /// `a`, `a or b`, `a, b or c`.
 fn join_alternatives(words: &[String]) -> String {

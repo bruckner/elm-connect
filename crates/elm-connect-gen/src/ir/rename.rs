@@ -50,6 +50,30 @@ impl Role {
         }
     }
 
+    /// The element, as a bare noun: "message".
+    pub(super) fn noun(self) -> &'static str {
+        let what = self.what();
+        what.split_once(' ').map_or(what, |(_, noun)| noun)
+    }
+
+    /// The kinds of element a rename can name under this one, as
+    /// alternatives: "method" under a service; `None` for an element with
+    /// nothing under it.
+    pub(super) fn members(self) -> Option<&'static str> {
+        match self {
+            Role::Package => Some("service, message or enum"),
+            Role::Service => Some("method"),
+            Role::Message => Some("field, oneof or nested message or enum"),
+            Role::Enum => Some("value"),
+            Role::Method
+            | Role::Field
+            | Role::Oneof
+            | Role::OneofMember
+            | Role::EnumValue
+            | Role::EnumAlias => None,
+        }
+    }
+
     /// What the given name becomes, and the rule it must follow; `None`
     /// for an alias, which takes no name.
     pub(super) fn rule(self) -> Option<(&'static str, &'static str)> {
@@ -217,6 +241,19 @@ pub(super) fn resolve(pool: &DescriptorPool, name: &str) -> Option<Target> {
         &path,
         tag::ENUM_VALUE_NAME,
     ))
+}
+
+/// The longest of `name` and its dot-separated prefixes that [`resolve`]
+/// finds, with what it denotes: `name` itself when it resolves, or how far
+/// a name that does not got (`notes.v1.Note` for `notes.v1.Note.pageCount`).
+pub(super) fn resolve_prefix(pool: &DescriptorPool, name: &str) -> Option<(String, Target)> {
+    let mut prefix = name;
+    loop {
+        if let Some(target) = resolve(pool, prefix) {
+            return Some((prefix.to_owned(), target));
+        }
+        prefix = prefix.rsplit_once('.')?.0;
+    }
 }
 
 /// Every proto full name a rename of `files` (the files of the generated

@@ -1,0 +1,30 @@
+// Renames that name nothing generated: each problem names how far the
+// name resolves and what it lacks there, or that the package it reaches
+// is not generated, or, when nothing resolves, the generated packages.
+syntax = "proto3";
+
+package library.v1;
+
+import "google/protobuf/timestamp.proto";
+// Imported but not requested, so `google.type` is not generated.
+import "google/type/date.proto";
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+  FORMAT_EBOOK = 1;
+}
+
+message Book {
+  string name = 1;
+  int32 page_count = 2;
+  Format format = 3;
+  google.protobuf.Timestamp published = 4;
+}
+
+message GetBookRequest {
+  string name = 1;
+}
+
+service Library {
+  rpc GetBook(GetBookRequest) returns (Book);
+}
