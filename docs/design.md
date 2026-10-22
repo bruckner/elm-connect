@@ -2689,7 +2689,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   this client need their JSON on the wire, as `debug` in a Connect body
   or, as always, in a `google.rpc.Status` body.
 
-## 6. Generator  *(Decided unless marked)*
+## 6. Generator
 
 - Rust. One workspace: `elm-connect-gen` (library), `protoc-gen-elm-connect`
   (protoc plugin, reads `CodeGeneratorRequest` on stdin; it answers
@@ -2699,7 +2699,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
 - Output is produced from a typed Elm AST and a printer tuned to match
   `elm-format` (`elm-connect-gen::elm`). The conformance suite runs
   `elm-format --validate` on every golden file to keep that true.
-  *(Decided.)* No Wadler-style printer was needed: fixed rules choose
+  The printer is not Wadler-style: fixed rules choose
   one line or several per construct, laid out on a port of elm-format's
   own block model (text, tab stops, prefix, indent), and a corpus test
   holds the output to `elm-format --validate` and `elm make`.
@@ -2708,10 +2708,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `enum_unknown=fail|zero`,
   `rename=<proto full name>:<Elm name>` (repeatable) and
   `module_prefix=`; an option for unrecognised enum values (§3.3) is on
-  the roadmap. A
-  `transports=` option, choosing which transports' values were
-  generated, went with the shape it chose between (§4). *(Decided,
-  2026-10-13.)*
+  the roadmap.
   As the plugin and the CLI take them: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`), `bytes` (§3.4;
   `--elm-connect_opt=bytes=bytes`, or `elm-connect gen --bytes bytes`),
@@ -2732,8 +2729,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   together. A conformance case sets options with an
   `options.txt` holding that parameter, and a case whose parameter has
   problems expects them as its `diagnostics.txt`.
-- The CLI's `--include-imports` flag *(Decided, 2026-10-15;
-  narrowed 2026-10-16)*, named after buf's: the CLI also generates every
+- The CLI's `--include-imports` flag, named after buf's: the CLI also generates every
   imported file that declares a message or enum the requested packages
   refer to, through fields and method types, transitively (a file
   generated is generated whole, so its own references count too), bar
@@ -2741,10 +2737,10 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   generated from those files alone, not whole as a requested package is
   (§3.1): an import used only for its options, such as
   `google/api/client.proto`, `field_behavior.proto` or the googleapis
-  files the CLI embeds for `google.api.http`, contributes nothing, and
-  before this rule it brought a `Google.Api` module of some thirty
-  unused types, `HttpRule` among them, into every API that imported
-  one. A service is never referred to, so an imported file of services
+  files the CLI embeds for `google.api.http`, contributes nothing,
+  rather than a `Google.Api` module of some thirty unused types,
+  `HttpRule` among them, in every API that imports one. A service is
+  never referred to, so an imported file of services
   alone is not generated either (`crates/elm-connect/tests/generate.rs`).
   The plugin cannot do the same under `buf generate --include-imports`,
   which sends every import as a file to generate: there it skips only

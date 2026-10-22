@@ -825,7 +825,25 @@ holding it. The alternative was to document the gap under older
 versions; raising the floor closes it at the source. Where: design
 §3.4.
 
+### The CLI's `--include-imports`
+
+*2026-10-15; narrowed 2026-10-16.*
+
+The CLI's `--include-imports`, named after buf's, also generates the
+imported files that declare a message or enum the requested packages
+refer to, transitively, and off by default it generates what protoc
+and buf generate from the same files. As first built it added every
+imported file that declared anything and generated each imported
+package whole; from 2026-10-16 it adds only the files declaring what is
+referred to, each package from those files alone. Before, an import
+used only for its options, such as
+`google/api/client.proto`, `field_behavior.proto` or the googleapis
+files the CLI embeds, brought a `Google.Api` module of some thirty
+unused types, `HttpRule` among them, into every API that imported one.
+Where: design §6.
+
 ## Verification
+
 
 ### Envoy through func-e, pinned through mise, in CI
 
