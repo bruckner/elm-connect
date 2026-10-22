@@ -811,8 +811,11 @@ says why. Independent version numbers were the alternative; they would
 need a compatibility table and a CI matrix to keep it true. A looser
 sentinel, naming the oldest runtime the code could run against, as
 protobuf-go's generated code does, is recorded; the strict one means
-the gate compiles exactly the pair that ships. Where: design §8.1,
-§8.2.
+the gate compiles exactly the pair that ships. The looser variant would
+name the oldest release whose runtime has everything the generated
+code uses; it would change only the generator (which value it names)
+and add a CI job compiling the corpus against that older runtime.
+Where: design §8.1, §8.2.
 
 ### elm/json 1.1.4 at least
 

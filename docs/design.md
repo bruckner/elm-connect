@@ -3206,7 +3206,7 @@ the halves and through `send` (§5.2). Not live: `response_body`
 much to learn from first; small examples for learning from are on the
 roadmap.
 
-## 8. Compatibility and versioning  *(Decided)*
+## 8. Compatibility and versioning
 
 ### 8.1 One version
 
@@ -3275,12 +3275,9 @@ roadmap.
 - The sentinel is strict: generated code names the release that
   generated it, not the oldest runtime it could run against, so the
   ordinary gate, the corpus compiled against the runtime of the same
-  commit (§7), proves exactly the pair that ships. A looser variant is
-  recorded for later: as protobuf-go's generated code names a minimum
-  runtime vintage, the generator could name the oldest release whose
-  runtime has everything the generated code uses. That changes only
-  the generator (which value it names) and adds a CI job compiling the
-  corpus against that older runtime.
+  commit (§7), proves exactly the pair that ships (decisions.md: One
+  version, in lockstep, and a strict sentinel, which records the looser
+  variant).
 - `crates/elm-connect-gen/tests/lockstep.rs` tests that `Proto.Version`
   exposes the value `SENTINEL` names and every earlier value of its
   major, and that every expected module of the corpus names it.
@@ -3374,7 +3371,7 @@ Within a major version:
   `--out` whose first line is the generated-file notice above naming a
   proto file the run generated from, but which generating no longer
   gives. Files without the notice are left alone, since an application
-  may keep its own modules in the same directory. *(Decided.)*
+  may keep its own modules in the same directory.
   A generated file whose notice names none of the run's protos is left
   alone too: two `gen` runs may share an `--out` (two APIs, or one
   package under other options), and each run's check would otherwise
@@ -3399,7 +3396,7 @@ Within a major version:
 ### 8.6 Elm compilers
 
 - Elm 0.19.2 is the development target; 0.19.0 and 0.19.1 are checked
-  in CI. *(Decided.)* A CI job per earlier release installs the
+  in CI. A CI job per earlier release installs the
   official Linux binary (checksum pinned) and runs
   `conformance/compile-with.sh`, which compiles the runtime package (with
   `--docs`) and every case's expected output against a copy of the
