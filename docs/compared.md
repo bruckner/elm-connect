@@ -68,13 +68,17 @@ protos said:
    `google.api.http` transcoding in its config. No Elm tool speaks
    either; outside Elm, Google's GAPIC generators switch between gRPC
    and REST the same way.
-2. A CLI that compiles protos itself, with no protoc, beside a
-   conventional plugin. The Elm generators above all need protoc.
+2. Generated codecs that follow proto3's canonical JSON mapping, which
+   the OpenAPI route above loses
+   ([generator.md](generator.md#what-a-proto-becomes)).
 3. Tests against real servers: the official Connect conformance suite's
    unary JSON cases, and a live suite against connect-go, Vanguard and
    grpc-gateway, with the transcoders' differences published
    ([transcoding.md](transcoding.md#where-the-transcoders-differ)).
 4. A retry policy gated on each method's declared idempotency, Connect
    GET with a URL cap, and cancellation.
-5. Pure halves, `Rpc.request` and `Rpc.response`, so a client is tested
+5. A CLI that compiles protos itself, with no protoc, beside a
+   conventional plugin for protoc and buf. The Elm generators above all
+   need protoc.
+6. Pure halves, `Rpc.request` and `Rpc.response`, so a client is tested
    without a server ([quickstart.md](quickstart.md#7-test-without-a-server)).

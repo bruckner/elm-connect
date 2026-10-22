@@ -2,10 +2,11 @@
 
 The `elm-connect` command generates Elm clients for protobuf APIs
 straight from `.proto` files, without protoc: one Elm module per proto
-package, with JSON codecs, descriptors and a typed call for each unary
-method, to use with the
+package, with types, JSON codecs, defaults, descriptors and a typed call
+for each unary method, to use with the
 [`bruckner/elm-connect`](https://github.com/bruckner/elm-connect) Elm
-package over the Connect protocol or HTTP/JSON transcoding.
+package, a client-side implementation of Connect, over the Connect
+protocol or `google.api.http` transcoding.
 
 ```sh
 cargo install --locked elm-connect
