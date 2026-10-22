@@ -3669,19 +3669,24 @@ What the tag runs (`.github/workflows/release.yml`), in order:
    `elm-connect-<version>-<target>.tar.gz` (`.zip` on Windows), holding
    the two binaries, `LICENSE-MIT`, `LICENSE-APACHE` and
    `THIRD_PARTY.md`.
-7. Once both are green, the maintainer approves the `release`
-   environment, and the jobs that make something public run. `publish`
-   writes `SHA256SUMS` over the archives, attests the archives and
-   `SHA256SUMS` (`actions/attest-build-provenance`, verified with `gh
-   attestation verify`), and creates the GitHub Release with them and
-   the CHANGELOG section as its notes; a `0.x.y` tag makes a
-   pre-release, and produces nothing else. From `1.0.0` on, two more
-   jobs follow it: `crates` publishes `elm-connect-gen`, then
-   `protoc-gen-elm-connect` and `elm-connect`, to crates.io, and `elm`
-   runs `elm publish`, then builds the package's documentation from the
-   tag and compares it with the copy the package index serves, failing
-   on any difference: the index reads the package from GitHub, and a
-   difference means it did not get what was tagged.
+7. Once both are green, the maintainer approves `publish` under the
+   `release` environment. It writes `SHA256SUMS` over the archives,
+   attests the archives and `SHA256SUMS`
+   (`actions/attest-build-provenance`, verified with `gh attestation
+   verify`), and creates the GitHub Release with them and the CHANGELOG
+   section as its notes; a `0.x.y` tag makes a pre-release, and
+   produces nothing else. From `1.0.0` on, two more jobs wait behind a
+   second approval once the Release exists: `crates` publishes
+   `elm-connect-gen`, then `protoc-gen-elm-connect` and `elm-connect`,
+   to crates.io, and `elm` runs `elm publish`, which checks that the tag
+   on GitHub names the commit being published and that the tree
+   matches it, then builds the package's documentation again and
+   compares it with the copy the package index serves, failing on any
+   difference. The comparison confirms the index stored what the job
+   built; it is `elm publish`'s own checks that tie the package to the
+   tag. Two approvals rather
+   than one, so the Release can be looked at before the registries,
+   which have no undo, receive anything.
 
 A `workflow_dispatch` run on any branch rehearses the workflow:
 `verify` and `build` run, the archives are kept as the run's artifacts,
@@ -3698,7 +3703,11 @@ What protects a release:
   access.
 - The `release` environment requires the maintainer's review before any
   job under it runs, and accepts only tags matching the same pattern
-  and the `main` branch (for the rehearsal).
+  and the `main` branch. `main` stays listed after the first
+  rehearsal: every change to the workflow is rehearsed from `main`
+  before a tag depends on it, and the jobs that publish anything run
+  only on a tag push, so a run from `main` can build, keep artifacts
+  and ask for approval, and nothing more.
 - Every job that reads the source checks out the tag afresh, without
   persisted credentials, and the workflow uses no caches, so nothing an
   earlier run left behind reaches a release. Each job holds only the permissions it
@@ -3706,6 +3715,19 @@ What protects a release:
 - The binaries are built with exactly the workspace's `rust-version`,
   which the workflow reads from `Cargo.toml`, and with `--locked`, so
   with the dependency versions `Cargo.lock` pins and CI tests.
+
+Releases come from `main`: the work is iterated there until it is
+ready, the CHANGELOG is folded, and the tag is pushed. There are no
+release branches and no release-candidate tags, and the workflow holds
+to that: `verify` refuses a tag whose commit is not on `main`, and the
+tag pattern takes no suffix. An Elm package version is a bare
+`MAJOR.MINOR.PATCH`, so a `1.0.0-rc.1` could carry binaries and crates
+but never the package; the `0.x` line is the candidate line instead,
+each `0.x.y` tag a pre-release on the same path `1.0.0` takes. A
+candidate build with no version spent is a `workflow_dispatch` run on
+`main`: its archives are the run's artifacts. A release branch would
+become necessary only if a `1.x` ever needed patches beside a `2.x`
+([roadmap](roadmap.md#release-branches)).
 
 When a release fails: a tag is never moved, so a fix goes forward,
 under the next patch version, with its own commit and tag. Rerunning
