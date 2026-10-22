@@ -1,13 +1,42 @@
 # elm-connect
 
-elm-connect generates an Elm client from `.proto` files and calls the API
-over JSON: with the [Connect protocol](https://connectrpc.com/docs/protocol/)
-(connect-go, connect-es, connect-python, or Envoy's Connect-gRPC bridge
-in front of a gRPC server), or as REST through `google.api.http` rules
-(grpc-gateway, Envoy's gRPC-JSON transcoder, Vanguard). The generated
-code is the same for both; the transport is a field of the config a call
-is sent with. A call is data, and so is the config, so what a call sends
-and how it reads the answer can be checked without a server.
+An Elm implementation of [Connect](https://connectrpc.com/) (client-side
+only), elm-connect allows Elm apps to call gRPC servers from the browser.
+
+elm-connect provides idiomatic Elm code generation from `.proto` files:
+types, JSON codecs, defaults, descriptors, and type-safe API clients built
+from gRPC service definitions. The runtime library allows generated
+clients to use the [Connect protocol](https://connectrpc.com/docs/protocol/)
+(e.g., to a Connect server or Envoy's Connect-gRPC bridge) or REST through
+`google.api.http` gRPC transcoding (e.g., to grpc-gateway, Envoy's 
+gRPC-JSON transcoder, or Vanguard).
+
+You define your API with a clear, declarative schema in protobuf, and
+elm-connect gives you a complete, faithful, functional, idiomatic, and
+type-safe client out-of-the-box.
+
+## Why elm-connect?
+
+The existing Elm protobuf stack, protoc-gen-elm with elm-protocol-buffers
+and elm-grpc (last released in 2024), is binary-first: it can generate
+proto3 JSON codecs, but its only transport is binary gRPC-Web. An OpenAPI
+export of the same protos, fed to an OpenAPI generator, gives a REST
+client but loses proto3 JSON's rules and cannot switch to Connect.
+
+What elm-connect adds:
+
+- One generated client, switched between Connect and `google.api.http`
+  transcoding in its config
+- Generated codecs for proto3 canonical JSON mapping
+- The Connect conformance suite and live transcoders in CI, with the
+  transcoders' differences published
+- A retry policy gated on each method's idempotency
+- A CLI that needs no protoc, beside a plugin for protoc and buf
+- Pure halves, `Rpc.request` and `Rpc.response`, for tests without a
+  server
+
+[docs/compared.md](docs/compared.md) has the details, and a guide for
+users of protoc-gen-elm.
 
 ## Status
 
@@ -30,17 +59,21 @@ it would be a minor or a major release.
 
 ## Install
 
+The CLI:
 ```sh
 cargo install --locked --git https://github.com/bruckner/elm-connect elm-connect
+```
+
+The protoc plugin:
+```sh
 cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-elm-connect
 ```
 
-The CLI, `elm-connect`, needs nothing else; the plugin runs under protoc
-or buf. The runtime is an Elm package, read from a clone's `src/` as a
-source directory until it is published (`elm install
-bruckner/elm-connect` then). [docs/install.md](docs/install.md) has a
-complete `elm.json`, googleapis for protoc and buf, and how the versions
-line up.
+The CLI, `elm-connect`, needs nothing else. The plugin runs under protoc
+or buf. The runtime is an Elm package, but it isn't published yet. For now,
+it can be read from a clone's `src/` as a source directory.
+[docs/install.md](docs/install.md) has more details including a complete
+`elm.json`, googleapis for protoc and buf, and how the versions line up.
 
 ## Quick start
 
@@ -118,27 +151,8 @@ result, trying calls in `elm repl`, and testing without a server.
   call through one function of its own
   ([docs/calling.md](docs/calling.md#wrapping-the-sending-once)).
 
-## Compared with
-
-The existing Elm protobuf stack, protoc-gen-elm with elm-protocol-buffers
-and elm-grpc (last released in 2024), is binary-first: it can generate
-proto3 JSON codecs, but its only transport is binary gRPC-Web. An OpenAPI
-export of the same protos, fed to an OpenAPI generator, gives a REST
-client but loses proto3 JSON's rules (64-bit integers as exact strings,
-enums by name or number, the well-known types' forms, oneofs, `Any`,
-status details) and cannot switch to Connect. What elm-connect adds:
-
-- one generated client, switched between Connect and `google.api.http`
-  transcoding in its config;
-- a CLI that needs no protoc, beside a plugin for protoc and buf;
-- the Connect conformance suite and live transcoders in CI, with the
-  transcoders' differences published;
-- a retry policy gated on each method's idempotency;
-- pure halves, `Rpc.request` and `Rpc.response`, for tests without a
-  server.
-
-[docs/compared.md](docs/compared.md) has the details, and a guide for
-users of protoc-gen-elm.
+Check out [docs/roadmap.md](docs/roadmap.md) to see what we have planned
+as the project grows.
 
 ## Documentation
 
