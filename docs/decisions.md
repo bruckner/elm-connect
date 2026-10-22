@@ -631,6 +631,159 @@ which now reserves its two constructors (above). Client and
 bidirectional streaming are not feasible in browsers. Where: the
 roadmap.
 
+### A runtime package
+
+*2026-10-10; settled 2026-10-11.*
+
+Generated code is built against a runtime package rather than inlining
+its helpers into every module. The type layer was built against one
+from the first day, with the question of keeping it left open until
+its contents existed; they settled it: a shared type (`Duration`) must
+be one type across every generated module and the application, the
+timestamp codecs and the `Int64` helpers are one copy rather than one
+per module, and the transports belong there too. Where: design §5.
+
+### The config frozen
+
+*2026-10-13; frozen 2026-10-16.*
+
+`Rpc.Config` stays a record and never gains a field; a new knob goes
+on the opaque `Transport`, `Retry` or `Call`, or on a later
+`Rpc.Client`. Until 2026-10-16 `Transport` was the exposed union
+`Connect { useGet, maxGetUrl } | Transcode` and `Retry` a record:
+nearly every protocol on the roadmap would have changed the union, and
+a cap or jitter would have added a field to the record, each a major.
+Where: design §5.1, §8.3.
+
+### Retry with a cap and jitter
+
+*2026-10-16.*
+
+A retry's wait doubles up to a cap, 30 s by default and never above
+2^31 − 1 ms, and is drawn with full jitter. The policy was
+`{ attempts, backoff, codes, idempotentOnly }` without cap or jitter
+until then: a long policy overflowed `setTimeout` into a tight loop,
+and clients retried a recovering server in lockstep. Where: design
+§5.1.
+
+### The call's module, the body and argument order
+
+*2026-10-13 to 2026-10-16.*
+
+`Rpc.Call`'s modifiers and readers were in `Rpc` until 2026-10-16,
+where `Rpc.descriptor` read as too generic beside the config, errors
+and requests the module also handles; `Rpc.call` stays in `Rpc`. The
+string readers were `service` and `method` until `method` named the
+method record (2026-10-13); `idempotency` came on 2026-10-16. A
+method's codecs were record fields from 2026-10-15 and opaque from
+2026-10-16: the record form claimed its codec names left room for
+binary codecs beside them, which Elm's rules for records never
+allowed. `send` and `sendTraced` took the call first until 2026-10-16,
+which needed parentheses around every call. A request's body was
+`Maybe String` until 2026-10-16, when it became the opaque `Rpc.Body`,
+so that bytes can come as another kind of body rather than a field.
+Where: design §5.2.
+
+### Cancelling reports nothing
+
+*2026-10-13; 2026-10-15; 2026-10-16.*
+
+`Rpc.cancel` is `Http.cancel` by tracker, and a cancelled call reports
+nothing. It was that when decided on 2026-10-13; on 2026-10-15 it took
+the call's `toMsg` and reported a synthetic `Canceled` error, so the
+application would see every call end exactly once. Review found that
+outcome wrong both ways: it was reported when nothing was in flight (a
+cancel after the answer, or of a tracker never used), and beside a
+retry policy, which drops the tracker, the call reported `Canceled`
+and then its real result. On 2026-10-16 the runtime stopped guessing,
+and `Canceled` left `Rpc.Error`. The exactly-once form is on the
+roadmap. Where: design §5.2.
+
+### The trace, opaque
+
+*2026-10-13; 2026-10-15; 2026-10-16.*
+
+A trace's `httpStatus` and `code` came on 2026-10-13, its `headers`
+and `trailers` on 2026-10-15 (until then the Connect conformance
+suite's tests of response metadata failed through `sendTraced`), and
+on 2026-10-16 it became opaque, with `code : Maybe Code` and
+`transport`. It was a record, so a new field would have been a major,
+and its `code : Rpc.Code` repeated the result beside it. Where: design
+§5.2.
+
+### Bindings name fields by descriptor
+
+*2026-10-13; 2026-10-15; 2026-10-19; 2026-10-20.*
+
+A binding's path variables, query parameters, body field and response
+body are field descriptors, and the runtime derives names, JSON paths,
+default text and omission from them (2026-10-19). Before, the
+generator computed those and wrote them as positional strings
+(`Proto.Http.variable [ "name" ] [ … ] ""`, `Proto.Http.param
+"page_size" [ "pageSize" ] (Just "0")`), and a body field or response
+body as its JSON name. `viaBinding` gives a `Maybe` (2026-10-13): an
+earlier build let it take any number and failed at send time for one
+with no binding. A path variable with no value in the JSON is its
+field's default text (2026-10-20): the runtime sent an empty segment
+before, which Vanguard rejected (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`,
+`invalid parameter "inner.deep.b": unexpected end of JSON input`); that
+a server reads every message on the way as set was accepted on
+2026-10-15. Query parameters leave out zero values: the in-house
+generator sent them, which was harmless but noisy. Where: design
+§5.3, §7.
+
+### `Rpc.Code` without `Ok`
+
+*2026-10-13; reversed 2026-10-16.*
+
+`Rpc.Code` is gRPC's sixteen error codes, and success has no code, as
+in connect-go, connect-es and connect-kotlin. On 2026-10-13 two
+modules were decided instead: `Rpc.ErrorCode` for the sixteen and
+`Rpc.Code`, `Ok | Failed ErrorCode`, so that a `Trace` could report a
+status whole (before that the two types shared one module, the helpers
+for `Code` prefixed). That was reversed on 2026-10-16: `Code` existed
+only for the trace, whose result already said whether the call
+succeeded, it copied every helper to add one case, and its `Ok`
+clashed with `Result.Ok` in every module. The trace's `Maybe Code` says
+the same, and the sixteen codes took the name `Code`. Where: design
+§5.4.
+
+### Errors by what came back
+
+*2026-10-13; 2026-10-15; 2026-10-16.*
+
+`Rpc.Error` is `RpcStatus`, `HttpStatus`, `BadResponse` or `NoAnswer`.
+Two error types were built first, one per transport, since the wire
+forms differ; `source` keeps which one arrived without every caller
+handling two types. On 2026-10-15 every error that had an answer came
+to keep it, and the answer was first kept on one flat `Rpc` record
+beside `source`, whose `HttpStatus Int` marked an inferred code, until
+review found it bought nothing: Elm's record patterns bind field names
+and never match field values, so the documented
+`Rpc { source = HttpStatus 404, response }` did not parse. A
+constructor per kind of error replaced it the same day, and
+`Source`'s `Int`s went (`StatusBody`'s duplicated the raw body and
+`HttpStatus`'s the `statusCode`). A `Status = { code, message, details
+}` alias in the constructor was rejected, since `google.rpc.Status`
+generated from googleapis is already a `Google.Rpc.Status` record with
+`code : Int`. The codes and messages of errors with no stated status
+came on 2026-10-15, and the bad URL's printing on 2026-10-16.
+
+The shape until 2026-10-16 was `Status { code, message, details,
+source } Response | Http Response | Transport Http.Error | Canceled`.
+Review found three of the four names clashing: `Transport` with the
+`Rpc.Transport` type and module, `Canceled` with `Rpc.Code.Canceled`
+in every module exposing both, `Http` with the `Http` module.
+`Transport Http.Error` put elm/http's type in the API, so an elm/http
+major would have forced one here, and it let user code match
+`Http.BadStatus`, which the runtime never produced. A 2xx whose body
+did not decode was `Transport (Http.BadBody _)`, which dropped the
+answer. So on 2026-10-16 the constructors came to say what came back,
+`BadResponse` keeping the answer, `Reason` and `StatusError` were
+frozen, `InvalidHeader` became a reason, `Canceled` went with the
+synthetic cancel outcome, and the module became `Rpc.Error`, whose
+`toString` was `Rpc.errorToString`. Where: design §5.4.
+
 ## Input and versioning
 
 ### Editions and proto2 refused in 1.0
