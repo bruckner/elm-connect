@@ -2,9 +2,10 @@
 
 This is the design contract: each section says what the system does
 and the rules it keeps. Why a rule is what it is, what else was
-considered and what it replaced are in [decisions.md](decisions.md),
-and what may come later is in [roadmap.md](roadmap.md). Change this
-document by pull request; the PR discussion is the design record.
+considered and what it replaced are in [decisions.md](decisions.md);
+what may come later is in [roadmap.md](roadmap.md), and the questions
+still open are in §9. Change this document by pull request; the PR
+discussion is the design record.
 
 ## 1. What this is
 
@@ -3539,8 +3540,20 @@ unpublish, only yank: a published version stays.
 
 ## 9. Open questions, collected
 
-The questions this section collected are settled, and recorded with
-their reasons in [decisions.md](decisions.md).
+Two questions are open. The settled ones are recorded with their
+reasons in [decisions.md](decisions.md).
+
+- **Qualifying library names in an affected module.** A type or
+  constructor named like one its module uses unqualified is
+  `naming::reserved_name` (§3.8). Qualifying the library names in that
+  module would generate working code instead, but it makes a module's
+  text depend on what its package declares, and a `rename` already gets
+  past the clash.
+- **Importing the runtime's modules under an alias.** Generated code
+  refers to every runtime module qualified in full
+  (`Proto.Field.CardinalitySingular`, §3.9). An import alias would make
+  the generated source smaller than the builders alone do (decisions.md:
+  Descriptor trees built by functions).
 
 ## 10. Out of scope but recorded
 
