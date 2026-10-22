@@ -9,16 +9,10 @@ how to keep the two versions in step.
 ## The generator
 
 The generator comes as two binaries with the same options and the same
-output: a standalone CLI, and a protoc plugin for protoc and buf. Neither
-is released yet, so both install from the repository with Cargo:
-
-```sh
-cargo install --locked --git https://github.com/bruckner/elm-connect elm-connect
-cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-elm-connect
-```
-
-`--locked` builds with the dependency versions the repository's
-`Cargo.lock` pins, which are the ones its CI tests.
+output: a standalone CLI, and a protoc plugin for protoc and buf. Each
+release attaches both, built for six platforms, to its page under the
+repository's [Releases](https://github.com/bruckner/elm-connect/releases);
+Cargo builds them from source.
 
 - `elm-connect` needs nothing else. It compiles the protos itself, and
   carries `google/api/annotations.proto`, `google/api/http.proto` and
@@ -31,18 +25,100 @@ cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-
 `elm-connect --version` and `protoc-gen-elm-connect --version` print
 each binary's version.
 
-Prebuilt binaries and an npm package are planned
-([roadmap](roadmap.md)).
+### Prebuilt binaries
+
+A release has one archive per platform,
+`elm-connect-<version>-<target>.tar.gz`, holding both binaries and the
+license files, and `SHA256SUMS`, the checksums of every archive:
+
+| Platform | `<target>` |
+|---|---|
+| Linux, x86-64 | `x86_64-unknown-linux-musl` |
+| Linux, arm64 | `aarch64-unknown-linux-musl` |
+| macOS, Intel | `x86_64-apple-darwin` |
+| macOS, Apple silicon | `aarch64-apple-darwin` |
+| Windows, x86-64 | `x86_64-pc-windows-msvc` (a `.zip`) |
+| Windows, arm64 | `aarch64-pc-windows-msvc` (a `.zip`) |
+
+The Linux binaries are statically linked against musl, so they run on
+any distribution. Download the archive and `SHA256SUMS`, check one
+against the other, and check that the archive was built from this
+repository by its release workflow (with the [GitHub CLI](https://cli.github.com)):
+
+```sh
+version=0.1.0
+target=aarch64-apple-darwin
+base=https://github.com/bruckner/elm-connect/releases/download/$version
+curl -fLO "$base/elm-connect-$version-$target.tar.gz"
+curl -fLO "$base/SHA256SUMS"
+sha256sum --check SHA256SUMS --ignore-missing
+gh attestation verify "elm-connect-$version-$target.tar.gz" --repo bruckner/elm-connect
+```
+
+`--ignore-missing` skips the archives not downloaded. Where there is no
+`sha256sum`, `shasum -a 256 --check --ignore-missing SHA256SUMS` does
+the same. Then unpack the archive and put both binaries in a directory
+on `PATH`:
+
+```sh
+tar xzf "elm-connect-$version-$target.tar.gz"
+install elm-connect protoc-gen-elm-connect ~/.local/bin/
+```
+
+On Windows, check the `.zip` the same way (`sha256sum` is in Git Bash;
+in PowerShell, compare `(Get-FileHash <archive>).Hash` with its line in
+`SHA256SUMS`), unpack it with `Expand-Archive`, and put
+`elm-connect.exe` and `protoc-gen-elm-connect.exe` in a directory on
+`PATH`. The binaries are not signed, so macOS refuses to run one a
+browser downloaded until `xattr -d com.apple.quarantine <binary>`
+clears the mark, and Windows SmartScreen may ask once; `curl`
+downloads are not marked.
+
+[SECURITY.md](../SECURITY.md#verifying-a-release) says what a release is
+built from and what the two checks prove.
+
+### With Cargo
+
+Cargo builds both binaries from source, with the Rust version the
+crates declare (their `rust-version`) or newer:
+
+```sh
+cargo install --locked elm-connect
+cargo install --locked protoc-gen-elm-connect
+```
+
+Until the crates are on crates.io, install from the repository instead,
+with `--git https://github.com/bruckner/elm-connect` before the crate's
+name.
+
+`--locked` builds with the dependency versions the repository's
+`Cargo.lock` pins, which are the ones its CI tests.
+
+An npm package that fetches the right binary is on the
+[roadmap](roadmap.md).
 
 ## The runtime
 
 The generated modules import the runtime's `Proto.*` and `Rpc.*`
-modules. The runtime is not on the Elm package index yet, so an
-application reads it from a clone of this repository, as one of its
-source directories:
+modules. From 1.0.0 the runtime is on the Elm package index:
+
+```sh
+elm install bruckner/elm-connect
+```
+
+and the runtime's own dependencies come with it. An application then
+lists `elm/http` and `elm/json`, which generated code and `Rpc` calls
+need, `elm/time` when a proto uses `google.protobuf.Timestamp`, and
+`elm/bytes` when it generates with `bytes=bytes`.
+
+The index takes no version below 1.0.0, so before then an application
+reads the runtime from a clone of this repository, checked out at the
+tag of the release it generates with, as one of its source
+directories:
 
 ```sh
 git clone https://github.com/bruckner/elm-connect
+git -C elm-connect checkout 0.1.0
 ```
 
 A complete `elm.json` for a browser application outside this
@@ -100,13 +176,6 @@ module that imports it, with `MODULE NOT FOUND` and the import, such as
 
 The runtime compiles with Elm 0.19.0, 0.19.1 and 0.19.2; set
 `elm-version` to the compiler the application uses.
-
-Once the package is published, `elm install bruckner/elm-connect`
-replaces the third source directory, and the runtime's own dependencies
-come with it. An application then lists `elm/http` and `elm/json`, which
-generated code and `Rpc` calls need, `elm/time` when a proto uses
-`google.protobuf.Timestamp`, and `elm/bytes` when it generates with
-`bytes=bytes`.
 
 ## googleapis
 

@@ -1123,3 +1123,7 @@ tag (design §8).
   `docs/agent-guide.md` is now `docs/guide.md`, a guide for anyone
   working on a project that uses elm-connect, agent or not;
   `elm-connect guide` prints it under its new title.
+- `docs/install.md` installs the generator from a release's prebuilt
+  binaries, and says how to check an archive against the release's
+  `SHA256SUMS` and its build attestation; `SECURITY.md` says what a
+  release is built from and what those checks prove.

@@ -41,7 +41,12 @@ and arm64; mise refuses a download that does not match. After moving a
 pin in `mise.toml`, run `mise lock` (with `GITHUB_TOKEN` set, or
 GitHub's API rate limit leaves entries out) and commit both files; CI installs
 with the mise release named in `.github/workflows/ci.yml`, so move that
-too when you upgrade mise.
+too when you upgrade mise. `mise lock` writes every platform's entries;
+`mise install`, the setup step above included, rewrites `mise.lock` for
+the platform it runs on and drops the other platforms' entries for the
+Elm compiler (which `mise.toml` configures per platform), so a diff of
+`mise.lock` that removes another platform's entry comes from the wrong
+command: `git checkout mise.lock` undoes it.
 
 Cargo builds into the worktree's own `target/`, and the live suite's
 binaries go under it too. Keep it that way with several worktrees of the
@@ -174,6 +179,14 @@ Commits follow the seven rules from
 
 Reference durable things in a body (commits, files, sections of the
 design) rather than issue or PR numbers alone.
+
+## Releasing
+
+The maintainer cuts releases; [`docs/design.md` §8.7](docs/design.md#87-releasing)
+has the steps and what the release workflow does with a tag. A
+contributor's part is the `CHANGELOG.md` bullet under Unreleased that a
+pull request carries: the Unreleased list becomes the next release's
+notes.
 
 ## License
 
