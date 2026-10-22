@@ -428,6 +428,64 @@ call carrying every binding has nothing to fuse,
 method without a rule takes the implicit route. The same shape is
 connect-es's in its second version. Where: design §2, §4, §5.2.
 
+### A module per service
+
+*2026-10-13; 2026-10-16; 2026-10-20.*
+
+Each service is an Elm module of its own beside its package's. The
+first shape built was one module per package holding, after the
+codecs, a `Connect.Method` per method (`getNote`) and a `Transcode.Call`
+per binding (`getNoteHttp`, `getNoteHttp2`, …), with a `transports=`
+option choosing which were generated. It put method values in one
+namespace with each other across services and with the codecs and
+defaults, so a method `DefaultSettings` beside a message `Settings`
+clashed and two services could not both have a `Get`; it also put
+route presence in the type and named additional bindings by number.
+The module per service, calls as data and `viaBinding` replaced all
+three on 2026-10-13, and the `transports=` option went with the shape
+it chose between. A call's and a descriptor's arguments one per line,
+2026-10-16. A call's documentation showing its routes, 2026-10-20:
+until then they were visible only as `Proto.Http` data in its
+descriptor. Where: design §4, §6.
+
+### Methods carry codecs only
+
+*2026-10-13; 2026-10-15; 2026-10-16.*
+
+A `Proto.Method.Method` holds its request's encoder and its response's
+decoder, and its descriptor. The first shape, on 2026-10-13, put the
+codecs themselves in a descriptor record of `Rpc`'s; the second gave
+the method its types' typed records. Those hold each type's default
+and descriptor tree, and Elm keeps a top-level value whole, so a call
+through records cost about 16 KB gzipped, in an application's bundle,
+over a client referencing only the codecs; from 2026-10-15 a method
+carries the codecs alone. On 2026-10-16 the method's descriptor became
+a top-level value of its own, `descriptorGetNote`, which the call
+refers to, rather than being written inline. Where: design §4, §3.9.
+
+### Idempotency, whole
+
+*2026-10-16.*
+
+A method's descriptor carries its `idempotency_level` whole,
+`IdempotencyUnknown`, `IdempotencyNoSideEffects` or
+`IdempotencyIdempotent`, and a retry policy retries either of the last
+two. It was `idempotent : Bool`, true for `NO_SIDE_EFFECTS` alone, so an
+`IDEMPOTENT` method (a typical `Delete` or `Put`) was never retried
+under the idempotent-only gate; and the reader was
+`Rpc.idempotent : Call -> Bool`, a misnomer once there were three
+levels, now `Rpc.Call.idempotency`. Where: design §4, §5.1.
+
+### Well-known types in a path variable
+
+*2026-10-20.*
+
+A path variable may name a `Timestamp`, `Duration`, `FieldMask` or
+wrapper field, the well-known types whose JSON is one string or scalar,
+as a query parameter may. Refusing every message there was the first
+build, although `route::query_field` already accepted these. Where:
+design §4.
+
 ### Config is data, with no interceptors
 
 *2026-10-13.*

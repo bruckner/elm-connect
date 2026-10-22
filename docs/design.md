@@ -1698,7 +1698,7 @@ registry =
   in decisions.md (No option to leave the descriptors out; Descriptors
   in a module per type).
 
-## 4. Calls  *(Decided, 2026-10-13)*
+## 4. Calls
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
 beside the package's `Notes.V1`, holding a calls section with one
@@ -1765,10 +1765,8 @@ Both applications put one argument per line however short their
 arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
 keeps.
-*(Decided, 2026-10-16.)*
 
-- **A method's documentation shows its routes.** *(Decided,
-  2026-10-20.)* A call's doc comment gives the method's comment
+- **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
   own and its HTTP bindings as its `google.api.http` rule writes them,
   each with its `body` and `response_body` where set: one binding on
@@ -1781,8 +1779,8 @@ keeps.
   service's package would write them, relative to it inside it and by
   full name outside (`returns (google.protobuf.Empty)`); the call's
   annotation already names their Elm types. Why: the call is the
-  value a program uses, and the routes it may take were visible only as
-  `Proto.Http` data in its descriptor. The descriptor carries the
+  value a program uses, and the descriptor shows the routes it may take
+  only as `Proto.Http` data. The descriptor carries the
   comment and the declaration line.
   A service has no declaration of its own, so its module's
   documentation carries its comment and `` `service
@@ -1816,16 +1814,12 @@ keeps.
   `Proto.Method.Method` value is generated; `Rpc.Call.method` and
   `Rpc.Call.descriptor` read the method and its descriptor back from any
   call of it. Elm keeps a top-level value whole, and the call refers to
-  the descriptor value, so a program that calls the method keeps what
-  it kept when the descriptor was written inline, and one that does
-  not keeps neither. *(Decided, 2026-10-13; the descriptor became a
-  value of its own 2026-10-16.)* The first shape put the codecs
-  themselves in a descriptor record of `Rpc`'s; the second gave the
-  method its types' typed records (§3.9). A method now carries only
-  what the wire needs: the records hold each type's default and
-  descriptor tree, and Elm keeps a top-level value whole, so a call
-  through records cost about 16 KB gzipped over a client referencing
-  only the codecs in an application's bundle. *(Decided, 2026-10-15.)*
+  the descriptor value, so a program that calls the method keeps the
+  descriptor, and one that does not keeps neither. A method carries
+  only what the wire needs, its types' codecs and not their typed
+  values (§3.9), which hold each type's default and descriptor tree and
+  would come whole into every program that calls it (decisions.md:
+  Methods carry codecs only).
 - `idempotency` is the proto's `idempotency_level`, whole:
   `Proto.Method.IdempotencyUnknown` when unset,
   `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
@@ -1833,11 +1827,7 @@ keeps.
   (idempotent-only by default) retries either level, since an
   `IDEMPOTENT` method (a typical `Delete` or `Put`) is safe to repeat
   but not to cache. Transcoding takes its verb from the rule.
-  *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
-  `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
-  under `idempotentOnly`. `Rpc.Call.idempotency` reads it from a call;
-  it was `Rpc.idempotent : Call -> Bool` until the descriptor's three
-  levels made that a misnomer.
+  `Rpc.Call.idempotency` reads it from a call.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
@@ -1869,14 +1859,6 @@ keeps.
   again, so a retry or token-refresh wrapper closes over it, and a
   queue can store it; `req` keeps those uses typed.
 
-The first shape built was different: one module per package holding,
-after the codecs, a `Connect.Method` per method (`getNote`) and a
-`Transcode.Call` per binding (`getNoteHttp`, `getNoteHttp2`, …), a
-`transports=` option choosing which. It put route presence in the type
-(§2), named additional bindings by number, and put method values in one
-namespace with the codecs; the module per service, calls as data and
-`viaBinding` replace all three.
-
 In the IR (`ir::Service`, `ir::Method`):
 
 - Every service of a generated package, and each of its methods: the
@@ -1890,11 +1872,8 @@ In the IR (`ir::Service`, `ir::Method`):
   → `Notes`), so a conventionally named service keeps its name, and a
   name whose PascalCase form does not start with a letter is
   `naming::invalid_service`. The package module holds the types and
-  codecs only. *(Decided, 2026-10-13.)* One module for a package's
-  types and every service's methods was the first shape built; it put
-  method values in one namespace with each other across services and
-  with the codecs and defaults, so `DefaultSettings` beside a message
-  `Settings` clashed, and two services could not both have a `Get`.
+  codecs only, so a method's value shares no namespace with another
+  service's methods or with the codecs and defaults (below).
 - A method's value is its name converted as a field's is (`GetNote` →
   `getNote`, `HTTPGet` → `httpGet`), a reserved word escaped (`Type` →
   `type_`), and its descriptor's is
@@ -1968,9 +1947,7 @@ gets exactly this as data and never parses a template.
   `route.rs` so the two cannot drift. Its text is that JSON value
   (`/v1/at/2026-10-20T12%3A34%3A56Z`), as grpc-gateway reads it. `Empty`,
   `Any`, `Struct`, `Value` and `ListValue` stay refused, as does a
-  repeated one. *(Decided, 2026-10-20; `routes_well_known_path` case.)*
-  Refusing every message here was the first build, although
-  `route::query_field` already accepted these.
+  repeated one (`routes_well_known_path` case).
 - The client does not check a value against the variable's template
   (`notes/42` against `notes/*`): the server matches, and a mismatch is
   its 404.
