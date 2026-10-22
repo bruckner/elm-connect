@@ -119,6 +119,16 @@ needed anyway, an opaque `Rpc.Client`, built from a `Config` plus
 hooks and sent through functions of its own, can be added beside
 `Rpc.task` without changing it. A minor.
 
+## One outcome for every call
+
+Today a cancelled call reports nothing, and a call sent with a retry
+policy has no tracker, so it cannot be cancelled
+([design §5.2](design.md)). A model-held state machine (`Rpc.Pending`,
+stepped by an `update`) that owns the retry loop would make a retried
+call cancellable and have every call report exactly one outcome; a
+streaming transport would need the same machine, and would share it.
+An addition beside `Rpc.send` and `Rpc.task`: a minor.
+
 ## A fake transport for tests
 
 Today a program's calls are tested through the pure halves:
@@ -189,6 +199,15 @@ and `elm-connect --explain <code>` printing what a code means and its
 escape, as [diagnostics.md](diagnostics.md) lists them. Additive flags:
 a minor. (`elm-connect guide`, printing the
 [guide](guide.md), is built.)
+
+## Small examples for learning from
+
+The notes example was meant to double as the implementation to
+consult, and serves verification well, but carrying both transports,
+the error panel and the live suite's needs makes it too much to learn
+from first ([design §7](design.md)). Teaching wants a few short,
+well-documented examples that each show one thing, kept compiling the
+same way. No version impact.
 
 ## Consolidating the test suites
 

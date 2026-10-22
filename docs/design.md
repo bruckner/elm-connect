@@ -1,11 +1,10 @@
 # elm-connect — design
 
-**Status:** draft, open for iteration. Each section describes what is
-built. A *Decided* marker says a point was argued and settled, with a
-date where one says when an earlier shape gave way; nothing is
-*Proposed* or *Open* at present. The reasons behind the settled questions are in
-[decisions.md](decisions.md), and what may come later is in
-[roadmap.md](roadmap.md). Change this document by pull request; the PR
+This is the design contract: each section says what the system does
+and the rules it keeps. Why a rule is what it is, what else was
+considered and what it replaced are in [decisions.md](decisions.md);
+what may come later is in [roadmap.md](roadmap.md), and the questions
+still open are in §9. Change this document by pull request; the PR
 discussion is the design record.
 
 ## 1. What this is
@@ -89,7 +88,7 @@ a second transport and a public interface designed to be kept.
   becoming output (roadmap).
 - Server code generation.
 
-## 2. The layering  *(Decided; reshaped 2026-10-13)*
+## 2. The layering
 
 Generated code carries no transport. Three layers, the first two data:
 
@@ -109,22 +108,20 @@ Generated code carries no transport. Three layers, the first two data:
    and sends it as a `Task` or a `Cmd`, or gives the HTTP request it
    stands for and reads the answer without sending anything (§5.2).
 
-This is the shape connect-es arrived at in v2 (service descriptors from
+This is connect-es's shape since its v2 (service descriptors from
 `protoc-gen-es`, transport in the runtime) and the shape anmolitor's
-protoc-gen-elm uses (service module as data, elm-grpc as transport). It
-dissolves the "one plugin or two" question: one plugin emits layers 1
-and 2; the transport choice is made in the config, which an
-application builds once or per call.
+protoc-gen-elm uses (service module as data, elm-grpc as transport).
+One plugin emits layers 1 and 2, whichever transport a call takes; the
+transport is chosen in the config, which an application builds once or
+per call.
 
 Every method can be called over either transport. A method without an
 HTTP rule goes over the implicit route the transcoders serve (§4), so
-whether a method has a rule is not in its type. *(Decided, 2026-10-13.)*
-The first shape built made it one: a `Connect.Method` per method and a
-`Transcode.Call` per binding, so a method without a rule could not be
-passed to the transcoding transport at all. That split every helper an
-application wrote around calls into two, to guard against a server
-configuration the generator cannot see; `unbound_methods=error` (§6)
-keeps the guard for the servers that need it.
+whether a method has a rule is not in its type: in the type, it would
+split every helper an application writes around calls into two, to
+guard against a server configuration the generator cannot see.
+`unbound_methods=error` (§6) gives that guard to the servers that need
+it (decisions.md: Calls are data, with pure halves).
 
 ### 2.1 Before and after
 
@@ -273,13 +270,11 @@ rpc shared call =
     Rpc.task (config shared) call
 ```
 
-## 3. Generated types  *(Decided)*
+## 3. Generated types
 
 ### 3.1 Modules
 
-- **The runtime's modules** follow seven rules. *(Decided,
-  2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19; rule 7
-  2026-10-21.)* (1) A module per proto concept
+- **The runtime's modules** follow seven rules. (1) A module per proto concept
   holds whatever that concept has: its typed value if it has one, its
   descriptor, and the unions its descriptor holds. Several types to a
   module is the normal Elm shape (`Http`, `Html`). So `Proto.Message`
@@ -297,7 +292,7 @@ rpc shared call =
   (`CardinalitySingular`, `KindMessage`, `ScalarString`), so any of them
   can be exposed with `(..)` beside another union's and beside
   `Rpc.Code(..)` without a clash. (4) An `Internal` module holds what
-  the package needs but will not promise: a constructor two public
+  the package needs but does not promise: a constructor two public
   modules must build or match (`Rpc.Internal.Call`, built by `Rpc`,
   read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, built by
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
@@ -323,24 +318,22 @@ rpc shared call =
   `dictField`, `boolMapField`), with `objectOfFields` building a
   message's object from them. So a decoder and its encoders share a
   noun, and no helper shares a name with an elm/json function of
-  another type (`Json.Encode.object`, `Json.Encode.dict`), as `object`,
-  `dict` and `boolDict` did before. Every well-known type's codecs are
+  another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
   module imports an `Rpc` one, and `Rpc` reads two internal modules of
   the `Proto` side, `Proto.Internal.Binding` and `Proto.Internal.Any`,
   and no others, so that the codecs could become a package of their own
   without changing ([decisions.md](decisions.md#no-package-split)).
-- **Generated codecs are `encodeX` and `decodeX`.** *(Decided.)* A package module's codecs for a message or enum are the
+- **Generated codecs are `encodeX` and `decodeX`.** A package module's codecs for a message or enum are the
   pair `encodeNote : Note -> Json.Encode.Value` and
   `decodeNote : Json.Decode.Decoder Note`, so a type's two codecs sit
   together in a search and the ENCODERS and DECODERS sections each read
   as one prefix. The noun convention of rule 6 applies to the runtime,
-  whose decoders each read a kind; elm/json's spelling, `noteDecoder`,
-  was considered and not taken.
+  whose decoders each read a kind.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
-  *(Decided.)* Per-file modules leak the server's file layout into the
+  Per-file modules would leak the server's file layout into the
   client and make cross-file references within a package awkward.
-- **Lists in generated code.** *(Decided.)* A list literal
+- **Lists in generated code.** A list literal
   with elements puts each on its own line, a list of one too, so a list's
   layout does not change as it grows and every element is a line of its
   own in a diff. Four lists stay on one line where they fit, since each
@@ -351,7 +344,7 @@ rpc shared call =
   descriptors (each path reads as the dotted field path the rule
   writes), and a field's behaviors (`Proto.Field.withBehavior [ … ]`).
   Layout is not API (§8.3): it can change in any release.
-- **Values in the package module, descriptions beside it.** *(Decided.)* The package module holds what a program sends and
+- **Values in the package module, descriptions beside it.** The package module holds what a program sends and
   receives: the types (messages, oneofs, recursion wrappers, enums),
   their defaults and codecs, the typed values (`messageNote`,
   `enumVisibility`) and the registry. What the proto says about a type
@@ -363,8 +356,8 @@ rpc shared call =
   `descriptor : Proto.Message.Descriptor` built from them;
   `Notes.V1.Visibility` holds `descriptor : Proto.Enum.Descriptor`; a
   nested `Outer.Inner` is `Notes.V1.OuterInner`, flat as its type's
-  name is (§3.7; confirmed 2026-10-19, so that one naming rule names
-  both). Imports go one way:
+  name is (§3.7), so that one naming rule names
+  both. Imports go one way:
   the package module imports its descriptor modules (for the typed
   values and the registry), a message's descriptor module imports the
   descriptor modules of the enums its fields hold (another package's
@@ -373,7 +366,8 @@ rpc shared call =
   cycle can form. Why: a field's descriptor is something a program can
   name (`Notes.V1.Note.title`), which routes build on (§5.3) and UI
   code can, and the package module of values reads as the API a
-  program uses. The cost is a module per type (§3.9 measures it). A
+  program uses. The cost is a module per type, which a program pays
+  for only as far as it reaches (§3.9). A
   descriptor module is a generated module like any other: it opens
   with `elmConnectVersion_`, `module_prefix` applies to it, and its
   name is claimed with every other module's, so a message or enum
@@ -383,7 +377,7 @@ rpc shared call =
   `Shopitem`) is `naming::module_collision`, with `rename` the escape
   (`descriptors_module_collision` and `descriptors_module_case`
   cases).
-- **A descriptor module's values.** *(Decided.)* Its
+- **A descriptor module's values.** Its
   values share a namespace with the message's field names, so the
   generator claims as few names there as it can. It claims one,
   `descriptor`, which the protobuf style guide already lists among the
@@ -401,14 +395,14 @@ rpc shared call =
   adding one breaks no proto that generates.
 - Elm forbids import cycles; proto allows cycles between packages across
   files. The generator detects a package-level cycle and reports it as a
-  diagnostic naming the files involved. *(Decided.)* Alternative: fold
-  the strongly-connected packages into one module. Rejected for 1.0
-  because it changes module names based on a property users cannot see
-  in their protos.
+  diagnostic naming the files involved, rather than folding the
+  packages of a cycle into one module, which would make module names
+  depend on a property users cannot see in their protos (decisions.md:
+  Package import cycles refused).
   It is `generate::import_cycle` (`packages_cycle` case): it names
   each package with its files and points at a reference along the
   cycle in each.
-- An optional `module_prefix` option (`Api.Notes.V1`). *(Decided.)* It puts every module the run generates inside the prefix:
+- An optional `module_prefix` option (`Api.Notes.V1`). It puts every module the run generates inside the prefix:
   each package's, a renamed one too (`rename=notes.v1:Memos` under
   `module_prefix=Api` gives `Api.Memos`), each service's inside its
   package's, and any other generated package's, such as `Google.Rpc`;
@@ -419,7 +413,7 @@ rpc shared call =
   A file-level `elm_package` file option (like `java_package` or
   `go_package`), if one is added, composes under the prefix: with both, a
   package's module is `<module_prefix>.<elm_package>`.
-- **The runtime's namespaces.** *(Decided, 2026-10-21.)* The runtime's
+- **The runtime's namespaces.** The runtime's
   modules are `Rpc` and `Proto` and modules inside them, and it may add
   more there in any release (§8.3). A generated module that takes one
   of its modules' names is `naming::reserved_module`, an error. Any
@@ -434,7 +428,7 @@ rpc shared call =
   cases). Why a warning and not an error: the root `Proto` is the
   runtime's, but nothing is wrong with the output until the runtime
   takes the name, and an application may accept that risk.
-- **Modules of an application's packages.** *(Decided, 2026-10-21.)* A
+- **Modules of an application's packages.** A
   generated module named like a module of elm/html, elm/browser,
   elm/url, elm/svg, elm/file, elm/random, elm/regex, elm/parser or
   elm/virtual-dom (a fixed list of their exposed modules,
@@ -448,14 +442,10 @@ rpc shared call =
   never imports `Html`) is fine. Escape: `rename` the package or type,
   or `module_prefix`.
 - Only packages with a requested file are generated: protoc's
-  `file_to_generate`, or the files named to the CLI. *(Decided,
-  2026-10-15.)* Each is generated in full, from every compiled file that
+  `file_to_generate`, or the files named to the CLI. Each is generated in full, from every compiled file that
   declares it (protoc's `proto_file` holds every import): its types, its
   enums and its services, so a package's module is the same whichever of
-  its files were asked for (`packages_whole` case). Before, a package
-  was built from its requested files alone, and a field whose type was
-  declared in an unrequested file of the same package was silently
-  dropped. A file without a package is not one package with the other
+  its files were asked for (`packages_whole` case). A file without a package is not one package with the other
   files without one; only requested ones are taken, each
   `naming::invalid_module`.
   A generated package that refers to a package with no requested file
@@ -494,7 +484,7 @@ rpc shared call =
   A reference to another generated package is qualified with its module
   (`Users.V1.User`, `Users.V1.RoleUnspecified`), which is imported
   plainly, without an alias or an exposing list (`packages` case).
-- **Comments and declaration lines.** *(Decided, 2026-10-20.)* The
+- **Comments and declaration lines.** The
   declaration a proto element becomes is documented with the proto's
   comment for it and the element's one-line declaration, as a reader of
   Java's, C++'s or protobuf-es's generated code finds them (a method's
@@ -589,26 +579,21 @@ rpc shared call =
 
 - A record type alias per message. Nested messages are flattened into
   the package module with the outer name as a prefix
-  (`Outer.Inner` → `OuterInner`). *(Decided.)*
+  (`Outer.Inner` → `OuterInner`).
 - The record's fields are in declaration order, the order the `.proto`
   file writes them in, not field-number order; a oneof's field sits
-  where its first member is declared (§3.6). *(Decided.)* The
+  where its first member is declared (§3.6). The
   record's constructor is positional, so this order is API, and the
-  defaults, descriptors (§3.9), encoders and decoders follow it too.
-  Field-number order was considered: the record would survive a
-  cosmetic reordering of the file, and prost-reflect's `fields()` gives
-  it by accident. Rejected, since the record should read beside the
-  proto in its author's grouping, peer generators emit file order, and a
-  new field changes the positional constructor under either order, so
-  neither is stable under appends. The `field_order` conformance case
+  defaults, descriptors (§3.9), encoders and decoders follow it too
+  (decisions.md: Record fields in declaration order). The `field_order` conformance case
   pins it.
-- Scalars use proto3 zero values directly, not `Maybe`. *(Decided.)* A
+- Scalars use proto3 zero values directly, not `Maybe`. A
   missing JSON field decodes to the zero value, and `null` decodes to
   the zero value, matching proto3 JSON.
 - Message-typed fields are `Maybe`. proto3 `optional` fields are
-  `Maybe`. *(Decided.)*
+  `Maybe`.
 - `repeated` → `List`. `map<K, V>` → `Dict K V` with `K` restricted to
-  `String` and `Int` as proto allows. *(Decided.)*
+  `String` and `Int` as proto allows.
   `string` and 64-bit integer keys give `Dict String V`, 32-bit
   integer keys `Dict Int V`. JSON object keys are strings, so integer
   keys are read from their decimal strings and written with
@@ -623,45 +608,40 @@ rpc shared call =
   `"7"`). Two keys that canonicalise to one (`"7"` and `"07"`) fail the
   decode, naming both, rather than one silently replacing the other.
   protobuf's own parsers (protobuf-go's protojson) reject the same keys:
-  out of range, not an integer, or a duplicate. *(Decided 2026-10-19;
-  32-bit keys were checked only against the span of the signed and
-  unsigned types together, and 64-bit keys not at all, before.)*
+  out of range, not an integer, or a duplicate.
   An absent or `null` map decodes as `Dict.empty`.
-- `map<bool, V>` → `List ( Bool, V )`. *(Decided.)* The Elm form is an
+- `map<bool, V>` → `List ( Bool, V )`. The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
   most two entries. The encoder (`Proto.Json.boolMapField`, through
   `Proto.Json.encodeBoolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.boolMap`) reads one, fails on any key but exactly
   `"true"` or `"false"`, and gives the pairs in the object's key order.
-  An absent or `null` map decodes as `[]`. A `bool` key was first a
-  diagnostic, and `Dict String V` keyed by `"true"`/`"false"` was
-  considered; both hid the proto type.
-- Empty messages (zero fields) become `type alias Foo = {}`. *(Decided.)*
+  An absent or `null` map decodes as `[]`.
+- Empty messages (zero fields) become `type alias Foo = {}`.
   The decoder (`Proto.Json.emptyMessage`) accepts any JSON object,
   ignoring its keys, and fails on anything else, as every other message
-  does. *(Decided 2026-10-19; it accepted any JSON before.)*
+  does.
 - Every message gets `defaultFoo`, so callers write
   `{ defaultFoo | title = "x" }` and
   `Maybe.withDefault defaultFoo.stars msg.stars` without knowing the
-  proto default. *(Decided.)* `defaultFoo : Foo` holds every field at
+  proto default. `defaultFoo : Foo` holds every field at
   its proto3 default, the value it decodes to when absent: `0`, `0.0`,
   `False`, `""`, `"0"` for a 64-bit integer held as a `String` (`0` as
   an `Int`), an enum's zero constructor, `Nothing`, `[]`, `Dict.empty`,
   `()` for `Empty`, and each oneof's
   unset constructor. The name is the naming layer's (`default` + the
   type name), in the value namespace with the encoders and decoders,
-  where it cannot collide (§3.7). The generated module gains a
+  where it cannot collide (§3.7). The generated module has a
   `-- DEFAULTS` section between its types and its encoders. A recursive
   message's default needs nothing special: a field that closes a cycle
   is a `Maybe`, `List` or `Dict` of the wrapper, so its default is
-  empty, and the wrapper has no default of its own. Generated getters
-  (`getStars : Note -> Int`, unwrapping a `Maybe` to its proto default)
-  were the alternative; rejected, since the defaults give the same
-  without a function per field.
+  empty, and the wrapper has no default of its own. The defaults take
+  the place of a getter per field (decisions.md: Defaults rather than
+  getters).
 - Recursive messages: `type alias Node = { children : List Node }` is
-  illegal in Elm. Wrap with a custom type as protoc-gen-elm does.
-  *(Decided.)* The shape:
+  illegal in Elm, so a recursive message is wrapped in a custom type,
+  as protoc-gen-elm does. The shape:
 
   ```elm
   type alias Node =
@@ -703,21 +683,19 @@ rpc shared call =
 - A custom type per enum. Constructor names are the enum name plus the
   value name with the conventional prefix stripped:
   `enum Status { STATUS_UNSPECIFIED = 0; STATUS_ACTIVE = 1; }` →
-  `StatusUnspecified | StatusActive`. *(Decided.)*
-- **A nested enum's prefix.** *(Decided, 2026-10-21.)* The conventional
+  `StatusUnspecified | StatusActive`.
+- **A nested enum's prefix.** The conventional
   prefix is the enum's own name in `UPPER_SNAKE_CASE`, as the protobuf
   style guide, buf's `ENUM_VALUE_PREFIX` lint rule and AIP-126 write
   it, and for a nested enum its whole nesting path is accepted as well:
   the longer of the two the value starts with is stripped, so in
   `message Note { enum Kind { … } }` both `KIND_DRAFT` and
-  `NOTE_KIND_DRAFT` → `NoteKindDraft` (`nesting` case). Before, only the
-  own name was stripped, and `NOTE_KIND_DRAFT` became
-  `NoteKindNoteKindDraft`. Two values that stripping makes one
+  `NOTE_KIND_DRAFT` → `NoteKindDraft` (`nesting` case). Two values that stripping makes one
   constructor (`KIND_DRAFT` beside `NOTE_KIND_DRAFT`) are
   `naming::constructor_collision`, with `rename` the escape.
 - Encoding uses the proto name string. Decoding accepts the name and
-  also the integer form, as the JSON spec allows. *(Decided.)*
-- **Unknown values.** *(Decided.)* An unknown **number**
+  also the integer form, as the JSON spec allows.
+- **Unknown values.** An unknown **number**
   decodes to the zero-value constructor: forward-tolerant, so a stale
   client survives a server that added a value, and lossy, since
   re-encoding sends the zero value's name back (§3.8). An unknown
@@ -725,7 +703,7 @@ rpc shared call =
   `Expecting a value of enum "Priority", but got "WHATEVER"`, the enum
   named as declared within its package (`Outer.Inner.Kind` when
   nested). A name is matched exactly.
-- **`enum_unknown=fail|zero`.** *(Decided, 2026-10-14.)* The
+- **`enum_unknown=fail|zero`.** The
   default, `fail`, is the behaviour above. `zero` reads an unknown
   **name** as the zero value too, so nothing a JSON string or integer
   holds fails an enum's decode (`Proto.Json.enumOrZero`, same arguments
@@ -742,9 +720,7 @@ rpc shared call =
   what was received, will come as an option and never as the default:
   as the default, every `case` on an enum would gain a branch nobody
   wants to think about ([decisions.md](decisions.md), roadmap).
-  `zero` was built first because it needs no change to the generated
-  types.
-- Generated shape *(Decided)*: the encoder is a `case` with one
+- Generated shape: the encoder is a `case` with one
   `Json.Encode.string "NAME"` branch per constructor, so the compiler
   checks it is total. The decoder is one call to the runtime's
   `Proto.Json.enum` (`Proto.Json.enumOrZero` under `enum_unknown=zero`),
@@ -753,16 +729,15 @@ rpc shared call =
   name. Inlined, the decoder would need two `case` expressions (one over
   names, one over numbers) with a fallback branch each, about three
   times the lines per value and nothing a reader learns from them.
-- Aliases (`allow_alias`) collapse. *(Decided, 2026-10-11.)* The values
+- Aliases (`allow_alias`) collapse. The values
   sharing a number are one constructor, named for the first declared
   value with that number, which the encoder writes. The decoder accepts
   every alias name and the number: each alias is a row of its own,
   after its constructor's, so `URGENT = 2` after `HIGH = 2` adds
   `( "URGENT", 2, PriorityHigh )`. An alias claims no constructor name,
-  so it cannot collide with one (§3.7). A constructor per name was the
-  first build; it made `HIGH` and `URGENT` distinct in Elm when they
-  are one value on the wire and in every other protobuf runtime, and a
-  number could decode to only one of them.
+  so it cannot collide with one (§3.7). `HIGH` and `URGENT` are one
+  value on the wire and in every other protobuf runtime, so they are
+  one in Elm (decisions.md: Enum aliases as one constructor).
 - Values are in declaration order, the zero value first, whatever their
   numbers.
 
@@ -772,12 +747,12 @@ rpc shared call =
 |---|---|---|
 | `double`, `float` | `Float` | |
 | `int32`, `sint32`, `sfixed32`, `uint32`, `fixed32` | `Int` | |
-| `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String`, or `Int` under `int64=int` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 *(Decided; see below)* |
+| `int64`, `sint64`, `sfixed64`, `uint64`, `fixed64` | `String`, or `Int` under `int64=int` | proto3 JSON encodes them as strings; Elm's `Int` loses precision past 2^53 (see below) |
 | `bool` | `Bool` | |
 | `string` | `String` | |
-| `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | *(Decided 2026-10-19; see below.)* |
+| `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | see below |
 
-Encoders leave out every field at its default. *(Decided.)*
+Encoders leave out every field at its default.
 A message's encoder is `Proto.Json.objectOfFields` over `( jsonName, Maybe
 Json.Encode.Value )` pairs, one per field, `Nothing` leaving the field
 out:
@@ -805,25 +780,22 @@ Why: request bodies shrink to what the message holds; protobuf-go's
 `protojson`, and so connect-go, writes the same way unless
 `EmitUnpopulated` is set; and every proto3 JSON parser, this runtime's
 decoders included, reads a missing field as its default, so nothing is
-lost. Encoders wrote every field, defaults included and `Nothing` as
-`null`, until 2026-10-15; proto3 JSON allows both.
+lost. proto3 JSON allows writing defaults too; the encoders do not.
 
 Decoders accept every form proto3 JSON requires a parser to accept, not
-just the form encoders write. *(Decided.)*
+just the form encoders write.
 
 - 32-bit integers as numbers or strings, in exponent notation too
   (`42`, `"42"`, `1e2`, `"1e2"`), through `Proto.Json.int32` (`int32`,
   `sint32`, `sfixed32`) and `Proto.Json.uint32` (`uint32`, `fixed32`).
   A fractional value fails, and so does one outside the proto type's
-  range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned. *(Decided.)*
+  range: −2^31 to 2^31 − 1 signed, 0 to 2^32 − 1 unsigned.
   A string is read as `Proto.Json.int64` reads one, then range-checked,
   so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
-  for a 64-bit value and for every integer map key. *(Decided
-  2026-10-19; a string went through `String.toFloat` before, which
-  took `"+5"`, `"1.e3"` and `".5e1"`.)*
+  for a 64-bit value and for every integer map key.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
-  notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). *(Decided.)* The
+  notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). The
   `String` form (`Proto.Json.int64`) is always the canonical decimal
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
   found by moving the decimal point as text, never through a `Float`,
@@ -832,8 +804,7 @@ just the form encoders write. *(Decided.)*
   −2^63 to 2^63 − 1 for `Proto.Json.int64`, 0 to 2^64 − 1 for
   `Proto.Json.uint64`, checked by comparing the canonical digits with
   the bound's as text, by length and then digit by digit, so no `Int`
-  arithmetic rounds them. *(Decided 2026-10-19; before, any value of up
-  to 20 digits passed, `"99999999999999999999"` included.)* More than
+  arithmetic rounds them. More than
   20 digits fails before the digits are written out, which bounds the
   text an exponent can ask for. A JSON number past 2^53 has been
   rounded by the JSON parser before the decoder sees it, and is checked
@@ -855,21 +826,17 @@ just the form encoders write. *(Decided.)*
   An object holding both keys fails, naming them (`Expecting
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
-  as a duplicate field. *(Decided.)* The same holds for every two-name
+  as a duplicate field. The same holds for every two-name
   helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`,
   `valueFieldEither`). The
   two names are equal only for one-word fields without an explicit
-  `json_name`, so in practice most multi-word fields use `fieldEither`. A list of names
-  (`field [ "title" ]`) was the alternative; it puts brackets on every
-  line to serve the minority case, and two names are the most there can
-  be.
+  `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
+  be (decisions.md: Decoder steps).
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
   `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `field "tags" [] (Json.Decode.list Json.Decode.string)`.
-  Separate `optional` and `list` steps would read a little shorter but
-  double the step functions (each needs a two-name form too) and hide
-  the zero value the reader otherwise sees.
+  repeated one `field "tags" [] (Json.Decode.list Json.Decode.string)`,
+  and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields
   rather than reading the whole object once per field. `in` also finds
@@ -884,7 +851,7 @@ just the form encoders write. *(Decided.)*
   `hasOwnProperty`, so a key of that name decodes wherever keys are
   listed: a prototype-named field, a map, a `Struct` or an `Any`.
 
-**Bytes** *(Decided 2026-10-19.)* The rule:
+**Bytes.** The rule:
 
 - By default a `bytes` field is a `String` holding the base64 text
   exactly as received; nothing normalises it. `Proto.Json.bytes`
@@ -919,22 +886,20 @@ just the form encoders write. *(Decided.)*
   rather than through `Proto.Json.implicitField`, which would leave out every
   value. `docs/generator.md`'s option row and `Proto.Bytes`'s documentation say
   this where a user meets `Bytes`.
-- Why `String` stays the default: the trap above. A record of `String`s
+- Why `String` is the default: the trap above. A record of `String`s
   compares, tests and diffs as its users expect; one holding `Bytes`
   silently does not, which is a bad thing to hand anyone who did not ask
-  for it. `Bytes` by default was rejected for that reason.
-- Why in the runtime: a separate `elm-connect-bytes` package, depending
-  on elm/bytes so the runtime would not, was the earlier plan. It is not
-  needed: elm/http, which the runtime requires, already depends on
-  elm/bytes, so every application has it and the runtime's direct
-  dependency adds nothing to install.
+  for it.
+- Why in the runtime: elm/http, which the runtime requires, already
+  depends on elm/bytes, so every application has it and the runtime's
+  direct dependency adds nothing to install.
 - A per-field override, as `jstype` is for 64-bit integers, is deferred.
   Protobuf's `jstype` is valid only on 64-bit integer fields (protoc
   rejects it elsewhere), so there is no standard field option to read;
   an override would be a generator option naming fields, additive later.
   No custom proto option is defined for it.
 
-**64-bit integers** *(Decided.)* The rule:
+**64-bit integers.** The rule:
 
 - By default the five 64-bit kinds are `String`, the decimal integer,
   exact for every value. Their zero value is `"0"`, which re-encodes as
@@ -957,13 +922,12 @@ just the form encoders write. *(Decided.)*
   and the `Int64Value`/`UInt64Value` wrappers too. Map **keys** stay
   `String` under either setting, since they are strings on the wire,
   but are validated and canonicalised as the `String` form's values are,
-  and two keys that canonicalise to one fail (§3.2). *(Decided.)*
+  and two keys that canonicalise to one fail (§3.2).
 - The unsigned 64-bit kinds refuse a negative value when decoded
   (`Proto.Json.uint64`, `uint64AsInt`), as the 32-bit ones do; the
-  encoders are the signed ones. *(Decided 2026-10-14; a negative
-  `uint64` decoded before.)*
-- Rejected: an opaque `Proto.Int64.Int64`, as protoc-gen-elm has.
-  *(Decided.)* A 64-bit value a program mostly passes
+  encoders are the signed ones.
+- There is no opaque `Proto.Int64.Int64`, as protoc-gen-elm has
+  (decisions.md: 64-bit integers and bytes as `String`). A 64-bit value a program mostly passes
   through or displays, such as an ID, a revision or a count, gains
   nothing from a wrapper it must unwrap to show or compare;
   `int64=int` and `jstype` exist for arithmetic within 2^53; and
@@ -983,23 +947,22 @@ The runtime provides the Elm types.
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
 | `google.protobuf.Duration` | `Proto.Duration` (opaque; `toSeconds : Duration -> Float`) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
-| `google.protobuf.Empty` | `()`, without presence | *(Decided; see below)* |
-| `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; *(Decided; see below)* |
-| `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; *(Decided; see below)* |
-| `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; *(Decided; see below)* |
+| `google.protobuf.Empty` | `()`, without presence | see below |
+| `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; see below |
+| `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; see below |
+| `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; see below |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | *(Decided)* the message's JSON plus `"@type"` on the wire |
+| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | the message's JSON plus `"@type"` on the wire |
 
-The in-house generator mapped `Timestamp` to `String` to avoid a
-dependency. With a runtime package required anyway (for the transports),
-the parser lives there and `Time.Posix` is the right type.
+The runtime package is required anyway (§5), so the RFC 3339 parser
+lives there and a `Timestamp` is a `Time.Posix`, not a `String`.
 
 In detail:
 
 - A field of `Timestamp`, `Duration` or `FieldMask` is a message
   field, so a singular one is a `Maybe` (§3.2): `Maybe Time.Posix`,
   `Maybe Duration`, `Maybe (List String)`.
-- `Empty` carries nothing, presence included. *(Decided.)* A singular
+- `Empty` carries nothing, presence included. A singular
   field of it, `optional` or not, is `()`: encoded as `{}` always,
   decoded as `()` whether the key holds an object, holds `null` or is
   absent. Repeated it is `List ()`, as a map value `Dict K ()`. A oneof
@@ -1011,7 +974,7 @@ In detail:
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
 - `Struct` is `Dict String Json.Encode.Value` and `ListValue` is
-  `List Json.Encode.Value`. *(Decided.)* They are messages, so presence
+  `List Json.Encode.Value`. They are messages, so presence
   is kept: a singular field of either is a `Maybe` like any message
   field, and an absent or `null` field (`Nothing`) is distinct from an
   empty object or array (`Just Dict.empty`, `Just []`). Their decoders
@@ -1020,7 +983,7 @@ In detail:
   `Proto.Json.encodeStruct` and `encodeListValue`. The members and
   elements are passed through as received.
 - A singular `Value` field, `optional` or not, is `Maybe
-  Json.Encode.Value`. *(Decided, 2026-10-19.)* `Value` is a message, and
+  Json.Encode.Value`. `Value` is a message, and
   `null` is one of its values: protojson reads `"payload": null` as set,
   holding `NullValue`, and only a missing key as unset. So a missing key
   is `Nothing`, and any JSON under the key is `Just` it, `null` included
@@ -1028,10 +991,9 @@ In detail:
   writes its JSON, `null` too. The step is `Proto.Json.valueField`
   (`valueFieldEither` when the names differ), which reads `null` as set
   where `field` reads it as the default. This keeps a default message
-  `{}` and matches `Struct` and `ListValue`. It replaces a bare
-  `Json.Encode.Value` that read a missing key as `null` and always wrote
-  the field, so a client that never touched it sent `null` and the
-  server saw it set. Repeated, as a map value and as a oneof member it
+  `{}` and matches `Struct` and `ListValue`, and a client that never
+  touches the field never sends it (decisions.md: `google.protobuf.Value`
+  fields as `Maybe`). Repeated, as a map value and as a oneof member it
   stays a bare `Json.Encode.Value`, passed through as received
   (`Json.Decode.value`, written back as is). A `Value` member of a oneof
   that arrives as `null` is set and holds `null`, as protojson reads it,
@@ -1054,16 +1016,15 @@ In detail:
   `fromSeconds` and `fromMilliseconds` give the limit for one past it
   (nanoseconds zero), and `fromSeconds` gives zero for NaN and the
   infinities, so every `Duration` prints as text `fromString` reads.
-  *(Decided 2026-10-19; they built any span before, which `toString`
-  wrote and `fromString` refused.)* The readers are `toSeconds` and
+  The readers are `toSeconds` and
   `toMilliseconds`, as `Proto.Int64.toInt` and `Proto.Bytes.toBase64`
   are, and not the nouns `seconds` and `milliseconds`: elm-units names
   its constructor `Duration.seconds`, so the noun would read as the
-  opposite conversion. *(Decided.)*
+  opposite conversion.
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
-- `Any` is in the runtime as `Proto.Any` *(Decided)*: an opaque `Any`
+- `Any` is in the runtime as `Proto.Any`: an opaque `Any`
   holding the type URL and the packed message, either as its JSON or, when only
   its protobuf binary arrived, as that binary (base64) alone. `pack`
   (prefix `type.googleapis.com/`) and `packWith` (another prefix) take
@@ -1086,34 +1047,26 @@ In detail:
   (no type URL; the typed value's default), as protojson reads it. A
   binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
-  `Proto.Json.any` does not read back. *(Moved from
-  `Proto.Any.encodeJson` and `jsonDecoder` 2026-10-19, so that generated
-  code reaches every well-known type's codecs through `Proto.Json`.)*
+  `Proto.Json.any` does not read back. They are in `Proto.Json` so that
+  generated code reaches every well-known type's codecs there.
 - A field of `Any` is a message field, so a singular one is a
   `Maybe Proto.Any.Any`; repeated it is `List Proto.Any.Any`, as a map
   value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
   encoded and decoded with `Proto.Json.encodeAny` and `Proto.Json.any`,
   and its descriptor kind is `Message "google.protobuf.Any"`. A method
-  taking or returning one uses those codecs too (`any_field` case). It was the `types::any` diagnostic until `Proto.Any` existed:
-  decoding one needs the registry the descriptors give, and unpacking
+  taking or returning one uses those codecs too (`any_field` case). Unpacking
   is left to the application, which knows the types it expects.
 - An `Any` field has no query form: its JSON is the packed message's,
   whose fields the route cannot know (`route::query_field`, §5.3).
 
 ### 3.6 Oneof
 
-*(Decided; see below.)* Two shapes were considered:
-
-- (a) A custom type with an `Unset` constructor, field typed as the
-  custom type: `message : NoteEventKind` where
-  `NoteEventKind = NoteEventKindUnset | NoteEventKindCreated Created | ...`.
-- (b) A custom type without `Unset`, field typed `Maybe NoteEventKind`.
-
-(b) is more idiomatic Elm and composes with `Maybe.map`. (a) puts every
-case in one `case`. The in-house generator uses (a).
-
-**Decided (2026-10-10):** (a). A plain union with the unset case as a
-constructor of the union itself, no `Maybe` wrapper.
+A oneof is a custom type with an `Unset` constructor, and its field is
+typed as the custom type: `kind : NoteEventKind` where
+`NoteEventKind = NoteEventKindUnset | NoteEventKindCreated Created | ...`.
+The unset case is a constructor of the union itself, with no `Maybe`
+wrapper, so every case is in one `case` (decisions.md: Oneofs as a
+union with an unset constructor).
 
 In detail:
 
@@ -1130,7 +1083,7 @@ In detail:
   messages), its unset constructor and a `Proto.Json.member` per
   member (`memberEither` when the JSON and proto names differ). The
   message's decoder reads it with a `Proto.Json.oneof` step.
-- Decoding is strict, as protobuf-go's protojson is. *(Decided.)*
+- Decoding is strict, as protobuf-go's protojson is.
   - A member is present when its key holds a value other than `null`;
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
@@ -1150,18 +1103,16 @@ In detail:
   argument (`NoteEventKindArchived`), encoded as `{"archived": {}}` and
   decoded by `Proto.Json.emptyMember`, which reads the key as set when
   it holds an object; `null` reads as unset, as for any member, and any
-  other value fails. *(Decided; §3.5.)*
-- `Json.Decode.oneOf` over the members, ending in
-  `Json.Decode.succeed` the unset constructor, was the first build. It
-  let a malformed member read as unset and took the first of several
-  members, and it cannot see two members at once, so it gave way to
-  `members`.
+  other value fails (§3.5).
+- `members` reads the members together: `Json.Decode.oneOf` over them
+  cannot see two members at once, and would let a malformed member
+  read as unset.
 
 ### 3.7 Naming
 
 - Field names → lowerCamelCase from the proto name (not `json_name`;
   `json_name` only affects the wire). Elm reserved words get a trailing
-  underscore (`type` → `type_`). *(Decided.)* A name starting with
+  underscore (`type` → `type_`). A name starting with
   capitals or underscores is converted too: after the underscores are
   dropped, the leading run of uppercase letters is lowercased, except
   that a run followed by a lowercase letter keeps its last letter, which
@@ -1171,39 +1122,33 @@ In detail:
   followed by a lone `s` (then the end, an uppercase letter, a digit or
   `_`) is a plural acronym, lowercased with its `s`: `IDs` → `ids`,
   `URLs` → `urls`, `APIs` → `apis`, `UUIDs` → `uuids`, `IDsSeen` →
-  `idsSeen`. *(Decided, 2026-10-21.)* The rule cannot tell `ID` + `s`
+  `idsSeen`. The rule cannot tell `ID` + `s`
   from `X` + `Is`, so `XIs` → `xis` too; that misreading is accepted,
-  and a `rename` gives such a name another. Before, `IDs` became `iDs`
-  (`URLs` `urLs`). Methods, oneofs
+  and a `rename` gives such a name another. Methods, oneofs
   and oneof members' descriptor values follow the same rule (`HTTPGet` →
   `httpGet`, `_Ping` → `ping`); types, enum constructors, modules and
   services do not (a message `URLPath` stays `URLPath`), and neither
   does a `rename`, which is taken as written. A name that is only
   underscores, or has a digit before its first letter (`_1x`), is still
   `naming::invalid_field` or `naming::invalid_method`: any Elm name for
-  it would be invented. *(Decided, 2026-10-20; `naming_first_letter`
-  case.)* Refusing a name that did not start with a lowercase letter was
-  the first build.
+  it would be invented (`naming_first_letter` case).
 - Collisions after casing (`foo_bar` and `fooBar` in one message, or
   a oneof `ID` beside a field `id`, which protoc accepts since it checks
   only fields' JSON names against each other) are
   `naming::field_collision`, not a silent rename. This is about
   collisions only: converting one name to its Elm form is not a rename.
-  *(Decided.)*
 - Nested messages and enums are flattened into their package's module,
   prefixed with the names of the messages enclosing them:
   `Outer.Inner` → `OuterInner`, `Outer.Inner.Kind` → `OuterInnerKind`.
-  *(Decided.)* A submodule per message (`Pkg.Outer.Inner`)
-  was considered and rejected: a parent referring to its own nested
+  There is no submodule per message (`Pkg.Outer.Inner`): a parent
+  referring to its own nested
   type would be an Elm module cycle. The descriptor modules (§3.1) are
   flat for the same reason, `Notes.V1.OuterInner` beside `Notes.V1.Outer`,
   and hold no types, so a message containing itself or its nested type
   needs no import between them (a field names a message by full name).
-  *(Confirmed 2026-10-19: a descriptor module follows its type's Elm
-  name, so one naming rule names both.)*
 - Type names that collide after nested-message flattening are a
-  diagnostic. *(Decided.)*
-- **Windows device names.** *(Decided, 2026-10-21.)* A module path
+  diagnostic.
+- **Windows device names.** A module path
   segment that is, ignoring case, `CON`, `PRN`, `AUX`, `NUL`, `COM1` to
   `COM9` or `LPT1` to `LPT9` is `naming::reserved_module` on every OS,
   as case-only module collisions are (§3.8): each segment is a
@@ -1214,8 +1159,8 @@ In detail:
   package's problem covers the modules inside it. Escape: `rename`. An
   option to accept them, for output that never reaches Windows, may
   come if asked; it is not built.
-- **The refusals kept for 1.0.** *(Decided, 2026-10-21.)* Each of these
-  stays a refusal, because any name the generator invented in its place
+- **The refusals.** Each of these
+  is a refusal, because any name the generator invented in its place
   would be unpredictable, or would depend on what else the protos
   declare, so that adding a message in a minor release of an API could
   silently rename an existing type. Each has an escape, and an escape
@@ -1246,7 +1191,7 @@ In detail:
   application's elm/* packages (`naming::shadowing_module`), both
   escaped by `module_prefix` or `rename` (§3.1).
 
-- **Field names the front end refuses.** *(Decided, 2026-10-21.)* Two
+- **Field names the front end refuses.** Two
   fields of one message whose names are the same once lowercased
   without underscores (`aB` and `ab`, `ID` and `id`, `ID` and `Id`)
   never reach the naming rules: prost-reflect, which both binaries build
@@ -1286,9 +1231,9 @@ As the `naming` and `naming_collision` cases show:
   (§3.9). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
-  `registry`, is all lowercase, so it is none of them. A suffix scheme was
-  rejected for the typed values: `encodeFooMessage` would be both the
-  encoder of `FooMessage` and the typed value of `EncodeFoo`.
+  `registry`, is all lowercase, so it is none of them. The typed values
+  take a prefix too, since under a suffix `encodeFooMessage` would be
+  both the encoder of `FooMessage` and the typed value of `EncodeFoo`.
 - A descriptor module's values are `descriptor` and one per field,
   named as its record field, but that a field or member named
   `descriptor` takes `descriptor_` (§3.1). A oneof member has no record
@@ -1315,7 +1260,7 @@ As the `naming` and `naming_collision` cases show:
   (`display_name` and `oneof displayName`), which
   `naming::field_collision` reports with both sites.
 
-**Rename map** *(Decided, 2026-10-14)*. The naming rules are
+**Rename map.** The naming rules are
 fixed, so a proto name they turn into no Elm name, or into one that
 collides, or simply into an unwanted one, needs a way past them that
 leaves the protos alone: the option `rename=<proto full name>:<Elm
@@ -1358,13 +1303,11 @@ underscores; a type or constructor an ASCII uppercase letter followed
 by letters and digits, with no underscore, so it cannot meet a
 recursive wrapper's (`Node_`); a value or record field an ASCII
 lowercase letter followed by letters, digits or underscores, not ending
-in an underscore, and not a reserved word. *(No trailing underscore:
-decided 2026-10-21.)* A derived value ends in `_` only as the
+in an underscore, and not a reserved word. A derived value ends in `_` only as the
 reserved-word escape (`type_`) or `descriptor_`, and the generator's
 own values end in one (`elmConnectVersion_`), so the promise of §3.1
 that a value it adds later cannot collide holds for renamed names too
-(`rename_invalid` case). Before, `foo_` and `get_` were accepted, and a
-rename to `elmConnectVersion_` was `naming::value_collision`. An enum
+(`rename_invalid` case). An enum
 value alias has no constructor of its own to
 rename, which is `options::invalid_rename` too. A proto name that
 resolves to nothing in the generated packages is
@@ -1374,7 +1317,7 @@ on that element's declaration, with a suggestion among that element's
 members only; or that the element's package is not generated, and how
 to generate it; or, when nothing resolves, the generated packages, with
 a suggestion among them (`suggestions` and `rename_unknown` cases). Names that collide after renaming are the
-`naming::*_collision` diagnostics, as before, and each `naming::*` help
+`naming::*_collision` diagnostics, as without a rename, and each `naming::*` help
 text names the escape, the `rename` of the element at fault by its proto
 full name (of a collision's second claimant, when renaming it would part
 them), with a placeholder for the Elm name (`rename` and
@@ -1387,7 +1330,7 @@ that rename instead (`rename_collision` case).
 Valid proto constructs whose Elm form drops a distinction the proto
 makes, or that the generator refuses with a diagnostic.
 
-The policy *(Decided)*: diagnostics stay the default, and
+The policy: diagnostics are the default, and
 each diagnostic names its escape, a generator option (§6) that gets the
 user past it, in its help text. An escape either generates the
 construct some other way or leaves it out; what it leaves out it
@@ -1440,8 +1383,7 @@ case names it):
   package has none; its help text says to add a package.
 - **A `google.protobuf` type without a mapping**
   (`types::unsupported_well_known`, `types_unsupported` case), such as
-  `Api` or `Type`. `Any`
-  was refused here (`types::any`) until it was built (§3.5). No escape
+  `Api` or `Type`. No escape
   yet.
 - **Package import cycles** (`generate::import_cycle`, `packages_cycle`
   case): Elm forbids import cycles. No escape yet; a module map,
@@ -1509,17 +1451,15 @@ case names it):
   `naming::shadowing_module`, §3.1). A `rename` to such a name is the same problem. Escape:
   `rename=`, and for a module `module_prefix=` (§3.7, §3.1); the help
   writes them as the front end in use takes them (`--rename` and
-  `--module-prefix` from the CLI). Qualifying the library names in an
-  affected module would generate working code instead; it is left open,
-  since it makes a module's text depend on what its package declares,
-  and a `rename` already gets past the clash.
+  `--module-prefix` from the CLI). Whether to qualify the library names
+  in an affected module instead is open (§9).
 - **Methods without an HTTP rule, when asked**: under
   `unbound_methods=error`, each one is `services::unbound_method`
   (`services_unbound_error` case; §4). The option is the user's own
   choice, and its escape is the default, `unbound_methods=implicit`,
   which the help names.
 
-### 3.9 Descriptors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
+### 3.9 Descriptors
 
 Every message and enum gets a descriptor, in a module of its own
 beside the package's (§3.1), and a typed value, in the package's
@@ -1586,16 +1526,13 @@ registry =
         (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
 ```
 
-- **The layout** *(Decided)*. A descriptor module holds
+- **The layout.** A descriptor module holds
   its `elmConnectVersion_`, then `descriptor`, then a message's fields
   in declaration order, each oneof's members where the oneof is, each
   value documented (what the field is, and its oneof). The package
   module's sections are types, defaults, typed values (each enum's,
   then each message's), the registry, encoders and decoders; a package
-  without types has the registry alone. Until 2026-10-19 each
-  descriptor was a value of the package module, `descriptorNote`, its
-  fields written inline, in a descriptors section beside the typed
-  values.
+  without types has the registry alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
   `Proto.Thing.Thing a` the typed value carrying it beside the type's
@@ -1603,7 +1540,7 @@ registry =
   and `Proto.Message.Message a`, `Proto.Enum.Descriptor` and
   `Proto.Enum.Enum a`, `Proto.Method.Descriptor` and
   `Proto.Method.Method req res` (§4, which holds the codecs of its types
-  but not their typed values). *(Decided.)* Nothing about a type is
+  but not their typed values). Nothing about a type is
   written twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
 - **The typed values are opaque**, built by positional functions and
@@ -1618,8 +1555,7 @@ registry =
   function, a type grows by a new modifier and a new reader, a minor,
   and code generated before compiles against the newer runtime. A
   builder takes its arguments positionally, never as one record
-  argument, which would freeze the shape the same way. The first shape
-  was record aliases written as literals. *(Decided, 2026-10-16.)*
+  argument, which would freeze the shape the same way.
 - **The trees are opaque too**, for the same reason, each built by a
   `descriptor` function and read in the module of its concept (§3.1):
   `Proto.Message` (`descriptor typeName fields`; `typeName`, `typeUrl`,
@@ -1640,14 +1576,10 @@ registry =
   for `[deprecated = true]`; an enum value likewise takes
   `|> Proto.EnumValue.withDeprecated`. A message's oneofs are the ones
   its fields name, in order of first appearance, derived by
-  the builder rather than written a second time. *(Decided, 2026-10-16.)*
-  The record form wrote every property of every field, its labels
-  included. *(Measured 2026-10-16.)* Against the record form, the
-  builders make the Connect conformance suite's generated Elm 5.9 %
-  smaller (126,211 to 118,711 bytes) and the notes example's 6.6 %
-  (98,345 to 91,863), though generated code refers to every module
-  qualified in full (`Proto.Field.CardinalitySingular`). An import
-  alias would save more; that is a separate question.
+  the builder rather than written a second time. Generated code refers
+  to every runtime module qualified in full
+  (`Proto.Field.CardinalitySingular`); whether to import them under an
+  alias is open (§9).
 - The trees are faithful to the proto, not to the
   Elm mapping: a message's full name, its fields in declaration order
   (name, JSON name, number, cardinality, kind, oneof, behavior,
@@ -1667,9 +1599,8 @@ registry =
   wherever the field is read alone, by a route's default path or query
   text (§5.3) and by UI code that renders the field. `Proto.Field`
   imports `Proto.Enum`, which imports only `Proto.EnumValue`, so no
-  import cycle forms either. *(Decided, 2026-10-19; `KindEnum` held the
-  full name before.)*
-- **The omission rule reads the cardinality.** *(Decided.)*
+  import cycle forms either.
+- **The omission rule reads the cardinality.**
   Whether a path variable or query parameter is sent at its field's
   default lives in the runtime (`Proto.Http.variable` and `param`,
   §5.3), which reads presence from the last field's descriptor: a
@@ -1695,7 +1626,6 @@ registry =
   the descriptor pool has it, which it does exactly when a proto
   imports it; a number this release does not name is kept as
   `BehaviorUnknown` and the unspecified zero is dropped.
-  *(Decided, 2026-10-16; `BehaviorUnknown` 2026-10-21.)*
 - **Descriptor data is added sparingly.** A program that uses the
   registry keeps every tree in it, and every program pays for the
   trees' source size, so a property joins the trees only when a use
@@ -1727,13 +1657,12 @@ registry =
   reflection; calls carry codecs only (§4), because Elm's dead-code
   elimination keeps a top-level value whole: a method holding a typed
   value would bring the type's default and descriptor tree into every
-  program that calls it. *(Decided.)* For the same reason
+  program that calls it. For the same reason
   each descriptor is a top-level value of its own (in its descriptor
   module) and the registry is built from those, never from the typed
   values: a registry of
-  `messageFoo.descriptor` kept every type's codecs and default in any
-  program that used it, which on a large API was most of the program.
-  *(Decided, 2026-10-16.)*
+  `messageFoo.descriptor` would keep every type's codecs and default in any
+  program that uses it, which on a large API is most of the program.
 - Each method's descriptor is a value of its own in its service's
   module, `descriptorGetNote`, which its call refers to (§4). Its name
   is derived from the method's, so it can collide only with a method
@@ -1753,48 +1682,24 @@ registry =
   elimination when nothing uses it. A package without types has a
   module holding its registry alone. It names each descriptor module's
   `descriptor`, so the package module imports every one of them.
-- **No option to leave the trees out.** A `descriptors=off` setting
-  that wrote the message trees empty and no registry was built,
-  measured (below) and dropped *(2026-10-14)*. It saved generated
-  bytes only, and it made a tree with no fields mean either a message
-  with none or descriptors switched off, a doubt every reader of the
-  trees (`Proto.Any.describe`, a registry lookup, `Proto.Enum`'s names
-  and numbers) would have carried. One knob fewer while the shape
-  settles; it can return, additively, if smaller modules turn out to
-  matter.
-- **Cost** *(measured 2026-10-14, Elm 0.19.2, Apple M4)*: a synthetic
-  package of 300 messages of eight fields and ten enums gives a package
-  module of 25,434 lines (1.13 MB) with descriptors and 22,277 lines
-  (0.66 MB) without. A cold `elm make` of a program using every decoder
-  takes the same time either way (5.2–6.6 s over three runs each, the
-  spread larger than the difference). The optimized program is 677 KB
-  (46 KB gzipped) without descriptors, the same with them when the
-  registry is unused, since dead-code elimination drops the trees, and
-  1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
-  always written: the cost falls on applications that use them. (That
-  measurement predates the descriptors' split from the typed values:
-  the registry then kept every type's codecs too.)
-- **Cost of the descriptor modules** *(measured 2026-10-19, Elm
-  0.19.2)*: the notes example's generated Elm goes from 5 modules of
-  2,652 lines (92,896 bytes) to 39 modules of 4,099 lines (128,572
-  bytes), and the Connect conformance suite's from 119,376 to 184,997
-  bytes. Most of the growth is per module (its header, imports and
-  `elmConnectVersion_`, about fifteen lines) and per value (a two-line
-  doc comment, and a field's own annotation and name). On a
-  synthetic package of 100 to 500 messages of eight fields, a cold
-  `elm make --optimize` takes the same time within run-to-run noise
-  (the superlinear growth is in the package module's types and codecs,
-  which do not move), peak memory is 1–12 % higher, and the optimized
-  program, with everything reachable through the registry, is 21–29 %
-  larger unminified, each field descriptor being a top-level value of
-  its own. Dead-code elimination works per top-level value, so a real
-  program pays for what it reaches: the notes example's optimized
-  bundle goes from 268 to 274 KB; a program reaching every call and the
-  registry, minified and gzipped, from 22.2 to 22.5 KB; a program that
-  only encodes and decodes is byte-identical; `elmConnectVersion_` is
-  dropped from every bundle.
+- **No option to leave the trees out.** Such an option would save
+  generated bytes only, and would make a tree with no fields mean
+  either a message with none or descriptors switched off, a doubt every
+  reader of the trees (`Proto.Any.describe`, a registry lookup,
+  `Proto.Enum`'s names and numbers) would carry (decisions.md: No
+  option to leave the descriptors out).
+- **Cost.** The trees are always written, and the cost falls on the
+  programs that use them. Dead-code elimination works per top-level
+  value, so a program pays for what it reaches: one that leaves the
+  registry unused keeps no message tree, one that only encodes and
+  decodes keeps no descriptor at all, and `elmConnectVersion_` is
+  dropped from every bundle. Each descriptor module adds a header,
+  imports and `elmConnectVersion_`, and each field a top-level value
+  with its doc comment, to the generated source. The measurements are
+  in decisions.md (No option to leave the descriptors out; Descriptors
+  in a module per type).
 
-## 4. Calls  *(Decided, 2026-10-13)*
+## 4. Calls
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
 beside the package's `Notes.V1`, holding a calls section with one
@@ -1861,10 +1766,8 @@ Both applications put one argument per line however short their
 arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
 keeps.
-*(Decided, 2026-10-16.)*
 
-- **A method's documentation shows its routes.** *(Decided,
-  2026-10-20.)* A call's doc comment gives the method's comment
+- **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
   own and its HTTP bindings as its `google.api.http` rule writes them,
   each with its `body` and `response_body` where set: one binding on
@@ -1877,8 +1780,8 @@ keeps.
   service's package would write them, relative to it inside it and by
   full name outside (`returns (google.protobuf.Empty)`); the call's
   annotation already names their Elm types. Why: the call is the
-  value a program uses, and the routes it may take were visible only as
-  `Proto.Http` data in its descriptor. The descriptor carries the
+  value a program uses, and the descriptor shows the routes it may take
+  only as `Proto.Http` data. The descriptor carries the
   comment and the declaration line.
   A service has no declaration of its own, so its module's
   documentation carries its comment and `` `service
@@ -1912,16 +1815,12 @@ keeps.
   `Proto.Method.Method` value is generated; `Rpc.Call.method` and
   `Rpc.Call.descriptor` read the method and its descriptor back from any
   call of it. Elm keeps a top-level value whole, and the call refers to
-  the descriptor value, so a program that calls the method keeps what
-  it kept when the descriptor was written inline, and one that does
-  not keeps neither. *(Decided, 2026-10-13; the descriptor became a
-  value of its own 2026-10-16.)* The first shape put the codecs
-  themselves in a descriptor record of `Rpc`'s; the second gave the
-  method its types' typed records (§3.9). A method now carries only
-  what the wire needs: the records hold each type's default and
-  descriptor tree, and Elm keeps a top-level value whole, so a call
-  through records cost about 16 KB gzipped over a client referencing
-  only the codecs in an application's bundle. *(Decided, 2026-10-15.)*
+  the descriptor value, so a program that calls the method keeps the
+  descriptor, and one that does not keeps neither. A method carries
+  only what the wire needs, its types' codecs and not their typed
+  values (§3.9), which hold each type's default and descriptor tree and
+  would come whole into every program that calls it (decisions.md:
+  Methods carry codecs only).
 - `idempotency` is the proto's `idempotency_level`, whole:
   `Proto.Method.IdempotencyUnknown` when unset,
   `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
@@ -1929,11 +1828,7 @@ keeps.
   (idempotent-only by default) retries either level, since an
   `IDEMPOTENT` method (a typical `Delete` or `Put`) is safe to repeat
   but not to cache. Transcoding takes its verb from the rule.
-  *(Decided, 2026-10-16.)* It was `idempotent : Bool`, true for
-  `NO_SIDE_EFFECTS` alone, so an `IDEMPOTENT` method was never retried
-  under `idempotentOnly`. `Rpc.Call.idempotency` reads it from a call;
-  it was `Rpc.idempotent : Call -> Bool` until the descriptor's three
-  levels made that a misnomer.
+  `Rpc.Call.idempotency` reads it from a call.
 - **Bindings are data.** `bindings` is the method's `google.api.http`
   rule as the generator parsed it (§4 routes, below): the rule's own
   binding first, then its `additional_bindings` in order, each a
@@ -1965,14 +1860,6 @@ keeps.
   again, so a retry or token-refresh wrapper closes over it, and a
   queue can store it; `req` keeps those uses typed.
 
-The first shape built was different: one module per package holding,
-after the codecs, a `Connect.Method` per method (`getNote`) and a
-`Transcode.Call` per binding (`getNoteHttp`, `getNoteHttp2`, …), a
-`transports=` option choosing which. It put route presence in the type
-(§2), named additional bindings by number, and put method values in one
-namespace with the codecs; the module per service, calls as data and
-`viaBinding` replace all three.
-
 In the IR (`ir::Service`, `ir::Method`):
 
 - Every service of a generated package, and each of its methods: the
@@ -1986,11 +1873,8 @@ In the IR (`ir::Service`, `ir::Method`):
   → `Notes`), so a conventionally named service keeps its name, and a
   name whose PascalCase form does not start with a letter is
   `naming::invalid_service`. The package module holds the types and
-  codecs only. *(Decided, 2026-10-13.)* One module for a package's
-  types and every service's methods was the first shape built; it put
-  method values in one namespace with each other across services and
-  with the codecs and defaults, so `DefaultSettings` beside a message
-  `Settings` clashed, and two services could not both have a `Get`.
+  codecs only, so a method's value shares no namespace with another
+  service's methods or with the codecs and defaults (below).
 - A method's value is its name converted as a field's is (`GetNote` →
   `getNote`, `HTTPGet` → `httpGet`), a reserved word escaped (`Type` →
   `type_`), and its descriptor's is
@@ -2064,9 +1948,7 @@ gets exactly this as data and never parses a template.
   `route.rs` so the two cannot drift. Its text is that JSON value
   (`/v1/at/2026-10-20T12%3A34%3A56Z`), as grpc-gateway reads it. `Empty`,
   `Any`, `Struct`, `Value` and `ListValue` stay refused, as does a
-  repeated one. *(Decided, 2026-10-20; `routes_well_known_path` case.)*
-  Refusing every message here was the first build, although
-  `route::query_field` already accepted these.
+  repeated one (`routes_well_known_path` case).
 - The client does not check a value against the variable's template
   (`notes/42` against `notes/*`): the server matches, and a mismatch is
   its 404.
@@ -2085,19 +1967,17 @@ gets exactly this as data and never parses a template.
 - Additional bindings follow the same rules and may not nest
   (`route::rule`, as is a rule with no pattern).
 
-## 5. Runtime  *(Decided unless marked)*
+## 5. Runtime
 
-**The package is kept.** *(Decided.)* The type layer was
-built against a runtime package from day one, because the JSON pipeline
-helpers and the well-known-type codecs would otherwise be inlined into
-every generated module, with the question of keeping it left open until
-its contents existed. They settle it: a shared type (`Duration`)
+**The runtime is a package.** Generated code is built against it
+rather than carrying the JSON pipeline helpers and the well-known-type
+codecs inlined into every generated module: a shared type (`Duration`)
 must be one type across every generated module and the application,
 which inlining cannot give; the codecs for timestamps as `Time.Posix`
 and the `Int64` helpers are one copy rather than one per module; and
-the coming transports belong in it too.
+the transports belong in it too.
 
-### 5.1 Config  *(Decided, 2026-10-13; frozen 2026-10-16)*
+### 5.1 Config
 
 ```elm
 type alias Config =                       -- frozen (§8.3)
@@ -2159,16 +2039,15 @@ breaking it (roadmap).
   proxy's quirks, stream framing) on `Transport`; a retry knob on
   `Retry`; a per-call one on `Call`; hooks on a future opaque
   `Rpc.Client` (an addition, so a minor); and JSON codec options are
-  the generator's, decided when code is generated. *(Decided,
-  2026-10-16.)* `Transport` was the exposed union `Connect { useGet,
-  maxGetUrl } | Transcode` and `Retry` a record until then; nearly every
-  protocol on the roadmap would have changed the union, and a cap or
-  jitter would have added a field to the record, each a major.
+  the generator's, decided when code is generated. As an exposed union,
+  `Transport` would change with nearly every protocol on the roadmap,
+  and as a record `Retry` with every new setting, each a major
+  (decisions.md: The config frozen).
 - Headers are name–value pairs rather than `Http.Header`, which is
   opaque, so a built request can be inspected and compared.
 - GET is off by default (`connect`), as in connect-es: a GET is only
   worth it where a cache sits in front of the server, and the
-  application knows that, not the generator. *(Decided.)*
+  application knows that, not the generator.
   `connectGet` sends an `IdempotencyNoSideEffects` method's call as a
   GET, which
   puts the request in URLs, and so in history and logs;
@@ -2190,8 +2069,7 @@ breaking it (roadmap).
   browser has received the body by then, so the limit bounds what is
   decoded and held, not what is downloaded. An error answer is read
   whatever its size, for its status. A limit below 1 refuses every body
-  with anything in it, and `checkConfig` reports it. *(Decided,
-  2026-10-20.)*
+  with anything in it, and `checkConfig` reports it.
 - `withWriteMaxBytes n` is its twin for the request: connect-go's
   `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
   default. A call whose request message, as the JSON a POST sends (for
@@ -2203,7 +2081,7 @@ breaking it (roadmap).
   URL and the invalid header, and never retried, since nothing was sent
   and nothing would change. The size is the call's message, not a
   request rewritten for `taskFromRequest`. A limit below 1 refuses
-  every call, and `checkConfig` reports it. *(Decided, 2026-10-20.)*
+  every call, and `checkConfig` reports it.
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
   number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
@@ -2221,14 +2099,14 @@ breaking it (roadmap).
   `Config -> List String`, empty when nothing is wrong, read as a list
   so later releases can report more. It reports invalid config headers
   too (below), each by name, its value left out since it may be a
-  credential. *(Decided.)*
+  credential.
 - A header a browser refuses is never handed to elm/http: a name that is
   not an RFC 9110 token, or a value that, once the spaces and tabs at
   either end are trimmed, holds NUL, CR or LF or a character above
   U+00FF (XHR's values are byte strings). XHR's `setRequestHeader`
   throws on such a header, and elm/http calls it outside any handler,
   inside the scheduler's step, so one bad value (a token with a
-  newline, a display name in CJK) stopped every Elm process for good:
+  newline, a display name in CJK) would stop every Elm process for good:
   no HTTP, no ports, no timers. Every way of sending (`send`,
   `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
   config's and the call's headers first, and a call with one fails
@@ -2236,7 +2114,7 @@ breaking it (roadmap).
   (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
   never altered to fit: a changed credential would fail later and less
   clearly. The pure `Rpc.request` still builds the request, which has
-  no error to give. *(Decided.)*
+  no error to give.
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
   code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
@@ -2248,7 +2126,7 @@ breaking it (roadmap).
   safety on idempotency; a timeout is the ambiguous case, since the
   request may have reached the server, and `DeadlineExceeded` belongs
   in `codes` only for calls safe to replay, which the idempotent-only
-  default keeps to. *(Decided.)*
+  default keeps to.
 - The wait before the second attempt is bounded by the backoff, 200 ms
   by default, doubling before each one after, never above the cap, 30 s
   by default (`withMaxBackoff`), nor above 2^31 − 1 ms, past which
@@ -2258,12 +2136,11 @@ breaking it (roadmap).
   command: the loop reads `Time.now` when an attempt fails and hashes
   its milliseconds with the attempt number (a 32-bit integer hash), so
   clients a millisecond apart draw unrelated waits. `withoutJitter`
-  waits each bound in full. *(Decided, 2026-10-16.)* The policy was
-  `{ attempts, backoff, codes, idempotentOnly }` without cap or jitter
-  until then: a long policy overflowed `setTimeout` into a tight loop,
-  and clients retried a recovering server in lockstep.
+  waits each bound in full. Without the cap a long policy would
+  overflow `setTimeout` into a tight loop, and without jitter clients
+  would retry a recovering server in lockstep.
 
-### 5.2 Rpc  *(Decided, 2026-10-13)*
+### 5.2 Rpc
 
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 `Rpc` is the one module that sends, beside a
@@ -2277,8 +2154,8 @@ public module names its type by an alias; `Body`, which no other module
 builds or matches, is defined in `Rpc.Body` (§3.1, rule 4). `Request` and
 `Response` are frozen records, each declared once in its module so
 that `Rpc`, `Rpc.Trace` and the internals share it without an import
-cycle (§3.1, rule 5); `Rpc` aliases both, so `Rpc.Request` and
-`Rpc.Response` name them in annotations as before. `Rpc` itself holds
+cycle (§3.1, rule 5); `Rpc` aliases both, so annotations name them
+`Rpc.Request` and `Rpc.Response`. `Rpc` itself holds
 the public API and the running of a call (sending, retrying, timing a
 trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Route` maps a call onto a binding's URL and body,
@@ -2293,10 +2170,10 @@ and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
-The names stay `Rpc` and `Proto.*`. *(Decided 2026-10-19.)* They say
-what the modules are: proto data, and RPC calls over either transport.
-They were `Connect.*` at first, a product prefix that tied proto3 JSON
-to one of the two transports; no public `Connect` module remains. The
+The names `Rpc` and `Proto.*` say what the modules are: proto data, and
+RPC calls over either transport, with no product prefix tying proto3
+JSON to one of the two (decisions.md: `Rpc` and `Proto` as the
+top-level names). The
 cost of short names is collision: an application with a module of its
 own named `Rpc` (or `Proto.Json`) cannot import either, since Elm 0.19
 refuses a module name defined twice: `AMBIGUOUS IMPORT`, "I found
@@ -2306,11 +2183,9 @@ defined locally", or with the runtime vendored as a source directory,
 The application renames its own module; generated modules go under
 `module_prefix` (§3.1, `docs/generator.md`'s option table); a package whose
 module would be one of the runtime's is refused
-(`naming::reserved_module`, §3.8). An option to
-move the runtime's own modules under a prefix was considered and
-deferred: it can only work where the runtime is vendored or bundled
-rather than installed as a package, and it is a complex option to carry
-before anyone asks for it.
+(`naming::reserved_module`, §3.8). There is no option to move the
+runtime's own modules under a prefix: it could only work where the
+runtime is vendored or bundled rather than installed as a package.
 
 ```elm
 -- Rpc.Request, Rpc.Response: frozen (§8.3)
@@ -2364,47 +2239,40 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   and `responseDecoder` (the typed values' `Proto.Message.encode` and
   `decoder` for `Any` and error details). Another encoding's codecs
   would arrive as a modifier of the opaque `Method` and `Message`
-  (§3.9), not as a field beside these. *(Decided, 2026-10-13; method
-  fields 2026-10-15; opaque 2026-10-16.)* The record form claimed its
-  codec names left room for binary codecs beside them, which Elm's
-  rules for records never allowed.
+  (§3.9), not as a field beside these (roadmap: binary protobuf).
 - A call's modifiers and readers live in `Rpc.Call`, the module its
   type is named in, as each opaque type has its own; `Rpc.call`, the
   constructor generated code applies, stays in `Rpc` beside an alias
   `Rpc.Call` of the type, so generated code imports `Rpc` alone and
-  its `Rpc.Call req res` annotations name the alias. *(Decided,
-  2026-10-16.)* They were in `Rpc`, where `Rpc.descriptor` read as too
-  generic beside the config, errors and requests the module also
-  handles.
+  its `Rpc.Call req res` annotations name the alias. In `Rpc`,
+  `Rpc.descriptor` would read as too generic beside the config, errors
+  and requests the module also handles.
 - The readers are `method` (the `Method`), `descriptor` (its
   descriptor), `serviceName`, `methodName` and `idempotency` (the
-  descriptor's, §4); the string accessors were `service` and `method`
-  until `method` named the record. *(Decided, 2026-10-13;
-  `idempotency` 2026-10-16.)*
+  descriptor's, §4).
 - `viaBinding n` is `Just` the call over binding `n` when the
   descriptor has one (`0` the rule's own, `1` and up its additional
   bindings), `Nothing` otherwise; a method without a rule gives
   `Nothing` for every number, and its unadjusted call takes the
   implicit route (§5.3). A call therefore always has a route, and
-  sending never fails for want of a binding. *(Decided.)*
+  sending never fails for want of a binding.
 - `Request` is the data form of the record `Http.request` takes,
   without `expect` and `tracker`: elm/http has no request value of its
   own, and its headers and body are opaque. Headers are pairs, the body
   an opaque `Rpc.Body` (`none`, `text`, read by `toText`), and
   `withCredentials` picks `Http.request` or `Http.riskyRequest`. It
   stays a record, so a rewriter changes it with record syntax, and is
-  frozen. The body was `Maybe String` until 2026-10-16: the bytes that
-  streaming envelopes, gRPC-web, binary protobuf and compression need
-  will arrive as another kind of `Body` (`bytes`), a minor, rather than
-  as a field.
+  frozen. The body is an opaque `Body` so that the bytes that streaming
+  envelopes, gRPC-web, binary protobuf and compression need can arrive
+  as another kind of `Body` (`bytes`), a minor, rather than as a field
+  (roadmap).
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
 - `send` and `sendTraced` take the message before the call, as
   `Task.attempt` and `Http.expectJson` take theirs before the data, so
   a call pipes into them as into `task`: `Notes.getNote req |> Rpc.send
-  config GotNote`. *(Decided, 2026-10-16.)* They took the call first
-  until then, which needed parentheses around every call.
+  config GotNote`.
 - `send` without a retry policy is one `Http.request`, carrying the
   call's tracker; with one, it is `Task.attempt` over `task`, and the
   tracker does not apply, since elm/http tracks commands only and
@@ -2425,20 +2293,12 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   the tasks (`task`, and `taskTraced` under `sendTraced`) ignore the
   tracker; one killed with `Process.kill` reports nothing and has no
   trace, its attempts and duration ending with the process.
-  *(Decided, 2026-10-16.)* It was plain `Http.cancel` when decided on
-  2026-10-13; on 2026-10-15 it took the call's `toMsg` and reported a
-  synthetic `Canceled` error, so the application would see every call
-  end exactly once. Review found that outcome wrong both ways: it was
-  reported when nothing was in flight (a cancel after the answer, or
-  of a tracker never used), and beside a retry policy, which drops the
-  tracker, the call reported `Canceled` and then its real result.
   Unary cancellation is rare, and an application that cancels holds
-  the locus of control to say so itself, so the runtime no longer
-  guesses. The exactly-once form is a later, additive design: a
-  model-held state machine (`Rpc.Pending` stepped by an `update`) that
-  owns the retry loop, so a retried call is cancellable and every call
-  reports one outcome; a streaming transport would need the same
-  machine, and would share it.
+  the locus of control to say so itself, so the runtime does not
+  guess; a synthetic outcome would be wrong both ways, reported when
+  nothing was in flight and, beside a retry policy, before the call's
+  real result (decisions.md: Cancelling reports nothing). Every call
+  reporting exactly one outcome is on the roadmap.
 - `Rpc.Trace` is opaque, made only by the runtime and read by
   accessors: `serviceName` and `methodName` (as a call's are named),
   `transport` (`Rpc.Transport.name` of the config's), `binding`
@@ -2456,12 +2316,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `code` as Connect spells it or `"ok"`, `duration`, `attempts`); `service`
   and `method` are `Rpc.Call.toJson`'s keys for a call. `toString` is one
   log line without the request, whose URL and body hold the message
-  and whose headers may hold credentials. *(Opaque, `code : Maybe Code` and
-  `transport` decided 2026-10-16; `httpStatus` and `code` 2026-10-13,
-  `headers` and `trailers` 2026-10-15.)* It was a record, so a new
-  field (per-attempt statuses, sizes once compression exists) would
-  have been a major; its `code : Rpc.Code` repeated the result beside
-  it.
+  and whose headers may hold credentials. It is opaque so that a new
+  field (per-attempt statuses, sizes once compression exists) is a
+  minor.
 - `splitTrailers` is the Connect unary rule for an answer's metadata:
   a header named `trailer-<name>`, in any case, is the trailer
   `<name>`, and the rest are headers; every name is lowercased. A
@@ -2472,7 +2329,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   elm/http's `_Http_parseHeaders` join repeated names' values with
   `", "` in the order they came, and names differing only in case are
   joined the same way when lowercased. The conformance suite's
-  duplicate-metadata tests accept the joined value. *(Decided.)*
+  duplicate-metadata tests accept the joined value.
 - Only the pure halves are unit-tested; elm-test cannot run a `Task`,
   so `task`, `send`, the traced forms and the retry loop are checked by
   the compiler and by the retry policy's own tests, and run against a
@@ -2488,16 +2345,16 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   cancellation test cancels calls sent through the halves (the tracker on `Http.request`), and a
   smoke case one sent with `send`; each is aborted, and the runner
   reports the cancellation it recorded itself, as an application
-  does (2026-10-16).
+  does.
 - The pure halves and the traced forms give the application an
   answer's headers and trailers; `task` and `send` give the response or
   the error and nothing more. The conformance suite's tests of response
   headers and trailers pass both through the halves and through
-  `sendTraced` (2026-10-15).
+  `sendTraced`.
 
 ### 5.3 Transports
 
-#### Connect  *(Decided)*
+#### Connect
 
 Run against connect-go by the live suite (§7): POST and GET, the
 timeout header, every method of the example API; and by the Connect
@@ -2524,7 +2381,7 @@ all 40 passing.
   in the runtime rather than taken from elm/url, whose `percentEncode`
   keeps `!*'()`, which the transcoding rules require escaped.
 
-#### Transcode  *(Decided, 2026-10-13)*
+#### Transcode
 
 Run against Vanguard by the live suite (§7): GET with query
 parameters, POST with a body field, PATCH with an update mask in the
@@ -2544,7 +2401,7 @@ default, and is `Nothing` for a number the method has no binding of
 (§5.2).
 
 - **Variables and parameters are paths of field descriptors.**
-  *(Decided, 2026-10-19.)* A variable is `Proto.Http.variable { fieldPath,
+  A variable is `Proto.Http.variable { fieldPath,
   template }` and a parameter `Proto.Http.param fieldPath`, where `fieldPath`
   is the path of `Proto.Field.Descriptor`s from the request message
   down to the field, each from its message's descriptor module (§3.1):
@@ -2560,22 +2417,18 @@ default, and is `Nothing` for a number the method has no binding of
   oneof, not a message) is, any other only when unset or empty. The
   generator keeps what may be a variable or a parameter (below) and
   writes the descriptors; the derivation exists once, in the runtime.
-  Before, the generator computed the names, JSON paths, default text
-  and omission and wrote them as positional strings
-  (`Proto.Http.variable [ "name" ] [ … ] ""`, `Proto.Http.param
-  "page_size" [ "pageSize" ] (Just "0")`). A variable of a
+  A variable of a
   well-known request (`{seconds}` of a `Timestamp`) is refused
   (`route::path_field`): its JSON is not an object of its fields.
 
 - **A body field and a response body are field descriptors.**
-  *(Decided, 2026-10-19.)* `Proto.Http.bodyField
+  `Proto.Http.bodyField
   Notes.V1.CreateNoteRequest.note` and `responseBody = Just
   Notes.V1.ListNotesResponse.notes`, so that every field a binding
   names is named one way. Each is one descriptor, not a path: the
   generator accepts as `body` only a singular message field at the top
   of the request, and as `response_body` only a field at the top of the
-  response. The runtime reads the field's `jsonName`, the key it read
-  before, so `Proto.Internal.Binding` is unchanged. A service module
+  response. The runtime reads the field's `jsonName` as the key. A service module
   imports the response's descriptor module when a binding names a
   response body; descriptor modules import no service module, so no
   cycle forms. A body field of a well-known request (`body:
@@ -2586,7 +2439,6 @@ default, and is `Nothing` for a number the method has no binding of
   Envoy accept the shape, since each reads the field from the message
   by reflection rather than from its JSON; the runtime here reads the
   encoded JSON by key, so the shape is refused until someone needs it.
-  Before, both took the field's JSON name as a string.
 
 - **The implicit route.** A method without a rule has no bindings, and
   is called as `POST /<package>.<Service>/<Method>` with the request as
@@ -2598,10 +2450,8 @@ default, and is `Nothing` for a number the method has no binding of
   not in the type. Its answer is read as a transcoder's (any 2xx).
   The live suite runs it against connect-go with Vanguard (§7).
 - Every call has a route: its binding, or the implicit route when the
-  method has no rule. An earlier build let `viaBinding` take any
-  number and failed at send time for one with no binding; making the
-  choice a `Maybe` moved that failure to where the number is chosen.
-  *(Decided, 2026-10-13.)*
+  method has no rule. A number the method has no binding of is refused
+  where it is chosen, by `viaBinding`'s `Maybe`, never at send time.
 - Success is any 2xx; an empty body reads as `{}`, and with
   `response_body` the answer is that field of the response.
 - Path variables are percent-encoded (every byte but RFC 3986's
@@ -2616,26 +2466,20 @@ default, and is `Nothing` for a number the method has no binding of
   bindings are written unchanged; this is a second line of defence for
   a binding built by hand with `Proto.Http.literal`, which could
   otherwise end the path with `#` or start a query with `?`.
-  *(Decided.)*
 - A path variable the request's JSON has no value for (a message on
   the way unset, or the field absent or `null`) is the text of the
   field's proto3 default, which the runtime reads from the variable's
   last field descriptor (`0`, `""`, `false`, an enum's zero name). An
   unset well-known field (a timestamp, a wrapper) is `""`, as an unset
   string is, so the server sees an empty segment there too; a
-  well-known type has no zero text of its own to send. *(Decided,
-  2026-10-20.)* proto3 reads the field as its default there, and a
-  server parses the segment as the field's type: Vanguard rejected the
-  empty segment the runtime sent before
-  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`, `invalid parameter
-  "inner.deep.b": unexpected end of JSON input`) and accepts `0`. A
-  server reads every message on the way as set, which the wire cannot
-  avoid (§7). *(Decided, 2026-10-15.)*
+  well-known type has no zero text of its own to send. proto3 reads
+  the field as its default there, and a server parses the segment as
+  the field's type, so an empty segment fails where `0` is accepted
+  (§7). A server reads every message on the way as set, which the wire
+  cannot avoid (§7).
 - Path from the template and the request; body from the `body` field
   (`*`, a named field, or none); remaining request fields as query
-  parameters on GET and DELETE, omitting zero values. *(Decided for
-  omission: the in-house generator sent them, which was harmless but
-  noisy.)*
+  parameters on GET and DELETE, omitting zero values.
 - Query parameters: unless `body` is `*`, every
   leaf of the request that is not bound by the path and not under the
   body field, in declaration order, depth first through singular
@@ -2651,7 +2495,7 @@ default, and is `Nothing` for a number the method has no binding of
   still compares a value with its parameter's default text, so JSON
   from another encoder (`Rpc.taskFromRequest`, the pure halves) gives
   the same query. Likewise a path variable missing from the JSON is
-  its default's text, which is now how every path field at its default
+  its default's text, which is how every path field at its default
   is written.
   Values are written as proto3 JSON writes them, unquoted: enums by
   name, 64-bit integers in decimal, timestamps in RFC 3339, field masks
@@ -2669,7 +2513,7 @@ default, and is `Nothing` for a number the method has no binding of
 
 [proto limits]: https://protobuf.dev/programming-guides/proto-limits/
 
-### 5.4 Errors  *(Decided, 2026-10-13; reshaped 2026-10-16)*
+### 5.4 Errors
 
 Every source is read from a live answer by the live suite (§7): a
 Connect body and a `google.rpc.Status` body, each with details read
@@ -2727,15 +2571,8 @@ type Code = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
 Success has no code: the `Result` a call ends with says whether it
 succeeded, as in connect-go, connect-es and connect-kotlin, whose
 `Code` is the sixteen error codes alone. A failed answer whose body
-says `ok` or `0` reads as `Unknown`. *(Decided, 2026-10-16.)* On
-2026-10-13 two modules were decided instead: `Rpc.ErrorCode` for these
-sixteen and `Rpc.Code`, `Ok | Failed ErrorCode`, so that a `Trace`
-could report a status whole. That decision is reversed: `Code` existed
-only for the trace, whose result already said whether the call
-succeeded, it copied every helper to add one case, and its `Ok` clashed
-with `Result.Ok` in every module. The trace's `error : Maybe Code`
-says the same, and the sixteen codes took the name `Code`. (Before that the
-two types shared one module, the helpers for `Code` prefixed.)
+says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
+`Nothing` on success (decisions.md: `Rpc.Code` without `Ok`).
 
 - `toHttpStatus` is the status a Connect server sends with a code, the
   Connect protocol's table, which is `google/rpc/code.proto`'s HTTP
@@ -2745,10 +2582,9 @@ two types shared one module, the helpers for `Code` prefixed.)
   where a 400 means a proxy or the transport refused the request, so it
   reads as `Internal`, not `InvalidArgument`.
 
-- One error type for every transport. Two were built first, one per
-  transport, on the grounds that the wire forms differ (`"code":
-  "not_found"` against `"code": 5`) and that knowing which one arrived
-  tells a developer which side misbehaved. `source` keeps that
+- One error type for every transport. The wire forms differ (`"code":
+  "not_found"` against `"code": 5`), and knowing which one arrived
+  tells a developer which side misbehaved: `source` keeps that
   information without making every caller handle two types, and a
   server behind a transcoder can answer in either form.
 - A failed answer is read by one reader whatever the transport, in
@@ -2772,42 +2608,32 @@ two types shared one module, the helpers for `Code` prefixed.)
   recognised it, so an application can parse what the readers do not
   (`HttpStatus response -> Rpc.Body.toText response.body`). Some servers cannot be
   changed to answer in a standard shape, and when the readers fall
-  through to the status table the body that said more was otherwise
-  lost. Reading the answer with the pure halves (§5.2) would work too,
+  through to the status table the body that said more would otherwise
+  be lost. Reading the answer with the pure halves (§5.2) would work too,
   but gives up the retry loop. A custom reader passed to the config as
   a function is the possible next step, deferred until a second
-  application asks for it. *(Decided, 2026-10-15; `BadResponse`
-  2026-10-16.)*
+  application asks for it.
 - A constructor per kind of error, and `code` and `message` for the
   common path (`case Rpc.Error.code error of Unauthenticated -> …`).
-  *(Decided, 2026-10-15.)* The answer was first kept on one flat
-  `Rpc` record beside `source`, whose `HttpStatus Int` marked an
-  inferred code, until review found it bought nothing: Elm's record
-  patterns bind field names and never match field values, so the
-  documented `Rpc { source = HttpStatus 404, response }` did not
-  parse, and helpers serve as well. A code the server stated and one inferred
+  A code the server stated and one inferred
   from the HTTP status are different kinds of error, which a
   constructor says honestly while `code` still gives one code for
-  both. `Source`'s `Int`s went too: `StatusBody`'s duplicated the raw
-  body and `HttpStatus`'s `statusCode`. A `Status = { code, message,
-  details }` alias wrapped in the constructor was rejected, since
-  `google.rpc.Status` generated from googleapis is already a
-  `Google.Rpc.Status` record with `code : Int`, and two `Status`
-  records with different code types would confuse; the record is
-  `StatusError` now, its constructor `RpcStatus`, which says the same
-  thing without the clash.
+  both. The record is `StatusError` and its constructor `RpcStatus`,
+  not `Status`: `google.rpc.Status` generated from googleapis is
+  already a `Google.Rpc.Status` record with `code : Int`, and two
+  `Status` records with different code types would confuse
+  (decisions.md: Errors by what came back).
 - The errors and their readers are a module of their own, `Rpc.Error`,
   as each type has its module (§5.2); `Rpc` keeps the alias `Error`
   so annotations naming `Rpc.Error` compile, and the readers are
-  `Rpc.Error.code`, `message`, `details` and `toString` (which was
-  `Rpc.errorToString`). *(Decided, 2026-10-16.)*
+  `Rpc.Error.code`, `message`, `details` and `toString`.
 - Every error has a code, the one the Connect clients give it when the
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
   `InvalidHeader` `Internal`, `RequestTooLarge` and `ResponseTooLarge`
-  `ResourceExhausted`. This settles whether a client timeout reads as
-  `DeadlineExceeded`: through `code` it does, while the constructor
+  `ResourceExhausted`. So a client timeout reads as
+  `DeadlineExceeded` through `code`, while the constructor
   still says no answer came. `message` gives a description for those
   (`timeout`, `network error`, `bad URL: <url>`, `invalid header
   "<name>"`, connect-es's `message size <size> is larger than
@@ -2819,8 +2645,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   printed without the `user:password@` a URL can carry and without its
   query and fragment, which over Connect's GET hold the request
   (`bad URL: https://api.example.com/base (query omitted)`); the whole
-  URL stays in the error. *(Decided, 2026-10-15; the URL's printing
-  2026-10-16.)*
+  URL stays in the error.
 - `Reason` and `StatusError` are frozen (§8.3): every failure a browser
   request can have before an answer is read is one of the reasons, and
   a later kind of failure found in an answer that was read (a malformed
@@ -2830,12 +2655,11 @@ two types shared one module, the helpers for `Code` prefixed.)
   whatever the policy's codes: nothing was sent, and nothing would
   change. `InvalidHeader` has its home here rather than in a
   constructor of its own beside `NoAnswer`, since it is one more reason
-  nothing was sent (§5.1). *(Decided, 2026-10-16.)*
+  nothing was sent (§5.1).
 - `ResponseTooLarge { limit, size }` is the answer over the receive limit
   (§5.1): it arrived, but was dropped before it was decoded, so it is a
   reason no answer was read and carries no `Response`; keeping one would
-  keep the body the limit is there to drop. It was added before 1.0
-  because `Reason` freezes then. connect-go and connect-node have the
+  keep the body the limit is there to drop. connect-go and connect-node have the
   knob and connect-web does not, and the conformance suite tests it
   only for servers (§7); it is kept because an Elm program is not only
   a browser one (§1), and because server streaming will check each
@@ -2845,39 +2669,28 @@ two types shared one module, the helpers for `Code` prefixed.)
   `RequestTooLarge { limit, size }` is the request over the send limit,
   never sent. The two are distinct constructors, as connect-es's
   messages are distinct, so a caller can tell a request it must shrink
-  from an answer it asked not to read. *(Decided, 2026-10-20.)*
-- The shape until 2026-10-16 was `Status { code, message, details,
-  source } Response | Http Response | Transport Http.Error | Canceled`
-  (2026-10-15). Review found three of the four names clashing:
-  `Transport` with the `Rpc.Transport` type and module (`Rpc.Transport
-  _ ->` beside `transport = Rpc.Transport.transcode`), `Canceled` with
-  `Rpc.Code.Canceled` in every module exposing both, `Http` with the
-  `Http` module. `Transport Http.Error` put elm/http's type in the API,
-  so an elm/http major would have forced one here, and it let user code
-  match `Http.BadStatus`, which the runtime never produced. And a 2xx
-  whose body did not decode was `Transport (Http.BadBody _)`, which
-  dropped the answer, the status and body a developer most needs when a
-  schema drifts. So the constructors say what came back (`RpcStatus`,
-  `HttpStatus`, `BadResponse`, `NoAnswer`), the runtime maps elm/http's
-  errors to its own `Reason`, and `BadResponse` keeps the answer.
-  `Canceled` went with the synthetic cancel outcome (§5.2).
-- Error details are `Proto.Any.Any` values (§3.5). *(Decided,
-  2026-10-13.)* A `google.rpc.Status` body holds them as proto3 JSON
+  from an answer it asked not to read.
+- The constructors say what came back (`RpcStatus`, `HttpStatus`,
+  `BadResponse`, `NoAnswer`), and the runtime maps elm/http's errors to
+  its own `Reason`, so no elm/http type is in the API and an elm/http
+  major forces none here; `BadResponse` keeps the answer, the status
+  and body a developer most needs when a schema drifts (decisions.md:
+  Errors by what came back).
+- Error details are `Proto.Any.Any` values (§3.5). A `google.rpc.Status` body holds them as proto3 JSON
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64
   binary>, "debug": <JSON, optional>}`, read as an `Any` of that type
   (`type.googleapis.com/` prefixed unless the name holds a `/`) whose
   payload is `debug` when present and the binary alone otherwise. Each
   detail is read in either form whichever body it came in, the proto3
   form first; one in neither form is left out rather than losing the
-  error's code and message with it. They were raw JSON values first,
-  until `Any` was designed.
+  error's code and message with it.
 - `Rpc.Error.details : Proto.Message.Message a -> Error -> List a` gives
   the details that are of that type and decode, in order; only an
   `RpcStatus` error has any. A binary-only detail never decodes: details meant for
   this client need their JSON on the wire, as `debug` in a Connect body
   or, as always, in a `google.rpc.Status` body.
 
-## 6. Generator  *(Decided unless marked)*
+## 6. Generator
 
 - Rust. One workspace: `elm-connect-gen` (library), `protoc-gen-elm-connect`
   (protoc plugin, reads `CodeGeneratorRequest` on stdin; it answers
@@ -2887,7 +2700,7 @@ two types shared one module, the helpers for `Code` prefixed.)
 - Output is produced from a typed Elm AST and a printer tuned to match
   `elm-format` (`elm-connect-gen::elm`). The conformance suite runs
   `elm-format --validate` on every golden file to keep that true.
-  *(Decided.)* No Wadler-style printer was needed: fixed rules choose
+  The printer is not Wadler-style: fixed rules choose
   one line or several per construct, laid out on a port of elm-format's
   own block model (text, tab stops, prefix, indent), and a corpus test
   holds the output to `elm-format --validate` and `elm make`.
@@ -2896,10 +2709,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   `enum_unknown=fail|zero`,
   `rename=<proto full name>:<Elm name>` (repeatable) and
   `module_prefix=`; an option for unrecognised enum values (§3.3) is on
-  the roadmap. A
-  `transports=` option, choosing which transports' values were
-  generated, went with the shape it chose between (§4). *(Decided,
-  2026-10-13.)*
+  the roadmap.
   As the plugin and the CLI take them: `int64` (§3.4; `--elm-connect_opt=int64=int`, or
   `elm-connect gen --int64 int`), `bytes` (§3.4;
   `--elm-connect_opt=bytes=bytes`, or `elm-connect gen --bytes bytes`),
@@ -2920,8 +2730,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   together. A conformance case sets options with an
   `options.txt` holding that parameter, and a case whose parameter has
   problems expects them as its `diagnostics.txt`.
-- The CLI's `--include-imports` flag *(Decided, 2026-10-15;
-  narrowed 2026-10-16)*, named after buf's: the CLI also generates every
+- The CLI's `--include-imports` flag, named after buf's: the CLI also generates every
   imported file that declares a message or enum the requested packages
   refer to, through fields and method types, transitively (a file
   generated is generated whole, so its own references count too), bar
@@ -2929,10 +2738,10 @@ two types shared one module, the helpers for `Code` prefixed.)
   generated from those files alone, not whole as a requested package is
   (§3.1): an import used only for its options, such as
   `google/api/client.proto`, `field_behavior.proto` or the googleapis
-  files the CLI embeds for `google.api.http`, contributes nothing, and
-  before this rule it brought a `Google.Api` module of some thirty
-  unused types, `HttpRule` among them, into every API that imported
-  one. A service is never referred to, so an imported file of services
+  files the CLI embeds for `google.api.http`, contributes nothing,
+  rather than a `Google.Api` module of some thirty unused types,
+  `HttpRule` among them, in every API that imports one. A service is
+  never referred to, so an imported file of services
   alone is not generated either (`crates/elm-connect/tests/generate.rs`).
   The plugin cannot do the same under `buf generate --include-imports`,
   which sends every import as a file to generate: there it skips only
@@ -2967,7 +2776,7 @@ two types shared one module, the helpers for `Code` prefixed.)
   returned by the library as `Generated::warnings` beside
   `Generated::files`.
 
-## 7. Conformance  *(Decided)*
+## 7. Conformance
 
 The harness is `conformance/cases/` and the
 `conformance` test of `elm-connect-gen`, described in
@@ -2987,9 +2796,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   elements; it is compared with the generator's own without sources and,
   by problem code, with `diagnostics.txt` and `warnings.txt`.
 - Route fixtures: a JSON file of `(template, request) → (path, query,
-  body)` expectations, checked against the generator's parser. The same
-  file is intended to be consumable by a server-side implementation so
-  the two ends can prove agreement without sharing code.
+  body)` expectations, checked against the generator's parser. A
+  server-side implementation can consume the same file, so the two
+  ends can prove agreement without sharing code.
   They are `conformance/routes/` (layout in
   `conformance/README.md`): `routes.proto` gives the request messages and
   the rules, since a request's JSON names fields by JSON name and the
@@ -3083,15 +2892,14 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   or `FloatValue` holding NaN or an infinity, which it writes as
   `null`; an `Any` without a type URL).
 
-### Live verification *(Decided 2026-10-15)*
+### Live verification
 
 The corpus and the route fixtures prove what is generated and what
-request a call becomes; nothing above proves that a server accepts
-that request or that the runtime reads its answer. The HTTP path
+request a call becomes; the live suite proves that a server accepts
+that request and that the runtime reads its answer, over the HTTP path
 (`Rpc.task`, `send`, `sendTraced`, retries, timeouts,
 `withCredentials`, trackers, the error reader and the transcoding
-request builder) was compile-checked and unit-tested only. Five
-workstreams, in order, closed that; all five are built (2026-10-15):
+request builder), which unit tests cannot run. It has five parts:
 
 1. **Runner**: one example API, one server answering it over
    Connect and transcoding from one process, and a headless runner
@@ -3106,9 +2914,9 @@ workstreams, in order, closed that; all five are built (2026-10-15):
    asserting path, query, body, response and the `google.rpc.Status`
    error body, reusing the route fixtures' expectations where they
    overlap.
-4. **Examples**: `examples/notes/` gains a browser application over
-   either transport and a walkthrough; the README's snippets move into
-   it so CI compiles them.
+4. **Examples**: `examples/notes/` holds a browser application over
+   either transport and a walkthrough, and the README's snippets live
+   in it, so CI compiles them.
 5. **CI**: a `live` job on Ubuntu, built with the
    runner and given its caches with the examples.
 
@@ -3127,23 +2935,21 @@ Decisions:
   --include-imports` (`buf.gen.include-imports.yaml`) and checks it
   gives the committed files, so the googleapis files that only carry
   `google.api.http` are not generated when asked for either (§3.1).
-- *(Decided 2026-10-15.)* The protos generation reads are vendored, not
+- The protos generation reads are vendored, not
   fetched: googleapis' few files the example imports
   (`examples/notes/third_party/googleapis/`) and the conformance suite's
   (`conformance/live/suite/proto/`), each exported once with `buf export`
   at the commit the Buf Schema Registry pinned and refreshed by `just
-  protos-refresh`. Fetching them was a dependency on the registry being
-  up whenever buf's cache was cold, a developer's first run or CI's
-  after a pin changed, and the registry was unavailable five times in one
-  day of runs; vendored, `buf generate` needs no network.
+  protos-refresh`. Fetched, they would depend on the registry being
+  up whenever buf's cache is cold, a developer's first run or CI's
+  after a pin changes; vendored, `buf generate` needs no network
+  (decisions.md: Vendored protos for the live suite).
 - HTTP/1.1 only, without TLS: elm/http cannot choose a protocol, and a
   browser handles the rest.
 - The runner sends through its own `XMLHttpRequest` over `node:http`
   (`conformance/live/xhr.mjs`), the subset elm/http uses, with a
   browser's whole-exchange timeout; it hides no response header and
   reports each exchange, so a case can assert what went over the wire.
-  xhr2 was the candidate and was not taken: unmaintained since 2022,
-  its timeout is socket idleness and its status text is invented.
 - `just live` is not part of `just check`, which needs neither Go nor
   the network; CI runs it as its own job.
 
@@ -3196,14 +3002,14 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   cancelled while it runs on. `Basic/unary/success`, `Connect with
   GET/success`, `Duplicate Metadata/unary/success` and `unary/error`, and
   `Errors/unary/error-with-metadata` assert the answer's headers and
-  trailers; they failed through `sendTraced` until the `Trace` carried
-  them (2026-10-15), and would through `send` and `task`, which do not
+  trailers; they pass through `sendTraced`, whose `Trace` carries
+  them, and would fail through `send` and `task`, which do not
   give them (§5.2).
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `NoAnswer Timeout`, as a Connect client gives its own deadline.
-- The receive limit is declared (`supportsMessageReceiveLimit: true`,
-  2026-10-20): the wrapper applies a request's `message_receive_limit`
+- The receive limit is declared (`supportsMessageReceiveLimit: true`):
+  the wrapper applies a request's `message_receive_limit`
   with `withReadMaxBytes` (0 is no limit) and reports `ResponseTooLarge` as
   `resource_exhausted`. v1.0.6 has no client-mode case that relies on
   it (its one such suite, Server Message Size, tests servers over the
@@ -3213,7 +3019,7 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   send limit; the `writeMaxBytes` cases there show a refused
   call sends nothing, and a GET's limit counts the JSON before
   it is percent-encoded.
-Workstream 3: the example server also serves the
+Transcoding live tests: the example server also serves the
 route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
 the request Vanguard decoded, and `conformance/live/routes.mjs` sends
 every fixture through the runtime with its binding. It checks (a) the
@@ -3239,10 +3045,9 @@ Vanguard's answer so that a change either way is noticed:
   Vanguard rejects (it quotes a wrapper's value for protojson only when
   non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
   string.
-- A path variable under an unset message was sent as an empty segment
-  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejected as
-  no int32. The runtime now writes the field's default (§5.3), and
-  Vanguard accepts `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
+- A path variable under an unset message is sent as the field's
+  default (§5.3), and Vanguard accepts
+  `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
   `inner` and `inner.deep` as set and empty where the request left
   them unset. Neither end is wrong: a path segment sets its field and
   every message on the way, and no path leaves them unset.
@@ -3251,10 +3056,9 @@ Vanguard's answer so that a change either way is noticed:
 
 Also seen, not a divergence: with `body: "*"` the runtime sends
 `"sub": {}` for a message whose only field the path holds, which the
-fixtures' comparison drops. It also wrote fields at their defaults
-until encoders left them out (§3.4).
+fixtures' comparison drops.
 
-Workstream 4: `examples/notes/elm/` is a browser
+Examples: `examples/notes/elm/` is a browser
 application (`Main.elm`) that lists, creates, edits with an update
 mask, archives and deletes notes, and shows each error's code, message,
 source and details (`google.rpc.BadRequest` and `ErrorInfo` by type,
@@ -3274,13 +3078,13 @@ every one in `just check`, and `just live` compiles the application and
 `src/Snippets/`, the README's and the guides' examples the application does not
 contain. A snippet that computes something, the update mask's, has
 tests in the example's `tests/`, which `just check` runs against the
-generated notes modules. The service-module snippets of §2.1 and §4 stay illustrations:
+generated notes modules. The service-module snippets of §2.1 and §4 are illustrations:
 they elide (`…`) what the generated module spells out, and §4's is
 pinned by the `services` case's expected output. Not verified: the
 application is driven by hand in a browser, not by the live suite; the
 calls it makes are the suite's.
 
-Workstream 5: the `live` job caches Go's modules and
+CI: the `live` job caches Go's modules and
 build cache, npm's downloads, Elm's packages and the `connectconformance`
 binary, each keyed on the files that pin it (`go.sum`;
 `package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and
@@ -3388,7 +3192,7 @@ which the runtime reads as `GrpcHeaders`, without details.
   a status it has no name for, which becomes an `HttpStatus` error's
   message; and the header-only form carries no details.
 
-What is now verified live, against connect-go, Vanguard, grpc-gateway
+What is verified live, against connect-go, Vanguard, grpc-gateway
 and Envoy: every method of the example API over both transports, from
 Node in CI (transcoding under all three transcoders) and by hand from
 the example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
@@ -3399,16 +3203,11 @@ the transcoding request builder on every route fixture, under all three
 transcoders; the error reader's header-only form against Envoy; the Connect conformance suite's unary JSON cases;
 `taskFromRequest` with a rewritten request; and cancellation, through
 the halves and through `send` (§5.2). Not live: `response_body`
-(§5.3).
+(§5.3). The notes example serves verification, which makes it too
+much to learn from first; small examples for learning from are on the
+roadmap.
 
-Recorded for later: a pass of small, well-documented examples for learning from (medium priority, 2026-10-15): the notes
-example was meant to double as the implementation to consult, and
-serves verification well, but carrying both transports, the error
-panel and the live suite's needs makes it too much to learn from
-first; teaching wants a few short examples that each show one thing,
-kept compiling the same way.
-
-## 8. Compatibility and versioning  *(Decided)*
+## 8. Compatibility and versioning
 
 ### 8.1 One version
 
@@ -3477,12 +3276,9 @@ kept compiling the same way.
 - The sentinel is strict: generated code names the release that
   generated it, not the oldest runtime it could run against, so the
   ordinary gate, the corpus compiled against the runtime of the same
-  commit (§7), proves exactly the pair that ships. A looser variant is
-  recorded for later: as protobuf-go's generated code names a minimum
-  runtime vintage, the generator could name the oldest release whose
-  runtime has everything the generated code uses. That changes only
-  the generator (which value it names) and adds a CI job compiling the
-  corpus against that older runtime.
+  commit (§7), proves exactly the pair that ships (decisions.md: One
+  version, in lockstep, and a strict sentinel, which records the looser
+  variant).
 - `crates/elm-connect-gen/tests/lockstep.rs` tests that `Proto.Version`
   exposes the value `SENTINEL` names and every earlier value of its
   major, and that every expected module of the corpus names it.
@@ -3576,7 +3372,7 @@ Within a major version:
   `--out` whose first line is the generated-file notice above naming a
   proto file the run generated from, but which generating no longer
   gives. Files without the notice are left alone, since an application
-  may keep its own modules in the same directory. *(Decided.)*
+  may keep its own modules in the same directory.
   A generated file whose notice names none of the run's protos is left
   alone too: two `gen` runs may share an `--out` (two APIs, or one
   package under other options), and each run's check would otherwise
@@ -3601,7 +3397,7 @@ Within a major version:
 ### 8.6 Elm compilers
 
 - Elm 0.19.2 is the development target; 0.19.0 and 0.19.1 are checked
-  in CI. *(Decided.)* A CI job per earlier release installs the
+  in CI. A CI job per earlier release installs the
   official Linux binary (checksum pinned) and runs
   `conformance/compile-with.sh`, which compiles the runtime package (with
   `--docs`) and every case's expected output against a copy of the
@@ -3744,8 +3540,20 @@ unpublish, only yank: a published version stays.
 
 ## 9. Open questions, collected
 
-The questions this section collected are settled, and recorded with
-their reasons in [decisions.md](decisions.md).
+Two questions are open. The settled ones are recorded with their
+reasons in [decisions.md](decisions.md).
+
+- **Qualifying library names in an affected module.** A type or
+  constructor named like one its module uses unqualified is
+  `naming::reserved_name` (§3.8). Qualifying the library names in that
+  module would generate working code instead, but it makes a module's
+  text depend on what its package declares, and a `rename` already gets
+  past the clash.
+- **Importing the runtime's modules under an alias.** Generated code
+  refers to every runtime module qualified in full
+  (`Proto.Field.CardinalitySingular`, §3.9). An import alias would make
+  the generated source smaller than the builders alone do (decisions.md:
+  Descriptor trees built by functions).
 
 ## 10. Out of scope but recorded
 
