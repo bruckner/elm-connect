@@ -156,36 +156,11 @@ as the project grows.
 
 ## Documentation
 
-- [docs/install.md](docs/install.md): the binaries, the runtime in
-  `elm.json`, googleapis, versions.
-- [docs/quickstart.md](docs/quickstart.md): from a proto to a call, in
-  `elm repl` and in a test.
-- [docs/generator.md](docs/generator.md): what a proto becomes in Elm,
-  the options, `check`, and running the plugin.
-- [docs/calling.md](docs/calling.md): configs, transports, retries,
-  errors, tracing, cancelling, and the pure halves.
-- [docs/descriptors.md](docs/descriptors.md): descriptors, the registry,
-  `Any`, error details and update masks.
-- [docs/transcoding.md](docs/transcoding.md): `google.api.http` in
-  practice, server options, and where transcoders differ.
-- [docs/envoy.md](docs/envoy.md): the notes example behind Envoy's
-  gRPC-JSON transcoder, run with func-e and tested live.
-- [docs/compared.md](docs/compared.md): the other Elm tools and the
-  OpenAPI route.
-- [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
-  what gets past it.
-- [docs/guide.md](docs/guide.md): working on a project that uses
-  elm-connect: `check`, diagnostics and their escapes; `elm-connect
-  guide` prints it.
-- [docs/design.md](docs/design.md): the design, with its reasons.
-- [docs/decisions.md](docs/decisions.md): what was decided, when, and
-  what the alternative was.
-- [docs/roadmap.md](docs/roadmap.md): what 1.0 leaves out and what may
-  come after it.
-- [ARCHITECTURE.md](ARCHITECTURE.md): the generator's pipeline, the
-  runtime's layers and the test layers, for changing them.
-- [examples/notes](examples/notes): an API, its Go server, and a browser
-  application on its generated client, with a walkthrough.
+[docs/README.md](docs/README.md) maps every page: getting started,
+the reference pages, the specifications, and the design, decisions and
+roadmap behind the project. [ARCHITECTURE.md](ARCHITECTURE.md) maps the
+code for changing it, and [examples/notes](examples/notes) is a complete
+application on a generated client, with a walkthrough.
 
 ## Developing
 
