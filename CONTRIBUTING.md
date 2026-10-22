@@ -142,8 +142,8 @@ a decision updates the document in the same PR.
 ## Docs ride with the change
 
 Whatever a change makes true lands in the same pull request as the
-change, ideally the same commit: a design-doc status, a README
-paragraph, a `CHANGELOG.md` line. A documentation-only PR is for work
+change, ideally the same commit: a design rule, a decision record, a
+README paragraph, a `CHANGELOG.md` line. A documentation-only PR is for work
 that *is* the document, such as a design revision, not for catching up
 on bookkeeping after the fact.
 
