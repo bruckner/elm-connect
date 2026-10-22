@@ -87,7 +87,7 @@ a second transport and a public interface designed to be kept.
   becoming output (roadmap).
 - Server code generation.
 
-## 2. The layering  *(Decided; reshaped 2026-10-13)*
+## 2. The layering
 
 Generated code carries no transport. Three layers, the first two data:
 
@@ -107,22 +107,20 @@ Generated code carries no transport. Three layers, the first two data:
    and sends it as a `Task` or a `Cmd`, or gives the HTTP request it
    stands for and reads the answer without sending anything (§5.2).
 
-This is the shape connect-es arrived at in v2 (service descriptors from
+This is connect-es's shape since its v2 (service descriptors from
 `protoc-gen-es`, transport in the runtime) and the shape anmolitor's
-protoc-gen-elm uses (service module as data, elm-grpc as transport). It
-dissolves the "one plugin or two" question: one plugin emits layers 1
-and 2; the transport choice is made in the config, which an
-application builds once or per call.
+protoc-gen-elm uses (service module as data, elm-grpc as transport).
+One plugin emits layers 1 and 2, whichever transport a call takes; the
+transport is chosen in the config, which an application builds once or
+per call.
 
 Every method can be called over either transport. A method without an
 HTTP rule goes over the implicit route the transcoders serve (§4), so
-whether a method has a rule is not in its type. *(Decided, 2026-10-13.)*
-The first shape built made it one: a `Connect.Method` per method and a
-`Transcode.Call` per binding, so a method without a rule could not be
-passed to the transcoding transport at all. That split every helper an
-application wrote around calls into two, to guard against a server
-configuration the generator cannot see; `unbound_methods=error` (§6)
-keeps the guard for the servers that need it.
+whether a method has a rule is not in its type: in the type, it would
+split every helper an application writes around calls into two, to
+guard against a server configuration the generator cannot see.
+`unbound_methods=error` (§6) gives that guard to the servers that need
+it (decisions.md: Calls are data, with pure halves).
 
 ### 2.1 Before and after
 

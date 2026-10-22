@@ -202,7 +202,11 @@ HTTP request a call stands for and reading an answer without sending
 anything. The first shape was a `Connect.Method` per method and a
 `Transcode.Call` per binding, chosen by a `transports=` option, which
 put route presence in the type and named additional bindings by
-number. A call carrying every binding has nothing to fuse,
+number: a method without a rule could not be passed to the transcoding
+transport at all, so every helper an application wrote around calls
+split in two, guarding against a server configuration the generator
+cannot see; `unbound_methods=error` keeps that guard as an option. A
+call carrying every binding has nothing to fuse,
 `Rpc.Call.viaBinding n` picks a binding without a name for it, and a
 method without a rule takes the implicit route. The same shape is
 connect-es's in its second version. Where: design §2, §4, §5.2.
