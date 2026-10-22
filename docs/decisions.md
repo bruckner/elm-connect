@@ -43,6 +43,17 @@ possible. It would be a major (modules leave the package) and is
 revisited only for a transport whose runtime is mostly its own. Where:
 design §3.1.
 
+### The design as a specification
+
+*2026-10-22.*
+
+The design says what the system does, in the present tense; the
+history and the alternatives are on this page. Until then its headings
+and paragraphs carried status markers, *Decided* with the date a point
+was settled or reshaped, and §5 and §6 were "Decided unless marked",
+with nothing in them marked otherwise. The dates are kept in the
+entries here. Where: the design's opening paragraph.
+
 ## Generated types
 
 ### 64-bit integers and bytes as `String`

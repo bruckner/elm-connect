@@ -1,12 +1,10 @@
 # elm-connect — design
 
-**Status:** draft, open for iteration. Each section describes what is
-built. A *Decided* marker says a point was argued and settled, with a
-date where one says when an earlier shape gave way; nothing is
-*Proposed* or *Open* at present. The reasons behind the settled questions are in
-[decisions.md](decisions.md), and what may come later is in
-[roadmap.md](roadmap.md). Change this document by pull request; the PR
-discussion is the design record.
+This is the design contract: each section says what the system does
+and the rules it keeps. Why a rule is what it is, what else was
+considered and what it replaced are in [decisions.md](decisions.md),
+and what may come later is in [roadmap.md](roadmap.md). Change this
+document by pull request; the PR discussion is the design record.
 
 ## 1. What this is
 
