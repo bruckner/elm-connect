@@ -2775,7 +2775,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   returned by the library as `Generated::warnings` beside
   `Generated::files`.
 
-## 7. Conformance  *(Decided)*
+## 7. Conformance
 
 The harness is `conformance/cases/` and the
 `conformance` test of `elm-connect-gen`, described in
@@ -2795,9 +2795,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   elements; it is compared with the generator's own without sources and,
   by problem code, with `diagnostics.txt` and `warnings.txt`.
 - Route fixtures: a JSON file of `(template, request) → (path, query,
-  body)` expectations, checked against the generator's parser. The same
-  file is intended to be consumable by a server-side implementation so
-  the two ends can prove agreement without sharing code.
+  body)` expectations, checked against the generator's parser. A
+  server-side implementation can consume the same file, so the two
+  ends can prove agreement without sharing code.
   They are `conformance/routes/` (layout in
   `conformance/README.md`): `routes.proto` gives the request messages and
   the rules, since a request's JSON names fields by JSON name and the
@@ -2891,15 +2891,14 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   or `FloatValue` holding NaN or an infinity, which it writes as
   `null`; an `Any` without a type URL).
 
-### Live verification *(Decided 2026-10-15)*
+### Live verification
 
 The corpus and the route fixtures prove what is generated and what
-request a call becomes; nothing above proves that a server accepts
-that request or that the runtime reads its answer. The HTTP path
+request a call becomes; the live suite proves that a server accepts
+that request and that the runtime reads its answer, over the HTTP path
 (`Rpc.task`, `send`, `sendTraced`, retries, timeouts,
 `withCredentials`, trackers, the error reader and the transcoding
-request builder) was compile-checked and unit-tested only. Five
-workstreams, in order, closed that; all five are built (2026-10-15):
+request builder), which unit tests cannot run. It has five parts:
 
 1. **Runner**: one example API, one server answering it over
    Connect and transcoding from one process, and a headless runner
@@ -2914,9 +2913,9 @@ workstreams, in order, closed that; all five are built (2026-10-15):
    asserting path, query, body, response and the `google.rpc.Status`
    error body, reusing the route fixtures' expectations where they
    overlap.
-4. **Examples**: `examples/notes/` gains a browser application over
-   either transport and a walkthrough; the README's snippets move into
-   it so CI compiles them.
+4. **Examples**: `examples/notes/` holds a browser application over
+   either transport and a walkthrough, and the README's snippets live
+   in it, so CI compiles them.
 5. **CI**: a `live` job on Ubuntu, built with the
    runner and given its caches with the examples.
 
@@ -2935,23 +2934,21 @@ Decisions:
   --include-imports` (`buf.gen.include-imports.yaml`) and checks it
   gives the committed files, so the googleapis files that only carry
   `google.api.http` are not generated when asked for either (§3.1).
-- *(Decided 2026-10-15.)* The protos generation reads are vendored, not
+- The protos generation reads are vendored, not
   fetched: googleapis' few files the example imports
   (`examples/notes/third_party/googleapis/`) and the conformance suite's
   (`conformance/live/suite/proto/`), each exported once with `buf export`
   at the commit the Buf Schema Registry pinned and refreshed by `just
-  protos-refresh`. Fetching them was a dependency on the registry being
-  up whenever buf's cache was cold, a developer's first run or CI's
-  after a pin changed, and the registry was unavailable five times in one
-  day of runs; vendored, `buf generate` needs no network.
+  protos-refresh`. Fetched, they would depend on the registry being
+  up whenever buf's cache is cold, a developer's first run or CI's
+  after a pin changes; vendored, `buf generate` needs no network
+  (decisions.md: Vendored protos for the live suite).
 - HTTP/1.1 only, without TLS: elm/http cannot choose a protocol, and a
   browser handles the rest.
 - The runner sends through its own `XMLHttpRequest` over `node:http`
   (`conformance/live/xhr.mjs`), the subset elm/http uses, with a
   browser's whole-exchange timeout; it hides no response header and
   reports each exchange, so a case can assert what went over the wire.
-  xhr2 was the candidate and was not taken: unmaintained since 2022,
-  its timeout is socket idleness and its status text is invented.
 - `just live` is not part of `just check`, which needs neither Go nor
   the network; CI runs it as its own job.
 
@@ -3004,14 +3001,14 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   cancelled while it runs on. `Basic/unary/success`, `Connect with
   GET/success`, `Duplicate Metadata/unary/success` and `unary/error`, and
   `Errors/unary/error-with-metadata` assert the answer's headers and
-  trailers; they failed through `sendTraced` until the `Trace` carried
-  them (2026-10-15), and would through `send` and `task`, which do not
+  trailers; they pass through `sendTraced`, whose `Trace` carries
+  them, and would fail through `send` and `task`, which do not
   give them (§5.2).
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
   `NoAnswer Timeout`, as a Connect client gives its own deadline.
-- The receive limit is declared (`supportsMessageReceiveLimit: true`,
-  2026-10-20): the wrapper applies a request's `message_receive_limit`
+- The receive limit is declared (`supportsMessageReceiveLimit: true`):
+  the wrapper applies a request's `message_receive_limit`
   with `withReadMaxBytes` (0 is no limit) and reports `ResponseTooLarge` as
   `resource_exhausted`. v1.0.6 has no client-mode case that relies on
   it (its one such suite, Server Message Size, tests servers over the
@@ -3021,7 +3018,7 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   send limit; the `writeMaxBytes` cases there show a refused
   call sends nothing, and a GET's limit counts the JSON before
   it is percent-encoded.
-Workstream 3: the example server also serves the
+Transcoding live tests: the example server also serves the
 route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
 the request Vanguard decoded, and `conformance/live/routes.mjs` sends
 every fixture through the runtime with its binding. It checks (a) the
@@ -3047,10 +3044,9 @@ Vanguard's answer so that a change either way is noticed:
   Vanguard rejects (it quotes a wrapper's value for protojson only when
   non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
   string.
-- A path variable under an unset message was sent as an empty segment
-  (`/v1/typed/0/false/KIND_UNSPECIFIED/0/`), which Vanguard rejected as
-  no int32. The runtime now writes the field's default (§5.3), and
-  Vanguard accepts `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
+- A path variable under an unset message is sent as the field's
+  default (§5.3), and Vanguard accepts
+  `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
   `inner` and `inner.deep` as set and empty where the request left
   them unset. Neither end is wrong: a path segment sets its field and
   every message on the way, and no path leaves them unset.
@@ -3059,10 +3055,9 @@ Vanguard's answer so that a change either way is noticed:
 
 Also seen, not a divergence: with `body: "*"` the runtime sends
 `"sub": {}` for a message whose only field the path holds, which the
-fixtures' comparison drops. It also wrote fields at their defaults
-until encoders left them out (§3.4).
+fixtures' comparison drops.
 
-Workstream 4: `examples/notes/elm/` is a browser
+Examples: `examples/notes/elm/` is a browser
 application (`Main.elm`) that lists, creates, edits with an update
 mask, archives and deletes notes, and shows each error's code, message,
 source and details (`google.rpc.BadRequest` and `ErrorInfo` by type,
@@ -3082,13 +3077,13 @@ every one in `just check`, and `just live` compiles the application and
 `src/Snippets/`, the README's and the guides' examples the application does not
 contain. A snippet that computes something, the update mask's, has
 tests in the example's `tests/`, which `just check` runs against the
-generated notes modules. The service-module snippets of §2.1 and §4 stay illustrations:
+generated notes modules. The service-module snippets of §2.1 and §4 are illustrations:
 they elide (`…`) what the generated module spells out, and §4's is
 pinned by the `services` case's expected output. Not verified: the
 application is driven by hand in a browser, not by the live suite; the
 calls it makes are the suite's.
 
-Workstream 5: the `live` job caches Go's modules and
+CI: the `live` job caches Go's modules and
 build cache, npm's downloads, Elm's packages and the `connectconformance`
 binary, each keyed on the files that pin it (`go.sum`;
 `package-lock.json`; the `elm.json`s; `fetch-conformance.sh`), and
@@ -3196,7 +3191,7 @@ which the runtime reads as `GrpcHeaders`, without details.
   a status it has no name for, which becomes an `HttpStatus` error's
   message; and the header-only form carries no details.
 
-What is now verified live, against connect-go, Vanguard, grpc-gateway
+What is verified live, against connect-go, Vanguard, grpc-gateway
 and Envoy: every method of the example API over both transports, from
 Node in CI (transcoding under all three transcoders) and by hand from
 the example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
@@ -3207,14 +3202,9 @@ the transcoding request builder on every route fixture, under all three
 transcoders; the error reader's header-only form against Envoy; the Connect conformance suite's unary JSON cases;
 `taskFromRequest` with a rewritten request; and cancellation, through
 the halves and through `send` (§5.2). Not live: `response_body`
-(§5.3).
-
-Recorded for later: a pass of small, well-documented examples for learning from (medium priority, 2026-10-15): the notes
-example was meant to double as the implementation to consult, and
-serves verification well, but carrying both transports, the error
-panel and the live suite's needs makes it too much to learn from
-first; teaching wants a few short examples that each show one thing,
-kept compiling the same way.
+(§5.3). The notes example serves verification, which makes it too
+much to learn from first; small examples for learning from are on the
+roadmap.
 
 ## 8. Compatibility and versioning  *(Decided)*
 

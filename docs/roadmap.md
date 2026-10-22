@@ -200,6 +200,15 @@ escape, as [diagnostics.md](diagnostics.md) lists them. Additive flags:
 a minor. (`elm-connect guide`, printing the
 [guide](guide.md), is built.)
 
+## Small examples for learning from
+
+The notes example was meant to double as the implementation to
+consult, and serves verification well, but carrying both transports,
+the error panel and the live suite's needs makes it too much to learn
+from first ([design §7](design.md)). Teaching wants a few short,
+well-documented examples that each show one thing, kept compiling the
+same way. No version impact.
+
 ## Consolidating the test suites
 
 A pass over the test layers (the conformance corpus, the route

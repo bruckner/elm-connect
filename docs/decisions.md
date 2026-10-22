@@ -844,6 +844,37 @@ Where: design §6.
 
 ## Verification
 
+### Live verification
+
+*2026-10-15.*
+
+Until then the corpus and the route fixtures proved what is generated
+and what request a call becomes, and the HTTP path (`Rpc.task`, `send`,
+`sendTraced`, retries, timeouts, `withCredentials`, trackers, the error
+reader and the transcoding request builder) was compile-checked and
+unit-tested only. Five workstreams, in order, closed that, all built on
+2026-10-15: a runner over one example API and one Go server, the
+Connect conformance suite, the transcoding live tests, the notes
+example with the README's snippets moved into it, and CI's `live` job.
+The server is connect-go with Vanguard, the canonical Connect stack.
+The runner's `XMLHttpRequest` is its own: xhr2 was the candidate and
+was not taken, being unmaintained since 2022, its timeout socket
+idleness and its status text invented. The suite's tests of response
+headers and trailers failed through `sendTraced` until the `Trace`
+carried them, the same day. The receive limit was declared to the
+suite on 2026-10-20, with the limit itself. Where: design §7.
+
+### Vendored protos for the live suite
+
+*2026-10-15.*
+
+The protos the example and the conformance suite generate from are
+vendored, exported once with `buf export` at the commit the Buf Schema
+Registry pinned and refreshed by `just protos-refresh`. Fetching them
+was the alternative, and the first build: a dependency on the registry
+being up whenever buf's cache was cold, a developer's first run or
+CI's after a pin changed, and the registry was unavailable five times
+in one day of runs. Where: design §7.
 
 ### Envoy through func-e, pinned through mise, in CI
 
