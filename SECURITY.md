@@ -30,6 +30,38 @@ What to expect:
   agree on another date with you. You are credited in the advisory
   unless you ask not to be.
 
+## Verifying a release
+
+A release is built from its tag, a commit on `main` named by the bare
+version (`1.2.0`), by the repository's release workflow
+(`.github/workflows/release.yml`), which checks out the tag afresh,
+uses no caches, and builds with `--locked`, so with the dependency
+versions `Cargo.lock` pins, under the Rust version the crates declare.
+Release tags cannot be moved or deleted, and nothing is published
+until the maintainer approves the run (design §8.7 in `docs/design.md`
+has the whole process).
+
+Two checks tie a downloaded archive to that build:
+
+- `SHA256SUMS`, attached to the release, lists every archive's
+  checksum: `sha256sum --check SHA256SUMS --ignore-missing` beside the
+  downloaded archive.
+- Every archive and `SHA256SUMS` carry a build-provenance attestation
+  signed for the release workflow's run:
+  `gh attestation verify <archive> --repo bruckner/elm-connect` checks
+  that this repository's release workflow built the file, and from
+  which commit.
+
+The Elm package's `src/` is the tagged tree's: the Elm package index
+reads the package from the tag on GitHub, and the release workflow
+builds the package's documentation from the tag and compares it with
+the index's copy, failing the release on any difference.
+
+[docs/install.md](docs/install.md#prebuilt-binaries) walks through the
+download and both checks. A checksum or an attestation that does not
+verify, or a package whose contents differ from its tag, is a security
+problem: report it privately, as above.
+
 ## Scope
 
 In scope for the generator:

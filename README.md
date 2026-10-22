@@ -60,7 +60,11 @@ it would be a minor or a major release.
 
 ## Install
 
-The CLI:
+Each release has prebuilt binaries of the CLI and the protoc plugin for
+Linux, macOS and Windows on the
+[Releases](https://github.com/bruckner/elm-connect/releases) page, with
+checksums and build attestations to verify them. Or build them with
+Cargo. The CLI:
 ```sh
 cargo install --locked --git https://github.com/bruckner/elm-connect elm-connect
 ```
@@ -71,10 +75,11 @@ cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-
 ```
 
 The CLI, `elm-connect`, needs nothing else. The plugin runs under protoc
-or buf. The runtime is an Elm package, but it isn't published yet. For now,
-it can be read from a clone's `src/` as a source directory.
-[docs/install.md](docs/install.md) has more details including a complete
-`elm.json`, googleapis for protoc and buf, and how the versions line up.
+or buf. The runtime is an Elm package, published to the package index from
+1.0.0; until then, it can be read from a clone's `src/` as a source directory.
+[docs/install.md](docs/install.md) has more details including verifying a
+download, a complete `elm.json`, googleapis for protoc and buf, and how the
+versions line up.
 
 ## Quick start
 
