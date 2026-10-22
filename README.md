@@ -53,8 +53,9 @@ against connect-go v2.0.1 and over transcoding against Vanguard v0.5.0
 and grpc-gateway v2.32.0, with the route fixtures under both
 transcoders.
 
-Nothing is on crates.io or the Elm package index yet; 1.0 is the next
-release. Streaming, binary protobuf and gRPC-Web are out of scope for
+Releases before 1.0 carry prebuilt binaries and put the crates on
+crates.io; the Elm package reaches the package index at 1.0.
+Streaming, binary protobuf and gRPC-Web are out of scope for
 1.x; [docs/roadmap.md](docs/roadmap.md) says what may come, and whether
 it would be a minor or a major release.
 

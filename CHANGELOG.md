@@ -1127,3 +1127,9 @@ tag (design §8).
   binaries, and says how to check an archive against the release's
   `SHA256SUMS` and its build attestation; `SECURITY.md` says what a
   release is built from and what those checks prove.
+- Each release carries prebuilt binaries of `elm-connect` and
+  `protoc-gen-elm-connect` for Linux (musl), macOS and Windows on x86-64
+  and arm64, with a `SHA256SUMS` file and build provenance attestations
+  (`gh attestation verify`). The release workflow publishes the crates
+  and the Elm package from 1.0.0, in jobs gated on the `release`
+  environment's approval.

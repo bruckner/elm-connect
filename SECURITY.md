@@ -52,10 +52,11 @@ Two checks tie a downloaded archive to that build:
   that this repository's release workflow built the file, and from
   which commit.
 
-The Elm package's `src/` is the tagged tree's: the Elm package index
-reads the package from the tag on GitHub, and the release workflow
-builds the package's documentation from the tag and compares it with
-the index's copy, failing the release on any difference.
+The Elm package's `src/` is the tagged tree's: `elm publish` checks
+that the tag on GitHub names the commit being published and that the
+tree matches it, and the release workflow then builds the package's documentation from the tag
+and compares it with the index's copy, failing the release if the
+index did not store what was built.
 
 [docs/install.md](docs/install.md#prebuilt-binaries) walks through the
 download and both checks. A checksum or an attestation that does not
