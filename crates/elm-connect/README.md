@@ -5,8 +5,8 @@ straight from `.proto` files, without protoc: one Elm module per proto
 package, with types, JSON codecs, defaults, descriptors and a typed call
 for each unary method, to use with the
 [`bruckner/elm-connect`](https://github.com/bruckner/elm-connect) Elm
-package, a client-side implementation of Connect, over the Connect
-protocol or `google.api.http` transcoding.
+package, an independent, client-side implementation of ConnectRPC,
+over the Connect protocol or `google.api.http` transcoding.
 
 ```sh
 cargo install --locked elm-connect

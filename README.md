@@ -1,7 +1,8 @@
 # elm-connect
 
-An Elm implementation of [Connect](https://connectrpc.com/) (client-side
-only), elm-connect allows Elm apps to call gRPC servers from the browser.
+An independent Elm implementation of [ConnectRPC](https://connectrpc.com/)
+(client-side only), elm-connect allows Elm apps to call gRPC servers from
+the browser.
 
 elm-connect provides idiomatic Elm code generation from `.proto` files:
 types, JSON codecs, defaults, descriptors, and type-safe API clients built

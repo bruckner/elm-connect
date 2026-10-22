@@ -1,13 +1,13 @@
 # elm-connect documentation
 
-elm-connect is an Elm implementation of Connect, client-side only: a
-generator that turns `.proto` files into idiomatic Elm (types, JSON
-codecs, defaults, descriptors and a typed client per service), and a
-runtime that sends the calls over the Connect protocol or through
-`google.api.http` transcoding. Start with [install.md](install.md) and
-[quickstart.md](quickstart.md), and keep [guide.md](guide.md) at hand
-while working on a project that uses it. The rest are reference pages,
-for when a question comes up.
+elm-connect is an independent Elm implementation of ConnectRPC,
+client-side only: a generator that turns `.proto` files into idiomatic
+Elm (types, JSON codecs, defaults, descriptors and a typed client per
+service), and a runtime that sends the calls over the Connect protocol
+or through `google.api.http` transcoding. Start with
+[install.md](install.md) and [quickstart.md](quickstart.md), and keep
+[guide.md](guide.md) at hand while working on a project that uses it.
+The rest are reference pages, for when a question comes up.
 
 ## Getting started
 
