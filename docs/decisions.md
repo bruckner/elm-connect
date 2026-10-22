@@ -69,8 +69,11 @@ mostly passes through or displays (an ID, a revision, a count) gains
 nothing from a wrapper it must unwrap to show or compare; and `Bytes`
 by default, because Elm's `==` does not look inside a `Bytes` value, so
 records holding one compare equal when they differ. The cost accepted:
-an `int64` field and a `string` field have the same Elm type. Where:
-design §3.4.
+an `int64` field and a `string` field have the same Elm type. A
+separate `elm-connect-bytes` package, depending on elm/bytes so the
+runtime would not, was the earlier plan for `Bytes`; elm/http, which
+the runtime requires, already depends on elm/bytes, so it was not
+needed. Where: design §3.4.
 
 ### Record fields in declaration order
 
@@ -124,8 +127,26 @@ inline. Why: a field's descriptor becomes a value a program can name
 (`Notes.V1.Note.title`), which routes and UI code build on. The cost is
 a module per type, measured: programs pay only for what they reach.
 Nesting the modules (`Notes.V1.Outer.Inner`) was rejected, since a
-parent referring to its nested type would be an import cycle. Where:
-design §3.1, §3.9.
+parent referring to its nested type would be an import cycle.
+
+Measured (Elm 0.19.2): the notes example's generated Elm went from 5
+modules of 2,652 lines (92,896 bytes) to 39 modules of 4,099 lines
+(128,572 bytes), and the Connect conformance suite's from 119,376 to
+184,997 bytes. Most of the growth is per module (its header, imports
+and `elmConnectVersion_`, about fifteen lines) and per value (a
+two-line doc comment, and a field's own annotation and name). On a
+synthetic package of 100 to 500 messages of eight fields, a cold `elm
+make --optimize` takes the same time within run-to-run noise (the
+superlinear growth is in the package module's types and codecs, which
+do not move), peak memory is 1–12 % higher, and the optimized program,
+with everything reachable through the registry, is 21–29 % larger
+unminified, each field descriptor being a top-level value of its own.
+Dead-code elimination works per top-level value, so a real program pays
+for what it reaches: the notes example's optimized bundle went from 268
+to 274 KB; a program reaching every call and the registry, minified and
+gzipped, from 22.2 to 22.5 KB; a program that only encodes and decodes
+is byte-identical; `elmConnectVersion_` is dropped from every bundle.
+Where: design §3.1, §3.9.
 
 ### Doc comments in elm-format's form
 
@@ -141,6 +162,182 @@ to give up that guarantee for doc comments, so that formatting a
 generated tree would rewrite it and `elm-connect check` would report
 drift, or to run elm-format while generating, which the one-binary
 install does not allow. Where: design §3.1.
+
+### Package import cycles refused
+
+*2026-10-10.*
+
+Proto allows cycles between packages, and Elm forbids import cycles, so
+a package-level cycle is `generate::import_cycle`, naming the files
+involved. The alternative was to fold the strongly-connected packages
+into one module; rejected for 1.0 because it changes module names
+based on a property users cannot see in their protos. Where: design
+§3.1, §3.8.
+
+### Codecs named `encodeX` and `decodeX`
+
+*2026-10-19.*
+
+A package module's codecs for a type are `encodeNote` and
+`decodeNote`, so a type's two codecs sit together in a search and the
+ENCODERS and DECODERS sections each read as one prefix. elm/json's
+spelling, `noteDecoder`, was considered and not taken. Where: design
+§3.1.
+
+### Packages generated whole
+
+*2026-10-15.*
+
+A requested package is generated from every compiled file that
+declares it, so its module is the same whichever of its files were
+asked for. Before, a package was built from its requested files alone,
+and a field whose type was declared in an unrequested file of the same
+package was silently dropped. Where: design §3.1.
+
+### Defaults rather than getters
+
+*2026-10-11.*
+
+Every message has `defaultFoo`, every field at its proto3 default, so
+callers write `{ defaultFoo | title = "x" }` and
+`Maybe.withDefault defaultFoo.stars msg.stars`. Generated getters
+(`getStars : Note -> Int`, unwrapping a `Maybe` to its proto default)
+were the alternative; rejected, since the defaults give the same
+without a function per field. Where: design §3.2.
+
+### `map<bool, V>` as an association list
+
+*2026-10-11.*
+
+A map with `bool` keys is `List ( Bool, V )`, since `Bool` is not
+`comparable`. A `bool` key was first a diagnostic, and `Dict String V`
+keyed by `"true"`/`"false"` was considered; both hid the proto type.
+Where: design §3.2.
+
+### Decoders as strict as protojson
+
+*2026-10-14; 2026-10-19.*
+
+The decoders refuse what protobuf-go's protojson refuses, each fixed
+from a laxer first build. A negative `uint64` decoded until 2026-10-14.
+Until 2026-10-19: a 32-bit integer in a string went through
+`String.toFloat`, which took `"+5"`, `"1.e3"` and `".5e1"`; a 64-bit
+value of up to 20 digits passed, `"99999999999999999999"` included;
+32-bit map keys were checked only against the span of the signed and
+unsigned types together, and 64-bit keys not at all; an empty
+message's decoder accepted any JSON; and `Proto.Duration`'s builders
+made any span, which `toString` wrote and `fromString` refused. Where:
+design §3.2, §3.4, §3.5.
+
+### Encoders leave defaults out
+
+*2026-10-15.*
+
+A message's encoder leaves out every field at its default, as
+protobuf-go's `protojson`, and so connect-go, writes unless
+`EmitUnpopulated` is set. Until then the encoders wrote every field,
+defaults included and `Nothing` as `null`; proto3 JSON allows both, and
+request bodies now hold only what the message holds. Where: design
+§3.4.
+
+### Decoder steps
+
+*2026-10-10.*
+
+A message's decoder reads each field with one step, which names the
+field once, or twice (`fieldEither`) when its JSON and proto names
+differ, and takes the value an absent field reads as. A list of names
+(`field [ "title" ]`) was the alternative; it puts brackets on every
+line to serve the minority case. Separate `optional` and `list` steps
+would read a little shorter but double the step functions (each needs
+a two-name form too) and hide the zero value the reader otherwise sees.
+Where: design §3.4.
+
+### Enum aliases as one constructor
+
+*2026-10-11.*
+
+Values of an `allow_alias` enum that share a number are one
+constructor, named for the first declared, and the decoder accepts
+every alias. A constructor per name was the first build; it made
+`HIGH` and `URGENT` distinct in Elm when they are one value on the
+wire and in every other protobuf runtime, and a number could decode to
+only one of them. Where: design §3.3.
+
+### `enum_unknown=zero`
+
+*2026-10-14.*
+
+The option reads an unknown enum name as the zero value, as an unknown
+number already reads; `fail` stays the default. It came before the
+`<Enum>Unrecognized Int` option because it needs no change to the
+generated types. Where: design §3.3.
+
+### `Timestamp` as `Time.Posix`
+
+*2026-10-10.*
+
+The in-house generator this one grew out of mapped `Timestamp` to
+`String` to avoid a dependency. With a runtime package required anyway,
+the RFC 3339 parser lives there and `Time.Posix` is the right type.
+Where: design §3.5.
+
+### Oneofs as a union with an unset constructor
+
+*2026-10-10.*
+
+A oneof is a custom type with an `Unset` constructor, and its field is
+typed as that type. The alternative was a custom type without `Unset`,
+the field typed `Maybe` of it: more idiomatic Elm, and it composes with
+`Maybe.map`. The chosen shape puts every case in one `case`, as the
+in-house generator does. The first decoder was `Json.Decode.oneOf` over
+the members, ending in `Json.Decode.succeed` the unset constructor; it
+let a malformed member read as unset and took the first of several
+members, since it cannot see two at once, and gave way to
+`Proto.Json.members`, which is strict as protojson is. Where: design
+§3.6.
+
+### No option to leave the descriptors out
+
+*2026-10-14.*
+
+A `descriptors=off` setting that wrote the message trees empty and no
+registry was built, measured and dropped. It saved generated bytes
+only, and it made a tree with no fields mean either a message with
+none or descriptors switched off. Measured (Elm 0.19.2, Apple M4): a
+synthetic package of 300 messages of eight fields and ten enums gives a
+package module of 25,434 lines (1.13 MB) with descriptors and 22,277
+lines (0.66 MB) without. A cold `elm make` of a program using every
+decoder takes the same time either way (5.2–6.6 s over three runs each,
+the spread larger than the difference). The optimized program is
+677 KB (46 KB gzipped) without descriptors, the same with them when the
+registry is unused, since dead-code elimination drops the trees, and
+1,655 KB (73 KB gzipped) when it uses the registry. So the trees are
+always written, and the cost falls on applications that use them. That
+measurement predates the descriptors' split from the typed values: the
+registry then kept every type's codecs too. One knob fewer while the
+shape settled; it can return, additively, if smaller modules turn out
+to matter. Where: design §3.9.
+
+### Descriptor trees built by functions
+
+*2026-10-13; reshaped 2026-10-16; 2026-10-19; 2026-10-21.*
+
+Descriptors were decided on 2026-10-13 as record aliases written as
+literals. On 2026-10-16 the trees and the typed values became opaque,
+built by positional functions (see "One module per opaque type, plain
+names"): the record form wrote every property of every field, its
+labels included, and against it the builders make the Connect
+conformance suite's generated Elm 5.9 % smaller (126,211 to 118,711
+bytes) and the notes example's 6.6 % (98,345 to 91,863), though
+generated code refers to every module qualified in full. The same day
+`Behavior` joined the field's tree, and the registry was built from the
+descriptor values rather than the typed values: a registry of
+`messageFoo.descriptor` kept every type's codecs and default in any
+program that used it, which on a large API was most of the program.
+`KindEnum` held the enum's full name until 2026-10-19, when it took the
+enum's descriptor; `BehaviorUnknown` came on 2026-10-21 (below). Where:
+design §3.9.
 
 ## Naming
 
@@ -187,6 +384,26 @@ named like one its module uses unqualified (`naming::reserved_name`). Two field 
 that differ only in case or underscores (`aB` and `ab`) are refused
 before generation by the CLI's and the plugin's descriptor reader,
 with no code and no escape. Where: design §3.7, §3.8.
+
+### When the naming rules were settled
+
+*2026-10-14 to 2026-10-21.*
+
+The rename map, 2026-10-14. A field, method or oneof name starting
+with capitals or underscores converted rather than refused,
+2026-10-20; refusing a name that did not start with a lowercase letter
+was the first build. A descriptor module named by its type's Elm name,
+so one rule names both, confirmed 2026-10-19. On 2026-10-21: plural
+acronyms (`IDs` → `ids`; before, `IDs` became `iDs` and `URLs`
+`urLs`); a nested enum's whole path accepted as its prefix (before,
+only its own name was stripped, and `NOTE_KIND_DRAFT` in
+`Note.Kind` became `NoteKindNoteKindDraft`); Windows device names
+refused; the refusals kept for 1.0; the front end's field-name
+refusal, coded; the `naming::runtime_namespace` and
+`naming::shadowing_module` warnings; and no trailing underscore in a
+renamed value (before, `foo_` and `get_` were accepted, and a rename to
+`elmConnectVersion_` was `naming::value_collision`). Where: design
+§3.1, §3.3, §3.7.
 
 ## The runtime's API
 
@@ -245,6 +462,20 @@ been a major, and generated code would have broken on the literal
 rather than on the version check. Opaque, a type grows by a new
 modifier and accessor, a minor. Where: design §3.1, §3.9, §5.1, §8.3.
 
+### The runtime's module rules
+
+*2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19; rule 7
+2026-10-21.*
+
+The seven rules the runtime's modules follow: a module per proto
+concept, builders named for what they build, union constructors
+prefixed, `Internal` modules for what is shared but not promised, leaf
+modules for shared records, JSON helpers named by role, and imports in
+one direction. Before rule 6, the helpers `object`, `dict` and
+`boolDict` shared their names with elm/json functions of another type
+(`Json.Encode.object`, `Json.Encode.dict`). Rule 7 keeps a package
+split possible (above, "No package split"). Where: design §3.1.
+
 ### `Rpc` and `Proto` as the top-level names
 
 *2026-10-19.*
@@ -267,8 +498,11 @@ vendored rather than installed. Where: design §5.2.
 unpacks through the typed values, describes its type through a
 registry, and holds a payload that arrived only as binary rather than
 failing on it. Error details are `Any` values. Before, a field of
-`Any` was a diagnostic, and error details were raw JSON. Where: design
-§3.5, §5.4.
+`Any` was a diagnostic, and error details were raw JSON. On 2026-10-19
+its codecs moved from `Proto.Any.encodeJson` and `jsonDecoder` to
+`Proto.Json.encodeAny` and `Proto.Json.any`, so that generated code
+reaches every well-known type's codecs through `Proto.Json`. Where:
+design §3.5, §5.4.
 
 ### Receive and send limits, with no default
 
