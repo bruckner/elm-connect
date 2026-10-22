@@ -1,8 +1,9 @@
-# Using elm-connect as an agent
+# Using elm-connect
 
-This page is for an agent, or a person, working on an application that
-uses elm-connect: changing its protos, regenerating its Elm client, or
-fixing a build. To change elm-connect itself, read
+This page is for anyone, a person or an agent, working on an
+application that uses elm-connect: changing its protos, regenerating
+its Elm client, or fixing a build. [README.md](README.md) maps the rest
+of the documentation. To change elm-connect itself, read
 [AGENTS.md](../AGENTS.md) instead. `elm-connect guide` prints this
 page, so a reader with only the binary has it too.
 
@@ -49,8 +50,9 @@ do not work around a diagnostic by editing generated code.
 A collision or a reserved name (`naming::*_collision`,
 `naming::reserved_name`, `naming::reserved_module`) means two proto
 names become one Elm name, or a generated name takes one Elm or the
-runtime already uses. Tell the user the two ways out and let them
-choose, since either changes names their code uses:
+runtime already uses. Both ways out change names the application's
+code uses, so choose deliberately; an agent should put the choice to
+the user:
 
 - `--rename <proto full name>:<Elm name>` (`rename=` for the plugin)
   renames one element in the generated code, leaving the proto alone;

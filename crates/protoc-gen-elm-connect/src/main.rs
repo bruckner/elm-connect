@@ -251,7 +251,7 @@ Options go in the plugin parameter, comma-separated `key=value` pairs:
 int64, bytes, unbound_methods, streaming, enum_unknown, rename (repeatable)
 and module_prefix. To generate without protoc, use the `elm-connect` CLI.
 To work with the generated code, run `elm-connect guide` or read
-{REPOSITORY_FILES}docs/agent-guide.md.
+{REPOSITORY_FILES}docs/guide.md.
 
 Usage: protoc-gen-elm-connect [--version | --help]
 "

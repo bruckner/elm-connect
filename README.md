@@ -160,9 +160,9 @@ users of protoc-gen-elm.
   OpenAPI route.
 - [docs/diagnostics.md](docs/diagnostics.md): every diagnostic code, and
   what gets past it.
-- [docs/agent-guide.md](docs/agent-guide.md): using the generator as an
-  agent: `check`, diagnostics and their escapes; `elm-connect guide`
-  prints it.
+- [docs/guide.md](docs/guide.md): working on a project that uses
+  elm-connect: `check`, diagnostics and their escapes; `elm-connect
+  guide` prints it.
 - [docs/design.md](docs/design.md): the design, with its reasons.
 - [docs/decisions.md](docs/decisions.md): what was decided, when, and
   what the alternative was.

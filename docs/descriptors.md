@@ -5,6 +5,8 @@ data: each message, enum, field and method has a descriptor, and each
 package a registry of them by full name. They are what `Proto.Any` and
 `Rpc.Error.details` read, and what a program uses to walk a message it
 was not written for.
+`google.rpc.Status`, the error detail types and the well-known types
+are listed with the other specifications in [specs.md](specs.md).
 
 ## Typed values
 
