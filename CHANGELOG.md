@@ -1103,3 +1103,17 @@ tag (design §8).
   element's package is not generated, and how to generate it; or, when
   nothing resolves, the generated packages. The `rename_unknown`
   conformance case pins each.
+- `naming::reserved_name` points at the name of the message, enum,
+  oneof, oneof field or enum value that takes the library's name: the
+  CLI shows the snippet, labelled with what the element becomes or the
+  `rename` that gave it the name, and the plugin prefixes the message
+  with `file:line:col`. It was the one naming problem with no source
+  site.
+- Two fields of one message whose names are the same once lowercased
+  without underscores (`aB` and `ab`, `ID` and `Id`), which protoc
+  accepts and prost-reflect refuses, are `input::field_name_conflict`:
+  the message names both fields and the message, and the help says to
+  rename one in the proto, that `rename` cannot help, and that protoc
+  accepts the file. The CLI keeps the snippet; the plugin gives each
+  field's `file:line:col`. Before, the CLI printed prost-reflect's text
+  with no code and the plugin `reading the descriptors: …`.

@@ -145,9 +145,10 @@ pub fn generate_with_imports(
                     files.push(file(&emit::emit_service(package, service, options)));
                 }
             }
-            Err(problems) => {
-                for problem in &problems {
-                    diagnostics.push(problem.clone());
+            Err(reserved) => {
+                for name in &reserved {
+                    let site = ir::name_site(pool, &name.element, name.label());
+                    diagnostics.push(name.problem(site));
                 }
             }
         }

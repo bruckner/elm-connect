@@ -57,6 +57,11 @@ output, so it is a minor: the descriptors already reserve
 `CardinalityRequired` for `required` fields, and closed enums,
 non-zero defaults and explicit presence become descriptor modifiers
 and generated decoders. Groups and extensions would stay refused.
+Two fields of one message whose names are the same once lowercased
+without underscores (`aB` and `ab`), which protoc accepts and the
+descriptor library refuses in any file but a proto2 one, are
+`input::field_name_conflict`; accepting them as protoc does, once that
+library's rule matches protoc's, is a minor too.
 
 ## Options in the proto
 

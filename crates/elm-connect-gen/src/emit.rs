@@ -153,11 +153,12 @@ mod scalar;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use crate::diagnostics::{Diagnostics, Problem};
+use crate::diagnostics::{Problem, Site};
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
-    Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service, TypeName,
+    Element, Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service,
+    TypeName,
 };
 use crate::naming::VERSION_VALUE;
 use crate::options::{EnumUnknown, Options};
@@ -244,10 +245,10 @@ impl Kind {
 const VERSION_VALUE_DOC: &str = "The elm-connect release this module was generated for: a compile \
                                  error here means the runtime package is from another release.";
 
-/// The Elm module for `package`. Every construct a built IR holds has an
-/// emitter, so this does not fail today; the error is the problems found,
-/// for constructs to come whose emitters may report some.
-pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics> {
+/// The Elm module for `package`, or, when it declares a type or
+/// constructor under a name its code also uses unqualified for a
+/// library's, every such name.
+pub fn emit(package: &Package, options: &Options) -> Result<Module, Vec<ReservedName>> {
     let mut emitter = Emitter::new(&package.module, options);
     let decls = emitter.package(package);
     let reserved = emitter.reserved_names(package, options);
@@ -257,6 +258,55 @@ pub fn emit(package: &Package, options: &Options) -> Result<Module, Diagnostics>
     let mut module = emitter.module(package, decls);
     module.doc = docs::package(package);
     Ok(module)
+}
+
+/// A type or constructor a package declares under a name its module's
+/// code also uses unqualified for a library's. The emitter finds these
+/// only once it has written the code, after the IR is built; the IR keeps
+/// no source positions, so the caller, which holds the descriptor pool,
+/// finds the site of [`ReservedName::element`] and makes the problem.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReservedName {
+    /// The proto element that declares it.
+    pub element: Element,
+    /// The element, as a problem names it: "message `notes.v1.Dict`".
+    pub what: String,
+    /// "type" or "constructor".
+    pub kind: &'static str,
+    /// The Elm name.
+    pub name: String,
+    /// The library module whose name it takes.
+    pub home: &'static str,
+    /// The `rename` option that would rename the element, as its reader
+    /// writes it.
+    pub rename: String,
+    /// The `rename` option's name, as its reader writes it, when a rename
+    /// gave the element this name.
+    pub renamed_by: Option<&'static str>,
+}
+
+impl ReservedName {
+    /// The label of the element's name: "message `notes.v1.Dict` becomes
+    /// `Dict`", or "... is renamed to `String` by `rename`".
+    pub fn label(&self) -> String {
+        let name = &self.name;
+        match self.renamed_by {
+            Some(option) => format!("{} is renamed to `{name}` by {option}", self.what),
+            None => format!("{} becomes `{name}`", self.what),
+        }
+    }
+
+    /// The `naming::reserved_name` problem, at `site` when it is known.
+    pub fn problem(&self, site: Option<Site>) -> Problem {
+        Problem::reserved_name(
+            &self.what,
+            self.kind,
+            &self.name,
+            self.home,
+            &self.rename,
+            site,
+        )
+    }
 }
 
 /// The descriptor modules of `package`: one per enum, then one per
@@ -568,66 +618,89 @@ impl Emitter {
         name
     }
 
-    /// A `naming::reserved_name` problem for every type or constructor
-    /// `package` declares under a name its module's code also uses
-    /// unqualified for a library's.
-    fn reserved_names(&self, package: &Package, options: &Options) -> Diagnostics {
-        let mut declared: Vec<(&str, Kind, String, String)> = Vec::new();
+    /// Every type or constructor `package` declares under a name its
+    /// module's code also uses unqualified for a library's.
+    fn reserved_names(&self, package: &Package, options: &Options) -> Vec<ReservedName> {
+        // Each declaration: its Elm name and kind, how a problem names it,
+        // the proto full name a rename takes, and the element.
+        let mut declared: Vec<(&str, Kind, String, String, Element)> = Vec::new();
         for message in &package.messages {
             let full = &message.proto_full_name;
             let what = format!("message `{full}`");
-            declared.push((&message.elm_name, Kind::Type, what.clone(), full.clone()));
-            declared.push((
-                &message.elm_name,
-                Kind::Constructor,
-                what.clone(),
-                full.clone(),
-            ));
-            if let Some(wrapper) = &message.wrapper {
-                declared.push((&wrapper.elm_name, Kind::Type, what.clone(), full.clone()));
-                declared.push((&wrapper.elm_name, Kind::Constructor, what, full.clone()));
+            let element = Element::Message(full.clone());
+            let mut names = vec![&message.elm_name];
+            names.extend(message.wrapper.as_ref().map(|wrapper| &wrapper.elm_name));
+            for name in names {
+                for kind in [Kind::Type, Kind::Constructor] {
+                    declared.push((name, kind, what.clone(), full.clone(), element.clone()));
+                }
             }
             for oneof in &message.oneofs {
                 let what = format!("oneof `{}` of `{full}`", oneof.proto_name);
                 let proto = format!("{full}.{}", oneof.proto_name);
+                let element = Element::Oneof {
+                    message: full.clone(),
+                    name: oneof.proto_name.clone(),
+                };
                 declared.push((
                     &oneof.elm_type_name,
                     Kind::Type,
                     what.clone(),
                     proto.clone(),
+                    element.clone(),
                 ));
-                declared.push((&oneof.unset_ctor, Kind::Constructor, what, proto));
+                declared.push((&oneof.unset_ctor, Kind::Constructor, what, proto, element));
                 for variant in &oneof.variants {
                     let what = format!("oneof field `{}` of `{full}`", variant.proto_name);
                     let proto = format!("{full}.{}", variant.proto_name);
-                    declared.push((&variant.elm_ctor, Kind::Constructor, what, proto));
+                    let element = Element::Field {
+                        message: full.clone(),
+                        name: variant.proto_name.clone(),
+                    };
+                    declared.push((&variant.elm_ctor, Kind::Constructor, what, proto, element));
                 }
             }
         }
         for enumeration in &package.enums {
             let full = &enumeration.proto_full_name;
             let what = format!("enum `{full}`");
-            declared.push((&enumeration.elm_name, Kind::Type, what, full.clone()));
+            let element = Element::Enum(full.clone());
+            declared.push((
+                &enumeration.elm_name,
+                Kind::Type,
+                what,
+                full.clone(),
+                element,
+            ));
             for value in enumeration.values() {
                 let what = format!("enum value `{}` of `{full}`", value.proto_name);
                 let proto = format!("{full}.{}", value.proto_name);
-                declared.push((&value.elm_ctor, Kind::Constructor, what, proto));
+                let element = Element::EnumValue {
+                    enumeration: full.clone(),
+                    name: value.proto_name.clone(),
+                };
+                declared.push((&value.elm_ctor, Kind::Constructor, what, proto, element));
             }
         }
-        let mut problems = Diagnostics::new();
-        for (name, kind, what, proto) in declared {
+        let mut reserved = Vec::new();
+        for (name, kind, what, proto, element) in declared {
             if let Some(home) = self.unqualified.get(&(kind, name.to_owned())) {
-                let rename = options.spelling.rename(&proto);
-                problems.push(Problem::reserved_name(
-                    &what,
-                    kind.as_str(),
-                    name,
+                let renamed = options
+                    .rename
+                    .get(&proto)
+                    .is_some_and(|given| given == name);
+                reserved.push(ReservedName {
+                    element,
+                    what,
+                    kind: kind.as_str(),
+                    name: name.to_owned(),
                     home,
-                    &rename,
-                ));
+                    rename: options.spelling.rename(&proto),
+                    renamed_by: renamed.then(|| options.spelling.rename_key()),
+                });
             }
         }
-        problems
+        reserved
     }
 
     /// The library type `module.name args`, which the module then imports.

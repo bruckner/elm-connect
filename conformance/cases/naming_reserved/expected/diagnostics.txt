@@ -2,6 +2,13 @@ naming::reserved_name
 
   × The message `reserved.v1.Dict` becomes the Elm type `Dict`, but its module
   │ also uses `Dict.Dict` as `Dict`.
+    ╭─[reserved.proto:11:9]
+ 10 │ // by a rename.
+ 11 │ message Dict {
+    ·         ──┬─
+    ·           ╰── message `reserved.v1.Dict` becomes `Dict`
+ 12 │   map<string, string> labels = 1;
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a type
         of the same name in the same module takes their place and the module
@@ -11,6 +18,13 @@ naming::reserved_name
 
   × The message `reserved.v1.Duration` becomes the Elm type `Duration`, but
   │ its module also uses `Proto.Duration.Duration` as `Duration`.
+    ╭─[reserved.proto:15:9]
+ 14 │
+ 15 │ message Duration {
+    ·         ────┬───
+    ·             ╰── message `reserved.v1.Duration` becomes `Duration`
+ 16 │   google.protobuf.Duration length = 1;
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a type
         of the same name in the same module takes their place and the module
@@ -21,6 +35,13 @@ naming::reserved_name
 
   × The message `reserved.v1.Just` becomes the Elm constructor `Just`, but its
   │ module also uses `Maybe.Just` as `Just`.
+    ╭─[reserved.proto:19:9]
+ 18 │
+ 19 │ message Just {
+    ·         ──┬─
+    ·           ╰── message `reserved.v1.Just` becomes `Just`
+ 20 │   optional int32 count = 1;
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a
         constructor of the same name in the same module takes their place and
@@ -31,6 +52,13 @@ naming::reserved_name
 
   × The message `reserved.v1.Note` becomes the Elm type `String`, but its
   │ module also uses `String.String` as `String`.
+    ╭─[reserved.proto:23:9]
+ 22 │
+ 23 │ message Note {
+    ·         ──┬─
+    ·           ╰── message `reserved.v1.Note` is renamed to `String` by `rename`
+ 24 │   string title = 1;
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a type
         of the same name in the same module takes their place and the module
@@ -40,6 +68,13 @@ naming::reserved_name
 
   × The enum `reserved.v1.Maybe` becomes the Elm type `Maybe`, but its module
   │ also uses `Maybe.Maybe` as `Maybe`.
+    ╭─[reserved.proto:27:6]
+ 26 │
+ 27 │ enum Maybe {
+    ·      ──┬──
+    ·        ╰── enum `reserved.v1.Maybe` becomes `Maybe`
+ 28 │   MAYBE_UNSPECIFIED = 0;
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a type
         of the same name in the same module takes their place and the module
@@ -51,6 +86,13 @@ naming::reserved_name
   × The enum value `SHADE_DARK` of `reserved.v1.Shade` becomes the Elm
   │ constructor `Nothing`, but its module also uses `Maybe.Nothing` as
   │ `Nothing`.
+    ╭─[reserved.proto:33:3]
+ 32 │   SHADE_UNSPECIFIED = 0;
+ 33 │   SHADE_DARK = 1;
+    ·   ─────┬────
+    ·        ╰── enum value `SHADE_DARK` of `reserved.v1.Shade` is renamed to `Nothing` by `rename`
+ 34 │ }
+    ╰────
   help: Generated code refers to some types and constructors of elm/core and
         of the runtime unqualified, as Elm code conventionally does, so a
         constructor of the same name in the same module takes their place and

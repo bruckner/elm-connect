@@ -5,8 +5,11 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use elm_connect_gen::diagnostics::{Columns, Diagnostics, LineColSpan, Problem, Site};
-use elm_connect_gen::{Generated, GeneratedFile, Options};
+use elm_connect_gen::diagnostics::{
+    Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
+    field_name_conflicts,
+};
+use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
 use miette::{Diagnostic, IntoDiagnostic, Report, WrapErr};
 use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
 
@@ -111,6 +114,10 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
         if let Some(report) = editions_problem(&error, &includes) {
             return Err(report);
         }
+        let error = match FieldNameConflict::recognise(error, &includes) {
+            Ok(conflict) => return Err(Report::new(conflict)),
+            Err(error) => error,
+        };
         if error.is_file_not_found() {
             return Err(Report::new(NotFound {
                 error,
@@ -180,6 +187,98 @@ impl Diagnostic for NotFound {
 
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
         self.error.labels()
+    }
+}
+
+/// protox's refusal of two fields of a message whose names are the same
+/// once lowercased without underscores, which protoc accepts, as
+/// `input::field_name_conflict`: the problem's code, message and help,
+/// with protox's snippet and labels.
+#[derive(Debug)]
+struct FieldNameConflict {
+    problem: Problem,
+    error: protox::Error,
+}
+
+impl FieldNameConflict {
+    /// `error` as a conflict, when it is one, or else `error` back. protox
+    /// exposes neither the descriptor library's error nor its kind, only
+    /// its text, so the error is recognised by that; the message is found
+    /// by parsing the file again from `includes`, at the field the error
+    /// points to.
+    fn recognise(error: protox::Error, includes: &[PathBuf]) -> Result<Self, protox::Error> {
+        if error.is_parse() || error.is_io() || error.is_file_not_found() {
+            return Err(error);
+        }
+        let text = error.to_string();
+        let Some((first, second)) = field_name_conflict_names(&text) else {
+            return Err(error);
+        };
+        let name = error.file().unwrap_or_default();
+        let source = includes
+            .iter()
+            .find_map(|include| fs::read_to_string(include.join(name)).ok());
+        let parsed = source
+            .as_deref()
+            .and_then(|source| protox::file::File::from_source(name, source).ok());
+        let conflicts = parsed
+            .as_ref()
+            .map(|file| field_name_conflicts(file.file_descriptor_proto(), first, second))
+            .unwrap_or_default();
+        // The label offsets of the error, to tell apart two messages with
+        // fields of the same two names.
+        let offsets: Vec<usize> = error
+            .labels()
+            .map(|labels| labels.map(|label| label.offset()).collect())
+            .unwrap_or_default();
+        let at = |conflict: &&elm_connect_gen::diagnostics::FieldNameConflict| {
+            let start = |site: &Site| {
+                let span = site.span?;
+                Some(span.byte_span(source.as_deref()?, Columns::Bytes)?.offset())
+            };
+            conflict
+                .sites
+                .iter()
+                .all(|site| start(site).is_some_and(|offset| offsets.contains(&offset)))
+        };
+        let message = conflicts
+            .iter()
+            .find(at)
+            .or(conflicts.first())
+            .map(|conflict| conflict.message.as_str());
+        let problem =
+            Problem::field_name_conflict(name, message, first, second, Spelling::Flags, Vec::new());
+        Ok(FieldNameConflict { problem, error })
+    }
+}
+
+impl std::fmt::Display for FieldNameConflict {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.problem.message())
+    }
+}
+
+impl std::error::Error for FieldNameConflict {}
+
+impl Diagnostic for FieldNameConflict {
+    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
+        Some(Box::new(self.problem.code().as_str()))
+    }
+
+    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
+        Some(Box::new(self.problem.help_text()))
+    }
+
+    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
+        self.error.source_code()
+    }
+
+    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+        self.error.labels()
+    }
+
+    fn related<'a>(&'a self) -> Option<Box<dyn Iterator<Item = &'a dyn Diagnostic> + 'a>> {
+        self.error.related()
     }
 }
 
