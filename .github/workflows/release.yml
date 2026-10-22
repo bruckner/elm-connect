@@ -1,0 +1,382 @@
+name: Release
+
+# A release (design section 8.7): pushing a version tag verifies the tagged
+# commit, builds the command-line tools for six targets, and, once the
+# `release` environment's reviewer approves, attests the archives and
+# creates the GitHub Release; from 1.0.0 it also publishes the crates and
+# the Elm package. A manual run verifies and builds any ref and publishes
+# nothing; its archives stay workflow artifacts.
+#
+# Nothing here is cached: a release builds from a fresh checkout with the
+# toolchain the workspace names, so no state from another run can reach
+# what is published.
+
+on:
+  push:
+    tags:
+      # The Elm package's tags are bare versions, `1.2.3`, with no `v`
+      # (design section 8.1); `+` is one or more of the class before it.
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      rehearse_gate:
+        description: Also run a no-op job under the `release` environment, to exercise its approval
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    # Git's bash on Windows, so every step is one script for every runner.
+    shell: bash
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      major: ${{ steps.version.outputs.major }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Read the workspace's rust-version
+        id: rust
+        run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      - name: Read the version
+        id: version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 --locked |
+            jq -r '.packages[] | select(.name == "elm-connect") | .version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+          echo "Workspace version: $version"
+      - name: Lockstep with the tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != push ]; then
+            echo "Not a tag: nothing to compare the version $VERSION with."
+            exit 0
+          fi
+          elm=$(jq -r .version elm.json)
+          if [ "$GITHUB_REF_NAME" != "$VERSION" ] || [ "$GITHUB_REF_NAME" != "$elm" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME, Cargo workspace $VERSION, elm.json $elm: all three must be equal."
+            exit 1
+          fi
+      - name: On main
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != push ]; then
+            echo "Not a tag: any ref may be rehearsed."
+            exit 0
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::$GITHUB_REF_NAME tags a commit that is not on main."
+            exit 1
+          fi
+      - name: CHANGELOG has the section
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != push ]; then
+            echo "Not a tag: the release notes are not extracted."
+            exit 0
+          fi
+          # The lines after `## <version>` up to the next `## ` heading,
+          # without the blank lines around them.
+          mkdir -p "$RUNNER_TEMP/notes"
+          notes="$RUNNER_TEMP/notes/release-notes.md"
+          awk -v heading="## $VERSION" '
+            index($0, "## ") == 1 {
+              inside = ($0 == heading || index($0, heading " ") == 1)
+              found = found || inside
+              next
+            }
+            inside && NF { while (blank > 0) { print ""; blank-- } print; started = 1; next }
+            inside && started { blank++ }
+            END { exit !found }
+          ' CHANGELOG.md > "$notes" || {
+            echo "::error::CHANGELOG.md has no \"## $VERSION\" section."
+            exit 1
+          }
+          if [ ! -s "$notes" ]; then
+            echo "::error::CHANGELOG.md's \"## $VERSION\" section is empty."
+            exit 1
+          fi
+          cat "$notes"
+      - name: Upload the release notes
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes
+          path: ${{ runner.temp }}/notes/release-notes.md
+          if-no-files-found: error
+      - name: Lockstep test
+        run: cargo test --locked -p elm-connect-gen --test lockstep
+      - name: Package the crates
+        run: cargo package --workspace --locked
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: verify
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each target builds natively on its own runner. The Linux targets
+        # are musl, so the binaries run on any distribution; the crates are
+        # pure Rust and link no C library.
+        include:
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            runner: ubuntu-24.04-arm
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+          - target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the workspace's rust-version
+        id: rust
+        run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --locked --release -p elm-connect -p protoc-gen-elm-connect --target "$TARGET"
+      # The tools as a user runs them, on the platform they were built
+      # for: CI's gate runs on Linux and macOS only.
+      - name: Smoke test
+        run: |
+          case "$TARGET" in *windows*) exe=.exe ;; *) exe= ;; esac
+          bin="$PWD/target/$TARGET/release"
+          cli="$bin/elm-connect$exe"
+          plugin="$bin/protoc-gen-elm-connect$exe"
+
+          "$cli" --version | tee "$RUNNER_TEMP/cli-version"
+          grep -qx "elm-connect $VERSION" "$RUNNER_TEMP/cli-version"
+          "$plugin" --version | tee "$RUNNER_TEMP/plugin-version"
+          grep -qx "protoc-gen-elm-connect $VERSION" "$RUNNER_TEMP/plugin-version"
+
+          smoke="$RUNNER_TEMP/smoke"
+          mkdir -p "$smoke/proto"
+          printf '%s\n' 'syntax = "proto3";' 'package smoke.v1;' 'message Ping { string text = 1; }' \
+            > "$smoke/proto/smoke.proto"
+          cd "$smoke"
+          "$cli" gen -I proto -o out smoke.proto
+          module=out/Smoke/V1.elm
+          head -n 1 "$module"
+          head -n 1 "$module" | grep -q "^-- Generated by elm-connect $VERSION "
+          "$cli" check -I proto -o out smoke.proto
+      - name: Archive
+        id: archive
+        run: |
+          stage="$RUNNER_TEMP/stage"
+          dist="$RUNNER_TEMP/dist"
+          mkdir -p "$stage" "$dist"
+          case "$TARGET" in *windows*) exe=.exe ;; *) exe= ;; esac
+          cp "target/$TARGET/release/elm-connect$exe" "target/$TARGET/release/protoc-gen-elm-connect$exe" \
+            LICENSE-MIT LICENSE-APACHE THIRD_PARTY.md "$stage/"
+          files=("elm-connect$exe" "protoc-gen-elm-connect$exe" LICENSE-MIT LICENSE-APACHE THIRD_PARTY.md)
+          name="elm-connect-$VERSION-$TARGET"
+          cd "$stage"
+          case "$TARGET" in
+            *windows*) 7z a -tzip "$dist/$name.zip" "${files[@]}" ;;
+            # No AppleDouble `._` entries from macOS's tar.
+            *) COPYFILE_DISABLE=1 tar czf "$dist/$name.tar.gz" "${files[@]}" ;;
+          esac
+          ls -l "$dist"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ runner.temp }}/dist/*
+          if-no-files-found: error
+
+  publish:
+    name: GitHub Release
+    needs: [verify, build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write # create the release and upload its files
+      id-token: write # sign the attestation (Sigstore)
+      attestations: write # store the attestation
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      MAJOR: ${{ needs.verify.outputs.major }}
+    steps:
+      # A release is made once: a rerun stops here rather than replace what
+      # was published.
+      - name: No release yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::The release $GITHUB_REF_NAME exists; a release is never replaced. Delete it by hand first if it must be remade."
+            exit 1
+          fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/artifacts
+      - name: Collect the archives and write SHA256SUMS
+        run: |
+          mkdir -p release
+          mv "$RUNNER_TEMP"/artifacts/*/elm-connect-"$VERSION"-* release/
+          cd release
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+          test "$(wc -l < SHA256SUMS)" -eq 6
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/*
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          if [ "$MAJOR" = 0 ]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$VERSION" --notes-file "$RUNNER_TEMP/artifacts/release-notes/release-notes.md" \
+            "${prerelease[@]}" release/*
+
+  crates:
+    name: Publish the crates
+    needs: [verify, publish]
+    if: github.event_name == 'push' && needs.verify.outputs.major != '0'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # exchanged for a crates.io token (Trusted Publishing)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the workspace's rust-version
+        id: rust
+        run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      # Trusted Publishing: a token for this job alone, revoked when it
+      # ends. crates.io accepts it only from this workflow file in the
+      # `release` environment, as each crate's settings there name them.
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        id: auth
+      # The generator first: the other two depend on its version. A crate
+      # already in the index is skipped, so a rerun after a partial
+      # publish finishes the rest.
+      - name: Publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          # The crate's file in crates.io's sparse index.
+          index_url() { echo "https://index.crates.io/${1:0:2}/${1:2:2}/$1"; }
+          in_index() {
+            curl -fsS "$(index_url "$1")" 2>/dev/null |
+              jq -e --arg v "$VERSION" 'select(.vers == $v)' >/dev/null
+          }
+          for crate in elm-connect-gen protoc-gen-elm-connect elm-connect; do
+            if in_index "$crate"; then
+              echo "$crate $VERSION is already published."
+              continue
+            fi
+            cargo publish --locked -p "$crate"
+            for _ in $(seq 60); do
+              in_index "$crate" && break
+              sleep 10
+            done
+            in_index "$crate" || {
+              echo "::error::$crate $VERSION is not in the index ten minutes after publishing."
+              exit 1
+            }
+          done
+
+  elm:
+    name: Publish the Elm package
+    needs: [verify, publish]
+    if: github.event_name == 'push' && needs.verify.outputs.major != '0'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      # `elm publish` reads the tag from the local repository (`git show
+      # <version>`) and from GitHub, and refuses a tree that differs from
+      # the tagged commit, so the checkout is the tag, with tags.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          # The mise release that wrote mise.lock; move the two together.
+          version: 2026.9.4
+          install_args: github:elm/compiler
+          cache: false
+      - name: Publish
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "::error::The checkout differs from $GITHUB_REF_NAME."
+            exit 1
+          fi
+          elm publish
+      # The index registers the package from the tag on GitHub; its
+      # documentation must be what this checkout of the tag builds.
+      - name: The index serves what was tagged
+        run: |
+          elm make --docs="$RUNNER_TEMP/local-docs.json"
+          url="https://package.elm-lang.org/packages/bruckner/elm-connect/$VERSION/docs.json"
+          for _ in $(seq 60); do
+            curl -fsS -o "$RUNNER_TEMP/index-docs.json" "$url" && break
+            sleep 10
+          done
+          test -s "$RUNNER_TEMP/index-docs.json" || {
+            echo "::error::$url is not served ten minutes after publishing."
+            exit 1
+          }
+          diff <(jq -S . "$RUNNER_TEMP/local-docs.json") <(jq -S . "$RUNNER_TEMP/index-docs.json") || {
+            echo "::error::The index's docs.json for $VERSION differs from this build of the tag."
+            exit 1
+          }
+
+  rehearse-gate:
+    name: Rehearse the release gate
+    needs: [verify, build]
+    if: github.event_name == 'workflow_dispatch' && inputs.rehearse_gate
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - run: echo "The release environment approved this run; nothing is published."

@@ -3653,7 +3653,7 @@ By hand, before the tag:
 5. Tag the commit on `main` with the bare version, `git tag 1.2.0`, and
    push the tag.
 
-What the tag runs, in order:
+What the tag runs (`.github/workflows/release.yml`), in order:
 
 6. `verify`: the tag equals the workspace's and `elm.json`'s version,
    the tagged commit is on `main`, `CHANGELOG.md` has the tag's
