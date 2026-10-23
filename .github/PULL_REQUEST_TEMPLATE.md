@@ -9,8 +9,8 @@
 - [ ] `just check` passes locally (and `just live`, if the change
       touches the runtime's sending, the service modules,
       `examples/notes/` or a README excerpt's file).
-- [ ] A `CHANGELOG.md` bullet under Unreleased for each user-visible
-      change.
+- [ ] A release-notes fragment under `changelog.d/` for each
+      user-visible change.
 - [ ] `docs/design.md` updated where a statement became true or false.
 - [ ] The conformance corpus re-blessed (`just bless`) and its diff
       reviewed, if generated code changed.

@@ -3433,12 +3433,13 @@ By hand, before the tag:
    the workflow.
 2. Run `just bless`, then `just live`, and commit the regenerated
    trees (§8.4).
-3. In `CHANGELOG.md`, turn `## Unreleased` into `## <version>` followed
-   by the release date, and start a new, empty `## Unreleased` above
-   it. The first release does this once over everything listed so far;
-   after that, Unreleased holds only what is new since the last
-   release. The section is the release's notes: the workflow publishes
-   it as the GitHub Release's text, and refuses a tag without it.
+3. Run `just changelog-fold <version>`: the fragments under
+   `changelog.d/`, one per change since the last release, become a
+   `## <version>` section of `CHANGELOG.md` with the date, below
+   Unreleased, and are removed. The fragments are raw notes written
+   change by change; edit the section into the release's notes, for a
+   reader deciding whether to upgrade. The section is published as the
+   GitHub Release's text, and the workflow refuses a tag without it.
 4. From 1.1 on: check out the last release's tag beside this commit,
    compile its corpus's expected output against this commit's `src/`
    (`conformance/compile-with.sh` with the harness's source directories

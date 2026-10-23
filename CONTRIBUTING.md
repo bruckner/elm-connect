@@ -25,7 +25,7 @@ elm-format, elm-test-rs, node, just, zizmor, gitleaks and cargo-deny,
 and Go, buf and func-e (which fetches Envoy) for the live suite. The Rust it pins is also the
 workspace's minimum supported Rust version (`rust-version`): the MSRV
 is the pinned toolchain, a pull request that moves the pin moves the
-MSRV with it, and the CHANGELOG says so. From the repository root:
+MSRV with it, and its release note says so. From the repository root:
 
 ```sh
 mise install    # install the pinned toolchain
@@ -113,7 +113,8 @@ A pull request carries, besides the change itself (the
 - a passing `just check`, and `just live` where the change touches what
   it covers (see "The gate");
 - tests for the behaviour it adds or fixes;
-- a `CHANGELOG.md` bullet under Unreleased for each user-visible change;
+- a release-notes fragment under [`changelog.d/`](changelog.d/README.md)
+  for each user-visible change;
 - an update to `docs/design.md` wherever a statement there becomes true
   or false, and to the README or the page under `docs/` that describes
   the behaviour;
@@ -143,16 +144,14 @@ a decision updates the document in the same PR.
 
 Whatever a change makes true lands in the same pull request as the
 change, ideally the same commit: a design rule, a decision record, a
-README paragraph, a `CHANGELOG.md` line. A documentation-only PR is for work
+README paragraph, a `changelog.d/` fragment. A documentation-only PR is for work
 that *is* the document, such as a design revision, not for catching up
 on bookkeeping after the fact.
 
-Since every change appends to the CHANGELOG's Unreleased list,
-`.gitattributes` merges that file with git's union driver, which keeps
-both sides' lines where two branches add bullets at the same spot
-instead of reporting a conflict. It applies to local merges and
-rebases only; GitHub's merge ignores it, so a branch behind `main`
-still shows a conflict there until it is rebased.
+Release notes are collected as one file per change under
+`changelog.d/`, so two pull requests never conflict over them;
+`just changelog-fold` turns the files into the next release's section
+of `CHANGELOG.md` when it is cut.
 
 ## Code comments
 
@@ -184,9 +183,9 @@ design) rather than issue or PR numbers alone.
 
 The maintainer cuts releases; [`docs/design.md` §8.7](docs/design.md#87-releasing)
 has the steps and what the release workflow does with a tag. A
-contributor's part is the `CHANGELOG.md` bullet under Unreleased that a
-pull request carries: the Unreleased list becomes the next release's
-notes.
+contributor's part is the fragment under `changelog.d/` that a pull
+request carries: the fragments are the raw notes the maintainer edits
+into the next release's section of `CHANGELOG.md`.
 
 ## License
 

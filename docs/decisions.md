@@ -71,6 +71,21 @@ symlink (archives and Windows checkouts treat symlinks unevenly), with
 library that every application links; MPL's file-level copyleft would
 serve nothing here. The README says generated code is the user's.
 Where: the README's License section, `LICENSE`, the `license` recipe.
+### Release notes from fragments
+
+*2026-10-22.*
+
+Until 0.1.0 every change appended a bullet to `CHANGELOG.md`'s
+Unreleased list, and every merge put a conflict on every open pull
+request: GitHub's merge ignores the union driver `.gitattributes`
+named, so only a rebase cleared it. From 0.1.0 a change adds a file
+under `changelog.d/` instead, and the release folds the files into the
+version's section, which the maintainer edits: the fragments are raw
+notes, and the section is written for a user. Release notes generated
+from pull-request titles were the alternative; they cost nothing per
+change but make the titles the notes, and the notes are read by people
+deciding whether to upgrade. Where: `changelog.d/README.md`, the
+`changelog-fold` recipe, CONTRIBUTING.
 
 ## Generated types
 

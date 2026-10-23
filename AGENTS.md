@@ -115,9 +115,10 @@ its verdict; check it before proposing something.
 Keep the branch linear: when `main` moves, `git rebase origin/main`
 and `git push --force-with-lease`; never merge `main` into the branch.
 Pull requests land on `main` as merge commits, which a ruleset
-enforces. A pull request carries its `CHANGELOG.md` bullet under
-Unreleased when a user of the package or the binaries would notice the
-change; repository-only changes carry none.
+enforces. A pull request carries a release-notes fragment under
+`changelog.d/` (one file named after the branch, bullets in
+`CHANGELOG.md`'s form) when a user of the package or the binaries would
+notice the change; repository-only changes carry none.
 
 ## What never goes in
 

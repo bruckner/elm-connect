@@ -46,8 +46,8 @@ The rest are reference pages, for when a question comes up.
   alternative was.
 - [roadmap.md](roadmap.md): what 1.0 leaves out and what may come after
   it.
-- [CHANGELOG.md](../CHANGELOG.md): every release's changes, and what is
-  unreleased.
+- [CHANGELOG.md](../CHANGELOG.md): every release's notes; what is not
+  yet released is under [changelog.d/](../changelog.d/README.md).
 - [ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md)
   and [AGENTS.md](../AGENTS.md): the code's shape, the contributor's
   workflow and the working agreement, for changing elm-connect itself.
