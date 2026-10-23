@@ -57,12 +57,23 @@ gh attestation verify "elm-connect-$version-$target.tar.gz" --repo bruckner/elm-
 
 `--ignore-missing` skips the archives not downloaded. Where there is no
 `sha256sum`, `shasum -a 256 --check --ignore-missing SHA256SUMS` does
-the same. Then unpack the archive and put both binaries in a directory
-on `PATH`:
+the same; a good archive gets `OK`. `gh attestation verify` exits 0
+when the archive's attestation checks out and non-zero when it does not.
+Outside a terminal, as in a script or CI, a success prints nothing at
+all, so read the exit status (`echo $?`).
+
+The archive has no top-level directory: it holds `elm-connect`,
+`protoc-gen-elm-connect`, `LICENSE-MIT`, `LICENSE-APACHE` and
+`THIRD_PARTY.md` side by side. Unpack it into a directory of its own,
+then put both binaries in a directory on `PATH` (`~/.local/bin` here;
+add it to `PATH` if it is not there already):
 
 ```sh
-tar xzf "elm-connect-$version-$target.tar.gz"
-install elm-connect protoc-gen-elm-connect ~/.local/bin/
+mkdir elm-connect-$version
+tar xzf "elm-connect-$version-$target.tar.gz" -C elm-connect-$version
+install -d ~/.local/bin
+install elm-connect-$version/elm-connect elm-connect-$version/protoc-gen-elm-connect ~/.local/bin/
+elm-connect --version
 ```
 
 On Windows, check the `.zip` the same way (`sha256sum` is in Git Bash;
@@ -79,19 +90,16 @@ built from and what the two checks prove.
 
 ### With Cargo
 
-Cargo builds both binaries from source, with the Rust version the
-crates declare (their `rust-version`) or newer:
+Cargo builds both binaries from their crates on crates.io, with the
+Rust version the crates declare (their `rust-version`) or newer:
 
 ```sh
 cargo install --locked elm-connect
 cargo install --locked protoc-gen-elm-connect
 ```
 
-Until the crates are on crates.io, install from the repository instead,
-with `--git https://github.com/bruckner/elm-connect` before the crate's
-name.
-
-`--locked` builds with the dependency versions the repository's
+Each installs the latest release; `--version 0.1.0` picks one.
+`--locked` builds with the dependency versions the release's
 `Cargo.lock` pins, which are the ones its CI tests.
 
 An npm package that fetches the right binary is on the
@@ -119,6 +127,18 @@ directories:
 ```sh
 git clone https://github.com/bruckner/elm-connect
 git -C elm-connect checkout 0.1.0
+```
+
+Add the clone's `src` to the application's `source-directories`, and
+install the four packages the runtime imports (below says why each).
+`elm install` takes one package at a time, and asks before changing
+`elm.json`:
+
+```sh
+elm install elm/http
+elm install elm/json
+elm install elm/time
+elm install elm/bytes
 ```
 
 A complete `elm.json` for a browser application outside this
@@ -150,11 +170,19 @@ repository, with the generated modules in `generated/`:
         }
     },
     "test-dependencies": {
-        "direct": {},
-        "indirect": {}
+        "direct": {
+            "elm-explorations/test": "2.2.1"
+        },
+        "indirect": {
+            "elm/random": "1.0.0"
+        }
     }
 }
 ```
+
+The test dependencies are what `elm-test-rs init` adds, for tests such
+as the [quick start's](quickstart.md#7-test-without-a-server); an
+application without tests leaves them empty.
 
 The path to the clone may be relative to the `elm.json` or absolute.
 Every package the runtime imports must be a direct dependency, since
@@ -191,11 +219,15 @@ and add that:
 
 ```sh
 git clone --depth 1 https://github.com/googleapis/googleapis
-protoc -I proto -I googleapis --elm-connect_out=generated greet/v1/greet.proto
+mkdir -p generated
+protoc -I proto -I googleapis --elm-connect_out=generated notes/v1/notes.proto
 ```
 
-Without them, protoc stops with `google/api/annotations.proto: File not
-found.` The `google/protobuf` files come with protoc.
+The proto is named by its path under its `-I` directory, here
+`proto/notes/v1/notes.proto`, and protoc writes only into an out
+directory that exists. Without the googleapis files, protoc stops with
+`google/api/annotations.proto: File not found.` The `google/protobuf`
+files come with protoc.
 
 ### With buf
 
@@ -282,4 +314,4 @@ Regenerate with the binary matching the runtime, or use the runtime
 version the generated code names (`v0_2` is 0.2.x). A runtime accepts
 code that an older binary of the same major version generated, so after
 upgrading the runtime within a major, regenerating can wait. The design
-([§8](design.md)) has the policy.
+([§8](design.md#8-compatibility-and-versioning)) has the policy.
