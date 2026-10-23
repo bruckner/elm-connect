@@ -10,8 +10,8 @@ over the Connect protocol or `google.api.http` transcoding.
 
 ```sh
 cargo install --locked elm-connect
-elm-connect gen -I proto -o generated notes/v1/notes.proto
-elm-connect check -I proto -o generated notes/v1/notes.proto
+elm-connect gen -I proto notes/v1/notes.proto --out generated
+elm-connect check -I proto notes/v1/notes.proto --out generated
 ```
 
 `elm-connect --help` says where to start and lists the options, and

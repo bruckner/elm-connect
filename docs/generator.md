@@ -38,7 +38,7 @@ otherwise.
 | `oneof kind { string text = 11; string link = 12; }` | a field `kind : NoteKind`, with `type NoteKind = NoteKindUnset \| NoteKindText String \| NoteKindLink String`; a `google.protobuf.Empty` member has no argument |
 | `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof) |
 | `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` |
-| `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name |
+| `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name: `Just [ "create_time" ]`. A path is not checked: a camelCase one (`"createTime"`) passes through unchanged, and goes out as the same JSON, but a mask the client decodes holds proto names, so the two do not compare equal |
 | `google.protobuf.Empty` | `()`, as a field and as a request or response |
 | `google.protobuf.Struct` | `Maybe (Dict String Json.Encode.Value)` |
 | `google.protobuf.Value` | `Maybe Json.Encode.Value`; `Just` the JSON `null` is a `Value` set to null |
@@ -57,6 +57,33 @@ Every generated module starts with a line naming the elm-connect
 version and the protos that produced it, and defines
 `elmConnectVersion_`, which [install.md](install.md#versions) explains.
 A package is generated whole, from every given file declaring it.
+
+## Names
+
+The Elm names follow from the proto's, by a fixed rule:
+
+- Fields, oneofs and methods become lowerCamelCase from their proto
+  names (`create_time` → `createTime`, `GetNote` → `getNote`), not from
+  `json_name`, which only changes the wire.
+- A leading run of capitals is lowercased as one word: `ID` → `id`,
+  `URLPath` → `urlPath`, `HTTPGet` → `httpGet`, and a plural acronym
+  with its `s`, `IDs` → `ids`. Leading underscores are dropped
+  (`_internal` → `internal`).
+- An Elm reserved word gets a trailing underscore: a field `type` is
+  `type_`, still `"type"` on the wire.
+- Messages, enums and services keep their proto spelling (`URLPath`
+  stays `URLPath`); a nested message or enum is prefixed with the names
+  of the messages enclosing it (`Outer.Inner` → `OuterInner`). A
+  package's segments are capitalized (`notes.v1` → `Notes.V1`).
+- An enum value drops the enum's own prefix, or for a nested enum the
+  whole nesting path, whichever it starts with, and takes the type's
+  name in front: in `message Note { enum Kind { … } }`, both
+  `KIND_DRAFT` and `NOTE_KIND_DRAFT` become `NoteKindDraft`.
+
+Two names that meet after these rules are a diagnostic, never a silent
+rename ([diagnostics.md](diagnostics.md)), and `rename` (below) gives
+any element another name. The design's
+[§3.7](design.md#37-naming) has the full rule and its edge cases.
 
 ## Options
 
@@ -77,10 +104,10 @@ For example, to give `notes.v1.Note` the Elm type `Memo` and its field
 `title` the record field `heading`:
 
 ```sh
-protoc --elm-connect_out=generated \
+protoc -I proto -I googleapis --elm-connect_out=generated \
   --elm-connect_opt=rename=notes.v1.Note:Memo,rename=notes.v1.Note.title:heading \
-  notes.proto
-elm-connect gen notes.proto --out generated \
+  notes/v1/notes.proto
+elm-connect gen -I proto notes/v1/notes.proto --out generated \
   --rename notes.v1.Note:Memo --rename notes.v1.Note.title:heading
 ```
 
@@ -88,9 +115,15 @@ To generate every module inside `Api`, so `notes.v1` becomes `Api.Notes.V1`
 in `generated/Api/Notes/V1.elm`:
 
 ```sh
-protoc --elm-connect_out=generated --elm-connect_opt=module_prefix=Api notes.proto
-elm-connect gen notes.proto --out generated --module-prefix Api
+protoc -I proto -I googleapis --elm-connect_out=generated --elm-connect_opt=module_prefix=Api notes/v1/notes.proto
+elm-connect gen -I proto notes/v1/notes.proto --out generated --module-prefix Api
 ```
+
+These examples use the layout of the [quick start](quickstart.md):
+the protos under `proto/`, and for protoc the googleapis files under
+`googleapis/` ([install.md](install.md#with-protoc)). protoc writes only
+into an out directory that exists (`mkdir -p generated`); the CLI
+creates it.
 
 `rename` takes the proto's names as declared (`notes.v1.Note.page_count`,
 not `pageCount`).
@@ -147,7 +180,7 @@ modules differ only in the version they name, `check` says which version
 generated them instead of printing diffs.
 
 ```sh
-elm-connect check notes.proto --out generated --module-prefix Api
+elm-connect check -I proto notes/v1/notes.proto --out generated --module-prefix Api
 ```
 
 The protoc plugin cannot check, since protoc writes its files; with
@@ -157,17 +190,25 @@ or regenerate and `git diff --exit-code` the output.
 ## Running the plugin
 
 protoc finds the plugin on `PATH` by its name, from the
-`--elm-connect_out` flag:
+`--elm-connect_out` flag. With the protos under `proto/` and the
+googleapis files under `googleapis/`, and the out directory created
+first, since protoc does not create it:
 
 ```sh
+mkdir -p generated
 protoc -I proto -I googleapis --elm-connect_out=generated --elm-connect_opt=int64=int notes/v1/notes.proto
 ```
 
-buf runs it from a `buf.gen.yaml`, with the options under `opt`:
+buf runs it from a `buf.gen.yaml`, with the options under `opt`, one
+`key=value` per item:
 
-```yaml examples/notes/buf.gen.yaml
-- local: protoc-gen-elm-connect
-  out: elm/generated
+```yaml
+version: v2
+plugins:
+  - local: protoc-gen-elm-connect
+    out: generated
+    opt:
+      - int64=int
 ```
 
 [install.md](install.md#googleapis) has the googleapis files either needs
@@ -183,5 +224,6 @@ the problem is: the CLI quotes the lines with the problem marked, the
 plugin gives each place as `file:line:column`. [diagnostics.md](diagnostics.md) lists every code with the
 option or edit that gets past it.
 
-The design ([§3](design.md) for the generated types, §4 for calls, §6
-for the generator) has the reasons behind each form.
+The design ([§3](design.md#3-generated-types) for the generated types,
+[§4](design.md#4-calls) for calls, [§6](design.md#6-generator) for the
+generator) has the reasons behind each form.

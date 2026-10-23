@@ -4,7 +4,7 @@ Every problem elm-connect reports carries a code, such as
 `naming::type_collision`, printed above its message by both the CLI and
 the protoc plugin. This file lists every code.
 
-Codes are additive within a major version (design §8.3): codes are added,
+Codes are additive within a major version ([design §8.3](design.md#83-the-surfaces-and-their-promises)): codes are added,
 and none is removed or changes meaning. A diagnostic's message, help text
 and rendering are not a contract, and may change in any release.
 

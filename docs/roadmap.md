@@ -2,7 +2,7 @@
 
 What may come after 1.0. Each entry says what it is, what it needs,
 and whether it would ship in a minor release or need a major one,
-under the compatibility rules of [design §8](design.md): within a
+under the compatibility rules of [design §8](design.md#8-compatibility-and-versioning): within a
 major, generated code compiles against every later runtime of that
 major, the runtime's API only grows, and the same protos with the same
 options generate the same modules, types and values. The page promises
@@ -123,7 +123,7 @@ hooks and sent through functions of its own, can be added beside
 
 Today a cancelled call reports nothing, and a call sent with a retry
 policy has no tracker, so it cannot be cancelled
-([design §5.2](design.md)). A model-held state machine (`Rpc.Pending`,
+([design §5.2](design.md#52-rpc)). A model-held state machine (`Rpc.Pending`,
 stepped by an `update`) that owns the retry loop would make a retried
 call cancellable and have every call report exactly one outcome; a
 streaming transport would need the same machine, and would share it.
@@ -205,7 +205,7 @@ a minor. (`elm-connect guide`, printing the
 The notes example was meant to double as the implementation to
 consult, and serves verification well, but carrying both transports,
 the error panel and the live suite's needs makes it too much to learn
-from first ([design §7](design.md)). Teaching wants a few short,
+from first ([design §7](design.md#7-conformance)). Teaching wants a few short,
 well-documented examples that each show one thing, kept compiling the
 same way. No version impact.
 
