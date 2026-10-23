@@ -374,11 +374,12 @@ design §3.9.
 
 ## Naming
 
-### Naming refusals and rules (pending the operator's review of 2026-10-21)
+### Naming refusals and rules
 
-*Decision: pending.*
+*Decision: the rules below, reviewed 2026-10-21; what the review changed
+is in the next entry.*
 
-The rules as implemented today (`crates/elm-connect-gen/src/naming.rs`):
+The rules as implemented (`crates/elm-connect-gen/src/naming.rs`):
 
 - A package becomes a module, each segment PascalCase
   (`foo_bar.v2beta1` → `FooBar.V2beta1`). A message or enum becomes a
@@ -387,8 +388,10 @@ The rules as implemented today (`crates/elm-connect-gen/src/naming.rs`):
 - A field, oneof, method or oneof member's descriptor value drops each
   `_` and uppercases the next letter, then lowercases the leading
   capital run but for its last letter when a lowercase letter follows
-  (`URLPath` → `urlPath`, `ID` → `id`, `IDs` → `iDs`). One of Elm's
-  fourteen reserved words gains a trailing `_` (`type_`).
+  (`URLPath` → `urlPath`, `ID` → `id`); a run of two or more capitals
+  followed by a lone `s` is a plural acronym, lowercased with its `s`
+  (`IDs` → `ids`, `URLs` → `urls`). One of Elm's fourteen reserved
+  words gains a trailing `_` (`type_`).
 - An enum value's constructor is the enum's Elm name and the value
   with the enum's own `UPPER_SNAKE` prefix stripped (`STATUS_ACTIVE` →
   `StatusActive`). A oneof's type is the message's name and the
@@ -416,7 +419,7 @@ dependency's (`naming::reserved_module`), and a type or constructor
 named like one its module uses unqualified (`naming::reserved_name`). Two field names
 that differ only in case or underscores (`aB` and `ab`) are refused
 before generation by the CLI's and the plugin's descriptor reader,
-with no code and no escape. Where: design §3.7, §3.8.
+(`input::field_name_conflict`, no escape). Where: design §3.7, §3.8.
 
 ### When the naming rules were settled
 
