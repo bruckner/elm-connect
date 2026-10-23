@@ -10,19 +10,16 @@ and rendering are not a contract, and may change in any release.
 
 Each code is an error, which fails the run, unless the table says
 otherwise. The escape is what gets past it: an option, given as the CLI's
-flag / the plugin's parameter, or an edit to the protos. Where a code's
-rendered output is not pinned by a conformance case (`conformance/cases`,
-which feeds the generator `input/` protos and an `options.txt`
-parameter), the row says which test covers it instead.
+flag / the plugin's parameter, or an edit to the protos.
 
 | Code | What it reports | Escape |
 |---|---|---|
 | **`input::`** | **What the generator was handed: the files and their syntax.** | |
-| `input::unknown_file` | A file asked for is not among the compiled files. Only a caller of the library can ask for one: the CLI and protoc request what they compiled. Not in the corpus, which requests every file it compiles: `tests/ir/build.rs` and the plugin's tests cover it. | Ask for a file the compiler was given; check its name against the include paths. |
+| `input::unknown_file` | A file asked for is not among the compiled files. Only a caller of the library can ask for one: the CLI and protoc request what they compiled. | Ask for a file the compiler was given; check its name against the include paths. |
 | `input::not_proto3` | A file to generate declares `syntax = "proto2"` (or no syntax, which is proto2). | `syntax = "proto3";` in the file. |
-| `input::editions` | A file declares an edition (`edition = "2023";`). Not in the corpus, whose compiler cannot parse an editions file: `crates/elm-connect/tests/compile_errors.rs` and the plugin's tests cover it. | `syntax = "proto3";` in place of the edition, if the file uses nothing beyond proto3. |
-| `input::file_name` | A file name holds a newline or another control character, which would break the generated header comment. Not in the corpus, which cannot hold such a file: `tests/ir/build.rs` covers it. | Rename the file. |
-| `input::field_name_conflict` | Two fields of one message have names that are the same once lowercased without underscores (`aB` and `ab`, `ID` and `Id`), which prost-reflect, the descriptor library both binaries use, refuses in any file but a proto2 one. protoc accepts such a file, since it compares the fields' exact JSON names, so through protoc it is the plugin that refuses it. Not in the corpus, whose compiler refuses the file itself: `crates/elm-connect/tests/compile_errors.rs`, the plugin's tests and the generator's (`diagnostics/field_names.rs`, which pins the library's wording) cover it. | Rename one of the fields in the proto: the file is refused before any option applies, so `rename` cannot help. |
+| `input::editions` | A file declares an edition (`edition = "2023";`). | `syntax = "proto3";` in place of the edition, if the file uses nothing beyond proto3. |
+| `input::file_name` | A file name holds a newline or another control character, which would break the generated header comment. | Rename the file. |
+| `input::field_name_conflict` | Two fields of one message have names that are the same once lowercased without underscores (`aB` and `ab`, `ID` and `Id`), which prost-reflect, the descriptor library both binaries use, refuses in any file but a proto2 one. protoc accepts such a file, since it compares the fields' exact JSON names, so through protoc it is the plugin that refuses it. | Rename one of the fields in the proto: the file is refused before any option applies, so `rename` cannot help. |
 | **`options::`** | **The options: the CLI's flags or the plugin's parameter.** | |
 | `options::unknown_option` | The plugin parameter names an option that does not exist, gives one a value it does not take, or holds a pair without `=`. The CLI's argument parser reports the same mistakes in its flags itself. | Fix the key or value; [generator.md](generator.md#options) lists them. |
 | `options::duplicate_option` | An option other than `rename` is given twice, or `rename` renames one proto element twice. | Give it once. |
@@ -60,3 +57,19 @@ parameter), the row says which test covers it instead.
 | **`generate::`** | **The set of packages to generate, and the graph between them.** | |
 | `generate::not_generated` | A generated package refers to a type of a package that is not generated. | `--include-imports` on the CLI; with protoc, name the file on the command line; with buf, `buf generate --include-imports`. |
 | `generate::import_cycle` | Generated packages refer to each other in a cycle, which Elm modules cannot. | Move the types that refer to each other into one package. |
+
+## Where each is tested
+
+For contributors: each code's rendered output is pinned by a case in
+[`conformance/cases`](../conformance/cases), which feeds the generator
+`input/` protos and an `options.txt` parameter, except four the corpus
+cannot reach. `input::unknown_file` (the corpus requests every file it
+compiles) is covered by `crates/elm-connect-gen/tests/ir/build.rs` and
+the plugin's tests; `input::editions` (the corpus's compiler cannot
+parse an editions file) by `crates/elm-connect/tests/compile_errors.rs`
+and the plugin's tests; `input::file_name` (the corpus cannot hold such
+a file) by `crates/elm-connect-gen/tests/ir/build.rs`; and `input::field_name_conflict` (the
+corpus's compiler refuses the file itself) by
+`crates/elm-connect/tests/compile_errors.rs`, the plugin's tests and
+`crates/elm-connect-gen/src/diagnostics/field_names.rs`, which pins
+the library's wording.
