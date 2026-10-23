@@ -2610,9 +2610,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   changed to answer in a standard shape, and when the readers fall
   through to the status table the body that said more would otherwise
   be lost. Reading the answer with the pure halves (§5.2) would work too,
-  but gives up the retry loop. A custom reader passed to the config as
-  a function is the possible next step, deferred until a second
-  application asks for it.
+  but gives up the retry loop.
 - A constructor per kind of error, and `code` and `message` for the
   common path (`case Rpc.Error.code error of Unauthenticated -> …`).
   A code the server stated and one inferred
@@ -3438,8 +3436,10 @@ By hand, before the tag:
    `## <version>` section of `CHANGELOG.md` with the date, below
    Unreleased, and are removed. The fragments are raw notes written
    change by change; edit the section into the release's notes, for a
-   reader deciding whether to upgrade. The section is published as the
-   GitHub Release's text, and the workflow refuses a tag without it.
+   reader deciding whether to upgrade. When the edit condenses them,
+   the section links the commit before the fold, which holds the notes
+   verbatim. The section is published as the GitHub Release's text,
+   and the workflow refuses a tag without it.
 4. From 1.1 on: check out the last release's tag beside this commit,
    compile its corpus's expected output against this commit's `src/`
    (`conformance/compile-with.sh` with the harness's source directories
