@@ -2610,9 +2610,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   changed to answer in a standard shape, and when the readers fall
   through to the status table the body that said more would otherwise
   be lost. Reading the answer with the pure halves (§5.2) would work too,
-  but gives up the retry loop. A custom reader passed to the config as
-  a function is the possible next step, deferred until a second
-  application asks for it.
+  but gives up the retry loop.
 - A constructor per kind of error, and `code` and `message` for the
   common path (`case Rpc.Error.code error of Unauthenticated -> …`).
   A code the server stated and one inferred
