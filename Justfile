@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check snippets zizmor gitleaks deny license package
+check: fmt-check clippy test elm-check snippets changelog-check zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -32,6 +32,47 @@ fmt-check:
 # and the two must not drift.
 license:
     cmp LICENSE LICENSE-MIT
+
+# Each release-notes fragment under changelog.d/ is bullets in the
+# CHANGELOG's form (a `- ` line, its continuation lines, blank lines) with
+# a trailing newline, so the fold can concatenate them as they are.
+changelog-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    status=0
+    for f in changelog.d/*.md; do
+        [ "$f" = changelog.d/README.md ] && continue
+        if ! grep -q '^- ' "$f" || [ -n "$(tail -c 1 "$f")" ] || grep -qvE '^(- |  |$)' "$f"; then
+            echo "changelog.d: $f is not bullets in the CHANGELOG's form" >&2
+            status=1
+        fi
+    done
+    exit $status
+
+# Fold the fragments under changelog.d/ into a `## <version> — <date>`
+# section of CHANGELOG.md below Unreleased, and remove them. The section is
+# then edited into the release's notes (design section 8.7).
+changelog-fold version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fragments=$(ls changelog.d/*.md | grep -v '/README\.md$' || true)
+    if [ -z "$fragments" ]; then
+        echo "changelog.d: nothing to fold" >&2
+        exit 1
+    fi
+    just changelog-check
+    section=$(mktemp)
+    { printf '## %s — %s\n\n' '{{version}}' "$(date +%F)"; cat $fragments; } > "$section"
+    awk -v section="$section" '
+        function emit() { while ((getline line < section) > 0) print line; done = 1 }
+        /^## / && unreleased && !done { emit(); print "" }
+        /^## Unreleased/ { unreleased = 1 }
+        { print }
+        END { if (unreleased && !done) { print ""; emit() } }
+    ' CHANGELOG.md > CHANGELOG.md.new
+    mv CHANGELOG.md.new CHANGELOG.md
+    git rm -q -f $fragments
+    echo "CHANGELOG.md: folded $(echo $fragments | wc -w | tr -d ' ') fragment(s) into {{version}}"
 
 # Lint every crate and target; warnings are errors.
 clippy:
