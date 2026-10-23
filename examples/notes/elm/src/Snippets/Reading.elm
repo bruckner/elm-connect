@@ -4,14 +4,12 @@ module Snippets.Reading exposing (Model, Msg(..), describe, update)
 the kinds of `Rpc.Error`.
 -}
 
+-- region reading
+
 import Notes.V1
 import Rpc
 import Rpc.Code
 import Rpc.Error
-
-
-
--- region reading
 
 
 type Msg

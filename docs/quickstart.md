@@ -7,7 +7,8 @@ binaries and the runtime are installed as [install.md](install.md) says.
 ## 1. A proto
 
 The notes example's API, `notes.v1.NotesService`, in
-`proto/notes/v1/notes.proto`. Two of its methods:
+`proto/notes/v1/notes.proto`. Two of its methods, from a file that also
+declares their messages and imports `google/protobuf/empty.proto`:
 
 ```proto examples/notes/proto/notes/v1/notes.proto excerpt
 syntax = "proto3";
@@ -30,6 +31,21 @@ service NotesService {
 `GetNote` has a `google.api.http` rule, so over transcoding it is
 `GET /v1/notes/<id>`. `Ping` has none, and is sent on the implicit
 route ([transcoding.md](transcoding.md#methods-without-an-http-rule)).
+
+The whole file is
+[`examples/notes/proto/notes/v1/notes.proto`](https://github.com/bruckner/elm-connect/blob/0.1.0/examples/notes/proto/notes/v1/notes.proto).
+To follow along, fetch it into the layout the commands below assume:
+
+```sh
+mkdir -p proto/notes/v1
+curl -fL -o proto/notes/v1/notes.proto \
+  https://raw.githubusercontent.com/bruckner/elm-connect/0.1.0/examples/notes/proto/notes/v1/notes.proto
+```
+
+The CLI carries the `google/api` files the proto imports, and the
+`google/protobuf` ones map to the runtime, so `notes.proto` is the only
+file it needs. protoc and buf need the googleapis files as well
+([install.md](install.md#googleapis)).
 
 ## 2. Generate
 
@@ -112,6 +128,12 @@ the update keeps compiling when the message gains a field
 An error is one type for both transports, `Rpc.Error`, of four kinds:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#reading
+import Notes.V1
+import Rpc
+import Rpc.Code
+import Rpc.Error
+
+
 type Msg
     = GotNote (Result Rpc.Error Notes.V1.Note)
 
@@ -168,7 +190,7 @@ transport sends:
 > import Rpc
 > import Rpc.Transport
 > config = Rpc.config "https://api.example.com"
-{ baseUrl = "https://api.example.com", headers = [], retry = Nothing, timeout = Nothing, transport = Connect { get = False, maxGetUrl = Nothing }, withCredentials = False }
+{ baseUrl = "https://api.example.com", headers = [], retry = Nothing, timeout = Nothing, transport = Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }, withCredentials = False }
     : Rpc.Config
 > Rpc.request config (Notes.getNote { name = "notes/42" })
 { body = Text "{\"name\":\"notes/42\"}", headers = [("Connect-Protocol-Version","1")], method = "POST", timeout = Nothing, url = "https://api.example.com/notes.v1.NotesService/GetNote", withCredentials = False }
@@ -187,9 +209,30 @@ body is sent as `application/json`, which elm/http adds, so the request's
 
 `Rpc.response` is the other half: it reads an `Http.Response String` as
 the call's answer. Together the two check a client in elm-test, with no
-server and no HTTP:
+server and no HTTP. Set up the tests once, from the application's
+directory, with [elm-test-rs](https://github.com/mpizenberg/elm-test-rs)
+or [elm-test](https://github.com/rtfeldman/node-test-runner):
+
+```sh
+elm-test-rs init    # or: elm-test init
+```
+
+Either adds `elm-explorations/test` to the `elm.json`'s
+`test-dependencies` ([install.md](install.md#the-runtime) shows the
+result) and creates `tests/`. A test module in `tests/`, run by
+`elm-test-rs` (or `elm-test`):
 
 ```elm examples/notes/elm/tests/Snippets/OfflineTest.elm#offline
+import Dict
+import Expect
+import Http
+import Notes.V1.NotesService as Notes
+import Rpc
+import Rpc.Code
+import Rpc.Error
+import Test exposing (Test, describe, test)
+
+
 config : Rpc.Config
 config =
     Rpc.config "https://api.example.com"
