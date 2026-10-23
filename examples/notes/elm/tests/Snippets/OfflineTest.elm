@@ -4,6 +4,8 @@ module Snippets.OfflineTest exposing (suite)
 it reads an answer, checked with the pure halves.
 -}
 
+-- region offline
+
 import Dict
 import Expect
 import Http
@@ -12,10 +14,6 @@ import Rpc
 import Rpc.Code
 import Rpc.Error
 import Test exposing (Test, describe, test)
-
-
-
--- region offline
 
 
 config : Rpc.Config

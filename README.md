@@ -64,15 +64,15 @@ it would be a minor or a major release.
 Each release has prebuilt binaries of the CLI and the protoc plugin for
 Linux, macOS and Windows on the
 [Releases](https://github.com/bruckner/elm-connect/releases) page, with
-checksums and build attestations to verify them. Or build them with
-Cargo. The CLI:
+checksums and build attestations to verify them. Or build them from
+crates.io with Cargo. The CLI:
 ```sh
-cargo install --locked --git https://github.com/bruckner/elm-connect elm-connect
+cargo install --locked elm-connect
 ```
 
 The protoc plugin:
 ```sh
-cargo install --locked --git https://github.com/bruckner/elm-connect protoc-gen-elm-connect
+cargo install --locked protoc-gen-elm-connect
 ```
 
 The CLI, `elm-connect`, needs nothing else. The plugin runs under protoc

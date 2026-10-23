@@ -35,7 +35,7 @@ beside each link says what the runtime or the generator does about it.
 - [Style guide](https://protobuf.dev/programming-guides/style/) and
   [proto limits](https://protobuf.dev/programming-guides/proto-limits/):
   the naming conventions the Elm names assume, and the bounds the
-  generator holds to ([design.md](design.md) §3).
+  generator holds to ([design.md §3](design.md#3-generated-types)).
 - [`descriptor.proto`](https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto)
   and [`plugin.proto`](https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/plugin.proto):
   the generator's input, and the protocol `protoc-gen-elm-connect`

@@ -9,8 +9,14 @@ over the Connect protocol or `google.api.http` transcoding.
 
 ```sh
 cargo install --locked protoc-gen-elm-connect
-protoc -I proto --elm-connect_out=generated proto/notes/v1/notes.proto
+mkdir -p generated
+protoc -I proto -I googleapis --elm-connect_out=generated notes/v1/notes.proto
 ```
+
+The proto is named by its path under `proto/`; `googleapis/` holds the
+`google/api/annotations.proto` and `google/api/http.proto` a proto with
+`google.api.http` rules imports, and protoc writes only into an out
+directory that exists.
 
 With buf, name it as a local plugin in `buf.gen.yaml`:
 
