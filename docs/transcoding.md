@@ -28,6 +28,16 @@ decimal, timestamps in RFC 3339. The query holds only the fields that
 are set: a field with presence when it is present, any other field when
 it differs from its default.
 
+A query parameter is named by the field's proto name, and a nested
+field by the dotted path of proto names, as `google/api/http.proto`
+says: `ListNotes` with `{ pageSize = 10, pageToken = "abc" }` sends
+`?page_size=10&page_token=abc`, and a field `filter.visibility` sends
+`filter.visibility=…`. A `google.protobuf.FieldMask` is a value like
+any other, so it goes out in its proto3 JSON form, the paths in
+lowerCamelCase joined by commas: `readMask = Just [ "create_time" ]`
+sends `read_mask=createTime`. Some servers do not read that form in the
+query (grpc-gateway, [below](#where-the-transcoders-differ)).
+
 A success is any 2xx, an empty body reading as `{}`, and the response
 decoded from the field `response_body` names when the rule names one.
 
@@ -44,7 +54,7 @@ that route as follows:
 |---|---|
 | grpc-gateway | with `generate_unbound_methods=true` (live) |
 | Envoy gRPC-JSON transcoder | with `auto_mapping: true` (live) |
-| Vanguard | always; v0.5 serves rules only, and the Connect handler mounted beside it serves the route (live) |
+| Vanguard | not by itself: v0.5 serves rules only, and answers the route with 404 `NOT_FOUND` (by hand, with the example server's Connect handler removed); a Connect handler mounted beside it serves the route (live) |
 | A Connect handler (connect-go, connect-es, …) | always: it is the Connect request |
 
 For a server that serves rules alone, generate with
@@ -142,7 +152,14 @@ other than `google/api/http.proto` and proto3 JSON say:
 - grpc-gateway v2.32.0 forwards a `google.protobuf.FieldMask` query
   value's paths as written, so a mask sent in the query in its JSON form
   (`mask=displayName`) reaches the service as a path no field has, and
-  the call fails.
+  the call fails. A mask in the body arrives whole, since grpc-gateway
+  reads a body with protojson, which turns `displayName` into
+  `display_name` (checked by hand, not by the live suite): for a
+  grpc-gateway server, give a method with a mask a rule that sends it
+  in the body, `body: "*"`, or keep the mask out of a request sent with
+  a body field or no body. A `GET` has no body, so a mask on a `GET`
+  reaches grpc-gateway intact only as a path that is the same in both
+  forms (`name`, not `display_name`).
 - grpc-gateway v2.32.0, under its default unescaping mode, answers 404
   for a single-segment path variable holding `%2F` (above).
 - Vanguard v0.5.0 rejects an empty `google.protobuf.StringValue` sent as
