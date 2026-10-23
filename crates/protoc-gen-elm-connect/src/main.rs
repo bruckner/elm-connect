@@ -244,8 +244,9 @@ fn usage() -> String {
 
 A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
 
-    protoc --elm-connect_out=generated notes.proto
-    protoc --elm-connect_out=generated --elm-connect_opt=int64=int notes.proto
+    protoc -I proto -I googleapis --elm-connect_out=generated notes/v1/notes.proto
+    protoc -I proto -I googleapis --elm-connect_out=generated \\
+      --elm-connect_opt=int64=int notes/v1/notes.proto
 
 Options go in the plugin parameter, comma-separated `key=value` pairs:
 int64, bytes, unbound_methods, streaming, enum_unknown, rename (repeatable)

@@ -14,7 +14,7 @@ fn start_here() -> String {
     format!(
         "Start here:
   1. Generate Elm modules from the protos:
-       elm-connect gen -I proto -o src/Generated notes/v1/notes.proto
+       elm-connect gen -I proto notes/v1/notes.proto --out generated
   2. Add the runtime: the generated code imports `Proto.*` and `Rpc.*` from the
      elm-connect runtime, read from a clone's `src/` as a source directory until
      it is published (`elm install bruckner/elm-connect` then).
@@ -64,15 +64,15 @@ enum Command {
 
 /// What `gen --help` ends with.
 const GEN_EXAMPLES: &str = "Examples:
-  elm-connect gen -I proto -o src/Generated notes/v1/notes.proto
-  elm-connect gen -I proto -o src/Generated --rename notes.v1.Note:Memo notes/v1/notes.proto
-  elm-connect gen -I proto -o src/Generated --module-prefix Api notes/v1/notes.proto";
+  elm-connect gen -I proto notes/v1/notes.proto --out generated
+  elm-connect gen -I proto notes/v1/notes.proto --out generated --rename notes.v1.Note:Memo
+  elm-connect gen -I proto notes/v1/notes.proto --out generated --module-prefix Api";
 
 /// What `check --help` ends with.
 const CHECK_EXAMPLES: &str = "Examples:
-  elm-connect check -I proto -o src/Generated notes/v1/notes.proto
-  elm-connect check -I proto -o src/Generated --rename notes.v1.Note:Memo notes/v1/notes.proto
-  elm-connect check -I proto -o src/Generated --module-prefix Api notes/v1/notes.proto";
+  elm-connect check -I proto notes/v1/notes.proto --out generated
+  elm-connect check -I proto notes/v1/notes.proto --out generated --rename notes.v1.Note:Memo
+  elm-connect check -I proto notes/v1/notes.proto --out generated --module-prefix Api";
 
 /// What to generate from and how: the arguments `gen` and `check` share.
 #[derive(Args)]
@@ -132,7 +132,7 @@ struct GenArgs {
     rename: Vec<String>,
     /// The module every generated module goes inside, such as `Api`.
     ///
-    /// With `Api.Notes`, `notes.v1` becomes `Api.Notes.V1`, in
+    /// With `Api`, `notes.v1` becomes `Api.Notes.V1`, in
     /// `Api/Notes/V1.elm`. The runtime's modules are never prefixed.
     #[arg(long, value_name = "MODULE", value_parser = module_prefix)]
     module_prefix: Option<ModuleName>,
@@ -533,12 +533,17 @@ mod tests {
                 "a link is not absolute: {link}"
             );
         }
-        for expected in [
-            "](https://github.com/bruckner/elm-connect/blob/main/AGENTS.md)",
-            "](https://github.com/bruckner/elm-connect/blob/main/docs/generator.md#options)",
-            "](https://github.com/bruckner/elm-connect/blob/main/docs/diagnostics.md)",
+        let tagged = format!(
+            "https://github.com/bruckner/elm-connect/blob/{}/",
+            elm_connect_gen::VERSION
+        );
+        for path in [
+            "AGENTS.md",
+            "docs/generator.md#options",
+            "docs/diagnostics.md",
         ] {
-            assert!(printed.contains(expected), "{expected}");
+            let expected = format!("]({tagged}{path})");
+            assert!(printed.contains(&expected), "{expected}");
         }
         assert!(Cli::try_parse_from(["elm-connect", "guide"]).is_ok());
     }
