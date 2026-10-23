@@ -1133,3 +1133,7 @@ tag (design §8).
   (`gh attestation verify`). The release workflow publishes the crates
   and the Elm package from 1.0.0, in jobs gated on the `release`
   environment's approval.
+- A `LICENSE` file, the MIT text again, since `elm publish` requires one
+  by that name; `just check` keeps it equal to `LICENSE-MIT`. The README
+  says the generated code is the user's and carries no license of
+  elm-connect's.

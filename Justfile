@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check snippets zizmor gitleaks deny package
+check: fmt-check clippy test elm-check snippets zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -27,6 +27,11 @@ fmt:
 fmt-check:
     cargo fmt --all --check
     elm-format --validate {{elm_dirs}}
+
+# `elm publish` needs a file named LICENSE; it is a copy of LICENSE-MIT,
+# and the two must not drift.
+license:
+    cmp LICENSE LICENSE-MIT
 
 # Lint every crate and target; warnings are errors.
 clippy:

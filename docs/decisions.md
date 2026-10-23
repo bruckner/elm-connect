@@ -54,6 +54,24 @@ was settled or reshaped, and §5 and §6 were "Decided unless marked",
 with nothing in them marked otherwise. The dates are kept in the
 entries here. Where: the design's opening paragraph.
 
+### The license, reviewed: dual on the crates, MIT on the Elm package
+
+*2026-10-22.*
+
+The dual MIT OR Apache-2.0 license was chosen at the outset as the Rust
+convention. Reviewed against MIT alone, Apache 2.0 alone, BSD-3-Clause
+(the Elm convention), MPL 2.0 and the copyleft family: kept. The dual
+grant lets a GPLv2 project take MIT and a patent-conscious adopter take
+Apache, and a single license would buy only one file fewer. The Elm
+package is MIT, since `elm.json` takes one identifier and the index
+cannot show an `OR`. `elm publish` also requires a file named `LICENSE`,
+so that file holds the MIT text a second time, as a copy rather than a
+symlink (archives and Windows checkouts treat symlinks unevenly), with
+`just check` keeping the copy equal. Copyleft was ruled out for a
+library that every application links; MPL's file-level copyleft would
+serve nothing here. The README says generated code is the user's.
+Where: the README's License section, `LICENSE`, the `license` recipe.
+
 ## Generated types
 
 ### 64-bit integers and bytes as `String`

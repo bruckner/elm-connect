@@ -189,7 +189,12 @@ Dual-licensed under either of
 
 at your option. The Elm package is published to the package index under
 MIT, since `elm.json` carries a single license identifier; that is one of
-the two options and changes nothing about your choice.
+the two options and changes nothing about your choice. `LICENSE` is a
+third file holding the MIT text again, because `elm publish` requires a
+file of that name; `just check` keeps it equal to `LICENSE-MIT`.
+
+Code the generator writes from your protos is yours: it carries no
+license of elm-connect's, and you may use it under any terms.
 
 The generator embeds files from googleapis, under the Apache License
 2.0, and ports elm-format's Markdown parser and printer, under the BSD
