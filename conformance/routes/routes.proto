@@ -191,6 +191,6 @@ service Routes {
 
   // No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
   // request as its body, as grpc-gateway (generate_unbound_methods),
-  // Envoy's transcoder (auto_mapping) and Vanguard serve it.
+  // Envoy's transcoder (auto_mapping) and a Connect handler serve it.
   rpc Unbound(GetMessageRequest) returns (Message);
 }
