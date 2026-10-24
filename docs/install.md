@@ -205,11 +205,43 @@ module that imports it, with `MODULE NOT FOUND` and the import, such as
 The runtime compiles with Elm 0.19.0, 0.19.1 and 0.19.2; set
 `elm-version` to the compiler the application uses.
 
+### Building in CI
+
+A clone beside the application resolves on one machine only. An
+application whose client CI builds needs the runtime inside its own
+repository: copy the release tag's `src/` and `LICENSE` into it, with
+the package's `elm.json` beside them if your licence tooling reads
+package metadata, and point `source-directories` at the copy. Leave the
+copy unchanged, and replace it whole when you move to another release,
+together with the generator. A generated module that does not match
+the copy's release stops the build at `Proto.Version`
+([Versions](#versions)).
+
+The runtime is compiled into the application's bundle, so its licence
+notice ships wherever the application publishes its other
+dependencies' notices. Put the copy where licence and bill-of-materials
+tooling treats it as third-party code: a tool that takes every source
+directory inside the client for the application's own would compile it
+in without a notice.
+
+Pin the CLI to the same release in the tool manager CI uses; the
+release archives hold the two binaries at their top level. Then run
+`elm-connect check` in CI with the same arguments as `gen`: `gen` never
+deletes a module, so only `check` names one the protos no longer
+produce ([generator.md](generator.md#checking-generated-code-elm-connect-check)).
+
 ## googleapis
 
 A proto with `google.api.http` rules imports
 `google/api/annotations.proto`, which imports `google/api/http.proto`.
-The CLI carries both. protoc and buf need them from googleapis.
+The CLI carries both, and `google/api/field_behavior.proto`, and no other
+googleapis file: a proto that imports another, such as
+`google/api/resource.proto` or `google/api/client.proto`, needs a
+googleapis checkout on the CLI's `-I` too. The CLI looks for an import
+under each `-I` directory in order, then among protobuf's own
+`google/protobuf` files, and only then among the three it carries, so a
+copy on the include path wins. protoc and buf need all of them from
+googleapis.
 
 ### With protoc
 

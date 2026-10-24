@@ -116,10 +116,25 @@ viaTranscoding =
         |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
 ```
 
-A message is a record, so build one from its default by record update,
-`{ defaultNote | title = "Milk" }`, rather than as a full record literal:
-the update keeps compiling when the message gains a field
-([generator.md](generator.md#what-a-proto-becomes)).
+A message is a record, so build one from its default by record update
+rather than as a full record literal: the update keeps compiling when
+the message gains a field
+([generator.md](generator.md#what-a-proto-becomes)). Elm's record update
+takes an unqualified name, and `{ Notes.V1.defaultNote | … }` does not
+compile, so bind the default first:
+
+```elm examples/notes/elm/src/Snippets/Sending.elm#building
+milk : Notes.V1.Note
+milk =
+    let
+        note =
+            Notes.V1.defaultNote
+    in
+    { note | title = "Milk" }
+```
+
+With `import Notes.V1 exposing (defaultNote)`,
+`{ defaultNote | title = "Milk" }` is enough.
 
 `Rpc.task` gives a `Task` instead, for chaining calls.
 

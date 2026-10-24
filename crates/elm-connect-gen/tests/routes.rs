@@ -439,7 +439,7 @@ fn reference(route: &Route, request: &DynamicMessage) -> Http {
 
 /// The implicit route of the method `full_name`, which has no rule: the
 /// request Connect POSTs, which grpc-gateway (`generate_unbound_methods`),
-/// Envoy (`auto_mapping`) and Vanguard serve.
+/// Envoy (`auto_mapping`) and a Connect handler serve.
 fn implicit(full_name: &str, request: &DynamicMessage) -> Http {
     let (service, method) = full_name.rsplit_once('.').expect("a method's full name");
     Http {

@@ -170,7 +170,7 @@ type RoutesClient interface {
 	Head(context.Context, *v1.FileRequest) (*v1.FileRequest, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
-	// Envoy's transcoder (auto_mapping) and Vanguard serve it.
+	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
 	Unbound(context.Context, *v1.GetMessageRequest) (*v1.Message, error)
 }
 
@@ -198,7 +198,7 @@ type RoutesHandler interface {
 	Head(context.Context, *v1.FileRequest) (*v1.FileRequest, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
-	// Envoy's transcoder (auto_mapping) and Vanguard serve it.
+	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
 	Unbound(context.Context, *v1.GetMessageRequest) (*v1.Message, error)
 }
 

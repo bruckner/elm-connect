@@ -1,7 +1,7 @@
-module Snippets.Sending exposing (Msg(..), config, viaConnect, viaTranscoding)
+module Snippets.Sending exposing (Msg(..), config, milk, viaConnect, viaTranscoding)
 
 {-| The README's quick start and docs/quickstart.md's first call: a call sent
-over each transport.
+over each transport, and a message built from its default.
 -}
 
 -- region sending
@@ -37,3 +37,17 @@ viaTranscoding =
 
 
 -- endregion sending
+-- region building
+
+
+milk : Notes.V1.Note
+milk =
+    let
+        note =
+            Notes.V1.defaultNote
+    in
+    { note | title = "Milk" }
+
+
+
+-- endregion building

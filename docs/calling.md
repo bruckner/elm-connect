@@ -215,6 +215,13 @@ never reached it; a call with side effects that failed after the server
 acted is then made again. A call that was never sent (a bad URL, an
 invalid header) is never retried.
 
+The policy's attempts are internal to `send`: the application sees one
+result, after the last of them. An application that retries on its own,
+by replaying a queue once the network is back or by re-issuing a call
+after refreshing a credential, decides for each call whether the policy,
+its own retry, or both apply. With both, every replay is itself retried,
+so the attempts multiply.
+
 ## Adjusting one call
 
 ```elm src/Rpc/Call.elm excerpt
@@ -326,6 +333,28 @@ The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
 read and bodies that do not decode.
 
+An `HttpStatus` code is the [Connect protocol's
+mapping](https://connectrpc.com/docs/protocol/#http-to-error-code) of an
+HTTP status without a status body, and for some statuses it is not the
+code a server would have sent in one
+([`google/rpc/code.proto`](https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto)
+gives each code's HTTP status):
+
+| HTTP status | `HttpStatus` code | Sent in a status body with |
+|---|---|---|
+| 401 | `Unauthenticated` | `Unauthenticated` |
+| 403 | `PermissionDenied` | `PermissionDenied` |
+| 503 | `Unavailable` | `Unavailable` |
+| 502 | `Unavailable` | nothing: a proxy's answer |
+| 400 | `Internal` | `InvalidArgument`, `FailedPrecondition`, `OutOfRange` |
+| 404 | `Unimplemented` | `NotFound` |
+| 429 | `Unavailable` | `ResourceExhausted` |
+| 504 | `Unavailable` | `DeadlineExceeded` |
+| any other | `Unknown` | |
+
+An application whose server does not yet send status bodies tells the
+last four apart by the response's `statusCode`, not by the code.
+
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
@@ -342,7 +371,10 @@ status details of one type ([descriptors.md](descriptors.md#error-details)).
 `StatusError.source`, an `Rpc.Error.Source`, says where the status was
 read; the runtime tries each in this order, whatever the transport:
 
-- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A
+  string `code` that is not one of Connect's names still makes the body
+  a Connect body: the error is `RpcStatus` with the code `Unknown`, and
+  the message and details as the body gives them.
 - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as
   grpc-gateway and Vanguard send.
 - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
@@ -409,6 +441,11 @@ sends and how it reads an answer without a server
 ([quickstart.md](quickstart.md#7-test-without-a-server)), and
 `Rpc.taskFromRequest` sends a request in place of the call's own and
 reads the answer as the call's, with the config's retry policy.
+
+A request's `headers` are those the runtime and the config add, not all
+that go out: sending a request with a body adds
+`Content-Type: application/json`, which elm/http sets from the body, and
+the browser adds its own, so a test of `Rpc.request` sees neither.
 
 `Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
 carries its metadata, the `trailer-` ones apart, for an application that
