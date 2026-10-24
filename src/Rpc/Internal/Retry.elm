@@ -1,10 +1,12 @@
-module Rpc.Internal.Retry exposing (Outcome, Policy, Retry(..), delay, jitter, maxDelay, run)
+module Rpc.Internal.Retry exposing (Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, maxDelay, run, step, wait)
 
 {-| When to try a call again. Not exposed. Two public modules need the
 constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
-and `Rpc` reads it through `run`, the attempt loop, which applies the policy
-math kept here (`delay`, `jitter`). A knob can be added without breaking
-code that builds a policy.
+and `Rpc` reads it through `run`, the attempt loop. The loop decides each
+wait with [`step`](#step), which is [`wait`](#wait), the policy math
+(`delay`, `jitter` and the deadline), applied to a failed attempt; the math
+is kept pure and here so it can be tested without sending anything. A knob
+can be added without breaking code that builds a policy.
 -}
 
 import Bitwise
@@ -27,7 +29,8 @@ one of `codes`; before the second, a wait of up to `backoff` milliseconds,
 doubling before each one after and never longer than `maxBackoff`; with
 `jitter`, a wait drawn uniformly from zero to that bound; with
 `idempotentOnly`, only for a method declared `IdempotencyNoSideEffects` or
-`IdempotencyIdempotent`, whose repeat changes nothing more.
+`IdempotencyIdempotent`, whose repeat changes nothing more; with `deadline`,
+all attempts and waits within that many milliseconds of the first attempt.
 -}
 type alias Policy =
     { attempts : Int
@@ -36,6 +39,7 @@ type alias Policy =
     , jitter : Bool
     , codes : List Code
     , idempotentOnly : Bool
+    , deadline : Maybe Float
     }
 
 
@@ -49,44 +53,154 @@ type alias Outcome e a =
     }
 
 
+{-| Where a call stands after a failed attempt: `tried` attempts made, the
+last failing with `code`, of a method of `idempotency`, at `now`, `elapsed`
+milliseconds after the first began.
+-}
+type alias Moment =
+    { tried : Int
+    , code : Code
+    , idempotency : Idempotency
+    , now : Time.Posix
+    , elapsed : Float
+    }
+
+
 {-| Run `once` until it succeeds or the policy, if there is one, says to
-stop. `retryCode` gives the code a failure is retried by, or `Nothing` when
-trying again cannot help. Each wait is drawn by [`jitter`](#jitter), seeded
-from the time the attempt failed.
+stop. `once` is given the milliseconds left of the policy's deadline when the
+attempt begins, or `Nothing` without one, to bound its timeout by
+([`attemptTimeout`](#attemptTimeout)). `retryCode` gives the code a failure is
+retried by, or `Nothing` when trying again cannot help. The clock is read
+before the first attempt, after each failure and after each wait; without a
+policy, `once` runs alone.
 -}
-run : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> Task Never ( Maybe Http.Metadata, Result e a ) -> Task Never (Outcome e a)
+run : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> (Maybe Float -> Task Never ( Maybe Http.Metadata, Result e a )) -> Task Never (Outcome e a)
 run retry idempotency retryCode once =
-    let
-        loop tried =
-            once
+    case retry of
+        Nothing ->
+            once Nothing
+                |> Task.map (\( metadata, result ) -> { attempts = 1, metadata = metadata, result = result })
+
+        Just policy ->
+            Time.now
                 |> Task.andThen
-                    (\( metadata, result ) ->
-                        case next retry idempotency retryCode tried result of
-                            Just ( policy, bound ) ->
-                                Time.now
-                                    |> Task.andThen (\now -> Process.sleep (jitter policy (Time.posixToMillis now) tried bound))
-                                    |> Task.andThen (\_ -> loop (tried + 1))
+                    (\start ->
+                        let
+                            since time =
+                                toFloat (Time.posixToMillis time - Time.posixToMillis start)
 
-                            Nothing ->
-                                Task.succeed { attempts = tried, metadata = metadata, result = result }
+                            loop tried elapsed =
+                                once (budget policy elapsed)
+                                    |> Task.andThen
+                                        (\( metadata, result ) ->
+                                            Time.now
+                                                |> Task.andThen
+                                                    (\now ->
+                                                        case step retry idempotency retryCode { tried = tried, now = now, elapsed = since now } result of
+                                                            Just ms ->
+                                                                Process.sleep ms
+                                                                    |> Task.andThen (\_ -> Time.now)
+                                                                    |> Task.andThen (\woke -> loop (tried + 1) (since woke))
+
+                                                            Nothing ->
+                                                                Task.succeed { attempts = tried, metadata = metadata, result = result }
+                                                    )
+                                        )
+                        in
+                        loop 1 0
                     )
-    in
-    loop 1
 
 
-{-| The policy and the bound on the wait before trying again, or `Nothing` to
-stop.
+{-| The loop's decision after an attempt: the wait before the next, or
+`Nothing` to stop, which a success, a missing policy or a failure trying again
+cannot help (`retryCode` gives `Nothing`) always is.
 -}
-next : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> Int -> Result e a -> Maybe ( Retry, Float )
-next retry idempotency retryCode tried result =
+step : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> { tried : Int, now : Time.Posix, elapsed : Float } -> Result e a -> Maybe Float
+step retry idempotency retryCode at result =
     case ( retry, result ) of
         ( Just policy, Err error ) ->
             retryCode error
-                |> Maybe.andThen (delay policy idempotency tried)
-                |> Maybe.map (Tuple.pair policy)
+                |> Maybe.andThen
+                    (\code ->
+                        wait policy
+                            { tried = at.tried
+                            , code = code
+                            , idempotency = idempotency
+                            , now = at.now
+                            , elapsed = at.elapsed
+                            }
+                    )
 
         _ ->
             Nothing
+
+
+{-| The wait in milliseconds before the next attempt, or `Nothing` to stop:
+the bound [`delay`](#delay) gives, drawn below by [`jitter`](#jitter), seeded
+from `now`; and `Nothing` when that wait would end at or past the deadline.
+-}
+wait : Retry -> Moment -> Maybe Float
+wait retry moment =
+    delay retry moment.idempotency moment.tried moment.code
+        |> Maybe.map (jitter retry (Time.posixToMillis moment.now) moment.tried)
+        |> Maybe.andThen
+            (\ms ->
+                case deadline retry of
+                    Just limit ->
+                        if moment.elapsed + ms < limit then
+                            Just ms
+
+                        else
+                            Nothing
+
+                    Nothing ->
+                        Just ms
+            )
+
+
+{-| The policy's deadline, when it is a positive finite number of
+milliseconds; any other value means none, as for a timeout.
+-}
+deadline : Retry -> Maybe Float
+deadline (Retry policy) =
+    case policy.deadline of
+        Just ms ->
+            if ms > 0 && not (isInfinite ms) then
+                Just ms
+
+            else
+                Nothing
+
+        Nothing ->
+            Nothing
+
+
+{-| What is left of the deadline `elapsed` milliseconds after the first
+attempt began, or `Nothing` without a deadline. It is at least 1 ms: a
+timeout below that would read as none, and the wait that came before was
+already kept short of the deadline, so only a late timer gets here.
+-}
+budget : Retry -> Float -> Maybe Float
+budget retry elapsed =
+    deadline retry
+        |> Maybe.map (\limit -> max 1 (limit - elapsed))
+
+
+{-| An attempt's timeout under what is left of a deadline: with no budget the
+timeout as it is, with no timeout the budget, and otherwise the smaller of
+the two. The timeout is a usable one, a positive number, or `Nothing`.
+-}
+attemptTimeout : Maybe Float -> Maybe Float -> Maybe Float
+attemptTimeout left timeout =
+    case ( left, timeout ) of
+        ( Just ms, Just t ) ->
+            Just (min ms t)
+
+        ( Just ms, Nothing ) ->
+            Just ms
+
+        ( Nothing, _ ) ->
+            timeout
 
 
 {-| The longest wait, in milliseconds: 2^31 − 1. `Process.sleep` hands its

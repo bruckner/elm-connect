@@ -1,6 +1,6 @@
 module Rpc.Retry exposing
     ( Retry, on
-    , withAttempts, withBackoff, withMaxBackoff, withoutJitter, allowNonIdempotent
+    , withAttempts, withBackoff, withMaxBackoff, withDeadline, withoutJitter, allowNonIdempotent
     )
 
 {-| When to try a failed call again: the `retry` of a
@@ -22,7 +22,7 @@ It is data, like the rest of a config: two policies built alike are `==`.
 
 # Changing a policy
 
-@docs withAttempts, withBackoff, withMaxBackoff, withoutJitter, allowNonIdempotent
+@docs withAttempts, withBackoff, withMaxBackoff, withDeadline, withoutJitter, allowNonIdempotent
 
 -}
 
@@ -77,6 +77,7 @@ on codes =
         , jitter = True
         , codes = codes
         , idempotentOnly = True
+        , deadline = Nothing
         }
 
 
@@ -104,6 +105,28 @@ and a value that is not a positive number waits not at all.
 withMaxBackoff : Float -> Retry -> Retry
 withMaxBackoff ms (Internal.Retry policy) =
     Internal.Retry { policy | maxBackoff = ms }
+
+
+{-| A bound in milliseconds on all of a call's attempts and the waits between
+them together, counted from when the first attempt begins. None by default:
+a call's timeout ([`Rpc.Call.withTimeout`](Rpc-Call#withTimeout)) applies to
+each attempt alone, so a call may take its attempts times its timeout, and
+the waits besides.
+
+    Rpc.Retry.on [ Rpc.Code.Unavailable ]
+        |> Rpc.Retry.withAttempts 5
+        |> Rpc.Retry.withDeadline 10000
+
+No wait is begun that would end at or past the deadline: the call ends with
+the last attempt's result instead. Each attempt's timeout is what is left of
+the deadline when it begins, or its own timeout if that is shorter, and over
+Connect the server is told so in `Connect-Timeout-Ms`. A deadline that is not
+a positive number (`0`, a negative number, NaN or infinity) means none.
+
+-}
+withDeadline : Float -> Retry -> Retry
+withDeadline ms (Internal.Retry policy) =
+    Internal.Retry { policy | deadline = Just ms }
 
 
 {-| Wait each bound in full, without jitter: for tests, and for a single

@@ -83,7 +83,10 @@ binding (Internal.Trace t) =
     t.binding
 
 
-{-| The request sent.
+{-| The request sent. Under a retry policy with a deadline
+([`Rpc.Retry.withDeadline`](Rpc-Retry#withDeadline)) it is the first
+attempt's, its timeout bounded by the deadline; a later attempt's is bounded
+by what is left of it.
 -}
 request : Trace -> Request
 request (Internal.Trace t) =

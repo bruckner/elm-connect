@@ -2005,6 +2005,7 @@ name : Transport -> String                -- "connect" | "transcode"
 on : List Rpc.Code.Code -> Retry          -- 3 attempts, 200 ms doubling, 30 s cap, jitter, idempotent only
 withAttempts : Int -> Retry -> Retry
 withBackoff, withMaxBackoff : Float -> Retry -> Retry
+withDeadline : Float -> Retry -> Retry    -- all attempts and waits; none by default
 withoutJitter, allowNonIdempotent : Retry -> Retry
 ```
 
@@ -2142,6 +2143,18 @@ breaking it (roadmap).
   waits each bound in full. Without the cap a long policy would
   overflow `setTimeout` into a tight loop, and without jitter clients
   would retry a recovering server in lockstep.
+- A call's timeout applies to each attempt, as gRPC's per-try timeout
+  does; `withDeadline ms` bounds all attempts and waits together, none
+  by default, a value that is not a positive finite number meaning
+  none, as for a timeout. The loop reads `Time.now` before the first
+  attempt and counts from it: it begins no wait that would end at or
+  past the deadline, ending with the last result instead, and gives
+  each attempt as its timeout what is left of the deadline when it
+  begins (at least 1 ms), or its own timeout if that is shorter, and
+  over Connect sends that value as `Connect-Timeout-Ms`. Cutting the
+  last attempt short is what makes it a deadline rather than only a
+  stop between attempts. A traced send's request is the first
+  attempt's.
 
 ### 5.2 Rpc
 

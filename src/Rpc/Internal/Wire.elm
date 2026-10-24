@@ -1,4 +1,4 @@
-module Rpc.Internal.Wire exposing (Settings, request)
+module Rpc.Internal.Wire exposing (Settings, request, withBudget)
 
 {-| The request each transport sends for a call: Connect's POST, or its GET of
 a method without side effects, and transcoding's request over a binding,
@@ -15,6 +15,7 @@ import Rpc.Body as Body
 import Rpc.Call
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
+import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Route as Route exposing (Route(..), route)
 import Rpc.Internal.Transport exposing (Transport(..))
 import Rpc.Request exposing (Request)
@@ -116,6 +117,58 @@ transcodeRequest rule cfg ((Call fields) as c) =
     , timeout = callTimeout cfg c
     , withCredentials = cfg.withCredentials
     }
+
+
+{-| The request an attempt sends with `left` milliseconds of a retry deadline
+to go (`Rpc.Internal.Retry.budget`): `sent` with
+its timeout bounded by them, and over Connect a `Connect-Timeout-Ms` that
+says so in place of any it had. A request whose timeout is already within
+the budget, or sent without a deadline, is `sent` as it is.
+-}
+withBudget : Settings c -> Call req res -> Maybe Float -> Request -> Request
+withBudget cfg c left sent =
+    let
+        timeout =
+            usableTimeout sent.timeout
+    in
+    case Retry.attemptTimeout left timeout of
+        Just ms ->
+            if timeout == Just ms then
+                sent
+
+            else
+                { sent
+                    | timeout = Just ms
+                    , headers =
+                        if speaksConnect cfg c then
+                            List.filter (\( name, _ ) -> String.toLower name /= "connect-timeout-ms") sent.headers
+                                ++ [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
+
+                        else
+                            sent.headers
+                }
+
+        Nothing ->
+            sent
+
+
+{-| Whether the call goes over the Connect protocol, which carries its
+timeout in a header: over Connect, and over transcoding by the implicit
+route of a method without a rule.
+-}
+speaksConnect : Settings c -> Call req res -> Bool
+speaksConnect cfg c =
+    case cfg.transport of
+        Connect _ ->
+            True
+
+        Transcode _ ->
+            case route cfg.transport c of
+                Bound _ _ ->
+                    False
+
+                Implicit ->
+                    True
 
 
 callTimeout : Settings c -> Call req res -> Maybe Float

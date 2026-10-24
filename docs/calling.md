@@ -171,6 +171,7 @@ on : List Code -> Retry
 withAttempts : Int -> Retry -> Retry
 withBackoff : Float -> Retry -> Retry
 withMaxBackoff : Float -> Retry -> Retry
+withDeadline : Float -> Retry -> Retry
 withoutJitter : Retry -> Retry
 allowNonIdempotent : Retry -> Retry
 ```
@@ -186,7 +187,14 @@ code is one of `codes`. Its defaults:
   failed together do not retry together (`withoutJitter` waits each
   bound in full);
 - only calls of a method declared `NO_SIDE_EFFECTS` or `IDEMPOTENT`
-  (`option idempotency_level`).
+  (`option idempotency_level`);
+- no deadline (`withDeadline`).
+
+The call's timeout already applies to each attempt, so without a
+deadline the worst case is the attempts times the timeout, plus the
+waits. A deadline bounds them all together: no wait begins that would
+end past it, and each attempt's timeout, `Connect-Timeout-Ms` included,
+is cut to what is left of it.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#retry
 retrying : Rpc.Config

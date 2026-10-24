@@ -351,7 +351,7 @@ taskTraced cfg c =
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        ( Rpc.Internal.Trace.init cfg.transport c sent outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
+                                        ( Rpc.Internal.Trace.init cfg.transport c (firstAttempt cfg c sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
@@ -513,8 +513,24 @@ attempt cfg c sent =
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
         Nothing ->
-            Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
-                |> Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cfg.retry c) (Rpc.Call.idempotency c) retryCode
+            Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cfg.retry c)
+                (Rpc.Call.idempotency c)
+                retryCode
+                (\left ->
+                    Rpc.Internal.Wire.withBudget cfg c left sent
+                        |> Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                )
+
+
+{-| The request the first attempt sends: `sent`, its timeout bounded by the
+retry policy's deadline when there is one.
+-}
+firstAttempt : Config -> Call req res -> Request -> Request
+firstAttempt cfg c sent =
+    Rpc.Internal.Wire.withBudget cfg
+        c
+        (Rpc.Internal.Call.retryIn cfg.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.budget policy 0))
+        sent
 
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a

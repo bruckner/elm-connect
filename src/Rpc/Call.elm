@@ -80,7 +80,9 @@ withHeaders extra (Internal.Call c) =
 
 One that is not a positive number (`0`, a negative number, NaN or infinity)
 is ignored, and the config's applies. With a retry policy in effect
-([`withRetry`](#withRetry)), the timeout applies to each attempt.
+([`withRetry`](#withRetry)), the timeout applies to each attempt, and a
+policy's deadline ([`Rpc.Retry.withDeadline`](Rpc-Retry#withDeadline))
+shortens it to what is left of the deadline.
 
 -}
 withTimeout : Float -> Call req res -> Call req res
