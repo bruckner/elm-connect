@@ -119,7 +119,10 @@ struct GenArgs {
     /// What an unknown enum value name decodes as: `fail` or `zero`.
     ///
     /// `fail`: the decode fails. `zero`: the name reads as the zero value,
-    /// as an unknown number always does.
+    /// as an unknown number always does. It applies to every enum the
+    /// invocation generates. Packages that refer to none of each other's
+    /// types can take different values in separate invocations, each with
+    /// its own `--out`.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
