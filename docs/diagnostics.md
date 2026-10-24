@@ -16,7 +16,8 @@ flag / the plugin's parameter, or an edit to the protos.
 |---|---|---|
 | **`input::`** | **What the generator was handed: the files and their syntax.** | |
 | `input::unknown_file` | A file asked for is not among the compiled files. Only a caller of the library can ask for one: the CLI and protoc request what they compiled. | Ask for a file the compiler was given; check its name against the include paths. |
-| `input::not_proto3` | A file to generate declares `syntax = "proto2"`, or no syntax, which makes it proto2; the message says which, and for a file without a `syntax` statement points at its first line. | `syntax = "proto3";` as the file's first statement. |
+| `input::file_not_found` | The CLI alone: a file named on its command line, or a file one of them imports, is under none of the include paths. The help lists the paths searched, then the `google/protobuf` files and the `google/api` ones the CLI carries, and says which `-I` path does not exist. protoc reports the same in its own words. | Add the directory the file is under with `-I`, and name the file relative to it; for another `google/api` file, add a googleapis checkout ([install.md](install.md#googleapis)). |
+| `input::not_proto3` | A file to generate declares `syntax = "proto2"`, or no syntax, which makes it proto2; the message says which, and for a file without a `syntax` statement points at its first line. The CLI reports it in place of the parser's errors when such a file does not parse, as a proto3 file whose `syntax` line was changed does not (its fields have no labels). | `syntax = "proto3";` as the file's first statement. |
 | `input::editions` | A file declares an edition (`edition = "2023";`). | `syntax = "proto3";` in place of the edition, if the file uses nothing beyond proto3. |
 | `input::file_name` | A file name holds a newline or another control character, which would break the generated header comment. | Rename the file. |
 | `input::field_name_conflict` | Two fields of one message have names that are the same once lowercased without underscores (`aB` and `ab`, `ID` and `Id`), which prost-reflect, the descriptor library both binaries use, refuses in any file but a proto2 one. protoc accepts such a file, since it compares the fields' exact JSON names, so through protoc it is the plugin that refuses it. | Rename one of the fields in the proto: the file is refused before any option applies, so `rename` cannot help. |
@@ -62,13 +63,14 @@ flag / the plugin's parameter, or an edit to the protos.
 
 For contributors: each code's rendered output is pinned by a case in
 [`conformance/cases`](../conformance/cases), which feeds the generator
-`input/` protos and an `options.txt` parameter, except four the corpus
+`input/` protos and an `options.txt` parameter, except five the corpus
 cannot reach. `input::unknown_file` (the corpus requests every file it
 compiles) is covered by `crates/elm-connect-gen/tests/ir/build.rs` and
 the plugin's tests; `input::editions` (the corpus's compiler cannot
 parse an editions file) by `crates/elm-connect/tests/compile_errors.rs`
 and the plugin's tests; `input::file_name` (the corpus cannot hold such
-a file) by `crates/elm-connect-gen/tests/ir/build.rs`; and `input::field_name_conflict` (the
+a file) by `crates/elm-connect-gen/tests/ir/build.rs`; `input::file_not_found` (the
+corpus's compiler stops first) by `crates/elm-connect/tests/compile_errors.rs`; and `input::field_name_conflict` (the
 corpus's compiler refuses the file itself) by
 `crates/elm-connect/tests/compile_errors.rs`, the plugin's tests and
 `crates/elm-connect-gen/src/diagnostics/field_names.rs`, which pins

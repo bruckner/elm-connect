@@ -10,6 +10,12 @@ use prost_types::{DescriptorProto, FileDescriptorProto};
 use super::Site;
 use super::spans::{Spans, tag};
 
+/// The label at the first of the two fields.
+pub const FIRST_LABEL: &str = "this field";
+
+/// The label at the second of the two fields.
+pub const SECOND_LABEL: &str = "has the same name as this one once lowercased without underscores";
+
 /// The text prost-reflect gives the refusal, around the two field names.
 const PREFIX: &str = "camel-case name of field '";
 const MIDDLE: &str = "' conflicts with field '";
@@ -67,18 +73,18 @@ pub fn field_name_conflicts(
                 ]
                 .concat()
             };
-            let site = |path: &[i32], label: String| Site {
+            let site = |path: &[i32], label: &str| Site {
                 file: file.name().to_owned(),
                 span: spans.get(path),
-                label,
+                label: label.to_owned(),
                 within: Vec::new(),
             };
             found.push(FieldNameConflict {
                 message: name.clone(),
                 path: name_path(j),
                 sites: vec![
-                    site(&name_path(i), format!("field `{first}`")),
-                    site(&name_path(j), format!("and field `{second}`")),
+                    site(&name_path(i), FIRST_LABEL),
+                    site(&name_path(j), SECOND_LABEL),
                 ],
             });
         }
@@ -192,7 +198,7 @@ mod tests {
                 ("p.v1.B.C", &[4, 1, 3, 0, 2, 0, 1][..])
             ]
         );
-        assert_eq!(found[0].sites[0].label, "field `ID`");
+        assert_eq!(found[0].sites[0].label, FIRST_LABEL);
         assert_eq!(found[0].sites[1].span, None);
     }
 }

@@ -77,7 +77,9 @@ a second transport and a public interface designed to be kept.
   the existing stack; binary codecs are on the roadmap, as a minor.
 - gRPC-web; unary gRPC-Web, over the binary codecs, is on the roadmap.
 - proto2 syntax, and editions. A proto2 file to generate is
-  `input::not_proto3`. A file that declares an edition
+  `input::not_proto3`, under the CLI also when it does not parse, as a
+  proto3 file with its `syntax` line changed does not, in place of the
+  parser's errors. A file that declares an edition
   (`edition = "2023";`) is `input::editions`, from either binary, before
   anything is generated, even where its features would reduce to proto3
   semantics: protox, under the CLI, does not parse editions, and the
@@ -2762,8 +2764,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   the message, and lists the sites with their labels when there are
   several; the CLI renders snippets.
   The CLI's compile errors are protox's, rendered as protox renders them
-  and not in the catalogue; a file or import found on no include path
-  adds a help naming the include paths searched.
+  and not in the catalogue, but a file or import found on no include
+  path, which is `input::file_not_found` with a help naming the include
+  paths searched and any that does not exist.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.

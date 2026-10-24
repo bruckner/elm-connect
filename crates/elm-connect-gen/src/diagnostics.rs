@@ -30,7 +30,10 @@ use miette::{
     SourceCode,
 };
 
-pub use field_names::{FieldNameConflict, field_name_conflict_names, field_name_conflicts};
+pub use field_names::{
+    FIRST_LABEL as FIELD_NAME_CONFLICT_FIRST, FieldNameConflict,
+    SECOND_LABEL as FIELD_NAME_CONFLICT_SECOND, field_name_conflict_names, field_name_conflicts,
+};
 pub use spans::{Columns, LineColSpan, Spans, tag};
 
 /// Declares [`Code`], its rendering and [`Code::ALL`] from one list, so
@@ -61,6 +64,9 @@ macro_rules! codes {
 codes! {
     /// A file to generate is not among the compiled files.
     UnknownFile => "input::unknown_file",
+    /// A file named to the CLI, or a file it imports, is under none of
+    /// the include paths.
+    FileNotFound => "input::file_not_found",
     /// A file to generate is not proto3.
     NotProto3 => "input::not_proto3",
     /// A file declares an edition (`edition = "2023";`), which elm-connect
@@ -1359,11 +1365,11 @@ impl Problem {
                  lowercased without underscores, and elm-connect cannot read the file."
             ),
             format!(
-                "elm-connect builds its descriptors with prost-reflect, which refuses two such \
-                 fields in one message of a file that is not proto2. It refuses the file before \
-                 any option applies, so {} cannot help: rename one of the fields in the proto. \
-                 protoc accepts the file, since it compares the fields' JSON names, which \
-                 differ.",
+                "Fields of one message whose names differ only in case and underscores are \
+                 refused in any file but a proto2 one, when elm-connect reads the file and \
+                 before any option applies, so {} cannot help: rename one of them in the \
+                 proto. protoc accepts the file, since it compares the fields' exact JSON \
+                 names, which differ.",
                 spelling.rename_key()
             ),
             sites,
