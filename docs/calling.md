@@ -215,10 +215,12 @@ never reached it; a call with side effects that failed after the server
 acted is then made again. A call that was never sent (a bad URL, an
 invalid header) is never retried.
 
-An application that queues failed calls and replays them itself, such
-as when the network comes back, leaves `retry` unset on the calls it
-queues: with both, each replay retries again, and the attempts
-multiply.
+The policy's attempts are internal to `send`: the application sees one
+result, after the last of them. An application that retries on its own,
+by replaying a queue once the network is back or by re-issuing a call
+after refreshing a credential, decides for each call whether the policy,
+its own retry, or both apply. With both, every replay is itself retried,
+so the attempts multiply.
 
 ## Adjusting one call
 
@@ -331,17 +333,27 @@ The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
 read and bodies that do not decode.
 
-An `HttpStatus` code is the table's guess, and for some statuses it is
-not the code the server meant. Connect and `google.rpc.Status` servers
-send 401 with `Unauthenticated`, 403 with `PermissionDenied` and 503
-with `Unavailable`, which the table reads back; a 502 comes from a
-proxy, with no code, and reads as `Unavailable` too. They send 400 with
-`InvalidArgument`, `FailedPrecondition` or `OutOfRange`, 404 with
-`NotFound`, 429 with `ResourceExhausted` and 504 with
-`DeadlineExceeded`, where the table reads `Internal`, `Unimplemented`,
-`Unavailable` and `Unavailable`. An application whose server does not
-yet send status bodies tells those statuses apart by the response's
-`statusCode`, not by the code.
+An `HttpStatus` code is the [Connect protocol's
+mapping](https://connectrpc.com/docs/protocol/#http-to-error-code) of an
+HTTP status without a status body, and for some statuses it is not the
+code a server would have sent in one
+([`google/rpc/code.proto`](https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto)
+gives each code's HTTP status):
+
+| HTTP status | `HttpStatus` code | Sent in a status body with |
+|---|---|---|
+| 401 | `Unauthenticated` | `Unauthenticated` |
+| 403 | `PermissionDenied` | `PermissionDenied` |
+| 503 | `Unavailable` | `Unavailable` |
+| 502 | `Unavailable` | nothing: a proxy's answer |
+| 400 | `Internal` | `InvalidArgument`, `FailedPrecondition`, `OutOfRange` |
+| 404 | `Unimplemented` | `NotFound` |
+| 429 | `Unavailable` | `ResourceExhausted` |
+| 504 | `Unavailable` | `DeadlineExceeded` |
+| any other | `Unknown` | |
+
+An application whose server does not yet send status bodies tells the
+last four apart by the response's `statusCode`, not by the code.
 
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
