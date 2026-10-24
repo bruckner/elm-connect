@@ -215,12 +215,51 @@ never reached it; a call with side effects that failed after the server
 acted is then made again. A call that was never sent (a bad URL, an
 invalid header) is never retried.
 
+### What the policy is, and is not
+
+The policy is the kind of retry gRPC configures as a service config's
+`retryPolicy` ([gRPC retry guide](https://grpc.io/docs/guides/retry/),
+[gRFC A6](https://github.com/grpc/proposal/blob/master/A6-client-retries.md)):
+a bounded number of attempts on listed codes, each after an exponential
+wait with a cap and jitter, run inside the client. Two things gRPC does
+there are not done here: it honours the server's pushback header and
+throttles retries when too many of them fail
+([`Retry-After` is on the roadmap](roadmap.md#retry-after-and-retryinfo)).
+It is not gRPC's *transparent retry*, which re-sends only a request the
+server application is known never to have seen; a browser client cannot
+know that, and this one does not claim to.
+
+The Connect protocol has no retry semantics, and its clients ship no
+policy. Its [error codes](https://connectrpc.com/docs/protocol/#error-codes)
+say of `unavailable` that a client should back off and retry idempotent
+operations, and leave the rest to the application. The default here is
+that advice made concrete: the codes are the application's choice, and
+the proto's declared idempotency keeps the policy to calls that are
+safe to replay.
+
+### The policy, the application, or both
+
 The policy's attempts are internal to `send`: the application sees one
-result, after the last of them. An application that retries on its own,
-by replaying a queue once the network is back or by re-issuing a call
-after refreshing a credential, decides for each call whether the policy,
-its own retry, or both apply. With both, every replay is itself retried,
-so the attempts multiply.
+result, after the last of them, and nothing while they run. That is what
+decides which retry a failure should get.
+
+- **The policy**, for a transient failure that a short wait fixes and
+  that needs nothing from the application: `Unavailable` from a proxy, a
+  dropped connection, `ResourceExhausted` from a rate limit. It belongs
+  on calls that are safe to replay, which the default keeps to.
+- **The application**, for a failure that needs a change before the call
+  can be tried again: a credential to refresh, the network to come back,
+  a user to ask. The application also owns any wait the user should see
+  or may cancel, since a policy's waits are invisible and `send` with a
+  policy takes no tracker ([Cancelling](#cancelling)). An application
+  that retries a call on its own sends it with `retry = Nothing` in that
+  call's config, unless it means the two to stack.
+- **Both**, the common shape: the policy covers the blips and the
+  application the structural failures. They multiply: every replay the
+  application makes is itself retried by the policy, so a queue of ten
+  calls replayed under a policy of three attempts may make thirty
+  requests. Declared idempotency is what keeps that to calls that can
+  stand it.
 
 ## Adjusting one call
 

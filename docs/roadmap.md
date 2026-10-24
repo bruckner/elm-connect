@@ -166,6 +166,22 @@ A retry policy waits by its own backoff. Honouring the server's
 error detail, would be a new setting on the opaque `Rpc.Retry`: a
 minor.
 
+## A gRPC service config's `retryPolicy`
+
+A gRPC client takes its retry policy from a service config, a JSON
+document with a `retryPolicy` per set of methods
+([service config](https://github.com/grpc/grpc/blob/master/doc/service_config.md),
+[gRFC A6](https://github.com/grpc/proposal/blob/master/A6-client-retries.md)):
+`maxAttempts`, `initialBackoff`, `maxBackoff`, `backoffMultiplier` and
+`retryableStatusCodes`. A decoder from that JSON to an `Rpc.Retry`, so an
+application whose server already publishes one need not transcribe it.
+Attempts, the two backoffs and the codes map as they are. The multiplier
+is fixed at 2 here and would need a `withMultiplier` knob. gRPC's jitter
+is ±20% of the wait where this policy draws from zero to it: a documented
+difference, not a knob. The per-method `name` list is the application's
+to apply, and pushback, throttling and hedging stay out. A function and a
+knob on the opaque `Retry`: a minor.
+
 ## An npm wrapper and the Buf plugin
 
 Today the CLI and the plugin are installed from a release's prebuilt
