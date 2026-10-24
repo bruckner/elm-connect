@@ -53,6 +53,7 @@ type State
   - [`labels`](Tasks-V1-Task#labels): Unordered.
   - [`owner`](Tasks-V1-Task#owner): Deprecated. Immutable.
   - [`notes`](Tasks-V1-Task#notes)
+  - [`made`](Tasks-V1-Task#made): Output only. When the task was made: the behavior is said once.
   - `due`: See [`TaskDue`](#TaskDue).
 
 -}
@@ -63,6 +64,7 @@ type alias Task =
     , labels : List String
     , owner : String
     , notes : String
+    , made : String
     , due : TaskDue
     }
 
@@ -104,6 +106,7 @@ defaultTask =
     , labels = []
     , owner = ""
     , notes = ""
+    , made = ""
     , due = TaskDueUnset
     }
 
@@ -190,6 +193,7 @@ encodeTask value =
          , ( "labels", Proto.Json.repeatedField Json.Encode.string value.labels )
          , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
          , ( "notes", Proto.Json.implicitField "" Json.Encode.string value.notes )
+         , ( "made", Proto.Json.implicitField "" Json.Encode.string value.made )
          ]
             ++ encodeTaskDue value.due
         )
@@ -248,6 +252,7 @@ decodeTask =
         |> Proto.Json.field "labels" [] (Json.Decode.list Json.Decode.string)
         |> Proto.Json.field "owner" "" Json.Decode.string
         |> Proto.Json.field "notes" "" Json.Decode.string
+        |> Proto.Json.field "made" "" Json.Decode.string
         |> Proto.Json.oneof decodeTaskDue
 
 

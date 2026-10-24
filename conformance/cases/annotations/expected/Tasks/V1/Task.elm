@@ -33,6 +33,7 @@ descriptor =
         , labels
         , owner
         , notes
+        , made
         , date
         , never
         ]
@@ -87,6 +88,17 @@ owner =
 notes : Proto.Field.Descriptor
 notes =
     Proto.Field.descriptor "notes" "notes" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+{-| Output only. When the task was made: the behavior is said once.
+
+`string made = 9 [(google.api.field_behavior) = OUTPUT_ONLY];`
+
+-}
+made : Proto.Field.Descriptor
+made =
+    Proto.Field.descriptor "made" "made" 9 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.withBehavior [ Proto.Field.BehaviorOutputOnly ]
 
 
 {-| `string date = 7 [(google.api.field_behavior) = INPUT_ONLY];`, in oneof `due`

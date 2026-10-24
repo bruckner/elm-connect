@@ -18,3 +18,6 @@
 - Generated doc comments put `an` before a type name that starts with
   a vowel sound ("An [`Author`]…", "Encodes an [`Event`]…"), where they
   always wrote `a`.
+- A field's behavior words (`Output only.`, `Required.` and the rest)
+  are left out of its generated doc when its comment already starts with
+  them, as AIP-style comments do, so they are not said twice.

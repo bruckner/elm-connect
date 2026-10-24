@@ -196,15 +196,23 @@ fn descriptor_target(descriptors: &str) -> String {
 
 /// The item of a record field: its Elm name linked to `target`, its
 /// descriptor value, then `Deprecated.`, its comment and its behaviors as
-/// words (`Required.`); the name alone when there is nothing else. The
-/// field's declaration is on its descriptor value.
+/// words (`Required.`), but those the comment already starts with, as an
+/// AIP-style comment does (`Output only. When it was made.`); the name
+/// alone when there is nothing else. The field's declaration is on its
+/// descriptor value.
 pub(super) fn field_item(
     elm_name: &str,
     target: &str,
     doc: &Doc,
     behavior: &[FieldBehavior],
 ) -> String {
-    let words = behavior_words(behavior);
+    let said = leading_behavior_words(doc.comment.as_deref().unwrap_or_default());
+    let unsaid: Vec<FieldBehavior> = behavior
+        .iter()
+        .filter(|behavior| behavior_word(behavior).is_none_or(|word| !said.contains(&word)))
+        .copied()
+        .collect();
+    let words = behavior_words(&unsaid);
     named_item(
         &link(elm_name, target),
         with_sentence(item_rest(doc), &words),
@@ -261,21 +269,54 @@ fn is_one_paragraph(blocks: &str) -> bool {
 fn behavior_words(behavior: &[FieldBehavior]) -> String {
     behavior
         .iter()
-        .filter_map(|behavior| match behavior {
-            FieldBehavior::Required => Some("Required."),
-            FieldBehavior::OutputOnly => Some("Output only."),
-            FieldBehavior::InputOnly => Some("Input only."),
-            FieldBehavior::Immutable => Some("Immutable."),
-            FieldBehavior::Identifier => Some("Identifier."),
-            FieldBehavior::UnorderedList => Some("Unordered."),
-            // A number this release does not name has no word; the descriptor
-            // value still carries it.
-            FieldBehavior::Optional
-            | FieldBehavior::NonEmptyDefault
-            | FieldBehavior::Unknown(_) => None,
-        })
+        .filter_map(behavior_word)
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// The words of one behavior, or `None` for one that is not written.
+fn behavior_word(behavior: &FieldBehavior) -> Option<&'static str> {
+    match behavior {
+        FieldBehavior::Required => Some("Required."),
+        FieldBehavior::OutputOnly => Some("Output only."),
+        FieldBehavior::InputOnly => Some("Input only."),
+        FieldBehavior::Immutable => Some("Immutable."),
+        FieldBehavior::Identifier => Some("Identifier."),
+        FieldBehavior::UnorderedList => Some("Unordered."),
+        // A number this release does not name has no word; the descriptor
+        // value still carries it.
+        FieldBehavior::Optional | FieldBehavior::NonEmptyDefault | FieldBehavior::Unknown(_) => {
+            None
+        }
+    }
+}
+
+/// The behaviors' words that `comment` starts with, one after another,
+/// in any case: `Required. Output only.` of `Required. Output only. The
+/// time.` A word counts only as a whole sentence of its own.
+fn leading_behavior_words(comment: &str) -> Vec<&'static str> {
+    const WORDS: [&str; 6] = [
+        "Required.",
+        "Output only.",
+        "Input only.",
+        "Immutable.",
+        "Identifier.",
+        "Unordered.",
+    ];
+    let mut rest = comment.trim_start();
+    let mut said = Vec::new();
+    while let Some(word) = WORDS.iter().find(|word| {
+        rest.get(..word.len())
+            .is_some_and(|start| start.eq_ignore_ascii_case(word))
+            && rest[word.len()..]
+                .chars()
+                .next()
+                .is_none_or(char::is_whitespace)
+    }) {
+        said.push(*word);
+        rest = rest[word.len()..].trim_start();
+    }
+    said
 }
 
 /// An item's text after its head: `Deprecated.` and the comment, as one
@@ -576,6 +617,42 @@ mod tests {
         assert_eq!(
             behavior_words(&[NonEmptyDefault, Identifier, InputOnly]),
             "Identifier. Input only."
+        );
+    }
+
+    #[test]
+    fn a_behavior_the_comment_starts_with_is_not_repeated() {
+        use FieldBehavior::*;
+        let doc = |comment: &str| Doc {
+            comment: Some(comment.to_owned()),
+            declaration: "string a = 1;".into(),
+            deprecated: false,
+        };
+        assert_eq!(
+            field_item(
+                "a",
+                "M#a",
+                &doc("Output only. When it was made."),
+                &[OutputOnly]
+            ),
+            "  - [`a`](M#a): Output only. When it was made."
+        );
+        assert_eq!(
+            field_item(
+                "a",
+                "M#a",
+                &doc("REQUIRED. output only. The a."),
+                &[Required, OutputOnly, Immutable]
+            ),
+            "  - [`a`](M#a): REQUIRED. output only. The a. Immutable."
+        );
+        assert_eq!(
+            field_item("a", "M#a", &doc("Output only.ish"), &[OutputOnly]),
+            "  - [`a`](M#a): Output only.ish Output only."
+        );
+        assert_eq!(
+            field_item("a", "M#a", &doc("The a. Required."), &[Required]),
+            "  - [`a`](M#a): The a. Required. Required."
         );
     }
 
