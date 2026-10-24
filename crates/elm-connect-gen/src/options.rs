@@ -118,7 +118,7 @@ impl Options {
             };
             let (key, value) = (key.trim(), value.trim());
             if !KEYS.contains(&key) {
-                problems.push(Problem::unknown_option(key));
+                problems.push(Problem::unknown_option(key, &KEYS));
                 continue;
             }
             if key != "rename" && !seen.insert(key.to_owned()) {

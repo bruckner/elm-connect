@@ -1,0 +1,14 @@
+input::not_proto3
+
+  × The file `notes.proto` has no `syntax` statement, which makes it proto2,
+  │ but elm-connect generates proto3.
+   ╭─[notes.proto:1:1]
+ 1 │ // A file without a syntax statement is proto2, and refused.
+   · ▲
+   · ╰── no `syntax` statement before this
+ 2 │ package legacy.v1;
+   ╰────
+  help: elm-connect implements the proto3 JSON mapping; proto2 features like
+        `required` and default values have no Elm mapping. A file without a
+        `syntax` statement is proto2. Add `syntax = "proto3";` as its first
+        statement.

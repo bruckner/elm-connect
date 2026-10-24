@@ -1189,12 +1189,14 @@ impl Problem {
         )
     }
 
-    /// The plugin parameter names `key`, which is no option.
-    pub fn unknown_option(key: &str) -> Self {
+    /// The plugin parameter names `key`, which is none of `keys`, the
+    /// options; the help suggests the nearest of them ([`closest`]).
+    pub fn unknown_option(key: &str, keys: &[&str]) -> Self {
+        let suggestion = closest(key, keys.iter().copied());
         Problem::new(
             Code::UnknownOption,
             format!("There is no option `{key}`."),
-            OPTION_KEYS_HELP,
+            format!("{}{OPTION_KEYS_HELP}", did_you_mean(suggestion.as_deref())),
             Vec::new(),
         )
     }
@@ -1270,13 +1272,32 @@ impl Problem {
         )
     }
 
-    /// `file` uses `syntax`, not proto3.
-    pub fn not_proto3(file: &str, syntax: &str, site: Site) -> Self {
+    /// `file` uses `syntax`, not proto3; `None` when it declares no
+    /// syntax, which makes it proto2.
+    pub fn not_proto3(file: &str, syntax: Option<&str>, site: Site) -> Self {
+        let (message, add) = match syntax {
+            Some(syntax) => (
+                format!(
+                    "The file `{file}` uses {syntax} syntax, but elm-connect generates proto3."
+                ),
+                "Use `syntax = \"proto3\";`.",
+            ),
+            None => (
+                format!(
+                    "The file `{file}` has no `syntax` statement, which makes it proto2, but \
+                     elm-connect generates proto3."
+                ),
+                "A file without a `syntax` statement is proto2. Add `syntax = \"proto3\";` as \
+                 its first statement.",
+            ),
+        };
         Problem::new(
             Code::NotProto3,
-            format!("The file `{file}` uses {syntax} syntax, but elm-connect generates proto3."),
-            "elm-connect implements the proto3 JSON mapping; proto2 features like `required` \
-             and default values have no Elm mapping. Use `syntax = \"proto3\";`.",
+            message,
+            format!(
+                "elm-connect implements the proto3 JSON mapping; proto2 features like \
+                 `required` and default values have no Elm mapping. {add}"
+            ),
             vec![site],
         )
     }
