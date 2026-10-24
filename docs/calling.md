@@ -215,6 +215,52 @@ never reached it; a call with side effects that failed after the server
 acted is then made again. A call that was never sent (a bad URL, an
 invalid header) is never retried.
 
+### What the policy is, and is not
+
+The policy is the kind of retry gRPC configures as a service config's
+`retryPolicy` ([gRPC retry guide](https://grpc.io/docs/guides/retry/),
+[gRFC A6](https://github.com/grpc/proposal/blob/master/A6-client-retries.md)):
+a bounded number of attempts on listed codes, each after an exponential
+wait with a cap and jitter, run inside the client. Two things gRPC does
+there are not done here: it honours the server's pushback header and
+throttles retries when too many of them fail
+([`Retry-After` is on the roadmap](roadmap.md#retry-after-and-retryinfo)).
+It is not gRPC's *transparent retry*, which re-sends only a request the
+server application is known never to have seen; a browser client cannot
+know that, and this one does not claim to.
+
+The Connect protocol has no retry semantics, and its clients ship no
+policy. Its [error codes](https://connectrpc.com/docs/protocol/#error-codes)
+say of `unavailable` that a client should back off and retry idempotent
+operations, and leave the rest to the application. The default here is
+that advice made concrete: the codes are the application's choice, and
+the proto's declared idempotency keeps the policy to calls that are
+safe to replay.
+
+### The policy, the application, or both
+
+The policy's attempts are internal to `send`: the application sees one
+result, after the last of them, and nothing while they run. That is what
+decides which retry a failure should get.
+
+- **The policy**, for a transient failure that a short wait fixes and
+  that needs nothing from the application: `Unavailable` from a proxy, a
+  dropped connection, `ResourceExhausted` from a rate limit. It belongs
+  on calls that are safe to replay, which the default keeps to.
+- **The application**, for a failure that needs a change before the call
+  can be tried again: a credential to refresh, the network to come back,
+  a user to ask. The application also owns any wait the user should see
+  or may cancel, since a policy's waits are invisible and `send` with a
+  policy takes no tracker ([Cancelling](#cancelling)). An application
+  that retries a call on its own sends it with `retry = Nothing` in that
+  call's config, unless it means the two to stack.
+- **Both**, the common shape: the policy covers the blips and the
+  application the structural failures. They multiply: every replay the
+  application makes is itself retried by the policy, so a queue of ten
+  calls replayed under a policy of three attempts may make thirty
+  requests. Declared idempotency is what keeps that to calls that can
+  stand it.
+
 ## Adjusting one call
 
 ```elm src/Rpc/Call.elm excerpt
@@ -326,6 +372,28 @@ The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
 read and bodies that do not decode.
 
+An `HttpStatus` code is the [Connect protocol's
+mapping](https://connectrpc.com/docs/protocol/#http-to-error-code) of an
+HTTP status without a status body, and for some statuses it is not the
+code a server would have sent in one
+([`google/rpc/code.proto`](https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto)
+gives each code's HTTP status):
+
+| HTTP status | `HttpStatus` code | Sent in a status body with |
+|---|---|---|
+| 401 | `Unauthenticated` | `Unauthenticated` |
+| 403 | `PermissionDenied` | `PermissionDenied` |
+| 503 | `Unavailable` | `Unavailable` |
+| 502 | `Unavailable` | nothing: a proxy's answer |
+| 400 | `Internal` | `InvalidArgument`, `FailedPrecondition`, `OutOfRange` |
+| 404 | `Unimplemented` | `NotFound` |
+| 429 | `Unavailable` | `ResourceExhausted` |
+| 504 | `Unavailable` | `DeadlineExceeded` |
+| any other | `Unknown` | |
+
+An application whose server does not yet send status bodies tells the
+last four apart by the response's `statusCode`, not by the code.
+
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
@@ -342,7 +410,10 @@ status details of one type ([descriptors.md](descriptors.md#error-details)).
 `StatusError.source`, an `Rpc.Error.Source`, says where the status was
 read; the runtime tries each in this order, whatever the transport:
 
-- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A
+  string `code` that is not one of Connect's names still makes the body
+  a Connect body: the error is `RpcStatus` with the code `Unknown`, and
+  the message and details as the body gives them.
 - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as
   grpc-gateway and Vanguard send.
 - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
@@ -409,6 +480,11 @@ sends and how it reads an answer without a server
 ([quickstart.md](quickstart.md#7-test-without-a-server)), and
 `Rpc.taskFromRequest` sends a request in place of the call's own and
 reads the answer as the call's, with the config's retry policy.
+
+A request's `headers` are those the runtime and the config add, not all
+that go out: sending a request with a body adds
+`Content-Type: application/json`, which elm/http sets from the body, and
+the browser adds its own, so a test of `Rpc.request` sees neither.
 
 `Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
 carries its metadata, the `trailer-` ones apart, for an application that

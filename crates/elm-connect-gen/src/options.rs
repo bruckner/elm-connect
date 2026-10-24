@@ -267,7 +267,7 @@ pub enum UnboundMethods {
     /// Generated like any other, with no bindings: the runtime calls it
     /// over the implicit route `POST /<package>.<Service>/<Method>`, which
     /// grpc-gateway (`generate_unbound_methods`), Envoy's transcoder
-    /// (`auto_mapping`) and Vanguard serve.
+    /// (`auto_mapping`) and a Connect handler serve.
     #[default]
     Implicit,
     /// A diagnostic, `services::unbound_method`, for a server that serves

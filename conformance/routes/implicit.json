@@ -1,5 +1,5 @@
 {
-  "description": "A method without a rule: the implicit route, POST /<package>.<Service>/<Method> with the request as its JSON body and Connect-Protocol-Version: 1, which grpc-gateway (generate_unbound_methods), Envoy (auto_mapping) and Vanguard serve. Such a fixture has no binding and no rule.",
+  "description": "A method without a rule: the implicit route, POST /<package>.<Service>/<Method> with the request as its JSON body and Connect-Protocol-Version: 1, which grpc-gateway (generate_unbound_methods), Envoy (auto_mapping) and a Connect handler serve; behind Vanguard, which serves rules alone, the Connect handler mounted beside it answers. Such a fixture has no binding and no rule.",
   "fixtures": [
     {
       "name": "a method without a rule is POSTed whole to its service and method",

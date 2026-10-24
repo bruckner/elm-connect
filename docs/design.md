@@ -1845,15 +1845,16 @@ keeps.
   the runtime sends it as `POST /<package>.<Service>/<Method>` with the
   request as its JSON body (§5.3), which grpc-gateway
   (`generate_unbound_methods`), Envoy's transcoder (`auto_mapping`) and
-  Vanguard (always; from v0.5 through the Connect handler mounted
-  beside it, §7) serve. That request is exactly the one Connect
-  POSTs.
+  any Connect handler serve. That request is exactly the one Connect
+  POSTs, so behind Vanguard, which from v0.5 serves rules alone, the
+  Connect handler mounted beside it answers the route (§7).
 - **`unbound_methods`** (§6) is `implicit` by default, the behaviour
   above. With `error`, each method without a rule is
   `services::unbound_method`, pointing at the method, for a server that
-  serves rules alone. Lenient is the default because the three common
-  transcoders serve the implicit route (Vanguard without being asked),
-  a server with a Connect handler serves it too, and an API whose
+  serves rules alone. Lenient is the default because grpc-gateway and
+  Envoy's transcoder serve the implicit route when asked, a server with
+  a Connect handler serves it always (Vanguard's beside it included),
+  and an API whose
   every method has a rule loses nothing either way; strict is one
   option away for the rest.
 - `Rpc.Call req res` keeps the request type, not just the response
@@ -2388,7 +2389,8 @@ all 40 passing.
 Run against Vanguard by the live suite (§7): GET with query
 parameters, POST with a body field, PATCH with an update mask in the
 query, DELETE, a custom verb, percent-encoded path values and the
-implicit route; and every route fixture (`conformance/routes/`), each
+implicit route (which the Connect handler beside it answers); and every
+route fixture (`conformance/routes/`), each
 request checked against the fixture and Vanguard's reading of it
 against the fixture's request, with three divergences recorded (§7).
 Not verified live: `response_body` (no rule of either API has one),
@@ -2445,12 +2447,13 @@ default, and is `Nothing` for a number the method has no binding of
 - **The implicit route.** A method without a rule has no bindings, and
   is called as `POST /<package>.<Service>/<Method>` with the request as
   its JSON body, which grpc-gateway (`generate_unbound_methods`), Envoy
-  (`auto_mapping`) and Vanguard all serve. That is exactly the request
+  (`auto_mapping`) and a Connect handler serve. That is exactly the request
   Connect POSTs, `Connect-Protocol-Version: 1` and `Connect-Timeout-Ms`
   included, so the runtime builds it from the descriptor and the
   generated code carries nothing for it; whether a method has a rule is
   not in the type. Its answer is read as a transcoder's (any 2xx).
-  The live suite runs it against connect-go with Vanguard (§7).
+  The live suite runs it against connect-go beside Vanguard, where the
+  Connect handler answers it (§7).
 - Every call has a route: its binding, or the implicit route when the
   method has no rule. A number the method has no binding of is refused
   where it is chosen, by `viaBinding`'s `Maybe`, never at send time.

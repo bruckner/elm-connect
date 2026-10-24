@@ -20,7 +20,7 @@ otherwise.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field |
+| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)) |
 | `string`, `bool` | `String`, `Bool` |
 | `int32`, `uint32`, `sint32`, `fixed32`, `sfixed32` | `Int` |
 | `double`, `float` | `Float` |
@@ -96,7 +96,7 @@ Both binaries take the same options: the protoc plugin as
 | `bytes` | `--bytes` | `string` (default), `bytes` | How `bytes` fields are held. `string` is the base64 text as received; `bytes` gives elm/bytes' `Bytes` (add elm/bytes to your `elm.json`), the `BytesValue` wrapper too. `Proto.Bytes` converts either way under both. Beware: Elm's `==` does not look inside a `Bytes`, so any two compare equal: a record differing only in a `Bytes` field equals the other, `Expect.equal` passes when the bytes differ, and a check for whether your model changed misses a change to them. |
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
-| `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. |
+| `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -123,7 +123,9 @@ These examples use the layout of the [quick start](quickstart.md):
 the protos under `proto/`, and for protoc the googleapis files under
 `googleapis/` ([install.md](install.md#with-protoc)). protoc writes only
 into an out directory that exists (`mkdir -p generated`); the CLI
-creates it.
+creates it. The CLI needs no googleapis for `google/api/annotations.proto`,
+`google/api/http.proto` and `google/api/field_behavior.proto`, the three
+googleapis files it carries ([install.md](install.md#googleapis)).
 
 `rename` takes the proto's names as declared (`notes.v1.Note.page_count`,
 not `pageCount`).

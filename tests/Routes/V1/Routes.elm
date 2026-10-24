@@ -237,7 +237,7 @@ head =
 
 {-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 request as its body, as grpc-gateway (generate\_unbound\_methods),
-Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+Envoy's transcoder (auto\_mapping) and a Connect handler serve it.
 
 `rpc Unbound(GetMessageRequest) returns (Message)`.
 Connect: `POST /routes.v1.Routes/Unbound`.
@@ -764,7 +764,7 @@ descriptorHead =
 
 {-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 request as its body, as grpc-gateway (generate\_unbound\_methods),
-Envoy's transcoder (auto\_mapping) and Vanguard serve it.
+Envoy's transcoder (auto\_mapping) and a Connect handler serve it.
 
 `rpc Unbound(GetMessageRequest) returns (Message)`
 

@@ -118,9 +118,10 @@ binding; `rule` repeats that binding so the file reads without the proto.
 A method without a rule has `"binding": null` and `"rule": null`, and
 expects the implicit route: `POST /<package>.<Service>/<Method>` with
 the request as its body and `Connect-Protocol-Version: 1`, which
-grpc-gateway (`generate_unbound_methods`), Envoy (`auto_mapping`) and
-Vanguard serve (`implicit.json`; the live suite below runs it against
-Vanguard). `request` is proto3 JSON. `path`
+grpc-gateway (`generate_unbound_methods`), Envoy (`auto_mapping`) and a
+Connect handler serve (`implicit.json`; the live suite below runs it
+against the example server, where the Connect handler mounted beside
+Vanguard answers it). `request` is proto3 JSON. `path`
 (custom verb included) and the query pairs are as sent,
 percent-encoded; `headers`, optional and `[]` when absent, are those
 the route itself adds; `body` is JSON or `null` for none.
