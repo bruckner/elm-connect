@@ -2205,7 +2205,9 @@ type Call req res      -- opaque: method, request, binding, per-call adjustments
 -- per call
 withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
 withTimeout : Float -> Call req res -> Call req res                     -- replaces the config's
-withTracker : String -> Call req res -> Call req res                    -- send without retry only
+withRetry : Rpc.Retry.Retry -> Call req res -> Call req res             -- replaces the config's
+withoutRetry : Call req res -> Call req res                             -- no policy, whatever the config's
+withTracker : String -> Call req res -> Call req res                    -- send without a policy in effect only
 viaBinding : Int -> Call req res -> Maybe (Call req res)                -- transcoding only
 
 -- reading
@@ -2276,10 +2278,17 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `Task.attempt` and `Http.expectJson` take theirs before the data, so
   a call pipes into them as into `task`: `Notes.getNote req |> Rpc.send
   config GotNote`.
-- `send` without a retry policy is one `Http.request`, carrying the
-  call's tracker; with one, it is `Task.attempt` over `task`, and the
-  tracker does not apply, since elm/http tracks commands only and
-  retrying needs a task. The traced forms are tasks too.
+- The policy in effect is the call's when it has one and the config's
+  otherwise: `withRetry` puts another in the config's place, as
+  `withTimeout` does the timeout, and `withoutRetry` puts none, so one
+  config serves calls that retry and calls that must not, a call the
+  user may cancel or one the application retries itself. Every way of
+  sending resolves the call's choice, then the config's, before the
+  attempt loop runs.
+- `send` without a retry policy in effect is one `Http.request`,
+  carrying the call's tracker; with one, it is `Task.attempt` over
+  `task`, and the tracker does not apply, since elm/http tracks commands
+  only and retrying needs a task. The traced forms are tasks too.
 - `cancel tracker` is `Http.cancel tracker`, and a cancelled call
   reports nothing, as elm/http's requests do: elm/http cancels by
   killing the process that runs the request, which aborts it and
@@ -2290,7 +2299,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   an answer whose message was queued before the cancel ran is still
   delivered, so the application ignores, by its tracker or a request id
   of its own, a result for a call it withdrew. It is for `send`
-  without a retry policy, and for a request the application sends
+  without a retry policy in effect, and for a request the application sends
   itself from `request` with the tracker on its `Http.request`: a call
   sent with a retry policy has no tracker and cannot be cancelled, and
   the tasks (`task`, and `taskTraced` under `sendTraced`) ignore the

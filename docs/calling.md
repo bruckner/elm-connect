@@ -252,8 +252,9 @@ decides which retry a failure should get.
   a user to ask. The application also owns any wait the user should see
   or may cancel, since a policy's waits are invisible and `send` with a
   policy takes no tracker ([Cancelling](#cancelling)). An application
-  that retries a call on its own sends it with `retry = Nothing` in that
-  call's config, unless it means the two to stack.
+  that retries a call on its own sends it with `Rpc.Call.withoutRetry`
+  (or with `retry = Nothing` in that call's config), unless it means the
+  two to stack.
 - **Both**, the common shape: the policy covers the blips and the
   application the structural failures. They multiply: every replay the
   application makes is itself retried by the policy, so a queue of ten
@@ -266,13 +267,16 @@ decides which retry a failure should get.
 ```elm src/Rpc/Call.elm excerpt
 withHeaders : List ( String, String ) -> Call req res -> Call req res
 withTimeout : Float -> Call req res -> Call req res
+withRetry : Retry -> Call req res -> Call req res
+withoutRetry : Call req res -> Call req res
 withTracker : String -> Call req res -> Call req res
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 ```
 
 `Rpc.Call` adjusts a call before it is sent: headers after the config's,
-a timeout in milliseconds in place of the config's, a tracker for
-cancelling, and, for transcoding, another of the rule's bindings (`0` is
+a timeout in milliseconds in place of the config's, a retry policy in
+place of the config's (`withRetry`) or none (`withoutRetry`), a tracker
+for cancelling, and, for transcoding, another of the rule's bindings (`0` is
 the rule's own, `1` and up its `additional_bindings`).
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#per-call
@@ -315,9 +319,11 @@ elm/http's requests do, so the application records that it withdrew the
 call where it cancels, and ignores a result that arrives after: an
 answer already queued when the cancel ran is still delivered.
 
-Only `Rpc.send` without a retry policy puts the tracker on its request.
-A call sent with a retry policy, or with `Rpc.task`, `Rpc.taskTraced`
-or `Rpc.sendTraced`, cannot be cancelled this way.
+Only `Rpc.send` without a retry policy in effect puts the tracker on its
+request; under a config with a policy, a call the user may cancel is
+sent with `Rpc.Call.withoutRetry`. A call sent with a retry policy, or
+with `Rpc.task`, `Rpc.taskTraced` or `Rpc.sendTraced`, cannot be
+cancelled this way.
 
 ## Outside the browser
 

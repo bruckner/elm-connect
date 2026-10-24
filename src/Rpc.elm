@@ -107,7 +107,8 @@ import Time
     Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
 
 It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
-(`withHeaders`, `withTimeout`, `withTracker`, `viaBinding`) and read
+(`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
+`viaBinding`) and read
 (`serviceName`, `methodName`, `descriptor`, `toJson`, …).
 
 -}
@@ -135,6 +136,7 @@ call m req =
         , headers = []
         , timeout = Nothing
         , tracker = Nothing
+        , retry = Rpc.Internal.Call.InheritRetry
         }
 
 
@@ -167,7 +169,9 @@ application's state with record syntax:
   - `withCredentials`: send cookies and other credentials cross-origin
     (`Http.riskyRequest`).
   - `retry`: whether and when to try a failed call again
-    ([`Rpc.Retry`](Rpc-Retry)).
+    ([`Rpc.Retry`](Rpc-Retry)). A call can take another policy
+    ([`Rpc.Call.withRetry`](Rpc-Call#withRetry)) or none
+    ([`Rpc.Call.withoutRetry`](Rpc-Call#withoutRetry)) in its place.
 
 -}
 type alias Config =
@@ -230,7 +234,8 @@ checkConfig cfg =
     Notes.getNote { name = "notes/42" }
         |> Rpc.task config
 
-With a `retry` policy in the config ([`Rpc.Retry`](Rpc-Retry)), a failed
+With a retry policy in effect, the config's `retry` ([`Rpc.Retry`](Rpc-Retry))
+or the call's own ([`Rpc.Call.withRetry`](Rpc-Call#withRetry)), a failed
 attempt is sent again as the policy says, and the task ends with the last
 attempt's result. A task ignores the call's tracker
 ([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), so [`cancel`](#cancel)
@@ -254,10 +259,11 @@ into [`task`](#task):
     Notes.getNote { name = "notes/42" }
         |> Rpc.send config GotNote
 
-The config's retry policy applies as it does to [`task`](#task). The call's
+The retry policy in effect applies as it does to [`task`](#task). The call's
 tracker is put on its request, so [`cancel`](#cancel) can stop it, only when
-the config has no retry policy; with one, the call runs until the policy
-stops it.
+no policy is in effect: the config has no `retry`, or the call is sent
+[`withoutRetry`](Rpc-Call#withoutRetry). With one, the call runs until the
+policy stops it.
 
 -}
 send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
@@ -266,7 +272,7 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
         sent =
             request cfg c
     in
-    if cfg.retry == Nothing && unsendable cfg c sent == Nothing then
+    if Rpc.Internal.Call.retryIn cfg.retry c == Nothing && unsendable cfg c sent == Nothing then
         Internal.send (response cfg c) toMsg fields.tracker sent
 
     else
@@ -294,11 +300,13 @@ cancel ran is still delivered, so an application that cancels keeps track of
 the calls it withdrew (by the tracker, or a request id of its own) and ignores
 a result that comes after.
 
-Only `send` without a [`Retry`](Rpc-Retry#Retry) policy puts the tracker on
-its request, as does an application sending a request from
+Only `send` without a [`Retry`](Rpc-Retry#Retry) policy in effect puts the
+tracker on its request, as does an application sending a request from
 [`request`](#request) itself with the tracker on its `Http.request`. A call
-sent with a retry policy has no tracker and cannot be cancelled: it runs on
-and reports its result. The tasks, [`task`](#task) and
+under a config with a policy is sent so with
+[`Rpc.Call.withoutRetry`](Rpc-Call#withoutRetry). A call sent with a retry
+policy has no tracker and cannot be cancelled: it runs on and reports its
+result. The tasks, [`task`](#task) and
 [`taskTraced`](#taskTraced) under [`sendTraced`](#sendTraced), ignore the
 tracker too; one run under `Process.spawn` and stopped with `Process.kill`
 reports nothing, and has no trace, since its attempts and duration end with
@@ -321,7 +329,7 @@ cancel =
         |> Rpc.taskTraced config
         |> Task.perform GotNote
 
-The config's retry policy applies as it does to [`task`](#task), and the
+The retry policy in effect applies as it does to [`task`](#task), and the
 trace counts every attempt ([`Rpc.Trace.attempts`](Rpc-Trace#attempts)) and
 the milliseconds from before the first to after the last, waits included
 ([`Rpc.Trace.duration`](Rpc-Trace#duration)). The call's tracker is ignored,
@@ -357,7 +365,7 @@ taskTraced cfg c =
     Notes.getNote { name = "notes/42" }
         |> Rpc.sendTraced config GotNote
 
-It is [`taskTraced`](#taskTraced) as a command: the config's retry policy
+It is [`taskTraced`](#taskTraced) as a command: the retry policy in effect
 applies, and the call's tracker is ignored, so [`cancel`](#cancel) cannot
 stop it.
 
@@ -477,7 +485,7 @@ splitTrailers =
 
 
 {-| Send a request in place of the one a call would send, and read the answer as
-the call's. The config's retry policy applies, and the call's tracker is
+the call's. The retry policy in effect applies, and the call's tracker is
 ignored, as with [`task`](#task). A request whose URL or headers cannot be
 sent is not.
 -}
@@ -506,7 +514,7 @@ attempt cfg c sent =
 
         Nothing ->
             Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer )) sent
-                |> Rpc.Internal.Retry.run cfg.retry (Rpc.Call.idempotency c) retryCode
+                |> Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cfg.retry c) (Rpc.Call.idempotency c) retryCode
 
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
