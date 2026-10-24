@@ -2007,6 +2007,7 @@ withAttempts : Int -> Retry -> Retry
 withBackoff, withMaxBackoff : Float -> Retry -> Retry
 withDeadline : Float -> Retry -> Retry    -- all attempts and waits; none by default
 withoutJitter, allowNonIdempotent : Retry -> Retry
+next : Retry -> { tried : Int, code : Rpc.Code.Code, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
 ```
 
 The config is data: a record with no function in it, transport options
@@ -2155,6 +2156,13 @@ breaking it (roadmap).
   last attempt short is what makes it a deadline rather than only a
   stop between attempts. A traced send's request is the first
   attempt's.
+- `Rpc.Retry.next policy { tried, code, idempotency, now, elapsed }` is
+  the loop's decision as a pure function, the wait before the next
+  attempt or `Nothing` to stop, so an application that runs its own
+  loop (to show a wait, to cancel, to refresh between attempts) sends
+  each attempt `withoutRetry` and takes the policy's schedule from it.
+  The loop and `next` call the same function in
+  `Rpc.Internal.Retry`, so the two cannot drift.
 
 ### 5.2 Rpc
 

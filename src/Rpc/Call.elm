@@ -107,7 +107,7 @@ withRetry policy (Internal.Call c) =
 
 {-| Send this call once, whatever the config's `retry` says: for a call the
 user may cancel ([`withTracker`](#withTracker)), and for a call the
-application retries on its own.
+application retries on its own ([`Rpc.Retry.next`](Rpc-Retry#next)).
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withoutRetry
