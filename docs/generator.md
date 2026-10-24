@@ -123,7 +123,9 @@ These examples use the layout of the [quick start](quickstart.md):
 the protos under `proto/`, and for protoc the googleapis files under
 `googleapis/` ([install.md](install.md#with-protoc)). protoc writes only
 into an out directory that exists (`mkdir -p generated`); the CLI
-creates it.
+creates it. The CLI needs no googleapis for `google/api/annotations.proto`,
+`google/api/http.proto` and `google/api/field_behavior.proto`, the three
+googleapis files it carries ([install.md](install.md#googleapis)).
 
 `rename` takes the proto's names as declared (`notes.v1.Note.page_count`,
 not `pageCount`).
