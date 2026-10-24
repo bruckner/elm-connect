@@ -250,7 +250,7 @@ defaultCreateNoteRequest =
     }
 
 
-{-| A [`UpdateNoteRequest`](#UpdateNoteRequest) with every field at its default and every oneof unset.
+{-| An [`UpdateNoteRequest`](#UpdateNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateNoteRequest : UpdateNoteRequest
 defaultUpdateNoteRequest =
@@ -267,7 +267,7 @@ defaultDeleteNoteRequest =
     }
 
 
-{-| A [`ArchiveNoteRequest`](#ArchiveNoteRequest) with every field at its default and every oneof unset.
+{-| An [`ArchiveNoteRequest`](#ArchiveNoteRequest) with every field at its default and every oneof unset.
 -}
 defaultArchiveNoteRequest : ArchiveNoteRequest
 defaultArchiveNoteRequest =
@@ -465,7 +465,7 @@ encodeCreateNoteRequest value =
         ]
 
 
-{-| Encodes a [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON.
+{-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON.
 -}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
 encodeUpdateNoteRequest value =
@@ -484,7 +484,7 @@ encodeDeleteNoteRequest value =
         ]
 
 
-{-| Encodes a [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON.
+{-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON.
 -}
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
 encodeArchiveNoteRequest value =
@@ -576,7 +576,7 @@ decodeCreateNoteRequest =
         |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
 
 
-{-| Decodes a [`UpdateNoteRequest`](#UpdateNoteRequest) from proto3 JSON.
+{-| Decodes an [`UpdateNoteRequest`](#UpdateNoteRequest) from proto3 JSON.
 -}
 decodeUpdateNoteRequest : Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequest =
@@ -593,7 +593,7 @@ decodeDeleteNoteRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
 
 
-{-| Decodes a [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
+{-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
 -}
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =

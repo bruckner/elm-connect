@@ -69,8 +69,8 @@ impl Emitter {
             .collect();
         Decl::Value {
             doc: Some(format!(
-                "A {} with every field at its default and every oneof unset.",
-                docs::local(&shape.message.elm_name)
+                "{} with every field at its default and every oneof unset.",
+                docs::a_local_capital(&shape.message.elm_name)
             )),
             name: shape.message.default_name(),
             annotation: ty(shape.message.elm_name.clone(), []),
@@ -133,8 +133,8 @@ impl Emitter {
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
             doc: Some(format!(
-                "Encodes a {} as proto3 JSON.",
-                docs::local(&shape.message.elm_name)
+                "Encodes {} as proto3 JSON.",
+                docs::a_local(&shape.message.elm_name)
             )),
             name: shape.message.encoder_name(),
             annotation: Type::Function(
@@ -212,8 +212,8 @@ impl Emitter {
         let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
         Decl::Value {
             doc: Some(format!(
-                "Decodes a {} from proto3 JSON.",
-                docs::local(&shape.message.elm_name)
+                "Decodes {} from proto3 JSON.",
+                docs::a_local(&shape.message.elm_name)
             )),
             name: shape.message.decoder_name(),
             annotation,

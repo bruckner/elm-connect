@@ -1507,7 +1507,7 @@ defaultServerCompatResponse =
     }
 
 
-{-| A [`UnaryResponseDefinition`](#UnaryResponseDefinition) with every field at its default and every oneof unset.
+{-| An [`UnaryResponseDefinition`](#UnaryResponseDefinition) with every field at its default and every oneof unset.
 -}
 defaultUnaryResponseDefinition : UnaryResponseDefinition
 defaultUnaryResponseDefinition =
@@ -1532,7 +1532,7 @@ defaultStreamResponseDefinition =
     }
 
 
-{-| A [`UnaryRequest`](#UnaryRequest) with every field at its default and every oneof unset.
+{-| An [`UnaryRequest`](#UnaryRequest) with every field at its default and every oneof unset.
 -}
 defaultUnaryRequest : UnaryRequest
 defaultUnaryRequest =
@@ -1541,7 +1541,7 @@ defaultUnaryRequest =
     }
 
 
-{-| A [`UnaryResponse`](#UnaryResponse) with every field at its default and every oneof unset.
+{-| An [`UnaryResponse`](#UnaryResponse) with every field at its default and every oneof unset.
 -}
 defaultUnaryResponse : UnaryResponse
 defaultUnaryResponse =
@@ -1549,7 +1549,7 @@ defaultUnaryResponse =
     }
 
 
-{-| A [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) with every field at its default and every oneof unset.
+{-| An [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) with every field at its default and every oneof unset.
 -}
 defaultIdempotentUnaryRequest : IdempotentUnaryRequest
 defaultIdempotentUnaryRequest =
@@ -1558,7 +1558,7 @@ defaultIdempotentUnaryRequest =
     }
 
 
-{-| A [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) with every field at its default and every oneof unset.
+{-| An [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) with every field at its default and every oneof unset.
 -}
 defaultIdempotentUnaryResponse : IdempotentUnaryResponse
 defaultIdempotentUnaryResponse =
@@ -1660,7 +1660,7 @@ defaultConformancePayloadConnectGetInfo =
     }
 
 
-{-| A [`Error`](#Error) with every field at its default and every oneof unset.
+{-| An [`Error`](#Error) with every field at its default and every oneof unset.
 -}
 defaultError : Error
 defaultError =
@@ -2186,7 +2186,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`HTTPVersion`](#HTTPVersion) as proto3 JSON.
+{-| Encodes an [`HTTPVersion`](#HTTPVersion) as proto3 JSON.
 -}
 encodeHTTPVersion : HTTPVersion -> Json.Encode.Value
 encodeHTTPVersion value =
@@ -2580,7 +2580,7 @@ encodeServerCompatResponse value =
         ]
 
 
-{-| Encodes a [`UnaryResponseDefinition`](#UnaryResponseDefinition) as proto3 JSON.
+{-| Encodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) as proto3 JSON.
 -}
 encodeUnaryResponseDefinition : UnaryResponseDefinition -> Json.Encode.Value
 encodeUnaryResponseDefinition value =
@@ -2594,7 +2594,7 @@ encodeUnaryResponseDefinition value =
         )
 
 
-{-| Encodes a [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) as the members of its message's JSON object.
+{-| Encodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) as the members of its message's JSON object.
 -}
 encodeUnaryResponseDefinitionResponse : UnaryResponseDefinitionResponse -> List ( String, Maybe Json.Encode.Value )
 encodeUnaryResponseDefinitionResponse value =
@@ -2625,7 +2625,7 @@ encodeStreamResponseDefinition value =
         ]
 
 
-{-| Encodes a [`UnaryRequest`](#UnaryRequest) as proto3 JSON.
+{-| Encodes an [`UnaryRequest`](#UnaryRequest) as proto3 JSON.
 -}
 encodeUnaryRequest : UnaryRequest -> Json.Encode.Value
 encodeUnaryRequest value =
@@ -2635,7 +2635,7 @@ encodeUnaryRequest value =
         ]
 
 
-{-| Encodes a [`UnaryResponse`](#UnaryResponse) as proto3 JSON.
+{-| Encodes an [`UnaryResponse`](#UnaryResponse) as proto3 JSON.
 -}
 encodeUnaryResponse : UnaryResponse -> Json.Encode.Value
 encodeUnaryResponse value =
@@ -2644,7 +2644,7 @@ encodeUnaryResponse value =
         ]
 
 
-{-| Encodes a [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as proto3 JSON.
+{-| Encodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as proto3 JSON.
 -}
 encodeIdempotentUnaryRequest : IdempotentUnaryRequest -> Json.Encode.Value
 encodeIdempotentUnaryRequest value =
@@ -2654,7 +2654,7 @@ encodeIdempotentUnaryRequest value =
         ]
 
 
-{-| Encodes a [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as proto3 JSON.
+{-| Encodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as proto3 JSON.
 -}
 encodeIdempotentUnaryResponse : IdempotentUnaryResponse -> Json.Encode.Value
 encodeIdempotentUnaryResponse value =
@@ -2766,7 +2766,7 @@ encodeConformancePayloadConnectGetInfo value =
         ]
 
 
-{-| Encodes a [`Error`](#Error) as proto3 JSON.
+{-| Encodes an [`Error`](#Error) as proto3 JSON.
 -}
 encodeError : Error -> Json.Encode.Value
 encodeError value =
@@ -2957,7 +2957,7 @@ encodeTestCaseExpandedSize value =
 -- DECODERS
 
 
-{-| Decodes a [`HTTPVersion`](#HTTPVersion) from proto3 JSON.
+{-| Decodes an [`HTTPVersion`](#HTTPVersion) from proto3 JSON.
 -}
 decodeHTTPVersion : Json.Decode.Decoder HTTPVersion
 decodeHTTPVersion =
@@ -3253,7 +3253,7 @@ decodeServerCompatResponse =
         |> Proto.Json.fieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
 
 
-{-| Decodes a [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON.
+{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON.
 -}
 decodeUnaryResponseDefinition : Json.Decode.Decoder UnaryResponseDefinition
 decodeUnaryResponseDefinition =
@@ -3265,7 +3265,7 @@ decodeUnaryResponseDefinition =
         |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
 
 
-{-| Decodes a [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) from the members of its message's JSON object.
+{-| Decodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) from the members of its message's JSON object.
 -}
 decodeUnaryResponseDefinitionResponse : Json.Decode.Decoder UnaryResponseDefinitionResponse
 decodeUnaryResponseDefinitionResponse =
@@ -3289,7 +3289,7 @@ decodeStreamResponseDefinition =
         |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
 
 
-{-| Decodes a [`UnaryRequest`](#UnaryRequest) from proto3 JSON.
+{-| Decodes an [`UnaryRequest`](#UnaryRequest) from proto3 JSON.
 -}
 decodeUnaryRequest : Json.Decode.Decoder UnaryRequest
 decodeUnaryRequest =
@@ -3298,7 +3298,7 @@ decodeUnaryRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
-{-| Decodes a [`UnaryResponse`](#UnaryResponse) from proto3 JSON.
+{-| Decodes an [`UnaryResponse`](#UnaryResponse) from proto3 JSON.
 -}
 decodeUnaryResponse : Json.Decode.Decoder UnaryResponse
 decodeUnaryResponse =
@@ -3306,7 +3306,7 @@ decodeUnaryResponse =
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
 
 
-{-| Decodes a [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON.
+{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON.
 -}
 decodeIdempotentUnaryRequest : Json.Decode.Decoder IdempotentUnaryRequest
 decodeIdempotentUnaryRequest =
@@ -3315,7 +3315,7 @@ decodeIdempotentUnaryRequest =
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
-{-| Decodes a [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON.
+{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON.
 -}
 decodeIdempotentUnaryResponse : Json.Decode.Decoder IdempotentUnaryResponse
 decodeIdempotentUnaryResponse =
@@ -3417,7 +3417,7 @@ decodeConformancePayloadConnectGetInfo =
         |> Proto.Json.fieldEither "queryParams" "query_params" [] (Json.Decode.list decodeHeader)
 
 
-{-| Decodes a [`Error`](#Error) from proto3 JSON.
+{-| Decodes an [`Error`](#Error) from proto3 JSON.
 -}
 decodeError : Json.Decode.Decoder Error
 decodeError =

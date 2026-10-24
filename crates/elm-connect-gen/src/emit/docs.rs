@@ -54,6 +54,46 @@ pub(super) fn local(name: &str) -> String {
     link(name, &format!("#{name}"))
 }
 
+/// [`local`] after its indefinite article, `a` or `an`
+/// ([`takes_an`]): `an [`Author`](#Author)`.
+pub(super) fn a_local(name: &str) -> String {
+    let article = if takes_an(name) { "an" } else { "a" };
+    format!("{article} {}", local(name))
+}
+
+/// [`a_local`] at the start of a sentence: `An [`Author`](#Author)`.
+pub(super) fn a_local_capital(name: &str) -> String {
+    let mut text = a_local(name);
+    text.replace_range(..1, &text[..1].to_uppercase());
+    text
+}
+
+/// Whether a type name is read with `an` before it: it starts with a
+/// vowel sound. A leading acronym (two capitals, `HTTPRule`, `URLPath`)
+/// is read letter by letter, so it is the first letter's name that
+/// counts (`an HTTPRule`, `a URLPath`); a word is read as a word, with
+/// the common English exceptions (`a User`, `a OneOf`, `an Hour`).
+fn takes_an(name: &str) -> bool {
+    let mut chars = name.chars();
+    let (Some(first), second) = (chars.next(), chars.next()) else {
+        return false;
+    };
+    if second.is_some_and(|c| c.is_ascii_uppercase()) && first.is_ascii_uppercase() {
+        return "AEFHILMNORSX".contains(first);
+    }
+    let word = name.to_ascii_lowercase();
+    let starts = |prefixes: &[&str]| prefixes.iter().any(|prefix| word.starts_with(prefix));
+    if starts(&["hour", "honest", "honor", "honour", "heir"]) {
+        return true;
+    }
+    if starts(&[
+        "uni", "use", "usu", "uti", "ura", "uri", "eu", "ewe", "one", "once",
+    ]) {
+        return false;
+    }
+    "aeiou".contains(first.to_ascii_lowercase())
+}
+
 /// A link to the declaration `name` of the runtime's module `module` on
 /// the package site, an absolute URL, which an editor's hover makes
 /// clickable where it does not follow a page link.
@@ -537,5 +577,36 @@ mod tests {
             behavior_words(&[NonEmptyDefault, Identifier, InputOnly]),
             "Identifier. Input only."
         );
+    }
+
+    #[test]
+    fn the_article_follows_the_names_first_sound() {
+        for name in [
+            "Author",
+            "Event",
+            "Item",
+            "Order",
+            "Update",
+            "HTTPRule",
+            "RPCStatus",
+            "Hour",
+            "IDs",
+        ] {
+            assert!(takes_an(name), "an {name}");
+        }
+        for name in [
+            "Book",
+            "User",
+            "Unit",
+            "OneofCase",
+            "URLPath",
+            "Euro",
+            "Y",
+            "",
+        ] {
+            assert!(!takes_an(name), "a {name}");
+        }
+        assert_eq!(a_local_capital("Author"), "An [`Author`](#Author)");
+        assert_eq!(a_local("Book"), "a [`Book`](#Book)");
     }
 }

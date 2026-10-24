@@ -85,8 +85,8 @@ impl Emitter {
         ]);
         Decl::Value {
             doc: Some(format!(
-                "Encodes a {} as the members of its message's JSON object.",
-                docs::local(&shape.oneof.elm_type_name)
+                "Encodes {} as the members of its message's JSON object.",
+                docs::a_local(&shape.oneof.elm_type_name)
             )),
             name: shape.oneof.encoder_name(),
             annotation: Type::Function(
@@ -155,8 +155,8 @@ impl Emitter {
         );
         Decl::Value {
             doc: Some(format!(
-                "Decodes a {} from the members of its message's JSON object.",
-                docs::local(&shape.oneof.elm_type_name)
+                "Decodes {} from the members of its message's JSON object.",
+                docs::a_local(&shape.oneof.elm_type_name)
             )),
             name: shape.oneof.decoder_name(),
             annotation,

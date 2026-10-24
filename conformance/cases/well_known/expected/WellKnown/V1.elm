@@ -122,7 +122,7 @@ type EventWhen
 -- DEFAULTS
 
 
-{-| A [`Event`](#Event) with every field at its default and every oneof unset.
+{-| An [`Event`](#Event) with every field at its default and every oneof unset.
 -}
 defaultEvent : Event
 defaultEvent =
@@ -189,7 +189,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Event`](#Event) as proto3 JSON.
+{-| Encodes an [`Event`](#Event) as proto3 JSON.
 -}
 encodeEvent : Event -> Json.Encode.Value
 encodeEvent value =
@@ -226,7 +226,7 @@ encodeEvent value =
         )
 
 
-{-| Encodes a [`EventWhen`](#EventWhen) as the members of its message's JSON object.
+{-| Encodes an [`EventWhen`](#EventWhen) as the members of its message's JSON object.
 -}
 encodeEventWhen : EventWhen -> List ( String, Maybe Json.Encode.Value )
 encodeEventWhen value =
@@ -259,7 +259,7 @@ encodeEventWhen value =
 -- DECODERS
 
 
-{-| Decodes a [`Event`](#Event) from proto3 JSON.
+{-| Decodes an [`Event`](#Event) from proto3 JSON.
 -}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
@@ -294,7 +294,7 @@ decodeEvent =
         |> Proto.Json.oneof decodeEventWhen
 
 
-{-| Decodes a [`EventWhen`](#EventWhen) from the members of its message's JSON object.
+{-| Decodes an [`EventWhen`](#EventWhen) from the members of its message's JSON object.
 -}
 decodeEventWhen : Json.Decode.Decoder EventWhen
 decodeEventWhen =

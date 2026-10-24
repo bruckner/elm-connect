@@ -111,7 +111,7 @@ defaultMemo =
     }
 
 
-{-| A [`Edit`](#Edit) with every field at its default and every oneof unset.
+{-| An [`Edit`](#Edit) with every field at its default and every oneof unset.
 -}
 defaultEdit : Edit
 defaultEdit =
@@ -183,7 +183,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Audience`](#Audience) as proto3 JSON.
+{-| Encodes an [`Audience`](#Audience) as proto3 JSON.
 -}
 encodeAudience : Audience -> Json.Encode.Value
 encodeAudience value =
@@ -225,7 +225,7 @@ encodeMemoBody value =
             ]
 
 
-{-| Encodes a [`Edit`](#Edit) as proto3 JSON.
+{-| Encodes an [`Edit`](#Edit) as proto3 JSON.
 -}
 encodeEdit : Edit -> Json.Encode.Value
 encodeEdit value =
@@ -247,7 +247,7 @@ encodeGetNoteRequest value =
 -- DECODERS
 
 
-{-| Decodes a [`Audience`](#Audience) from proto3 JSON.
+{-| Decodes an [`Audience`](#Audience) from proto3 JSON.
 -}
 decodeAudience : Json.Decode.Decoder Audience
 decodeAudience =
@@ -280,7 +280,7 @@ decodeMemoBody =
         ]
 
 
-{-| Decodes a [`Edit`](#Edit) from proto3 JSON.
+{-| Decodes an [`Edit`](#Edit) from proto3 JSON.
 -}
 decodeEdit : Json.Decode.Decoder Edit
 decodeEdit =

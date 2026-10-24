@@ -463,7 +463,7 @@ type alias LocalizedMessage =
 -- DEFAULTS
 
 
-{-| A [`ErrorInfo`](#ErrorInfo) with every field at its default and every oneof unset.
+{-| An [`ErrorInfo`](#ErrorInfo) with every field at its default and every oneof unset.
 -}
 defaultErrorInfo : ErrorInfo
 defaultErrorInfo =
@@ -732,7 +732,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`ErrorInfo`](#ErrorInfo) as proto3 JSON.
+{-| Encodes an [`ErrorInfo`](#ErrorInfo) as proto3 JSON.
 -}
 encodeErrorInfo : ErrorInfo -> Json.Encode.Value
 encodeErrorInfo value =
@@ -883,7 +883,7 @@ encodeLocalizedMessage value =
 -- DECODERS
 
 
-{-| Decodes a [`ErrorInfo`](#ErrorInfo) from proto3 JSON.
+{-| Decodes an [`ErrorInfo`](#ErrorInfo) from proto3 JSON.
 -}
 decodeErrorInfo : Json.Decode.Decoder ErrorInfo
 decodeErrorInfo =

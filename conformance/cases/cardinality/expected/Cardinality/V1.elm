@@ -76,7 +76,7 @@ type alias Note =
 -- DEFAULTS
 
 
-{-| A [`Author`](#Author) with every field at its default and every oneof unset.
+{-| An [`Author`](#Author) with every field at its default and every oneof unset.
 -}
 defaultAuthor : Author
 defaultAuthor =
@@ -144,7 +144,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Author`](#Author) as proto3 JSON.
+{-| Encodes an [`Author`](#Author) as proto3 JSON.
 -}
 encodeAuthor : Author -> Json.Encode.Value
 encodeAuthor value =
@@ -178,7 +178,7 @@ encodeNote value =
 -- DECODERS
 
 
-{-| Decodes a [`Author`](#Author) from proto3 JSON.
+{-| Decodes an [`Author`](#Author) from proto3 JSON.
 -}
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =

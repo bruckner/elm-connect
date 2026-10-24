@@ -15,3 +15,6 @@
   same name as this one once lowercased without underscores", and under
   the CLI is rendered with the header and the catalogue pointer the other
   diagnostics have.
+- Generated doc comments put `an` before a type name that starts with
+  a vowel sound ("An [`Author`]…", "Encodes an [`Event`]…"), where they
+  always wrote `a`.

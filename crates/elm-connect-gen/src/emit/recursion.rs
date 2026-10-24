@@ -12,9 +12,9 @@ impl Emitter {
     pub(super) fn wrapper_type(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
         Decl::CustomType {
             doc: Some(format!(
-                "A {} where a cycle of fields leads back to it, since Elm rejects a \
+                "{} where a cycle of fields leads back to it, since Elm rejects a \
                  recursive type alias.",
-                docs::local(&message.elm_name)
+                docs::a_local_capital(&message.elm_name)
             )),
             name: wrapper.elm_name.clone(),
             type_params: Vec::new(),
@@ -30,8 +30,8 @@ impl Emitter {
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
             doc: Some(format!(
-                "Encodes a {} as proto3 JSON.",
-                docs::local(&wrapper.elm_name)
+                "Encodes {} as proto3 JSON.",
+                docs::a_local(&wrapper.elm_name)
             )),
             name: wrapper.encoder_name(),
             annotation: Type::Function(
@@ -54,8 +54,8 @@ impl Emitter {
             self.library_type(JSON_DECODE, "Decoder", [ty(wrapper.elm_name.clone(), [])]);
         Decl::Value {
             doc: Some(format!(
-                "Decodes a {} from proto3 JSON.",
-                docs::local(&wrapper.elm_name)
+                "Decodes {} from proto3 JSON.",
+                docs::a_local(&wrapper.elm_name)
             )),
             name: wrapper.decoder_name(),
             annotation,
