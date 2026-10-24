@@ -42,7 +42,7 @@ type alias Alarm =
 -- DEFAULTS
 
 
-{-| A [`Alarm`](#Alarm) with every field at its default and every oneof unset.
+{-| An [`Alarm`](#Alarm) with every field at its default and every oneof unset.
 -}
 defaultAlarm : Alarm
 defaultAlarm =
@@ -82,7 +82,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Alarm`](#Alarm) as proto3 JSON.
+{-| Encodes an [`Alarm`](#Alarm) as proto3 JSON.
 -}
 encodeAlarm : Alarm -> Json.Encode.Value
 encodeAlarm value =
@@ -95,7 +95,7 @@ encodeAlarm value =
 -- DECODERS
 
 
-{-| Decodes a [`Alarm`](#Alarm) from proto3 JSON.
+{-| Decodes an [`Alarm`](#Alarm) from proto3 JSON.
 -}
 decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =

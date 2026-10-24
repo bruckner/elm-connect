@@ -201,7 +201,7 @@ type alias Sum =
 -- DEFAULTS
 
 
-{-| A [`Outer`](#Outer) with every field at its default and every oneof unset.
+{-| An [`Outer`](#Outer) with every field at its default and every oneof unset.
 -}
 defaultOuter : Outer
 defaultOuter =
@@ -211,7 +211,7 @@ defaultOuter =
     }
 
 
-{-| A [`OuterInner`](#OuterInner) with every field at its default and every oneof unset.
+{-| An [`OuterInner`](#OuterInner) with every field at its default and every oneof unset.
 -}
 defaultOuterInner : OuterInner
 defaultOuterInner =
@@ -219,7 +219,7 @@ defaultOuterInner =
     }
 
 
-{-| A [`OuterInnerDeepest`](#OuterInnerDeepest) with every field at its default and every oneof unset.
+{-| An [`OuterInnerDeepest`](#OuterInnerDeepest) with every field at its default and every oneof unset.
 -}
 defaultOuterInnerDeepest : OuterInnerDeepest
 defaultOuterInnerDeepest =
@@ -263,7 +263,7 @@ defaultForest =
     }
 
 
-{-| A [`Expr`](#Expr) with every field at its default and every oneof unset.
+{-| An [`Expr`](#Expr) with every field at its default and every oneof unset.
 -}
 defaultExpr : Expr
 defaultExpr =
@@ -383,7 +383,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`OuterInnerKind`](#OuterInnerKind) as proto3 JSON.
+{-| Encodes an [`OuterInnerKind`](#OuterInnerKind) as proto3 JSON.
 -}
 encodeOuterInnerKind : OuterInnerKind -> Json.Encode.Value
 encodeOuterInnerKind value =
@@ -398,7 +398,7 @@ encodeOuterInnerKind value =
             Json.Encode.string "OUTER_INNER_KIND_PUBLISHED"
 
 
-{-| Encodes a [`Outer`](#Outer) as proto3 JSON.
+{-| Encodes an [`Outer`](#Outer) as proto3 JSON.
 -}
 encodeOuter : Outer -> Json.Encode.Value
 encodeOuter value =
@@ -409,7 +409,7 @@ encodeOuter value =
         ]
 
 
-{-| Encodes a [`OuterInner`](#OuterInner) as proto3 JSON.
+{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
 encodeOuterInner : OuterInner -> Json.Encode.Value
 encodeOuterInner value =
@@ -418,7 +418,7 @@ encodeOuterInner value =
         ]
 
 
-{-| Encodes a [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
+{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
 -}
 encodeOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
 encodeOuterInnerDeepest value =
@@ -488,14 +488,14 @@ encodeForest value =
         ]
 
 
-{-| Encodes a [`Expr`](#Expr) as proto3 JSON.
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
 encodeExpr : Expr -> Json.Encode.Value
 encodeExpr value =
     Proto.Json.objectOfFields (encodeExprValue value.value)
 
 
-{-| Encodes a [`ExprValue`](#ExprValue) as the members of its message's JSON object.
+{-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
 -}
 encodeExprValue : ExprValue -> List ( String, Maybe Json.Encode.Value )
 encodeExprValue value =
@@ -525,7 +525,7 @@ encodeSum value =
 -- DECODERS
 
 
-{-| Decodes a [`OuterInnerKind`](#OuterInnerKind) from proto3 JSON.
+{-| Decodes an [`OuterInnerKind`](#OuterInnerKind) from proto3 JSON.
 -}
 decodeOuterInnerKind : Json.Decode.Decoder OuterInnerKind
 decodeOuterInnerKind =
@@ -537,7 +537,7 @@ decodeOuterInnerKind =
         ]
 
 
-{-| Decodes a [`Outer`](#Outer) from proto3 JSON.
+{-| Decodes an [`Outer`](#Outer) from proto3 JSON.
 -}
 decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
@@ -547,7 +547,7 @@ decodeOuter =
         |> Proto.Json.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
 
 
-{-| Decodes a [`OuterInner`](#OuterInner) from proto3 JSON.
+{-| Decodes an [`OuterInner`](#OuterInner) from proto3 JSON.
 -}
 decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
@@ -555,7 +555,7 @@ decodeOuterInner =
         |> Proto.Json.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
 
 
-{-| Decodes a [`OuterInnerDeepest`](#OuterInnerDeepest) from proto3 JSON.
+{-| Decodes an [`OuterInnerDeepest`](#OuterInnerDeepest) from proto3 JSON.
 -}
 decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
@@ -620,7 +620,7 @@ decodeForest =
         |> Proto.Json.field "trees" [] (Json.Decode.list decodeNode)
 
 
-{-| Decodes a [`Expr`](#Expr) from proto3 JSON.
+{-| Decodes an [`Expr`](#Expr) from proto3 JSON.
 -}
 decodeExpr : Json.Decode.Decoder Expr
 decodeExpr =
@@ -628,7 +628,7 @@ decodeExpr =
         |> Proto.Json.oneof decodeExprValue
 
 
-{-| Decodes a [`ExprValue`](#ExprValue) from the members of its message's JSON object.
+{-| Decodes an [`ExprValue`](#ExprValue) from the members of its message's JSON object.
 -}
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =

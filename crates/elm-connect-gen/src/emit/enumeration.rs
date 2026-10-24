@@ -44,8 +44,8 @@ impl Emitter {
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
             doc: Some(format!(
-                "Encodes a {} as proto3 JSON.",
-                docs::local(&enumeration.elm_name)
+                "Encodes {} as proto3 JSON.",
+                docs::a_local(&enumeration.elm_name)
             )),
             name: enumeration.encoder_name(),
             annotation: Type::Function(
@@ -94,8 +94,8 @@ impl Emitter {
         );
         Decl::Value {
             doc: Some(format!(
-                "Decodes a {} from proto3 JSON.",
-                docs::local(&enumeration.elm_name)
+                "Decodes {} from proto3 JSON.",
+                docs::a_local(&enumeration.elm_name)
             )),
             name: enumeration.decoder_name(),
             annotation,

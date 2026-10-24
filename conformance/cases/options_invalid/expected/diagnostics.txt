@@ -7,6 +7,14 @@ options::unknown_option
 
 options::unknown_option
 
+  × There is no option `int_64`.
+  help: Did you mean `int64`? The plugin parameter is comma-separated
+        `key=value` pairs, and its options are `int64`, `bytes`,
+        `unbound_methods`, `streaming`, `enum_unknown`, `rename` and
+        `module_prefix`.
+
+options::unknown_option
+
   × The option `int64` is `long`, which is not one of its values.
   help: `int64` is `string` or `int`; left out, it is `string`.
 

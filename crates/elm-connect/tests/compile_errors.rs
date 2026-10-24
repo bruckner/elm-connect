@@ -88,20 +88,92 @@ fn fields_the_descriptor_library_refuses_get_a_code() {
     let report = elm_connect::compile(&[PathBuf::from("p.proto")], std::slice::from_ref(&dir))
         .expect_err("prost-reflect refuses `aB` beside `ab`");
     let rendered = render(&report);
-    assert_eq!(
-        report.code().map(|code| code.to_string()).as_deref(),
-        Some("input::field_name_conflict")
+    assert!(
+        rendered.contains("input::field_name_conflict"),
+        "{rendered}"
     );
     assert!(
-        report
-            .to_string()
-            .starts_with("The fields `aB` and `ab` of the message `p.v1.M` have names"),
-        "{report}"
+        rendered.contains("The fields `aB` and `ab` of the message `p.v1.M` have names"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("elm-connect found a problem in the protos"),
+        "{rendered}"
     );
     assert!(rendered.contains("╭─[p.proto:2:20]"), "{rendered}");
-    assert!(rendered.contains("first defined here"), "{rendered}");
-    assert!(rendered.contains("defined again here"), "{rendered}");
+    assert!(rendered.contains("this field"), "{rendered}");
+    assert!(
+        rendered.contains("has the same name as this one once lowercased"),
+        "{rendered}"
+    );
     assert!(rendered.contains("`--rename` cannot help"), "{rendered}");
+    assert!(!rendered.contains("prost-reflect"), "{rendered}");
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_elm-connect"))
+        .args(["gen", "p.proto", "--out", "out", "-I"])
+        .arg(&dir)
+        .output()
+        .expect("run elm-connect");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Error: input::field_name_conflict"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("Codes and their escapes:"), "{stderr}");
+}
+
+#[test]
+fn a_proto3_file_turned_proto2_is_refused_before_its_labels() {
+    let dir = inputs(
+        "cli-proto2-labels",
+        &[
+            (
+                "flipped.proto",
+                "// Was proto3.\nsyntax = \"proto2\";\npackage f.v1;\nmessage M { string a = 1; int32 b = 2; }\n",
+            ),
+            (
+                "bare.proto",
+                "// No syntax.\npackage b.v1;\nmessage M { string a = 1; }\n",
+            ),
+        ],
+    );
+    let report = elm_connect::compile(
+        &[PathBuf::from("flipped.proto")],
+        std::slice::from_ref(&dir),
+    )
+    .expect_err("a proto2 file");
+    let rendered = render(&report);
+    assert!(rendered.contains("input::not_proto3"), "{rendered}");
+    assert!(rendered.contains("uses proto2 syntax"), "{rendered}");
+    assert!(rendered.contains("╭─[flipped.proto:2:1]"), "{rendered}");
+    assert!(!rendered.contains("label"), "no parser errors: {rendered}");
+
+    let report = elm_connect::compile(&[PathBuf::from("bare.proto")], std::slice::from_ref(&dir))
+        .expect_err("a file without syntax is proto2");
+    let rendered = render(&report);
+    assert!(rendered.contains("input::not_proto3"), "{rendered}");
+    assert!(rendered.contains("has no `syntax` statement"), "{rendered}");
+    assert!(rendered.contains("╭─[bare.proto:1:1]"), "{rendered}");
+}
+
+#[test]
+fn a_proto2_import_that_does_not_parse_stays_a_parse_error() {
+    let dir = inputs(
+        "cli-proto2-import",
+        &[
+            (
+                "old.proto",
+                "syntax = \"proto2\";\npackage o.v1;\nmessage O { string a = 1; }\n",
+            ),
+            (
+                "new.proto",
+                "syntax = \"proto3\";\npackage n.v1;\nimport \"old.proto\";\nmessage N { o.v1.O o = 1; }\n",
+            ),
+        ],
+    );
+    let report = elm_connect::compile(&[PathBuf::from("new.proto")], std::slice::from_ref(&dir))
+        .expect_err("the import does not parse");
+    assert!(!render(&report).contains("input::not_proto3"));
 }
 
 #[test]
@@ -149,6 +221,23 @@ fn a_missing_import_names_the_include_paths_searched() {
         "{help}"
     );
     assert!(help.contains("with `-I`"), "{help}");
+    assert!(!help.contains("does not exist"), "{help}");
+    assert_eq!(
+        report.code().map(|code| code.to_string()).as_deref(),
+        Some("input::file_not_found")
+    );
+
+    let absent = dir.join("protos");
+    let report = elm_connect::compile(
+        &[PathBuf::from("library.proto")],
+        std::slice::from_ref(&absent),
+    )
+    .expect_err("the include path does not exist");
+    let help = report.help().expect("a help").to_string();
+    assert!(
+        help.contains(&format!("`{}` does not exist.", absent.display())),
+        "{help}"
+    );
 
     let report = elm_connect::compile(&[PathBuf::from("absent.proto")], std::slice::from_ref(&dir))
         .expect_err("no such file");

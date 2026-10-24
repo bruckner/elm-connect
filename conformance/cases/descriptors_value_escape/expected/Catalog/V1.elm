@@ -84,7 +84,7 @@ type alias GetEntryRequest =
 -- DEFAULTS
 
 
-{-| A [`Entry`](#Entry) with every field at its default and every oneof unset.
+{-| An [`Entry`](#Entry) with every field at its default and every oneof unset.
 -}
 defaultEntry : Entry
 defaultEntry =
@@ -159,7 +159,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Entry`](#Entry) as proto3 JSON.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
 encodeEntry : Entry -> Json.Encode.Value
 encodeEntry value =
@@ -208,7 +208,7 @@ encodeGetEntryRequest value =
 -- DECODERS
 
 
-{-| Decodes a [`Entry`](#Entry) from proto3 JSON.
+{-| Decodes an [`Entry`](#Entry) from proto3 JSON.
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =

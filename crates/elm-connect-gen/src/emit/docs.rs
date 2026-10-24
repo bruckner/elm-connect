@@ -54,6 +54,46 @@ pub(super) fn local(name: &str) -> String {
     link(name, &format!("#{name}"))
 }
 
+/// [`local`] after its indefinite article, `a` or `an`
+/// ([`takes_an`]): `an [`Author`](#Author)`.
+pub(super) fn a_local(name: &str) -> String {
+    let article = if takes_an(name) { "an" } else { "a" };
+    format!("{article} {}", local(name))
+}
+
+/// [`a_local`] at the start of a sentence: `An [`Author`](#Author)`.
+pub(super) fn a_local_capital(name: &str) -> String {
+    let mut text = a_local(name);
+    text.replace_range(..1, &text[..1].to_uppercase());
+    text
+}
+
+/// Whether a type name is read with `an` before it: it starts with a
+/// vowel sound. A leading acronym (two capitals, `HTTPRule`, `URLPath`)
+/// is read letter by letter, so it is the first letter's name that
+/// counts (`an HTTPRule`, `a URLPath`); a word is read as a word, with
+/// the common English exceptions (`a User`, `a OneOf`, `an Hour`).
+fn takes_an(name: &str) -> bool {
+    let mut chars = name.chars();
+    let (Some(first), second) = (chars.next(), chars.next()) else {
+        return false;
+    };
+    if second.is_some_and(|c| c.is_ascii_uppercase()) && first.is_ascii_uppercase() {
+        return "AEFHILMNORSX".contains(first);
+    }
+    let word = name.to_ascii_lowercase();
+    let starts = |prefixes: &[&str]| prefixes.iter().any(|prefix| word.starts_with(prefix));
+    if starts(&["hour", "honest", "honor", "honour", "heir"]) {
+        return true;
+    }
+    if starts(&[
+        "uni", "use", "usu", "uti", "ura", "uri", "eu", "ewe", "one", "once",
+    ]) {
+        return false;
+    }
+    "aeiou".contains(first.to_ascii_lowercase())
+}
+
 /// A link to the declaration `name` of the runtime's module `module` on
 /// the package site, an absolute URL, which an editor's hover makes
 /// clickable where it does not follow a page link.
@@ -156,15 +196,23 @@ fn descriptor_target(descriptors: &str) -> String {
 
 /// The item of a record field: its Elm name linked to `target`, its
 /// descriptor value, then `Deprecated.`, its comment and its behaviors as
-/// words (`Required.`); the name alone when there is nothing else. The
-/// field's declaration is on its descriptor value.
+/// words (`Required.`), but those the comment already starts with, as an
+/// AIP-style comment does (`Output only. When it was made.`); the name
+/// alone when there is nothing else. The field's declaration is on its
+/// descriptor value.
 pub(super) fn field_item(
     elm_name: &str,
     target: &str,
     doc: &Doc,
     behavior: &[FieldBehavior],
 ) -> String {
-    let words = behavior_words(behavior);
+    let said = leading_behavior_words(doc.comment.as_deref().unwrap_or_default());
+    let unsaid: Vec<FieldBehavior> = behavior
+        .iter()
+        .filter(|behavior| behavior_word(behavior).is_none_or(|word| !said.contains(&word)))
+        .copied()
+        .collect();
+    let words = behavior_words(&unsaid);
     named_item(
         &link(elm_name, target),
         with_sentence(item_rest(doc), &words),
@@ -221,21 +269,54 @@ fn is_one_paragraph(blocks: &str) -> bool {
 fn behavior_words(behavior: &[FieldBehavior]) -> String {
     behavior
         .iter()
-        .filter_map(|behavior| match behavior {
-            FieldBehavior::Required => Some("Required."),
-            FieldBehavior::OutputOnly => Some("Output only."),
-            FieldBehavior::InputOnly => Some("Input only."),
-            FieldBehavior::Immutable => Some("Immutable."),
-            FieldBehavior::Identifier => Some("Identifier."),
-            FieldBehavior::UnorderedList => Some("Unordered."),
-            // A number this release does not name has no word; the descriptor
-            // value still carries it.
-            FieldBehavior::Optional
-            | FieldBehavior::NonEmptyDefault
-            | FieldBehavior::Unknown(_) => None,
-        })
+        .filter_map(behavior_word)
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// The words of one behavior, or `None` for one that is not written.
+fn behavior_word(behavior: &FieldBehavior) -> Option<&'static str> {
+    match behavior {
+        FieldBehavior::Required => Some("Required."),
+        FieldBehavior::OutputOnly => Some("Output only."),
+        FieldBehavior::InputOnly => Some("Input only."),
+        FieldBehavior::Immutable => Some("Immutable."),
+        FieldBehavior::Identifier => Some("Identifier."),
+        FieldBehavior::UnorderedList => Some("Unordered."),
+        // A number this release does not name has no word; the descriptor
+        // value still carries it.
+        FieldBehavior::Optional | FieldBehavior::NonEmptyDefault | FieldBehavior::Unknown(_) => {
+            None
+        }
+    }
+}
+
+/// The behaviors' words that `comment` starts with, one after another,
+/// in any case: `Required. Output only.` of `Required. Output only. The
+/// time.` A word counts only as a whole sentence of its own.
+fn leading_behavior_words(comment: &str) -> Vec<&'static str> {
+    const WORDS: [&str; 6] = [
+        "Required.",
+        "Output only.",
+        "Input only.",
+        "Immutable.",
+        "Identifier.",
+        "Unordered.",
+    ];
+    let mut rest = comment.trim_start();
+    let mut said = Vec::new();
+    while let Some(word) = WORDS.iter().find(|word| {
+        rest.get(..word.len())
+            .is_some_and(|start| start.eq_ignore_ascii_case(word))
+            && rest[word.len()..]
+                .chars()
+                .next()
+                .is_none_or(char::is_whitespace)
+    }) {
+        said.push(*word);
+        rest = rest[word.len()..].trim_start();
+    }
+    said
 }
 
 /// An item's text after its head: `Deprecated.` and the comment, as one
@@ -537,5 +618,72 @@ mod tests {
             behavior_words(&[NonEmptyDefault, Identifier, InputOnly]),
             "Identifier. Input only."
         );
+    }
+
+    #[test]
+    fn a_behavior_the_comment_starts_with_is_not_repeated() {
+        use FieldBehavior::*;
+        let doc = |comment: &str| Doc {
+            comment: Some(comment.to_owned()),
+            declaration: "string a = 1;".into(),
+            deprecated: false,
+        };
+        assert_eq!(
+            field_item(
+                "a",
+                "M#a",
+                &doc("Output only. When it was made."),
+                &[OutputOnly]
+            ),
+            "  - [`a`](M#a): Output only. When it was made."
+        );
+        assert_eq!(
+            field_item(
+                "a",
+                "M#a",
+                &doc("REQUIRED. output only. The a."),
+                &[Required, OutputOnly, Immutable]
+            ),
+            "  - [`a`](M#a): REQUIRED. output only. The a. Immutable."
+        );
+        assert_eq!(
+            field_item("a", "M#a", &doc("Output only.ish"), &[OutputOnly]),
+            "  - [`a`](M#a): Output only.ish Output only."
+        );
+        assert_eq!(
+            field_item("a", "M#a", &doc("The a. Required."), &[Required]),
+            "  - [`a`](M#a): The a. Required. Required."
+        );
+    }
+
+    #[test]
+    fn the_article_follows_the_names_first_sound() {
+        for name in [
+            "Author",
+            "Event",
+            "Item",
+            "Order",
+            "Update",
+            "HTTPRule",
+            "RPCStatus",
+            "Hour",
+            "IDs",
+        ] {
+            assert!(takes_an(name), "an {name}");
+        }
+        for name in [
+            "Book",
+            "User",
+            "Unit",
+            "OneofCase",
+            "URLPath",
+            "Euro",
+            "Y",
+            "",
+        ] {
+            assert!(!takes_an(name), "a {name}");
+        }
+        assert_eq!(a_local_capital("Author"), "An [`Author`](#Author)");
+        assert_eq!(a_local("Book"), "a [`Book`](#Book)");
     }
 }

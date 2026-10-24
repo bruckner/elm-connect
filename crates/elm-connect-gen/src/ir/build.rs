@@ -16,7 +16,7 @@ use super::{
     Package, ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
 use super::{declaration, rename};
-use crate::diagnostics::{Diagnostics, Problem, Referrer, Site, Spans, closest, tag};
+use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
@@ -714,12 +714,42 @@ impl Builder {
         if file.name().chars().any(char::is_control) {
             self.diagnostics.push(Problem::file_name(file.name()));
         }
-        let syntax = file.file_descriptor_proto().syntax();
-        if syntax != "proto3" {
+        let proto = file.file_descriptor_proto();
+        let syntax = proto.syntax();
+        if syntax == "proto3" {
+            return;
+        }
+        // A descriptor leaves `syntax` empty for proto2, whether the file
+        // says `syntax = "proto2";` or nothing; the source info tells the
+        // two apart, when there is any.
+        let spans = self
+            .spans
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Spans::new(proto));
+        let undeclared = (syntax.is_empty() || syntax == "proto2")
+            && proto.source_code_info.is_some()
+            && spans.get(&[tag::FILE_SYNTAX]).is_none();
+        if undeclared {
+            // No statement to point at: the file's start, where the
+            // statement belongs, rather than the whole file.
+            let site = Site {
+                file: file.name().to_owned(),
+                span: Some(LineColSpan {
+                    start_line: 0,
+                    start_col: 0,
+                    end_line: 0,
+                    end_col: 0,
+                }),
+                label: "no `syntax` statement before this".into(),
+                within: Vec::new(),
+            };
+            self.diagnostics
+                .push(Problem::not_proto3(file.name(), None, site));
+        } else {
             let syntax = if syntax.is_empty() { "proto2" } else { syntax };
             let site = self.site(file, &[tag::FILE_SYNTAX], format!("{syntax} here"));
             self.diagnostics
-                .push(Problem::not_proto3(file.name(), syntax, site));
+                .push(Problem::not_proto3(file.name(), Some(syntax), site));
         }
     }
 

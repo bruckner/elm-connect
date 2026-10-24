@@ -275,7 +275,7 @@ defaultMessage =
     }
 
 
-{-| A [`UpdateMessageRequest`](#UpdateMessageRequest) with every field at its default and every oneof unset.
+{-| An [`UpdateMessageRequest`](#UpdateMessageRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateMessageRequest : UpdateMessageRequest
 defaultUpdateMessageRequest =
@@ -284,7 +284,7 @@ defaultUpdateMessageRequest =
     }
 
 
-{-| A [`Everything`](#Everything) with every field at its default and every oneof unset.
+{-| An [`Everything`](#Everything) with every field at its default and every oneof unset.
 -}
 defaultEverything : Everything
 defaultEverything =
@@ -312,7 +312,7 @@ defaultEverything =
     }
 
 
-{-| A [`Inner`](#Inner) with every field at its default and every oneof unset.
+{-| An [`Inner`](#Inner) with every field at its default and every oneof unset.
 -}
 defaultInner : Inner
 defaultInner =
@@ -350,7 +350,7 @@ defaultResource =
     }
 
 
-{-| A [`UpdateResourceRequest`](#UpdateResourceRequest) with every field at its default and every oneof unset.
+{-| An [`UpdateResourceRequest`](#UpdateResourceRequest) with every field at its default and every oneof unset.
 -}
 defaultUpdateResourceRequest : UpdateResourceRequest
 defaultUpdateResourceRequest =
@@ -518,7 +518,7 @@ encodeMessage value =
         ]
 
 
-{-| Encodes a [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
+{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
 -}
 encodeUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
 encodeUpdateMessageRequest value =
@@ -528,7 +528,7 @@ encodeUpdateMessageRequest value =
         ]
 
 
-{-| Encodes a [`Everything`](#Everything) as proto3 JSON.
+{-| Encodes an [`Everything`](#Everything) as proto3 JSON.
 -}
 encodeEverything : Everything -> Json.Encode.Value
 encodeEverything value =
@@ -558,7 +558,7 @@ encodeEverything value =
         )
 
 
-{-| Encodes a [`EverythingChoice`](#EverythingChoice) as the members of its message's JSON object.
+{-| Encodes an [`EverythingChoice`](#EverythingChoice) as the members of its message's JSON object.
 -}
 encodeEverythingChoice : EverythingChoice -> List ( String, Maybe Json.Encode.Value )
 encodeEverythingChoice value =
@@ -575,7 +575,7 @@ encodeEverythingChoice value =
             ]
 
 
-{-| Encodes a [`Inner`](#Inner) as proto3 JSON.
+{-| Encodes an [`Inner`](#Inner) as proto3 JSON.
 -}
 encodeInner : Inner -> Json.Encode.Value
 encodeInner value =
@@ -617,7 +617,7 @@ encodeResource value =
         ]
 
 
-{-| Encodes a [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON.
+{-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON.
 -}
 encodeUpdateResourceRequest : UpdateResourceRequest -> Json.Encode.Value
 encodeUpdateResourceRequest value =
@@ -672,7 +672,7 @@ decodeMessage =
         |> Proto.Json.field "text" "" Json.Decode.string
 
 
-{-| Decodes a [`UpdateMessageRequest`](#UpdateMessageRequest) from proto3 JSON.
+{-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from proto3 JSON.
 -}
 decodeUpdateMessageRequest : Json.Decode.Decoder UpdateMessageRequest
 decodeUpdateMessageRequest =
@@ -681,7 +681,7 @@ decodeUpdateMessageRequest =
         |> Proto.Json.field "message" Nothing (Json.Decode.map Just decodeMessage)
 
 
-{-| Decodes a [`Everything`](#Everything) from proto3 JSON.
+{-| Decodes an [`Everything`](#Everything) from proto3 JSON.
 -}
 decodeEverything : Json.Decode.Decoder Everything
 decodeEverything =
@@ -709,7 +709,7 @@ decodeEverything =
         |> Proto.Json.oneof decodeEverythingChoice
 
 
-{-| Decodes a [`EverythingChoice`](#EverythingChoice) from the members of its message's JSON object.
+{-| Decodes an [`EverythingChoice`](#EverythingChoice) from the members of its message's JSON object.
 -}
 decodeEverythingChoice : Json.Decode.Decoder EverythingChoice
 decodeEverythingChoice =
@@ -720,7 +720,7 @@ decodeEverythingChoice =
         ]
 
 
-{-| Decodes a [`Inner`](#Inner) from proto3 JSON.
+{-| Decodes an [`Inner`](#Inner) from proto3 JSON.
 -}
 decodeInner : Json.Decode.Decoder Inner
 decodeInner =
@@ -758,7 +758,7 @@ decodeResource =
         |> Proto.Json.field "weights" [] (Proto.Json.boolMap Proto.Json.float)
 
 
-{-| Decodes a [`UpdateResourceRequest`](#UpdateResourceRequest) from proto3 JSON.
+{-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from proto3 JSON.
 -}
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest
 decodeUpdateResourceRequest =

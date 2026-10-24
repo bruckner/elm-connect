@@ -30,7 +30,10 @@ use miette::{
     SourceCode,
 };
 
-pub use field_names::{FieldNameConflict, field_name_conflict_names, field_name_conflicts};
+pub use field_names::{
+    FIRST_LABEL as FIELD_NAME_CONFLICT_FIRST, FieldNameConflict,
+    SECOND_LABEL as FIELD_NAME_CONFLICT_SECOND, field_name_conflict_names, field_name_conflicts,
+};
 pub use spans::{Columns, LineColSpan, Spans, tag};
 
 /// Declares [`Code`], its rendering and [`Code::ALL`] from one list, so
@@ -61,6 +64,9 @@ macro_rules! codes {
 codes! {
     /// A file to generate is not among the compiled files.
     UnknownFile => "input::unknown_file",
+    /// A file named to the CLI, or a file it imports, is under none of
+    /// the include paths.
+    FileNotFound => "input::file_not_found",
     /// A file to generate is not proto3.
     NotProto3 => "input::not_proto3",
     /// A file declares an edition (`edition = "2023";`), which elm-connect
@@ -1189,12 +1195,14 @@ impl Problem {
         )
     }
 
-    /// The plugin parameter names `key`, which is no option.
-    pub fn unknown_option(key: &str) -> Self {
+    /// The plugin parameter names `key`, which is none of `keys`, the
+    /// options; the help suggests the nearest of them ([`closest`]).
+    pub fn unknown_option(key: &str, keys: &[&str]) -> Self {
+        let suggestion = closest(key, keys.iter().copied());
         Problem::new(
             Code::UnknownOption,
             format!("There is no option `{key}`."),
-            OPTION_KEYS_HELP,
+            format!("{}{OPTION_KEYS_HELP}", did_you_mean(suggestion.as_deref())),
             Vec::new(),
         )
     }
@@ -1270,13 +1278,32 @@ impl Problem {
         )
     }
 
-    /// `file` uses `syntax`, not proto3.
-    pub fn not_proto3(file: &str, syntax: &str, site: Site) -> Self {
+    /// `file` uses `syntax`, not proto3; `None` when it declares no
+    /// syntax, which makes it proto2.
+    pub fn not_proto3(file: &str, syntax: Option<&str>, site: Site) -> Self {
+        let (message, add) = match syntax {
+            Some(syntax) => (
+                format!(
+                    "The file `{file}` uses {syntax} syntax, but elm-connect generates proto3."
+                ),
+                "Use `syntax = \"proto3\";`.",
+            ),
+            None => (
+                format!(
+                    "The file `{file}` has no `syntax` statement, which makes it proto2, but \
+                     elm-connect generates proto3."
+                ),
+                "A file without a `syntax` statement is proto2. Add `syntax = \"proto3\";` as \
+                 its first statement.",
+            ),
+        };
         Problem::new(
             Code::NotProto3,
-            format!("The file `{file}` uses {syntax} syntax, but elm-connect generates proto3."),
-            "elm-connect implements the proto3 JSON mapping; proto2 features like `required` \
-             and default values have no Elm mapping. Use `syntax = \"proto3\";`.",
+            message,
+            format!(
+                "elm-connect implements the proto3 JSON mapping; proto2 features like \
+                 `required` and default values have no Elm mapping. {add}"
+            ),
             vec![site],
         )
     }
@@ -1338,11 +1365,11 @@ impl Problem {
                  lowercased without underscores, and elm-connect cannot read the file."
             ),
             format!(
-                "elm-connect builds its descriptors with prost-reflect, which refuses two such \
-                 fields in one message of a file that is not proto2. It refuses the file before \
-                 any option applies, so {} cannot help: rename one of the fields in the proto. \
-                 protoc accepts the file, since it compares the fields' JSON names, which \
-                 differ.",
+                "Fields of one message whose names differ only in case and underscores are \
+                 refused in any file but a proto2 one, when elm-connect reads the file and \
+                 before any option applies, so {} cannot help: rename one of them in the \
+                 proto. protoc accepts the file, since it compares the fields' exact JSON \
+                 names, which differ.",
                 spelling.rename_key()
             ),
             sites,

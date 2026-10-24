@@ -43,7 +43,7 @@ type alias Attributes =
 -- DEFAULTS
 
 
-{-| A [`Attributes`](#Attributes) with every field at its default and every oneof unset.
+{-| An [`Attributes`](#Attributes) with every field at its default and every oneof unset.
 -}
 defaultAttributes : Attributes
 defaultAttributes =
@@ -83,7 +83,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Attributes`](#Attributes) as proto3 JSON.
+{-| Encodes an [`Attributes`](#Attributes) as proto3 JSON.
 -}
 encodeAttributes : Attributes -> Json.Encode.Value
 encodeAttributes value =
@@ -96,7 +96,7 @@ encodeAttributes value =
 -- DECODERS
 
 
-{-| Decodes a [`Attributes`](#Attributes) from proto3 JSON.
+{-| Decodes an [`Attributes`](#Attributes) from proto3 JSON.
 -}
 decodeAttributes : Json.Decode.Decoder Attributes
 decodeAttributes =

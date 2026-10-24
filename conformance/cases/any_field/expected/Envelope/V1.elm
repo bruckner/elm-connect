@@ -65,7 +65,7 @@ type EnvelopeBody
 -- DEFAULTS
 
 
-{-| A [`Envelope`](#Envelope) with every field at its default and every oneof unset.
+{-| An [`Envelope`](#Envelope) with every field at its default and every oneof unset.
 -}
 defaultEnvelope : Envelope
 defaultEnvelope =
@@ -109,7 +109,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Envelope`](#Envelope) as proto3 JSON.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON.
 -}
 encodeEnvelope : Envelope -> Json.Encode.Value
 encodeEnvelope value =
@@ -123,7 +123,7 @@ encodeEnvelope value =
         )
 
 
-{-| Encodes a [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
+{-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
 -}
 encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
 encodeEnvelopeBody value =
@@ -144,7 +144,7 @@ encodeEnvelopeBody value =
 -- DECODERS
 
 
-{-| Decodes a [`Envelope`](#Envelope) from proto3 JSON.
+{-| Decodes an [`Envelope`](#Envelope) from proto3 JSON.
 -}
 decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
@@ -156,7 +156,7 @@ decodeEnvelope =
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
-{-| Decodes a [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.
+{-| Decodes an [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.
 -}
 decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBody =

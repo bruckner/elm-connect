@@ -15,7 +15,8 @@ use std::io::{self, IsTerminal, Read, Write};
 use std::process::ExitCode;
 
 use elm_connect_gen::diagnostics::{
-    Diagnostics, Problem, Site, field_name_conflict_names, field_name_conflicts, render_narrow,
+    Diagnostics, FIELD_NAME_CONFLICT_SECOND, Problem, Site, field_name_conflict_names,
+    field_name_conflicts, render_narrow,
 };
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{Options, Spelling, VERSION, generate, googleapis};
@@ -139,7 +140,7 @@ fn field_name_conflict(
             let site = Site {
                 file: name.to_owned(),
                 span: None,
-                label: format!("field `{second}`"),
+                label: FIELD_NAME_CONFLICT_SECOND.to_owned(),
                 within: Vec::new(),
             };
             Problem::field_name_conflict(name, None, first, second, spelling, vec![site])
@@ -795,7 +796,10 @@ service Uploads {
             error.contains("p.proto:3:20: The fields `aB` and `ab` of the message `p.v1.M`"),
             "{error}"
         );
-        assert!(error.contains("p.proto:3:35: and field `ab`"), "{error}");
+        assert!(
+            error.contains("p.proto:3:35: has the same name as this one once lowercased"),
+            "{error}"
+        );
         assert!(error.contains("`rename` cannot help"), "{error}");
         assert!(response.file.is_empty());
         assert_eq!(warnings, "");

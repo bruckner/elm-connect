@@ -25,6 +25,8 @@ message Task {
     deprecated = true
   ];
   string notes = 6;
+  // Output only. When the task was made: the behavior is said once.
+  string made = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
   oneof due {
     string date = 7 [(google.api.field_behavior) = INPUT_ONLY];
     string never = 8 [deprecated = true];

@@ -115,7 +115,7 @@ defaultResult =
     }
 
 
-{-| A [`Order`](#Order) with every field at its default and every oneof unset.
+{-| An [`Order`](#Order) with every field at its default and every oneof unset.
 -}
 defaultOrder : Order
 defaultOrder =
@@ -255,7 +255,7 @@ encodeResult value =
         ]
 
 
-{-| Encodes a [`Order`](#Order) as proto3 JSON.
+{-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
 encodeOrder : Order -> Json.Encode.Value
 encodeOrder _ =
@@ -316,7 +316,7 @@ decodeResult =
         |> Proto.Json.field "chars" [] (Json.Decode.list decodeChar)
 
 
-{-| Decodes a [`Order`](#Order) from proto3 JSON.
+{-| Decodes an [`Order`](#Order) from proto3 JSON.
 -}
 decodeOrder : Json.Decode.Decoder Order
 decodeOrder =

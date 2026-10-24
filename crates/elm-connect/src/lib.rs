@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{
-    Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
+    Code, Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
     field_name_conflicts,
 };
 use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
@@ -114,8 +114,11 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
         if let Some(report) = editions_problem(&error, &includes) {
             return Err(report);
         }
-        let error = match FieldNameConflict::recognise(error, &includes) {
-            Ok(conflict) => return Err(Report::new(conflict)),
+        if let Some(report) = proto2_problem(&error, files, &includes) {
+            return Err(report);
+        }
+        let error = match field_name_conflict(error, &includes) {
+            Ok(report) => return Err(report),
             Err(error) => error,
         };
         if error.is_file_not_found() {
@@ -163,7 +166,7 @@ impl std::error::Error for NotFound {}
 
 impl Diagnostic for NotFound {
     fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        self.error.code()
+        Some(Box::new(Code::FileNotFound.as_str()))
     }
 
     fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
@@ -172,11 +175,25 @@ impl Diagnostic for NotFound {
             .iter()
             .map(|include| format!("`{}`", include.display()))
             .collect();
+        // An include path that is no directory is the likelier mistake.
+        let missing: String = self
+            .includes
+            .iter()
+            .filter(|include| !include.is_dir())
+            .map(|include| {
+                let what = if include.exists() {
+                    "is not a directory"
+                } else {
+                    "does not exist"
+                };
+                format!(" `{}` {what}.", include.display())
+            })
+            .collect();
         Some(Box::new(format!(
             "The include paths searched were {} (`-I`, `.` when none is given), then the \
-             `google/protobuf` files and the `google/api` annotations elm-connect bundles. \
-             Add the directory the file is under with `-I`, and name it relative to that \
-             directory.",
+             `google/protobuf` files and the `google/api` annotations elm-connect bundles.\
+             {missing} Add the directory the file is under with `-I`, and name it relative to \
+             that directory.",
             searched.join(", ")
         )))
     }
@@ -192,94 +209,64 @@ impl Diagnostic for NotFound {
 
 /// protox's refusal of two fields of a message whose names are the same
 /// once lowercased without underscores, which protoc accepts, as
-/// `input::field_name_conflict`: the problem's code, message and help,
-/// with protox's snippet and labels.
-#[derive(Debug)]
-struct FieldNameConflict {
-    problem: Problem,
+/// `input::field_name_conflict` at the two fields, or `error` back for any
+/// other error. protox exposes neither the descriptor library's error nor
+/// its kind, only its text, so the error is recognised by that; the
+/// message is found by parsing the file again from `includes`, at the
+/// field the error points to.
+fn field_name_conflict(
     error: protox::Error,
-}
-
-impl FieldNameConflict {
-    /// `error` as a conflict, when it is one, or else `error` back. protox
-    /// exposes neither the descriptor library's error nor its kind, only
-    /// its text, so the error is recognised by that; the message is found
-    /// by parsing the file again from `includes`, at the field the error
-    /// points to.
-    fn recognise(error: protox::Error, includes: &[PathBuf]) -> Result<Self, protox::Error> {
-        if error.is_parse() || error.is_io() || error.is_file_not_found() {
-            return Err(error);
-        }
-        let text = error.to_string();
-        let Some((first, second)) = field_name_conflict_names(&text) else {
-            return Err(error);
+    includes: &[PathBuf],
+) -> Result<Report, protox::Error> {
+    if error.is_parse() || error.is_io() || error.is_file_not_found() {
+        return Err(error);
+    }
+    let text = error.to_string();
+    let Some((first, second)) = field_name_conflict_names(&text) else {
+        return Err(error);
+    };
+    let name = error.file().unwrap_or_default().to_owned();
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(&name)).ok());
+    let parsed = source
+        .as_deref()
+        .and_then(|source| protox::file::File::from_source(&name, source).ok());
+    let conflicts = parsed
+        .as_ref()
+        .map(|file| field_name_conflicts(file.file_descriptor_proto(), first, second))
+        .unwrap_or_default();
+    // The label offsets of the error, to tell apart two messages with
+    // fields of the same two names.
+    let offsets: Vec<usize> = error
+        .labels()
+        .map(|labels| labels.map(|label| label.offset()).collect())
+        .unwrap_or_default();
+    let at = |conflict: &&elm_connect_gen::diagnostics::FieldNameConflict| {
+        let start = |site: &Site| {
+            let span = site.span?;
+            Some(span.byte_span(source.as_deref()?, Columns::Bytes)?.offset())
         };
-        let name = error.file().unwrap_or_default();
-        let source = includes
+        conflict
+            .sites
             .iter()
-            .find_map(|include| fs::read_to_string(include.join(name)).ok());
-        let parsed = source
-            .as_deref()
-            .and_then(|source| protox::file::File::from_source(name, source).ok());
-        let conflicts = parsed
-            .as_ref()
-            .map(|file| field_name_conflicts(file.file_descriptor_proto(), first, second))
-            .unwrap_or_default();
-        // The label offsets of the error, to tell apart two messages with
-        // fields of the same two names.
-        let offsets: Vec<usize> = error
-            .labels()
-            .map(|labels| labels.map(|label| label.offset()).collect())
-            .unwrap_or_default();
-        let at = |conflict: &&elm_connect_gen::diagnostics::FieldNameConflict| {
-            let start = |site: &Site| {
-                let span = site.span?;
-                Some(span.byte_span(source.as_deref()?, Columns::Bytes)?.offset())
-            };
-            conflict
-                .sites
-                .iter()
-                .all(|site| start(site).is_some_and(|offset| offsets.contains(&offset)))
-        };
-        let message = conflicts
-            .iter()
-            .find(at)
-            .or(conflicts.first())
-            .map(|conflict| conflict.message.as_str());
-        let problem =
-            Problem::field_name_conflict(name, message, first, second, Spelling::Flags, Vec::new());
-        Ok(FieldNameConflict { problem, error })
-    }
-}
-
-impl std::fmt::Display for FieldNameConflict {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.problem.message())
-    }
-}
-
-impl std::error::Error for FieldNameConflict {}
-
-impl Diagnostic for FieldNameConflict {
-    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        Some(Box::new(self.problem.code().as_str()))
-    }
-
-    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        Some(Box::new(self.problem.help_text()))
-    }
-
-    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-        self.error.source_code()
-    }
-
-    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
-        self.error.labels()
-    }
-
-    fn related<'a>(&'a self) -> Option<Box<dyn Iterator<Item = &'a dyn Diagnostic> + 'a>> {
-        self.error.related()
-    }
+            .all(|site| start(site).is_some_and(|offset| offsets.contains(&offset)))
+    };
+    let conflict = conflicts.iter().find(at).or(conflicts.first());
+    let problem = Problem::field_name_conflict(
+        &name,
+        conflict.map(|conflict| conflict.message.as_str()),
+        first,
+        second,
+        Spelling::Flags,
+        conflict
+            .map(|conflict| conflict.sites.clone())
+            .unwrap_or_default(),
+    );
+    Ok(match source {
+        Some(source) => report(problem, &name, source),
+        None => Report::new(Diagnostics::from(problem)),
+    })
 }
 
 /// The `input::editions` problem for a parse `error` in a file that
@@ -294,23 +281,83 @@ fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Repor
     let source = includes
         .iter()
         .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
-    let (edition, span) = declared_edition(&source)?;
+    let (edition, span) = first_statement(&source, "edition")?;
     let site = Site {
         file: name.to_owned(),
         span: Some(span),
         label: "the edition".into(),
         within: Vec::new(),
     };
-    let mut diagnostics = Diagnostics::new();
-    diagnostics.push(Problem::editions(name, Some(&edition), site));
-    let sources = HashMap::from([(name.to_owned(), source)]);
-    diagnostics.attach_sources(&sources, Columns::Bytes);
-    Some(Report::new(diagnostics))
+    Some(report(
+        Problem::editions(name, Some(&edition), site),
+        name,
+        source,
+    ))
 }
 
-/// The edition `source` declares, `2023` of `edition = "2023";`, and the
-/// span of that statement, when its first statement is one.
-fn declared_edition(source: &str) -> Option<(String, LineColSpan)> {
+/// The `input::not_proto3` problem for a parse `error` in one of `files`
+/// that is proto2, by `syntax = "proto2";` or by declaring no syntax or
+/// edition at all. A proto3 file turned proto2 fails to parse (its fields
+/// have no labels), and the parser's errors would hide that the file is
+/// refused anyway. An imported proto2 file is left to the parser: proto2
+/// imports are allowed. `None` for any other error.
+fn proto2_problem(
+    error: &protox::Error,
+    files: &[PathBuf],
+    includes: &[PathBuf],
+) -> Option<Report> {
+    if !error.is_parse() {
+        return None;
+    }
+    let name = error.file()?;
+    if !files.iter().any(|file| file.ends_with(name)) {
+        return None;
+    }
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
+    let (syntax, span, label) = match first_statement(&source, "syntax") {
+        Some((syntax, span)) if syntax == "proto2" => (Some("proto2"), span, "proto2 here"),
+        Some(_) => return None,
+        None if first_statement(&source, "edition").is_some() => return None,
+        None => (
+            None,
+            LineColSpan {
+                start_line: 0,
+                start_col: 0,
+                end_line: 0,
+                end_col: 0,
+            },
+            "no `syntax` statement before this",
+        ),
+    };
+    let site = Site {
+        file: name.to_owned(),
+        span: Some(span),
+        label: label.into(),
+        within: Vec::new(),
+    };
+    Some(report(
+        Problem::not_proto3(name, syntax, site),
+        name,
+        source,
+    ))
+}
+
+/// `problem`, sited in `name` whose text is `source`, as the one problem
+/// of a report.
+fn report(problem: Problem, name: &str, source: String) -> Report {
+    let mut diagnostics = Diagnostics::new();
+    diagnostics.push(problem);
+    let sources = HashMap::from([(name.to_owned(), source)]);
+    diagnostics.attach_sources(&sources, Columns::Bytes);
+    Report::new(diagnostics)
+}
+
+/// The value `source`'s first statement gives `keyword`, `2023` of
+/// `edition = "2023";` for `edition`, and the span of that statement, when
+/// its first statement is one.
+fn first_statement(source: &str, keyword: &str) -> Option<(String, LineColSpan)> {
     let bytes = source.as_bytes();
     // Past whitespace and comments from `at`.
     let skip = |mut at: usize| loop {
@@ -326,19 +373,19 @@ fn declared_edition(source: &str) -> Option<(String, LineColSpan)> {
         }
     };
     let start = skip(0);
-    let after = start + "edition".len();
-    let keyword = source.get(start..after)? == "edition"
+    let after = start + keyword.len();
+    let declares = source.get(start..after)? == keyword
         && !bytes
             .get(after)
             .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
-    if !keyword {
+    if !declares {
         return None;
     }
     let at = skip(after);
     let at = skip(at + source[at..].strip_prefix('=').map(|_| 1)?);
     let quote = *bytes.get(at).filter(|b| matches!(b, b'"' | b'\''))?;
     let len = source[at + 1..].find(char::from(quote))?;
-    let edition = source[at + 1..at + 1 + len].to_owned();
+    let value = source[at + 1..at + 1 + len].to_owned();
     let mut end = at + len + 2;
     let semicolon = skip(end);
     if source[semicolon..].starts_with(';') {
@@ -358,7 +405,7 @@ fn declared_edition(source: &str) -> Option<(String, LineColSpan)> {
         end_line: end_line?,
         end_col: end_col?,
     };
-    Some((edition, span))
+    Some((value, span))
 }
 
 /// Compiles `files` against `includes` and generates Elm from them as

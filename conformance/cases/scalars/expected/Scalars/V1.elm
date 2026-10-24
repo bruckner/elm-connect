@@ -105,7 +105,7 @@ defaultScalars =
     }
 
 
-{-| A [`Empty`](#Empty) with every field at its default and every oneof unset.
+{-| An [`Empty`](#Empty) with every field at its default and every oneof unset.
 -}
 defaultEmpty : Empty
 defaultEmpty =
@@ -177,7 +177,7 @@ encodeScalars value =
         ]
 
 
-{-| Encodes a [`Empty`](#Empty) as proto3 JSON.
+{-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
 encodeEmpty : Empty -> Json.Encode.Value
 encodeEmpty _ =
@@ -212,7 +212,7 @@ decodeScalars =
         |> Proto.Json.fieldEither "exactTotal" "exact_total" "0" Proto.Json.uint64
 
 
-{-| Decodes a [`Empty`](#Empty) from proto3 JSON.
+{-| Decodes an [`Empty`](#Empty) from proto3 JSON.
 -}
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =

@@ -1,0 +1,6 @@
+// A file without a syntax statement is proto2, and refused.
+package legacy.v1;
+
+message Note {
+  optional string title = 1;
+}
