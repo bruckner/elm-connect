@@ -215,6 +215,11 @@ never reached it; a call with side effects that failed after the server
 acted is then made again. A call that was never sent (a bad URL, an
 invalid header) is never retried.
 
+An application that queues failed calls and replays them itself, such
+as when the network comes back, leaves `retry` unset on the calls it
+queues: with both, each replay retries again, and the attempts
+multiply.
+
 ## Adjusting one call
 
 ```elm src/Rpc/Call.elm excerpt
@@ -326,6 +331,18 @@ The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
 read and bodies that do not decode.
 
+An `HttpStatus` code is the table's guess, and for some statuses it is
+not the code the server meant. Connect and `google.rpc.Status` servers
+send 401 with `Unauthenticated`, 403 with `PermissionDenied` and 503
+with `Unavailable`, which the table reads back; a 502 comes from a
+proxy, with no code, and reads as `Unavailable` too. They send 400 with
+`InvalidArgument`, `FailedPrecondition` or `OutOfRange`, 404 with
+`NotFound`, 429 with `ResourceExhausted` and 504 with
+`DeadlineExceeded`, where the table reads `Internal`, `Unimplemented`,
+`Unavailable` and `Unavailable`. An application whose server does not
+yet send status bodies tells those statuses apart by the response's
+`statusCode`, not by the code.
+
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
@@ -342,7 +359,10 @@ status details of one type ([descriptors.md](descriptors.md#error-details)).
 `StatusError.source`, an `Rpc.Error.Source`, says where the status was
 read; the runtime tries each in this order, whatever the transport:
 
-- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+- `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A
+  string `code` that is not one of Connect's names still makes the body
+  a Connect body: the error is `RpcStatus` with the code `Unknown`, and
+  the message and details as the body gives them.
 - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as
   grpc-gateway and Vanguard send.
 - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
@@ -409,6 +429,11 @@ sends and how it reads an answer without a server
 ([quickstart.md](quickstart.md#7-test-without-a-server)), and
 `Rpc.taskFromRequest` sends a request in place of the call's own and
 reads the answer as the call's, with the config's retry policy.
+
+A request's `headers` are those the runtime and the config add, not all
+that go out: sending a request with a body adds
+`Content-Type: application/json`, which elm/http sets from the body, and
+the browser adds its own, so a test of `Rpc.request` sees neither.
 
 `Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
 carries its metadata, the `trailer-` ones apart, for an application that
