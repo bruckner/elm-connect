@@ -219,3 +219,45 @@ Decisions taken while building, and the alternatives, for the report.
   runtime: BadResponse = `internal`). Fixed on the way: GET query parameters
   in the protocol's recommended order (`connect, base64, encoding, message`).
   The JSON run is unchanged: 40/40 halves, 39+1 known sendTraced.
+
+## Protobuf conformance suite (run 2)
+
+- **Runner:** `conformance_test_runner` v32.0-rc2, prebuilt by
+  bufbuild/protobuf-conformance (GitHub release, asset
+  `conformance_test_runner-32.0-rc2-osx-x86_64.zip`, SHA-256
+  `9c01b26eface95c277eb4c08de09536ad6605434632c9e3682ee4d5b553ad280`, the
+  digest GitHub reports for the asset; runs under Rosetta). Protobuf's own
+  releases ship protoc alone. No build was needed. The repo notes v32.0 is
+  bufbuild's last runner release (later ones move to an npm package).
+- **Testee:** `conformance/protobuf/` — `Testee.elm`, a worker over the
+  Elm generated from `test_messages_proto3.proto` under `codec=both`, and
+  `testee.mjs`, a vanilla-JS pipe driver that reads ConformanceRequest and
+  writes ConformanceResponse by hand (four wire types) and hands each
+  request to the worker over a port. Proto2/editions messages and
+  JSPB/text formats are answered `skipped`. `just protobuf-conformance`
+  (opt-in, not in `check`) fetches the runner, generates, builds and runs
+  it against `failure_list.txt`; it passes.
+- **Deviation:** the generator refuses `google.protobuf.NullValue`
+  (`types::unsupported_well_known`), so the testee's proto is the suite's
+  with its two NullValue fields removed
+  (`spike/protobuf-conformance/strip-null-value.sh`); 2 Recommended cases
+  fail for it, classified unsupported.
+- **Result** (`spike/protobuf-conformance/tally-v32.0-rc2.md`; totals from a
+  `TESTEE_FAIL_ALL=1` run whose failure list names every case run): 1,468
+  proto3 cases, 1,408 pass. Required 1,095/1,135, Recommended 313/333.
+  Binary→binary: Required 478/482, Recommended 215/216. Binary→JSON
+  292/298 + 10/10, JSON→binary 136/148 + 15/20, JSON→JSON 189/207 + 73/87.
+- **Fixed on the way (ours, cheap):** repeated scalars declared
+  `[packed = false]` were written packed (26 Recommended cases). The IR now
+  records `unpacked` from the field's own options (prost-reflect's
+  `is_packed()` reports such a field packed when the pool comes from
+  protox), and the generator emits `Proto.Binary.listUnpacked`. The codec
+  corpus has no such field, so its blessed output is unchanged.
+- **Binary failures left (7):** merge of a message field arriving twice (5,
+  ours: run-1 Q8, specified below), unknown fields not retained (2, spec
+  choice). Cross-format: an `Any` holding a non-well-known message's JSON
+  written to binary loses its message (3, ours: needs a codec registry).
+  The other 50 are the proto3 JSON codecs' (Time.Posix milliseconds,
+  encoders that cannot refuse out-of-range values, 64-bit numbers through
+  Float, lenient JSON parsing, unknown enum names), classified in
+  `conformance/protobuf/failure_list.txt`.

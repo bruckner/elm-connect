@@ -8,3 +8,4 @@ mise.local.toml
 .mise.local.toml
 /tests/Generated/
 /examples/eliza/index.html
+/conformance/protobuf/build/

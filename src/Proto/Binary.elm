@@ -2,7 +2,7 @@ module Proto.Binary exposing
     ( decode, encode
     , Codec
     , message, field, repeated, mapEntry, skip
-    , implicit, optional, present, list, dict, boolMap
+    , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
     , int64, sint64, sfixed64, uint64, fixed64
@@ -52,7 +52,7 @@ outside ±(2^53 − 1).
 
 # Encoding a message
 
-@docs implicit, optional, present, list, dict, boolMap
+@docs implicit, optional, present, list, listUnpacked, dict, boolMap
 
 
 # Scalars
@@ -381,6 +381,14 @@ list ((Codec c) as codec) number vs =
 
             else
                 E.sequence (List.map (present codec number) vs)
+
+
+{-| A repeated scalar field declared `[packed = false]`: one field key per
+element; left out when empty.
+-}
+listUnpacked : Codec v -> Int -> List v -> Encoder
+listUnpacked codec number vs =
+    E.sequence (List.map (present codec number) vs)
 
 
 {-| A map field, its entries in the `Dict`'s order, each entry leaving out a

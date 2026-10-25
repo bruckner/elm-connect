@@ -825,6 +825,7 @@ mod tests {
             ty,
             cyclic: false,
             jstype: crate::ir::JsType::Normal,
+            unpacked: false,
             annotations: crate::ir::Annotations::default(),
             doc: crate::ir::Doc::default(),
         }

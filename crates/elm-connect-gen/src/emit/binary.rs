@@ -224,6 +224,9 @@ impl Emitter {
                 FieldShape::Maybe(_) | FieldShape::Json => {
                     apply(self.binary("optional"), [codec, number, value])
                 }
+                FieldShape::List(_) if field.unpacked => {
+                    apply(self.binary("listUnpacked"), [codec, number, value])
+                }
                 FieldShape::List(_) => apply(self.binary("list"), [codec, number, value]),
                 FieldShape::Dict(..) => {
                     let Cardinality::Map(key) = field.cardinality else {
