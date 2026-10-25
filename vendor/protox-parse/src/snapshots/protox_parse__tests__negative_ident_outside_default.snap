@@ -1,0 +1,11 @@
+---
+source: protox-parse/src/tests.rs
+expression: "parse(\"\n        option opt = -foo;\n    \")"
+---
+Err(
+    [
+        NegativeIdentOutsideDefault {
+            span: 22..26,
+        },
+    ],
+)
