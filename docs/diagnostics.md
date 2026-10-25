@@ -66,9 +66,9 @@ For contributors: each code's rendered output is pinned by a case in
 `input/` protos and an `options.txt` parameter, except five the corpus
 cannot reach. `input::unknown_file` (the corpus requests every file it
 compiles) is covered by `crates/elm-connect-gen/tests/ir/build.rs` and
-the plugin's tests; `input::editions` (the corpus's compiler cannot
-parse an editions file) by `crates/elm-connect/tests/compile_errors.rs`
-and the plugin's tests; `input::file_name` (the corpus cannot hold such
+the plugin's tests; `input::editions` (the CLI and the plugin refuse
+the file ahead of the generator the corpus drives) by
+`crates/elm-connect/tests/compile_errors.rs` and the plugin's tests; `input::file_name` (the corpus cannot hold such
 a file) by `crates/elm-connect-gen/tests/ir/build.rs`; `input::file_not_found` (the
 corpus's compiler stops first) by `crates/elm-connect/tests/compile_errors.rs`; and `input::field_name_conflict` (the
 corpus's compiler refuses the file itself) by

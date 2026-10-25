@@ -11,7 +11,7 @@ use elm_connect_gen::diagnostics::{
 };
 use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
 use miette::{Diagnostic, IntoDiagnostic, Report, WrapErr};
-use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
+use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor, Syntax};
 
 /// What compiling the inputs gives the generator.
 #[derive(Debug)]
@@ -125,6 +125,15 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
             return Err(not_found(&error, &includes));
         }
         return Err(error.into());
+    }
+    // protox compiles edition 2023 files, which this release does not generate from.
+    if let Some(file) = compiler
+        .descriptor_pool()
+        .files()
+        .find(|file| file.syntax() == Syntax::Editions)
+        && let Some(report) = editions_report(file.name(), &includes)
+    {
+        return Err(report);
     }
     let mut inputs = Vec::new();
     let mut sources = HashMap::new();
@@ -291,14 +300,18 @@ fn field_name_conflict(
 }
 
 /// The `input::editions` problem for a parse `error` in a file that
-/// declares an edition, which protox cannot parse: the file is found
-/// again on `includes` and its first statement read. `None` for any other
-/// error.
+/// declares an edition protox cannot parse: the file is found again on
+/// `includes` and its first statement read. `None` for any other error.
 fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
     if !error.is_parse() {
         return None;
     }
-    let name = error.file()?;
+    editions_report(error.file()?, includes)
+}
+
+/// The `input::editions` problem for the file `name`, found on `includes`,
+/// sited at its `edition` statement. `None` when it has none.
+fn editions_report(name: &str, includes: &[PathBuf]) -> Option<Report> {
     let source = includes
         .iter()
         .find_map(|include| fs::read_to_string(include.join(name)).ok())?;

@@ -82,10 +82,11 @@ a second transport and a public interface designed to be kept.
   parser's errors. A file that declares an edition
   (`edition = "2023";`) is `input::editions`, from either binary, before
   anything is generated, even where its features would reduce to proto3
-  semantics: protox, under the CLI, does not parse editions, and the
-  plugin answers protoc before building its descriptor pool, which
-  cannot take an editions file. The plugin does not claim
-  `FEATURE_SUPPORTS_EDITIONS`, so protoc says the same in its own words.
+  semantics: the CLI refuses an editions file once protox has compiled
+  it (or failed to parse an edition it does not know), and the plugin
+  answers protoc before building its descriptor pool. The plugin does
+  not claim `FEATURE_SUPPORTS_EDITIONS`, so protoc says the same in its
+  own words.
   Supporting the editions that reduce to proto3 is additive, an error
   becoming output (roadmap).
 - Server code generation.
