@@ -44,6 +44,18 @@ pub(crate) struct FileDescriptorProto {
     pub source_code_info: Option<SourceCodeInfo>,
     #[prost(string, optional, tag = "12")]
     pub syntax: Option<String>,
+    #[prost(enumeration = "Edition", optional, tag = "14")]
+    pub edition: Option<i32>,
+}
+
+// The values of `google.protobuf.Edition` this crate names; others decode as their number.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, prost::Enumeration)]
+#[repr(i32)]
+pub(crate) enum Edition {
+    Unknown = 0,
+    Proto2 = 998,
+    Proto3 = 999,
+    Edition2023 = 1000,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -207,6 +219,8 @@ impl FileDescriptorProto {
             options: file.options.map(Options::from_prost),
             source_code_info: file.source_code_info,
             syntax: file.syntax,
+            // prost_types::FileDescriptorProto has no `edition` field.
+            edition: None,
         }
     }
 
