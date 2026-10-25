@@ -9,6 +9,7 @@ timed `init`.
 
 import Connectrpc.Eliza.V1.ElizaService as Eliza
 import Dict exposing (Dict)
+import FastJson
 import Http
 import Json.Decode as D
 import Json.Encode as E
@@ -412,6 +413,13 @@ encoded value =
     String.length (E.encode 0 value)
 
 
+{-| Inputs the estimate in FastJson must treat as the generated decoder does.
+-}
+oddNotes : List String
+oddNotes =
+    [ "[]", "null", "\"x\"", "{}", "{\"name\":null}", "{\"createTime\":\"2026-01-01T00:00:00Z\",\"create_time\":\"2026-01-01T00:00:00Z\"}", "{\"name\":5}", "[1,2]", "{\"length\":\"x\"}" ]
+
+
 
 -- TASKS
 
@@ -430,6 +438,7 @@ tasks =
         , ( "request.transcode.list", \_ -> requestSize (Rpc.request transcodeCfg listNotes) )
         , ( "request.transcode.create", \_ -> requestSize (Rpc.request transcodeCfg createNote) )
         , ( "request.connect.tags1000", \_ -> requestSize (Rpc.request connectCfg bigNote) )
+        , ( "call.build", \i -> Rpc.Call.methodName (Eliza.say { sentence = "Hello" }) |> String.length |> (+) i )
         , ( "send.connect.say", \_ -> always 1 (Rpc.send connectCfg (ignore ()) say) )
         , ( "send.connect.headers", \_ -> always 1 (Rpc.send headersCfg (ignore ()) sayWithHeaders) )
         , ( "send.connectGet.say", \_ -> always 1 (Rpc.send getCfg (ignore ()) say) )
@@ -455,6 +464,8 @@ tasks =
         -- the JSON codecs
         , ( "json.note.decode", \_ -> decoded "note" Notes.V1.decodeNote noteJson )
         , ( "json.note.plain", \_ -> decoded "note" plainNote noteJson )
+        , ( "json.note.fast", \_ -> decoded "note" FastJson.decodeNote noteJson )
+        , ( "json.note.fastMapN", \_ -> decoded "note" FastJson.decodeNoteMapN noteJson )
         , ( "json.note.encode", \_ -> encoded (Notes.V1.encodeNote note) )
         , ( "json.scalars.decode", \_ -> decoded "scalars" Scalars.V1.decodeScalars scalarsJson )
         , ( "json.scalars.decodeSnake", \_ -> decoded "scalars" Scalars.V1.decodeScalars scalarsSnakeJson )
@@ -472,6 +483,7 @@ tasks =
         , ( "json.forest.encode", \_ -> encoded (Nesting.V1.encodeForest forest) )
         , ( "json.notes1000.decode", \_ -> decoded "notes" Notes.V1.decodeListNotesResponse notes1000Json )
         , ( "json.notes1000.plain", \_ -> decoded "notes" plainNotes notes1000Json )
+        , ( "json.notes1000.fast", \_ -> decoded "notes" FastJson.decodeListNotesResponse notes1000Json )
         , ( "json.notes1000.encode", \_ -> encoded (Notes.V1.encodeListNotesResponse notes1000) )
         , ( "json.timestamp.decode", \_ -> decoded "ts" Proto.Json.timestamp timestampJson )
         , ( "json.timestamp.fromString", \_ -> Proto.Timestamp.fromString "2026-10-25T12:34:56.789Z" |> Maybe.map (always 1) |> Maybe.withDefault 0 )
@@ -498,5 +510,9 @@ checks =
             , List.length errors == 5
             , decoded "" Scalars.V1.decodeScalars scalarsSnakeJson == 1
             , decoded "" Maps.V1.decodeTeam labels1000Json == 1
+            , D.decodeString FastJson.decodeNote noteJson == Ok note
+            , D.decodeString FastJson.decodeNoteMapN noteJson == Ok note
+            , D.decodeString FastJson.decodeListNotesResponse notes1000Json == Ok notes1000
+            , List.map (D.decodeString FastJson.decodeNote >> Result.toMaybe) oddNotes == List.map (D.decodeString Notes.V1.decodeNote >> Result.toMaybe) oddNotes
             ]
         )
