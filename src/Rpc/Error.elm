@@ -79,6 +79,10 @@ type Error
   - `InvalidHeader`: a header, named here, that a request cannot carry: its
     name is not an HTTP token, or its value holds NUL, CR, LF or a character
     above U+00FF. Nothing was sent.
+  - `InvalidPathValue`: over transcoding, a request field the path holds
+    (`field`, its JSON names joined with `.`) whose value the variable's
+    `template` cannot match, such as `""` or `notes/a/b` for
+    `{name=notes/*}`. Nothing was sent.
   - `RequestTooLarge`: the request message, as JSON, was longer in UTF-8
     bytes (`size`) than the transport sends (`limit`,
     [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes)). Nothing was
@@ -97,6 +101,7 @@ type Reason
     | NetworkError
     | BadUrl String
     | InvalidHeader String
+    | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
 
@@ -151,8 +156,9 @@ type Source
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus).
   - `BadResponse`: `Internal`.
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL or an invalid header `Internal`, a request or a
-    response over its limit `ResourceExhausted`.
+    `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
+    value `InvalidArgument`, a request or a response over its limit
+    `ResourceExhausted`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
 reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
@@ -186,6 +192,9 @@ code error =
         NoAnswer (InvalidHeader _) ->
             Code.Internal
 
+        NoAnswer (InvalidPathValue _) ->
+            Code.InvalidArgument
+
         NoAnswer (RequestTooLarge _) ->
             Code.ResourceExhausted
 
@@ -202,7 +211,8 @@ code error =
     application never shows, so the message keeps its first 300 characters,
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
-    `invalid header "<name>"` or, as connect-es words them,
+    `invalid header "<name>"`, `path field "<field>" does not match
+    <template>` or, as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
     for a request and `… readMaxBytes <limit>` for a response, both in
     bytes. A bad URL is printed as its scheme, host and path, without the
@@ -210,7 +220,7 @@ code error =
     which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
     stays in the error. An invalid header is named, its value left out, since
-    it may be a credential.
+    it may be a credential; an invalid path value is left out too.
 
 -}
 message : Error -> String
@@ -240,6 +250,9 @@ message error =
 
         NoAnswer (InvalidHeader name) ->
             "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
+
+        NoAnswer (InvalidPathValue { field, template }) ->
+            "path field " ++ Json.Encode.encode 0 (Json.Encode.string field) ++ " does not match " ++ template
 
         NoAnswer (RequestTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit

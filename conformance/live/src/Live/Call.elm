@@ -413,6 +413,9 @@ reasonToString reason =
         Rpc.Error.InvalidHeader name ->
             "InvalidHeader " ++ name
 
+        Rpc.Error.InvalidPathValue { field, template } ->
+            "InvalidPathValue " ++ field ++ " " ++ template
+
         Rpc.Error.RequestTooLarge { limit, size } ->
             "RequestTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
 

@@ -16,6 +16,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Internal.Wire
 import Rpc.Transport
 import Test exposing (Test, describe, test)
 
@@ -124,6 +125,7 @@ suite : Test
 suite =
     describe "Transcode"
         [ paths
+        , pathValues
         , queries
         , bodies
         , routes
@@ -222,6 +224,113 @@ paths =
                 url { rule | path = [ Proto.Http.literal "v1", var [ sub "inner" "inner", sub "deep" "deep", field "b" "b" CardinalitySingular (KindScalar ScalarInt32) ] ] }
                     """{"inner":{"deep":{"b":0}}}"""
                     |> Expect.equal "https://api.example.com/v1/0"
+        ]
+
+
+{-| A rule with one variable of field `name` and this template.
+-}
+named : List Proto.Http.Segment -> Rule
+named template =
+    { rule | path = [ Proto.Http.literal "v1", Proto.Http.variable { fieldPath = [ string "name" "name" ], template = template } ] }
+
+
+{-| What sending refuses in a call of `r` with this request: the field and
+template of the first path value that cannot match, or `Nothing`.
+-}
+refused : Rule -> String -> Maybe { field : String, template : String }
+refused r request =
+    Rpc.Internal.Wire.invalidPathValue config (bound r request)
+
+
+notes : List Proto.Http.Segment
+notes =
+    [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+
+
+pathValues : Test
+pathValues =
+    describe "path values sending refuses"
+        [ test "an empty value matches no template" <|
+            \_ ->
+                [ refused (named []) """{"name":""}"""
+                , refused (named [ Proto.Http.wildcard ]) """{"name":""}"""
+                , refused (named notes) """{"name":""}"""
+                , refused (named [ Proto.Http.doubleWildcard ]) """{"name":""}"""
+                ]
+                    |> Expect.equal
+                        [ Just { field = "name", template = "*" }
+                        , Just { field = "name", template = "*" }
+                        , Just { field = "name", template = "notes/*" }
+                        , Just { field = "name", template = "**" }
+                        ]
+        , test "an absent string is its empty default, refused; an absent number is 0, sent" <|
+            \_ ->
+                [ refused (named notes) "{}"
+                , refused { rule | path = [ Proto.Http.literal "v1", var [ field "n" "n" CardinalitySingular (KindScalar ScalarInt32) ] ] } "{}"
+                ]
+                    |> Expect.equal [ Just { field = "name", template = "notes/*" }, Nothing ]
+        , test "a single-segment variable takes a value holding /, which it escapes" <|
+            \_ ->
+                ( refused (named []) """{"name":"a/b"}""", refused (named [ Proto.Http.wildcard ]) """{"name":"notes/a/b"}""" )
+                    |> Expect.equal ( Nothing, Nothing )
+        , test "a multi-segment variable refuses a value with more or fewer segments than its template" <|
+            \_ ->
+                [ """{"name":"notes/a/b"}""", """{"name":"notes"}""", """{"name":"notes/"}""" ]
+                    |> List.map (refused (named notes))
+                    |> Expect.equal (List.repeat 3 (Just { field = "name", template = "notes/*" }))
+        , test "a multi-segment variable refuses another literal and an empty segment" <|
+            \_ ->
+                [ refused (named notes) """{"name":"things/a"}"""
+                , refused (named [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]) """{"name":"users//notes/n"}"""
+                , refused (named [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]) """{"name":"files/a//b"}"""
+                ]
+                    |> Expect.equal
+                        [ Just { field = "name", template = "notes/*" }
+                        , Just { field = "name", template = "users/*/notes/*" }
+                        , Just { field = "name", template = "files/**" }
+                        ]
+        , test "a matching multi-segment value is sent" <|
+            \_ ->
+                [ refused (named notes) """{"name":"notes/42"}"""
+                , refused (named notes) """{"name":"notes/a b?"}"""
+                , refused (named [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]) """{"name":"users/u/notes/n"}"""
+                , refused (named [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]) """{"name":"files/a/b/c.txt"}"""
+                , refused (named [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]) """{"name":"files"}"""
+                , refused (named [ Proto.Http.doubleWildcard, Proto.Http.literal "x" ]) """{"name":"a/b/x"}"""
+                ]
+                    |> Expect.equal (List.repeat 6 Nothing)
+        , test "a literal-only template takes its literal alone" <|
+            \_ ->
+                ( refused (named [ Proto.Http.literal "me" ]) """{"name":"me"}""", refused (named [ Proto.Http.literal "me" ]) """{"name":"you"}""" )
+                    |> Expect.equal ( Nothing, Just { field = "name", template = "me" } )
+        , test "the first value that cannot match is named by its JSON field path" <|
+            \_ ->
+                refused
+                    { rule
+                        | path =
+                            [ Proto.Http.literal "v1"
+                            , var [ string "id" "id" ]
+                            , Proto.Http.variable { fieldPath = [ sub "the_note" "theNote", string "name" "name" ], template = notes }
+                            , var [ string "other" "other" ]
+                            ]
+                    }
+                    """{"id":"1","theNote":{"name":"notes/a/b"}}"""
+                    |> Expect.equal (Just { field = "theNote.name", template = "notes/*" })
+        , test "the pure request is still built" <|
+            \_ ->
+                url (named notes) """{"name":"notes/a/b"}"""
+                    |> Expect.equal "https://api.example.com/v1/notes/a/b"
+        , test "Connect, and a method without a rule, have no path to refuse" <|
+            \_ ->
+                [ Rpc.Internal.Wire.invalidPathValue { config | transport = Rpc.Transport.connect } (bound (named notes) """{"name":""}""")
+                , Rpc.Internal.Wire.invalidPathValue config (Rpc.call (raw []) (json """{"name":""}"""))
+                ]
+                    |> Expect.equal [ Nothing, Nothing ]
+        , test "the error is InvalidArgument, naming the field and the template without the value" <|
+            \_ ->
+                NoAnswer (InvalidPathValue { field = "note.name", template = "notes/*" })
+                    |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal ( InvalidArgument, "path field \"note.name\" does not match notes/*" )
         ]
 
 

@@ -241,8 +241,9 @@ attempt's result. A task ignores the call's tracker
 ([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), so [`cancel`](#cancel)
 cannot stop it.
 
-A call whose URL or headers cannot be sent (see [`Config`](#Config)), or whose
-request is over the transport's
+A call whose URL or headers cannot be sent (see [`Config`](#Config)), whose
+path value cannot match its variable's template (see [`request`](#request)),
+or whose request is over the transport's
 [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes), is not: it fails with
 `NoAnswer`, and nothing reaches elm/http.
 
@@ -404,9 +405,9 @@ type alias Request =
     Rpc.Request.Request
 
 
-{-| The request a call sends. It is built whatever the config holds, a `baseUrl`
-with a query or a header a request cannot carry included; sending it is what
-refuses those.
+{-| The request a call sends. It is built whatever the config and the call hold,
+a `baseUrl` with a query, a header a request cannot carry or a path value its
+template cannot match included; sending it is what refuses those.
 
 Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
 as its body and `Connect-Protocol-Version: 1`. With
@@ -428,6 +429,16 @@ and custom verb are written as they are, but for a character a path segment
 cannot hold, which is percent-encoded (a `%` followed by two hex digits is
 kept as an escape); generated bindings hold none. A call without bindings is
 the request Connect would POST.
+
+A path value must match its variable's template, as `google.api.http` defines
+it. A variable of one segment (`{name}`, `{name=*}`) takes any value but `""`,
+its `/` escaped. Any other value is split at each `/`, and its segments must
+be non-empty and match the template's: a literal itself, `*` one segment, `**`
+any number. `getNote { name = "" }` and
+`getNote { name = "notes/a/b" }` under `get: "/v1/{name=notes/*}"` match
+nothing. Sending such a call fails with
+`NoAnswer (InvalidPathValue { field = "name", template = "notes/*" })`, nothing
+sent; `request` still builds its URL.
 
 -}
 request : Config -> Call req res -> Request
@@ -487,7 +498,8 @@ splitTrailers =
 {-| Send a request in place of the one a call would send, and read the answer as
 the call's. The retry policy in effect applies, and the call's tracker is
 ignored, as with [`task`](#task). A request whose URL or headers cannot be
-sent is not.
+sent is not, nor is one for a call whose path value cannot match its template:
+the call's values are checked, whatever URL the request carries.
 -}
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 taskFromRequest cfg c sent =
@@ -534,10 +546,11 @@ firstAttempt cfg c sent =
 
 
 {-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
-fragment, or a header a browser refuses, on which XHR's `setRequestHeader`
-throws outside elm/http's handler and stops the program for good; or a request
-message over the transport's write limit. The message is the call's, as JSON,
-whatever a rewritten request carries.
+fragment; a path value its variable's template cannot match, which no server
+can route to the method; a header a browser refuses, on which XHR's
+`setRequestHeader` throws outside elm/http's handler and stops the program for
+good; or a request message over the transport's write limit. The path values
+and the message are the call's, whatever a rewritten request carries.
 -}
 unsendable : Config -> Call req res -> Request -> Maybe Error
 unsendable cfg c sent =
@@ -545,11 +558,14 @@ unsendable cfg c sent =
         Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
 
     else
-        case Internal.invalidHeader sent.headers of
-            Just name ->
+        case ( Rpc.Internal.Wire.invalidPathValue cfg c, Internal.invalidHeader sent.headers ) of
+            ( Just path, _ ) ->
+                Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidPathValue path))
+
+            ( Nothing, Just name ) ->
                 Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
 
-            Nothing ->
+            ( Nothing, Nothing ) ->
                 Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
                     |> Maybe.map Rpc.Error.NoAnswer
 
