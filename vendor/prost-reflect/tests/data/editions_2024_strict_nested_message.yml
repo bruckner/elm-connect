@@ -1,0 +1,13 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  options:
+    features:
+      defaultSymbolVisibility: STRICT
+  messageType:
+  - name: Outer
+    nestedType:
+    - name: Inner
+      visibility: VISIBILITY_EXPORT

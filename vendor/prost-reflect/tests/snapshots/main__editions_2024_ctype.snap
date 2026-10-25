@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: ctype option is not allowed under edition 2024 and beyond; use the feature string_type = VIEW|CORD|STRING|... instead
+related: []
+severity: error

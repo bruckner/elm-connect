@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "Symbol \"dep.Extendable\", defined in \"dep.proto\" target of extend is not visible from \"test.proto\". It is explicitly marked 'local' and cannot be accessed outside its own file"
+related: []
+severity: error

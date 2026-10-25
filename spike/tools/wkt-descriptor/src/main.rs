@@ -55,7 +55,7 @@ fn file_literal(file: &FileDescriptorProto) -> String {
     format!(
         "FileDescriptorProto {{ name: {}, package: {}, dependency: {}, public_dependency: {:?}, \
          weak_dependency: {:?}, message_type: {}, enum_type: {}, service: vec![], extension: \
-         vec![], options: {}, source_code_info: None, syntax: {}, edition: None, }}",
+         vec![], options: {}, source_code_info: None, syntax: {}, edition: None, option_dependency: vec![], }}",
         opt_str(&file.name),
         opt_str(&file.package),
         strings(&file.dependency),
@@ -112,7 +112,7 @@ fn message_literal(m: &DescriptorProto) -> String {
     format!(
         "DescriptorProto {{ name: {}, field: {}, extension: {}, nested_type: {}, enum_type: {}, \
          extension_range: {}, oneof_decl: {}, options: {}, reserved_range: {}, reserved_name: \
-         {}, }}",
+         {}, visibility: None, }}",
         opt_str(&m.name),
         vec(&m.field, field_literal),
         vec(&m.extension, field_literal),
@@ -203,7 +203,7 @@ fn enum_literal(e: &EnumDescriptorProto) -> String {
     assert!(e.options.is_none(), "enum options not handled: {}", e.name());
     format!(
         "EnumDescriptorProto {{ name: {}, value: {}, options: None, reserved_range: {}, \
-         reserved_name: {}, }}",
+         reserved_name: {}, visibility: None, }}",
         opt_str(&e.name),
         vec(&e.value, value_literal),
         vec(&e.reserved_range, |r| format!(

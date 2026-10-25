@@ -1,0 +1,24 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2023
+  package: dep
+  messageType:
+  - name: Top
+    nestedType:
+    - name: Nested
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  messageType:
+  - name: Message
+    field:
+    - name: nested
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .dep.Top.Nested
+      jsonName: nested

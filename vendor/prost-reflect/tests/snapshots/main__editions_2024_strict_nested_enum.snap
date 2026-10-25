@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "\"test.Outer.Kind\" is a nested enum and cannot be marked `export` with STRICT default_symbol_visibility. It must be moved to top-level, ideally in its own file in order to be `export`. For C++ namespacing of enums in a messages use: `local message <OuterNamespace> { export enum test.Outer.Kind {...} reserved 1 to max; }`"
+related: []
+severity: error

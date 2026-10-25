@@ -1,0 +1,11 @@
+file:
+- name: options.proto
+  syntax: editions
+  edition: EDITION_2023
+  package: options
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  package: test
+  optionDependency:
+  - options.proto

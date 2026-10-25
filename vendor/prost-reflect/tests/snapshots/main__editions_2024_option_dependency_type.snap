@@ -1,0 +1,10 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+help: "'options.Tag' is defined in 'options.proto', which 'test.proto' imports only for use in options"
+labels: []
+message: "name 'options.Tag' is not defined"
+related: []
+severity: error

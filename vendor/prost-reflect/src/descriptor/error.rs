@@ -29,6 +29,20 @@ pub(super) enum DescriptorErrorKind {
         message: String,
         found: Label,
     },
+    UnsupportedInEdition {
+        message: String,
+        found: Label,
+    },
+    NotVisible {
+        message: String,
+        found: Label,
+        #[cfg_attr(not(feature = "miette"), allow(dead_code))]
+        defined: Label,
+    },
+    NamingStyle {
+        message: String,
+        found: Label,
+    },
     DuplicateFileName {
         name: String,
     },
@@ -319,7 +333,10 @@ impl DescriptorErrorKind {
             DescriptorErrorKind::MissingRequiredField { label } => Some(label),
             DescriptorErrorKind::UnknownSyntax { found, .. } => Some(found),
             DescriptorErrorKind::UnsupportedEdition { found, .. } => Some(found),
-            DescriptorErrorKind::InvalidFeature { found, .. } => Some(found),
+            DescriptorErrorKind::InvalidFeature { found, .. }
+            | DescriptorErrorKind::UnsupportedInEdition { found, .. }
+            | DescriptorErrorKind::NotVisible { found, .. }
+            | DescriptorErrorKind::NamingStyle { found, .. } => Some(found),
             DescriptorErrorKind::DuplicateFileName { .. } => None,
             DescriptorErrorKind::FileNotFound { found, .. } => Some(found),
             DescriptorErrorKind::InvalidImportIndex => None,
@@ -358,8 +375,14 @@ impl DescriptorErrorKind {
             }
             DescriptorErrorKind::UnknownSyntax { found, .. }
             | DescriptorErrorKind::UnsupportedEdition { found, .. }
-            | DescriptorErrorKind::InvalidFeature { found, .. } => {
+            | DescriptorErrorKind::InvalidFeature { found, .. }
+            | DescriptorErrorKind::UnsupportedInEdition { found, .. }
+            | DescriptorErrorKind::NamingStyle { found, .. } => {
                 found.resolve_span(file, source);
+            }
+            DescriptorErrorKind::NotVisible { found, defined, .. } => {
+                found.resolve_span(file, source);
+                defined.resolve_span(file, source);
             }
             DescriptorErrorKind::DuplicateFileName { .. } => {}
             DescriptorErrorKind::FileNotFound { found, .. } => {
@@ -474,7 +497,10 @@ impl fmt::Display for DescriptorErrorKind {
             DescriptorErrorKind::UnsupportedEdition { edition: None, .. } => {
                 write!(f, "a file with syntax 'editions' must set its edition")
             }
-            DescriptorErrorKind::InvalidFeature { message, .. } => f.write_str(message),
+            DescriptorErrorKind::InvalidFeature { message, .. }
+            | DescriptorErrorKind::UnsupportedInEdition { message, .. }
+            | DescriptorErrorKind::NotVisible { message, .. }
+            | DescriptorErrorKind::NamingStyle { message, .. } => f.write_str(message),
             DescriptorErrorKind::DuplicateFileName { name, .. } => {
                 write!(f, "a different file named '{name}' has already been added")
             }
@@ -643,9 +669,12 @@ impl miette::Diagnostic for DescriptorErrorKind {
                 "valid values are 'proto2', 'proto3' and 'editions'",
             )),
             DescriptorErrorKind::UnsupportedEdition { .. } => {
-                Some(Box::new("the supported edition is '2023'"))
+                Some(Box::new("the supported editions are '2023' and '2024'"))
             }
             DescriptorErrorKind::InvalidFeature { .. } => None,
+            DescriptorErrorKind::UnsupportedInEdition { .. } => None,
+            DescriptorErrorKind::NotVisible { .. } => None,
+            DescriptorErrorKind::NamingStyle { .. } => None,
             DescriptorErrorKind::DuplicateFileName { .. } => None,
             DescriptorErrorKind::FileNotFound { .. } => None,
             DescriptorErrorKind::InvalidImportIndex => None,
@@ -702,7 +731,13 @@ impl miette::Diagnostic for DescriptorErrorKind {
             DescriptorErrorKind::MissingRequiredField { label } => spans.extend(label.to_span()),
             DescriptorErrorKind::UnknownSyntax { found: defined, .. }
             | DescriptorErrorKind::UnsupportedEdition { found: defined, .. }
-            | DescriptorErrorKind::InvalidFeature { found: defined, .. } => {
+            | DescriptorErrorKind::InvalidFeature { found: defined, .. }
+            | DescriptorErrorKind::UnsupportedInEdition { found: defined, .. }
+            | DescriptorErrorKind::NamingStyle { found: defined, .. } => {
+                spans.extend(defined.to_span());
+            }
+            DescriptorErrorKind::NotVisible { found, defined, .. } => {
+                spans.extend(found.to_span());
                 spans.extend(defined.to_span());
             }
             DescriptorErrorKind::DuplicateFileName { .. } => {}

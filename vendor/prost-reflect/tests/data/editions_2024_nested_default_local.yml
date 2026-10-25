@@ -1,0 +1,27 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+  messageType:
+  - name: Top
+    enumType:
+    - name: Kind
+      value:
+      - name: KIND_UNSPECIFIED
+        number: 0
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  messageType:
+  - name: Message
+    field:
+    - name: kind
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_ENUM
+      typeName: .dep.Top.Kind
+      jsonName: kind

@@ -46,6 +46,8 @@ pub(crate) struct FileDescriptorProto {
     pub syntax: Option<String>,
     #[prost(enumeration = "Edition", optional, tag = "14")]
     pub edition: Option<i32>,
+    #[prost(string, repeated, tag = "15")]
+    pub option_dependency: Vec<String>,
 }
 
 // The values of `google.protobuf.Edition` this crate names; others decode as their number.
@@ -56,6 +58,7 @@ pub(crate) enum Edition {
     Proto2 = 998,
     Proto3 = 999,
     Edition2023 = 1000,
+    Edition2024 = 1001,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -80,6 +83,8 @@ pub(crate) struct DescriptorProto {
     pub reserved_range: Vec<descriptor_proto::ReservedRange>,
     #[prost(string, repeated, tag = "10")]
     pub reserved_name: Vec<String>,
+    #[prost(enumeration = "prost_types::SymbolVisibility", optional, tag = "11")]
+    pub visibility: Option<i32>,
 }
 
 pub(crate) mod descriptor_proto {
@@ -144,6 +149,8 @@ pub(crate) struct EnumDescriptorProto {
     pub reserved_range: Vec<enum_descriptor_proto::EnumReservedRange>,
     #[prost(string, repeated, tag = "5")]
     pub reserved_name: Vec<String>,
+    #[prost(enumeration = "prost_types::SymbolVisibility", optional, tag = "6")]
+    pub visibility: Option<i32>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -220,6 +227,7 @@ impl FileDescriptorProto {
             source_code_info: file.source_code_info,
             syntax: file.syntax,
             edition: file.edition,
+            option_dependency: file.option_dependency,
         }
     }
 
@@ -254,8 +262,7 @@ impl FileDescriptorProto {
             source_code_info: self.source_code_info.clone(),
             syntax: self.syntax.clone(),
             edition: self.edition,
-            // Edition 2024's option imports, which this crate does not support.
-            option_dependency: Vec::new(),
+            option_dependency: self.option_dependency.clone(),
         }
     }
 }
@@ -297,6 +304,7 @@ impl DescriptorProto {
             options: file.options.map(Options::from_prost),
             reserved_range: file.reserved_range,
             reserved_name: file.reserved_name,
+            visibility: file.visibility,
         }
     }
 
@@ -336,8 +344,7 @@ impl DescriptorProto {
             options: self.options.as_ref().map(Options::to_prost),
             reserved_range: self.reserved_range.clone(),
             reserved_name: self.reserved_name.clone(),
-            // Edition 2024's symbol visibility, which this crate does not support.
-            visibility: None,
+            visibility: self.visibility,
         }
     }
 }
@@ -424,6 +431,7 @@ impl EnumDescriptorProto {
             options: file.options.map(Options::from_prost),
             reserved_range: file.reserved_range,
             reserved_name: file.reserved_name,
+            visibility: file.visibility,
         }
     }
 
@@ -438,8 +446,7 @@ impl EnumDescriptorProto {
             options: self.options.as_ref().map(Options::to_prost),
             reserved_range: self.reserved_range.clone(),
             reserved_name: self.reserved_name.clone(),
-            // Edition 2024's symbol visibility, which this crate does not support.
-            visibility: None,
+            visibility: self.visibility,
         }
     }
 }

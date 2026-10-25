@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "\"test.Outer.Inner\" is a nested message and cannot be `export` with STRICT default_symbol_visibility. It must be moved to top-level, ideally in its own file in order to be `export`."
+related: []
+severity: error

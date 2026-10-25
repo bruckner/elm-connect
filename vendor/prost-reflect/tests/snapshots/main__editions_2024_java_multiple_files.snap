@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "the file option `java_multiple_files` is not supported in editions 2024 and above, which defaults to the feature value of `nest_in_file_class = NO` (equivalent to `java_multiple_files = true`)"
+related: []
+severity: error

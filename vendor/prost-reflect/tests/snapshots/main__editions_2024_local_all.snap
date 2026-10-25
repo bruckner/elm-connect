@@ -1,0 +1,14 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "Symbol \"dep.Request\", defined in \"dep.proto\" is not visible from \"test.proto\". It defaulted to local from file-level 'option features.default_symbol_visibility = LOCAL_ALL;' and cannot be accessed outside its own file"
+related:
+  - causes: []
+    labels: []
+    message: "Symbol \"dep.Request\", defined in \"dep.proto\" is not visible from \"test.proto\". It defaulted to local from file-level 'option features.default_symbol_visibility = LOCAL_ALL;' and cannot be accessed outside its own file"
+    related: []
+    severity: error
+severity: error

@@ -1,0 +1,39 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test.v1
+  messageType:
+  - name: legacy_message
+    options:
+      features:
+        enforceNamingStyle: STYLE_LEGACY
+    field:
+    - name: BadField
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      jsonName: BadField
+  - name: Good
+    field:
+    - name: map_field
+      number: 1
+      label: LABEL_REPEATED
+      type: TYPE_MESSAGE
+      typeName: .test.v1.Good.MapFieldEntry
+      jsonName: mapField
+    nestedType:
+    - name: MapFieldEntry
+      field:
+      - name: key
+        number: 1
+        label: LABEL_OPTIONAL
+        type: TYPE_STRING
+        jsonName: key
+      - name: value
+        number: 2
+        label: LABEL_OPTIONAL
+        type: TYPE_INT32
+        jsonName: value
+      options:
+        mapEntry: true

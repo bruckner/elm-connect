@@ -18,6 +18,7 @@ pub(crate) mod file {
     pub(crate) const OPTIONS: i32 = 8;
     pub(crate) const SYNTAX: i32 = 12;
     pub(crate) const EDITION: i32 = 14;
+    pub(crate) const OPTION_DEPENDENCY: i32 = 15;
 
     pub(crate) mod options {
         pub(crate) const JAVA_PACKAGE: i32 = 1;

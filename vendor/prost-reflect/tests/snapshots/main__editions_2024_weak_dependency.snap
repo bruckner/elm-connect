@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: weak imports are not allowed under edition 2024 and beyond
+related: []
+severity: error

@@ -1,0 +1,20 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  options:
+    features:
+      defaultSymbolVisibility: STRICT
+  messageType:
+  - name: Namespace
+    visibility: VISIBILITY_LOCAL
+    enumType:
+    - name: Kind
+      visibility: VISIBILITY_EXPORT
+      value:
+      - name: KIND_UNSPECIFIED
+        number: 0
+    reservedRange:
+    - start: 1
+      end: 536870912

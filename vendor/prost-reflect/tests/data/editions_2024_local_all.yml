@@ -1,0 +1,22 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+  options:
+    features:
+      defaultSymbolVisibility: LOCAL_ALL
+  messageType:
+  - name: Request
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  service:
+  - name: Service
+    method:
+    - name: Call
+      inputType: .dep.Request
+      outputType: .dep.Request

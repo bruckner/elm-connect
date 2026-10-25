@@ -29,7 +29,8 @@ use crate::{
     },
     Cardinality, DescriptorError, DescriptorPool, DynamicMessage, Edition, EnumDescriptor,
     EnumType, EnumValueDescriptor, ExtensionDescriptor, Features, FieldDescriptor, FileDescriptor,
-    Kind, MessageDescriptor, MethodDescriptor, OneofDescriptor, ServiceDescriptor, Syntax, Value,
+    Kind, MessageDescriptor, MethodDescriptor, OneofDescriptor, ServiceDescriptor,
+    SymbolVisibility, Syntax, Value,
 };
 
 impl fmt::Debug for Syntax {
@@ -163,6 +164,17 @@ impl DescriptorPool {
     /// [`DescriptorPool::from_file_descriptor_set`] or [`DescriptorPool::decode`].
     pub fn new() -> Self {
         DescriptorPool::default()
+    }
+
+    /// Sets whether files added to this pool from now on must follow the naming style their
+    /// `enforce_naming_style` feature asks for (in edition 2024, `STYLE2024` by default).
+    ///
+    /// This is off by default. A compiler enables it to check source files as protoc does; a
+    /// pool built from compiled descriptors should leave it off, since protoc strips
+    /// `enforce_naming_style`, a source-retention feature, from the descriptors it writes and
+    /// sends to plugins, so a file that opted out would be checked again.
+    pub fn enforce_naming_style(&mut self, enforce: bool) {
+        Arc::make_mut(&mut self.inner).enforce_naming_style = enforce;
     }
 
     /// Creates a [`DescriptorPool`] from a [`FileDescriptorSet`].
@@ -606,6 +618,19 @@ impl FileDescriptor {
         })
     }
 
+    /// Gets the files this file imports with `import option` (edition 2024), whose extensions
+    /// it can use in options but whose messages and enums it cannot use. A file that is not in
+    /// the pool is left out: unlike an ordinary import, an option import need not be added.
+    ///
+    /// This corresponds to the [`FileDescriptorProto::option_dependency`] field.
+    pub fn option_dependencies(&self) -> impl Iterator<Item = FileDescriptor> + '_ {
+        let pool = self.parent_pool();
+        self.file_descriptor_proto()
+            .option_dependency
+            .iter()
+            .filter_map(|name| pool.get_file_by_name(name))
+    }
+
     /// Gets the top-level message types defined within this file.
     ///
     /// This does not include nested messages defined within another message.
@@ -978,6 +1003,26 @@ impl MessageDescriptor {
     /// enclosing messages and overridden by its own `features` options.
     pub fn features(&self) -> Features {
         self.inner().features
+    }
+
+    /// Gets the `export` or `local` modifier this message is declared with, if any (edition
+    /// 2024).
+    pub fn visibility_keyword(&self) -> Option<SymbolVisibility> {
+        SymbolVisibility::from_keyword(self.raw().visibility)
+    }
+
+    /// Gets whether other files can use this message: its `export` or `local` modifier, or
+    /// otherwise its `default_symbol_visibility` feature. Messages in files before edition 2024
+    /// are always exported.
+    ///
+    /// `default_symbol_visibility` is a source-retention feature, which protoc strips from the
+    /// descriptors it writes, so for a pool built from those this reports the edition's default.
+    pub fn visibility(&self) -> SymbolVisibility {
+        SymbolVisibility::resolve(
+            self.visibility_keyword(),
+            self.inner().features,
+            self.inner().parent.is_some(),
+        )
     }
 
     fn inner(&self) -> &MessageDescriptorInner {
@@ -1582,6 +1627,26 @@ impl EnumDescriptor {
     /// enclosing messages and overridden by its own `features` options.
     pub fn features(&self) -> Features {
         self.inner().features
+    }
+
+    /// Gets the `export` or `local` modifier this enum is declared with, if any (edition
+    /// 2024).
+    pub fn visibility_keyword(&self) -> Option<SymbolVisibility> {
+        SymbolVisibility::from_keyword(self.raw().visibility)
+    }
+
+    /// Gets whether other files can use this enum: its `export` or `local` modifier, or
+    /// otherwise its `default_symbol_visibility` feature. Enums in files before edition 2024 are
+    /// always exported.
+    ///
+    /// `default_symbol_visibility` is a source-retention feature, which protoc strips from the
+    /// descriptors it writes, so for a pool built from those this reports the edition's default.
+    pub fn visibility(&self) -> SymbolVisibility {
+        SymbolVisibility::resolve(
+            self.visibility_keyword(),
+            self.inner().features,
+            self.inner().parent.is_some(),
+        )
     }
 
     fn inner(&self) -> &EnumDescriptorInner {

@@ -1,0 +1,9 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  optionDependency:
+  - options.proto
+  messageType:
+  - name: Message

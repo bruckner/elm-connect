@@ -1,0 +1,24 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+  messageType:
+  - name: Extendable
+    visibility: VISIBILITY_LOCAL
+    extensionRange:
+    - start: 100
+      end: 200
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  extension:
+  - name: value
+    number: 100
+    label: LABEL_OPTIONAL
+    type: TYPE_INT32
+    extendee: .dep.Extendable
+    jsonName: value

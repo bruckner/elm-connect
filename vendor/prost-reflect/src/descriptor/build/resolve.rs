@@ -75,7 +75,19 @@ impl Visitor for ResolveVisitor<'_> {
             }
         }
 
+        // Option dependencies make only their extensions visible, for use in options. One that
+        // is not in the pool is not an error, as in protoc's descriptor pool: a file's options
+        // are usually interpreted already, and some front ends leave option-only files out.
+        let mut option_dependencies = transitive_dependencies.clone();
+        for dependency in &file.option_dependency {
+            if let Some(&dependency_index) = self.pool.file_names.get(dependency.as_str()) {
+                option_dependencies.insert(dependency_index);
+                self.resolve_public_dependencies(&mut option_dependencies, dependency_index);
+            }
+        }
+
         self.pool.files[index as usize].transitive_dependencies = transitive_dependencies;
+        self.pool.files[index as usize].option_dependencies = option_dependencies;
 
         for &public_dependency in &file.public_dependency {
             if !matches!(usize::try_from(public_dependency), Ok(i) if i < file.dependency.len()) {

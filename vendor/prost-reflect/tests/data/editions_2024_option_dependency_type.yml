@@ -1,0 +1,22 @@
+file:
+- name: options.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: options
+  messageType:
+  - name: Tag
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  optionDependency:
+  - options.proto
+  messageType:
+  - name: Message
+    field:
+    - name: tag
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .options.Tag
+      jsonName: tag

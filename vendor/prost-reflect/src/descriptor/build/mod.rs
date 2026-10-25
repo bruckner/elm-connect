@@ -2,6 +2,7 @@ mod features;
 mod names;
 mod options;
 mod resolve;
+mod symbols;
 mod visit;
 
 use core::fmt;
@@ -142,6 +143,7 @@ impl DescriptorPool {
         debug_assert_eq!(Arc::strong_count(&self.inner), 1);
         let inner = Arc::get_mut(&mut self.inner).unwrap();
         inner.resolve_features(offsets)?;
+        inner.check_symbols(offsets)?;
 
         for file in &mut inner.files[offsets.file as usize..] {
             file.prost = file.raw.to_prost();
@@ -258,6 +260,19 @@ impl<'a, 'b> ResolveNameResult<'a, 'b> {
             ResolveNameResult::NotImported { name, file } => {
                 let root_name = files[found_file as usize].raw.name();
                 let dep_name = files[file as usize].raw.name();
+                let help = if files[found_file as usize]
+                    .option_dependencies
+                    .contains(&file)
+                {
+                    format!(
+                        "'{name}' is defined in '{dep_name}', which '{root_name}' imports only \
+                         for use in options"
+                    )
+                } else {
+                    format!(
+                        "'{name}' is defined in '{dep_name}', which is not imported by '{root_name}'"
+                    )
+                };
                 Err(DescriptorErrorKind::NameNotFound {
                     found: Label::new(
                         files,
@@ -265,9 +280,7 @@ impl<'a, 'b> ResolveNameResult<'a, 'b> {
                         found_file,
                         join_path(found_path1, found_path2),
                     ),
-                    help: Some(format!(
-                        "'{name}' is defined in '{dep_name}', which is not imported by '{root_name}'"
-                    )),
+                    help: Some(help),
                     name: name.into_owned(),
                 })
             }

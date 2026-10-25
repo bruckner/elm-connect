@@ -1,0 +1,10 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  messageType:
+  - name: Message
+    options:
+      features:
+        defaultSymbolVisibility: LOCAL_ALL

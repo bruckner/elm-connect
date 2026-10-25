@@ -7,9 +7,9 @@ use insta::assert_yaml_snapshot;
 use miette::JSONReportHandler;
 use prost::Message;
 use prost_reflect::{
-    Cardinality, DescriptorError, DescriptorPool, DynamicMessage, Edition, EnumType, FieldPresence,
-    JsonFormat, MessageEncoding, ReflectMessage, RepeatedFieldEncoding, Syntax, Utf8Validation,
-    Value,
+    Cardinality, DefaultSymbolVisibility, DescriptorError, DescriptorPool, DynamicMessage, Edition,
+    EnforceNamingStyle, EnumType, FieldPresence, JsonFormat, MessageEncoding, ReflectMessage,
+    RepeatedFieldEncoding, SymbolVisibility, Syntax, Utf8Validation, Value,
 };
 use prost_types::FileDescriptorSet;
 
@@ -25,6 +25,14 @@ fn read_file_descriptor_set(path: impl AsRef<Path>) -> DynamicMessage {
 }
 
 fn check(name: &str, add_wkt: bool) -> Result<DescriptorPool, DescriptorError> {
+    check_with(name, add_wkt, false)
+}
+
+fn check_with(
+    name: &str,
+    add_wkt: bool,
+    enforce_naming_style: bool,
+) -> Result<DescriptorPool, DescriptorError> {
     let input = read_file_descriptor_set(format!("{}.yml", name));
     let proto_bytes = input.encode_to_vec();
 
@@ -36,6 +44,7 @@ fn check(name: &str, add_wkt: bool) -> Result<DescriptorPool, DescriptorError> {
     } else {
         DescriptorPool::new()
     };
+    pool.enforce_naming_style(enforce_naming_style);
     pool.decode_file_descriptor_set(proto_bytes.as_slice())?;
 
     Ok(pool)
@@ -72,7 +81,10 @@ fn check_ok(name: &str, add_wkt: bool) {
 }
 
 fn check_err(name: &str, add_wkt: bool) {
-    let actual_err = check(name, add_wkt).unwrap_err();
+    render_err(name, check(name, add_wkt).unwrap_err());
+}
+
+fn render_err(name: &str, actual_err: DescriptorError) {
     let mut actual_json = String::new();
     JSONReportHandler::new()
         .render_report(&mut actual_json, &actual_err)
@@ -237,6 +249,23 @@ check_err!(editions_extension_required);
 check_err!(editions_utf8_validation_non_string);
 check_err!(editions_message_encoding_non_message);
 check_err!(editions_feature_target);
+check_ok!(editions_2024_visibility);
+check_err!(editions_2024_local_message);
+check_err!(editions_2024_nested_default_local);
+check_err!(editions_2024_local_all);
+check_err!(editions_2024_extendee_not_visible);
+check_ok!(editions_2023_visibility);
+check_err!(editions_2024_strict_nested_message);
+check_err!(editions_2024_strict_nested_enum);
+check_ok!(editions_2024_strict_namespace_enum);
+check_err!(editions_2024_default_visibility_target);
+check_ok!(editions_2024_option_dependency, add_wkt: true);
+check_err!(editions_2024_option_dependency_type);
+check_ok!(editions_2024_option_dependency_missing);
+check_err!(editions_option_dependency_before_2024);
+check_err!(editions_2024_weak_dependency);
+check_err!(editions_2024_ctype);
+check_err!(editions_2024_java_multiple_files);
 
 // Regression test for https://github.com/andrewhickman/prost-reflect/issues/195
 //
@@ -577,4 +606,99 @@ fn editions_map_fields_are_not_delimited() {
         Utf8Validation::None
     );
     assert!(message.get_field_by_name("child").unwrap().is_group());
+}
+
+#[test]
+fn editions_2024_visibility_resolves() {
+    let pool = check("editions_2024_visibility", false).unwrap();
+    let file = pool.get_file_by_name("dep.proto").unwrap();
+    assert_eq!(file.edition(), Edition::Edition2024);
+    // Edition 2024's defaults; the 2023 features keep theirs.
+    assert_eq!(
+        file.features().default_symbol_visibility(),
+        DefaultSymbolVisibility::ExportTopLevel
+    );
+    assert_eq!(
+        file.features().enforce_naming_style(),
+        EnforceNamingStyle::Style2024
+    );
+    assert_eq!(file.features().field_presence(), FieldPresence::Explicit);
+
+    let message = |name: &str| pool.get_message_by_name(name).unwrap();
+    assert_eq!(message("dep.Top").visibility_keyword(), None);
+    assert_eq!(message("dep.Top").visibility(), SymbolVisibility::Export);
+    assert_eq!(
+        message("dep.Top.Exported").visibility_keyword(),
+        Some(SymbolVisibility::Export)
+    );
+    assert_eq!(
+        message("dep.Top.Nested").visibility(),
+        SymbolVisibility::Local
+    );
+    let kind = pool.get_enum_by_name("dep.Top.Kind").unwrap();
+    assert_eq!(kind.visibility(), SymbolVisibility::Export);
+    let color = pool.get_enum_by_name("dep.Color").unwrap();
+    assert_eq!(color.visibility(), SymbolVisibility::Export);
+
+    // Before edition 2024 everything is exported.
+    let pool = check("editions_2023_visibility", false).unwrap();
+    let nested = pool.get_message_by_name("dep.Top.Nested").unwrap();
+    assert_eq!(nested.visibility(), SymbolVisibility::Export);
+    assert_eq!(
+        nested.features().default_symbol_visibility(),
+        DefaultSymbolVisibility::ExportAll
+    );
+    assert_eq!(
+        nested.features().enforce_naming_style(),
+        EnforceNamingStyle::StyleLegacy
+    );
+}
+
+#[test]
+fn editions_2024_option_dependencies() {
+    let pool = check("editions_2024_option_dependency", true).unwrap();
+    let file = pool.get_file_by_name("test.proto").unwrap();
+    assert_eq!(file.dependencies().len(), 0);
+    let option_dependencies: Vec<_> = file
+        .option_dependencies()
+        .map(|f| f.name().to_owned())
+        .collect();
+    assert_eq!(option_dependencies, ["options.proto"]);
+    // The option dependency survives the prost-types and encoded forms.
+    assert_eq!(
+        file.file_descriptor_proto().option_dependency,
+        ["options.proto"]
+    );
+    // An option dependency that is not in the pool is left out.
+    let missing_pool = check("editions_2024_option_dependency_missing", false).unwrap();
+    let missing = missing_pool.get_file_by_name("test.proto").unwrap();
+    assert_eq!(missing.option_dependencies().count(), 0);
+    assert_eq!(
+        missing.file_descriptor_proto().option_dependency,
+        ["options.proto"]
+    );
+
+    let round_trip = DescriptorPool::decode(pool.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(
+        round_trip
+            .get_file_by_name("test.proto")
+            .unwrap()
+            .option_dependencies()
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn editions_2024_naming_style() {
+    let name = "editions_2024_naming_style";
+    render_err(name, check_with(name, false, true).unwrap_err());
+    // Names are checked only when the pool is asked to: protoc strips the source-retention
+    // feature that opts a file out from the descriptors it writes.
+    assert!(check(name, false).is_ok());
+}
+
+#[test]
+fn editions_2024_naming_style_legacy() {
+    check_with("editions_2024_naming_style_legacy", false, true).unwrap();
 }

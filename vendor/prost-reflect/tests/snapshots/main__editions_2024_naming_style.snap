@@ -1,0 +1,54 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: Package name Test.v1 should be lower_snake_case (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+related:
+  - causes: []
+    labels: []
+    message: Message name bad_message should be TitleCase (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Oneof name Choice should be lower_snake_case (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Field name BadField should be lower_snake_case (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Field name field_1 contains style violating underscores (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Enum name lower should begin with a capital letter (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Enum value name lower_zero should be UPPER_SNAKE_CASE (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Enum value name TRAILING_ contains style violating underscores (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Service name service should begin with a capital letter (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+  - causes: []
+    labels: []
+    message: Method name do_it should be TitleCase (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+severity: error

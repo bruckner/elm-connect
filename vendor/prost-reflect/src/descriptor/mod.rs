@@ -10,8 +10,8 @@ pub(crate) mod types;
 
 pub use self::error::DescriptorError;
 pub use self::features::{
-    Edition, EnumType, Features, FieldPresence, JsonFormat, MessageEncoding, RepeatedFieldEncoding,
-    Utf8Validation,
+    DefaultSymbolVisibility, Edition, EnforceNamingStyle, EnumType, Features, FieldPresence,
+    JsonFormat, MessageEncoding, RepeatedFieldEncoding, SymbolVisibility, Utf8Validation,
 };
 use self::types::{DescriptorProto, EnumDescriptorProto};
 
@@ -149,6 +149,9 @@ struct DescriptorPoolInner {
     enums: Vec<EnumDescriptorInner>,
     extensions: Vec<ExtensionDescriptorInner>,
     services: Vec<ServiceDescriptorInner>,
+    /// Whether files added from now on are checked against their `enforce_naming_style`
+    /// feature.
+    enforce_naming_style: bool,
 }
 
 #[derive(Clone)]
@@ -195,6 +198,9 @@ struct FileDescriptorInner {
     prost: prost_types::FileDescriptorProto,
     dependencies: Vec<FileIndex>,
     transitive_dependencies: HashSet<FileIndex>,
+    /// The files whose extensions this file can use in options: its dependencies and option
+    /// dependencies, and their public dependencies.
+    option_dependencies: HashSet<FileIndex>,
 }
 
 /// A protobuf message definition.

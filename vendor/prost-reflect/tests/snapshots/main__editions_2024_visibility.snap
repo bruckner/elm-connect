@@ -1,0 +1,67 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+file:
+  - edition: EDITION_2024
+    enumType:
+      - name: Color
+        value:
+          - name: COLOR_UNSPECIFIED
+            number: 0
+    messageType:
+      - enumType:
+          - name: Kind
+            value:
+              - name: KIND_UNSPECIFIED
+                number: 0
+            visibility: VISIBILITY_EXPORT
+        name: Top
+        nestedType:
+          - name: Exported
+            visibility: VISIBILITY_EXPORT
+          - name: Nested
+    name: dep.proto
+    package: dep
+    syntax: editions
+  - dependency:
+      - dep.proto
+    edition: EDITION_2024
+    messageType:
+      - field:
+          - jsonName: top
+            label: LABEL_OPTIONAL
+            name: top
+            number: 1
+            type: TYPE_MESSAGE
+            typeName: ".dep.Top"
+          - jsonName: exported
+            label: LABEL_OPTIONAL
+            name: exported
+            number: 2
+            type: TYPE_MESSAGE
+            typeName: ".dep.Top.Exported"
+          - jsonName: kind
+            label: LABEL_OPTIONAL
+            name: kind
+            number: 3
+            type: TYPE_ENUM
+            typeName: ".dep.Top.Kind"
+          - jsonName: color
+            label: LABEL_OPTIONAL
+            name: color
+            number: 4
+            type: TYPE_ENUM
+            typeName: ".dep.Color"
+          - jsonName: local
+            label: LABEL_OPTIONAL
+            name: local
+            number: 5
+            type: TYPE_MESSAGE
+            typeName: ".test.Message.Local"
+        name: Message
+        nestedType:
+          - name: Local
+    name: test.proto
+    package: test
+    syntax: editions

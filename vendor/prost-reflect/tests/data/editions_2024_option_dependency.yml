@@ -1,0 +1,34 @@
+file:
+- name: options.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: options
+  dependency:
+  - google/protobuf/descriptor.proto
+  extension:
+  - name: label
+    number: 50001
+    label: LABEL_OPTIONAL
+    type: TYPE_STRING
+    extendee: .google.protobuf.FieldOptions
+    jsonName: label
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  optionDependency:
+  - options.proto
+  messageType:
+  - name: Message
+    field:
+    - name: text
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_STRING
+      jsonName: text
+      options:
+        uninterpretedOption:
+        - name:
+          - namePart: options.label
+            isExtension: true
+          stringValue: aGk=

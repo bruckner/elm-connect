@@ -1,0 +1,13 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  weakDependency:
+  - 0

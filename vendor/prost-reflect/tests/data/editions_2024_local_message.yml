@@ -1,0 +1,23 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+  messageType:
+  - name: Hidden
+    visibility: VISIBILITY_LOCAL
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  messageType:
+  - name: Message
+    field:
+    - name: hidden
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .dep.Hidden
+      jsonName: hidden

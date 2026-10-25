@@ -1,0 +1,63 @@
+file:
+- name: dep.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: dep
+  messageType:
+  - name: Top
+    nestedType:
+    - name: Exported
+      visibility: VISIBILITY_EXPORT
+    - name: Nested
+    enumType:
+    - name: Kind
+      visibility: VISIBILITY_EXPORT
+      value:
+      - name: KIND_UNSPECIFIED
+        number: 0
+  enumType:
+  - name: Color
+    value:
+    - name: COLOR_UNSPECIFIED
+      number: 0
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2024
+  package: test
+  dependency:
+  - dep.proto
+  messageType:
+  - name: Message
+    field:
+    - name: top
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .dep.Top
+      jsonName: top
+    - name: exported
+      number: 2
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .dep.Top.Exported
+      jsonName: exported
+    - name: kind
+      number: 3
+      label: LABEL_OPTIONAL
+      type: TYPE_ENUM
+      typeName: .dep.Top.Kind
+      jsonName: kind
+    - name: color
+      number: 4
+      label: LABEL_OPTIONAL
+      type: TYPE_ENUM
+      typeName: .dep.Color
+      jsonName: color
+    - name: local
+      number: 5
+      label: LABEL_OPTIONAL
+      type: TYPE_MESSAGE
+      typeName: .test.Message.Local
+      jsonName: local
+    nestedType:
+    - name: Local

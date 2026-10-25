@@ -66,6 +66,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -96,6 +97,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/source_context.proto".into()),
@@ -126,6 +128,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -158,6 +161,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/type.proto".into()),
@@ -272,6 +276,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Field".into()),
@@ -512,6 +517,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("Cardinality".into()),
@@ -540,6 +546,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         extension_range: vec![],
@@ -547,6 +554,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Enum".into()),
@@ -638,6 +646,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("EnumValue".into()),
@@ -690,6 +699,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Option".into()),
@@ -729,6 +739,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![EnumDescriptorProto {
@@ -753,6 +764,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 service: vec![],
                 extension: vec![],
@@ -782,6 +794,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/api.proto".into()),
@@ -896,6 +909,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Method".into()),
@@ -1000,6 +1014,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Mixin".into()),
@@ -1039,6 +1054,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![],
@@ -1070,6 +1086,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/descriptor.proto".into()),
@@ -1105,6 +1122,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FileDescriptorProto".into()),
@@ -1300,6 +1318,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("DescriptorProto".into()),
@@ -1501,6 +1520,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             DescriptorProto {
                                 name: Some("ReservedRange".into()),
@@ -1540,6 +1560,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         enum_type: vec![],
@@ -1548,6 +1569,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("ExtensionRangeOptions".into()),
@@ -1708,6 +1730,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 end: Some(5),
                             }],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![EnumDescriptorProto {
                             name: Some("VerificationState".into()),
@@ -1726,6 +1749,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         extension_range: vec![ExtensionRange {
                             start: Some(1000),
@@ -1736,6 +1760,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FieldDescriptorProto".into()),
@@ -1984,6 +2009,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("Label".into()),
@@ -2007,6 +2033,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         extension_range: vec![],
@@ -2014,6 +2041,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("OneofDescriptorProto".into()),
@@ -2053,6 +2081,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("EnumDescriptorProto".into()),
@@ -2177,6 +2206,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![],
@@ -2184,6 +2214,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("EnumValueDescriptorProto".into()),
@@ -2236,6 +2267,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("ServiceDescriptorProto".into()),
@@ -2288,6 +2320,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("MethodDescriptorProto".into()),
@@ -2379,6 +2412,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FileOptions".into()),
@@ -2690,6 +2724,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         extension_range: vec![ExtensionRange {
                             start: Some(1000),
@@ -2709,6 +2744,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             },
                         ],
                         reserved_name: vec!["php_generic_services".into()],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("MessageOptions".into()),
@@ -2847,6 +2883,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             },
                         ],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FieldOptions".into()),
@@ -3083,6 +3120,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             DescriptorProto {
                                 name: Some("FeatureSupport".into()),
@@ -3148,6 +3186,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         enum_type: vec![
@@ -3173,6 +3212,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("JSType".into()),
@@ -3196,6 +3236,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("OptionRetention".into()),
@@ -3219,6 +3260,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("OptionTargetType".into()),
@@ -3277,6 +3319,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         extension_range: vec![ExtensionRange {
@@ -3297,6 +3340,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             },
                         ],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("OneofOptions".into()),
@@ -3340,6 +3384,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("EnumOptions".into()),
@@ -3434,6 +3479,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             end: Some(6),
                         }],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("EnumValueOptions".into()),
@@ -3516,6 +3562,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("ServiceOptions".into()),
@@ -3572,6 +3619,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("MethodOptions".into()),
@@ -3653,6 +3701,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         extension_range: vec![ExtensionRange {
                             start: Some(1000),
@@ -3663,6 +3712,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("UninterpretedOption".into()),
@@ -3798,6 +3848,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![],
@@ -3805,6 +3856,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FeatureSet".into()),
@@ -4027,6 +4079,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             }],
                             extension_range: vec![],
                             oneof_decl: vec![],
@@ -4036,6 +4089,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 end: Some(536870912),
                             }],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![
                             EnumDescriptorProto {
@@ -4065,6 +4119,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("EnumType".into()),
@@ -4088,6 +4143,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("RepeatedFieldEncoding".into()),
@@ -4111,6 +4167,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("Utf8Validation".into()),
@@ -4137,6 +4194,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     end: Some(1),
                                 }],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("MessageEncoding".into()),
@@ -4160,6 +4218,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("JsonFormat".into()),
@@ -4183,6 +4242,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                             EnumDescriptorProto {
                                 name: Some("EnforceNamingStyle".into()),
@@ -4206,6 +4266,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             },
                         ],
                         extension_range: vec![
@@ -4232,6 +4293,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             end: Some(1000),
                         }],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FeatureSetDefaults".into()),
@@ -4339,6 +4401,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 },
                             ],
                             reserved_name: vec!["features".into()],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![],
@@ -4346,6 +4409,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("SourceCodeInfo".into()),
@@ -4458,6 +4522,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![ExtensionRange {
@@ -4469,6 +4534,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("GeneratedCodeInfo".into()),
@@ -4590,12 +4656,14 @@ fn make_descriptor() -> FileDescriptorSet {
                                 options: None,
                                 reserved_range: vec![],
                                 reserved_name: vec![],
+                                visibility: None,
                             }],
                             extension_range: vec![],
                             oneof_decl: vec![],
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![],
@@ -4603,6 +4671,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![
@@ -4673,6 +4742,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     EnumDescriptorProto {
                         name: Some("SymbolVisibility".into()),
@@ -4696,6 +4766,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 service: vec![],
@@ -4726,6 +4797,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: None,
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/duration.proto".into()),
@@ -4771,6 +4843,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -4801,6 +4874,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/empty.proto".into()),
@@ -4819,6 +4893,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -4849,6 +4924,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/field_mask.proto".into()),
@@ -4879,6 +4955,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -4909,6 +4986,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/struct.proto".into()),
@@ -4978,6 +5056,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             })),
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![],
                         extension_range: vec![],
@@ -4985,6 +5064,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Value".into()),
@@ -5079,6 +5159,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("ListValue".into()),
@@ -5103,6 +5184,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![EnumDescriptorProto {
@@ -5115,6 +5197,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 service: vec![],
                 extension: vec![],
@@ -5144,6 +5227,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/timestamp.proto".into()),
@@ -5189,6 +5273,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     options: None,
                     reserved_range: vec![],
                     reserved_name: vec![],
+                    visibility: None,
                 }],
                 enum_type: vec![],
                 service: vec![],
@@ -5219,6 +5304,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/wrappers.proto".into()),
@@ -5250,6 +5336,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("FloatValue".into()),
@@ -5274,6 +5361,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Int64Value".into()),
@@ -5298,6 +5386,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("UInt64Value".into()),
@@ -5322,6 +5411,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("Int32Value".into()),
@@ -5346,6 +5436,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("UInt32Value".into()),
@@ -5370,6 +5461,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("BoolValue".into()),
@@ -5394,6 +5486,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("StringValue".into()),
@@ -5418,6 +5511,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("BytesValue".into()),
@@ -5442,6 +5536,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![],
@@ -5473,6 +5568,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: Some("proto3".into()),
                 edition: None,
+                option_dependency: vec![],
             },
             FileDescriptorProto {
                 name: Some("google/protobuf/compiler/plugin.proto".into()),
@@ -5545,6 +5641,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("CodeGeneratorRequest".into()),
@@ -5623,6 +5720,7 @@ fn make_descriptor() -> FileDescriptorSet {
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some("CodeGeneratorResponse".into()),
@@ -5734,6 +5832,7 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         enum_type: vec![EnumDescriptorProto {
                             name: Some("Feature".into()),
@@ -5757,12 +5856,14 @@ fn make_descriptor() -> FileDescriptorSet {
                             options: None,
                             reserved_range: vec![],
                             reserved_name: vec![],
+                            visibility: None,
                         }],
                         extension_range: vec![],
                         oneof_decl: vec![],
                         options: None,
                         reserved_range: vec![],
                         reserved_name: vec![],
+                        visibility: None,
                     },
                 ],
                 enum_type: vec![],
@@ -5794,6 +5895,7 @@ fn make_descriptor() -> FileDescriptorSet {
                 source_code_info: None,
                 syntax: None,
                 edition: None,
+                option_dependency: vec![],
             },
         ],
     }

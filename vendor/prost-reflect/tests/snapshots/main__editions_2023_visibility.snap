@@ -1,0 +1,28 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+file:
+  - edition: EDITION_2023
+    messageType:
+      - name: Top
+        nestedType:
+          - name: Nested
+    name: dep.proto
+    package: dep
+    syntax: editions
+  - dependency:
+      - dep.proto
+    edition: EDITION_2024
+    messageType:
+      - field:
+          - jsonName: nested
+            label: LABEL_OPTIONAL
+            name: nested
+            number: 1
+            type: TYPE_MESSAGE
+            typeName: ".dep.Top.Nested"
+        name: Message
+    name: test.proto
+    package: test
+    syntax: editions

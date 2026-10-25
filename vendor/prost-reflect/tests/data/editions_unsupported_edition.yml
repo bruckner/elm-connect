@@ -1,7 +1,7 @@
 file:
 - name: test.proto
   syntax: editions
-  edition: EDITION_2024
+  edition: EDITION_99997_TEST_ONLY
   messageType:
   - name: Message
     field:

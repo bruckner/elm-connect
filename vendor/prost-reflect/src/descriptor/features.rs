@@ -6,7 +6,8 @@ use prost::Message;
 ///
 /// Files with `syntax = "proto2"` and `syntax = "proto3"` have the editions
 /// [`Proto2`](Edition::Proto2) and [`Proto3`](Edition::Proto3); files that begin with
-/// `edition = "2023";` have [`Edition2023`](Edition::Edition2023).
+/// `edition = "2023";` or `edition = "2024";` have [`Edition2023`](Edition::Edition2023) or
+/// [`Edition2024`](Edition::Edition2024).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
 pub enum Edition {
@@ -16,6 +17,8 @@ pub enum Edition {
     Proto3,
     /// A file with `edition = "2023"`.
     Edition2023,
+    /// A file with `edition = "2024"`.
+    Edition2024,
 }
 
 /// The resolved [features](https://protobuf.dev/editions/features/) of a descriptor.
@@ -36,6 +39,8 @@ pub struct Features {
     pub(crate) utf8_validation: Utf8Validation,
     pub(crate) message_encoding: MessageEncoding,
     pub(crate) json_format: JsonFormat,
+    pub(crate) enforce_naming_style: EnforceNamingStyle,
+    pub(crate) default_symbol_visibility: DefaultSymbolVisibility,
 }
 
 /// The `field_presence` feature: whether a singular field tracks presence.
@@ -94,10 +99,74 @@ pub enum JsonFormat {
     LegacyBestEffort,
 }
 
+/// The `enforce_naming_style` feature: whether names must follow the style guide.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum EnforceNamingStyle {
+    /// Packages and fields are `lower_snake_case`, messages, enums, services and methods
+    /// `TitleCase`, and enum values `UPPER_SNAKE_CASE` (edition 2024's default).
+    Style2024,
+    /// Names are not checked (the default before edition 2024).
+    StyleLegacy,
+}
+
+/// The `default_symbol_visibility` feature: whether messages and enums without an `export` or
+/// `local` modifier can be used from other files.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DefaultSymbolVisibility {
+    /// Every message and enum is exported (the default before edition 2024).
+    ExportAll,
+    /// Top-level messages and enums are exported, nested ones are local (edition 2024's
+    /// default).
+    ExportTopLevel,
+    /// Every message and enum is local.
+    LocalAll,
+    /// Every message and enum is local, and a nested one cannot be marked `export`, except an
+    /// enum in a local top-level message that reserves every field number.
+    Strict,
+}
+
+/// The `export` or `local` modifier of a message or enum, which decides whether other files can
+/// use it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SymbolVisibility {
+    /// Other files can use the definition.
+    Export,
+    /// Only the file that defines it can use the definition.
+    Local,
+}
+
+impl SymbolVisibility {
+    /// The modifier a descriptor's `visibility` field records, if any.
+    pub(crate) fn from_keyword(keyword: Option<i32>) -> Option<SymbolVisibility> {
+        match keyword {
+            Some(1) => Some(SymbolVisibility::Local),
+            Some(2) => Some(SymbolVisibility::Export),
+            _ => None,
+        }
+    }
+
+    /// The visibility of a message or enum with the modifier `keyword`, whose features are
+    /// `features` and which is or is not `nested` in a message.
+    pub(crate) fn resolve(
+        keyword: Option<SymbolVisibility>,
+        features: Features,
+        nested: bool,
+    ) -> SymbolVisibility {
+        keyword.unwrap_or(match features.default_symbol_visibility {
+            DefaultSymbolVisibility::ExportAll => SymbolVisibility::Export,
+            DefaultSymbolVisibility::ExportTopLevel if !nested => SymbolVisibility::Export,
+            DefaultSymbolVisibility::ExportTopLevel
+            | DefaultSymbolVisibility::LocalAll
+            | DefaultSymbolVisibility::Strict => SymbolVisibility::Local,
+        })
+    }
+}
+
 impl Edition {
     pub(crate) const PROTO2_NUMBER: i32 = 998;
     pub(crate) const PROTO3_NUMBER: i32 = 999;
     pub(crate) const EDITION_2023_NUMBER: i32 = 1000;
+    pub(crate) const EDITION_2024_NUMBER: i32 = 1001;
 
     /// The edition's number in the `google.protobuf.Edition` enum.
     pub fn number(self) -> i32 {
@@ -105,6 +174,7 @@ impl Edition {
             Edition::Proto2 => Edition::PROTO2_NUMBER,
             Edition::Proto3 => Edition::PROTO3_NUMBER,
             Edition::Edition2023 => Edition::EDITION_2023_NUMBER,
+            Edition::Edition2024 => Edition::EDITION_2024_NUMBER,
         }
     }
 
@@ -118,7 +188,7 @@ impl Edition {
             Edition::PROTO2_NUMBER => "proto2".to_owned(),
             Edition::PROTO3_NUMBER => "proto3".to_owned(),
             Edition::EDITION_2023_NUMBER => "2023".to_owned(),
-            1001 => "2024".to_owned(),
+            Edition::EDITION_2024_NUMBER => "2024".to_owned(),
             n => n.to_string(),
         }
     }
@@ -141,6 +211,8 @@ impl Features {
                 utf8_validation: Utf8Validation::None,
                 message_encoding: MessageEncoding::LengthPrefixed,
                 json_format: JsonFormat::LegacyBestEffort,
+                enforce_naming_style: EnforceNamingStyle::StyleLegacy,
+                default_symbol_visibility: DefaultSymbolVisibility::ExportAll,
             },
             Edition::Proto3 => Features {
                 field_presence: FieldPresence::Implicit,
@@ -149,6 +221,8 @@ impl Features {
                 utf8_validation: Utf8Validation::Verify,
                 message_encoding: MessageEncoding::LengthPrefixed,
                 json_format: JsonFormat::Allow,
+                enforce_naming_style: EnforceNamingStyle::StyleLegacy,
+                default_symbol_visibility: DefaultSymbolVisibility::ExportAll,
             },
             Edition::Edition2023 => Features {
                 field_presence: FieldPresence::Explicit,
@@ -157,6 +231,18 @@ impl Features {
                 utf8_validation: Utf8Validation::Verify,
                 message_encoding: MessageEncoding::LengthPrefixed,
                 json_format: JsonFormat::Allow,
+                enforce_naming_style: EnforceNamingStyle::StyleLegacy,
+                default_symbol_visibility: DefaultSymbolVisibility::ExportAll,
+            },
+            Edition::Edition2024 => Features {
+                field_presence: FieldPresence::Explicit,
+                enum_type: EnumType::Open,
+                repeated_field_encoding: RepeatedFieldEncoding::Packed,
+                utf8_validation: Utf8Validation::Verify,
+                message_encoding: MessageEncoding::LengthPrefixed,
+                json_format: JsonFormat::Allow,
+                enforce_naming_style: EnforceNamingStyle::Style2024,
+                default_symbol_visibility: DefaultSymbolVisibility::ExportTopLevel,
             },
         }
     }
@@ -189,6 +275,16 @@ impl Features {
     /// The `json_format` feature.
     pub fn json_format(&self) -> JsonFormat {
         self.json_format
+    }
+
+    /// The `enforce_naming_style` feature.
+    pub fn enforce_naming_style(&self) -> EnforceNamingStyle {
+        self.enforce_naming_style
+    }
+
+    /// The `default_symbol_visibility` feature.
+    pub fn default_symbol_visibility(&self) -> DefaultSymbolVisibility {
+        self.default_symbol_visibility
     }
 
     /// Overrides these features with those set in `set`.
@@ -239,6 +335,22 @@ impl Features {
                 _ => return Err(("json_format", value)),
             };
         }
+        if let Some(value) = set.enforce_naming_style {
+            self.enforce_naming_style = match value {
+                1 => EnforceNamingStyle::Style2024,
+                2 => EnforceNamingStyle::StyleLegacy,
+                _ => return Err(("enforce_naming_style", value)),
+            };
+        }
+        if let Some(value) = set.default_symbol_visibility {
+            self.default_symbol_visibility = match value {
+                1 => DefaultSymbolVisibility::ExportAll,
+                2 => DefaultSymbolVisibility::ExportTopLevel,
+                3 => DefaultSymbolVisibility::LocalAll,
+                4 => DefaultSymbolVisibility::Strict,
+                _ => return Err(("default_symbol_visibility", value)),
+            };
+        }
         Ok(self)
     }
 }
@@ -252,12 +364,13 @@ impl fmt::Debug for Features {
             .field("utf8_validation", &self.utf8_validation)
             .field("message_encoding", &self.message_encoding)
             .field("json_format", &self.json_format)
+            .field("enforce_naming_style", &self.enforce_naming_style)
+            .field("default_symbol_visibility", &self.default_symbol_visibility)
             .finish()
     }
 }
 
-/// The fields of `google.protobuf.FeatureSet` this crate resolves, plus the two that edition
-/// 2024 introduced, so that a 2023 file setting them can be refused.
+/// The fields of `google.protobuf.FeatureSet` this crate resolves.
 #[derive(Clone, PartialEq, Message)]
 pub(crate) struct FeatureSetProto {
     #[prost(int32, optional, tag = "1")]

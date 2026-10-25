@@ -521,7 +521,7 @@ impl OptionsVisitor<'_> {
         extendee: &MessageDescriptor,
     ) -> Result<ExtensionDescriptor, DescriptorErrorKind> {
         let (_, def) = resolve_name(
-            &self.pool.inner.files[file as usize].transitive_dependencies,
+            &self.pool.inner.files[file as usize].option_dependencies,
             &self.pool.inner.names,
             scope,
             name,

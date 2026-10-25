@@ -60,6 +60,9 @@ impl Visitor for NameVisitor<'_> {
                 Some(Edition::EDITION_2023_NUMBER) => {
                     (Syntax::Editions, Edition::Edition2023, None)
                 }
+                Some(Edition::EDITION_2024_NUMBER) => {
+                    (Syntax::Editions, Edition::Edition2024, None)
+                }
                 edition => (Syntax::Proto2, Edition::Proto2, Some(Err(edition))),
             },
             Some(syntax) => (Syntax::Proto2, Edition::Proto2, Some(Ok(syntax))),
@@ -83,6 +86,7 @@ impl Visitor for NameVisitor<'_> {
             prost: Default::default(), // the prost descriptor is initialized from the internal descriptor once resolution is complete, to avoid needing to duplicate all modifications
             dependencies: Vec::with_capacity(file.dependency.len()),
             transitive_dependencies: HashSet::default(),
+            option_dependencies: HashSet::default(),
         });
 
         match syntax_error {

@@ -88,7 +88,9 @@ impl FeatureResolver<'_> {
             return parent;
         }
 
-        if set.enforce_naming_style.is_some() || set.default_symbol_visibility.is_some() {
+        if edition < Edition::Edition2024
+            && (set.enforce_naming_style.is_some() || set.default_symbol_visibility.is_some())
+        {
             let name = if set.enforce_naming_style.is_some() {
                 "enforce_naming_style"
             } else {
@@ -359,7 +361,7 @@ fn unsupported_target(
         tag::features::METHOD => "method",
         _ => return None,
     };
-    let targets: [(&'static str, bool, &[&str]); 6] = [
+    let targets: [(&'static str, bool, &[&str]); 7] = [
         ("field_presence", set.field_presence.is_some(), &["field"]),
         ("enum_type", set.enum_type.is_some(), &["enum"]),
         (
@@ -377,6 +379,12 @@ fn unsupported_target(
             "json_format",
             set.json_format.is_some(),
             &["message", "enum"],
+        ),
+        // `enforce_naming_style` may be set on every entity.
+        (
+            "default_symbol_visibility",
+            set.default_symbol_visibility.is_some(),
+            &[],
         ),
     ];
     targets
@@ -592,7 +600,73 @@ impl EditionsVisitor<'_> {
     }
 }
 
+impl EditionsVisitor<'_> {
+    fn edition(&self, file: FileIndex) -> Edition {
+        self.pool.files[file as usize].edition
+    }
+
+    fn unsupported(&mut self, file: FileIndex, path: &[i32], message: impl Into<String>) {
+        self.errors.push(DescriptorErrorKind::UnsupportedInEdition {
+            message: message.into(),
+            found: Label::new(&self.pool.files, "found here", file, path.into()),
+        });
+    }
+
+    /// Edition 2024 removed the `ctype` option in favour of the `pb.cpp` `string_type` feature.
+    fn check_ctype(&mut self, file: FileIndex, path: &[i32], field: &FieldDescriptorProto) {
+        if self.edition(file) >= Edition::Edition2024
+            && field
+                .options
+                .as_ref()
+                .is_some_and(|o| o.value.ctype.is_some())
+        {
+            self.unsupported(
+                file,
+                &join_path(path, &[tag::field::OPTIONS, tag::field::options::CTYPE]),
+                "ctype option is not allowed under edition 2024 and beyond; use the feature \
+                 string_type = VIEW|CORD|STRING|... instead",
+            );
+        }
+    }
+}
+
 impl Visitor for EditionsVisitor<'_> {
+    fn visit_file(&mut self, path: &[i32], index: FileIndex, file: &FileDescriptorProto) {
+        let edition = self.edition(index);
+        if edition < Edition::Edition2024 && !file.option_dependency.is_empty() {
+            self.unsupported(
+                index,
+                &join_path(path, &[tag::file::OPTION_DEPENDENCY, 0]),
+                "option imports are not supported before edition 2024",
+            );
+        }
+        if edition >= Edition::Edition2024 {
+            if file
+                .options
+                .as_ref()
+                .is_some_and(|o| o.value.java_multiple_files.is_some())
+            {
+                self.unsupported(
+                    index,
+                    &join_path(
+                        path,
+                        &[tag::file::OPTIONS, tag::file::options::JAVA_MULTIPLE_FILES],
+                    ),
+                    "the file option `java_multiple_files` is not supported in editions 2024 \
+                     and above, which defaults to the feature value of `nest_in_file_class = \
+                     NO` (equivalent to `java_multiple_files = true`)",
+                );
+            }
+            if !file.weak_dependency.is_empty() {
+                self.unsupported(
+                    index,
+                    &join_path(path, &[tag::file::WEAK_DEPENDENCY, 0]),
+                    "weak imports are not allowed under edition 2024 and beyond",
+                );
+            }
+        }
+    }
+
     fn visit_field(
         &mut self,
         path: &[i32],
@@ -605,6 +679,7 @@ impl Visitor for EditionsVisitor<'_> {
         if !self.is_editions(file) {
             return;
         }
+        self.check_ctype(file, path, field);
 
         let containing_map_entry = self.is_map_entry(message);
         let inner = &self.pool.messages[message as usize].fields[index as usize];
@@ -670,6 +745,7 @@ impl Visitor for EditionsVisitor<'_> {
         if !self.is_editions(file) {
             return;
         }
+        self.check_ctype(file, path, extension);
 
         let inner = &self.pool.extensions[index as usize];
         let (features, kind) = (inner.features, inner.kind);
