@@ -7,4 +7,4 @@ node_modules/
 mise.local.toml
 .mise.local.toml
 /tests/Generated/
-/examples/eliza/index.html
+/examples/eliza/elm.js
