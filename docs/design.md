@@ -853,6 +853,16 @@ just the form encoders write.
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
+- A key written twice in one object (`{"title":"a","title":"b"}`) is
+  not refused, as protobuf's parsers refuse it: it reads as its last
+  value. JavaScript's JSON parser keeps only the last, so the decoders
+  never see the first, and only the response text does. Finding one
+  takes a pass over every body that tells strings from structure and
+  keeps each object's keys; that pass alone, without the keys, costs
+  more than the decode (in the performance spike's benchmark, 2.3 µs
+  against 5.6 µs for a note, 565 µs against 2,989 µs for a page of
+  1,000 notes, and four times `JSON.parse`'s own time), for a body no
+  protobuf writer produces.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
   `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a

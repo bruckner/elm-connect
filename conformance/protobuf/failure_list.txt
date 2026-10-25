@@ -31,5 +31,8 @@ Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
 
-# Fix candidate, lenient parsing: a field named twice in one object.
+# Design choice: a key written twice in one object reads as its last value.
+# JavaScript's JSON parser keeps only the last, so only the response text
+# shows the first, and checking it is a scan of every body that costs more
+# than decoding it (docs/design.md, section 3.4).
 Recommended.Proto3.JsonInput.FieldNameDuplicate
