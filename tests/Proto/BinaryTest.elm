@@ -38,6 +38,7 @@ suite =
         , maps
         , messages
         , wellKnown
+        , wellKnownMerges
         , properties
         ]
 
@@ -706,6 +707,99 @@ wellKnown =
         , test "a field mask's paths" <|
             \_ -> wire B.fieldMask [] (String.join ",") [ "a.b_c", "d" ] "0a0a 0a05612e625f63 0a0164"
         ]
+
+
+{-| Each case is field 1 arriving twice, the second read into the first as
+generated code reads a singular message field; the expected values are
+protobuf-go's (v1.36.12) for the two messages concatenated.
+-}
+wellKnownMerges : Test
+wellKnownMerges =
+    describe "well-known types arriving twice"
+        [ test "Timestamp merges field by field" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> mergesTo B.timestamp posixText "0a0808011080cab5ee01 0a020802" (Just "2500")
+                    , \_ -> mergesTo B.timestamp posixText "0a0808011080cab5ee01 0a051080e59a77" (Just "1250")
+                    ]
+                    ()
+        , test "Duration merges field by field, then takes one sign" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> mergesTo B.duration Proto.Duration.toString "0a0808011080cab5ee01 0a020803" (Just "3.500s")
+                    , \_ -> mergesTo B.duration Proto.Duration.toString "0a0808011080cab5ee01 0a051080e59a77" (Just "1.250s")
+
+                    -- protobuf-go keeps seconds 3 and nanos -500000000, a
+                    -- Duration its JSON writer refuses; one sign makes it 2.5s.
+                    , \_ -> mergesTo B.duration Proto.Duration.toString "0a1608ffffffffffffffffff011080b6ca91feffffffff01 0a020803" (Just "2.500s")
+                    ]
+                    ()
+        , test "a wrapper takes the later value, and keeps the earlier when the later is empty" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> mergesTo B.int32Value String.fromInt "0a020807 0a020809" (Just "9")
+                    , \_ -> mergesTo B.int32Value String.fromInt "0a020807 0a00" (Just "7")
+                    ]
+                    ()
+        , test "Struct joins the members, a later member of the same name winning" <|
+            \_ ->
+                mergesTo B.struct
+                    (Json.Encode.encode 0 << Json.Encode.dict identity identity)
+                    "0a1a0a0e0a0161120911000000000000f03f0a080a016212031a0178 0a120a070a0162120220010a070a016312020800"
+                    (Just """{"a":1,"b":true,"c":null}""")
+        , test "Value takes the later kind, merging two objects or two lists" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0911000000000000f03f 0a031a0173" (Just "\"s\"")
+                    , \_ ->
+                        mergesTo B.value
+                            (Json.Encode.encode 0)
+                            "0a2b2a290a0e0a0161120911000000000000f03f0a170a016e12122a100a0e0a0178120911000000000000f03f 0a2b2a290a0e0a016212091100000000000000400a170a016e12122a100a0e0a01791209110000000000000040"
+                            (Just """{"a":1,"b":2,"n":{"y":2}}""")
+                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[1,2]")
+                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a122a100a0e0a0161120911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[2]")
+                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a020800" (Just "null")
+                    ]
+                    ()
+        , test "ListValue adds the later elements after the earlier" <|
+            \_ ->
+                mergesTo B.listValue
+                    (Json.Encode.encode 0 << Json.Encode.list identity)
+                    "0a0b0a0911000000000000f03f 0a050a031a0178"
+                    (Just """[1,"x"]""")
+        , test "FieldMask adds the later paths after the earlier" <|
+            \_ -> mergesTo B.fieldMask (String.join ",") "0a030a0161 0a060a01620a0163" (Just "a,b,c")
+        , test "Any merges field by field: the later type URL or value replaces the earlier" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a0412020802" (Just """{"type":"x","value":"CAI="}""")
+                    , \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a050a03612f79" (Just """{"type":"y","value":"CAE="}""")
+                    ]
+                    ()
+        ]
+
+
+{-| `hex` read as a message whose field 1, of `codec`, is read into the value
+read before it, as generated code reads a singular message field.
+-}
+mergesTo : B.Codec a -> (a -> String) -> String -> Maybe String -> Expectation
+mergesTo codec show hex expected =
+    B.decode
+        (B.merge
+            (\number wireType current ->
+                if number == 1 then
+                    B.fieldInto codec current Just wireType current
+
+                else
+                    B.skip wireType current
+            )
+            identity
+            Nothing
+        )
+        (fromHex hex)
+        |> Maybe.andThen identity
+        |> Maybe.map show
+        |> Expect.equal expected
 
 
 posixText : Time.Posix -> String

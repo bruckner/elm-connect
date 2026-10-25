@@ -1122,14 +1122,6 @@ embedded write into zero =
         }
 
 
-{-| A well-known type's codec from a decoder that reads it whole: one that
-arrives twice replaces the one before.
--}
-embeddedWhole : (a -> Encoder) -> (Int -> D.Decoder a) -> a -> Codec a
-embeddedWhole write read zero =
-    embedded write (\_ -> Internal.Decoder read) zero
-
-
 {-| The encoder of a whole message from its codec, for a well-known type
 a method takes: `messageEncoder Proto.Binary.empty`.
 -}
@@ -1151,29 +1143,43 @@ messageDecoder (Codec c) =
 
 
 {-| `google.protobuf.Timestamp` as `Time.Posix`: nanoseconds past the
-millisecond are dropped when read.
+millisecond are dropped when read. One that arrives twice is merged field by
+field, as protobuf merges any message: the seconds or the nanoseconds the
+later one carries replace the earlier one's.
 -}
 timestamp : Codec Time.Posix
 timestamp =
-    embeddedWhole writeTimestamp readTimestamp (Time.millisToPosix 0)
+    embedded writeTimestamp timestampInto (Time.millisToPosix 0)
 
 
-readTimestamp : Int -> D.Decoder Time.Posix
-readTimestamp =
-    message ( 0, 0 )
-        (\number wire ( seconds, nanos ) ->
-            case number of
-                1 ->
-                    field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
+timestampInto : Time.Posix -> Decoder Time.Posix
+timestampInto existing =
+    let
+        millis =
+            Time.posixToMillis existing
 
-                2 ->
-                    field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
-
-                _ ->
-                    skip wire ( seconds, nanos )
+        seconds =
+            floor (toFloat millis / 1000)
+    in
+    Internal.Decoder
+        (message ( seconds, (millis - seconds * 1000) * 1000000 ) partsStep identity
+            >> D.map (\( s, nanos ) -> Time.millisToPosix (s * 1000 + floor (toFloat nanos / 1.0e6)))
         )
-        (\( seconds, nanos ) -> ( seconds * 1000 + floor (toFloat nanos / 1.0e6), 0 ))
-        >> D.map (Time.millisToPosix << Tuple.first)
+
+
+{-| A `Timestamp`'s or a `Duration`'s fields: `seconds` (1) and `nanos` (2).
+-}
+partsStep : Int -> Int -> ( Int, Int ) -> D.Decoder ( Int, ( Int, Int ) )
+partsStep number wire ( seconds, nanos ) =
+    case number of
+        1 ->
+            field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
+
+        2 ->
+            field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
+
+        _ ->
+            skip wire ( seconds, nanos )
 
 
 writeTimestamp : Time.Posix -> Encoder
@@ -1188,29 +1194,26 @@ writeTimestamp posix =
     E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
 
 
-{-| `google.protobuf.Duration`, exact.
+{-| `google.protobuf.Duration`, exact. One that arrives twice is merged field
+by field: the seconds or the nanoseconds the later one carries replace the
+earlier one's, and the two are then given one sign as
+[`Proto.Duration.fromParts`](Proto-Duration#fromParts) does.
 -}
 duration : Codec Duration
 duration =
-    embeddedWhole writeDuration readDuration (Proto.Duration.fromParts 0 0)
+    embedded writeDuration durationInto (Proto.Duration.fromParts 0 0)
 
 
-readDuration : Int -> D.Decoder Duration
-readDuration =
-    message ( 0, 0 )
-        (\number wire ( seconds, nanos ) ->
-            case number of
-                1 ->
-                    field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
-
-                2 ->
-                    field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
-
-                _ ->
-                    skip wire ( seconds, nanos )
+durationInto : Duration -> Decoder Duration
+durationInto existing =
+    let
+        parts =
+            Proto.Duration.toParts existing
+    in
+    Internal.Decoder
+        (message ( parts.seconds, parts.nanos ) partsStep identity
+            >> D.map (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
         )
-        identity
-        >> D.map (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
 
 
 writeDuration : Duration -> Encoder
@@ -1223,12 +1226,13 @@ writeDuration d =
 
 
 {-| `google.protobuf.FieldMask` as its paths, proto field names as the
-binary form carries them.
+binary form carries them. One that arrives twice adds its paths after the
+earlier one's.
 -}
 fieldMask : Codec (List String)
 fieldMask =
-    embeddedWhole (list string 1)
-        (message []
+    embedded (list string 1)
+        (merge
             (\number wire paths ->
                 if number == 1 then
                     repeated string identity paths wire paths
@@ -1245,39 +1249,58 @@ fieldMask =
 -}
 empty : Codec ()
 empty =
-    embeddedWhole (\() -> nothing) (message () (\_ wire acc -> skip wire acc) identity) ()
+    embedded (\() -> nothing) (merge (\_ wire acc -> skip wire acc) identity) ()
 
 
-{-| `google.protobuf.Struct` as its members.
+{-| `google.protobuf.Struct` as its members. One that arrives twice adds its
+members to the earlier one's, a member of the same name replacing the
+earlier.
 -}
 struct : Codec (Dict String Json.Encode.Value)
 struct =
-    embeddedWhole writeStruct readStruct Dict.empty
+    structCodec ()
 
 
-{-| `google.protobuf.ListValue` as its elements.
+{-| `google.protobuf.ListValue` as its elements. One that arrives twice adds
+its elements after the earlier one's.
 -}
 listValue : Codec (List Json.Encode.Value)
 listValue =
-    embeddedWhole writeList readList []
+    listCodec ()
 
 
-{-| `google.protobuf.Value` as JSON: an object's members are written in
-key order.
+{-| `google.protobuf.Value` as JSON: an object's members are written in key
+order. One that arrives twice replaces the earlier, unless both hold an
+object, whose members are then merged as `struct`'s, or both a list, whose
+elements are then added after the earlier ones, as protobuf merges a oneof's
+message member.
 -}
 value : Codec Json.Encode.Value
 value =
-    embeddedWhole writeValue readValue Json.Encode.null
+    valueCodec ()
+
+
+{-| The codecs of the three types that hold each other, built on use, since
+Elm's values cannot refer to themselves.
+-}
+structCodec : () -> Codec (Dict String Json.Encode.Value)
+structCodec () =
+    embedded writeStruct structInto Dict.empty
+
+
+listCodec : () -> Codec (List Json.Encode.Value)
+listCodec () =
+    embedded writeList listInto []
 
 
 valueCodec : () -> Codec Json.Encode.Value
 valueCodec () =
-    embeddedWhole writeValue readValue Json.Encode.null
+    embedded writeValue valueInto Json.Encode.null
 
 
-readStruct : Int -> D.Decoder (Dict String Json.Encode.Value)
-readStruct =
-    message Dict.empty
+structInto : Dict String Json.Encode.Value -> Decoder (Dict String Json.Encode.Value)
+structInto =
+    merge
         (\number wire members ->
             if number == 1 then
                 mapEntry string (valueCodec ()) (\k v -> Dict.insert k v members) wire members
@@ -1293,9 +1316,9 @@ writeStruct members =
     dict string (valueCodec ()) 1 members
 
 
-readList : Int -> D.Decoder (List Json.Encode.Value)
-readList =
-    message []
+listInto : List Json.Encode.Value -> Decoder (List Json.Encode.Value)
+listInto =
+    merge
         (\number wire items ->
             if number == 1 then
                 repeated (valueCodec ()) identity items wire items
@@ -1311,9 +1334,9 @@ writeList items =
     list (valueCodec ()) 1 items
 
 
-readValue : Int -> D.Decoder Json.Encode.Value
-readValue =
-    message Json.Encode.null
+valueInto : Json.Encode.Value -> Decoder Json.Encode.Value
+valueInto =
+    merge
         (\number wire current ->
             case number of
                 1 ->
@@ -1329,10 +1352,18 @@ readValue =
                     field bool Json.Encode.bool wire current
 
                 5 ->
-                    field (embeddedWhole writeStruct readStruct Dict.empty) (Json.Encode.dict identity identity) wire current
+                    fieldInto (structCodec ())
+                        (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) current |> Result.toMaybe)
+                        (Json.Encode.dict identity identity)
+                        wire
+                        current
 
                 6 ->
-                    field (embeddedWhole writeList readList []) (Json.Encode.list identity) wire current
+                    fieldInto (listCodec ())
+                        (Json.Decode.decodeValue (Json.Decode.list Json.Decode.value) current |> Result.toMaybe)
+                        (Json.Encode.list identity)
+                        wire
+                        current
 
                 _ ->
                     skip wire current
@@ -1374,10 +1405,10 @@ writeValue json =
             present string 3 s
 
         Ok (JArray items) ->
-            present (embeddedWhole writeList readList []) 6 items
+            present (listCodec ()) 6 items
 
         Ok (JObject members) ->
-            present (embeddedWhole writeStruct readStruct Dict.empty) 5 members
+            present (structCodec ()) 5 members
 
         _ ->
             present int32 1 0
@@ -1385,32 +1416,35 @@ writeValue json =
 
 {-| `google.protobuf.Any`: read, it holds the packed message's binary, which
 [`Proto.Any.unpack`](Proto-Any#unpack) decodes with a message that has binary
-codecs. Written, an `Any` packed from such a message writes its binary; one
-holding a well-known type's JSON (read from proto3 JSON) is converted to
-binary; one holding another message's JSON alone is written with its type
-URL alone, since that message's binary encoder is not at hand.
+codecs. Written, one holding a well-known type's JSON (read from proto3 JSON)
+is converted to binary; one holding another message's JSON is written with
+its type URL alone, since that message's binary encoder is not at hand. One
+that arrives twice is merged field by field: the type URL or the value the
+later one carries replaces the earlier one's.
 -}
 any : Codec Any
 any =
-    embeddedWhole writeAny readAny (InternalAny.Any "" (InBinary ""))
+    embedded writeAny anyInto (InternalAny.Any "" (InBinary ""))
 
 
-readAny : Int -> D.Decoder Any
-readAny =
-    message ( "", "" )
-        (\number wire ( url, payload ) ->
-            case number of
-                1 ->
-                    field string (\v -> ( v, payload )) wire ( url, payload )
+anyInto : Any -> Decoder Any
+anyInto (InternalAny.Any start payload) =
+    Internal.Decoder
+        (message ( start, payload )
+            (\number wire ( url, current ) ->
+                case number of
+                    1 ->
+                        field string (\v -> ( v, current )) wire ( url, current )
 
-                2 ->
-                    field bytes (\v -> ( url, v )) wire ( url, payload )
+                    2 ->
+                        field bytes (\v -> ( url, InBinary v )) wire ( url, current )
 
-                _ ->
-                    skip wire ( url, payload )
+                    _ ->
+                        skip wire ( url, current )
+            )
+            identity
+            >> D.map (\( url, current ) -> InternalAny.Any url current)
         )
-        identity
-        >> D.map (\( url, payload ) -> InternalAny.Any url (InBinary payload))
 
 
 writeAny : Any -> Encoder

@@ -2808,10 +2808,16 @@ generator's binary output and the proto codec are written against it.
   lists gives back the state the step conses onto, and
   `decodeFooBytes = mergeFooBytes defaultFoo`. Repeated fields inside
   it are joined, a later map entry replaces the earlier one for its key
-  (`insertBool` for a `bool`-keyed map). A wrapper, an ordinary message
-  of one field, merges too; the other well-known types held as Elm
-  values (`Timestamp`, `Duration`, `Struct`, `ListValue`, `Value`,
-  `FieldMask`, `Any`) replace the one read before.
+  (`insertBool` for a `bool`-keyed map). The well-known types held as
+  Elm values merge as protobuf-go merges their messages: a `Timestamp`
+  or a `Duration` field by field, its seconds or nanoseconds replacing
+  the earlier one's (a `Duration` then given one sign, as
+  `Proto.Duration.fromParts` does); a wrapper's value replaces the
+  earlier one when present; a `Struct`'s members joined, a member of
+  the same name replacing; a `ListValue`'s elements and a `FieldMask`'s
+  paths appended; a `Value` replaced unless both hold an object or both
+  a list, which are merged as a `Struct` or a `ListValue`; an `Any`'s
+  type URL and value each replaced when present.
 - **Unknown fields are skipped**, by their wire type, and so is a field
   of a wire type its declaration does not take, as protobuf-go files
   it under unknown fields rather than failing; they are not kept, so a
