@@ -276,11 +276,16 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
             request cfg c
     in
     if Rpc.Internal.Call.retryIn cfg.retry c == Nothing && unsendable cfg c sent == Nothing then
-        if Rpc.Internal.Transport.proto cfg.transport then
-            Internal.sendBytes (responseBytes cfg c) toMsg fields.tracker sent
+        Internal.send
+            (case Rpc.Internal.Answer.binaryReader cfg.transport c of
+                Just read ->
+                    Http.expectBytesResponse toMsg read
 
-        else
-            Internal.send (response cfg c) toMsg fields.tracker sent
+                Nothing ->
+                    Http.expectStringResponse toMsg (response cfg c)
+            )
+            fields.tracker
+            sent
 
     else
         Task.attempt toMsg (taskFromRequest cfg c sent)
@@ -562,13 +567,15 @@ attempt cfg c sent =
                 (Rpc.Call.idempotency c)
                 retryCode
                 (\left ->
-                    if Rpc.Internal.Transport.proto cfg.transport then
-                        Rpc.Internal.Wire.withBudget cfg c left sent
-                            |> Internal.taskBytes (\answer -> Ok ( Internal.metadataOf answer, responseBytes cfg c answer ))
+                    Internal.task
+                        (case Rpc.Internal.Answer.binaryReader cfg.transport c of
+                            Just read ->
+                                Http.bytesResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
 
-                    else
-                        Rpc.Internal.Wire.withBudget cfg c left sent
-                            |> Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                            Nothing ->
+                                Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                        )
+                        (Rpc.Internal.Wire.withBudget cfg c left sent)
                 )
 
 

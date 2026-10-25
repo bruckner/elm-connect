@@ -54,13 +54,10 @@ bytes =
 toText : Body -> Maybe String
 toText body =
     case body of
-        None ->
-            Nothing
-
         Text content ->
             Just content
 
-        Binary _ ->
+        _ ->
             Nothing
 
 

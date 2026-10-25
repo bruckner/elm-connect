@@ -1223,7 +1223,7 @@ sendLimits =
             Json.Encode.encode 0 (Rpc.Call.requestJson call)
 
         refused transport limit =
-            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) (Ok json)
+            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) json
                 |> Maybe.map (\reason -> ( reason, Rpc.Error.code (NoAnswer reason), Rpc.Error.message (NoAnswer reason) ))
     in
     describe "withWriteMaxBytes"
@@ -1246,7 +1246,7 @@ sendLimits =
         , test "every transport starts with no limit" <|
             \_ ->
                 [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (Ok (String.repeat 100000 "x")))
+                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (String.repeat 100000 "x"))
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "checkConfig reports a limit below 1, not one of 1 or more" <|
             \_ ->

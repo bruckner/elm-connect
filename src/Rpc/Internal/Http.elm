@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, bytesText, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, sendBytes, splitTrailers, task, taskBytes, unreserved, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, bytesText, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -370,24 +370,12 @@ quote text =
     Json.Encode.encode 0 (Json.Encode.string text)
 
 
-{-| The request as a task, its response read by `read` as text. A text body is
+{-| The request as a task, its response read by `resolver`. A text body is
 sent as `application/json`, a bytes body as `application/proto`;
 `withCredentials` sends cookies cross-origin (`Http.riskyTask`).
 -}
-task : (Http.Response String -> Result e a) -> Request -> Task e a
-task read =
-    taskWith (Http.stringResolver read)
-
-
-{-| The request as a task, its response read by `read` as bytes.
--}
-taskBytes : (Http.Response Bytes -> Result e a) -> Request -> Task e a
-taskBytes read =
-    taskWith (Http.bytesResolver read)
-
-
-taskWith : Http.Resolver e a -> Request -> Task e a
-taskWith resolver request =
+task : Http.Resolver e a -> Request -> Task e a
+task resolver request =
     let
         perform =
             if request.withCredentials then
@@ -406,23 +394,11 @@ taskWith resolver request =
         }
 
 
-{-| The request as a command, its response read by `read` as text,
-cancellable through `tracker` (`Http.cancel`).
+{-| The request as a command, its response read by `expect`, cancellable
+through `tracker` (`Http.cancel`).
 -}
-send : (Http.Response String -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request -> Cmd msg
-send read toMsg =
-    sendWith (Http.expectStringResponse toMsg read)
-
-
-{-| The request as a command, its response read by `read` as bytes.
--}
-sendBytes : (Http.Response Bytes -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request -> Cmd msg
-sendBytes read toMsg =
-    sendWith (Http.expectBytesResponse toMsg read)
-
-
-sendWith : Http.Expect msg -> Maybe String -> Request -> Cmd msg
-sendWith expect tracker request =
+send : Http.Expect msg -> Maybe String -> Request -> Cmd msg
+send expect tracker request =
     let
         perform =
             if request.withCredentials then
@@ -444,15 +420,17 @@ sendWith expect tracker request =
 
 body : Request -> Http.Body
 body request =
-    case ( Rpc.Body.toText request.body, Rpc.Body.toBytes request.body ) of
-        ( Just json, _ ) ->
+    case Rpc.Body.toText request.body of
+        Just json ->
             Http.stringBody "application/json" json
 
-        ( Nothing, Just binary ) ->
-            Http.bytesBody "application/proto" binary
+        Nothing ->
+            case Rpc.Body.toBytes request.body of
+                Just binary ->
+                    Http.bytesBody "application/proto" binary
 
-        ( Nothing, Nothing ) ->
-            Http.emptyBody
+                Nothing ->
+                    Http.emptyBody
 
 
 {-| Bytes read as UTF-8 text, as a browser decodes a text body; `""` when
@@ -579,25 +557,14 @@ utf8Width code =
         3
 
 
-{-| Why a call whose request message is `message`, its JSON or its protobuf
-binary, must not be sent over a transport: its length in bytes is over the
-transport's write limit.
+{-| Why a call whose request message's JSON is `json` must not be sent over a
+transport: its length in bytes is over the transport's write limit.
 -}
-requestTooLarge : Transport -> Result Bytes String -> Maybe Error.Reason
-requestTooLarge transport message =
+requestTooLarge : Transport -> String -> Maybe Error.Reason
+requestTooLarge transport json =
     Transport.writeMaxBytes transport
         |> Maybe.andThen
             (\limit ->
-                (case message of
-                    Ok json ->
-                        overLimit limit json
-
-                    Err binary ->
-                        if Bytes.width binary > max 0 limit then
-                            Just (Bytes.width binary)
-
-                        else
-                            Nothing
-                )
+                overLimit limit json
                     |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
             )

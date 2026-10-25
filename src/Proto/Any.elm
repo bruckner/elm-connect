@@ -35,12 +35,9 @@ codecs of an `Any` are [`Proto.Json.any`](Proto-Json#any) and
 
 -}
 
-import Bytes
-import Bytes.Decode
-import Bytes.Encode
 import Json.Decode
-import Proto.Bytes
 import Proto.Internal.Any as Internal exposing (Payload(..))
+import Proto.Internal.Message
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 
@@ -111,10 +108,10 @@ packWith prefix message value =
 the `Any` can be written in either form.
 -}
 payloadOf : Message a -> a -> Payload
-payloadOf message value =
-    case Message.encodeBytes message of
-        Just encode ->
-            InBoth (Message.encode message value) (Proto.Bytes.toBase64 (Bytes.Encode.encode (encode value)))
+payloadOf ((Proto.Internal.Message.Message m) as message) value =
+    case m.binary of
+        Just binary ->
+            InBoth (Message.encode message value) (binary.toBase64 value)
 
         Nothing ->
             InJson (Message.encode message value)
@@ -124,26 +121,24 @@ payloadOf message value =
 `Just (Err problem)` for this type when it cannot be read.
 -}
 unpack : Message a -> Any -> Maybe (Result Problem a)
-unpack message ((Internal.Any _ payload) as any) =
+unpack ((Proto.Internal.Message.Message m) as message) ((Internal.Any _ payload) as any) =
     if is message any then
         case payload of
-            InJson json ->
-                Just (Json.Decode.decodeValue (Message.decoder message) json |> Result.mapError Json)
-
-            InBoth json _ ->
-                Just (Json.Decode.decodeValue (Message.decoder message) json |> Result.mapError Json)
-
             InBinary base64 ->
-                case Message.bytesDecoder message of
-                    Just decoder ->
-                        Just
-                            (Proto.Bytes.fromBase64 base64
-                                |> Maybe.andThen (\bytes -> Bytes.Decode.decode (decoder (Bytes.width bytes)) bytes)
-                                |> Result.fromMaybe Binary
-                            )
+                case m.binary of
+                    Just binary ->
+                        case binary.fromBase64 base64 of
+                            Just value ->
+                                Just (Ok value)
+
+                            Nothing ->
+                                Just (Err Binary)
 
                     Nothing ->
                         Just (Err BinaryOnly)
+
+            _ ->
+                Just (Json.Decode.decodeValue (Message.decoder message) (Internal.jsonOf payload) |> Result.mapError Json)
 
     else
         Nothing

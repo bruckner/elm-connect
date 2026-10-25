@@ -1,4 +1,4 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..), nameOf)
+module Proto.Internal.Any exposing (Any(..), Payload(..), jsonOf, nameOf)
 
 {-| The `Any` type, defined here so that `Rpc` can build one from a Connect
 error detail, which `Proto.Any` exposes only opaquely.
@@ -32,3 +32,18 @@ nameOf url =
         |> List.reverse
         |> List.head
         |> Maybe.withDefault url
+
+
+{-| The packed message's JSON, `null` when only its binary arrived.
+-}
+jsonOf : Payload -> Json.Encode.Value
+jsonOf payload =
+    case payload of
+        InJson json ->
+            json
+
+        InBoth json _ ->
+            json
+
+        InBinary _ ->
+            Json.Encode.null

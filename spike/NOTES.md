@@ -172,11 +172,9 @@ Decisions taken while building, and the alternatives, for the report.
 - Generated binary codecs are ~1.5x the JSON ones unminified but smaller
   minified+gzipped (7.1 vs 9.2 KB for the corpus): their code is
   repetitive and they drop `Proto.Timestamp`.
-- The transport path costs a JSON-only program 2.2 KB gzip (notes example),
-  because `Rpc.send` reaches the bytes path statically. Moving it behind
-  `withBinary` (the method carrying a closure that sends bytes) would let DCE
-  drop it, but `Proto.Method` cannot import `Rpc.Internal` (cycle); it needs
-  the method type in an internal module both sides import. Not done here.
+- The transport path cost a JSON-only program 2.2 KB gzip (notes example),
+  because `Rpc.send` reached the bytes path statically. Fixed in run 3 (see
+  "DCE of the bytes path").
 - Q2 (size* vs copy): +6 % encode speed for a size function per message;
   kept the copy. Q3 (hoisting): 1 %, kept the use-site form; a hoisted
   recursive codec does compile.
@@ -287,3 +285,60 @@ generated code:
 - Cost: one more top-level function per message, a few bytes per message
   field step; all generated, nothing public changes but `embedded`'s
   argument (a public runtime function the generated code calls).
+
+## DCE of the bytes path (run 3)
+
+- **Shape.** `Proto.Method.withBinary`/`methodBinary` build the whole bytes
+  path as closures (`Rpc.Internal.Binary.binary`): the Connect message (POST
+  bytes, GET's unpadded URL-safe base64, computed only for a GET), the
+  write-limit check (encodes only when a limit is set), and the reading of
+  an answer as bytes (content type, read limit, `Proto.Binary.decode`; any
+  non-200 handed back to the text path as UTF-8). `Proto.Message.withBinary`
+  likewise builds an `Any`'s base64 halves (`toBase64`, `fromBase64`). A
+  program that never calls `withBinary` never reaches `Proto.Binary`,
+  `Proto.Bytes` or elm/bytes: none of their definitions, and not elm/bytes'
+  kernel, which any `Bytes.width` in the generic path would drag in whole
+  (its header imports `Bytes.Encode.getWidth`/`write`).
+- **The type move.** `Rpc` must read those closures, so the record moved to
+  `Proto.Internal.Method` / `Proto.Internal.Message`, with the descriptor as
+  a type parameter, and `Proto.Method.Method req res` /
+  `Proto.Message.Message a` became aliases of
+  `Internal.Method Descriptor req res` / `Internal.Message Descriptor a`.
+  The descriptor stays a parameter because moving `Proto.Method.Descriptor`
+  would move `Idempotency(..)`, whose constructors an alias cannot
+  re-export. No cycle: `Proto.Internal.Method` imports `Rpc.Error` and
+  `Rpc.Body` (neither imports a method), and `Proto.Method` imports
+  `Rpc.Internal.Binary`, which imports neither `Proto.Method` nor
+  `Rpc.Internal.Call`: its closures take the read limit and the text
+  reader as arguments instead of a `Call`. Every public signature is
+  unchanged and every test passes as it was.
+- **Costs of the move.** The package site and compiler errors show
+  `Proto.Internal.Method.Method` (the note `Proto.Any.Any` already carries).
+  An opaque union becoming an alias is what `elm diff` would call a major
+  change against a published version, so it belongs before the first Elm
+  publish, or is done with the union kept public and an internal reader
+  instead (which needs a public function).
+- **Generic path tightened on the way:** `Rpc.Internal.Http.send`/`task`
+  take the `Http.Expect`/`Http.Resolver` (no bytes twins), the request-size
+  check takes the binary's length from the closure, one
+  `Proto.Internal.Method.binaryUnder` serves every site.
+- **What is left in a JSON-only program** (notes, `codec=json`: +552 B gzip
+  over dfe7d38, from +2,700 at this run's start; numbers in
+  `measurements-run3.md`): the codec setting itself, read at run time
+  (`Transport.proto`, the `MissingCodec` check and its message, the answer
+  guard against reading binary as text, the choice between the string and
+  bytes `Expect`), about 170 B; `Any`'s binary-aware payload (`InBoth`,
+  `unpack`'s `Binary` problem), about 100 B; and the bytes kind of
+  `Rpc.Body` plus the refactored Connect message, about 280 B. All of it
+  follows from the codec being a run-time `Transport` setting, which any
+  program can turn on. Getting to zero needs the codec chosen where the
+  method is built (a method with binary codecs always sends binary over
+  Connect, say), so a JSON-only program has nothing to dispatch on; that is
+  a different public shape from `withCodec`.
+- **Found while measuring:** binary programs grew by 3.4 KB gzip between
+  run 2's measurement and its final head (SizeBinary 14,663 to 18,037). The
+  binary `Any` writer's conversion of a well-known type's JSON form (the
+  live leg's data-loss fix) reaches `Proto.Json`'s well-known decoders and
+  `Proto.Timestamp` from every binary program. Corpus binary codecs are now
+  10.5 KB gzip against JSON's 9.2. The same closure trick applies (attach
+  the conversion where JSON produced the `Any`); not done here.

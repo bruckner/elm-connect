@@ -1,4 +1,4 @@
-module Rpc.Internal.Answer exposing (toResult, toResultBytes)
+module Rpc.Internal.Answer exposing (binaryReader, toResult, toResultBytes)
 
 {-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
 stands for, from a Connect error body, a `google.rpc.Status` body or gRPC
@@ -8,14 +8,13 @@ as API.
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Decode
 import Dict
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Any exposing (Any)
-import Proto.Binary
 import Proto.Internal.Any
+import Proto.Internal.Method
 import Proto.Json
 import Proto.Method as Method
 import Rpc.Body
@@ -40,11 +39,13 @@ toResult transport ((Call fields) as c) answer =
                     if metadata.statusCode /= 200 then
                         Err (failure metadata raw)
 
-                    else if Transport.proto transport && hasBinary fields.method then
-                        Err (Error.BadResponse "a protobuf binary answer is read as bytes (Rpc.responseBytes)" (answerOf metadata raw))
-
                     else
-                        within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
+                        case Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method of
+                            Just _ ->
+                                Err (Error.BadResponse "a protobuf binary answer is read as bytes (Rpc.responseBytes)" (answerOf metadata raw))
+
+                            Nothing ->
+                                within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
 
                 ( Transcode _, Bound _ rule ) ->
                     within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
@@ -71,77 +72,22 @@ is JSON, read as `toResult` reads it; under any other codec the bytes are the
 answer's text.
 -}
 toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error res
-toResultBytes transport ((Call fields) as c) answer =
-    case ( Transport.proto transport, Method.responseBytesDecoder fields.method, answer ) of
-        ( True, Just decoder, Http.GoodStatus_ metadata raw ) ->
-            if metadata.statusCode /= 200 then
-                Err (failure metadata (Internal.bytesText raw))
+toResultBytes transport c answer =
+    case binaryReader transport c of
+        Just read ->
+            read answer
 
-            else
-                case header "content-type" metadata |> Maybe.map mediaType of
-                    Just other ->
-                        if other == "application/proto" then
-                            decodeBinary transport decoder (Method.output (Method.toDescriptor fields.method)) metadata raw
-
-                        else
-                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (binaryAnswer metadata raw))
-
-                    Nothing ->
-                        decodeBinary transport decoder (Method.output (Method.toDescriptor fields.method)) metadata raw
-
-        _ ->
+        Nothing ->
             toResult transport c (asText answer)
 
 
-hasBinary : Method.Method req res -> Bool
-hasBinary method =
-    case Method.responseBytesDecoder method of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
-
-
-{-| A content type without its parameters, lowercased.
+{-| How a call's answer is read as bytes, when the call is sent so: over
+Connect's proto codec, by a method with binary codecs.
 -}
-mediaType : String -> String
-mediaType value =
-    String.split ";" value
-        |> List.head
-        |> Maybe.withDefault ""
-        |> String.trim
-        |> String.toLower
-
-
-decodeBinary : Transport -> (Int -> Bytes.Decode.Decoder res) -> String -> Http.Metadata -> Bytes -> Result Error res
-decodeBinary transport decoder output metadata raw =
-    case ( Transport.readMaxBytes transport, Bytes.width raw ) of
-        ( Just limit, size ) ->
-            if size > max 0 limit then
-                Err (Error.NoAnswer (Error.ResponseTooLarge { limit = limit, size = size }))
-
-            else
-                readBinary decoder output metadata raw
-
-        ( Nothing, _ ) ->
-            readBinary decoder output metadata raw
-
-
-readBinary : (Int -> Bytes.Decode.Decoder res) -> String -> Http.Metadata -> Bytes -> Result Error res
-readBinary decoder output metadata raw =
-    Proto.Binary.decode decoder raw
-        |> Result.fromMaybe (Error.BadResponse ("the body is not a " ++ output ++ " in protobuf binary") (binaryAnswer metadata raw))
-
-
-binaryAnswer : Http.Metadata -> Bytes -> Response
-binaryAnswer metadata raw =
-    { url = metadata.url
-    , statusCode = metadata.statusCode
-    , statusText = metadata.statusText
-    , headers = metadata.headers
-    , body = Rpc.Body.bytes raw
-    }
+binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> Result Error res)
+binaryReader transport ((Call fields) as c) =
+    Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method
+        |> Maybe.map (\binary -> binary.read (Transport.readMaxBytes transport) (toResult transport c))
 
 
 asText : Http.Response Bytes -> Http.Response String

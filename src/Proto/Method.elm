@@ -45,10 +45,14 @@ import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Http exposing (Binding)
+import Proto.Internal.Method as Internal
+import Rpc.Internal.Binary
 
 
 {-| A method taking a `req` and answering a `res`. It is opaque: built by
-[`method`](#method) and read by the functions below.
+[`method`](#method) and read by the functions below. The package site and
+compiler errors may show it as `Proto.Internal.Method.Method`, its name
+inside the package.
 
 It holds what sending a call needs: the request's encoder, the response's
 decoder and the method's descriptor. The types'
@@ -56,20 +60,8 @@ decoder and the method's descriptor. The types'
 trees, are not part of it.
 
 -}
-type Method req res
-    = Method
-        { encodeRequest : req -> Json.Encode.Value
-        , responseDecoder : Json.Decode.Decoder res
-        , descriptor : Descriptor
-        , binary : Maybe (Binary req res)
-        , json : Bool
-        }
-
-
-type alias Binary req res =
-    { encodeRequest : req -> Bytes.Encode.Encoder
-    , responseDecoder : Int -> Bytes.Decode.Decoder res
-    }
+type alias Method req res =
+    Internal.Method Descriptor req res
 
 
 {-| A method from its request's proto3 JSON encoder, its response's proto3
@@ -93,7 +85,7 @@ JSON decoder and its descriptor. Generated code writes:
 -}
 method : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Descriptor -> Method req res
 method encode decoder methodDescriptor =
-    Method
+    Internal.Method
         { encodeRequest = encode
         , responseDecoder = decoder
         , descriptor = methodDescriptor
@@ -114,8 +106,8 @@ generated code under `codec=both` writes
 
 -}
 withBinary : (req -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder res) -> Method req res -> Method req res
-withBinary encodeBinary binaryDecoder (Method m) =
-    Method { m | binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder } }
+withBinary encodeBinary binaryDecoder (Internal.Method m) =
+    Internal.Method { m | binary = Just (Rpc.Internal.Binary.binary encodeBinary binaryDecoder (output m.descriptor)) }
 
 
 {-| A method with protobuf binary codecs alone (`codec=binary`). Its JSON
@@ -124,11 +116,11 @@ proto codec only, not for transcoding.
 -}
 methodBinary : (req -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder res) -> Descriptor -> Method req res
 methodBinary encodeBinary binaryDecoder methodDescriptor =
-    Method
+    Internal.Method
         { encodeRequest = \_ -> Json.Encode.null
         , responseDecoder = Json.Decode.fail (name methodDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
         , descriptor = methodDescriptor
-        , binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder }
+        , binary = Just (Rpc.Internal.Binary.binary encodeBinary binaryDecoder (output methodDescriptor))
         , json = False
         }
 
@@ -136,7 +128,7 @@ methodBinary encodeBinary binaryDecoder methodDescriptor =
 {-| The request's protobuf binary encoder, when the method has one.
 -}
 encodeRequestBytes : Method req res -> Maybe (req -> Bytes.Encode.Encoder)
-encodeRequestBytes (Method m) =
+encodeRequestBytes (Internal.Method m) =
     Maybe.map .encodeRequest m.binary
 
 
@@ -144,7 +136,7 @@ encodeRequestBytes (Method m) =
 takes the response's length in bytes.
 -}
 responseBytesDecoder : Method req res -> Maybe (Int -> Bytes.Decode.Decoder res)
-responseBytesDecoder (Method m) =
+responseBytesDecoder (Internal.Method m) =
     Maybe.map .responseDecoder m.binary
 
 
@@ -153,21 +145,21 @@ responseBytesDecoder (Method m) =
 send.
 -}
 hasJson : Method req res -> Bool
-hasJson (Method m) =
+hasJson (Internal.Method m) =
     m.json
 
 
 {-| A request as proto3 JSON.
 -}
 encodeRequest : Method req res -> req -> Json.Encode.Value
-encodeRequest (Method m) =
+encodeRequest (Internal.Method m) =
     m.encodeRequest
 
 
 {-| The response's proto3 JSON decoder.
 -}
 responseDecoder : Method req res -> Json.Decode.Decoder res
-responseDecoder (Method m) =
+responseDecoder (Internal.Method m) =
     m.responseDecoder
 
 
@@ -176,7 +168,7 @@ the full names of its types, and its HTTP bindings, read by the functions
 below.
 -}
 toDescriptor : Method req res -> Descriptor
-toDescriptor (Method m) =
+toDescriptor (Internal.Method m) =
     m.descriptor
 
 

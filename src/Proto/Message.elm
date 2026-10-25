@@ -32,30 +32,23 @@ descriptor in a module of the message's own, beside one value per field
 
 -}
 
+import Bytes
 import Bytes.Decode
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Bytes
 import Proto.Field as Field
+import Proto.Internal.Message as Internal
 
 
 {-| A message type whose Elm values are `a`. It is opaque: built by
-[`message`](#message) and read by the functions below.
+[`message`](#message) and read by the functions below. The package site and
+compiler errors may show it as `Proto.Internal.Message.Message`, its name
+inside the package.
 -}
-type Message a
-    = Message
-        { encode : a -> Json.Encode.Value
-        , decoder : Json.Decode.Decoder a
-        , default : a
-        , descriptor : Descriptor
-        , binary : Maybe (Binary a)
-        }
-
-
-type alias Binary a =
-    { encode : a -> Bytes.Encode.Encoder
-    , decoder : Int -> Bytes.Decode.Decoder a
-    }
+type alias Message a =
+    Internal.Message Descriptor a
 
 
 {-| A message type from its proto3 JSON encoder and decoder, its default (the
@@ -69,7 +62,7 @@ decodes to) and its descriptor. Generated code writes:
 -}
 message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Message a
 message encodeJson jsonDecoder defaultValue messageDescriptor =
-    Message
+    Internal.Message
         { encode = encodeJson
         , decoder = jsonDecoder
         , default = defaultValue
@@ -90,8 +83,8 @@ The binary decoder takes the message's length in bytes, as
 
 -}
 withBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> Message a -> Message a
-withBinary encodeBinary binaryDecoder (Message m) =
-    Message { m | binary = Just { encode = encodeBinary, decoder = binaryDecoder } }
+withBinary encodeBinary binaryDecoder (Internal.Message m) =
+    Internal.Message { m | binary = Just (binary encodeBinary binaryDecoder) }
 
 
 {-| A typed value with protobuf binary codecs alone, as generated code under
@@ -100,19 +93,35 @@ fails.
 -}
 messageBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> a -> Descriptor -> Message a
 messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
-    Message
+    Internal.Message
         { encode = \_ -> Json.Encode.null
         , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
         , default = defaultValue
         , descriptor = messageDescriptor
-        , binary = Just { encode = encodeBinary, decoder = binaryDecoder }
+        , binary = Just (binary encodeBinary binaryDecoder)
         }
+
+
+{-| The binary codecs, with a value's binary as base64 and back for `Any`.
+They are built here, under `withBinary`, so that a program without binary
+codecs carries none of that code.
+-}
+binary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> Internal.Binary a
+binary encodeBinary binaryDecoder =
+    { encode = encodeBinary
+    , decoder = binaryDecoder
+    , toBase64 = \value -> Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeBinary value))
+    , fromBase64 =
+        \base64 ->
+            Proto.Bytes.fromBase64 base64
+                |> Maybe.andThen (\bytes -> Bytes.Decode.decode (binaryDecoder (Bytes.width bytes)) bytes)
+    }
 
 
 {-| The protobuf binary encoder, when the typed value has one.
 -}
 encodeBytes : Message a -> Maybe (a -> Bytes.Encode.Encoder)
-encodeBytes (Message m) =
+encodeBytes (Internal.Message m) =
     Maybe.map .encode m.binary
 
 
@@ -120,35 +129,35 @@ encodeBytes (Message m) =
 message's length in bytes.
 -}
 bytesDecoder : Message a -> Maybe (Int -> Bytes.Decode.Decoder a)
-bytesDecoder (Message m) =
+bytesDecoder (Internal.Message m) =
     Maybe.map .decoder m.binary
 
 
 {-| A value as proto3 JSON.
 -}
 encode : Message a -> a -> Json.Encode.Value
-encode (Message m) =
+encode (Internal.Message m) =
     m.encode
 
 
 {-| The proto3 JSON decoder.
 -}
 decoder : Message a -> Json.Decode.Decoder a
-decoder (Message m) =
+decoder (Internal.Message m) =
     m.decoder
 
 
 {-| The value with every field at its proto3 default.
 -}
 default : Message a -> a
-default (Message m) =
+default (Internal.Message m) =
     m.default
 
 
 {-| What the proto says about the message, read by the functions below.
 -}
 toDescriptor : Message a -> Descriptor
-toDescriptor (Message m) =
+toDescriptor (Internal.Message m) =
     m.descriptor
 
 
