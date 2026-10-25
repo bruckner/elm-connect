@@ -195,7 +195,7 @@ decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Json.Decode.succeed Scalars
         |> Proto.Json.fieldEither "doubleValue" "double_value" 0.0 Proto.Json.float
-        |> Proto.Json.fieldEither "floatValue" "float_value" 0.0 Proto.Json.float
+        |> Proto.Json.fieldEither "floatValue" "float_value" 0.0 Proto.Json.float32
         |> Proto.Json.fieldEither "int32Value" "int32_value" 0 Proto.Json.int32
         |> Proto.Json.fieldEither "int64Value" "int64_value" "0" Proto.Json.int64
         |> Proto.Json.fieldEither "uint32Value" "uint32_value" 0 Proto.Json.uint32

@@ -110,7 +110,7 @@ doubleValue =
 -}
 floatValue : Message Float
 floatValue =
-    message Proto.Json.encodeFloat Proto.Json.float 0 Descriptors.floatValue
+    message Proto.Json.encodeFloat Proto.Json.float32 0 Descriptors.floatValue
 
 
 {-| `google.protobuf.Int64Value`, its decimal string.

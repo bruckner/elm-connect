@@ -2,6 +2,7 @@ module Proto.JsonTest exposing (suite)
 
 import Dict
 import Expect
+import Fuzz
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
@@ -37,6 +38,7 @@ suite =
         , uint64Tests
         , uint64AsIntTests
         , floatTests
+        , float32Tests
         , bytesTests
         , wellKnownTests
         ]
@@ -1138,6 +1140,10 @@ floatTests =
             \_ -> fails Proto.Json.float "\"infinity\""
         , test "a boolean fails" <|
             \_ -> fails Proto.Json.float "false"
+        , test "a number past a double's range fails" <|
+            \_ -> failsOnEach Proto.Json.float [ "1.89769e+308", "-1.89769e+308", "1e999", "\"1e999\"" ]
+        , test "the largest double decodes" <|
+            \_ -> decodes Proto.Json.float "1.7976931348623157e308" 1.7976931348623157e308
         , test "encodes a finite value as a number" <|
             \_ -> encodesTo (Proto.Json.encodeFloat 1.5) "1.5"
         , test "encodes NaN as a string" <|
@@ -1147,6 +1153,58 @@ floatTests =
         , test "encodes negative infinity as a string" <|
             \_ -> encodesTo (Proto.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
         ]
+
+
+float32Tests : Test
+float32Tests =
+    describe "float32"
+        [ test "a number" <|
+            \_ -> decodes Proto.Json.float32 "1.5" 1.5
+        , test "the names of the values a number cannot write" <|
+            \_ ->
+                [ "\"NaN\"", "\"Infinity\"", "\"-Infinity\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.float32 >> Result.map (\n -> isNaN n || isInfinite n))
+                    |> Expect.equal [ Ok True, Ok True, Ok True ]
+        , test "the largest float, as a number and as a string" <|
+            \_ ->
+                [ "3.4028234663852886e38", "-3.4028234663852886e38", "\"3.4028234663852886e38\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.float32)
+                    |> Expect.equal [ Ok 3.4028234663852886e38, Ok -3.4028234663852886e38, Ok 3.4028234663852886e38 ]
+        , test "a number past a float's range fails" <|
+            \_ -> failsOnEach Proto.Json.float32 [ "3.502823e+38", "-3.502823e+38", "\"3.502823e+38\"", "1e999" ]
+        , test "a finite value within range is kept, not rounded to a float" <|
+            \_ -> decodes Proto.Json.float32 "0.1" 0.1
+        , Test.fuzz float32Value "every finite float decodes, as written" <|
+            \value ->
+                Json.Decode.decodeString Proto.Json.float32 (Json.Encode.encode 0 (Json.Encode.float value))
+                    |> Expect.equal (Ok value)
+        ]
+
+
+{-| A finite `float`, built from its sign, exponent and fraction bits, so every
+one is exactly a float32: subnormals, the smallest and the largest included.
+-}
+float32Value : Fuzz.Fuzzer Float
+float32Value =
+    Fuzz.map3
+        (\negative exponent fraction ->
+            let
+                magnitude =
+                    if exponent == 0 then
+                        toFloat fraction * 2 ^ -149
+
+                    else
+                        (1 + toFloat fraction / 2 ^ 23) * 2 ^ toFloat (exponent - 127)
+            in
+            if negative then
+                -magnitude
+
+            else
+                magnitude
+        )
+        Fuzz.bool
+        (Fuzz.oneOf [ Fuzz.intRange 0 254, Fuzz.constant 254, Fuzz.constant 0 ])
+        (Fuzz.oneOf [ Fuzz.intRange 0 (2 ^ 23 - 1), Fuzz.constant (2 ^ 23 - 1), Fuzz.constant 1 ])
 
 
 bytesTests : Test

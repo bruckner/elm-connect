@@ -228,6 +228,18 @@ nonNegativeZeroFloat =
         float
 
 
+{-| A finite value past a `float`'s range divided down into it; any other
+value as it is.
+-}
+withinFloat32 : Float -> Float
+withinFloat32 x =
+    if abs x > 3.4028234663852886e38 && not (isInfinite x) then
+        x / 1.0e300
+
+    else
+        x
+
+
 
 -- BYTES
 
@@ -393,7 +405,8 @@ short =
 
 
 {-| An `Everything`, each field at its default about a third of the time,
-its floats from `floats`.
+its floats from `floats`; the `float` field's divided down into a `float`'s
+range when finite and past it.
 -}
 everything : Fuzzer Float -> Fuzzer Routes.V1.Everything
 everything floats =
@@ -404,7 +417,7 @@ everything floats =
         |> Fuzz.andMap (orDefault "0" uint64Text)
         |> Fuzz.andMap Fuzz.bool
         |> Fuzz.andMap (orDefault 0 floats)
-        |> Fuzz.andMap (orDefault 0 floats)
+        |> Fuzz.andMap (orDefault 0 (Fuzz.map withinFloat32 floats))
         |> Fuzz.andMap (orDefault "" (Fuzz.map base64 (short (Fuzz.intRange 0 255))))
         |> Fuzz.andMap kind
         |> Fuzz.andMap (short awkwardString)

@@ -138,7 +138,7 @@ ratio : Float -> Rpc.Call Float Float
 ratio =
     Rpc.call
         (Proto.Method.method Proto.Json.encodeFloat
-            Proto.Json.float
+            Proto.Json.float32
             descriptorRatio
         )
 

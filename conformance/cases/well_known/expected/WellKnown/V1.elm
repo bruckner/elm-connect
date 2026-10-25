@@ -273,7 +273,7 @@ decodeEvent =
         |> Proto.Json.valueField "payload"
         |> Proto.Json.field "items" Nothing (Json.Decode.map Just Proto.Json.listValue)
         |> Proto.Json.field "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
-        |> Proto.Json.field "weight" Nothing (Json.Decode.map Just Proto.Json.float)
+        |> Proto.Json.field "weight" Nothing (Json.Decode.map Just Proto.Json.float32)
         |> Proto.Json.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.int64)
         |> Proto.Json.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.uint64)
         |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)

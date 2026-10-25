@@ -9,7 +9,7 @@ module Proto.Json exposing
     , int32, uint32
     , int64, uint64, encodeInt64
     , int64AsInt, uint64AsInt, encodeInt64AsInt
-    , float, encodeFloat
+    , float, float32, encodeFloat
     , bytes, encodeBytes
     , bytesAsBytes, encodeBytesAsBytes
     , timestamp, encodeTimestamp
@@ -90,7 +90,7 @@ the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
 
 # Floating point
 
-@docs float, encodeFloat
+@docs float, float32, encodeFloat
 
 
 # Bytes
@@ -1557,34 +1557,76 @@ encodeInt64AsInt int =
     Json.Encode.string (Proto.Int64.fromInt int)
 
 
-{-| Decode a `double` or `float`. proto3 JSON writes a finite value as a
-number and the others as the strings `"NaN"`, `"Infinity"` and `"-Infinity"`;
-a parser must also accept a finite value written as a string, such as `"1.5"`.
+{-| Decode a `double`. proto3 JSON writes a finite value as a number and the
+others as the strings `"NaN"`, `"Infinity"` and `"-Infinity"`; a parser must
+also accept a finite value written as a string, such as `"1.5"`.
+
+A number past a double's range, such as `1e999`, fails: JavaScript's JSON
+parser reads it as an infinity, which proto3 JSON writes only as a string.
+
 -}
 float : Decoder Float
 float =
     Json.Decode.oneOf
-        [ Json.Decode.float
-        , Json.Decode.string |> Json.Decode.andThen floatString
+        [ Json.Decode.map Ok Json.Decode.float
+        , Json.Decode.map Err Json.Decode.string
         ]
+        |> Json.Decode.andThen (floatIn "a double" (\_ -> True))
 
 
-floatString : String -> Decoder Float
-floatString text =
-    case text of
-        "NaN" ->
+{-| Decode a `float`, as [`float`](#float) decodes a `double`, and fail on a
+finite value whose magnitude is past the largest `float`,
+3.4028234663852886e38. A value within it is kept as it arrived, not rounded to
+the nearest `float`.
+-}
+float32 : Decoder Float
+float32 =
+    Json.Decode.oneOf
+        [ Json.Decode.map Ok Json.Decode.float
+        , Json.Decode.map Err Json.Decode.string
+        ]
+        |> Json.Decode.andThen (floatIn "a float" (\number -> abs number <= maxFloat32))
+
+
+maxFloat32 : Float
+maxFloat32 =
+    3.4028234663852886e38
+
+
+{-| A number, or the string it was written as, if it is finite and `fits`, or
+the string is one of the names of the values a number cannot write.
+-}
+floatIn : String -> (Float -> Bool) -> Result String Float -> Decoder Float
+floatIn kind fits written =
+    let
+        checked number =
+            if isInfinite number || not (fits number) then
+                Json.Decode.fail ("Expecting " ++ kind ++ ", but got a number past its range")
+
+            else
+                Json.Decode.succeed number
+    in
+    case written of
+        Ok number ->
+            checked number
+
+        Err "NaN" ->
             Json.Decode.succeed (0 / 0)
 
-        "Infinity" ->
+        Err "Infinity" ->
             Json.Decode.succeed (1 / 0)
 
-        "-Infinity" ->
+        Err "-Infinity" ->
             Json.Decode.succeed -(1 / 0)
 
-        _ ->
+        Err text ->
             case String.toFloat text of
                 Just number ->
-                    Json.Decode.succeed number
+                    if isNaN number then
+                        Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")
+
+                    else
+                        checked number
 
                 Nothing ->
                     Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")

@@ -801,7 +801,13 @@ just the form encoders write.
   so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
   for a 64-bit value and for every integer map key.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
-  `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
+  `"-Infinity"`, through `Proto.Json.float` (`double`) and
+  `Proto.Json.float32` (`float`). A number past a double's range fails
+  (JavaScript's JSON parser reads `1e999` as an infinity, which proto3
+  JSON writes only as a string), and for a `float` so does a finite
+  value whose magnitude is past 3.4028234663852886e38, the largest
+  `float`; a value within it is kept, not rounded to a `float`.
+- 64-bit integers as strings or numbers, in exponent
   notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). The
   `String` form (`Proto.Json.int64`) is always the canonical decimal
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),

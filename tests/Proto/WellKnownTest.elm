@@ -71,6 +71,12 @@ suite =
                         , ( "google.protobuf.StringValue", True )
                         , ( "google.protobuf.BytesValue", True )
                         ]
+        , test "FloatValue reads only a float's range, DoubleValue a double's" <|
+            \_ ->
+                ( Json.Decode.decodeString (Message.decoder WellKnown.floatValue) "1e300" |> Result.toMaybe
+                , Json.Decode.decodeString (Message.decoder WellKnown.doubleValue) "1e300" |> Result.toMaybe
+                )
+                    |> Expect.equal ( Nothing, Just 1.0e300 )
         , test "Value's default is null" <|
             \_ ->
                 ( Message.typeName (Message.toDescriptor WellKnown.value), Json.Encode.encode 0 (Message.default WellKnown.value) )

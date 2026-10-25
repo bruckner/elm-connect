@@ -214,7 +214,7 @@ impl Emitter {
                 let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
             }
-            FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
+            FieldShape::Plain(Zeroed::Scalar(Repr::Float | Repr::Float32)) => {
                 return apply(self.reference((PROTO_JSON, "implicitFloatField")), [value]);
             }
             // Not `implicitField`, which compares with `==`: Elm finds any two

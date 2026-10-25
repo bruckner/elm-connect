@@ -200,7 +200,7 @@ decodeNote =
         |> Proto.Json.field "editor" Nothing (Json.Decode.map Just decodeAuthor)
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
         |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
-        |> Proto.Json.field "weights" [] (Json.Decode.list Proto.Json.float)
+        |> Proto.Json.field "weights" [] (Json.Decode.list Proto.Json.float32)
         |> Proto.Json.field "reviewers" [] (Json.Decode.list decodeAuthor)
         |> Proto.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Json.Decode.string)
         |> Proto.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
