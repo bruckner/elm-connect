@@ -1,0 +1,26 @@
+// Required fields (`field_presence = LEGACY_REQUIRED`, proto2's
+// `required`). A required field is held as an explicit-presence field is,
+// a `Maybe`, so its codecs are an optional field's; its descriptor says it
+// is required (`Proto.Field.CardinalityRequired`), and so does its
+// declaration in the docs.
+edition = "2023";
+
+package required.v1;
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_EDITOR = 1;
+}
+
+message Author {
+  string name = 1;
+}
+
+message Note {
+  string id = 1 [features.field_presence = LEGACY_REQUIRED];
+  int32 revision = 2 [features.field_presence = LEGACY_REQUIRED, default = 1];
+  Role role = 3 [features.field_presence = LEGACY_REQUIRED];
+  Author author = 4 [features.field_presence = LEGACY_REQUIRED];
+  repeated string tags = 5;
+  string title = 6;
+}

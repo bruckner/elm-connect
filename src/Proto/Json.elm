@@ -4,7 +4,7 @@ module Proto.Json exposing
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
-    , enum, enumOrZero
+    , enum, enumOrZero, closedEnum
     , int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
     , int32, uint32
     , int64, uint64, encodeInt64
@@ -63,7 +63,7 @@ reads a missing field as its default, so nothing is lost.
 
 # Enums
 
-@docs enum, enumOrZero
+@docs enum, enumOrZero, closedEnum
 
 
 # Maps
@@ -815,8 +815,30 @@ enum : String -> a -> List ( String, Int, a ) -> Decoder a
 enum enumName zero values =
     enumWith
         (\text -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ quote text))
-        zero
+        (\_ -> Json.Decode.succeed zero)
         values
+
+
+{-| Decode a closed enum (`enum_type = CLOSED` in an edition 2023 file) as
+[`enum`](#enum) does, with the same arguments, except that a number the rows
+do not hold fails too, as an unknown name does: a closed enum has no value
+for it, as protobuf's own JSON parsers say.
+
+    Json.Decode.decodeString decodeStatus "7"
+    -- Err ...: Expecting a value of enum "Status", but got 7
+
+The second argument, the enum's first value, goes unused; it is taken so the
+three read alike. Code generated for a closed enum calls this one, or
+[`enumOrZero`](#enumOrZero) under `enum_unknown=zero`.
+
+-}
+closedEnum : String -> a -> List ( String, Int, a ) -> Decoder a
+closedEnum enumName _ values =
+    let
+        unknown text =
+            Json.Decode.fail ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ text)
+    in
+    enumWith (unknown << quote) (unknown << String.fromInt) values
 
 
 {-| Decode an enum as [`enum`](#enum) does, with the same arguments, except
@@ -836,13 +858,14 @@ zero value's name.
 -}
 enumOrZero : String -> a -> List ( String, Int, a ) -> Decoder a
 enumOrZero _ zero values =
-    enumWith (\_ -> Json.Decode.succeed zero) zero values
+    enumWith (\_ -> Json.Decode.succeed zero) (\_ -> Json.Decode.succeed zero) values
 
 
-{-| `enum` and `enumOrZero`, which differ in what an unknown name reads as.
+{-| `enum`, `enumOrZero` and `closedEnum`, which differ in what an unknown
+name and an unknown number read as.
 -}
-enumWith : (String -> Decoder a) -> a -> List ( String, Int, a ) -> Decoder a
-enumWith unknownName zero values =
+enumWith : (String -> Decoder a) -> (Int -> Decoder a) -> List ( String, Int, a ) -> Decoder a
+enumWith unknownName unknownNumber values =
     let
         lookup matches =
             values
@@ -866,9 +889,12 @@ enumWith unknownName zero values =
                                 unknownName text
 
                     Err int ->
-                        lookup (\( _, number, _ ) -> number == int)
-                            |> Maybe.withDefault zero
-                            |> Json.Decode.succeed
+                        case lookup (\( _, number, _ ) -> number == int) of
+                            Just value ->
+                                Json.Decode.succeed value
+
+                            Nothing ->
+                                unknownNumber int
             )
 
 

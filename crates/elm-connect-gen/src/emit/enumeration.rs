@@ -74,9 +74,13 @@ impl Emitter {
                     ])
                 })
         });
-        let decoder = match self.enum_unknown {
-            EnumUnknown::Fail => "enum",
-            EnumUnknown::Zero => "enumOrZero",
+        // A closed enum's decoder refuses a number it does not declare, as
+        // it refuses a name; under `enum_unknown=zero` it reads both as its
+        // first value, as an open enum's does.
+        let decoder = match (self.enum_unknown, enumeration.is_closed()) {
+            (EnumUnknown::Fail, false) => "enum",
+            (EnumUnknown::Fail, true) => "closedEnum",
+            (EnumUnknown::Zero, _) => "enumOrZero",
         };
         let decode = self.reference((PROTO_JSON, decoder));
         let body = apply(

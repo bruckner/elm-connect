@@ -1,6 +1,6 @@
 module Proto.Field exposing
-    ( Descriptor, descriptor, inOneof, withBehavior, withDeprecated
-    , name, jsonName, number, cardinality, kind, oneof
+    ( Descriptor, descriptor, inOneof, withBehavior, withDeprecated, withDefault
+    , name, jsonName, number, cardinality, kind, oneof, defaultValue
     , behavior, deprecated
     , Cardinality(..), Kind(..), Scalar(..), Behavior(..)
     )
@@ -17,12 +17,12 @@ all four can be exposed with `(..)` beside each other and beside the other
 modules' unions: `CardinalityRequired` and `BehaviorRequired` mean different
 things.
 
-@docs Descriptor, descriptor, inOneof, withBehavior, withDeprecated
+@docs Descriptor, descriptor, inOneof, withBehavior, withDeprecated, withDefault
 
 
 # Reading
 
-@docs name, jsonName, number, cardinality, kind, oneof
+@docs name, jsonName, number, cardinality, kind, oneof, defaultValue
 
 
 # Annotations
@@ -52,6 +52,7 @@ type Descriptor
         , oneof : Maybe String
         , behavior : List Behavior
         , deprecated : Bool
+        , defaultValue : Maybe String
         }
 
 
@@ -59,9 +60,11 @@ type Descriptor
 
   - `CardinalitySingular`: one, without presence unless it is a message or a
     oneof member.
-  - `CardinalityOptional`: one, with presence: a proto3 `optional` field.
-  - `CardinalityRequired`: one, which must be present: proto2's `required`.
-    The generator reads proto3 alone, so it never gives this today.
+  - `CardinalityOptional`: one, with presence: a proto3 `optional` field, or
+    a scalar or enum field of an edition 2023 file with explicit presence.
+  - `CardinalityRequired`: one, which must be present: a field of an edition
+    2023 file with `field_presence = LEGACY_REQUIRED`, proto2's `required`.
+    Generated code holds it as a `Maybe`, as it holds an optional field.
   - `CardinalityRepeated`: a list.
   - `CardinalityMap`: a map, keyed by this scalar.
 
@@ -142,7 +145,7 @@ type Behavior
 (`pageSize`, or the proto's explicit `json_name`), its number, how many values
 it holds, and the type of each value (for a map, of each map value). It is in
 no oneof, has no [`Behavior`](#Behavior) and is not deprecated until the
-modifiers below say otherwise.
+modifiers below say otherwise, and has no declared default.
 
     Proto.Field.descriptor "title" "title" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
 
@@ -158,6 +161,7 @@ descriptor protoName json fieldNumber howMany valueKind =
         , oneof = Nothing
         , behavior = []
         , deprecated = False
+        , defaultValue = Nothing
         }
 
 
@@ -181,6 +185,18 @@ withBehavior annotations (Descriptor f) =
 withDeprecated : Descriptor -> Descriptor
 withDeprecated (Descriptor f) =
     Descriptor { f | deprecated = True }
+
+
+{-| The field with this declared default (`[default = 5]`), as the proto
+writes it: `"5"`, `"hello"` for a string, an enum value's name, C-escaped
+for `bytes`. Only a field with presence has one, in an edition 2023 file;
+it is the value the field means while unset, which generated code leaves to
+you, since such a field is a `Maybe`:
+`Maybe.withDefault 5 note.stars`.
+-}
+withDefault : String -> Descriptor -> Descriptor
+withDefault value (Descriptor f) =
+    Descriptor { f | defaultValue = Just value }
 
 
 {-| Its proto name, such as `page_size`: the name a field mask's paths use.
@@ -224,6 +240,15 @@ kind (Descriptor f) =
 oneof : Descriptor -> Maybe String
 oneof (Descriptor f) =
     f.oneof
+
+
+{-| Its declared default, as the proto writes it
+([`withDefault`](#withDefault)); `Nothing` for a field without one, which
+is every proto3 field.
+-}
+defaultValue : Descriptor -> Maybe String
+defaultValue (Descriptor f) =
+    f.defaultValue
 
 
 {-| Its `google.api.field_behavior` annotations, in the order the proto gives

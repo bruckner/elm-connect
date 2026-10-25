@@ -51,12 +51,14 @@ body. A minor, after binary protobuf.
 
 ## Editions and proto2
 
-Today a proto2 file is `input::not_proto3` and a file that declares an
-edition is `input::editions`. Accepting them turns an error into
-output, so it is a minor: the descriptors already reserve
-`CardinalityRequired` for `required` fields, and closed enums,
-non-zero defaults and explicit presence become descriptor modifiers
-and generated decoders. Groups and extensions would stay refused.
+Edition 2023 is generated: explicit presence, `LEGACY_REQUIRED`
+(`CardinalityRequired`), closed enums and declared defaults, the last
+two as descriptor modifiers (`Proto.Enum.withClosed`,
+`Proto.Field.withDefault`) and a decoder rule. Today a proto2 file is
+`input::not_proto3` and a later edition `input::editions`; accepting
+them turns an error into output, so it is a minor. Delimited encoding
+(groups) and extensions stay refused, and so, under the binary
+codecs, do expanded repeated fields and closed enums.
 Two fields of one message whose names are the same once lowercased
 without underscores (`aB` and `ab`), which protoc accepts and the
 descriptor library refuses in any file but a proto2 one, are

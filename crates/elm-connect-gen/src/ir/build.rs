@@ -4,8 +4,10 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use prost_reflect::{
-    DescriptorPool, DynamicMessage, EnumDescriptor, EnumValueDescriptor, FieldDescriptor,
-    FileDescriptor, Kind, MessageDescriptor, MethodDescriptor, Value,
+    Cardinality as ProtoCardinality, DescriptorPool, DynamicMessage, Edition, EnumDescriptor,
+    EnumValueDescriptor, ExtensionDescriptor, Features, FieldDescriptor, FileDescriptor,
+    JsonFormat, Kind, MessageDescriptor, MethodDescriptor, RepeatedFieldEncoding, Syntax,
+    Utf8Validation, Value,
 };
 
 use super::comments::Comments;
@@ -16,9 +18,11 @@ use super::{
     Package, ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
 use super::{declaration, rename};
-use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
+use crate::diagnostics::{
+    Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, UnsupportedFeature, closest, tag,
+};
 use crate::naming::{self, NameError};
-use crate::options::{Options, Spelling, Streaming};
+use crate::options::{Codec, Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
 /// What a rename's help names in place of the proto element's full name.
@@ -90,6 +94,7 @@ pub fn build_with_imports(
     let mut builder = Builder {
         streaming: options.streaming,
         spelling: options.spelling,
+        codec: options.codec,
         ..Builder::default()
     };
 
@@ -562,6 +567,9 @@ struct Builder {
     references: Vec<Reference>,
     /// What a streaming method gets.
     streaming: Streaming,
+    /// Which codecs are generated, which decides whether a feature that
+    /// shapes only the binary wire format has an Elm form.
+    codec: Codec,
     /// The rename map's entries that name a generated element and suit it:
     /// Elm names by proto full name (an enum value's under its enum's).
     renames: HashMap<String, String>,
@@ -708,7 +716,8 @@ impl Builder {
         }
     }
 
-    /// Reports `file` if it is not proto3, or if its name holds a control
+    /// Reports `file` if it is neither proto3 nor an edition 2023 file
+    /// whose features have an Elm form, or if its name holds a control
     /// character, which the header of its package's module would carry.
     fn check_file(&mut self, file: &FileDescriptor) {
         if file.name().chars().any(char::is_control) {
@@ -717,6 +726,17 @@ impl Builder {
         let proto = file.file_descriptor_proto();
         let syntax = proto.syntax();
         if syntax == "proto3" {
+            return;
+        }
+        if file.syntax() == Syntax::Editions {
+            if file.edition() == Edition::Edition2023 {
+                self.check_features(file);
+            } else {
+                let edition = file.edition().to_string();
+                let site = self.edition_site(file, format!("edition {edition} here"));
+                self.diagnostics
+                    .push(Problem::editions(file.name(), Some(&edition), site));
+            }
             return;
         }
         // A descriptor leaves `syntax` empty for proto2, whether the file
@@ -751,6 +771,205 @@ impl Builder {
             self.diagnostics
                 .push(Problem::not_proto3(file.name(), Some(syntax), site));
         }
+    }
+
+    /// A site at `file`'s `edition` statement, wherever the compiler
+    /// recorded it.
+    fn edition_site(&mut self, file: &FileDescriptor, label: String) -> Site {
+        let spans = self
+            .spans
+            .entry(file.name().to_owned())
+            .or_insert_with(|| Spans::new(file.file_descriptor_proto()));
+        let path = if spans.get(&[tag::FILE_EDITION]).is_some() {
+            tag::FILE_EDITION
+        } else {
+            tag::FILE_SYNTAX
+        };
+        self.site(file, &[path], label)
+    }
+
+    /// Reports every element of `file`, an edition 2023 file, whose
+    /// features have no Elm form under the options, and every extension it
+    /// declares but those of the `google.protobuf` options messages.
+    fn check_features(&mut self, file: &FileDescriptor) {
+        let binary = self.codec != Codec::Json;
+        for message in all_messages(file) {
+            let element = format!("the message `{}`", message.full_name());
+            if message.features().json_format() == JsonFormat::LegacyBestEffort {
+                let inherited =
+                    inherited_from(&feature_scopes(file, message.parent_message()), |f| {
+                        f.json_format() == JsonFormat::LegacyBestEffort
+                    });
+                let site = self.site(
+                    file,
+                    &[message.path(), &[tag::MESSAGE_NAME]].concat(),
+                    "this message".into(),
+                );
+                self.diagnostics.push(Problem::unsupported_feature(
+                    &element,
+                    UnsupportedFeature::LegacyJson,
+                    inherited.as_deref(),
+                    site,
+                    self.spelling,
+                ));
+            }
+            for (index, range) in message
+                .descriptor_proto()
+                .extension_range
+                .iter()
+                .enumerate()
+            {
+                let index = i32::try_from(index).unwrap_or(i32::MAX);
+                let site = self.site(
+                    file,
+                    &[message.path(), &[tag::MESSAGE_EXTENSION_RANGE, index]].concat(),
+                    "these extension numbers".into(),
+                );
+                // A range's end is exclusive in the descriptor.
+                let what = format!(
+                    "The message `{}` declares the extension numbers {} to {}",
+                    message.full_name(),
+                    range.start(),
+                    range.end() - 1
+                );
+                self.diagnostics.push(Problem::extensions(&what, site));
+            }
+            for field in declared_fields(&message) {
+                self.check_field_features(file, &message, &field, binary);
+            }
+        }
+        let messages = all_messages(file);
+        let extensions: Vec<ExtensionDescriptor> = file
+            .extensions()
+            .chain(
+                messages
+                    .iter()
+                    .flat_map(MessageDescriptor::child_extensions),
+            )
+            .collect();
+        for extension in extensions {
+            self.check_extension(file, &extension);
+        }
+        for enumeration in all_enums(file) {
+            let element = format!("the enum `{}`", enumeration.full_name());
+            let scopes = feature_scopes(file, enumeration.parent_message());
+            let site = self.site(
+                file,
+                &[enumeration.path(), &[tag::ENUM_NAME]].concat(),
+                "this enum".into(),
+            );
+            if enumeration.features().json_format() == JsonFormat::LegacyBestEffort {
+                let inherited =
+                    inherited_from(&scopes, |f| f.json_format() == JsonFormat::LegacyBestEffort);
+                self.diagnostics.push(Problem::unsupported_feature(
+                    &element,
+                    UnsupportedFeature::LegacyJson,
+                    inherited.as_deref(),
+                    site.clone(),
+                    self.spelling,
+                ));
+            }
+            if binary && enumeration.is_closed() {
+                let inherited = inherited_from(&scopes, |f| {
+                    f.enum_type() == prost_reflect::EnumType::Closed
+                });
+                self.diagnostics.push(Problem::unsupported_feature(
+                    &element,
+                    UnsupportedFeature::ClosedBinary,
+                    inherited.as_deref(),
+                    site,
+                    self.spelling,
+                ));
+            }
+        }
+    }
+
+    /// Reports `field` of `message` in an edition 2023 file if a feature
+    /// it has, set on it or inherited, has no Elm form; `binary` when the
+    /// binary codecs are generated.
+    fn check_field_features(
+        &mut self,
+        file: &FileDescriptor,
+        message: &MessageDescriptor,
+        field: &FieldDescriptor,
+        binary: bool,
+    ) {
+        let mut scopes = feature_scopes(file, Some(message.clone()));
+        if let Some(oneof) = field.containing_oneof() {
+            scopes.push((
+                format!("the oneof `{}`", oneof.full_name()),
+                oneof.features(),
+            ));
+        }
+        let element = format!("the field `{}`", field.full_name());
+        let features = field.features();
+        let mut found = Vec::new();
+        if field.is_group() {
+            found.push(UnsupportedFeature::Delimited);
+        }
+        let string = match field.kind() {
+            Kind::String => true,
+            Kind::Message(entry) if field.is_map() => {
+                entry.map_entry_key_field().kind() == Kind::String
+                    || entry.map_entry_value_field().kind() == Kind::String
+            }
+            _ => false,
+        };
+        if string && features.utf8_validation() == Utf8Validation::None {
+            found.push(UnsupportedFeature::Utf8None);
+        }
+        if binary
+            && field.is_list()
+            && !matches!(field.kind(), Kind::Message(_) | Kind::String | Kind::Bytes)
+            && features.repeated_field_encoding() == RepeatedFieldEncoding::Expanded
+        {
+            found.push(UnsupportedFeature::Expanded);
+        }
+        for feature in found {
+            let inherited = inherited_from(&scopes, |f| match feature {
+                UnsupportedFeature::Delimited => {
+                    f.message_encoding() == prost_reflect::MessageEncoding::Delimited
+                }
+                UnsupportedFeature::Utf8None => f.utf8_validation() == Utf8Validation::None,
+                UnsupportedFeature::Expanded => {
+                    f.repeated_field_encoding() == RepeatedFieldEncoding::Expanded
+                }
+                UnsupportedFeature::ClosedBinary | UnsupportedFeature::LegacyJson => false,
+            });
+            let site = self.site(
+                file,
+                &[field.path(), &[tag::FIELD_NAME]].concat(),
+                "this field".into(),
+            );
+            self.diagnostics.push(Problem::unsupported_feature(
+                &element,
+                feature,
+                inherited.as_deref(),
+                site,
+                self.spelling,
+            ));
+        }
+    }
+
+    /// Reports `extension`, declared in an edition 2023 file, unless it
+    /// extends a `google.protobuf` message: a custom option or feature.
+    fn check_extension(&mut self, file: &FileDescriptor, extension: &ExtensionDescriptor) {
+        let extendee = extension.containing_message();
+        if extendee.package_name() == WELL_KNOWN_PACKAGE {
+            return;
+        }
+        let site = self.site(
+            file,
+            &[extension.path(), &[tag::FIELD_NAME]].concat(),
+            "this extension".into(),
+        );
+        let what = format!(
+            "The file `{}` extends `{}` with the field `{}`",
+            file.name(),
+            extendee.full_name(),
+            extension.full_name()
+        );
+        self.diagnostics.push(Problem::extensions(&what, site));
     }
 
     /// A site at `path` in `file`, or at its parent element when the
@@ -801,6 +1020,7 @@ impl Builder {
         comments
             .leading(&[tag::FILE_PACKAGE])
             .or_else(|| comments.leading(&[tag::FILE_SYNTAX]))
+            .or_else(|| comments.leading(&[tag::FILE_EDITION]))
             .map(str::to_owned)
     }
 
@@ -1654,7 +1874,9 @@ impl Builder {
             });
         }
         let mut values = values.into_iter();
-        // Proto3 compilers reject an enum whose first value is not 0.
+        // Proto3 compilers reject an enum whose first value is not 0, and
+        // editions compilers an open one; a closed enum's first value is
+        // its default, whatever its number.
         let full_name = enumeration.full_name();
         let proto_name = full_name
             .strip_prefix(package)
@@ -1671,14 +1893,25 @@ impl Builder {
             declaration::enumeration(enumeration),
             deprecated_enum,
         );
-        Enum::new(
-            full_name.to_owned(),
-            proto_name.to_owned(),
-            elm_name,
-            values.next()?,
-            values.collect(),
-        )
-        .map(|built| Enum {
+        let first = values.next()?;
+        let built = if file.syntax() == Syntax::Editions && enumeration.is_closed() {
+            Some(Enum::new_closed(
+                full_name.to_owned(),
+                proto_name.to_owned(),
+                elm_name,
+                first,
+                values.collect(),
+            ))
+        } else {
+            Enum::new(
+                full_name.to_owned(),
+                proto_name.to_owned(),
+                elm_name,
+                first,
+                values.collect(),
+            )
+        };
+        built.map(|built| Enum {
             doc,
             ..built
                 .with_declaration_order(declared)
@@ -2024,9 +2257,20 @@ impl Builder {
             let ty = self.resolve(file, message, field, value.kind())?;
             return Some((Cardinality::Map(key), ty));
         }
+        // An edition 2023 file gives presence by feature: explicit
+        // presence on a scalar or enum is proto3's `optional`, and a
+        // message field has presence either way, as in proto3.
+        let editions = file.syntax() == Syntax::Editions;
         let cardinality = if field.is_list() {
             Cardinality::Repeated
-        } else if field.field_descriptor_proto().proto3_optional() {
+        } else if editions && field.cardinality() == ProtoCardinality::Required {
+            Cardinality::Required
+        } else if field.field_descriptor_proto().proto3_optional()
+            || (editions
+                && field.supports_presence()
+                && field.containing_oneof().is_none()
+                && !matches!(field.kind(), Kind::Message(_)))
+        {
             Cardinality::Optional
         } else {
             Cardinality::Singular
@@ -2391,7 +2635,47 @@ fn annotations(field: &FieldDescriptor) -> Annotations {
     Annotations {
         behavior,
         deprecated,
+        default: field.field_descriptor_proto().default_value.clone(),
     }
+}
+
+/// The scopes whose features an element of `file` inside `message` (its
+/// innermost enclosing message, if any) inherits, outermost first: the
+/// file, then each enclosing message.
+fn feature_scopes(
+    file: &FileDescriptor,
+    message: Option<MessageDescriptor>,
+) -> Vec<(String, Features)> {
+    let mut messages = Vec::new();
+    let mut next = message;
+    while let Some(message) = next {
+        next = message.parent_message();
+        messages.push(message);
+    }
+    let mut scopes = vec![("the file".to_owned(), file.features())];
+    scopes.extend(messages.into_iter().rev().map(|message| {
+        (
+            format!("the message `{}`", message.full_name()),
+            message.features(),
+        )
+    }));
+    scopes
+}
+
+/// Where an element whose feature `has` holds inherits it from: the
+/// outermost of `scopes` (outermost first, the element's parent last)
+/// from which every scope down to the element has it, or `None` when its
+/// parent does not, so the element sets it itself.
+fn inherited_from(
+    scopes: &[(String, Features)],
+    has: impl Fn(&Features) -> bool,
+) -> Option<String> {
+    scopes
+        .iter()
+        .rev()
+        .take_while(|(_, features)| has(features))
+        .last()
+        .map(|(scope, _)| scope.clone())
 }
 
 /// The full name of the `google.api.http` extension of `MethodOptions`.
@@ -2470,10 +2754,16 @@ fn read_rule(rule: &DynamicMessage) -> HttpRule {
 }
 
 /// Whether `field` is a repeated scalar or enum that is not packed: one
-/// declared `[packed = false]`, as proto3's scalars are packed by default.
+/// declared `[packed = false]`, as proto3's scalars are packed by default,
+/// or with `repeated_field_encoding = EXPANDED` in an edition 2023 file.
 /// The option is read from the field's own options: the descriptor pool's
-/// `is_packed` reports such a field packed.
+/// `is_packed` reports such a proto3 field packed.
 fn unpacked(field: &FieldDescriptor) -> bool {
+    if field.parent_file().syntax() == Syntax::Editions {
+        return field.is_list()
+            && !field.is_packed()
+            && !matches!(field.kind(), Kind::Message(_) | Kind::String | Kind::Bytes);
+    }
     field.is_list()
         && field
             .field_descriptor_proto()

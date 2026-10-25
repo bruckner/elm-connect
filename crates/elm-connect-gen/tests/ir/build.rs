@@ -941,6 +941,7 @@ enum Level {
         Annotations {
             behavior: vec![FieldBehavior::OutputOnly, FieldBehavior::Immutable],
             deprecated: true,
+            default: None,
         }
     );
     assert_eq!(annotations("body"), Annotations::default());
@@ -949,6 +950,7 @@ enum Level {
         Annotations {
             behavior: vec![FieldBehavior::Required],
             deprecated: true,
+            default: None,
         }
     );
     let level = &package.enums[0];
@@ -970,6 +972,7 @@ message Note { string name = 1 [deprecated = true]; }
         Annotations {
             behavior: Vec::new(),
             deprecated: true,
+            default: None,
         }
     );
 }

@@ -1,0 +1,146 @@
+input::unsupported_feature
+
+  × The field `unsupported.v1.Envelope.body` has `features.message_encoding =
+  │ DELIMITED`, inherited from the file, which elm-connect does not generate.
+    ╭─[delimited.proto:12:9]
+ 11 │ message Envelope {
+ 12 │   Inner body = 1;
+    ·         ──┬─
+    ·           ╰── this field
+ 13 │   Inner other = 2 [features.message_encoding = LENGTH_PREFIXED];
+    ╰────
+  help: A delimited message field is written as proto2 writes a group, between
+        start and end tags, which the generated binary codecs do not read or
+        write. Set `features.message_encoding = LENGTH_PREFIXED` on the field,
+        or on the file for all of its fields.
+
+input::extensions
+
+  × The message `unsupported.v1.Outer` declares the extension numbers 100 to
+  │ 199, but elm-connect generates messages without extensions.
+    ╭─[unsupported.proto:26:14]
+ 25 │   repeated string labels = 4 [features.utf8_validation = VERIFY];
+ 26 │   extensions 100 to 199;
+    ·              ─────┬────
+    ·                   ╰── these extension numbers
+ 27 │ }
+    ╰────
+  help: A generated message is an Elm record of its own fields, with no place
+        for fields another file adds, and proto3, which elm-connect generates
+        the JSON mapping of, has extensions only for custom options. Extending
+        a `google.protobuf` options message is fine; move any other
+        extension's fields into the message, and drop the extension range.
+
+input::unsupported_feature
+
+  × The field `unsupported.v1.Outer.grouped` has `features.message_encoding =
+  │ DELIMITED`, which elm-connect does not generate.
+    ╭─[unsupported.proto:22:9]
+ 21 │ message Outer {
+ 22 │   Inner grouped = 1 [features.message_encoding = DELIMITED];
+    ·         ───┬───
+    ·            ╰── this field
+ 23 │   string name = 2 [(note) = "unchecked, from the file"];
+    ╰────
+  help: A delimited message field is written as proto2 writes a group, between
+        start and end tags, which the generated binary codecs do not read or
+        write. Set `features.message_encoding = LENGTH_PREFIXED` on the field,
+        or on the file for all of its fields.
+
+input::unsupported_feature
+
+  × The field `unsupported.v1.Outer.name` has `features.utf8_validation =
+  │ NONE`, inherited from the file, which elm-connect does not generate.
+    ╭─[unsupported.proto:23:10]
+ 22 │   Inner grouped = 1 [features.message_encoding = DELIMITED];
+ 23 │   string name = 2 [(note) = "unchecked, from the file"];
+    ·          ──┬─
+    ·            ╰── this field
+ 24 │   repeated int32 counts = 3 [features.repeated_field_encoding = EXPANDED];
+    ╰────
+  help: Elm strings hold valid Unicode, so the generated decoders refuse a
+        string that is not valid UTF-8, as `VERIFY` asks. Set
+        `features.utf8_validation = VERIFY`, or make the field `bytes` if it
+        may hold any bytes.
+
+input::unsupported_feature
+
+  × The field `unsupported.v1.Outer.counts` has
+  │ `features.repeated_field_encoding = EXPANDED`, which the binary codecs
+  │ elm-connect generates do not support.
+    ╭─[unsupported.proto:24:18]
+ 23 │   string name = 2 [(note) = "unchecked, from the file"];
+ 24 │   repeated int32 counts = 3 [features.repeated_field_encoding = EXPANDED];
+    ·                  ───┬──
+    ·                     ╰── this field
+ 25 │   repeated string labels = 4 [features.utf8_validation = VERIFY];
+    ╰────
+  help: The generated binary encoders write a repeated scalar or enum field
+        packed, one record holding every element. Set
+        `features.repeated_field_encoding = PACKED`, or generate the JSON
+        codecs alone (`codec=json`), where the encoding does not apply.
+
+input::unsupported_feature
+
+  × The message `unsupported.v1.Legacy` has `features.json_format =
+  │ LEGACY_BEST_EFFORT`, which elm-connect does not generate.
+    ╭─[unsupported.proto:33:9]
+ 32 │
+ 33 │ message Legacy {
+    ·         ───┬──
+    ·            ╰── this message
+ 34 │   option features.json_format = LEGACY_BEST_EFFORT;
+    ╰────
+  help: The generated JSON codecs implement the proto3 JSON mapping, whose
+        rules `LEGACY_BEST_EFFORT` relaxes (two fields may share a JSON name).
+        Set `features.json_format = ALLOW`.
+
+input::unsupported_feature
+
+  × The message `unsupported.v1.Legacy.Nested` has `features.json_format =
+  │ LEGACY_BEST_EFFORT`, inherited from the message `unsupported.v1.Legacy`,
+  │ which elm-connect does not generate.
+    ╭─[unsupported.proto:36:11]
+ 35 │
+ 36 │   message Nested {
+    ·           ───┬──
+    ·              ╰── this message
+ 37 │     int32 n = 1;
+    ╰────
+  help: The generated JSON codecs implement the proto3 JSON mapping, whose
+        rules `LEGACY_BEST_EFFORT` relaxes (two fields may share a JSON name).
+        Set `features.json_format = ALLOW`.
+
+input::extensions
+
+  × The file `unsupported.proto` extends `unsupported.v1.Outer` with the field
+  │ `unsupported.v1.extra`, but elm-connect generates messages without
+  │ extensions.
+    ╭─[unsupported.proto:30:9]
+ 29 │ extend Outer {
+ 30 │   int32 extra = 100;
+    ·         ──┬──
+    ·           ╰── this extension
+ 31 │ }
+    ╰────
+  help: A generated message is an Elm record of its own fields, with no place
+        for fields another file adds, and proto3, which elm-connect generates
+        the JSON mapping of, has extensions only for custom options. Extending
+        a `google.protobuf` options message is fine; move any other
+        extension's fields into the message, and drop the extension range.
+
+input::unsupported_feature
+
+  × The enum `unsupported.v1.Closed` has `features.enum_type = CLOSED`, which
+  │ the binary codecs elm-connect generates do not support.
+    ╭─[unsupported.proto:43:6]
+ 42 │
+ 43 │ enum Closed {
+    ·      ───┬──
+    ·         ╰── this enum
+ 44 │   option features.enum_type = CLOSED;
+    ╰────
+  help: The generated binary decoders read a number an enum does not declare
+        as its first value, where a closed enum's field would keep it as an
+        unknown field. Generate the JSON codecs alone (`codec=json`), whose
+        decoders refuse such a number, or set `features.enum_type = OPEN`.

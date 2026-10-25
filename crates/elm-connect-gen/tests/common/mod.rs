@@ -119,6 +119,12 @@ pub struct Compiled {
 }
 
 pub fn compile_case(case: &Path) -> Compiled {
+    try_compile_case(case)
+        .unwrap_or_else(|e| panic!("{} does not compile: {e:?}", case.join("input").display()))
+}
+
+/// [`compile_case`], or protox's error.
+pub fn try_compile_case(case: &Path) -> Result<Compiled, protox::Error> {
     let input = case.join("input");
     let include = case.join("include");
     let names = protos(&input);
@@ -131,12 +137,24 @@ pub fn compile_case(case: &Path) -> Compiled {
         include_paths.clone(),
     ));
     compiler.include_source_info(true).include_imports(true);
-    compiler
-        .open_files(&names)
-        .unwrap_or_else(|e| panic!("{} does not compile: {e:?}", input.display()));
-    Compiled {
+    compiler.open_files(&names)?;
+    Ok(Compiled {
         compiler,
         names,
         include_paths,
+    })
+}
+
+/// The `input::editions` problem the front ends report for `case`, whose
+/// input protox cannot parse because a file declares an edition other
+/// than 2023 (`edition = "2024";`), as the CLI reports it; `None` when
+/// the case compiles, or fails for another reason.
+pub fn unsupported_edition_case(case: &Path) -> Option<elm_connect_gen::diagnostics::Problem> {
+    let error = try_compile_case(case).err()?;
+    if !error.is_parse() {
+        return None;
     }
+    let name = error.file()?;
+    let source = fs::read_to_string(case.join("input").join(name)).ok()?;
+    elm_connect_gen::diagnostics::unsupported_edition(name, &source)
 }

@@ -69,9 +69,15 @@ codes! {
     FileNotFound => "input::file_not_found",
     /// A file to generate is not proto3.
     NotProto3 => "input::not_proto3",
-    /// A file declares an edition (`edition = "2023";`), which elm-connect
-    /// does not support.
+    /// A file declares an edition other than 2023 (`edition = "2024";`),
+    /// which elm-connect does not support.
     Editions => "input::editions",
+    /// An element of an edition 2023 file has a feature value with no Elm
+    /// form in elm-connect, such as `message_encoding = DELIMITED`.
+    UnsupportedFeature => "input::unsupported_feature",
+    /// An edition 2023 file declares an extension range, or extends a
+    /// message other than a `google.protobuf` options message.
+    Extensions => "input::extensions",
     /// A file's name cannot be written into a generated module's header.
     FileName => "input::file_name",
     /// Two fields of a message have names that are the same once
@@ -1355,19 +1361,75 @@ impl Problem {
         )
     }
 
-    /// `file` declares an edition, `edition` when it is known (`"2023"`).
+    /// `file` declares an edition other than 2023, `edition` when it is
+    /// known (`"2024"`).
     pub fn editions(file: &str, edition: Option<&str>, site: Site) -> Self {
         let declares = match edition {
             Some(edition) => format!("declares `edition = \"{edition}\"`"),
-            None => "declares an edition".to_owned(),
+            None => "declares an edition elm-connect does not know".to_owned(),
         };
         Problem::new(
             Code::Editions,
-            format!("The file `{file}` {declares}, but elm-connect generates proto3 only."),
-            "This release of elm-connect does not support editions: it implements the proto3 \
-             JSON mapping, and an edition's features (closed enums, required fields, \
-             explicit presence by default) have no Elm form here yet. Declare \
-             `syntax = \"proto3\";` instead, if the file uses no feature beyond proto3's.",
+            format!(
+                "The file `{file}` {declares}, but elm-connect generates proto3 and edition \
+                 2023 only."
+            ),
+            "elm-connect generates from `syntax = \"proto3\";` files and from `edition = \
+             \"2023\";` files whose features have an Elm form (explicit or implicit presence, \
+             `LEGACY_REQUIRED`, open and closed enums, packed repeated fields, checked UTF-8, \
+             the proto3 JSON mapping). Declare `edition = \"2023\";` instead, if the file uses \
+             nothing a later edition added.",
+            vec![site],
+        )
+    }
+
+    /// `element` (`the field \`a.B.c\``) of an edition 2023 file has the
+    /// unsupported feature value `feature`, set on itself or inherited
+    /// from `inherited` (`the file`, `the message \`a.B\``) when that is
+    /// where it is set.
+    /// `spelling` writes the `codec` option as the front end takes it.
+    pub fn unsupported_feature(
+        element: &str,
+        feature: UnsupportedFeature,
+        inherited: Option<&str>,
+        site: Site,
+        spelling: Spelling,
+    ) -> Self {
+        let setting = feature.setting();
+        let from = match inherited {
+            Some(scope) => format!(", inherited from {scope}"),
+            None => String::new(),
+        };
+        let mut chars = element.chars();
+        let element = match chars.next() {
+            Some(first) => first.to_uppercase().chain(chars).collect::<String>(),
+            None => String::new(),
+        };
+        let refused = match feature {
+            UnsupportedFeature::Expanded | UnsupportedFeature::ClosedBinary => {
+                "which the binary codecs elm-connect generates do not support"
+            }
+            _ => "which elm-connect does not generate",
+        };
+        Problem::new(
+            Code::UnsupportedFeature,
+            format!("{element} has `{setting}`{from}, {refused}."),
+            feature.help(spelling),
+            vec![site],
+        )
+    }
+
+    /// `what` (`The message \`a.B\` declares the extension numbers 100 to
+    /// 199`) is an extension an edition 2023 file declares.
+    pub fn extensions(what: &str, site: Site) -> Self {
+        Problem::new(
+            Code::Extensions,
+            format!("{what}, but elm-connect generates messages without extensions."),
+            "A generated message is an Elm record of its own fields, with no place for fields \
+             another file adds, and proto3, which elm-connect generates the JSON mapping of, \
+             has extensions only for custom options. Extending a `google.protobuf` options \
+             message is fine; move any other extension's fields into the message, and drop \
+             the extension range.",
             vec![site],
         )
     }
@@ -1848,4 +1910,139 @@ pub fn render_narrow(diagnostics: &Diagnostics) -> String {
         })
         .collect();
     rendered.join("\n")
+}
+
+/// A feature value of an edition 2023 file elm-connect does not generate,
+/// as [`Problem::unsupported_feature`] reports it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UnsupportedFeature {
+    /// `message_encoding = DELIMITED` on a message field: proto2's group
+    /// encoding.
+    Delimited,
+    /// `repeated_field_encoding = EXPANDED` on a repeated scalar or enum
+    /// field, under the binary codecs.
+    Expanded,
+    /// `enum_type = CLOSED` on an enum, under the binary codecs.
+    ClosedBinary,
+    /// `utf8_validation = NONE` on a string field.
+    Utf8None,
+    /// `json_format = LEGACY_BEST_EFFORT` on a message or enum.
+    LegacyJson,
+}
+
+impl UnsupportedFeature {
+    /// The feature and its value, as a proto sets it.
+    pub fn setting(self) -> &'static str {
+        match self {
+            UnsupportedFeature::Delimited => "features.message_encoding = DELIMITED",
+            UnsupportedFeature::Expanded => "features.repeated_field_encoding = EXPANDED",
+            UnsupportedFeature::ClosedBinary => "features.enum_type = CLOSED",
+            UnsupportedFeature::Utf8None => "features.utf8_validation = NONE",
+            UnsupportedFeature::LegacyJson => "features.json_format = LEGACY_BEST_EFFORT",
+        }
+    }
+
+    fn help(self, spelling: Spelling) -> String {
+        let json_alone = spelling.option("codec", "json");
+        match self {
+            UnsupportedFeature::Delimited => "A delimited message field is written as proto2 \
+                writes a group, between start and end tags, which the generated binary codecs \
+                do not read or write. Set `features.message_encoding = LENGTH_PREFIXED` on the \
+                field, or on the file for all of its fields."
+                .to_owned(),
+            UnsupportedFeature::Expanded => format!(
+                "The generated binary encoders write a repeated scalar or enum field packed, \
+                 one record holding every element. Set `features.repeated_field_encoding = \
+                 PACKED`, or generate the JSON codecs alone ({json_alone}), where the encoding \
+                 does not apply."
+            ),
+            UnsupportedFeature::ClosedBinary => format!(
+                "The generated binary decoders read a number an enum does not declare as its \
+                 first value, where a closed enum's field would keep it as an unknown field. \
+                 Generate the JSON codecs alone ({json_alone}), whose decoders refuse such a \
+                 number, or set `features.enum_type = OPEN`."
+            ),
+            UnsupportedFeature::Utf8None => "Elm strings hold valid Unicode, so the generated \
+                decoders refuse a string that is not valid UTF-8, as `VERIFY` asks. Set \
+                `features.utf8_validation = VERIFY`, or make the field `bytes` if it may hold \
+                any bytes."
+                .to_owned(),
+            UnsupportedFeature::LegacyJson => "The generated JSON codecs implement the proto3 \
+                JSON mapping, whose rules `LEGACY_BEST_EFFORT` relaxes (two fields may share a \
+                JSON name). Set `features.json_format = ALLOW`."
+                .to_owned(),
+        }
+    }
+}
+
+/// The value `source`'s first statement gives `keyword`, `2023` of
+/// `edition = "2023";` for `edition`, and the span of that statement, when
+/// its first statement is one.
+pub fn first_statement(source: &str, keyword: &str) -> Option<(String, LineColSpan)> {
+    let bytes = source.as_bytes();
+    // Past whitespace and comments from `at`.
+    let skip = |mut at: usize| loop {
+        let rest = &source[at..];
+        let trimmed = rest.trim_start();
+        at += rest.len() - trimmed.len();
+        if trimmed.starts_with("//") {
+            at += trimmed.find('\n').unwrap_or(trimmed.len());
+        } else if let Some(comment) = trimmed.strip_prefix("/*") {
+            at += 2 + comment.find("*/").map_or(comment.len(), |end| end + 2);
+        } else {
+            return at;
+        }
+    };
+    let start = skip(0);
+    let after = start + keyword.len();
+    let declares = source.get(start..after)? == keyword
+        && !bytes
+            .get(after)
+            .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
+    if !declares {
+        return None;
+    }
+    let at = skip(after);
+    let at = skip(at + source[at..].strip_prefix('=').map(|_| 1)?);
+    let quote = *bytes.get(at).filter(|b| matches!(b, b'"' | b'\''))?;
+    let len = source[at + 1..].find(char::from(quote))?;
+    let value = source[at + 1..at + 1 + len].to_owned();
+    let mut end = at + len + 2;
+    let semicolon = skip(end);
+    if source[semicolon..].starts_with(';') {
+        end = semicolon + 1;
+    }
+    let position = |offset: usize| {
+        let before = &source[..offset];
+        let line = before.matches('\n').count();
+        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+        (u32::try_from(line).ok(), u32::try_from(col).ok())
+    };
+    let (start_line, start_col) = position(start);
+    let (end_line, end_col) = position(end);
+    let span = LineColSpan {
+        start_line: start_line?,
+        start_col: start_col?,
+        end_line: end_line?,
+        end_col: end_col?,
+    };
+    Some((value, span))
+}
+
+/// The `input::editions` problem for the file `name`, whose text is
+/// `source`, when its first statement declares an edition other than 2023,
+/// sited at that statement: what a front end reports in place of its
+/// parser's errors for an edition the parser does not know.
+pub fn unsupported_edition(name: &str, source: &str) -> Option<Problem> {
+    let (edition, span) = first_statement(source, "edition")?;
+    if edition == "2023" {
+        return None;
+    }
+    let site = Site {
+        file: name.to_owned(),
+        span: Some(span),
+        label: "the edition".into(),
+        within: Vec::new(),
+    };
+    Some(Problem::editions(name, Some(&edition), site))
 }

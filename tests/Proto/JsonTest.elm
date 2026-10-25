@@ -23,6 +23,7 @@ suite =
         , oneofTests
         , enumTests
         , enumOrZeroTests
+        , closedEnumTests
         , int32DictTests
         , uint32DictTests
         , int64DictTests
@@ -582,6 +583,32 @@ enumOrZeroTests =
                     )
                     """{"status":"STATUS_ARCHIVED"}"""
                     StatusUnspecified
+        ]
+
+
+decodeStatusClosed : Decoder Status
+decodeStatusClosed =
+    Proto.Json.closedEnum "Status"
+        StatusActive
+        [ ( "STATUS_ACTIVE", 1, StatusActive )
+        , ( "STATUS_STARTED", 1, StatusActive )
+        , ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
+        ]
+
+
+closedEnumTests : Test
+closedEnumTests =
+    describe "closedEnum"
+        [ test "a name" <|
+            \_ -> decodes decodeStatusClosed "\"STATUS_STARTED\"" StatusActive
+        , test "a number it declares" <|
+            \_ -> decodes decodeStatusClosed "0" StatusUnspecified
+        , test "an unknown number fails, naming the enum and the number" <|
+            \_ -> failsWith decodeStatusClosed "7" "Expecting a value of enum \"Status\", but got 7"
+        , test "an unknown name fails, naming the enum and the name" <|
+            \_ -> failsWith decodeStatusClosed "\"STATUS_ARCHIVED\"" "Expecting a value of enum \"Status\", but got \"STATUS_ARCHIVED\""
+        , test "a fractional number fails" <|
+            \_ -> fails decodeStatusClosed "1.5"
         ]
 
 

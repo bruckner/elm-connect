@@ -28,13 +28,16 @@ otherwise.
 | `bytes` | `String`, the base64 text as received; under `bytes=bytes`, `Bytes.Bytes` from elm/bytes |
 | a field without presence (`string title = 2;`) | the value itself, its default when absent (`""`, `0`, `False`, the enum's zero value) |
 | `optional string subtitle = 1;` | `Maybe String` |
+| in an `edition = "2023";` file, a scalar or enum field (explicit presence, the edition's default) | `Maybe String`, as `optional` gives; with `[features.field_presence = IMPLICIT]`, on the field or the file, the value itself, as proto3 gives |
+| an edition 2023 field with `[features.field_presence = LEGACY_REQUIRED]` | `Maybe String`, as explicit presence gives; its descriptor is `CardinalityRequired` |
+| an edition 2023 field with `[default = 5]` | `Maybe Int`, `Nothing` while unset; its descriptor carries the default (`Proto.Field.defaultValue`) |
 | a singular message field, `optional` or not | `Maybe Author` |
 | `repeated string tags = 4;` | `List String` |
 | `map<string, V>` | `Dict String V` |
 | `map<K, V>` with a 32-bit integer key | `Dict Int V` |
 | `map<K, V>` with a 64-bit integer key | `Dict String V`, under `int64=int` too |
 | `map<bool, V>` | `List ( Bool, V )`, since `Bool` is not `comparable` |
-| `enum Visibility` | `type Visibility = VisibilityUnspecified \| VisibilityPrivate \| …`: one constructor per value, the type's name in front of the value's with the enum's own prefix dropped (`VISIBILITY_PRIVATE` → `VisibilityPrivate`), an alias folded into its first value; with it `encodeVisibility`, `decodeVisibility` and `enumVisibility : Proto.Enum.Enum Visibility`. An unknown number decodes as the zero value; an unknown name fails, or under `enum_unknown=zero` is the zero value too |
+| `enum Visibility` | `type Visibility = VisibilityUnspecified \| VisibilityPrivate \| …`: one constructor per value, the type's name in front of the value's with the enum's own prefix dropped (`VISIBILITY_PRIVATE` → `VisibilityPrivate`), an alias folded into its first value; with it `encodeVisibility`, `decodeVisibility` and `enumVisibility : Proto.Enum.Enum Visibility`. An unknown number decodes as the zero value; an unknown name fails, or under `enum_unknown=zero` is the zero value too. A closed enum (`enum_type = CLOSED`, edition 2023) fails on an unknown number too, or under `enum_unknown=zero` reads either as its first value, its default; its descriptor says it is closed |
 | `oneof kind { string text = 11; string link = 12; }` | a field `kind : NoteKind`, with `type NoteKind = NoteKindUnset \| NoteKindText String \| NoteKindLink String`; a `google.protobuf.Empty` member has no argument |
 | `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof). Code that held instants as RFC 3339 strings, from another generator or by hand, and keyed a `Dict` or a DOM id with them or sorted them, needs another key, since a `Time.Posix` is not `comparable`: `Time.posixToMillis` gives an `Int` to key with (through `String.fromInt` for an id) and to `compare`, which orders by the instant, where the strings ordered by their text |
 | `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` |

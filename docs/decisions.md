@@ -870,6 +870,28 @@ editions support, so protoc says the same. Accepting them later turns
 an error into output, a minor; the descriptors reserve
 `CardinalityRequired` for it. Where: design §1.3.
 
+### Edition 2023 generated where it has an Elm form
+
+*2026-10-25.* Supersedes "Editions and proto2 refused in 1.0" for
+edition 2023.
+
+An edition 2023 file is generated from. Explicit presence becomes a
+`Maybe` (`CardinalityOptional`), as proto3's `optional`;
+`LEGACY_REQUIRED` is held the same way and its descriptor says
+`CardinalityRequired`, so a required field's codecs are an optional
+one's and a missing one decodes as `Nothing` rather than failing. A
+closed enum's descriptor is `withClosed`, and its JSON decoder refuses
+a number it does not declare (`Proto.Json.closedEnum`), as protobuf's
+parsers do. A declared default rides in the field's descriptor
+(`withDefault`), its text as the proto writes it; the field is still a
+`Maybe`. A file whose features only restate proto3 generates exactly
+its proto3 twin, declarations in the docs included, which elide
+`features` and write presence as a label. Delimited encoding,
+extensions, `utf8_validation = NONE` and `json_format =
+LEGACY_BEST_EFFORT` are `input::unsupported_feature` or
+`input::extensions`; under the binary codecs so are `EXPANDED`
+repeated fields and closed enums. Where: design §1.3, §3.10.
+
 ### One version, in lockstep, and a strict sentinel
 
 *2026-10-16.*

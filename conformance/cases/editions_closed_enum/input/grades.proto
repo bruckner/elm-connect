@@ -1,0 +1,16 @@
+// A file of another package whose enums are all closed, inherited from the
+// file.
+edition = "2023";
+
+package closed.grades.v1;
+
+option features.enum_type = CLOSED;
+
+enum Grade {
+  GRADE_A = 0;
+  GRADE_B = 1;
+}
+
+message Report {
+  Grade grade = 1;
+}

@@ -24,7 +24,7 @@ use prost_types::compiler::{CodeGeneratorRequest, CodeGeneratorResponse};
 mod common;
 use common::{
     Compiled, DIAGNOSTICS, WARNINGS, case_name, case_parameter, cases, compile_case, files_under,
-    is_diagnostics_case, placeholder_header,
+    is_diagnostics_case, placeholder_header, unsupported_edition_case,
 };
 
 /// A set's files as protox encoded them, extension options intact, which
@@ -105,6 +105,11 @@ fn read(path: &Path) -> String {
 /// What one case's response gets wrong; empty when nothing.
 fn check(case: &Path) -> Vec<String> {
     let mut problems = Vec::new();
+    // protoc sends an edition only to a plugin that claims it, and the
+    // plugin claims 2023 alone; such a case is the CLI's to report.
+    if unsupported_edition_case(case).is_some() {
+        return problems;
+    }
     let (request, compiled) = request_for(case);
     let output = run_with(&request);
     let stderr = String::from_utf8_lossy(&output.stderr).into_owned();

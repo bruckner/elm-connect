@@ -1,0 +1,33 @@
+// Closed enums (`enum_type = CLOSED`): a number a closed enum does not
+// declare is not one of its values, so its decoder refuses one, as it
+// refuses an unknown name, and its descriptor says it is closed. Its first
+// value is its default, whatever its number. A closed enum cannot be the
+// type of an implicit-presence field, so a singular field of one is a
+// `Maybe`.
+edition = "2023";
+
+package closed.v1;
+
+enum Level {
+  option features.enum_type = CLOSED;
+  LEVEL_LOW = 1;
+  LEVEL_HIGH = 2;
+  LEVEL_TOP = 10;
+}
+
+// Open, the edition's default: an unknown number reads as the zero value.
+enum Mood {
+  MOOD_UNSPECIFIED = 0;
+  MOOD_GOOD = 1;
+}
+
+message Reading {
+  Level level = 1;
+  repeated Level history = 2;
+  map<string, Level> by_room = 3;
+  Mood mood = 4;
+  oneof pick {
+    Level chosen = 5;
+    string other = 6;
+  }
+}

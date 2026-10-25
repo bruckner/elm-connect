@@ -1,0 +1,17 @@
+// A file of the same package that makes presence implicit for every field
+// it declares, as proto3 has it, but where a field sets it back.
+edition = "2023";
+
+package presence.v1;
+
+import "presence.proto";
+
+option features.field_presence = IMPLICIT;
+
+message Draft {
+  string title = 1;
+  Shade shade = 2;
+  // Explicit again, set on the field: proto3's `optional`.
+  int32 version = 3 [features.field_presence = EXPLICIT];
+  Author author = 4;
+}

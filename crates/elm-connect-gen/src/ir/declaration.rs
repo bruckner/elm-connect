@@ -6,8 +6,9 @@
 //!   `service notes.v1.NotesService`, `oneof kind`: the full name, but a
 //!   oneof's, which is scoped to its message.
 //! - `repeated string tags = 4;`: a field, its type by keyword or by full
-//!   name, `map<string, string>` for a map, `optional` only for a proto3
-//!   optional field, then its options in brackets.
+//!   name, `map<string, string>` for a map, `optional` only for a field
+//!   with explicit presence that proto3 would write `optional`, then its
+//!   default and options in brackets.
 //! - `VISIBILITY_PUBLIC = 1;`: an enum value, with its options likewise.
 //! - `rpc GetNote(GetNoteRequest) returns (Note)`: a method, its types
 //!   named relative to its service's package, `stream` where it streams.
@@ -17,13 +18,24 @@
 //! each value in protobuf's text format as prost-reflect prints it, on one
 //! line. A repeated option is written once per value, as the proto
 //! repeats it.
+//!
+//! An edition 2023 file writes presence as a feature rather than a label;
+//! its fields are declared with the label proto3 and proto2 would give
+//! them (`optional` for explicit presence on a scalar or enum outside a
+//! oneof, `required` for `LEGACY_REQUIRED`), and `features` options are
+//! left out everywhere, since they say how the file is written rather than
+//! what it declares. A file that only restates proto3 in features is
+//! documented exactly as its proto3 twin is.
 
 use prost_reflect::ReflectMessage as _;
 use prost_reflect::text_format::FormatOptions;
 use prost_reflect::{
-    DynamicMessage, EnumDescriptor, EnumValueDescriptor, FieldDescriptor, Kind, MessageDescriptor,
-    MethodDescriptor, OneofDescriptor, ServiceDescriptor, Value,
+    Cardinality, DynamicMessage, EnumDescriptor, EnumValueDescriptor, FieldDescriptor, Kind,
+    MessageDescriptor, MethodDescriptor, OneofDescriptor, ServiceDescriptor, Syntax, Value,
 };
+
+/// The field every options message holds an element's `features` in.
+const FEATURES_OPTION: &str = "features";
 
 /// `message notes.v1.Note`.
 pub fn message(message: &MessageDescriptor) -> String {
@@ -88,9 +100,18 @@ pub fn enum_value(value: &EnumValueDescriptor) -> String {
 /// `repeated string tags = 4;`, with the field's options in brackets:
 /// `json_name` first when `explicit_json_name`, then the others.
 pub fn field(field: &FieldDescriptor, explicit_json_name: bool) -> String {
+    let editions = field.parent_file().syntax() == Syntax::Editions;
     let label = if field.is_list() {
         "repeated "
     } else if field.field_descriptor_proto().proto3_optional() {
+        "optional "
+    } else if editions && field.cardinality() == Cardinality::Required {
+        "required "
+    } else if editions
+        && field.supports_presence()
+        && field.containing_oneof().is_none()
+        && !matches!(field.kind(), Kind::Message(_))
+    {
         "optional "
     } else {
         ""
@@ -110,7 +131,15 @@ pub fn field(field: &FieldDescriptor, explicit_json_name: bool) -> String {
     let json_name = explicit_json_name
         .then(|| format!("json_name = {}", quoted(field.json_name())))
         .into_iter();
-    let options = json_name.chain(options(&field.options())).collect();
+    let default = field
+        .field_descriptor_proto()
+        .default_value
+        .as_deref()
+        .map(|value| format!("default = {}", default_literal(field, value)));
+    let options = json_name
+        .chain(default)
+        .chain(options(&field.options()))
+        .collect();
     format!(
         "{label}{ty} {} = {}{};",
         field.name(),
@@ -161,6 +190,17 @@ fn type_name(kind: &Kind) -> String {
     }
 }
 
+/// A field's `default` as a proto file writes it: quoted for a string, and
+/// for `bytes`, whose descriptor holds it C-escaped already, quoted as it
+/// is; bare for any other kind.
+fn default_literal(field: &FieldDescriptor, value: &str) -> String {
+    match field.kind() {
+        Kind::String => quoted(value),
+        Kind::Bytes => format!("\"{value}\""),
+        _ => value.to_owned(),
+    }
+}
+
 /// ` [a, b]`, or nothing for no options.
 fn bracketed(options: Vec<String>) -> String {
     if options.is_empty() {
@@ -177,6 +217,9 @@ fn options(options: &DynamicMessage) -> Vec<String> {
     let descriptor = options.descriptor();
     let mut written = Vec::new();
     for (field, value) in options.fields() {
+        if field.name() == FEATURES_OPTION {
+            continue;
+        }
         for value in each(value) {
             let mut alone = DynamicMessage::new(descriptor.clone());
             alone.set_field(&field, single(&field, value));

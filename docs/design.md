@@ -76,19 +76,14 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack; binary codecs are on the roadmap, as a minor.
 - gRPC-web; unary gRPC-Web, over the binary codecs, is on the roadmap.
-- proto2 syntax, and editions. A proto2 file to generate is
+- proto2 syntax, and editions after 2023. A proto2 file to generate is
   `input::not_proto3`, under the CLI also when it does not parse, as a
   proto3 file with its `syntax` line changed does not, in place of the
-  parser's errors. A file that declares an edition
-  (`edition = "2023";`) is `input::editions`, from either binary, before
-  anything is generated, even where its features would reduce to proto3
-  semantics: the CLI refuses an editions file once protox has compiled
-  it (or failed to parse an edition it does not know), and the plugin
-  answers protoc before building its descriptor pool. The plugin does
-  not claim `FEATURE_SUPPORTS_EDITIONS`, so protoc says the same in its
-  own words.
-  Supporting the editions that reduce to proto3 is additive, an error
-  becoming output (roadmap).
+  parser's errors. An edition 2023 file is generated from (§3.10); a
+  file that declares any other edition (`edition = "2024";`) is
+  `input::editions`, which the CLI reports in place of protox's parse
+  error, and which protoc reports in its own words, since the plugin
+  claims `FEATURE_SUPPORTS_EDITIONS` for edition 2023 alone.
 - Server code generation.
 
 ## 2. The layering
@@ -1568,10 +1563,11 @@ registry =
   `descriptor` function and read in the module of its concept (§3.1):
   `Proto.Message` (`descriptor typeName fields`; `typeName`, `typeUrl`,
   `fields`, `oneofs`), `Proto.Field` (`descriptor name jsonName number
-  cardinality kind`, `inOneof`, `withBehavior`, `withDeprecated`;
-  `name`, `jsonName`, `number`, `cardinality`, `kind`, `oneof`,
-  `behavior`, `deprecated`), `Proto.Enum` (`descriptor typeName
-  values`; `typeName`, `values`), `Proto.EnumValue` (`descriptor name
+  cardinality kind`, `inOneof`, `withBehavior`, `withDeprecated`,
+  `withDefault`; `name`, `jsonName`, `number`, `cardinality`, `kind`,
+  `oneof`, `behavior`, `deprecated`, `defaultValue`), `Proto.Enum`
+  (`descriptor typeName values`, `withClosed`; `typeName`, `values`,
+  `isClosed`), `Proto.EnumValue` (`descriptor name
   number`, `withDeprecated`; `name`, `number`, `deprecated`) and
   `Proto.Method` (`descriptor service name idempotency input output
   bindings`; the same six). The unions a descriptor holds are public, to
@@ -1581,8 +1577,10 @@ registry =
   written only when set: `|> Proto.Field.inOneof "kind"` for a oneof
   member, `|> Proto.Field.withBehavior [ … ]` for its
   `google.api.field_behavior` values, `|> Proto.Field.withDeprecated`
-  for `[deprecated = true]`; an enum value likewise takes
-  `|> Proto.EnumValue.withDeprecated`. A message's oneofs are the ones
+  for `[deprecated = true]`, `|> Proto.Field.withDefault "5"` for an
+  edition 2023 field's `[default = 5]`, as the proto writes it; an enum
+  value likewise takes `|> Proto.EnumValue.withDeprecated`, and a
+  closed enum `|> Proto.Enum.withClosed`. A message's oneofs are the ones
   its fields name, in order of first appearance, derived by
   the builder rather than written a second time. Generated code refers
   to every runtime module qualified in full
@@ -1596,9 +1594,10 @@ registry =
   its deprecation. A singular message field is
   `CardinalitySingular` of `KindMessage "…"` though Elm holds it as a
   `Maybe`; a proto3 `optional` field is `CardinalityOptional`, its
-  synthetic oneof not listed. `Cardinality` has `CardinalityRequired`
-  for proto2's `required`, which the generator, reading proto3 alone,
-  never gives. A field of a message type refers to it by full name,
+  synthetic oneof not listed, and so is an edition 2023 scalar or
+  enum field with explicit presence. `CardinalityRequired` is an
+  edition 2023 field with `field_presence = LEGACY_REQUIRED` (proto2's
+  `required`). A field of a message type refers to it by full name,
   never by value, since a message can contain itself and Elm forbids
   cyclic values; a `Proto.Registry` resolves the names. A field of an
   enum type holds the enum's descriptor, `KindEnum
@@ -1614,11 +1613,10 @@ registry =
   §5.3), which reads presence from the last field's descriptor: a
   `CardinalitySingular` field outside any oneof and not of a message
   type has none, and is left out at its default; any other is left out
-  only when unset or empty. That is exactly proto3's presence, and it
-  is sound because the generator accepts proto3 alone. A later syntax
-  (proto2, editions) must map explicit presence to
-  `CardinalityOptional` (or `CardinalityRequired`), never to
-  `CardinalitySingular`, or the runtime would drop a field set to its
+  only when unset or empty. That is exactly proto3's presence, and
+  edition 2023's maps onto it: explicit presence is
+  `CardinalityOptional` (or `CardinalityRequired`), never
+  `CardinalitySingular`, so the runtime never drops a field set to its
   default; a generated module carries no rule of its own to fix.
 - `Proto.Field.Behavior` mirrors `google.api.FieldBehavior` but its
   unspecified zero: `BehaviorOptional`, `BehaviorRequired`,
@@ -1706,6 +1704,49 @@ registry =
   with its doc comment, to the generated source. The measurements are
   in decisions.md (No option to leave the descriptors out; Descriptors
   in a module per type).
+
+
+### 3.10 Edition 2023
+
+An `edition = "2023";` file is generated as a proto3 file is, its
+features read where proto3 reads its syntax. The features are
+resolved by the descriptor library, protoc's way: the edition's
+defaults, then each `features` option from the file down to the
+element.
+
+- **Presence.** A scalar or enum field outside a oneof with explicit
+  presence (the edition's default) is `CardinalityOptional`, a `Maybe`,
+  exactly as proto3's `optional` (§3.2); `IMPLICIT` is
+  `CardinalitySingular`, the value itself. `LEGACY_REQUIRED` is
+  `CardinalityRequired` in the descriptor and a `Maybe` in Elm, with an
+  optional field's codecs: the generator keeps one Elm form per
+  presence, and a missing required field decodes as `Nothing` rather
+  than failing the message. Message fields and oneof members have
+  presence whatever the feature says, as in proto3.
+- **Closed enums** (`enum_type = CLOSED`) get `|> Proto.Enum.withClosed`
+  on their descriptor and `Proto.Json.closedEnum` as their decoder,
+  which refuses a number the enum does not declare as it refuses an
+  unknown name (`enum_unknown=zero` reads both as the first value). A
+  closed enum's first value is its default whatever its number.
+- **Declared defaults** (`[default = 5]`, only on a field with
+  presence) ride in the field's descriptor, `|> Proto.Field.withDefault
+  "5"`, the text as the proto writes it; the field stays a `Maybe`,
+  `Nothing` while unset, and the default is the reader's to apply.
+- **Documentation.** A field's one-line declaration writes its presence
+  as the label proto3 or proto2 would (`optional`, `required`), and
+  leaves `features` options out everywhere, so a file that only
+  restates proto3 in features generates its proto3 twin byte for byte
+  (the `editions_2023_proto3_equivalent` case is `codec_both`'s twin).
+  A package's comment is read from the `edition` statement where it is
+  read from `syntax`.
+- **Refused**, each naming the feature, the element and where it is
+  inherited from: `message_encoding = DELIMITED` (proto2's groups),
+  `utf8_validation = NONE`, `json_format = LEGACY_BEST_EFFORT`
+  (`input::unsupported_feature`), extension ranges and extensions of
+  messages outside `google.protobuf` (`input::extensions`); under the
+  binary codecs, `repeated_field_encoding = EXPANDED` and closed enums.
+  A file-wide `DELIMITED` does not reach a map's entries, which are
+  length-prefixed.
 
 ## 4. Calls
 
@@ -3387,8 +3428,8 @@ Within a major version:
   `Retry`, a call's on `Call`, hooks on a future `Rpc.Client`), never
   into `Config`. The public unions are
   frozen within a major, since users match on them exhaustively:
-  `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
-  proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and
+  `Proto.Field.Cardinality` (`CardinalityRequired` for edition 2023's
+  `LEGACY_REQUIRED`), `Kind` (whose `KindEnum` holds the enum's descriptor and
   `KindMessage` the message's full name, §3.9), `Scalar`, `Behavior` (with
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,

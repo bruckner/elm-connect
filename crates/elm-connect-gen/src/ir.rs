@@ -21,8 +21,10 @@
 //! - Nested messages and enums are flattened into their package, their Elm
 //!   names prefixed by the enclosing message's (`Outer.Inner` becomes
 //!   `OuterInner`, or `ShellInner` when `Outer` is renamed `Shell`).
-//! - Proto3 `optional` fields are [`Cardinality::Optional`] fields, never
-//!   [`Oneof`]s; only real oneofs appear as oneofs.
+//! - Proto3 `optional` fields, and the scalar and enum fields of an
+//!   edition 2023 file with explicit presence, are
+//!   [`Cardinality::Optional`] fields, never [`Oneof`]s; only real oneofs
+//!   appear as oneofs.
 //! - Every cycle of message references is marked: each field that closes
 //!   a cycle of record fields is [`Field::cyclic`], its target has a
 //!   [`Message::wrapper`], and each oneof member that closes any other
@@ -442,6 +444,10 @@ pub struct Annotations {
     pub behavior: Vec<FieldBehavior>,
     /// The standard `deprecated` option.
     pub deprecated: bool,
+    /// The `default` option, as the proto writes it (`5`, `hello`,
+    /// `ENUM_VALUE`, C-escaped for `bytes`), which only a field with
+    /// explicit presence in an edition 2023 file can have here.
+    pub default: Option<String>,
 }
 
 /// One value of `google.api.FieldBehavior`, but its unspecified zero.
@@ -509,8 +515,15 @@ pub enum Cardinality {
     /// when absent; message-typed fields are still `Singular` here, and
     /// the emitter gives them `Maybe`.
     Singular,
-    /// A proto3 `optional` field, with explicit presence.
+    /// A field with explicit presence: proto3 `optional`, or a scalar or
+    /// enum field of an edition 2023 file whose `field_presence` is
+    /// `EXPLICIT`.
     Optional,
+    /// A field that must be set: `field_presence = LEGACY_REQUIRED` in an
+    /// edition 2023 file. It is held with presence, as an
+    /// [`Optional`](Cardinality::Optional) field is; only its descriptor
+    /// says it is required.
+    Required,
     /// A `repeated` field.
     Repeated,
     /// A `map<K, V>` field, with this key kind; `V` is [`Field::ty`].
@@ -791,6 +804,9 @@ pub struct Enum {
     deprecated: Vec<String>,
     /// What the proto says about each value name, aliases included.
     value_docs: Vec<(String, Doc)>,
+    /// Whether the enum is closed (`enum_type = CLOSED` in an edition 2023
+    /// file): a number it does not declare is not one of its values.
+    closed: bool,
 }
 
 impl Enum {
@@ -803,12 +819,37 @@ impl Enum {
         zero: EnumValue,
         rest: Vec<EnumValue>,
     ) -> Option<Self> {
+        (zero.number == 0)
+            .then(|| Enum::with_first(proto_full_name, proto_name, elm_name, zero, rest, false))
+    }
+
+    /// A closed enum from its first value and the values after it. Its
+    /// first value is its default, whatever its number, and plays the zero
+    /// value's part ([`Enum::zero`]).
+    pub fn new_closed(
+        proto_full_name: String,
+        proto_name: String,
+        elm_name: String,
+        first: EnumValue,
+        rest: Vec<EnumValue>,
+    ) -> Self {
+        Enum::with_first(proto_full_name, proto_name, elm_name, first, rest, true)
+    }
+
+    fn with_first(
+        proto_full_name: String,
+        proto_name: String,
+        elm_name: String,
+        zero: EnumValue,
+        rest: Vec<EnumValue>,
+        closed: bool,
+    ) -> Self {
         let declared = std::iter::once(&zero)
             .chain(&rest)
             .flat_map(|value| std::iter::once(&value.proto_name).chain(&value.aliases))
             .cloned()
             .collect();
-        (zero.number == 0).then_some(Enum {
+        Enum {
             proto_full_name,
             proto_name,
             elm_name,
@@ -818,7 +859,14 @@ impl Enum {
             declared,
             deprecated: Vec::new(),
             value_docs: Vec::new(),
-        })
+            closed,
+        }
+    }
+
+    /// Whether the enum is closed: a number it does not declare does not
+    /// decode as one of its values.
+    pub fn is_closed(&self) -> bool {
+        self.closed
     }
 
     /// The enum with what the proto says about each value name (each a
@@ -875,7 +923,7 @@ impl Enum {
         })
     }
 
-    /// The first value, whose number is 0.
+    /// The first value, whose number is 0 unless the enum is closed.
     pub fn zero(&self) -> &EnumValue {
         &self.zero
     }

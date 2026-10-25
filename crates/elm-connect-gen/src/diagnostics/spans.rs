@@ -25,6 +25,15 @@ pub mod tag {
     pub const FILE_SERVICE: i32 = 6;
     /// `FileDescriptorProto.syntax`
     pub const FILE_SYNTAX: i32 = 12;
+    /// `FileDescriptorProto.edition`, where protoc records an `edition`
+    /// statement (protox records it at [`FILE_SYNTAX`]).
+    pub const FILE_EDITION: i32 = 14;
+    /// `FileDescriptorProto.extension`
+    pub const FILE_EXTENSION: i32 = 7;
+    /// `DescriptorProto.extension`
+    pub const MESSAGE_EXTENSION: i32 = 6;
+    /// `DescriptorProto.extension_range`
+    pub const MESSAGE_EXTENSION_RANGE: i32 = 5;
     /// `DescriptorProto.name`
     pub const MESSAGE_NAME: i32 = 1;
     /// `DescriptorProto.field`

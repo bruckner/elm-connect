@@ -1,0 +1,219 @@
+// The proto3 JSON codecs the generator writes, one construct per message
+// and one message holding them all (docs/design.md §7,
+// conformance/README.md "Codec round trips"). The codec test samples each
+// message, writes it with prost-reflect, and pins the samples for the Elm
+// tests, which decode and re-encode them with the generated codecs.
+edition = "2023";
+
+package codec.v1;
+
+option features.field_presence = IMPLICIT;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "other.proto";
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  KIND_TEXT = 1;
+  KIND_IMAGE = 2;
+  KIND_NEGATIVE = -1;
+}
+
+// Every scalar kind, without presence.
+message Scalars {
+  double double = 1;
+  float float = 2;
+  int32 int32 = 3;
+  int64 int64 = 4;
+  uint32 uint32 = 5;
+  uint64 uint64 = 6;
+  sint32 sint32 = 7;
+  sint64 sint64 = 8;
+  fixed32 fixed32 = 9;
+  fixed64 fixed64 = 10;
+  sfixed32 sfixed32 = 11;
+  sfixed64 sfixed64 = 12;
+  bool bool = 13;
+  string string = 14;
+  bytes bytes = 15;
+  Kind kind = 16;
+}
+
+// proto3 `optional`: presence on scalars and enums.
+message Optionals {
+  double double = 1 [features.field_presence = EXPLICIT];
+  float float = 2 [features.field_presence = EXPLICIT];
+  int32 int32 = 3 [features.field_presence = EXPLICIT];
+  int64 int64 = 4 [features.field_presence = EXPLICIT];
+  uint64 uint64 = 5 [features.field_presence = EXPLICIT];
+  sint32 sint32 = 6 [features.field_presence = EXPLICIT];
+  bool bool = 7 [features.field_presence = EXPLICIT];
+  string string = 8 [features.field_presence = EXPLICIT];
+  bytes bytes = 9 [features.field_presence = EXPLICIT];
+  Kind kind = 10 [features.field_presence = EXPLICIT];
+}
+
+message Repeated {
+  repeated double doubles = 1;
+  repeated float floats = 2;
+  repeated int32 int32s = 3;
+  repeated int64 int64s = 4;
+  repeated uint64 uint64s = 5;
+  repeated fixed32 fixed32s = 6;
+  repeated bool bools = 7;
+  repeated string strings = 8;
+  repeated bytes bytes = 9;
+  repeated Kind kinds = 10;
+  repeated Leaf leaves = 11;
+}
+
+// A map of each key kind.
+message Maps {
+  map<string, string> string_string = 1;
+  map<int32, Kind> int32_kind = 2;
+  map<int64, double> int64_double = 3;
+  map<uint32, int64> uint32_int64 = 4;
+  map<uint64, string> uint64_string = 5;
+  map<sint32, bool> sint32_bool = 6;
+  map<sint64, float> sint64_float = 7;
+  map<fixed32, uint64> fixed32_uint64 = 8;
+  map<fixed64, Leaf> fixed64_leaf = 9;
+  map<sfixed32, bytes> sfixed32_bytes = 10;
+  map<sfixed64, int32> sfixed64_int32 = 11;
+  map<bool, string> bool_string = 12;
+  map<bool, Leaf> bool_leaf = 13;
+  map<string, Leaf> string_leaf = 14;
+}
+
+// A oneof of every kind of member.
+message Choice {
+  string before = 1;
+  oneof pick {
+    string text = 2;
+    int64 big = 3;
+    double ratio = 4;
+    bool flag = 5;
+    bytes data = 6;
+    Kind kind = 7;
+    Leaf leaf = 8;
+    google.protobuf.Empty nothing = 9;
+    google.protobuf.Value json = 10;
+    google.protobuf.Timestamp at = 11;
+    google.protobuf.Int32Value wrapped = 12;
+    string two_words = 13;
+  }
+  int32 after = 14;
+}
+
+// JSON names: the lowerCamelCase default, and `json_name` overrides.
+message Names {
+  string plain = 1;
+  string two_words = 2;
+  string with_override = 3 [json_name = "overridden"];
+  int64 big_override = 4 [json_name = "Big_Value"];
+  Leaf leaf_override = 5 [json_name = "leafy"];
+  oneof named {
+    string member_override = 6 [json_name = "memberJson"];
+    int32 member_plain = 7;
+  }
+}
+
+// A nested message and enum.
+message Outer {
+  enum Mode {
+    MODE_UNSPECIFIED = 0;
+    MODE_ON = 1;
+    MODE_OFF = 2;
+  }
+  message Inner {
+    Mode mode = 1;
+    string note = 2;
+  }
+  Mode mode = 1;
+  Inner inner = 2;
+  repeated Inner inners = 3;
+  repeated Mode modes = 4;
+  map<string, Mode> named_modes = 5;
+}
+
+// A message that reaches itself: singular, repeated, through a map and
+// through a oneof.
+message Tree {
+  string label = 1;
+  Tree left = 2;
+  repeated Tree children = 3;
+  map<string, Tree> named = 4;
+  oneof link {
+    Tree next = 5;
+    string end = 6;
+  }
+}
+
+// The well-known types with a JSON form of their own.
+message WellKnown {
+  google.protobuf.Any any = 1;
+  google.protobuf.Struct struct = 2;
+  google.protobuf.ListValue list = 3;
+  google.protobuf.Value value = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  google.protobuf.Duration duration = 6;
+  google.protobuf.FieldMask mask = 7;
+  google.protobuf.Empty empty = 8;
+  repeated google.protobuf.Any anys = 9;
+  repeated google.protobuf.Value values = 10;
+  map<string, google.protobuf.Value> value_map = 11;
+  repeated google.protobuf.Timestamp timestamps = 12;
+  repeated google.protobuf.Duration durations = 13;
+  repeated google.protobuf.Empty empties = 14;
+  map<int32, google.protobuf.Struct> structs = 15;
+}
+
+// Every wrapper, singular, and two repeated or as a map value.
+message Wrappers {
+  google.protobuf.DoubleValue double = 1;
+  google.protobuf.FloatValue float = 2;
+  google.protobuf.Int64Value int64 = 3;
+  google.protobuf.UInt64Value uint64 = 4;
+  google.protobuf.Int32Value int32 = 5;
+  google.protobuf.UInt32Value uint32 = 6;
+  google.protobuf.BoolValue bool = 7;
+  google.protobuf.StringValue string = 8;
+  google.protobuf.BytesValue bytes = 9;
+  repeated google.protobuf.Int64Value int64s = 10;
+  map<string, google.protobuf.BytesValue> bytes_map = 11;
+}
+
+// A reference to another package's message and enum.
+message Across {
+  codec.other.v1.Remote remote = 1;
+  codec.other.v1.Shade shade = 2;
+  repeated codec.other.v1.Remote remotes = 3;
+  map<string, codec.other.v1.Shade> shades = 4;
+}
+
+message Leaf {
+  string name = 1;
+  int32 count = 2;
+}
+
+// Every message above, nested.
+message Everything {
+  Scalars scalars = 1;
+  Optionals optionals = 2;
+  Repeated repeated = 3;
+  Maps maps = 4;
+  Choice choice = 5;
+  Names names = 6;
+  Outer outer = 7;
+  Tree tree = 8;
+  WellKnown well_known = 9;
+  Wrappers wrappers = 10;
+  Across across = 11;
+  repeated Everything more = 12;
+}

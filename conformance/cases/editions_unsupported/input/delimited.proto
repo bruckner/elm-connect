@@ -1,0 +1,15 @@
+// Delimited encoding inherited from the file, where a field may set it
+// back; a map's entries are length-prefixed whatever the file says.
+edition = "2023";
+
+package unsupported.v1;
+
+import "unsupported.proto";
+
+option features.message_encoding = DELIMITED;
+
+message Envelope {
+  Inner body = 1;
+  Inner other = 2 [features.message_encoding = LENGTH_PREFIXED];
+  map<string, Inner> by_name = 3;
+}

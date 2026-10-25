@@ -2,8 +2,8 @@ module Proto.Enum exposing
     ( Enum, enum
     , encode, decoder, default, toDescriptor
     , toName, fromName, toNumber, fromNumber
-    , Descriptor, descriptor
-    , typeName, values
+    , Descriptor, descriptor, withClosed
+    , typeName, values, isClosed
     )
 
 {-| An enum type: its typed value, which holds its proto3 JSON codecs, its
@@ -28,12 +28,12 @@ the descriptor in a module of the enum's own
 
 # Descriptors
 
-@docs Descriptor, descriptor
+@docs Descriptor, descriptor, withClosed
 
 
 # Reading a descriptor
 
-@docs typeName, values
+@docs typeName, values, isClosed
 
 -}
 
@@ -192,6 +192,7 @@ type Descriptor
     = Descriptor
         { typeName : String
         , values : List EnumValue.Descriptor
+        , closed : Bool
         }
 
 
@@ -199,11 +200,22 @@ type Descriptor
 in declaration order
 ([`Proto.EnumValue.descriptor`](Proto-EnumValue#descriptor)). An alias
 (`allow_alias`) is a value of its own, with the number of the value it
-aliases.
+aliases. It is open until [`withClosed`](#withClosed) says otherwise.
 -}
 descriptor : String -> List EnumValue.Descriptor -> Descriptor
 descriptor fullName enumValues =
-    Descriptor { typeName = fullName, values = enumValues }
+    Descriptor { typeName = fullName, values = enumValues, closed = False }
+
+
+{-| The enum as closed: `enum_type = CLOSED` in an edition 2023 file. A
+number a closed enum does not declare is not one of its values, so its
+generated decoder fails on one, as on a name it does not know, where an
+open enum's reads the number as its zero value. A closed enum's first
+value is its default, whatever its number.
+-}
+withClosed : Descriptor -> Descriptor
+withClosed (Descriptor e) =
+    Descriptor { e | closed = True }
 
 
 {-| The enum's full name, such as `notes.v1.Visibility`.
@@ -219,3 +231,11 @@ its own, with the number of the value it aliases.
 values : Descriptor -> List EnumValue.Descriptor
 values (Descriptor e) =
     e.values
+
+
+{-| Whether the enum is closed ([`withClosed`](#withClosed)); `False` for
+every proto3 enum.
+-}
+isClosed : Descriptor -> Bool
+isClosed (Descriptor e) =
+    e.closed

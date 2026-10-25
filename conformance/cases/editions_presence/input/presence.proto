@@ -1,0 +1,34 @@
+// Presence in an edition 2023 file. It is explicit by default, so a scalar
+// or enum field is a `Maybe`, as a proto3 `optional` one is; a field that
+// sets `field_presence = IMPLICIT` reads absence as its zero value, as a
+// proto3 field does. A message field and a oneof member have presence
+// whatever the feature says, and a list or a map has none.
+edition = "2023";
+
+package presence.v1;
+
+enum Shade {
+  SHADE_UNSPECIFIED = 0;
+  SHADE_LIGHT = 1;
+}
+
+message Author {
+  string name = 1;
+}
+
+message Note {
+  // Explicit, the edition's default.
+  string title = 1;
+  int32 stars = 2;
+  Shade shade = 3;
+  bytes data = 4;
+  // Implicit, set on the field.
+  string body = 5 [features.field_presence = IMPLICIT];
+  Author author = 6;
+  repeated string tags = 7;
+  map<string, int32> counts = 8;
+  oneof kind {
+    string text = 9;
+    int64 size = 10;
+  }
+}

@@ -1,0 +1,26 @@
+// Declared defaults (`[default = ...]`), which only a field with explicit
+// presence may have. The field is still a `Maybe`, `Nothing` while unset;
+// its descriptor carries the default as the proto writes it
+// (`Proto.Field.withDefault`), and its declaration in the docs shows it.
+edition = "2023";
+
+package defaults.v1;
+
+enum Size {
+  SIZE_UNSPECIFIED = 0;
+  SIZE_SMALL = 1;
+  SIZE_LARGE = 2;
+}
+
+message Settings {
+  int32 retries = 1 [default = 3];
+  string greeting = 2 [default = "hello \"you\""];
+  bytes magic = 3 [default = "\001\x02"];
+  bool enabled = 4 [default = true];
+  double ratio = 5 [default = inf];
+  float scale = 6 [default = -1.5];
+  Size size = 7 [default = SIZE_LARGE];
+  int64 limit = 8 [default = 9007199254740993];
+  // Without a default.
+  uint32 plain = 9;
+}

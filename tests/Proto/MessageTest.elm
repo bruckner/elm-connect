@@ -33,7 +33,15 @@ event =
 suite : Test
 suite =
     describe "Proto.Message"
-        [ test "a message's oneofs are the ones its fields name, in order of first appearance" <|
+        [ test "a field has no declared default until withDefault gives one" <|
+            \_ ->
+                let
+                    stars =
+                        Field.descriptor "stars" "stars" 2 CardinalityOptional (KindScalar ScalarInt32)
+                in
+                ( Field.defaultValue stars, Field.defaultValue (Field.withDefault "5" stars), Field.cardinality (Field.withDefault "5" stars) )
+                    |> Expect.equal ( Nothing, Just "5", CardinalityOptional )
+        , test "a message's oneofs are the ones its fields name, in order of first appearance" <|
             \_ ->
                 ( Message.typeName event, Message.oneofs event, List.map Field.oneof (Message.fields event) )
                     |> Expect.equal ( "t.v1.Event", [ "body", "source" ], [ Nothing, Just "body", Just "source", Just "body", Nothing ] )

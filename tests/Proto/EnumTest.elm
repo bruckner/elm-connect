@@ -95,4 +95,12 @@ suite =
                         ( "t.v1.Level"
                         , [ ( "LEVEL_UNSPECIFIED", 0, False ), ( "LEVEL_HIGH", 1, False ), ( "LEVEL_URGENT", 1, True ) ]
                         )
+        , test "an enum is open until withClosed says otherwise" <|
+            \_ ->
+                let
+                    open =
+                        Enum.descriptor "t.v1.Grade" [ EnumValue.descriptor "GRADE_A" 1 ]
+                in
+                ( Enum.isClosed open, Enum.isClosed (Enum.withClosed open), Enum.values (Enum.withClosed open) == Enum.values open )
+                    |> Expect.equal ( False, True, True )
         ]

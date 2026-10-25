@@ -38,6 +38,7 @@ mod common;
 use common::{
     Compiled, DIAGNOSTICS, OPTIONS, WARNINGS, case_name, case_options, cases, compile_case,
     files_under, is_diagnostics_case, placeholder_header, protos, repo_root,
+    unsupported_edition_case,
 };
 use similar::TextDiff;
 
@@ -56,7 +57,24 @@ struct Run {
 /// requested; those of a requested package are generated with it. The
 /// case's `options.txt`, if any, sets the generator's
 /// options.
+///
+/// A case whose input declares an edition protox cannot parse gives the
+/// `input::editions` problem the CLI reports in place of the parser's
+/// errors.
 fn run_generator(case: &Path) -> Result<Run, String> {
+    if let Some(problem) = unsupported_edition_case(case) {
+        let mut diagnostics = Diagnostics::from(problem);
+        let input = case.join("input");
+        let sources: HashMap<String, String> = protos(&input)
+            .into_iter()
+            .map(|name| {
+                let text = fs::read_to_string(input.join(&name)).expect("read a proto");
+                (name, text)
+            })
+            .collect();
+        diagnostics.attach_sources(&sources, Columns::Bytes);
+        return Err(render_narrow(&diagnostics));
+    }
     let Compiled {
         compiler,
         names,
@@ -439,4 +457,57 @@ fn the_header_names_a_placeholder_version() {
     );
     let elsewhere = format!("module A\n-- {HEADER_PREFIX}{VERSION} from a.proto.\n");
     assert_eq!(placeholder_header(&elsewhere), elsewhere);
+}
+
+/// An edition 2023 file that only restates proto3 in features generates
+/// what its proto3 twin does: `editions_2023_proto3_equivalent` holds the
+/// twins of `codec_both`'s inputs, with its options, and its expected
+/// modules are `codec_both`'s, byte for byte. The golden test holds each
+/// case to the generator, so the two together hold the generator to this.
+#[test]
+fn the_proto3_equivalent_edition_generates_its_twin() {
+    let cases = repo_root().join("conformance/cases");
+    let twin = cases.join("editions_2023_proto3_equivalent");
+    let proto3 = cases.join("codec_both");
+    assert_eq!(
+        read(&twin.join(OPTIONS)),
+        read(&proto3.join(OPTIONS)),
+        "the twin takes the proto3 case's options"
+    );
+    for name in protos(&twin.join("input")) {
+        let source = read(&twin.join("input").join(&name));
+        assert!(
+            source.contains("\nedition = \"2023\";\n") && !source.contains("syntax ="),
+            "{name} is an edition 2023 file"
+        );
+    }
+    let modules = |case: &Path| -> BTreeMap<String, String> {
+        let expected = case.join("expected");
+        files_under(&expected)
+            .into_iter()
+            .map(|path| {
+                let text = read(&expected.join(&path));
+                (path, text)
+            })
+            .collect()
+    };
+    let (twin_modules, proto3_modules) = (modules(&twin), modules(&proto3));
+    assert!(!proto3_modules.is_empty());
+    assert_eq!(
+        twin_modules.keys().collect::<Vec<_>>(),
+        proto3_modules.keys().collect::<Vec<_>>(),
+        "the same modules"
+    );
+    for (path, text) in &proto3_modules {
+        if twin_modules[path] != *text {
+            panic!(
+                "{path} differs from its proto3 twin:\n{}",
+                unified_diff(path, text, &twin_modules[path])
+            );
+        }
+    }
+}
+
+fn read(path: &Path) -> String {
+    fs::read_to_string(path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }

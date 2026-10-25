@@ -423,7 +423,12 @@ pub(super) fn field_shape<'m>(
         }
         ty => value_shape(ty, field_holding(field.jstype, holding)),
     };
-    match (field.cardinality, value) {
+    // A required field is held as an `optional` one is: with presence.
+    let cardinality = match field.cardinality {
+        Cardinality::Required => Cardinality::Optional,
+        cardinality => cardinality,
+    };
+    match (cardinality, value) {
         // `optional` adds no presence to a message type, and `Empty` has
         // none to add.
         (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Empty)) => {
@@ -435,7 +440,9 @@ pub(super) fn field_shape<'m>(
             FieldShape::Json
         }
         (Cardinality::Singular, ValueShape::Zeroed(zeroed)) => FieldShape::Plain(zeroed),
-        (Cardinality::Singular | Cardinality::Optional, value) => FieldShape::Maybe(value),
+        (Cardinality::Singular | Cardinality::Optional | Cardinality::Required, value) => {
+            FieldShape::Maybe(value)
+        }
         (Cardinality::Repeated, value) => FieldShape::List(value),
         (Cardinality::Map(key), value) => match KeyShape::of(key) {
             Some(key) => FieldShape::Dict(key, value),

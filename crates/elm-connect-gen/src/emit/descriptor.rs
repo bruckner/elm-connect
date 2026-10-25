@@ -165,10 +165,13 @@ impl Emitter {
             })
             .collect();
         let builder = self.reference((PROTO_ENUM, "descriptor"));
-        let body = apply(
+        let mut body = apply(
             builder,
             [string(enumeration.proto_full_name.clone()), list(values)],
         );
+        if enumeration.is_closed() {
+            body = pipe(body, self.reference((PROTO_ENUM, "withClosed")));
+        }
         vec![Decl::Value {
             doc: Some(docs::enum_descriptor(
                 enumeration,
@@ -314,6 +317,13 @@ impl Emitter {
         if annotations.deprecated {
             built = pipe(built, self.reference((PROTO_FIELD, "withDeprecated")));
         }
+        if let Some(default) = &annotations.default {
+            let modifier = apply(
+                self.reference((PROTO_FIELD, "withDefault")),
+                [string(default.clone())],
+            );
+            built = pipe(built, modifier);
+        }
         built
     }
 
@@ -323,6 +333,7 @@ impl Emitter {
         match cardinality {
             Cardinality::Singular => self.reference((PROTO_FIELD, "CardinalitySingular")),
             Cardinality::Optional => self.reference((PROTO_FIELD, "CardinalityOptional")),
+            Cardinality::Required => self.reference((PROTO_FIELD, "CardinalityRequired")),
             Cardinality::Repeated => self.reference((PROTO_FIELD, "CardinalityRepeated")),
             Cardinality::Map(key) => {
                 let map = self.reference((PROTO_FIELD, "CardinalityMap"));

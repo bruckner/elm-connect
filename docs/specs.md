@@ -22,9 +22,12 @@ beside each link says what the runtime or the generator does about it.
 ## Protocol Buffers
 
 - [Language guide, proto3](https://protobuf.dev/programming-guides/proto3/):
-  what the generator reads. A proto2 file and a file that declares an
-  [edition](https://protobuf.dev/editions/overview/) are refused
-  ([diagnostics.md](diagnostics.md), [roadmap.md](roadmap.md)).
+  what the generator reads, with [edition 2023](https://protobuf.dev/editions/overview/)
+  where its features have an Elm form. A proto2 file and a later edition
+  are refused ([diagnostics.md](diagnostics.md), [roadmap.md](roadmap.md)).
+- [Feature settings for editions](https://protobuf.dev/editions/features/):
+  the features an edition 2023 file sets, and what each becomes
+  ([generator.md](generator.md)).
 - [ProtoJSON format](https://protobuf.dev/programming-guides/json/):
   the JSON the generated codecs write and read, on both transports
   ([generator.md](generator.md)).

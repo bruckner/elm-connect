@@ -1,0 +1,46 @@
+// Features with no Elm form, under codec=both: delimited message fields,
+// unchecked UTF-8, expanded repeated fields and closed enums under the
+// binary codecs, the legacy JSON format, and extensions. A custom option,
+// an extension of a google.protobuf options message, is fine.
+edition = "2023";
+
+package unsupported.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option features.utf8_validation = NONE;
+
+extend google.protobuf.FieldOptions {
+  string note = 50000;
+}
+
+message Inner {
+  int32 n = 1;
+}
+
+message Outer {
+  Inner grouped = 1 [features.message_encoding = DELIMITED];
+  string name = 2 [(note) = "unchecked, from the file"];
+  repeated int32 counts = 3 [features.repeated_field_encoding = EXPANDED];
+  repeated string labels = 4 [features.utf8_validation = VERIFY];
+  extensions 100 to 199;
+}
+
+extend Outer {
+  int32 extra = 100;
+}
+
+message Legacy {
+  option features.json_format = LEGACY_BEST_EFFORT;
+
+  message Nested {
+    int32 n = 1;
+  }
+
+  int32 n = 1;
+}
+
+enum Closed {
+  option features.enum_type = CLOSED;
+  CLOSED_A = 1;
+}
