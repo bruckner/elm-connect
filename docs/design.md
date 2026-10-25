@@ -1017,7 +1017,8 @@ In detail:
   truncated (toward the past, never rounded up; §3.8) and a timestamp prints with no fraction or three
   digits; protobuf's six and nine never arise. A leap second
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
-  `23:59:59` with its fraction.
+  `23:59:59` with its fraction. The `T` and the `Z` are uppercase only:
+  RFC 3339 allows `t` and `z`, proto3 JSON does not.
 - `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
   nanoseconds like protobuf, rather than as a `Float` of seconds. The
   `Float` views (`fromSeconds`, `toSeconds`) are exact to the nanosecond

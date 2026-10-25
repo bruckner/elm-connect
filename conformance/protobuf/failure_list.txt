@@ -31,10 +31,6 @@ Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
 
-# Fix candidate, lenient parsing: a Timestamp with a lowercase `t` or `z`.
-Required.Proto3.JsonInput.TimestampJsonInputLowercaseT
-Required.Proto3.JsonInput.TimestampJsonInputLowercaseZ
-
 # Fix candidate, lenient parsing: an Any whose `@type` is empty or not a
 # type URL.
 Required.Proto3.JsonInput.AnyWktRepresentationWithBadType

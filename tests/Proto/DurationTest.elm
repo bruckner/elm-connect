@@ -59,6 +59,8 @@ parsing =
             \_ -> rejects "315576000001s"
         , test "no unit" <|
             \_ -> rejects "1.5"
+        , test "an uppercase S" <|
+            \_ -> rejects "1.5S"
         , test "another unit" <|
             \_ -> rejects "1.5m"
         , test "ten fractional digits" <|
