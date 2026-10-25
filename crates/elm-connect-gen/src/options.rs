@@ -380,17 +380,21 @@ pub enum Streaming {
     /// Left out of its service's module, with a `services::streaming`
     /// warning; the rest is generated.
     Skip,
+    /// A server-streaming method is an `Rpc.Stream.StreamCall`; a client
+    /// or bidirectional one is still the `Error` diagnostic.
+    Server,
 }
 
 impl Streaming {
     /// The values the option takes, as written, the default first.
-    pub const VALUES: &'static [&'static str] = &["error", "skip"];
+    pub const VALUES: &'static [&'static str] = &["error", "skip", "server"];
 
     /// The value as written.
     pub fn as_str(self) -> &'static str {
         match self {
             Streaming::Error => "error",
             Streaming::Skip => "skip",
+            Streaming::Server => "server",
         }
     }
 }
@@ -402,7 +406,10 @@ impl std::str::FromStr for Streaming {
         match value {
             "error" => Ok(Streaming::Error),
             "skip" => Ok(Streaming::Skip),
-            _ => Err(format!("`streaming` is `error` or `skip`, not `{value}`")),
+            "server" => Ok(Streaming::Server),
+            _ => Err(format!(
+                "`streaming` is `error`, `skip` or `server`, not `{value}`"
+            )),
         }
     }
 }
@@ -508,7 +515,7 @@ mod tests {
         assert_eq!(streaming(""), Ok(Streaming::Error));
         assert_eq!(streaming("streaming=skip"), Ok(Streaming::Skip));
         assert_eq!(streaming("streaming=error,int64=int"), Ok(Streaming::Error));
-        assert!(error("streaming=drop").contains("`error` or `skip`"));
+        assert!(error("streaming=drop").contains("`error`, `skip` or `server`"));
         assert!(error("streaming=skip,streaming=skip").contains("more than once"));
         let enum_unknown = |parameter| parse(parameter).map(|o| o.enum_unknown);
         assert_eq!(enum_unknown(""), Ok(EnumUnknown::Fail));

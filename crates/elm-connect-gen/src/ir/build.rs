@@ -1254,10 +1254,14 @@ impl Builder {
             (false, true) => Some(("server", tag::METHOD_SERVER_STREAMING)),
             (true, true) => Some(("bidirectional", tag::METHOD_CLIENT_STREAMING)),
         };
-        if let Some((which, stream_tag)) = streaming {
+        let server_streaming = streaming.is_some_and(|(which, _)| which == "server")
+            && self.streaming == Streaming::Server;
+        if let Some((which, stream_tag)) = streaming.filter(|_| !server_streaming) {
             let site = self.site(file, &[path, &[stream_tag]].concat(), "streams here".into());
             self.diagnostics.push(match self.streaming {
-                Streaming::Error => Problem::streaming(full_name, which, site, self.spelling),
+                Streaming::Error | Streaming::Server => {
+                    Problem::streaming(full_name, which, site, self.spelling)
+                }
                 Streaming::Skip => {
                     Problem::streaming_skipped(full_name, which, site, self.spelling)
                 }
@@ -1323,6 +1327,7 @@ impl Builder {
             http,
             routes,
             doc,
+            server_streaming,
         };
 
         let service = method.parent_service();

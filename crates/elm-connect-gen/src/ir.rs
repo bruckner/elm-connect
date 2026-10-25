@@ -121,12 +121,13 @@ pub struct Service {
     /// name.
     pub module: ModuleName,
     /// The methods, in declaration order. Streaming methods are
-    /// diagnostics, or under `streaming=skip` left out, so every method
-    /// here is unary.
+    /// diagnostics, or under `streaming=skip` left out; under
+    /// `streaming=server` a server-streaming method is here, marked.
     pub methods: Vec<Method>,
 }
 
-/// A unary RPC method: one Elm value in its service's module (design §4).
+/// A unary or server-streaming RPC method: one Elm value in its service's
+/// module (design §4).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
     /// The proto method name, such as `GetNote`; the last segment of its
@@ -149,6 +150,8 @@ pub struct Method {
     pub routes: Vec<crate::route::Route>,
     /// What the proto says about the method.
     pub doc: Doc,
+    /// Whether the server streams its response (`streaming=server`).
+    pub server_streaming: bool,
 }
 
 impl Method {

@@ -7,7 +7,7 @@
 
 use super::field::{ValueShape, Zeroed, value_shape};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
+use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, RPC_STREAM, docs};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
     apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
@@ -73,16 +73,23 @@ impl Emitter {
         let response = self.method_type(&method.output);
         let encode_request = self.request_encoder(&method.input);
         let response_decoder = self.response_decoder(&method.output);
+        // A server-streaming method is a `Proto.Method.ServerStreaming`,
+        // which only `Rpc.Stream.call` takes, so it is never sent unary.
+        let (constructor, module, caller, call_type) = if method.server_streaming {
+            ("serverStreaming", RPC_STREAM, "call", "StreamCall")
+        } else {
+            ("method", RPC, "call", "Call")
+        };
         let built = stacked_apply(
-            self.reference((PROTO_METHOD, "method")),
+            self.reference((PROTO_METHOD, constructor)),
             [
                 encode_request,
                 response_decoder,
                 var(method.descriptor_name()),
             ],
         );
-        let body = apply(self.reference((RPC, "call")), [built]);
-        let call = self.library_type(RPC, "Call", [request.clone(), response]);
+        let body = apply(self.reference((module, caller)), [built]);
+        let call = self.library_type(module, call_type, [request.clone(), response]);
         Decl::Value {
             doc: Some(docs::method(service, method)),
             name: method.elm_name.clone(),

@@ -1,0 +1,15 @@
+// Under `streaming=server`, a server-streaming method is an
+// `Rpc.Stream.StreamCall`, beside the unary calls; a client or bidirectional
+// streaming method is still an error, so this service has none.
+syntax = "proto3";
+
+package chat.v1;
+
+message Line {
+  string text = 1;
+}
+
+service Chat {
+  rpc Send(Line) returns (Line);
+  rpc Listen(Line) returns (stream Line);
+}

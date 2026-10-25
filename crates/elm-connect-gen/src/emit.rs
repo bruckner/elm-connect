@@ -189,6 +189,8 @@ const PROTO_BYTES: &str = "Proto.Bytes";
 const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
+/// The runtime package's server-streaming calls, home of `StreamCall`.
+const RPC_STREAM: &str = "Rpc.Stream";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
 const PROTO_HTTP: &str = "Proto.Http";
 /// The runtime package's messages: typed values and descriptors.
@@ -1095,6 +1097,7 @@ mod tests {
             http: None,
             routes: Vec::new(),
             doc: crate::ir::Doc::default(),
+            server_streaming: false,
         };
         let service = Service {
             proto_full_name: "t.v1.S".into(),
