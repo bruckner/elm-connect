@@ -9,6 +9,7 @@ module Closed.V1.Reading exposing (..)
 
 import Closed.V1.Level
 import Closed.V1.Mood
+import Closed.V1.Tier
 import Proto.Field
 import Proto.Message
 import Proto.Version
@@ -52,11 +53,11 @@ history =
     Proto.Field.descriptor "history" "history" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum Closed.V1.Level.descriptor)
 
 
-{-| `map<string, closed.v1.Level> by_room = 3;`
+{-| `map<string, closed.v1.Tier> by_room = 3;`
 -}
 byRoom : Proto.Field.Descriptor
 byRoom =
-    Proto.Field.descriptor "by_room" "byRoom" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum Closed.V1.Level.descriptor)
+    Proto.Field.descriptor "by_room" "byRoom" 3 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum Closed.V1.Tier.descriptor)
 
 
 {-| `optional closed.v1.Mood mood = 4;`

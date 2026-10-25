@@ -18,3 +18,4 @@ serde_json = "1"
 [patch.crates-io]
 prost-reflect = { path = "../../../vendor/prost-reflect" }
 protox-parse = { path = "../../../vendor/protox-parse" }
+prost-types = { path = "../../../vendor/prost-types" }

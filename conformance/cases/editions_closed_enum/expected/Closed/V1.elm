@@ -15,6 +15,7 @@ type of an implicit-presence field, so a singular field of one is a
 import Closed.V1.Level
 import Closed.V1.Mood
 import Closed.V1.Reading
+import Closed.V1.Tier
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -49,6 +50,20 @@ type Level
     | LevelTop
 
 
+{-| A closed enum a map's values may take, which protoc requires to start
+at 0.
+
+[`enum closed.v1.Tier`](Closed-V1-Tier#descriptor)
+
+  - `TierNone` (`TIER_NONE`)
+  - `TierGold` (`TIER_GOLD`)
+
+-}
+type Tier
+    = TierNone
+    | TierGold
+
+
 {-| Open, the edition's default: an unknown number reads as the zero value.
 
 [`enum closed.v1.Mood`](Closed-V1-Mood#descriptor)
@@ -74,7 +89,7 @@ type Mood
 type alias Reading =
     { level : Maybe Level
     , history : List Level
-    , byRoom : Dict String Level
+    , byRoom : Dict String Tier
     , mood : Maybe Mood
     , pick : ReadingPick
     }
@@ -120,6 +135,13 @@ enumLevel =
     Proto.Enum.enum encodeLevel decodeLevel LevelLow Closed.V1.Level.descriptor
 
 
+{-| The typed value of [`Tier`](#Tier): its codecs, zero value and descriptor together.
+-}
+enumTier : Proto.Enum.Enum Tier
+enumTier =
+    Proto.Enum.enum encodeTier decodeTier TierNone Closed.V1.Tier.descriptor
+
+
 {-| The typed value of [`Mood`](#Mood): its codecs, zero value and descriptor together.
 -}
 enumMood : Proto.Enum.Enum Mood
@@ -147,6 +169,7 @@ registry =
             [ Closed.V1.Reading.descriptor
             ]
             [ Closed.V1.Level.descriptor
+            , Closed.V1.Tier.descriptor
             , Closed.V1.Mood.descriptor
             ]
         )
@@ -172,6 +195,18 @@ encodeLevel value =
             Json.Encode.string "LEVEL_TOP"
 
 
+{-| Encodes a [`Tier`](#Tier) as proto3 JSON.
+-}
+encodeTier : Tier -> Json.Encode.Value
+encodeTier value =
+    case value of
+        TierNone ->
+            Json.Encode.string "TIER_NONE"
+
+        TierGold ->
+            Json.Encode.string "TIER_GOLD"
+
+
 {-| Encodes a [`Mood`](#Mood) as proto3 JSON.
 -}
 encodeMood : Mood -> Json.Encode.Value
@@ -191,7 +226,7 @@ encodeReading value =
     Proto.Json.objectOfFields
         ([ ( "level", Maybe.map encodeLevel value.level )
          , ( "history", Proto.Json.repeatedField encodeLevel value.history )
-         , ( "byRoom", Proto.Json.dictField identity encodeLevel value.byRoom )
+         , ( "byRoom", Proto.Json.dictField identity encodeTier value.byRoom )
          , ( "mood", Maybe.map encodeMood value.mood )
          ]
             ++ encodeReadingPick value.pick
@@ -231,6 +266,17 @@ decodeLevel =
         ]
 
 
+{-| Decodes a [`Tier`](#Tier) from proto3 JSON.
+-}
+decodeTier : Json.Decode.Decoder Tier
+decodeTier =
+    Proto.Json.closedEnum "Tier"
+        TierNone
+        [ ( "TIER_NONE", 0, TierNone )
+        , ( "TIER_GOLD", 1, TierGold )
+        ]
+
+
 {-| Decodes a [`Mood`](#Mood) from proto3 JSON.
 -}
 decodeMood : Json.Decode.Decoder Mood
@@ -249,7 +295,7 @@ decodeReading =
     Json.Decode.succeed Reading
         |> Proto.Json.field "level" Nothing (Json.Decode.map Just decodeLevel)
         |> Proto.Json.field "history" [] (Json.Decode.list decodeLevel)
-        |> Proto.Json.fieldEither "byRoom" "by_room" Dict.empty (Json.Decode.dict decodeLevel)
+        |> Proto.Json.fieldEither "byRoom" "by_room" Dict.empty (Json.Decode.dict decodeTier)
         |> Proto.Json.field "mood" Nothing (Json.Decode.map Just decodeMood)
         |> Proto.Json.oneof decodeReadingPick
 

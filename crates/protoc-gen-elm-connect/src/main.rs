@@ -22,9 +22,9 @@ use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{Options, Spelling, VERSION, generate, googleapis};
 use prost::Message;
 use prost_reflect::{DescriptorError, DescriptorPool};
-use prost_types::FileDescriptorProto;
 use prost_types::compiler::code_generator_response::{Feature, File};
 use prost_types::compiler::{CodeGeneratorRequest, CodeGeneratorResponse};
+use prost_types::{Edition, FileDescriptorProto};
 
 /// The request's `proto_file`s as protoc encoded them. Decoding them into
 /// `prost_types` would drop extension options such as `google.api.http`,
@@ -38,37 +38,22 @@ struct RawProtoFiles {
     proto_file: Vec<Vec<u8>>,
 }
 
-/// The fields of a `FileDescriptorProto` that say whether it is an
-/// editions file, read before the pool is built: a descriptor pool cannot
-/// take one (design §1.3).
-#[derive(Clone, PartialEq, prost::Message)]
-struct FileHeader {
-    #[prost(string, optional, tag = "1")]
-    name: Option<String>,
-    #[prost(string, optional, tag = "12")]
-    syntax: Option<String>,
-    /// `FileDescriptorProto.edition`, a `google.protobuf.Edition`.
-    #[prost(int32, optional, tag = "14")]
-    edition: Option<i32>,
-}
+/// The one edition the plugin generates from, and so both the least and
+/// the greatest it claims.
+const EDITION: Edition = Edition::Edition2023;
 
-/// An `input::editions` problem for every file of `raw` that declares an
-/// edition.
-fn editions(raw: &RawProtoFiles) -> Diagnostics {
+/// An `input::editions` problem for every file of `request` that declares
+/// an edition other than 2023, which protoc sends only to a plugin that
+/// claims it, but another front end may.
+fn editions(request: &CodeGeneratorRequest) -> Diagnostics {
     let mut diagnostics = Diagnostics::new();
-    for file in &raw.proto_file {
-        let Ok(header) = FileHeader::decode(file.as_slice()) else {
-            continue;
-        };
-        if header.syntax.as_deref() != Some("editions") {
+    for file in &request.proto_file {
+        if file.syntax() != "editions" || file.edition() == EDITION {
             continue;
         }
-        let name = header.name.unwrap_or_default();
-        // `google.protobuf.Edition`'s numbers for the editions protoc
-        // accepts; any other is named generically.
-        let edition = match header.edition {
-            Some(1000) => Some("2023"),
-            Some(1001) => Some("2024"),
+        let name = file.name().to_owned();
+        let edition = match file.edition() {
+            Edition::Edition2024 => Some("2024"),
             _ => None,
         };
         let site = Site {
@@ -163,16 +148,21 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
         Err(err) => {
             let response = CodeGeneratorResponse {
                 error: Some(format!("elm-connect: decoding the request: {err}")),
-                ..CodeGeneratorResponse::default()
+                supported_features: Some(
+                    Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64,
+                ),
+                minimum_edition: Some(EDITION as i32),
+                maximum_edition: Some(EDITION as i32),
+                file: Vec::new(),
             };
             return (response, String::new());
         }
     };
     let response = |error: Option<String>, file: Vec<File>| CodeGeneratorResponse {
         error,
-        supported_features: Some(Feature::Proto3Optional as u64),
-        minimum_edition: None,
-        maximum_edition: None,
+        supported_features: Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64),
+        minimum_edition: Some(EDITION as i32),
+        maximum_edition: Some(EDITION as i32),
         file,
     };
     let options = match Options::from_parameter(request.parameter()) {
@@ -189,7 +179,7 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
             return (response(Some(error), Vec::new()), String::new());
         }
     };
-    let mut unsupported = editions(&raw);
+    let mut unsupported = editions(&request);
     if !unsupported.is_empty() {
         unsupported.locate();
         let error = render_narrow(&unsupported);
@@ -344,6 +334,12 @@ mod tests {
         elm_connect_gen::real_version(&std::fs::read_to_string(path).expect("the blessed output"))
     }
 
+    /// The response to `bytes`, through its encoding, as protoc reads it.
+    fn round_trip_bytes(bytes: &[u8]) -> CodeGeneratorResponse {
+        CodeGeneratorResponse::decode(run(bytes).0.encode_to_vec().as_slice())
+            .expect("decode the response")
+    }
+
     fn round_trip(request: CodeGeneratorRequest) -> CodeGeneratorResponse {
         let bytes = run(&request.encode_to_vec()).0.encode_to_vec();
         CodeGeneratorResponse::decode(bytes.as_slice()).expect("decode the response")
@@ -356,8 +352,10 @@ mod tests {
         assert_eq!(response.error, None);
         assert_eq!(
             response.supported_features,
-            Some(Feature::Proto3Optional as u64)
+            Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64)
         );
+        assert_eq!(response.minimum_edition, Some(Edition::Edition2023 as i32));
+        assert_eq!(response.maximum_edition, Some(Edition::Edition2023 as i32));
         let [file, _, _] = response.file.as_slice() else {
             panic!(
                 "expected the package's module and two descriptor modules, got {:?}",
@@ -722,51 +720,77 @@ service Uploads {
         assert!(api.contains("type alias HttpBody ="), "{api}");
     }
 
-    #[test]
-    fn an_editions_file_is_a_diagnostic_not_a_panic() {
+    /// A request for one file, `ed.proto`, declaring `edition`, as protoc
+    /// would send it.
+    fn editions_request(edition: Edition) -> Vec<u8> {
+        use prost_types::field_descriptor_proto::{Label, Type};
         let file = prost_types::FileDescriptorProto {
             name: Some("ed.proto".into()),
             package: Some("e.v1".into()),
             syntax: Some("editions".into()),
+            edition: Some(edition as i32),
             message_type: vec![prost_types::DescriptorProto {
                 name: Some("M".into()),
+                field: vec![prost_types::FieldDescriptorProto {
+                    name: Some("n".into()),
+                    number: Some(1),
+                    label: Some(Label::Optional as i32),
+                    r#type: Some(Type::Int32 as i32),
+                    json_name: Some("n".into()),
+                    ..prost_types::FieldDescriptorProto::default()
+                }],
                 ..prost_types::DescriptorProto::default()
             }],
             ..prost_types::FileDescriptorProto::default()
         };
-        // prost-types has no field for the edition; a second encoding
-        // merges it in, as protoc's own encoding would carry it.
-        let mut bytes = file.encode_to_vec();
-        FileHeader {
-            edition: Some(1000),
-            ..FileHeader::default()
-        }
-        .encode(&mut bytes)
-        .expect("encode");
-        let mut request = CodeGeneratorRequest {
+        CodeGeneratorRequest {
             file_to_generate: vec!["ed.proto".into()],
+            proto_file: vec![file],
             ..CodeGeneratorRequest::default()
         }
-        .encode_to_vec();
-        RawProtoFiles {
-            proto_file: vec![bytes],
-        }
-        .encode(&mut request)
-        .expect("encode");
+        .encode_to_vec()
+    }
 
-        let (response, warnings) = run(&request);
+    #[test]
+    fn an_edition_2023_file_generates() {
+        let (response, warnings) = run(&editions_request(Edition::Edition2023));
+        assert_eq!(response.error, None);
+        assert_eq!(warnings, "");
+        assert_eq!(names(&response), ["E/V1.elm", "E/V1/M.elm"]);
+        let module = response.file[0].content.as_deref().expect("content");
+        // Edition 2023's default presence is explicit.
+        assert!(module.contains("{ n : Maybe Int\n"), "{module}");
+    }
+
+    #[test]
+    fn every_response_claims_edition_2023_alone() {
+        for (request, ok) in [
+            (editions_request(Edition::Edition2023), true),
+            (editions_request(Edition::Edition2024), false),
+            (scalars_request().encode_to_vec(), true),
+            (b"not a request".to_vec(), false),
+        ] {
+            let response = round_trip_bytes(&request);
+            assert_eq!(response.error.is_none(), ok, "{:?}", response.error);
+            assert_eq!(
+                response.supported_features,
+                Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64)
+            );
+            assert_eq!(response.minimum_edition, Some(Edition::Edition2023 as i32));
+            assert_eq!(response.maximum_edition, Some(Edition::Edition2023 as i32));
+        }
+    }
+
+    #[test]
+    fn an_edition_2024_file_is_a_diagnostic_not_a_panic() {
+        let (response, warnings) = run(&editions_request(Edition::Edition2024));
         let error = response.error.expect("an error");
         assert!(error.starts_with("input::editions\n"), "{error}");
         assert!(error.contains("`ed.proto`"), "{error}");
-        assert!(error.contains("`edition = \"2023\"`"), "{error}");
-        assert!(error.contains("syntax = \"proto3\""), "{error}");
+        assert!(error.contains("`edition = \"2024\"`"), "{error}");
+        assert!(error.contains("edition = \"2023\";"), "{error}");
         assert!(response.file.is_empty());
         assert_eq!(warnings, "");
-        assert_eq!(
-            response.supported_features,
-            Some(Feature::Proto3Optional as u64),
-            "editions are not claimed"
-        );
     }
 
     #[test]

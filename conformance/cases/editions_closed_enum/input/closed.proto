@@ -15,6 +15,14 @@ enum Level {
   LEVEL_TOP = 10;
 }
 
+// A closed enum a map's values may take, which protoc requires to start
+// at 0.
+enum Tier {
+  option features.enum_type = CLOSED;
+  TIER_NONE = 0;
+  TIER_GOLD = 1;
+}
+
 // Open, the edition's default: an unknown number reads as the zero value.
 enum Mood {
   MOOD_UNSPECIFIED = 0;
@@ -24,7 +32,7 @@ enum Mood {
 message Reading {
   Level level = 1;
   repeated Level history = 2;
-  map<string, Level> by_room = 3;
+  map<string, Tier> by_room = 3;
   Mood mood = 4;
   oneof pick {
     Level chosen = 5;

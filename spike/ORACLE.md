@@ -93,3 +93,44 @@ Differences and their reasons:
 - The binary and JSON codecs under these features are exercised by prost-reflect's tests
   (`editions_binary_encoding`, `editions_json_and_text_format`), not by the conformance runner;
   that is run 2.
+
+## Run 2: the plugin, driven by protoc and buf
+
+`spike/run-plugin-oracle.sh OUT` (PROTOC set) runs the plugin under protoc 35.1
+(`~/.local/share/mise/installs/protoc/35.1/bin/protoc`, its existing install, not
+pinned in mise.toml) and buf 1.73.0 (pinned) over every `editions_*` corpus case and
+`codec_both`, and diffs their output with the CLI's for the same protos and options
+and with the case's expected modules (version placeholder put back). Result:
+
+```
+editions_2023_proto3_equivalent	20 modules	protoc=same buf=same expected=same 
+editions_2024	diagnostics	expected= 1 input::editions;	cli= 1 input::editions;	protoc= 1 input::editions;	buf= 1 input::editions;
+  protoc says: future.proto: is a file using edition 2024, which isn't supported by code generator protoc-gen-elm-connect.  Please ask the owner of this code generator to add support or switch back to a maximum of edition 2023.--elm-connect_out: input::editions
+  buf says: Failure: plugin /Users/bruckhauser/Documents/elm-connect-wt/spike-editions/target/debug/protoc-gen-elm-connect: input::editions
+editions_closed_enum	8 modules	protoc=same buf=same expected=same 
+editions_defaults	3 modules	protoc=same buf=same expected=same 
+editions_presence	5 modules	protoc=same buf=same expected=same 
+editions_required	4 modules	protoc=same buf=same expected=same 
+editions_unsupported	diagnostics	expected= 2 input::extensions; 7 input::unsupported_feature;	cli= 2 input::extensions; 7 input::unsupported_feature;	protoc= 2 input::extensions; 7 input::unsupported_feature;	buf= 2 input::extensions; 7 input::unsupported_feature;
+  protoc says: --elm-connect_out: input::unsupported_feature
+  buf says: Failure: plugin /Users/bruckhauser/Documents/elm-connect-wt/spike-editions/target/debug/protoc-gen-elm-connect: input::extensions
+codec_both	20 modules	protoc=same buf=same expected=same 
+```
+
+Every modules case: the CLI, protoc and buf write the same files, equal to the
+expected modules. Both diagnostics cases report the same codes from all three
+front ends. On edition 2024, protoc refuses the file itself (the plugin claims
+2023 at most) and still prints the plugin's answer; buf 1.73.0 sends the file
+to the plugin anyway, so the plugin's own check of the request's edition is
+what refuses it there.
+
+The first run caught a corpus mistake: `editions_closed_enum` had a map whose
+values were a closed enum starting at 1, which protoc refuses ("Enum value in
+map must define 0 as the first value") and prost-reflect accepts in every
+syntax (run 1's known gap). The case now uses a closed enum starting at 0 for
+the map.
+
+Run 1's descriptor oracle (`spike/run-oracle.sh`) was rerun after prost-types
+was regenerated and the edition side channels removed: still 0 descriptor and
+0 feature differences against buf 1.73.0 and protoc 35.1 on all four corpus
+files, and the same invalid-file table.

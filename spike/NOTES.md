@@ -70,3 +70,14 @@ traps met. The commit messages under `vendor/` carry the rest.
   (2024), through `elm_connect_gen::diagnostics::unsupported_edition`,
   which the corpus harness uses too. A 2023 file that fails to parse
   keeps the parser's errors.
+- **The plugin claims editions natively.** With prost-types regenerated, the
+  response's `supported_features` carries `FEATURE_SUPPORTS_EDITIONS` and
+  `minimum_edition`/`maximum_edition` are ordinary fields (EDITION_2023 both),
+  set on every response, errors included; the edition check reads
+  `request.proto_file[i].edition` from the decoded request. The pool is still
+  built from the request's raw `proto_file` bytes, for the extension options
+  (`google.api.http`) prost drops, as before; the edition rides in those bytes
+  too. No raw-byte splicing was needed in the end; the spliced version written
+  before the prost-types regeneration was discarded unbuilt into a commit.
+- **The plugin's own edition check stays.** buf 1.73.0 sends an edition 2024
+  file to a plugin that claims 2023 at most; protoc refuses it first.
