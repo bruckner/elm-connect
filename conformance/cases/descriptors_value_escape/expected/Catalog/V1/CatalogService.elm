@@ -41,16 +41,11 @@ Described by [`descriptorGetEntry`](#descriptorGetEntry).
 getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Catalog.V1.encodeGetEntryRequest
-            , decode = Catalog.V1.decodeEntry
-            , descriptor = descriptorGetEntry
-            , routes =
-                [ { route = routeGetEntry0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Catalog.V1.encodeGetEntryRequest
+            Catalog.V1.decodeEntry
+            descriptorGetEntry
+            [ routeGetEntry0
+            ]
         )
 
 
@@ -60,19 +55,19 @@ getEntry =
 
 {-| Binding 0 of [`getEntry`](#getEntry): `GET /v1/entries/*`.
 -}
-routeGetEntry0 : Catalog.V1.GetEntryRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetEntry0 : Catalog.V1.GetEntryRequest -> Rpc.Route.Route
 routeGetEntry0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Catalog.V1.queryOfGetEntryRequest request_
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "entries", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Catalog.V1.queryOfGetEntryRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "entries", "*" ] value0_
+    }
 
 
 

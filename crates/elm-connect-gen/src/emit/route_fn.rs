@@ -350,18 +350,23 @@ impl Emitter {
                 )
             }
         };
-        let built = record([
-            ("method", string(route.verb.as_str())),
-            ("path", path),
-            ("query", query),
-            ("body", body),
-        ]);
         let invalid = match checks.len() {
             0 => var(self.core("Nothing")),
             1 => checks.pop().unwrap(),
             _ => apply(self.reference((RPC_ROUTE, "firstInvalid")), [list(checks)]),
         };
-        let result = Expr::Tuple(vec![built, invalid]);
+        let response_body = match &route.response_body {
+            Some(top) => apply(var(self.core("Just")), [string(top.field.json[0].clone())]),
+            None => var(self.core("Nothing")),
+        };
+        let result = record([
+            ("method", string(route.verb.as_str())),
+            ("path", path),
+            ("query", query),
+            ("body", body),
+            ("responseBody", response_body),
+            ("invalid", invalid),
+        ]);
         Some(if values.is_empty() {
             result
         } else {

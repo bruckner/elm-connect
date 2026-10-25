@@ -40,12 +40,10 @@ Described by [`descriptorNow`](#descriptorNow).
 now : () -> Rpc.Call () Time.Posix
 now =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.timestamp
-            , descriptor = descriptorNow
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.timestamp
+            descriptorNow
+            []
         )
 
 
@@ -59,12 +57,10 @@ Described by [`descriptorSleep`](#descriptorSleep).
 sleep : Duration -> Rpc.Call Duration ()
 sleep =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeDuration
-            , decode = Proto.Json.empty
-            , descriptor = descriptorSleep
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeDuration
+            Proto.Json.empty
+            descriptorSleep
+            []
         )
 
 
@@ -78,12 +74,10 @@ Described by [`descriptorMask`](#descriptorMask).
 mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
 mask =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeFieldMask
-            , decode = Proto.Json.struct
-            , descriptor = descriptorMask
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeFieldMask
+            Proto.Json.struct
+            descriptorMask
+            []
         )
 
 
@@ -97,12 +91,10 @@ Described by [`descriptorEcho`](#descriptorEcho).
 echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
 echo =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Basics.identity
-            , decode = Proto.Json.listValue
-            , descriptor = descriptorEcho
-            , routes = []
-            }
+        (Proto.Method.methodWith Basics.identity
+            Proto.Json.listValue
+            descriptorEcho
+            []
         )
 
 
@@ -116,12 +108,10 @@ Described by [`descriptorTicks`](#descriptorTicks).
 ticks : Int -> Rpc.Call Int Int
 ticks =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeInt64AsInt
-            , decode = Proto.Json.uint64AsInt
-            , descriptor = descriptorTicks
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeInt64AsInt
+            Proto.Json.uint64AsInt
+            descriptorTicks
+            []
         )
 
 
@@ -135,12 +125,10 @@ Described by [`descriptorCount`](#descriptorCount).
 count : Int -> Rpc.Call Int Int
 count =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Json.Encode.int
-            , decode = Proto.Json.uint32
-            , descriptor = descriptorCount
-            , routes = []
-            }
+        (Proto.Method.methodWith Json.Encode.int
+            Proto.Json.uint32
+            descriptorCount
+            []
         )
 
 
@@ -154,12 +142,10 @@ Described by [`descriptorRatio`](#descriptorRatio).
 ratio : Float -> Rpc.Call Float Float
 ratio =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeFloat
-            , decode = Proto.Json.float
-            , descriptor = descriptorRatio
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeFloat
+            Proto.Json.float
+            descriptorRatio
+            []
         )
 
 
@@ -173,12 +159,10 @@ Described by [`descriptorName`](#descriptorName).
 name : String -> Rpc.Call String Bool
 name =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Json.Encode.string
-            , decode = Json.Decode.bool
-            , descriptor = descriptorName
-            , routes = []
-            }
+        (Proto.Method.methodWith Json.Encode.string
+            Json.Decode.bool
+            descriptorName
+            []
         )
 
 
@@ -192,12 +176,10 @@ Described by [`descriptorRaw`](#descriptorRaw).
 raw : String -> Rpc.Call String String
 raw =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeBytes
-            , decode = Proto.Json.bytes
-            , descriptor = descriptorRaw
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeBytes
+            Proto.Json.bytes
+            descriptorRaw
+            []
         )
 
 
@@ -211,12 +193,10 @@ Described by [`descriptorZone`](#descriptorZone).
 zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Zones.V1.encodeZoneRequest
-            , decode = Zones.V1.decodeZone
-            , descriptor = descriptorZone
-            , routes = []
-            }
+        (Proto.Method.methodWith Zones.V1.encodeZoneRequest
+            Zones.V1.decodeZone
+            descriptorZone
+            []
         )
 
 
@@ -230,12 +210,10 @@ Described by [`descriptorSet`](#descriptorSet).
 set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
 set =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Clock.V1.encodeAlarm
-            , decode = Clock.V1.decodeAlarm
-            , descriptor = descriptorSet
-            , routes = []
-            }
+        (Proto.Method.methodWith Clock.V1.encodeAlarm
+            Clock.V1.decodeAlarm
+            descriptorSet
+            []
         )
 
 

@@ -33,12 +33,10 @@ Described by [`descriptorSend`](#descriptorSend).
 send : Rpc.V1.Ping -> Rpc.Call Rpc.V1.Ping Rpc.V1.Ping
 send =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Rpc.V1.encodePing
-            , decode = Rpc.V1.decodePing
-            , descriptor = descriptorSend
-            , routes = []
-            }
+        (Proto.Method.methodWith Rpc.V1.encodePing
+            Rpc.V1.decodePing
+            descriptorSend
+            []
         )
 
 

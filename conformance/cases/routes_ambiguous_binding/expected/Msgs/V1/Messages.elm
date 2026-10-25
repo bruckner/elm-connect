@@ -41,19 +41,12 @@ Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorGetMessage
-            , routes =
-                [ { route = routeGetMessage0
-                  , responseBody = Nothing
-                  }
-                , { route = routeGetMessage1
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorGetMessage
+            [ routeGetMessage0
+            , routeGetMessage1
+            ]
         )
 
 
@@ -69,16 +62,11 @@ Described by [`descriptorGetSub`](#descriptorGetSub).
 getSub : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 getSub =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorGetSub
-            , routes =
-                [ { route = routeGetSub0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorGetSub
+            [ routeGetSub0
+            ]
         )
 
 
@@ -94,16 +82,11 @@ Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorUpdateMessage
-            , routes =
-                [ { route = routeUpdateMessage0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorUpdateMessage
+            [ routeUpdateMessage0
+            ]
         )
 
 
@@ -117,16 +100,11 @@ Described by [`descriptorListMessages`](#descriptorListMessages).
 listMessages : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 listMessages =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorListMessages
-            , routes =
-                [ { route = routeListMessages0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorListMessages
+            [ routeListMessages0
+            ]
         )
 
 
@@ -142,16 +120,11 @@ Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
 checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 checkMessage =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorCheckMessage
-            , routes =
-                [ { route = routeCheckMessage0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorCheckMessage
+            [ routeCheckMessage0
+            ]
         )
 
 
@@ -165,16 +138,11 @@ Described by [`descriptorCheckById`](#descriptorCheckById).
 checkById : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 checkById =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorCheckById
-            , routes =
-                [ { route = routeCheckById0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorCheckById
+            [ routeCheckById0
+            ]
         )
 
 
@@ -190,16 +158,11 @@ Described by [`descriptorTouch`](#descriptorTouch).
 touch : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 touch =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorTouch
-            , routes =
-                [ { route = routeTouch0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorTouch
+            [ routeTouch0
+            ]
         )
 
 
@@ -209,41 +172,41 @@ touch =
 
 {-| Binding 0 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
 -}
-routeGetMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeGetMessage0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    }
 
 
 {-| Binding 1 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
 -}
-routeGetMessage1 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage1 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeGetMessage1 request_ =
     let
         value0_ =
             request_.id
     in
-    ( { method = "GET"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_
-      , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegment "id" "*" value0_
-    )
+    { method = "GET"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_
+    , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "id" "*" value0_
+    }
 
 
 {-| Binding 0 of [`getSub`](#getSub): `GET /v1/messages/*/*`.
 -}
-routeGetSub0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetSub0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeGetSub0 request_ =
     let
         value0_ =
@@ -252,93 +215,94 @@ routeGetSub0 request_ =
         value1_ =
             request_.sub
     in
-    ( { method = "GET"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
-      , query = Rpc.Route.except [ "id", "sub" ] (Msgs.V1.queryOfMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.firstInvalid
-        [ Rpc.Route.checkSegment "id" "*" value0_
-        , Rpc.Route.checkSegment "sub" "*" value1_
-        ]
-    )
+    { method = "GET"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
+    , query = Rpc.Route.except [ "id", "sub" ] (Msgs.V1.queryOfMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid =
+        Rpc.Route.firstInvalid
+            [ Rpc.Route.checkSegment "id" "*" value0_
+            , Rpc.Route.checkSegment "sub" "*" value1_
+            ]
+    }
 
 
 {-| Binding 0 of [`updateMessage`](#updateMessage): `PATCH /v1/messages/*`.
 -}
-routeUpdateMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessage0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeUpdateMessage0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "PATCH"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
-      }
-    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
-    )
+    { method = "PATCH"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`listMessages`](#listMessages): `GET /v1/messages`.
 -}
-routeListMessages0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListMessages0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeListMessages0 request_ =
-    ( { method = "GET"
-      , path = "v1/messages"
-      , query = Msgs.V1.queryOfMessageRequest request_
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "GET"
+    , path = "v1/messages"
+    , query = Msgs.V1.queryOfMessageRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 {-| Binding 0 of [`checkMessage`](#checkMessage): `HEAD /v1/messages/*:check`.
 -}
-routeCheckMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCheckMessage0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeCheckMessage0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "HEAD"
-      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":check"
-      , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
-    )
+    { method = "HEAD"
+    , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":check"
+    , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`checkById`](#checkById): `HEAD /v1/messages/*:check`.
 -}
-routeCheckById0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCheckById0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeCheckById0 request_ =
     let
         value0_ =
             request_.id
     in
-    ( { method = "HEAD"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ ":check"
-      , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegment "id" "*" value0_
-    )
+    { method = "HEAD"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ ":check"
+    , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "id" "*" value0_
+    }
 
 
 {-| Binding 0 of [`touch`](#touch): `POST /msgs.v1.Messages/ListMessages`.
 -}
-routeTouch0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeTouch0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeTouch0 request_ =
-    ( { method = "POST"
-      , path = "msgs.v1.Messages/ListMessages"
-      , query = []
-      , body = Just (Msgs.V1.encodeMessageRequest request_)
-      }
-    , Nothing
-    )
+    { method = "POST"
+    , path = "msgs.v1.Messages/ListMessages"
+    , query = []
+    , body = Just (Msgs.V1.encodeMessageRequest request_)
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 

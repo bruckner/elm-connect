@@ -16,19 +16,19 @@ import Rpc.Route exposing (PathError, Route)
 {-| The route of a request over a binding, built whatever its path values,
 and the first path value its template cannot match, if any.
 -}
-route : Rule -> Value -> ( Route, Maybe PathError )
+route : Rule -> Value -> Route
 route rule json =
     let
         verb =
             Maybe.map ((++) ":" << Internal.encodeRouteText) rule.customVerb |> Maybe.withDefault ""
     in
-    ( { method = rule.method
-      , path = String.join "/" (List.map (pathSegment json) rule.path) ++ verb
-      , query = List.concatMap (queryPairs json) rule.query
-      , body = body rule json
-      }
-    , invalidPathValue rule json
-    )
+    { method = rule.method
+    , path = String.join "/" (List.map (pathSegment json) rule.path) ++ verb
+    , query = List.concatMap (queryPairs json) rule.query
+    , body = body rule json
+    , responseBody = rule.responseBody
+    , invalid = invalidPathValue rule json
+    }
 
 
 body : Rule -> Value -> Maybe Value

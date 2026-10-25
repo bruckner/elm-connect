@@ -38,16 +38,11 @@ Described by [`descriptorListArchived`](#descriptorListArchived).
 listArchived : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 listArchived =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Msgs.V1.encodeMessageRequest
-            , decode = Msgs.V1.decodeMessage
-            , descriptor = descriptorListArchived
-            , routes =
-                [ { route = routeListArchived0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
+            descriptorListArchived
+            [ routeListArchived0
+            ]
         )
 
 
@@ -57,15 +52,15 @@ listArchived =
 
 {-| Binding 0 of [`listArchived`](#listArchived): `GET /v1/messages`.
 -}
-routeListArchived0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListArchived0 : Msgs.V1.MessageRequest -> Rpc.Route.Route
 routeListArchived0 request_ =
-    ( { method = "GET"
-      , path = "v1/messages"
-      , query = Msgs.V1.queryOfMessageRequest request_
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "GET"
+    , path = "v1/messages"
+    , query = Msgs.V1.queryOfMessageRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 

@@ -55,12 +55,10 @@ Described by [`descriptorUnary`](#descriptorUnary).
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
 unary =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Connectrpc.Conformance.V1.encodeUnaryRequest
-            , decode = Connectrpc.Conformance.V1.decodeUnaryResponse
-            , descriptor = descriptorUnary
-            , routes = []
-            }
+        (Proto.Method.methodWith Connectrpc.Conformance.V1.encodeUnaryRequest
+            Connectrpc.Conformance.V1.decodeUnaryResponse
+            descriptorUnary
+            []
         )
 
 
@@ -77,12 +75,10 @@ Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
 unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
 unimplemented =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Connectrpc.Conformance.V1.encodeUnimplementedRequest
-            , decode = Connectrpc.Conformance.V1.decodeUnimplementedResponse
-            , descriptor = descriptorUnimplemented
-            , routes = []
-            }
+        (Proto.Method.methodWith Connectrpc.Conformance.V1.encodeUnimplementedRequest
+            Connectrpc.Conformance.V1.decodeUnimplementedResponse
+            descriptorUnimplemented
+            []
         )
 
 
@@ -100,12 +96,10 @@ Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
 idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
 idempotentUnary =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
-            , decode = Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
-            , descriptor = descriptorIdempotentUnary
-            , routes = []
-            }
+        (Proto.Method.methodWith Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
+            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
+            descriptorIdempotentUnary
+            []
         )
 
 

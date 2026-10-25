@@ -89,30 +89,24 @@ method encode decoder ((Descriptor d) as methodDescriptor) =
         , descriptor = methodDescriptor
         , routes =
             List.map
-                (\(Proto.Internal.Binding.Binding rule) ->
-                    { build = \req -> Proto.Internal.Interpret.route rule (encode req)
-                    , responseBody = rule.responseBody
-                    }
-                )
+                (\(Proto.Internal.Binding.Binding rule) req -> Proto.Internal.Interpret.route rule (encode req))
                 d.bindings
         }
 
 
-{-| A method whose routes are functions of its typed request, one per
-binding of its rule in order, each with the JSON name of the response field
-its answer is read from (`responseBody`, `Nothing` for the whole response).
-A route function gives the binding's route whatever the request holds, and
-the first path value its variable's template cannot match, which sending
-refuses. Generated code writes:
+{-| A method from its request's encoder, its response's decoder, its
+descriptor, and its routes: one function of the typed request per binding
+of its rule, in order. A route function gives the binding's route whatever
+the request holds, with the first path value its variable's template
+cannot match, which sending refuses, and the response field its answer is
+read from. Generated code writes:
 
     getNote =
         Rpc.call
-            (Proto.Method.methodWith
-                { encode = Notes.V1.encodeGetNoteRequest
-                , decode = Notes.V1.decodeNote
-                , descriptor = descriptorGetNote
-                , routes = [ { route = routeGetNote0, responseBody = Nothing } ]
-                }
+            (Proto.Method.methodWith Notes.V1.encodeGetNoteRequest
+                Notes.V1.decodeNote
+                descriptorGetNote
+                [ routeGetNote0 ]
             )
 
 The descriptor's bindings are not read: a program that does not refer to
@@ -120,19 +114,13 @@ them keeps none, nor the interpreter that [`method`](#method) builds its
 routes with.
 
 -}
-methodWith :
-    { encode : req -> Json.Encode.Value
-    , decode : Json.Decode.Decoder res
-    , descriptor : Descriptor
-    , routes : List { route : req -> ( Route, Maybe PathError ), responseBody : Maybe String }
-    }
-    -> Method req res
-methodWith m =
+methodWith : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Descriptor -> List (req -> Route) -> Method req res
+methodWith encode decoder methodDescriptor routes =
     Internal.Method
-        { encodeRequest = m.encode
-        , responseDecoder = m.decode
-        , descriptor = m.descriptor
-        , routes = List.map (\r -> { build = r.route, responseBody = r.responseBody }) m.routes
+        { encodeRequest = encode
+        , responseDecoder = decoder
+        , descriptor = methodDescriptor
+        , routes = routes
         }
 
 

@@ -69,33 +69,17 @@ impl Emitter {
         let response = self.method_type(&method.output);
         let encode_request = self.request_encoder(&method.input);
         let response_decoder = self.response_decoder(&method.output);
-        let routes: Vec<Expr> = method
-            .routes
-            .iter()
-            .enumerate()
-            .map(|(index, route)| {
-                record([
-                    ("route", var(route_name(method, index))),
-                    (
-                        "responseBody",
-                        maybe(
-                            route
-                                .response_body
-                                .as_ref()
-                                .map(|top| string(top.field.json[0].clone())),
-                        ),
-                    ),
-                ])
-            })
+        let routes: Vec<Expr> = (0..method.routes.len())
+            .map(|index| var(route_name(method, index)))
             .collect();
-        let built = apply(
+        let built = stacked_apply(
             self.reference((PROTO_METHOD, "methodWith")),
-            [record([
-                ("encode", encode_request),
-                ("decode", response_decoder),
-                ("descriptor", var(method.descriptor_name())),
-                ("routes", list(routes)),
-            ])],
+            [
+                encode_request,
+                response_decoder,
+                var(method.descriptor_name()),
+                list(routes),
+            ],
         );
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
@@ -150,7 +134,6 @@ impl Emitter {
                 encode_request,
             );
             let request = self.method_type(&method.input);
-            let error = self.library_type(RPC_ROUTE, "PathError", []);
             let built = self.library_type(RPC_ROUTE, "Route", []);
             decls.push(Decl::Value {
                 doc: Some(format!(
@@ -166,7 +149,7 @@ impl Emitter {
                     }
                 )),
                 name: route_name(method, index),
-                annotation: ty_fn([request], Type::Tuple(vec![built, ty("Maybe", [error])])),
+                annotation: ty_fn([request], built),
                 params: vec![pvar(REQUEST)],
                 body: typed.body,
             });

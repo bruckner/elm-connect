@@ -50,16 +50,11 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.empty
-            , descriptor = descriptorPing
-            , routes =
-                [ { route = routePing0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+            [ routePing0
+            ]
         )
 
 
@@ -69,15 +64,15 @@ ping =
 
 {-| Binding 0 of [`ping`](#ping): `HEAD /v1/ping`.
 -}
-routePing0 : () -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routePing0 : () -> Rpc.Route.Route
 routePing0 request_ =
-    ( { method = "HEAD"
-      , path = "v1/ping"
-      , query = []
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "HEAD"
+    , path = "v1/ping"
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 

@@ -52,19 +52,12 @@ Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeGetNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorGetNote
-            , routes =
-                [ { route = routeGetNote0
-                  , responseBody = Nothing
-                  }
-                , { route = routeGetNote1
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+            [ routeGetNote0
+            , routeGetNote1
+            ]
         )
 
 
@@ -80,16 +73,11 @@ Described by [`descriptorListNotes`](#descriptorListNotes).
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeListNotesRequest
-            , decode = Notes.V1.decodeListNotesResponse
-            , descriptor = descriptorListNotes
-            , routes =
-                [ { route = routeListNotes0
-                  , responseBody = Just "notes"
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+            [ routeListNotes0
+            ]
         )
 
 
@@ -105,16 +93,11 @@ Described by [`descriptorCreateNote`](#descriptorCreateNote).
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeCreateNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorCreateNote
-            , routes =
-                [ { route = routeCreateNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+            [ routeCreateNote0
+            ]
         )
 
 
@@ -132,16 +115,11 @@ Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeNote
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorReplaceNote
-            , routes =
-                [ { route = routeReplaceNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeNote
+            Notes.V1.decodeNote
+            descriptorReplaceNote
+            [ routeReplaceNote0
+            ]
         )
 
 
@@ -157,12 +135,10 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.empty
-            , descriptor = descriptorPing
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+            []
         )
 
 
@@ -172,83 +148,83 @@ ping =
 
 {-| Binding 0 of [`getNote`](#getNote): `GET /v1/notes/*`.
 -}
-routeGetNote0 : Notes.V1.GetNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetNote0 : Notes.V1.GetNoteRequest -> Rpc.Route.Route
 routeGetNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 {-| Binding 1 of [`getNote`](#getNote): `GET /v1/users/*/notes/*`.
 -}
-routeGetNote1 : Notes.V1.GetNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetNote1 : Notes.V1.GetNoteRequest -> Rpc.Route.Route
 routeGetNote1 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "users", "*", "notes", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "users", "*", "notes", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`listNotes`](#listNotes): `GET /v1/users/*/notes`.
 -}
-routeListNotes0 : Notes.V1.ListNotesRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListNotes0 : Notes.V1.ListNotesRequest -> Rpc.Route.Route
 routeListNotes0 request_ =
     let
         value0_ =
             request_.parent
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/notes"
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "parent" [ "users", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/notes"
+    , query = []
+    , body = Nothing
+    , responseBody = Just "notes"
+    , invalid = Rpc.Route.checkSegments "parent" [ "users", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`createNote`](#createNote): `POST /v1/notes`.
 -}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> Rpc.Route.Route
 routeCreateNote0 request_ =
-    ( { method = "POST"
-      , path = "v1/notes"
-      , query = []
-      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-      }
-    , Nothing
-    )
+    { method = "POST"
+    , path = "v1/notes"
+    , query = []
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 {-| Binding 0 of [`replaceNote`](#replaceNote): `PUT /v1/notes/*`.
 -}
-routeReplaceNote0 : Notes.V1.Note -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeReplaceNote0 : Notes.V1.Note -> Rpc.Route.Route
 routeReplaceNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "PUT"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "PUT"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 

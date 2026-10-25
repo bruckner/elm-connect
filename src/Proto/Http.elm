@@ -258,6 +258,6 @@ value its variable's template cannot match, as
 descriptor written as data. Generated code builds its routes from the typed
 request instead ([`Proto.Method.methodWith`](Proto-Method#methodWith)).
 -}
-interpret : Binding -> Json.Encode.Value -> ( Route, Maybe PathError )
+interpret : Binding -> Json.Encode.Value -> Route
 interpret (Internal.Binding rule) =
     Proto.Internal.Interpret.route rule

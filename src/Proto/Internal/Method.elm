@@ -20,11 +20,8 @@ type Method descriptor req res
         }
 
 
-{-| One binding as a call takes it: its route, built whatever its path
-values, with the first path value its template cannot match, and the JSON
-name of the response field its answer is read from.
+{-| One binding as a call takes it: its route of the request, built
+whatever its path values.
 -}
 type alias Bound req =
-    { build : req -> ( Route, Maybe PathError )
-    , responseBody : Maybe String
-    }
+    req -> Route

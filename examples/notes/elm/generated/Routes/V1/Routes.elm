@@ -53,25 +53,14 @@ Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeGetMessageRequest
-            , decode = Routes.V1.decodeMessage
-            , descriptor = descriptorGetMessage
-            , routes =
-                [ { route = routeGetMessage0
-                  , responseBody = Nothing
-                  }
-                , { route = routeGetMessage1
-                  , responseBody = Nothing
-                  }
-                , { route = routeGetMessage2
-                  , responseBody = Nothing
-                  }
-                , { route = routeGetMessage3
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorGetMessage
+            [ routeGetMessage0
+            , routeGetMessage1
+            , routeGetMessage2
+            , routeGetMessage3
+            ]
         )
 
 
@@ -87,16 +76,11 @@ Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeUpdateMessageRequest
-            , decode = Routes.V1.decodeMessage
-            , descriptor = descriptorUpdateMessage
-            , routes =
-                [ { route = routeUpdateMessage0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeUpdateMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUpdateMessage
+            [ routeUpdateMessage0
+            ]
         )
 
 
@@ -110,16 +94,11 @@ Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeMessage
-            , decode = Routes.V1.decodeMessage
-            , descriptor = descriptorUpdateMessageWhole
-            , routes =
-                [ { route = routeUpdateMessageWhole0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeMessage
+            Routes.V1.decodeMessage
+            descriptorUpdateMessageWhole
+            [ routeUpdateMessageWhole0
+            ]
         )
 
 
@@ -133,16 +112,11 @@ Described by [`descriptorPostSub`](#descriptorPostSub).
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeGetMessageRequest
-            , decode = Routes.V1.decodeMessage
-            , descriptor = descriptorPostSub
-            , routes =
-                [ { route = routePostSub0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorPostSub
+            [ routePostSub0
+            ]
         )
 
 
@@ -156,16 +130,11 @@ Described by [`descriptorQuery`](#descriptorQuery).
 query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeEverything
-            , decode = Routes.V1.decodeEverything
-            , descriptor = descriptorQuery
-            , routes =
-                [ { route = routeQuery0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorQuery
+            [ routeQuery0
+            ]
         )
 
 
@@ -179,16 +148,11 @@ Described by [`descriptorSingle`](#descriptorSingle).
 single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeEverything
-            , decode = Routes.V1.decodeEverything
-            , descriptor = descriptorSingle
-            , routes =
-                [ { route = routeSingle0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorSingle
+            [ routeSingle0
+            ]
         )
 
 
@@ -202,16 +166,11 @@ Described by [`descriptorMulti`](#descriptorMulti).
 multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeEverything
-            , decode = Routes.V1.decodeEverything
-            , descriptor = descriptorMulti
-            , routes =
-                [ { route = routeMulti0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorMulti
+            [ routeMulti0
+            ]
         )
 
 
@@ -225,16 +184,11 @@ Described by [`descriptorTyped`](#descriptorTyped).
 typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeEverything
-            , decode = Routes.V1.decodeEverything
-            , descriptor = descriptorTyped
-            , routes =
-                [ { route = routeTyped0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
+            descriptorTyped
+            [ routeTyped0
+            ]
         )
 
 
@@ -248,16 +202,11 @@ Described by [`descriptorFiles`](#descriptorFiles).
 files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeFileRequest
-            , decode = Routes.V1.decodeFileRequest
-            , descriptor = descriptorFiles
-            , routes =
-                [ { route = routeFiles0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorFiles
+            [ routeFiles0
+            ]
         )
 
 
@@ -271,16 +220,11 @@ Described by [`descriptorCancel`](#descriptorCancel).
 cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeResource
-            , decode = Routes.V1.decodeResource
-            , descriptor = descriptorCancel
-            , routes =
-                [ { route = routeCancel0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeResource
+            Routes.V1.decodeResource
+            descriptorCancel
+            [ routeCancel0
+            ]
         )
 
 
@@ -294,16 +238,11 @@ Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeUpdateResourceRequest
-            , decode = Routes.V1.decodeResource
-            , descriptor = descriptorUpdateResource
-            , routes =
-                [ { route = routeUpdateResource0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeUpdateResourceRequest
+            Routes.V1.decodeResource
+            descriptorUpdateResource
+            [ routeUpdateResource0
+            ]
         )
 
 
@@ -317,16 +256,11 @@ Described by [`descriptorHead`](#descriptorHead).
 head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeFileRequest
-            , decode = Routes.V1.decodeFileRequest
-            , descriptor = descriptorHead
-            , routes =
-                [ { route = routeHead0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
+            descriptorHead
+            [ routeHead0
+            ]
         )
 
 
@@ -344,12 +278,10 @@ Described by [`descriptorUnbound`](#descriptorUnbound).
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Routes.V1.encodeGetMessageRequest
-            , decode = Routes.V1.decodeMessage
-            , descriptor = descriptorUnbound
-            , routes = []
-            }
+        (Proto.Method.methodWith Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
+            descriptorUnbound
+            []
         )
 
 
@@ -359,24 +291,24 @@ unbound =
 
 {-| Binding 0 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
 -}
-routeGetMessage0 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage0 : Routes.V1.GetMessageRequest -> Rpc.Route.Route
 routeGetMessage0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    }
 
 
 {-| Binding 1 of [`getMessage`](#getMessage): `GET /v1/messages/*/*`.
 -}
-routeGetMessage1 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage1 : Routes.V1.GetMessageRequest -> Rpc.Route.Route
 routeGetMessage1 request_ =
     let
         value0_ =
@@ -385,38 +317,39 @@ routeGetMessage1 request_ =
         value1_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
-    ( { method = "GET"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
-      , query = Rpc.Route.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.firstInvalid
-        [ Rpc.Route.checkSegment "messageId" "*" value0_
-        , Rpc.Route.checkSegment "sub.subfield" "*" value1_
-        ]
-    )
+    { method = "GET"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
+    , query = Rpc.Route.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid =
+        Rpc.Route.firstInvalid
+            [ Rpc.Route.checkSegment "messageId" "*" value0_
+            , Rpc.Route.checkSegment "sub.subfield" "*" value1_
+            ]
+    }
 
 
 {-| Binding 2 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
 -}
-routeGetMessage2 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage2 : Routes.V1.GetMessageRequest -> Rpc.Route.Route
 routeGetMessage2 request_ =
     let
         value0_ =
             request_.messageId
     in
-    ( { method = "GET"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_
-      , query = Rpc.Route.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegment "messageId" "*" value0_
-    )
+    { method = "GET"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_
+    , query = Rpc.Route.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "messageId" "*" value0_
+    }
 
 
 {-| Binding 3 of [`getMessage`](#getMessage): `GET /v1/users/*/messages/*`.
 -}
-routeGetMessage3 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage3 : Routes.V1.GetMessageRequest -> Rpc.Route.Route
 routeGetMessage3 request_ =
     let
         value0_ =
@@ -425,119 +358,120 @@ routeGetMessage3 request_ =
         value1_ =
             request_.messageId
     in
-    ( { method = "GET"
-      , path = "v1/users/" ++ Rpc.Route.segment value0_ ++ "/messages/" ++ Rpc.Route.segment value1_
-      , query = Rpc.Route.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
-      , body = Nothing
-      }
-    , Rpc.Route.firstInvalid
-        [ Rpc.Route.checkSegment "userId" "*" value0_
-        , Rpc.Route.checkSegment "messageId" "*" value1_
-        ]
-    )
+    { method = "GET"
+    , path = "v1/users/" ++ Rpc.Route.segment value0_ ++ "/messages/" ++ Rpc.Route.segment value1_
+    , query = Rpc.Route.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid =
+        Rpc.Route.firstInvalid
+            [ Rpc.Route.checkSegment "userId" "*" value0_
+            , Rpc.Route.checkSegment "messageId" "*" value1_
+            ]
+    }
 
 
 {-| Binding 0 of [`updateMessage`](#updateMessage): `PATCH /v1/messages/*`.
 -}
-routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> Rpc.Route.Route
 routeUpdateMessage0 request_ =
     let
         value0_ =
             request_.messageId
     in
-    ( { method = "PATCH"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_
-      , query = []
-      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
-      }
-    , Rpc.Route.checkSegment "messageId" "*" value0_
-    )
+    { method = "PATCH"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_
+    , query = []
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "messageId" "*" value0_
+    }
 
 
 {-| Binding 0 of [`updateMessageWhole`](#updateMessageWhole): `PATCH /v1/messages/*`.
 -}
-routeUpdateMessageWhole0 : Routes.V1.Message -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessageWhole0 : Routes.V1.Message -> Rpc.Route.Route
 routeUpdateMessageWhole0 request_ =
     let
         value0_ =
             request_.messageId
     in
-    ( { method = "PATCH"
-      , path = "v1/messages/" ++ Rpc.Route.segment value0_
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
-      }
-    , Rpc.Route.checkSegment "messageId" "*" value0_
-    )
+    { method = "PATCH"
+    , path = "v1/messages/" ++ Rpc.Route.segment value0_
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "messageId" "*" value0_
+    }
 
 
 {-| Binding 0 of [`postSub`](#postSub): `POST /v1/subs/*`.
 -}
-routePostSub0 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routePostSub0 : Routes.V1.GetMessageRequest -> Rpc.Route.Route
 routePostSub0 request_ =
     let
         value0_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
-    ( { method = "POST"
-      , path = "v1/subs/" ++ Rpc.Route.segment value0_
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
-      }
-    , Rpc.Route.checkSegment "sub.subfield" "*" value0_
-    )
+    { method = "POST"
+    , path = "v1/subs/" ++ Rpc.Route.segment value0_
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "sub.subfield" "*" value0_
+    }
 
 
 {-| Binding 0 of [`query`](#query): `GET /v1/query`.
 -}
-routeQuery0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeQuery0 : Routes.V1.Everything -> Rpc.Route.Route
 routeQuery0 request_ =
-    ( { method = "GET"
-      , path = "v1/query"
-      , query = Routes.V1.queryOfEverything request_
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "GET"
+    , path = "v1/query"
+    , query = Routes.V1.queryOfEverything request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 {-| Binding 0 of [`single`](#single): `GET /v1/single/*`.
 -}
-routeSingle0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeSingle0 : Routes.V1.Everything -> Rpc.Route.Route
 routeSingle0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/single/" ++ Rpc.Route.segment value0_
-      , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfEverything request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegment "name" "*" value0_
-    )
+    { method = "GET"
+    , path = "v1/single/" ++ Rpc.Route.segment value0_
+    , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfEverything request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegment "name" "*" value0_
+    }
 
 
 {-| Binding 0 of [`multi`](#multi): `GET /v1/things/*`.
 -}
-routeMulti0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeMulti0 : Routes.V1.Everything -> Rpc.Route.Route
 routeMulti0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfEverything request_)
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Rpc.Route.except [ "name" ] (Routes.V1.queryOfEverything request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`typed`](#typed): `DELETE /v1/typed/*/*/*/*/*`.
 -}
-routeTyped0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeTyped0 : Routes.V1.Everything -> Rpc.Route.Route
 routeTyped0 request_ =
     let
         value0_ =
@@ -555,87 +489,88 @@ routeTyped0 request_ =
         value4_ =
             String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
     in
-    ( { method = "DELETE"
-      , path = "v1/typed/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_ ++ "/" ++ Rpc.Route.segment value2_ ++ "/" ++ Rpc.Route.segment value3_ ++ "/" ++ Rpc.Route.segment value4_
-      , query = Rpc.Route.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
-      , body = Nothing
-      }
-    , Rpc.Route.firstInvalid
-        [ Rpc.Route.checkSegment "count" "*" value0_
-        , Rpc.Route.checkSegment "flag" "*" value1_
-        , Rpc.Route.checkSegment "kind" "*" value2_
-        , Rpc.Route.checkSegment "big" "*" value3_
-        , Rpc.Route.checkSegment "inner.deep.b" "*" value4_
-        ]
-    )
+    { method = "DELETE"
+    , path = "v1/typed/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_ ++ "/" ++ Rpc.Route.segment value2_ ++ "/" ++ Rpc.Route.segment value3_ ++ "/" ++ Rpc.Route.segment value4_
+    , query = Rpc.Route.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid =
+        Rpc.Route.firstInvalid
+            [ Rpc.Route.checkSegment "count" "*" value0_
+            , Rpc.Route.checkSegment "flag" "*" value1_
+            , Rpc.Route.checkSegment "kind" "*" value2_
+            , Rpc.Route.checkSegment "big" "*" value3_
+            , Rpc.Route.checkSegment "inner.deep.b" "*" value4_
+            ]
+    }
 
 
 {-| Binding 0 of [`files`](#files): `GET /v1/files/**`.
 -}
-routeFiles0 : Routes.V1.FileRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeFiles0 : Routes.V1.FileRequest -> Rpc.Route.Route
 routeFiles0 request_ =
     let
         value0_ =
             request_.path
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
+    }
 
 
 {-| Binding 0 of [`cancel`](#cancel): `POST /v1/operations/*:cancel`.
 -}
-routeCancel0 : Routes.V1.Resource -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCancel0 : Routes.V1.Resource -> Rpc.Route.Route
 routeCancel0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "POST"
-      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":cancel"
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
-      }
-    , Rpc.Route.checkSegments "name" [ "operations", "*" ] value0_
-    )
+    { method = "POST"
+    , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":cancel"
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "operations", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`updateResource`](#updateResource): `PATCH /v1/resources/*`.
 -}
-routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Rpc.Route.Route
 routeUpdateResource0 request_ =
     let
         value0_ =
             Maybe.withDefault "" (Maybe.map .name request_.resource)
     in
-    ( { method = "PATCH"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Routes.V1.queryOfUpdateResourceRequest request_
-      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
-      }
-    , Rpc.Route.checkSegments "resource.name" [ "resources", "*" ] value0_
-    )
+    { method = "PATCH"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Routes.V1.queryOfUpdateResourceRequest request_
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "resource.name" [ "resources", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`head`](#head): `HEAD /v1/files/**`.
 -}
-routeHead0 : Routes.V1.FileRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeHead0 : Routes.V1.FileRequest -> Rpc.Route.Route
 routeHead0 request_ =
     let
         value0_ =
             request_.path
     in
-    ( { method = "HEAD"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
-    )
+    { method = "HEAD"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
+    }
 
 
 

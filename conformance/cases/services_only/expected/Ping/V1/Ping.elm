@@ -34,12 +34,10 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () Time.Posix
 ping =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.timestamp
-            , descriptor = descriptorPing
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.timestamp
+            descriptorPing
+            []
         )
 
 

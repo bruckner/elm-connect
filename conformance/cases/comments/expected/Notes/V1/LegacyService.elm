@@ -40,16 +40,11 @@ Described by [`descriptorClear`](#descriptorClear).
 clear : () -> Rpc.Call () ()
 clear =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.empty
-            , descriptor = descriptorClear
-            , routes =
-                [ { route = routeClear0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorClear
+            [ routeClear0
+            ]
         )
 
 
@@ -59,15 +54,15 @@ clear =
 
 {-| Binding 0 of [`clear`](#clear): `PURGE /v1/notes`.
 -}
-routeClear0 : () -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeClear0 : () -> Rpc.Route.Route
 routeClear0 request_ =
-    ( { method = "PURGE"
-      , path = "v1/notes"
-      , query = []
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "PURGE"
+    , path = "v1/notes"
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 

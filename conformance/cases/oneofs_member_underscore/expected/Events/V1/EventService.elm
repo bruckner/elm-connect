@@ -39,16 +39,11 @@ Described by [`descriptorListEvents`](#descriptorListEvents).
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Events.V1.encodeListEventsRequest
-            , decode = Events.V1.decodeListEventsResponse
-            , descriptor = descriptorListEvents
-            , routes =
-                [ { route = routeListEvents0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Events.V1.encodeListEventsRequest
+            Events.V1.decodeListEventsResponse
+            descriptorListEvents
+            [ routeListEvents0
+            ]
         )
 
 
@@ -58,19 +53,19 @@ listEvents =
 
 {-| Binding 0 of [`listEvents`](#listEvents): `GET /v1/feeds/*/events`.
 -}
-routeListEvents0 : Events.V1.ListEventsRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListEvents0 : Events.V1.ListEventsRequest -> Rpc.Route.Route
 routeListEvents0 request_ =
     let
         value0_ =
             request_.parent
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/events"
-      , query = Events.V1.queryOfListEventsRequest request_
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "parent" [ "feeds", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/events"
+    , query = Events.V1.queryOfListEventsRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "parent" [ "feeds", "*" ] value0_
+    }
 
 
 

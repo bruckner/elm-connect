@@ -35,12 +35,10 @@ Described by [`descriptorForward`](#descriptorForward).
 forward : Proto.Any.Any -> Rpc.Call Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeAny
-            , decode = Proto.Json.any
-            , descriptor = descriptorForward
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeAny
+            Proto.Json.any
+            descriptorForward
+            []
         )
 
 
@@ -54,12 +52,10 @@ Described by [`descriptorSend`](#descriptorSend).
 send : Envelope.V1.Envelope -> Rpc.Call Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Envelope.V1.encodeEnvelope
-            , decode = Envelope.V1.decodeEnvelope
-            , descriptor = descriptorSend
-            , routes = []
-            }
+        (Proto.Method.methodWith Envelope.V1.encodeEnvelope
+            Envelope.V1.decodeEnvelope
+            descriptorSend
+            []
         )
 
 

@@ -37,16 +37,11 @@ Described by [`descriptorGetThing`](#descriptorGetThing).
 getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
 getThing =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Things.V1.encodeGetThingRequest
-            , decode = Things.V1.decodeThing
-            , descriptor = descriptorGetThing
-            , routes =
-                [ { route = routeGetThing0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Things.V1.encodeGetThingRequest
+            Things.V1.decodeThing
+            descriptorGetThing
+            [ routeGetThing0
+            ]
         )
 
 
@@ -56,19 +51,19 @@ getThing =
 
 {-| Binding 0 of [`getThing`](#getThing): `GET /v1/things/*`.
 -}
-routeGetThing0 : Things.V1.GetThingRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetThing0 : Things.V1.GetThingRequest -> Rpc.Route.Route
 routeGetThing0 request_ =
     let
         value0_ =
             request_.resource
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Things.V1.queryOfGetThingRequest request_
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Things.V1.queryOfGetThingRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
+    }
 
 
 

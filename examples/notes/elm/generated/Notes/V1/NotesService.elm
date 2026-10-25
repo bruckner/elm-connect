@@ -59,16 +59,11 @@ Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeGetNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorGetNote
-            , routes =
-                [ { route = routeGetNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
+            descriptorGetNote
+            [ routeGetNote0
+            ]
         )
 
 
@@ -84,16 +79,11 @@ Described by [`descriptorListNotes`](#descriptorListNotes).
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeListNotesRequest
-            , decode = Notes.V1.decodeListNotesResponse
-            , descriptor = descriptorListNotes
-            , routes =
-                [ { route = routeListNotes0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
+            descriptorListNotes
+            [ routeListNotes0
+            ]
         )
 
 
@@ -111,16 +101,11 @@ Described by [`descriptorCreateNote`](#descriptorCreateNote).
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeCreateNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorCreateNote
-            , routes =
-                [ { route = routeCreateNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
+            descriptorCreateNote
+            [ routeCreateNote0
+            ]
         )
 
 
@@ -136,16 +121,11 @@ Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeUpdateNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorUpdateNote
-            , routes =
-                [ { route = routeUpdateNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
+            descriptorUpdateNote
+            [ routeUpdateNote0
+            ]
         )
 
 
@@ -161,16 +141,11 @@ Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeDeleteNoteRequest
-            , decode = Proto.Json.empty
-            , descriptor = descriptorDeleteNote
-            , routes =
-                [ { route = routeDeleteNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
+            descriptorDeleteNote
+            [ routeDeleteNote0
+            ]
         )
 
 
@@ -186,16 +161,11 @@ Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Notes.V1.encodeArchiveNoteRequest
-            , decode = Notes.V1.decodeNote
-            , descriptor = descriptorArchiveNote
-            , routes =
-                [ { route = routeArchiveNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
+            descriptorArchiveNote
+            [ routeArchiveNote0
+            ]
         )
 
 
@@ -212,12 +182,10 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Proto.Json.encodeEmpty
-            , decode = Proto.Json.empty
-            , descriptor = descriptorPing
-            , routes = []
-            }
+        (Proto.Method.methodWith Proto.Json.encodeEmpty
+            Proto.Json.empty
+            descriptorPing
+            []
         )
 
 
@@ -227,96 +195,96 @@ ping =
 
 {-| Binding 0 of [`getNote`](#getNote): `GET /v1/notes/*`.
 -}
-routeGetNote0 : Notes.V1.GetNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetNote0 : Notes.V1.GetNoteRequest -> Rpc.Route.Route
 routeGetNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`listNotes`](#listNotes): `GET /v1/notes`.
 -}
-routeListNotes0 : Notes.V1.ListNotesRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListNotes0 : Notes.V1.ListNotesRequest -> Rpc.Route.Route
 routeListNotes0 request_ =
-    ( { method = "GET"
-      , path = "v1/notes"
-      , query = Notes.V1.queryOfListNotesRequest request_
-      , body = Nothing
-      }
-    , Nothing
-    )
+    { method = "GET"
+    , path = "v1/notes"
+    , query = Notes.V1.queryOfListNotesRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 {-| Binding 0 of [`createNote`](#createNote): `POST /v1/notes`.
 -}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> Rpc.Route.Route
 routeCreateNote0 request_ =
-    ( { method = "POST"
-      , path = "v1/notes"
-      , query = []
-      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-      }
-    , Nothing
-    )
+    { method = "POST"
+    , path = "v1/notes"
+    , query = []
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
 
 
 {-| Binding 0 of [`updateNote`](#updateNote): `PATCH /v1/notes/*`.
 -}
-routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Rpc.Route.Route
 routeUpdateNote0 request_ =
     let
         value0_ =
             Maybe.withDefault "" (Maybe.map .name request_.note)
     in
-    ( { method = "PATCH"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Notes.V1.queryOfUpdateNoteRequest request_
-      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-      }
-    , Rpc.Route.checkSegments "note.name" [ "notes", "*" ] value0_
-    )
+    { method = "PATCH"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = Notes.V1.queryOfUpdateNoteRequest request_
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "note.name" [ "notes", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`deleteNote`](#deleteNote): `DELETE /v1/notes/*`.
 -}
-routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> Rpc.Route.Route
 routeDeleteNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "DELETE"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "DELETE"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 {-| Binding 0 of [`archiveNote`](#archiveNote): `POST /v1/notes/*:archive`.
 -}
-routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> Rpc.Route.Route
 routeArchiveNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "POST"
-      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":archive"
-      , query = []
-      , body = Just (Rpc.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "POST"
+    , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":archive"
+    , query = []
+    , body = Just (Rpc.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 

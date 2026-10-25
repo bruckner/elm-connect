@@ -44,7 +44,7 @@ request cfg c =
         Transcode _ ->
             case route cfg.transport c of
                 Bound _ bound ->
-                    transcodeRequest (Tuple.first (bound.build (Rpc.Call.requestMessage c))) cfg c
+                    transcodeRequest (bound (Rpc.Call.requestMessage c)) cfg c
 
                 Implicit ->
                     connectRequest { get = False, maxGetUrl = Nothing } cfg c
@@ -123,7 +123,7 @@ invalidPathValue : Settings c -> Call req res -> Maybe { field : String, templat
 invalidPathValue cfg c =
     case route cfg.transport c of
         Bound _ bound ->
-            Tuple.second (bound.build (Rpc.Call.requestMessage c))
+            (bound (Rpc.Call.requestMessage c)).invalid
 
         Implicit ->
             Nothing

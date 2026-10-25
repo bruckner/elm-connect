@@ -36,16 +36,11 @@ Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.methodWith
-            { encode = Api.Example.Notes.V1.encodeGetNoteRequest
-            , decode = Api.Example.Notes.V1.decodeNote
-            , descriptor = descriptorGetNote
-            , routes =
-                [ { route = routeGetNote0
-                  , responseBody = Nothing
-                  }
-                ]
-            }
+        (Proto.Method.methodWith Api.Example.Notes.V1.encodeGetNoteRequest
+            Api.Example.Notes.V1.decodeNote
+            descriptorGetNote
+            [ routeGetNote0
+            ]
         )
 
 
@@ -55,19 +50,19 @@ getNote =
 
 {-| Binding 0 of [`getNote`](#getNote): `GET /v1/notes/*`.
 -}
-routeGetNote0 : Api.Example.Notes.V1.GetNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetNote0 : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Route.Route
 routeGetNote0 request_ =
     let
         value0_ =
             request_.name
     in
-    ( { method = "GET"
-      , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = []
-      , body = Nothing
-      }
-    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
-    )
+    { method = "GET"
+    , path = "v1/" ++ Rpc.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 

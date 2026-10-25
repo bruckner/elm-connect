@@ -7,9 +7,9 @@ module Rpc.Route exposing
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
 generated route functions build it from a typed request:
-`routeGetNote0 : GetNoteRequest -> ( Route, Maybe PathError )`: the route,
-built whatever the request holds, and the first path value its variable's
-template cannot match. The helpers
+`routeGetNote0 : GetNoteRequest -> Route`: the route, built whatever the
+request holds, with the first path value its variable's template cannot
+match. The helpers
 below are what such functions call; application code reads a `Route` and
 does not build one.
 
@@ -39,14 +39,18 @@ import Rpc.Internal.Http as Internal
 
 {-| A binding's request: its HTTP method, its path percent-encoded and
 without a leading slash (`v1/notes/42:archive`), its query as name and
-value pairs not yet encoded, in order, and its body as JSON, `Nothing` for
-none.
+value pairs not yet encoded, in order, its body as JSON (`Nothing` for
+none), the JSON name of the response field its answer is read from
+(`Nothing` for the whole response), and the first path value its
+variable's template cannot match, which sending refuses.
 -}
 type alias Route =
     { method : String
     , path : String
     , query : List ( String, String )
     , body : Maybe Value
+    , responseBody : Maybe String
+    , invalid : Maybe PathError
     }
 
 
