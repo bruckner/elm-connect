@@ -8,3 +8,8 @@
   with the options on disk; modules from another release; or modules
   out of date, with their diffs. Before, a check given other options
   printed every module's diff as out of date.
+- `input::file_not_found` is rendered as the other diagnostics are,
+  under the "elm-connect found a problem" header and above the pointer
+  to the catalogue, in elm-connect's words (``The file `a.proto` imports
+  `b.proto`, which is under none of the include paths.``) rather than
+  protox's.

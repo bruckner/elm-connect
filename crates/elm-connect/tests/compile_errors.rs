@@ -7,8 +7,14 @@ fn fixtures() -> PathBuf {
 }
 
 fn render(report: &miette::Report) -> String {
+    render_at(report, 80)
+}
+
+/// `report` rendered `width` columns wide: wide enough, a long path stays
+/// on one line.
+fn render_at(report: &miette::Report, width: usize) -> String {
     let handler =
-        GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor()).with_width(80);
+        GraphicalReportHandler::new_themed(GraphicalTheme::unicode_nocolor()).with_width(width);
     let mut out = String::new();
     handler
         .render_report(&mut out, report.as_ref())
@@ -205,27 +211,32 @@ fn a_missing_import_names_the_include_paths_searched() {
         &[dir.clone(), other.clone()],
     )
     .expect_err("the import is on no include path");
-    let rendered = render(&report);
+    let rendered = render_at(&report, 400);
     assert!(
-        rendered.contains("import 'users/v1/user.proto' not found"),
-        "protox's own message stays: {rendered}"
+        rendered.contains("elm-connect found a problem in the protos"),
+        "{rendered}"
     );
-    assert!(rendered.contains("imported here"), "{rendered}");
-    let help = report.help().expect("a help").to_string();
+    assert!(rendered.contains("input::file_not_found"), "{rendered}");
     assert!(
-        help.starts_with(&format!(
+        rendered.contains(
+            "The file `library.proto` imports `users/v1/user.proto`, which is under none of \
+             the include paths."
+        ),
+        "{rendered}"
+    );
+    assert!(rendered.contains("╭─[library.proto:3:1]"), "{rendered}");
+    assert!(rendered.contains("imported here"), "{rendered}");
+    let flat = rendered;
+    assert!(
+        flat.contains(&format!(
             "The include paths searched were `{}`, `{}` (`-I`",
             dir.display(),
             other.display()
         )),
-        "{help}"
+        "{flat}"
     );
-    assert!(help.contains("with `-I`"), "{help}");
-    assert!(!help.contains("does not exist"), "{help}");
-    assert_eq!(
-        report.code().map(|code| code.to_string()).as_deref(),
-        Some("input::file_not_found")
-    );
+    assert!(flat.contains("with `-I`"), "{flat}");
+    assert!(!flat.contains("does not exist"), "{flat}");
 
     let absent = dir.join("protos");
     let report = elm_connect::compile(
@@ -233,13 +244,48 @@ fn a_missing_import_names_the_include_paths_searched() {
         std::slice::from_ref(&absent),
     )
     .expect_err("the include path does not exist");
-    let help = report.help().expect("a help").to_string();
+    let flat = render_at(&report, 400);
     assert!(
-        help.contains(&format!("`{}` does not exist.", absent.display())),
-        "{help}"
+        flat.contains(&format!("`{}` does not exist.", absent.display())),
+        "{flat}"
     );
+    assert!(
+        flat.contains("The file `library.proto` is under none of the include paths."),
+        "{flat}"
+    );
+}
 
+#[test]
+fn a_missing_file_is_a_report_without_a_snippet() {
+    let dir = inputs("cli-missing-file", &[]);
     let report = elm_connect::compile(&[PathBuf::from("absent.proto")], std::slice::from_ref(&dir))
         .expect_err("no such file");
-    assert!(render(&report).contains("The include paths searched were"));
+    let rendered = render(&report);
+    assert!(
+        rendered.contains("elm-connect found a problem in the protos"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("The file `absent.proto` is under none of the include paths."),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("The include paths searched were"),
+        "{rendered}"
+    );
+    assert!(!rendered.contains("╭─["), "no snippet: {rendered}");
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_elm-connect"))
+        .args(["gen", "absent.proto", "--out", "out", "-I"])
+        .arg(&dir)
+        .output()
+        .expect("run elm-connect");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("elm-connect found a problem in the protos"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("Error: input::file_not_found"), "{stderr}");
+    assert!(stderr.contains("Codes and their escapes:"), "{stderr}");
 }

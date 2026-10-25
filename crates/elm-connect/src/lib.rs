@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{
-    Code, Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
+    Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
     field_name_conflicts,
 };
 use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
@@ -122,10 +122,7 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
             Err(error) => error,
         };
         if error.is_file_not_found() {
-            return Err(Report::new(NotFound {
-                error,
-                includes: includes.clone(),
-            }));
+            return Err(not_found(&error, &includes));
         }
         return Err(error.into());
     }
@@ -148,63 +145,87 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     })
 }
 
-/// protox's error for a file or import found on no include path, as protox
-/// renders it, with a help naming the include paths it searched.
-#[derive(Debug)]
-struct NotFound {
-    error: protox::Error,
-    includes: Vec<PathBuf>,
-}
-
-impl std::fmt::Display for NotFound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.error, f)
+/// The `input::file_not_found` problem for protox's `error` that a file
+/// named on the command line, or one it imports, is on no include path:
+/// sited at the import, with its snippet, when an import is missing, and
+/// at the file, with none, when a file named on the command line is.
+/// protox exposes the missing name only in its message, so it is read
+/// from there.
+fn not_found(error: &protox::Error, includes: &[PathBuf]) -> Report {
+    let text = error.to_string();
+    // `file 'a.proto' not found`, `import 'a.proto' not found` and `file
+    // 'a.proto' is not in any include path`.
+    let quoted = text
+        .split_once('\'')
+        .and_then(|(_, rest)| rest.rsplit_once('\''))
+        .map_or(text.as_str(), |(name, _)| name);
+    let searched: Vec<String> = includes
+        .iter()
+        .map(|include| include.display().to_string())
+        .collect();
+    // An include path that is no directory is the likelier mistake.
+    let absent: Vec<(String, &str)> = includes
+        .iter()
+        .filter(|include| !include.is_dir())
+        .map(|include| {
+            let why = if include.exists() {
+                "is not a directory"
+            } else {
+                "does not exist"
+            };
+            (include.display().to_string(), why)
+        })
+        .collect();
+    let importer = text
+        .starts_with("import ")
+        .then(|| error.file())
+        .flatten()
+        .map(str::to_owned);
+    let Some(importer) = importer else {
+        return Report::new(Diagnostics::from(Problem::file_not_found(
+            quoted, None, &searched, &absent,
+        )));
+    };
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(&importer)).ok());
+    let span = error
+        .labels()
+        .and_then(|mut labels| labels.next())
+        .zip(source.as_deref())
+        .and_then(|(label, source)| {
+            line_col_span(source, label.offset(), label.offset() + label.len())
+        });
+    let site = Site {
+        file: importer.clone(),
+        span,
+        label: "imported here".into(),
+        within: Vec::new(),
+    };
+    let problem = Problem::file_not_found(quoted, Some(site), &searched, &absent);
+    match source {
+        Some(source) => report(problem, &importer, source),
+        None => Report::new(Diagnostics::from(problem)),
     }
 }
 
-impl std::error::Error for NotFound {}
-
-impl Diagnostic for NotFound {
-    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        Some(Box::new(Code::FileNotFound.as_str()))
-    }
-
-    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        let searched: Vec<String> = self
-            .includes
-            .iter()
-            .map(|include| format!("`{}`", include.display()))
-            .collect();
-        // An include path that is no directory is the likelier mistake.
-        let missing: String = self
-            .includes
-            .iter()
-            .filter(|include| !include.is_dir())
-            .map(|include| {
-                let what = if include.exists() {
-                    "is not a directory"
-                } else {
-                    "does not exist"
-                };
-                format!(" `{}` {what}.", include.display())
-            })
-            .collect();
-        Some(Box::new(format!(
-            "The include paths searched were {} (`-I`, `.` when none is given), then the \
-             `google/protobuf` files and the `google/api` annotations elm-connect bundles.\
-             {missing} Add the directory the file is under with `-I`, and name it relative to \
-             that directory.",
-            searched.join(", ")
-        )))
-    }
-
-    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-        self.error.source_code()
-    }
-
-    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
-        self.error.labels()
-    }
+/// The line and column span, columns in bytes, of the bytes `start` to
+/// `end` of `source`.
+fn line_col_span(source: &str, start: usize, end: usize) -> Option<LineColSpan> {
+    let position = |offset: usize| {
+        let before = source.get(..offset)?;
+        let line = before.matches('\n').count();
+        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+        Some((u32::try_from(line).ok()?, u32::try_from(col).ok()?))
+    };
+    let (start_line, start_col) = position(start)?;
+    let (end_line, end_col) = position(end)?;
+    Some(LineColSpan {
+        start_line,
+        start_col,
+        end_line,
+        end_col,
+    })
 }
 
 /// protox's refusal of two fields of a message whose names are the same

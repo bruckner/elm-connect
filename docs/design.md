@@ -2799,7 +2799,11 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   The CLI's compile errors are protox's, rendered as protox renders them
   and not in the catalogue, but a file or import found on no include
   path, which is `input::file_not_found` with a help naming the include
-  paths searched and any that does not exist.
+  paths searched and any that does not exist, rendered as the
+  catalogue's other problems are, under the header and above the
+  pointer to the catalogue: at the import statement, with its snippet,
+  for a missing import, and at the file, without one, for a file named
+  on the command line.
   The `naming::reserved_*` checks (§3.8) are errors: what they report
   would not compile, and an error at generation names the proto element
   and the escape where the Elm compiler's error would name neither.
