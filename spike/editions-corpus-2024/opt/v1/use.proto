@@ -1,0 +1,14 @@
+// Uses the options of a file it imports with `import option`.
+edition = "2024";
+
+package opt.v1.use;
+
+import "vis/v1/defaults.proto";
+import option "opt/v1/options.proto";
+
+message Labelled {
+  option (opt.v1.tag) = {name: "labelled"};
+
+  string title = 1 [(opt.v1.label) = "Title"];
+  vis.v1.Color color = 2;
+}

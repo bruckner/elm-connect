@@ -1,0 +1,4 @@
+edition = "2024";
+package deps.local_all;
+option features.default_symbol_visibility = LOCAL_ALL;
+message Request {}

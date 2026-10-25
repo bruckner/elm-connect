@@ -1,0 +1,3 @@
+edition = "2024";
+package invalid;
+import weak "deps/local_all.proto";

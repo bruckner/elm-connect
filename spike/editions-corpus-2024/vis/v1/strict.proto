@@ -1,0 +1,28 @@
+// STRICT visibility: everything local unless exported, nested types never exported, except
+// an enum in a local top-level message that reserves every field number.
+edition = "2024";
+
+package vis.v1.strict;
+
+option features.default_symbol_visibility = STRICT;
+
+export message Exported {
+  message Inner {
+    int32 value = 1;
+  }
+
+  Inner inner = 1;
+}
+
+message Unexported {
+  int32 value = 1;
+}
+
+local message Namespace {
+  export enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_ONE = 1;
+  }
+
+  reserved 1 to max;
+}

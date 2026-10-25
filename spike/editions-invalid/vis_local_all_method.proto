@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+import "deps/local_all.proto";
+service S { rpc Call(deps.local_all.Request) returns (deps.local_all.Request); }

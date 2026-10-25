@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+import option "deps/options.proto";
+message M { deps.options.Tag tag = 1; }

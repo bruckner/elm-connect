@@ -1,0 +1,5 @@
+edition = "2024";
+package deps.options;
+import "google/protobuf/descriptor.proto";
+message Tag {}
+extend google.protobuf.FieldOptions { string label = 50001; }

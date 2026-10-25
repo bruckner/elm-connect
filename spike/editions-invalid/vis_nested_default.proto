@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+import "deps/visibility.proto";
+message M { deps.Top.Nested n = 1; }

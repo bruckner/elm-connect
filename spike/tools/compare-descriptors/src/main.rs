@@ -1,5 +1,7 @@
 //! `compare-descriptors <corpus> <googleapis> <name=set.binpb>...`
 //!
+//! `COMPARE_FILES` (space-separated) names the corpus files; the edition 2023 corpus otherwise.
+//!
 //! Compiles the corpus files with the vendored protox and compares, for every reference set
 //! (a `FileDescriptorSet` built by buf or protoc from the same files), each corpus file's
 //! descriptor field for field (as canonical JSON, source info removed), then the features and
@@ -11,7 +13,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 use prost_reflect::{DescriptorPool, DynamicMessage, MessageDescriptor};
 use serde_json::Value;
 
-const FILES: &[&str] = &[
+const DEFAULT_FILES: &[&str] = &[
     "test_messages_edition2023.proto",
     "test_messages_proto3_editions.proto",
     "notes/v1/notes.proto",
@@ -30,9 +32,16 @@ fn main() {
         })
         .collect();
 
+    let files: Vec<String> = match std::env::var("COMPARE_FILES") {
+        Ok(list) => list.split_whitespace().map(str::to_owned).collect(),
+        Err(_) => DEFAULT_FILES.iter().map(|f| (*f).to_owned()).collect(),
+    };
+    let files: Vec<&str> = files.iter().map(String::as_str).collect();
+    let files = files.as_slice();
+
     let mut compiler = protox::Compiler::new([corpus, googleapis]).expect("include paths");
     compiler.include_imports(true).include_source_info(false);
-    if let Err(err) = compiler.open_files(FILES) {
+    if let Err(err) = compiler.open_files(files) {
         eprintln!("protox: {err:?}");
         std::process::exit(2);
     }
@@ -52,7 +61,7 @@ fn main() {
     for (name, bytes) in &references {
         let reference = files_by_name(bytes);
         println!("== descriptors: {name} vs protox");
-        for file in FILES {
+        for file in files {
             let mut diffs = Vec::new();
             diff("", &reference[*file], &fork[*file], &mut diffs);
             println!("{file}: {} difference(s)", diffs.len());
@@ -71,7 +80,7 @@ fn main() {
                 continue;
             }
         };
-        for file in FILES {
+        for file in files {
             let expected = feature_lines(&reference_pool, file);
             let actual = feature_lines(&fork_pool, file);
             let mut count = 0;
@@ -149,10 +158,26 @@ fn feature_lines(pool: &DescriptorPool, file: &str) -> BTreeMap<String, String> 
     let file = pool.get_file_by_name(file).expect("the file in the pool");
     lines.insert(
         format!("file {}", file.name()),
-        format!("{:?} {:?} {:?}", file.syntax(), file.edition(), file.features()),
+        format!(
+            "{:?} {:?} {:?} option_dependencies={:?}",
+            file.syntax(),
+            file.edition(),
+            file.features(),
+            file.option_dependencies()
+                .map(|f| f.name().to_owned())
+                .collect::<Vec<_>>()
+        ),
     );
     fn message(lines: &mut BTreeMap<String, String>, m: MessageDescriptor) {
-        lines.insert(format!("message {}", m.full_name()), format!("{:?}", m.features()));
+        lines.insert(
+            format!("message {}", m.full_name()),
+            format!(
+                "{:?} keyword={:?} visibility={:?}",
+                m.features(),
+                m.visibility_keyword(),
+                m.visibility()
+            ),
+        );
         for f in m.fields() {
             lines.insert(
                 format!("field {}", f.full_name()),
@@ -199,7 +224,13 @@ fn feature_lines(pool: &DescriptorPool, file: &str) -> BTreeMap<String, String> 
     fn enum_(lines: &mut BTreeMap<String, String>, e: prost_reflect::EnumDescriptor) {
         lines.insert(
             format!("enum {}", e.full_name()),
-            format!("{:?} closed={}", e.features(), e.is_closed()),
+            format!(
+                "{:?} closed={} keyword={:?} visibility={:?}",
+                e.features(),
+                e.is_closed(),
+                e.visibility_keyword(),
+                e.visibility()
+            ),
         );
         for v in e.values() {
             lines.insert(format!("value {}", v.full_name()), format!("{:?}", v.features()));

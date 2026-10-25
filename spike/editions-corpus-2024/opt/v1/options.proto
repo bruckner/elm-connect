@@ -1,0 +1,18 @@
+// Custom options, and a message that a file importing this one only for options cannot use.
+edition = "2024";
+
+package opt.v1;
+
+import "google/protobuf/descriptor.proto";
+
+message Tag {
+  string name = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  string label = 50001;
+}
+
+extend google.protobuf.MessageOptions {
+  Tag tag = 50002;
+}

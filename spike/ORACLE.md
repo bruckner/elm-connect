@@ -134,3 +134,63 @@ Run 1's descriptor oracle (`spike/run-oracle.sh`) was rerun after prost-types
 was regenerated and the edition side channels removed: still 0 descriptor and
 0 feature differences against buf 1.73.0 and protoc 35.1 on all four corpus
 files, and the same invalid-file table.
+
+## Run 3: edition 2024
+
+`spike/run-oracle.sh OUT` now builds two corpora: the edition 2023 one above and
+`spike/editions-corpus-2024/` (one module of its own, since its rewrites reuse the 2023 files'
+package and message names). protoc runs with `--retain_options`: without it protoc strips
+source-retention options from the set it writes, and edition 2024's `enforce_naming_style` and
+`default_symbol_visibility` are source-retention features. The comparison now also covers each
+file's option dependencies and each message's and enum's visibility keyword and resolved
+visibility.
+
+| File | From |
+|---|---|
+| `test_messages_proto3_editions.proto` | the v32.0 file with `edition = "2024"`, `option features.enforce_naming_style = STYLE_LEGACY;` (its JSON-name test fields break STYLE2024) and its four `ctype` options removed (2024 forbids `ctype`) |
+| `test_messages_edition2023.proto` | the v32.0 file with `edition = "2024"`, `java_multiple_files` and its four `ctype` options removed |
+| `vis/v1/defaults.proto` | EXPORT_TOP_LEVEL: top-level default export, nested default local, nested `export` message and enum, top-level `local` message and enum used in their own file |
+| `vis/v1/strict.proto`, `vis/v1/local_all.proto` | STRICT (with the namespacing enum exception) and LOCAL_ALL (with nested exports) |
+| `vis/v1/legacy.proto` | an edition 2023 file whose nested types a 2024 file uses |
+| `vis/v1/use.proto` | uses every exported symbol of the four, as field types and method types |
+| `opt/v1/options.proto`, `opt/v1/use.proto` | custom field and message options used through `import option` |
+| `naming/v1/naming.proto` | STYLE2024 names with digits, a map, a oneof, a nested enum, and a message that opts out with STYLE_LEGACY |
+
+protoc 35.1 and buf 1.73.0 accept every file. Without the opt-out, the rewrite of
+`test_messages_proto3_editions.proto` is refused by the fork with the same 19 naming errors as
+protoc, text for text (15 fields, 4 enum values).
+
+| Reference | Descriptor diffs | Feature diffs |
+|---|---:|---:|
+| protoc 35.1 (`--retain_options`) vs fork, 10 files, 518 elements | 0 | 0 |
+| buf 1.73.0 vs fork | 1 | 1 |
+
+The one buf difference is buf's: buf 1.73.0 leaves `option_dependency` out of the descriptors
+it writes (`opt/v1/use.proto` has no `optionDependency` in buf's image, and so no option
+dependencies in a pool built from it); protoc writes it, and the fork matches protoc.
+
+Without `--retain_options`, protoc's set differs from the fork's by the stripped features (4
+files), and a pool built from it would refuse `test_messages_proto3_editions.proto` if it checked
+names, because the opt-out is gone. That is why prost-reflect checks names only when a pool asks
+(`DescriptorPool::enforce_naming_style`, which protox's compiler turns on), as protoc's C++
+`DescriptorPool` does: the same stripping applies to the `proto_file`s protoc sends a plugin.
+
+### Invalid files, edition 2024
+
+`spike/editions-invalid/` gained 25 cases (`deps/` holds the files they import; buf builds each
+case with `deps/`):
+
+| Case | protoc 35.1 | buf 1.73.0 | fork |
+|---|---|---|---|
+| `vis_local_explicit`, `vis_nested_default`, `vis_local_all_method`, `vis_extendee_local` (field type, method type, extendee not visible) | refused | refused | refused |
+| `vis_strict_nested_message`, `vis_strict_nested_enum` | refused | refused (as "does not reserve all field numbers") | refused |
+| `vis_modifier_on_service`, `vis_modifier_in_2023`, `vis_feature_on_message` | refused | refused | refused (parser for the first two) |
+| `option_import_type`, `option_import_in_2023`, `option_import_order` | refused | refused | refused |
+| `weak_import_2024`, `ctype_2024`, `java_multiple_files_2024` | refused | refused | refused |
+| `naming_package`, `naming_message`, `naming_field`, `naming_field_digit_underscore`, `naming_oneof`, `naming_enum`, `naming_enum_value`, `naming_enum_value_trailing_underscore`, `naming_service`, `naming_method` | refused | refused | refused |
+| `edition_2024` (run 1's refusal) | accepted | accepted | **accepted** now |
+
+The fork's naming and visibility messages are protoc's texts (one doubled space and protoc's
+quoting of the feature value tidied); the rest keep the fork's wording. Run 1's three
+differences (`implicit_default`, `map_closed_enum_nonzero`, `json_name_conflict`) are unchanged.
+The 2023 corpus still shows 0 and 0 against both references.

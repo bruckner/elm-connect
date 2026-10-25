@@ -1,0 +1,27 @@
+// Uses, from another file, every symbol the other visibility files export.
+edition = "2024";
+
+package vis.v1.use;
+
+import "vis/v1/defaults.proto";
+import "vis/v1/legacy.proto";
+import "vis/v1/local_all.proto";
+import "vis/v1/strict.proto";
+
+message Uses {
+  vis.v1.Top top = 1;
+  vis.v1.Top.Shared shared = 2;
+  vis.v1.Top.Mode mode = 3;
+  vis.v1.Color color = 4;
+  vis.v1.strict.Exported exported = 5;
+  vis.v1.strict.Namespace.Kind kind = 6;
+  vis.v1.local_all.Request request = 7;
+  vis.v1.local_all.Request.Part part = 8;
+  vis.v1.local_all.Status status = 9;
+  vis.v1.legacy.Outer.Inner legacy_inner = 10;
+  vis.v1.legacy.Outer.Kind legacy_kind = 11;
+}
+
+service UseService {
+  rpc Call(vis.v1.local_all.Request) returns (vis.v1.Top.Shared);
+}

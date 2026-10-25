@@ -1,0 +1,3 @@
+edition = "2024";
+package invalid;
+enum Kind { KIND_UNSPECIFIED = 0; kind_other = 1; }

@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+option features.default_symbol_visibility = STRICT;
+message Outer { export message Inner {} }

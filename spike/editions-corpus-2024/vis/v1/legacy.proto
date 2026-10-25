@@ -1,0 +1,14 @@
+// An edition 2023 file: every symbol is exported, nested ones included.
+edition = "2023";
+
+package vis.v1.legacy;
+
+message Outer {
+  message Inner {
+    int32 value = 1;
+  }
+
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+  }
+}

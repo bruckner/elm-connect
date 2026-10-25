@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+import "deps/visibility.proto";
+extend deps.Extendable { int32 value = 100; }

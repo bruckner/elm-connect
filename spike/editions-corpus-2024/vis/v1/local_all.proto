@@ -1,0 +1,22 @@
+// LOCAL_ALL: everything local unless exported, and nested types may be exported.
+edition = "2024";
+
+package vis.v1.local_all;
+
+option features.default_symbol_visibility = LOCAL_ALL;
+
+export message Request {
+  export message Part {
+    string text = 1;
+  }
+
+  repeated Part parts = 1;
+}
+
+message Hidden {
+  int32 value = 1;
+}
+
+export enum Status {
+  STATUS_UNSPECIFIED = 0;
+}

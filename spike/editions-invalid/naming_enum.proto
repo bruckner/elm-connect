@@ -1,0 +1,3 @@
+edition = "2024";
+package invalid;
+enum lower_enum { LOWER_ENUM_UNSPECIFIED = 0; }

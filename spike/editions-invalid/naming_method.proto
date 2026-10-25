@@ -1,0 +1,4 @@
+edition = "2024";
+package invalid;
+message M {}
+service S { rpc get_thing(M) returns (M); }

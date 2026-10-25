@@ -1,0 +1,50 @@
+// Edition 2024's default visibility, EXPORT_TOP_LEVEL, with explicit modifiers.
+edition = "2024";
+
+package vis.v1;
+
+// Exported by default: top level.
+message Top {
+  // Local by default: nested.
+  message Nested {
+    int32 value = 1;
+  }
+
+  // Exported explicitly.
+  export message Shared {
+    string text = 1;
+  }
+
+  // Nested and exported.
+  export enum Mode {
+    MODE_UNSPECIFIED = 0;
+    MODE_FAST = 1;
+  }
+
+  // Nested, local by default.
+  enum Internal {
+    INTERNAL_UNSPECIFIED = 0;
+  }
+
+  Nested nested = 1;
+  Internal internal = 2;
+}
+
+// Local explicitly.
+local message Private {
+  Top.Nested nested = 1;
+}
+
+export enum Color {
+  COLOR_UNSPECIFIED = 0;
+  COLOR_RED = 1;
+}
+
+local enum Secret {
+  SECRET_UNSPECIFIED = 0;
+}
+
+message UsesLocal {
+  Private private = 1;
+  Secret secret = 2;
+}

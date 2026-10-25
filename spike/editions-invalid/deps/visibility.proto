@@ -1,0 +1,5 @@
+edition = "2024";
+package deps;
+local message Hidden {}
+message Top { message Nested {} }
+local message Extendable { extensions 100 to 200; }

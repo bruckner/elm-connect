@@ -1,0 +1,38 @@
+// Names that STYLE2024 accepts, including digits and nested scopes, and a message that opts out.
+edition = "2024";
+
+package naming.v1;
+
+message Http2Request {
+  string url = 1;
+  int32 retry_count2 = 2;
+  map<string, int32> header_counts = 3;
+
+  oneof body_kind {
+    string text_body = 4;
+    bytes raw_body = 5;
+  }
+
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    METHOD_GET2 = 1;
+  }
+
+  Method method = 6;
+}
+
+message LegacyNames {
+  option features.enforce_naming_style = STYLE_LEGACY;
+
+  int32 camelCase = 1;
+  int32 Field_Name = 2;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+}
+
+service NamingService {
+  rpc GetHttp2Request(Http2Request) returns (Http2Request);
+}
