@@ -1099,6 +1099,14 @@ transports =
                 , Rpc.Transport.withMaxGetUrl 1 Rpc.Transport.transcode
                 )
                     |> Expect.equal ( Rpc.request base (getNote { name = "x" }), Rpc.Transport.transcode )
+        , test "transcoding transports built alike are ==, and differ by their limits" <|
+            \_ ->
+                [ Rpc.Transport.withReadMaxBytes 10 Rpc.Transport.transcode == Rpc.Transport.withReadMaxBytes 10 Rpc.Transport.transcode
+                , Rpc.Transport.withReadMaxBytes 10 Rpc.Transport.transcode == Rpc.Transport.withReadMaxBytes 11 Rpc.Transport.transcode
+                , Rpc.Transport.withWriteMaxBytes 10 Rpc.Transport.transcode == Rpc.Transport.transcode
+                , Rpc.Transport.transcode == Rpc.Transport.connect
+                ]
+                    |> Expect.equal [ True, False, False, False ]
         , test "the config's default is Connect, POST only" <|
             \_ ->
                 base.transport

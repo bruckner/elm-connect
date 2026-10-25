@@ -17,7 +17,7 @@ import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Route as Route exposing (Route(..), route)
-import Rpc.Internal.Transport exposing (Transport(..))
+import Rpc.Internal.Transport exposing (Transcoder, Transport(..))
 import Rpc.Request exposing (Request)
 
 
@@ -41,10 +41,10 @@ request cfg c =
         Connect options ->
             connectRequest options cfg c
 
-        Transcode _ ->
+        Transcode options ->
             case route cfg.transport c of
                 Bound _ rule ->
-                    transcodeRequest rule cfg c
+                    transcodeRequest options.transcoder rule cfg c
 
                 Implicit ->
                     connectRequest { get = False, maxGetUrl = Nothing } cfg c
@@ -104,16 +104,16 @@ connectRequest options cfg ((Call fields) as c) =
 
 {-| The request over one binding of a method's rule.
 -}
-transcodeRequest : Rule -> Settings c -> Call req res -> Request
-transcodeRequest rule cfg ((Call fields) as c) =
+transcodeRequest : Transcoder -> Rule -> Settings c -> Call req res -> Request
+transcodeRequest transcoder rule cfg ((Call fields) as c) =
     let
         json =
             Rpc.Call.requestJson c
     in
     { method = rule.method
-    , url = Route.transcodeUrl cfg.baseUrl rule json
+    , url = transcoder.url cfg.baseUrl rule json
     , headers = cfg.headers ++ fields.headers
-    , body = Route.bindingBody rule json
+    , body = transcoder.body rule json
     , timeout = callTimeout cfg c
     , withCredentials = cfg.withCredentials
     }
@@ -125,11 +125,11 @@ implicit route, which have no path variables.
 -}
 invalidPathValue : Settings c -> Call req res -> Maybe { field : String, template : String }
 invalidPathValue cfg c =
-    case route cfg.transport c of
-        Bound _ rule ->
-            Route.invalidPathValue rule (Rpc.Call.requestJson c)
+    case ( cfg.transport, route cfg.transport c ) of
+        ( Transcode options, Bound _ rule ) ->
+            options.transcoder.invalidPathValue rule (Rpc.Call.requestJson c)
 
-        Implicit ->
+        _ ->
             Nothing
 
 

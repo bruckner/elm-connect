@@ -42,3 +42,30 @@ conformance corpus's `expected/` modules.
 | eliza | 216568 | 58150 | 19317 |
 
 The notes numbers match the gen-routes baseline to the byte.
+
+## Prototype 1: transcoding behind `Rpc.Transport.transcode`
+
+`Rpc.Internal.Wire` called `Rpc.Internal.Route`'s URL, body and path-check
+functions by name in its `Transcode` branches, so every program reached
+them, a Connect-only one included (`why.py`: `main -> Rpc.send ->
+Rpc.request -> Wire.request -> Wire.transcodeRequest -> Route.transcodeUrl`,
+and `Rpc.unsendable -> Wire.invalidPathValue -> Route.invalidPathValue`).
+The `Transcode` variant now carries those three functions
+(`Rpc.Internal.Transport.Transcoder`), put there by `Rpc.Transport.transcode`;
+Wire calls them through the transport. `==` on transports still holds:
+elm/core compares by reference first, and every transcoding transport holds
+the same three top-level functions (new test in `RpcTest`).
+
+| program | gzip before | after | delta |
+|---|---:|---:|---:|
+| min | 14868 | 13896 | -972 (-6.5%) |
+| eliza | 19317 | 18359 | -958 (-5.0%) |
+| notes (transcodes) | 25477 | 25532 | +55 (+0.2%) |
+
+Optimized: min 169074 -> 155717, eliza 216568 -> 203361, notes 298401 ->
+298618. Minified: 45127 -> 42029, 58150 -> 55101, 77210 -> 77284. What is
+left of `Rpc.Internal.Route` in min is `route` (the binding lookup Answer and
+Trace use), `connectUrl` and `trimSlash`, 1.1 KB optimized. Request and
+answer times unchanged (bench, within 2%). Runtime tests: 1034 pass (the
+codec round trips need `cargo test` to generate their modules and were not
+run); notes example tests 11 pass.

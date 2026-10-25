@@ -25,6 +25,7 @@ It is data, like the rest of a config: transports built alike are `==`.
 
 -}
 
+import Rpc.Internal.Route as Route
 import Rpc.Internal.Transport as Internal
 
 
@@ -66,7 +67,11 @@ serve: the request Connect would POST.
 -}
 transcode : Transport
 transcode =
-    Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing }
+    Internal.Transcode
+        { readMaxBytes = Nothing
+        , writeMaxBytes = Nothing
+        , transcoder = { url = Route.transcodeUrl, body = Route.bindingBody, invalidPathValue = Route.invalidPathValue }
+        }
 
 
 {-| POST a call whose GET URL, the whole of it with its query, would be longer
