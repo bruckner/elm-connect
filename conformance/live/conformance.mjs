@@ -7,8 +7,11 @@
 // each message prefixed by its length as a 4-byte big-endian integer.
 //
 //   connectconformance --mode client --conf conformance.yaml \
-//     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE]
+//     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE] [--elm PATH]
 //
+// A request for the proto codec is sent with the envelope's `codec: "proto"`,
+// which needs a program built against bindings with binary codecs
+// (`--elm build/elm-both.js`, which `just live-proto` builds).
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
 // Rpc.response), which give an application the answer's status and headers;
@@ -83,6 +86,7 @@ async function answer(runner, send, request) {
     useGet: request.useGetHttpMethod,
     // 0, the default, is no limit, as in connect-go.
     readMaxBytes: request.messageReceiveLimit || null,
+    codec: request.codec === Codec.PROTO ? "proto" : "json",
   };
   // A unary call's request is sent whole, so `afterCloseSendMs` counts from
   // the call being sent; refusal turns away the streaming-only timings.
@@ -112,7 +116,12 @@ async function answer(runner, send, request) {
   if (result.ok !== undefined) {
     let decoded;
     try {
-      decoded = fromJson(types.response, result.ok, { registry });
+      // Under the proto codec the runtime's response is read back from the
+      // binary it re-encodes, which holds an Any's packed bytes as they came.
+      decoded =
+        config.codec === "proto" && result.okBinary !== undefined
+          ? fromBinary(types.response, Buffer.from(result.okBinary, "base64"))
+          : fromJson(types.response, result.ok, { registry });
     } catch (e) {
       return failed(request, `the runtime's response does not read back as ${types.response.typeName}: ${e.message}`);
     }
@@ -121,12 +130,16 @@ async function answer(runner, send, request) {
     response.error = {
       code: codeOf(result.error.code),
       message: result.error.message,
-      details: result.error.details.map(detail),
+      details:
+        config.codec === "proto"
+          ? (result.error.detailsBinary ?? []).map((b64) => fromBinary(AnySchema, Buffer.from(b64, "base64")))
+          : result.error.details.map(detail),
     };
   } else if (result.canceled !== undefined) {
     response.error = { code: Code.CANCELED, message: "" };
   } else if (result.badResponse !== undefined) {
-    response.error = { code: Code.UNKNOWN, message: `BadResponse ${result.badResponse.problem}` };
+    // Rpc.Error.code reads a BadResponse as internal.
+    response.error = { code: Code.INTERNAL, message: `BadResponse ${result.badResponse.problem}` };
   } else {
     response.error = noAnswerError(result.noAnswer);
   }
@@ -142,7 +155,7 @@ function refusal(request) {
   if (request.service !== service) return `no service ${request.service}`;
   if (!Object.hasOwn(methods, request.method ?? "")) return `no unary method ${request.method}`;
   if (request.protocol !== Protocol.CONNECT) return `protocol ${Protocol[request.protocol]} is not supported`;
-  if (request.codec !== Codec.JSON) return `codec ${Codec[request.codec]} is not supported`;
+  if (request.codec !== Codec.JSON && request.codec !== Codec.PROTO) return `codec ${Codec[request.codec]} is not supported`;
   if (request.compression !== Compression.IDENTITY && request.compression !== Compression.UNSPECIFIED) {
     return `compression ${Compression[request.compression]} is not supported`;
   }
@@ -241,15 +254,17 @@ function write(message) {
 
 async function main(argv) {
   let send = "halves";
+  let elm = path.join(here, "build", "elm.js");
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--send") send = argv[++i];
+    else if (argv[i] === "--elm") elm = path.resolve(argv[++i]);
     else {
-      console.error("usage: conformance.mjs [--send halves|sendTraced|send|task]");
+      console.error("usage: conformance.mjs [--send halves|sendTraced|send|task] [--elm PATH]");
       process.exit(2);
     }
   }
   process.on("SIGTERM", () => process.exit(1));
-  const runner = await createRunner({ elm: path.join(here, "build", "elm.js") });
+  const runner = await createRunner({ elm });
   // The runner makes one call at a time, so requests are answered in order.
   for await (const bytes of frames(process.stdin)) {
     const request = fromBinary(ClientCompatRequestSchema, bytes);

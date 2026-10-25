@@ -1,6 +1,7 @@
 // A browser-shaped XMLHttpRequest over node:http, as much of it as elm/http
-// uses: open, setRequestHeader, send, abort, timeout, withCredentials,
-// responseType "" (text), the load, error, timeout, abort and progress events (and
+// uses: open, setRequestHeader, send (text, or a DataView or ArrayBuffer of
+// bytes), abort, timeout, withCredentials, responseType "" (text) or
+// "arraybuffer", the load, error, timeout, abort and progress events (and
 // upload progress),
 // status, statusText, response, responseText, responseURL and
 // getAllResponseHeaders. HTTP only, no TLS: the live suite's servers are local.
@@ -91,14 +92,20 @@ export function makeXMLHttpRequest(observe = () => {}) {
 
     send(body = null) {
       if (this.readyState !== OPENED) throw new Error("send before open");
-      if (this.responseType !== "" && this.responseType !== "text") {
+      if (this.responseType !== "" && this.responseType !== "text" && this.responseType !== "arraybuffer") {
         throw new Error(`responseType ${this.responseType} is not supported`);
       }
+      const binary = ArrayBuffer.isView(body)
+        ? Buffer.from(body.buffer, body.byteOffset, body.byteLength)
+        : body instanceof ArrayBuffer
+          ? Buffer.from(body)
+          : null;
       const exchange = {
         method: this.#method,
         url: this.#url.href,
         requestHeaders: this.#headers,
-        body: body === null || body === undefined ? null : String(body),
+        body: binary !== null || body === null || body === undefined ? null : String(body),
+        bodyBase64: binary === null ? undefined : binary.toString("base64"),
         timeout: this.timeout,
         withCredentials: this.withCredentials,
         status: null,
@@ -108,7 +115,7 @@ export function makeXMLHttpRequest(observe = () => {}) {
       };
       observe(exchange);
       this.#exchange = exchange;
-      const payload = exchange.body === null ? null : Buffer.from(exchange.body, "utf8");
+      const payload = binary ?? (exchange.body === null ? null : Buffer.from(exchange.body, "utf8"));
       const headers = {};
       for (const [k, v] of this.#headers) {
         const key = k.toLowerCase();
@@ -144,14 +151,20 @@ export function makeXMLHttpRequest(observe = () => {}) {
           this.status = response.statusCode;
           this.statusText = response.statusMessage ?? "";
           this.responseURL = this.#url.href;
-          this.responseText = Buffer.concat(chunks).toString("utf8");
-          this.response = this.responseText;
+          const whole = Buffer.concat(chunks);
+          if (this.responseType === "arraybuffer") {
+            this.response = whole.buffer.slice(whole.byteOffset, whole.byteOffset + whole.byteLength);
+            this.responseText = "";
+          } else {
+            this.responseText = whole.toString("utf8");
+            this.response = this.responseText;
+          }
           this.readyState = DONE;
           exchange.status = this.status;
           exchange.responseHeaders = Object.fromEntries(
             this.#responseHeaders.map(([k, v]) => [k.toLowerCase(), v]),
           );
-          exchange.responseBody = this.responseText;
+          exchange.responseBody = this.responseType === "arraybuffer" ? whole.toString("base64") : this.responseText;
           exchange.outcome = "load";
           this.dispatch("load");
           this.dispatch("loadend");
