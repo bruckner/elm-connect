@@ -566,7 +566,7 @@ unsendable cfg c sent =
                 Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
 
             ( Nothing, Nothing ) ->
-                Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
+                Internal.requestTooLarge cfg.transport (\() -> Json.Encode.encode 0 (Rpc.Call.requestJson c))
                     |> Maybe.map Rpc.Error.NoAnswer
 
 

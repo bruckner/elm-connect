@@ -270,39 +270,34 @@ validHeaderName name =
 
 tchar : Char -> Bool
 tchar char =
-    Char.isAlphaNum char && Char.toCode char < 128 || String.contains (String.fromChar char) "!#$%&'*+-.^_`|~"
+    oneUnit char && (Char.isAlphaNum char && Char.toCode char < 128 || String.contains (String.fromChar char) "!#$%&'*+-.^_`|~")
 
 
 {-| Whether a browser accepts a header value: after the spaces and tabs at
 either end, which it trims, no NUL, CR or LF, and no character above U+00FF
-(XHR's values are byte strings).
+(XHR's values are byte strings). A space and a tab are such characters
+themselves, so the whole value is checked as it is, in one pass.
 -}
 validHeaderValue : String -> Bool
 validHeaderValue value =
-    String.toList value
-        |> dropWhitespace
-        |> List.reverse
-        |> dropWhitespace
-        |> List.all byteChar
+    String.all byteChar value
 
 
-dropWhitespace : List Char -> List Char
-dropWhitespace chars =
-    case chars of
-        char :: rest ->
-            if char == ' ' || char == '\t' then
-                dropWhitespace rest
-
-            else
-                chars
-
-        [] ->
-            []
+{-| Whether a character is one UTF-16 code unit, as every character a header
+can hold is. elm/core's `String.all` reads a string from its end and takes a
+lone low surrogate together with the code unit before it for one character,
+whose code is that unit's; the pair's length gives it away. One at the start
+is taken with what lies before the string, and rejecting it there stops
+`String.all` before it reads further, where it would throw or never return.
+-}
+oneUnit : Char -> Bool
+oneUnit char =
+    String.length (String.fromChar char) == 1
 
 
 {-| A character a header value can hold: up to U+00FF, but NUL, LF and CR. A
-lone surrogate's code is NaN, which every comparison fails, so the bound is
-written to reject it.
+lone high surrogate's code is NaN, which every comparison fails, so the bound
+is written to reject it.
 -}
 byteChar : Char -> Bool
 byteChar char =
@@ -310,7 +305,7 @@ byteChar char =
         code =
             Char.toCode char
     in
-    (code <= 0xFF) && code /= 0 && code /= 0x0A && code /= 0x0D
+    oneUnit char && (code <= 0xFF) && code /= 0 && code /= 0x0A && code /= 0x0D
 
 
 {-| Whether a base URL holds a query or a fragment, after which a call's path
@@ -541,14 +536,15 @@ utf8Width code =
         3
 
 
-{-| Why a call whose request message is `json` must not be sent over a
-transport: its UTF-8 length is over the transport's write limit.
+{-| Why a call whose request message `json` encodes must not be sent over a
+transport: its UTF-8 length is over the transport's write limit. The message
+is encoded only when the transport has a limit to measure it against.
 -}
-requestTooLarge : Transport -> String -> Maybe Error.Reason
+requestTooLarge : Transport -> (() -> String) -> Maybe Error.Reason
 requestTooLarge transport json =
     Transport.writeMaxBytes transport
         |> Maybe.andThen
             (\limit ->
-                overLimit limit json
+                overLimit limit (json ())
                     |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
             )

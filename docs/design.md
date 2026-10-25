@@ -2113,11 +2113,11 @@ breaking it (roadmap).
 - A header a browser refuses is never handed to elm/http: a name that is
   not an RFC 9110 token, or a value that, once the spaces and tabs at
   either end are trimmed, holds NUL, CR or LF or a character above
-  U+00FF (XHR's values are byte strings). XHR's `setRequestHeader`
-  throws on such a header, and elm/http calls it outside any handler,
-  inside the scheduler's step, so one bad value (a token with a
-  newline, a display name in CJK) would stop every Elm process for good:
-  no HTTP, no ports, no timers. Every way of sending (`send`,
+  U+00FF, a lone surrogate among them (XHR's values are byte strings).
+  XHR's `setRequestHeader` throws on such a header, and elm/http calls
+  it outside any handler, inside the scheduler's step, so one bad value
+  (a token with a newline, a display name in CJK) would stop every Elm
+  process for good: no HTTP, no ports, no timers. Every way of sending (`send`,
   `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
   config's and the call's headers first, and a call with one fails
   with `NoAnswer (InvalidHeader name)`, nothing sent and never retried

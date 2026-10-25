@@ -70,36 +70,48 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     []
 
+        -- Built only for a call that may go as a GET: percent-encoding the
+        -- message takes several times as long as encoding it.
         getUrl =
-            url
-                ++ "?connect=v1&encoding=json&message="
-                ++ Internal.percentEncode Internal.unreserved json
+            if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects then
+                let
+                    whole =
+                        url
+                            ++ "?connect=v1&encoding=json&message="
+                            ++ Internal.percentEncode Internal.unreserved json
+                in
+                case options.maxGetUrl of
+                    Just limit ->
+                        if String.length whole <= limit then
+                            Just whole
 
-        fits =
-            case options.maxGetUrl of
-                Just limit ->
-                    String.length getUrl <= limit
+                        else
+                            Nothing
 
-                Nothing ->
-                    True
+                    Nothing ->
+                        Just whole
+
+            else
+                Nothing
     in
-    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
-        { method = "GET"
-        , url = getUrl
-        , headers = cfg.headers ++ fields.headers ++ timeoutHeader
-        , body = Body.none
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
+    case getUrl of
+        Just get ->
+            { method = "GET"
+            , url = get
+            , headers = cfg.headers ++ fields.headers ++ timeoutHeader
+            , body = Body.none
+            , timeout = timeout
+            , withCredentials = cfg.withCredentials
+            }
 
-    else
-        { method = "POST"
-        , url = url
-        , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-        , body = Body.text json
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
+        Nothing ->
+            { method = "POST"
+            , url = url
+            , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
+            , body = Body.text json
+            , timeout = timeout
+            , withCredentials = cfg.withCredentials
+            }
 
 
 {-| The request over one binding of a method's rule.
