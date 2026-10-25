@@ -400,3 +400,17 @@ generated code:
   `protobuf-conformance/tally-v32.0-rc2-merge.md`.
 - `spike/codec-harness/src/Experiments.elm` and `HoistCycle.elm` (run 2's
   Q2/Q3 experiments) are ported to the new API so `Bench2` still builds.
+
+## Comparison with elm-protocol-buffers (run 3)
+
+`COMPARISON.md`. In short: protoc-gen-elm 4.0.4's output does not compile
+for a negative enum value, a `bool`-keyed map or an aliased enum; on the
+corpus without them, elm-protocol-buffers' binary codecs are 33 % smaller
+gzipped, but 3.3 KB gzip of ours is `Proto.Binary.any`'s writer reaching
+`Proto.Json`/`Proto.Timestamp` (stubbed, the two are within 2 %); ours
+encode 2.5x faster, decode 11 % faster on the corpus and 3.8x on 1,000
+leaves (theirs appends with `++`), and are slower on 64-bit-dense messages
+(13–22 %). Conformance: 1,413 of 1,468 for ours, 585 for theirs (binary →
+binary Required 480 vs 463; their JSON codecs fail nearly every case).
+Not depending on it (its `Decoder`, `Encoder` and `Int64` would enter the
+public API); open enums (`Unrecognized_ Int`) are the idea worth taking.
