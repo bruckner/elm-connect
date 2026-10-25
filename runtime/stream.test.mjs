@@ -192,3 +192,26 @@ test("client: reopening an id replaces the old stream", async () => {
   await new Promise((r) => setTimeout(r, 120));
   assert.equal(events.filter((e) => e.kind === "end").length, 1);
 });
+
+test("envoy: a bare Status before any frame is the error, at every split", () => {
+  const status = { code: 3, message: "must not be negative", details: [{ "@type": "type.googleapis.com/google.rpc.BadRequest" }] };
+  const body = bytes(JSON.stringify(status));
+  for (const framing of ["array", "sse", "ndjson-bare"]) {
+    eachSplit(framing, body, [{ kind: "end", error: status, metadata: {} }]);
+    eachSplit(framing, join(body, bytes("\n")), [{ kind: "end", error: status, metadata: {} }]);
+  }
+});
+
+test("envoy ndjson: a first line shaped like a Status is a message when more follow", () => {
+  const lookalike = '{"code":1,"message":"m"}';
+  eachSplit("ndjson-bare", bytes(`${lookalike}\n${note2}\n`), [msg(lookalike), msg(note2), ok]);
+});
+
+test("envoy ndjson: a first message is delivered before the stream goes on", () => {
+  const p = parser("ndjson-bare");
+  assert.deepEqual(p.push(bytes(`${note2}\n`)), [msg(note2)]);
+});
+
+test("envoy: an object that is not a Status in place of the array is a protocol error", () => {
+  assert.throws(() => parseAll("array", [bytes('{"index":"1"}')]), { reason: "protocol" });
+});

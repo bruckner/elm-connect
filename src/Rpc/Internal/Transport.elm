@@ -24,6 +24,7 @@ type StreamFraming
     | EnvoyArray
     | EnvoyNdjson
     | EnvoySse
+    | ConnectEnvelope
 
 
 {-| The largest successful response body, in UTF-8 bytes, a transport reads,

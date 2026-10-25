@@ -57,6 +57,7 @@ import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Transport exposing (StreamFraming(..), Transport(..))
 import Rpc.Internal.Wire as Wire
+import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
 
 
@@ -144,19 +145,20 @@ open cfg opening =
             , withCredentials = cfg.withCredentials
             }
 
-        built =
-            Wire.request settings c
-
-        connect =
-            List.any (\( name, _ ) -> String.toLower name == "connect-protocol-version") built.headers
-
         framing =
-            case ( connect, cfg.transport ) of
-                ( False, Transcode options ) ->
+            case cfg.transport of
+                Transcode options ->
                     framingName options.streamFraming
 
-                _ ->
+                Connect _ ->
                     "connect"
+
+        built =
+            if framing == "connect" then
+                Wire.request { settings | transport = Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing } } c
+
+            else
+                Wire.request settings c |> plainJson
 
         contentType =
             if framing == "connect" then
@@ -233,6 +235,20 @@ postOnly transport =
             transport
 
 
+{-| A transcoder's implicit route is a plain JSON POST: the Connect headers
+the unary implicit route carries mean nothing to it (the companion enforces
+the timeout).
+-}
+plainJson : Request -> Request
+plainJson built =
+    { built
+        | headers =
+            List.filter
+                (\( name, _ ) -> not (List.member (String.toLower name) [ "connect-protocol-version", "connect-timeout-ms" ]))
+                built.headers
+    }
+
+
 framingName : StreamFraming -> String
 framingName framing =
     case framing of
@@ -247,6 +263,9 @@ framingName framing =
 
         EnvoySse ->
             "sse"
+
+        ConnectEnvelope ->
+            "connect"
 
 
 {-| The command that cancels the stream `id`. Nothing more arrives for it, not

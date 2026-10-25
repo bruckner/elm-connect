@@ -1,7 +1,7 @@
 module Rpc.Transport exposing
     ( Transport, connect, connectGet, transcode
     , withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
-    , StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, withStreamFraming
+    , StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, connectEnvelope, withStreamFraming
     , name
     )
 
@@ -22,7 +22,7 @@ It is data, like the rest of a config: transports built alike are `==`.
 
 # Stream framing
 
-@docs StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, withStreamFraming
+@docs StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, connectEnvelope, withStreamFraming
 
 
 # Reading
@@ -160,7 +160,10 @@ name transport =
 
 {-| How a transcoder frames the messages of a server stream
 ([`Rpc.Stream`](Rpc-Stream)). Connect has one framing, its envelopes, so this
-matters over [`transcode`](#transcode) alone.
+matters over [`transcode`](#transcode) alone, where it applies to every
+stream, on a method's rule or on the implicit route: a transcoder serves the
+implicit route in its own framing (Envoy's `auto_mapping`, grpc-gateway's
+unbound methods).
 -}
 type alias StreamFraming =
     Internal.StreamFraming
@@ -193,6 +196,15 @@ envoyNdjson =
 envoySse : StreamFraming
 envoySse =
     Internal.EnvoySse
+
+
+{-| Connect's own envelopes on the implicit route, for a server that answers
+it with a Connect handler behind a transcoder that cannot stream (Vanguard
+transcodes a server stream only when its response is `google.api.HttpBody`).
+-}
+connectEnvelope : StreamFraming
+connectEnvelope =
+    Internal.ConnectEnvelope
 
 
 {-| The framing a transcoder streams in. Over Connect it changes nothing.

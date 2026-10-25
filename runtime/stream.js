@@ -31,11 +31,11 @@ export function parser(framing) {
     case "ndjson":
       return textParser(ndjsonSplit, gatewayFrame);
     case "ndjson-bare":
-      return textParser(ndjsonSplit, bareFrame);
+      return textParser(ndjsonSplit, bareFrame, statusLine);
     case "array":
-      return textParser(arraySplit(), bareFrame);
+      return textParser(arraySplit(), bareFrame, statusObject);
     case "sse":
-      return textParser(sseSplit, bareFrame);
+      return textParser(sseSplit, bareFrame, statusObject);
     default:
       throw new StreamError("protocol", `unknown framing ${framing}`);
   }
@@ -88,10 +88,17 @@ function connectParser() {
 
 // The transcoders' text framings: decode UTF-8 across chunks, split into
 // pieces, turn each piece into a frame. A clean end has no marker.
-function textParser(split, frame) {
+//
+// `lead`, for Envoy's framings, decides from the body's start whether it is
+// frames or a bare google.rpc.Status: with convert_grpc_status, Envoy writes
+// an error that comes before the first message as a Status body under the
+// 200 it has already sent (the upstream sent headers first), outside the
+// framing. It answers "frames", "status", or "deciding" until it can tell.
+function textParser(split, frame, lead = null) {
   const utf8 = new TextDecoder("utf-8", { fatal: true });
   let text = "";
   let ended = false;
+  let mode = lead ? "deciding" : "frames";
   const frames = (pieces) => {
     const out = [];
     for (const piece of pieces) {
@@ -105,18 +112,66 @@ function textParser(split, frame) {
   return {
     push(chunk) {
       text += decode(utf8, chunk, true);
+      if (mode === "deciding") mode = lead(text, false);
+      if (mode !== "frames") return [];
       const { pieces, rest } = split(text, false);
       text = rest;
       return frames(pieces);
     },
     finish() {
       text += decode(utf8, new Uint8Array(0));
+      if (mode === "deciding") mode = lead(text, true);
+      if (mode === "status") {
+        const status = parseJson(text);
+        if (!isStatus(status)) throw new StreamError("protocol", "a body that is neither the framing nor a google.rpc.Status");
+        return [{ kind: "end", error: status, metadata: {} }];
+      }
       const { pieces } = split(text, true);
       const out = frames(pieces);
       if (!ended) out.push({ kind: "end", error: null, metadata: {} });
       return out;
     },
   };
+}
+
+// A google.rpc.Status as proto3 JSON: an integer code, and nothing but
+// message and details beside it.
+function isStatus(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Number.isInteger(value.code) &&
+    Object.keys(value).every((key) => key === "code" || key === "message" || key === "details")
+  );
+}
+
+// The array and SSE framings never start with "{": a body that does is a
+// Status.
+function statusObject(text, last) {
+  const start = text.trimStart();
+  if (start === "") return last ? "frames" : "deciding";
+  return start[0] === "{" ? "status" : "frames";
+}
+
+// Newline-delimited messages do start with "{", so the first line decides.
+// A first line that is not a Status is a message, delivered at once; one
+// that is waits for the end, or for a second line, which makes it a message
+// after all (a message type whose JSON looks like a Status is delayed by a
+// line; none of Envoy's framings can tell the two apart).
+function statusLine(text, last) {
+  const body = text.trimStart();
+  const end = body.indexOf("\n");
+  if (end < 0 && !last) return "deciding";
+  let first;
+  try {
+    first = JSON.parse(end < 0 ? body : body.slice(0, end));
+  } catch {
+    return "frames";
+  }
+  if (!isStatus(first)) return "frames";
+  if (end >= 0 && body.slice(end + 1).trim() !== "") return "frames";
+  return last ? "status" : "deciding";
 }
 
 function ndjsonSplit(text, last) {

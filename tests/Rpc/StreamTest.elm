@@ -130,8 +130,20 @@ suite =
                 \_ -> Expect.equal (field [ "open", "timeoutMs" ] (Decode.nullable Decode.float) (openJson config (watch 0))) (Just Nothing)
             , test "never a GET, whatever the transport says" <|
                 \_ -> Expect.equal (field [ "open", "method" ] Decode.string (openJson { config | transport = Rpc.Transport.connectGet } (watch 0))) (Just "POST")
-            , test "the implicit route over transcoding speaks Connect" <|
-                \_ -> Expect.equal (field [ "open", "framing" ] Decode.string (openJson { config | transport = Rpc.Transport.transcode } (watch 0))) (Just "connect")
+            , test "the implicit route over transcoding takes the transport's framing, as plain JSON" <|
+                \_ ->
+                    let
+                        sent =
+                            openJson { config | transport = Rpc.Transport.transcode } (watch 0 |> Stream.withTimeout 90)
+                    in
+                    Expect.equal
+                        ( field [ "open", "framing" ] Decode.string sent, field [ "open", "headers" ] (Decode.list (Decode.list Decode.string)) sent, field [ "open", "timeoutMs" ] Decode.float sent )
+                        ( Just "ndjson", Just [ [ "Authorization", "Bearer t" ], [ "Content-Type", "application/json" ] ], Just 90 )
+            , test "connectEnvelope keeps Connect over transcoding" <|
+                \_ ->
+                    Expect.equal
+                        (field [ "open", "framing" ] Decode.string (openJson { config | transport = Rpc.Transport.transcode |> Rpc.Transport.withStreamFraming Rpc.Transport.connectEnvelope } (watch 0)))
+                        (Just "connect")
             , test "an invalid header is an error, nothing sent" <|
                 \_ -> Expect.equal (openJson config (watch 0 |> Stream.withHeaders [ ( "X", "a\nb" ) ])) (Err (Error.NoAnswer (Error.InvalidHeader "X")))
             , test "cancel" <|
