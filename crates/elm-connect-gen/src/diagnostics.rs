@@ -115,6 +115,10 @@ codes! {
     /// one and the message's descriptor) get the same value name in its
     /// descriptor module.
     ValueCollision => "naming::value_collision",
+    /// Under `codec=binary` or `codec=both`, a type named for another
+    /// with `Bytes` at the end has JSON codecs that take the names of the
+    /// other's binary codecs.
+    CodecCollision => "naming::codec_collision",
     /// Two generated modules, each a package's, a service's or a type's
     /// descriptor module, get the same Elm module name.
     ModuleCollision => "naming::module_collision",
@@ -644,6 +648,39 @@ impl Problem {
                 rename_escape(
                     renamed,
                     format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
+            ),
+            vec![first, second],
+        )
+    }
+
+    /// Two types of `package` give codecs the same Elm `values` (`value
+    /// `encodeNoteBytes``): one's binary codecs and the JSON codecs of the
+    /// other, named for it with `Bytes` at the end.
+    pub fn codec_collision(
+        package: &str,
+        values: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
+        Problem::new(
+            Code::CodecCollision,
+            format!(
+                "The package `{package}` has two definitions whose codecs both become the Elm \
+                 {values}."
+            ),
+            format!(
+                "A type's protobuf binary codecs are named for its JSON codecs with `Bytes` at \
+                 the end (`encodeNoteBytes` beside `encodeNote`), so the JSON codecs of a type \
+                 named for another with `Bytes` at the end (`NoteBytes` beside `Note`) take the \
+                 same names, and a module cannot define two values with one name. Enums keep \
+                 their JSON codecs under `codec=binary`; messages and oneofs have them under \
+                 `codec=both`. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
                 )
             ),
             vec![first, second],

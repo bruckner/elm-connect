@@ -1247,6 +1247,18 @@ As the `naming` and `naming_collision` cases show:
   `registry`, is all lowercase, so it is none of them. The typed values
   take a prefix too, since under a suffix `encodeFooMessage` would be
   both the encoder of `FooMessage` and the typed value of `EncodeFoo`.
+- The binary codecs (§3.10) reserve `encodeFooBytes`, `decodeFooBytes`
+  and `mergeFooBytes`: named for the JSON codecs with a suffix, so that
+  the two sit side by side and read as a pair, at the cost the bullet
+  above names. A type `FooBytes` beside `Foo` has JSON codecs
+  `encodeFooBytes` and `decodeFooBytes`, which are `Foo`'s binary
+  codecs; under `codec=both`, or under `codec=binary` for an enum
+  `FooBytes` (an enum keeps its JSON codecs), that is
+  `naming::codec_collision`, pointing at both types, its help naming
+  the `rename` of the `Bytes` one (`codec_name_clash` case). A oneof's
+  binary codec is an encoder alone, so a type named for a oneof's with
+  `Bytes` meets only that. `merge` begins no JSON codec, so a merge
+  never meets one; under `codec=json` nothing is reserved.
 - A descriptor module's values are `descriptor` and one per field,
   named as its record field, but that a field or member named
   `descriptor` takes `descriptor_` (§3.1). A oneof member has no record
@@ -1759,6 +1771,8 @@ registry =
   `Proto.Method.encodeRequestBytes`/`responseBytesDecoder` (each a
   `Maybe`) and `Proto.Method.hasJson` read them back. A program that
   never builds a value with binary codecs carries none of their code.
+- **Names** are §3.7's: the JSON names with `Bytes` at the end, and
+  `naming::codec_collision` where a type's name meets them.
 - **Checked** by the corpus cases `codec_both` (the codec protos under
   `codec=both`) and `codec_binary`.
 

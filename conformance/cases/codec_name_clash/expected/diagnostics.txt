@@ -1,0 +1,79 @@
+naming::codec_collision
+
+  × The package `shelf.v1` has two definitions whose codecs both become the
+  │ Elm values `encodeBookBytes` and `decodeBookBytes`.
+    ╭─[shelf.proto:11:9]
+ 10 │
+ 11 │ message Book {
+    ·         ──┬─
+    ·           ╰── the binary codecs of message `shelf.v1.Book` become `encodeBookBytes` and `decodeBookBytes`
+ 12 │   string title = 1;
+ 13 │ }
+ 14 │
+ 15 │ message BookBytes {
+    ·         ────┬────
+    ·             ╰── and so do the JSON codecs of message `shelf.v1.BookBytes`
+ 16 │   bytes content = 1;
+    ╰────
+  help: A type's protobuf binary codecs are named for its JSON codecs with
+        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Bytes` at the end
+        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        define two values with one name. Enums keep their JSON codecs under
+        `codec=binary`; messages and oneofs have them under `codec=both`.
+        Rename one of them in the proto, or rename one with
+        `rename=shelf.v1.BookBytes:<Elm name>`.
+
+naming::codec_collision
+
+  × The package `shelf.v1` has two definitions whose codecs both become the
+  │ Elm value `encodeChoicePickBytes`.
+    ╭─[shelf.proto:28:9]
+ 27 │ message Choice {
+ 28 │   oneof pick {
+    ·         ──┬─
+    ·           ╰── the binary codec of oneof `pick` of `shelf.v1.Choice` becomes `encodeChoicePickBytes`
+ 29 │     string name = 1;
+ 30 │     int32 number = 2;
+ 31 │   }
+ 32 │ }
+ 33 │
+ 34 │ message ChoicePickBytes {
+    ·         ───────┬───────
+    ·                ╰── and so does the JSON codec of message `shelf.v1.ChoicePickBytes`
+ 35 │   bytes raw = 1;
+    ╰────
+  help: A type's protobuf binary codecs are named for its JSON codecs with
+        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Bytes` at the end
+        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        define two values with one name. Enums keep their JSON codecs under
+        `codec=binary`; messages and oneofs have them under `codec=both`.
+        Rename one of them in the proto, or rename one with
+        `rename=shelf.v1.ChoicePickBytes:<Elm name>`.
+
+naming::codec_collision
+
+  × The package `shelf.v1` has two definitions whose codecs both become the
+  │ Elm values `encodeShelfBytes` and `decodeShelfBytes`.
+    ╭─[shelf.proto:19:9]
+ 18 │
+ 19 │ message Shelf {
+    ·         ──┬──
+    ·           ╰── the binary codecs of message `shelf.v1.Shelf` become `encodeShelfBytes` and `decodeShelfBytes`
+ 20 │   repeated Book books = 1;
+ 21 │ }
+ 22 │
+ 23 │ enum ShelfBytes {
+    ·      ─────┬────
+    ·           ╰── and so do the JSON codecs of enum `shelf.v1.ShelfBytes`
+ 24 │   SHELF_BYTES_UNSPECIFIED = 0;
+    ╰────
+  help: A type's protobuf binary codecs are named for its JSON codecs with
+        `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
+        JSON codecs of a type named for another with `Bytes` at the end
+        (`NoteBytes` beside `Note`) take the same names, and a module cannot
+        define two values with one name. Enums keep their JSON codecs under
+        `codec=binary`; messages and oneofs have them under `codec=both`.
+        Rename one of them in the proto, or rename one with
+        `rename=shelf.v1.ShelfBytes:<Elm name>`.

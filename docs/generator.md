@@ -195,6 +195,12 @@ give. A 64-bit integer held as `Int` fails to decode outside
 ±(2^53 − 1); `bytes=bytes` reads a `bytes` field without a base64 round
 trip.
 
+The binary names are the JSON ones with `Bytes` at the end. A type
+named for another with `Bytes` at the end, `NoteBytes` beside `Note`,
+would have JSON codecs of the same names, so under `codec=both`, or
+under `codec=binary` for an enum, that is `naming::codec_collision`;
+`rename` one of the two. Under `codec=json` nothing is reserved.
+
 No transport sends protobuf binary yet: calls go as JSON, and a call of
 a method generated under `codec=binary` sends `null`. Connect's proto
 codec is next ([roadmap](roadmap.md#binary-protobuf)).
