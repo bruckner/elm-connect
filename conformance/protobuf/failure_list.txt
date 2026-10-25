@@ -1,0 +1,66 @@
+# The cases of the protobuf conformance suite (protocolbuffers/protobuf
+# conformance/, runner v32.0-rc2 from bufbuild/protobuf-conformance) the
+# testee fails, for conformance_test_runner --failure_list. The testee runs
+# proto3 JSON in and JSON out only; everything else is answered skipped
+# (README.md). The runner fails a run when a listed case passes, so the list
+# cannot go stale.
+#
+# Each group says why, and is either a design choice (documented behaviour
+# the suite disagrees with) or a fix candidate (behaviour the runtime or the
+# generator could change).
+
+# Design choice: a Timestamp is a Time.Posix, which holds milliseconds, so
+# digits past the third are dropped.
+Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampMaxValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampRepeatedValue.JsonOutput
+Recommended.Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
+Recommended.Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
+
+# Design choice: a 64-bit integer written as a JSON number past 2^53 is
+# rounded by JavaScript's JSON parser before the decoder sees it, so it is
+# read with the wrong digits or out of range (Proto.Json.int64).
+Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
+
+# Design choice: an enum number the client does not know reads as the zero
+# value, which is not written back (the enum_unknown option).
+Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
+
+# Fix candidate, lenient parsing: a number past the range of a double (read
+# as an infinity) or of a float.
+Required.Proto3.JsonInput.DoubleFieldTooLarge
+Required.Proto3.JsonInput.DoubleFieldTooSmall
+Required.Proto3.JsonInput.FloatFieldTooLarge
+Required.Proto3.JsonInput.FloatFieldTooSmall
+
+# Fix candidate, lenient parsing: a Timestamp with a lowercase `t` or `z`.
+Required.Proto3.JsonInput.TimestampJsonInputLowercaseT
+Required.Proto3.JsonInput.TimestampJsonInputLowercaseZ
+
+# Fix candidate, lenient parsing: an Any whose `@type` is empty or not a
+# type URL.
+Required.Proto3.JsonInput.AnyWktRepresentationWithBadType
+Required.Proto3.JsonInput.AnyWktRepresentationWithEmptyTypeAndValue
+
+# Fix candidate, lenient parsing: a FieldMask path with an underscore.
+Recommended.Proto3.JsonInput.FieldMaskInvalidCharacter
+
+# Fix candidate, lenient parsing: a field named twice in one object.
+Recommended.Proto3.JsonInput.FieldNameDuplicate
+
+# Fix candidate, lenient parsing: a string with an unpaired UTF-16
+# surrogate escape.
+Recommended.Proto3.JsonInput.StringFieldSurrogateInWrongOrder
+Recommended.Proto3.JsonInput.StringFieldUnpairedHighSurrogate
+Recommended.Proto3.JsonInput.StringFieldUnpairedLowSurrogate
+
+# Fix candidate, generator: google.protobuf.NullValue has no Elm mapping
+# (types::unsupported_well_known), so the testee's proto leaves out the
+# fields that hold one (strip-null-value.sh) and these are read as unknown.
+Recommended.Proto3.JsonInput.NullValueInOtherOneofNewFormat.Validator
+Recommended.Proto3.JsonInput.NullValueInOtherOneofOldFormat.Validator

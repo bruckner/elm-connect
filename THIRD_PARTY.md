@@ -44,6 +44,20 @@ The protos themselves are vendored, unmodified, in
 (its README.md names it), with the module's license in
 `conformance/live/suite/proto/LICENSE`.
 
+## Protocol Buffers test messages
+
+`conformance/protobuf/proto/google/protobuf/test_messages_proto3.proto`
+is [protobuf](https://github.com/protocolbuffers/protobuf)'s
+`src/google/protobuf/test_messages_proto3.proto` at v32.0, modified by
+`conformance/protobuf/strip-null-value.sh`, which removes its two
+`google.protobuf.NullValue` fields (`conformance/protobuf/README.md`). It
+is Copyright 2008 Google Inc. and licensed under the BSD 3-Clause License,
+as its header says; protobuf's `LICENSE` at v32.0 is beside it, in
+`conformance/protobuf/proto/LICENSE`. The Elm
+in `conformance/protobuf/generated/` is generated from it and keeps its
+comments. The conformance suite's runner, `conformance_test_runner`, is
+fetched at run time and not kept in the repository.
+
 ## Eliza
 
 `examples/eliza/proto/connectrpc/eliza/v1/eliza.proto` is copied

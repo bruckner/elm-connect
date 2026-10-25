@@ -28,6 +28,15 @@ beside each link says what the runtime or the generator does about it.
 - [ProtoJSON format](https://protobuf.dev/programming-guides/json/):
   the JSON the generated codecs write and read, on both transports
   ([generator.md](generator.md)).
+- [Protobuf conformance suite](https://github.com/protocolbuffers/protobuf/tree/main/conformance):
+  protobuf's test runner for parsers and serializers. `just
+  protobuf-conformance` runs it, opt-in and outside the gate, against the
+  runtime's proto3 JSON codecs through the Elm generated for its
+  `test_messages_proto3.proto`: JSON in and JSON out, with protobuf
+  binary, JSPB, text, proto2 and editions answered skipped. The cases
+  that fail are listed and classified in
+  [`conformance/protobuf/failure_list.txt`](../conformance/protobuf/failure_list.txt)
+  ([conformance/protobuf/README.md](../conformance/protobuf/README.md)).
 - [Well-known types](https://protobuf.dev/reference/protobuf/google.protobuf/):
   `Timestamp`, `Duration`, `FieldMask`, `Any`, the wrappers and the
   rest, and their JSON ([generator.md](generator.md),

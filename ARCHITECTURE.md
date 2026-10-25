@@ -162,6 +162,11 @@ Each layer proves one thing and has a known gap. A path that starts with
   `Rpc.sendTraced`. Gap: what the runtime does not support (streaming,
   the binary codec, HTTP/2) is declared out, and
   `known-failing-send.txt` lists the one case `sendTraced` fails.
+- **The protobuf conformance suite** (`conformance/protobuf/`, `just
+  protobuf-conformance`, opt-in): protobuf's `conformance_test_runner`
+  against the proto3 JSON codecs, through the Elm generated for its
+  test messages. Gap: JSON in and out only; the cases it fails are
+  classified in `failure_list.txt`.
 - **Lockstep** (`crates/elm-connect-gen/tests/lockstep.rs`): the
   workspace's version, `elm.json`'s, the `Proto.Version` sentinel and
   the corpus's header placeholder agree, and `rust-version` is the
