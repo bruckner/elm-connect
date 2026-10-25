@@ -393,9 +393,12 @@ clean:
 # The protobuf conformance suite (protocolbuffers/protobuf conformance/), opt
 # in, not part of `check`: conformance_test_runner, fetched prebuilt and
 # pinned (conformance/protobuf/fetch-runner.sh), drives the Elm testee
-# (conformance/protobuf/), generated from test_messages_proto3.proto under
-# codec=both, over proto3's binary and JSON cases. It must pass but for
-# conformance/protobuf/failure_list.txt.
+# (conformance/protobuf/), generated under codec=both from
+# test_messages_proto3.proto and from the subsets of
+# test_messages_edition2023.proto and test_messages_proto3_editions.proto
+# that elm-connect generates (spike/protobuf-conformance/strip-editions.sh),
+# over their binary and JSON
+# cases. It must pass but for conformance/protobuf/failure_list.txt.
 protobuf-conformance:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -404,10 +407,13 @@ protobuf-conformance:
     out={{target}}/protobuf-conformance
     rm -rf "$out/elm" "$out/proto"
     spike/protobuf-conformance/strip-null-value.sh "$runner/include" "$out/proto" > /dev/null
-    {{target}}/debug/elm-connect gen -I "$out/proto" google/protobuf/test_messages_proto3.proto --codec both --out "$out/elm"
+    spike/protobuf-conformance/strip-editions.sh "$runner/include" "$out/proto" > /dev/null
+    {{target}}/debug/elm-connect gen -I "$out/proto" google/protobuf/test_messages_proto3.proto \
+        google/protobuf/test_messages_edition2023.proto \
+        google/protobuf/test_messages_proto3_editions.proto --codec both --out "$out/elm"
     cd conformance/protobuf
     elm make > /dev/null 2>&1 || true
     elm make src/Testee.elm --optimize --output=build/testee.js
     mkdir -p "$out/run"
-    "$runner/bin/conformance_test_runner" --enforce_recommended --maximum_edition PROTO3 \
+    "$runner/bin/conformance_test_runner" --enforce_recommended --maximum_edition 2023 \
         --failure_list failure_list.txt --output_dir "$out/run" ./testee.sh

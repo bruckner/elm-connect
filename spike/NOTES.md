@@ -81,3 +81,22 @@ traps met. The commit messages under `vendor/` carry the rest.
   before the prost-types regeneration was discarded unbuilt into a commit.
 - **The plugin's own edition check stays.** buf 1.73.0 sends an edition 2024
   file to a plugin that claims 2023 at most; protoc refuses it first.
+- **Conformance runs two edition 2023 messages.** The runner (v32.0-rc2) at
+  `--maximum_edition 2023` runs 14 cases on `TestAllTypesEdition2023` (the
+  editions-specific ones: delimited fields and extensions, maps, length-prefixed
+  fields) and the whole proto3 suite again on proto3's message written in
+  edition 2023 (`Editions_Proto3`, 1,468 cases). The testee answers both, from
+  subsets (`spike/protobuf-conformance/strip-editions.sh`); the tally and its
+  classification are in `spike/protobuf-conformance/tally-editions.md`. The
+  binary codec spike merged cleanly (its notes renamed), so binary legs ran.
+- **EXPANDED is the costliest refusal.** test_messages_proto3_editions.proto,
+  protobuf's own proto3-in-editions file, writes proto3's `[packed = false]`
+  as `repeated_field_encoding = EXPANDED`, so under codec=both the canonical
+  editions twin of proto3 is refused although its proto3 original generates:
+  the merged binary codecs already encode unpacked fields (`Field::unpacked`),
+  and `unpacked()` already reads EXPANDED, so lifting the refusal is deleting
+  the check. Kept, as the decision for this run says; the report raises it.
+- **The notes example's edition 2023 translation generates today's code**:
+  `spike/run-notes-twin.sh` (39 modules through the plugin under buf, equal
+  to examples/notes/elm/generated; 11 through the CLI, equal to the proto3
+  file's).

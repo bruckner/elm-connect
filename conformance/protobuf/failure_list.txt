@@ -1,7 +1,10 @@
 # Cases of the protobuf conformance suite (protocolbuffers/protobuf
 # conformance/, runner v32.0-rc2 from bufbuild/protobuf-conformance) the
-# testee fails, for conformance_test_runner --failure_list. Proto3 only:
-# proto2 and editions messages, JSPB and text format are answered skipped.
+# testee fails, for conformance_test_runner --failure_list. proto3, and the
+# two edition 2023 messages (TestAllTypesEdition2023, and proto3's message
+# written in edition 2023, Editions_Proto3) generated from the subsets
+# spike/protobuf-conformance/strip-editions.sh leaves; proto2 and proto2
+# written as editions, JSPB and text format are answered skipped.
 # Each group is classified: ours (the runtime or generator could do it),
 # spec choice (a documented elm-connect choice the suite disagrees with),
 # unsupported (a feature elm-connect does not have).
@@ -89,3 +92,111 @@ Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedPart.Protobuf
 # that hold one (strip-null-value.sh).
 Recommended.Proto3.JsonInput.NullValueInOtherOneofNewFormat.Validator
 Recommended.Proto3.JsonInput.NullValueInOtherOneofOldFormat.Validator
+
+# --- Edition 2023 ---
+
+# The Editions_Proto3 twins of the proto3 failures above, with the same
+# causes: proto3 written in edition 2023 generates the same codecs.
+Recommended.Editions_Proto3.FieldMaskNumbersDontRoundTrip.JsonOutput
+Recommended.Editions_Proto3.FieldMaskPathsDontRoundTrip.JsonOutput
+Recommended.Editions_Proto3.FieldMaskTooManyUnderscore.JsonOutput
+Recommended.Editions_Proto3.JsonInput.FieldMaskInvalidCharacter
+Recommended.Editions_Proto3.JsonInput.FieldNameDuplicate
+Recommended.Editions_Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapPart.ProtobufOutput
+Recommended.Editions_Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapValue.ProtobufOutput
+Recommended.Editions_Proto3.JsonInput.IgnoreUnknownEnumStringValueInOptionalField.ProtobufOutput
+Recommended.Editions_Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedField.ProtobufOutput
+Recommended.Editions_Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedPart.ProtobufOutput
+Recommended.Editions_Proto3.JsonInput.NullValueInOtherOneofNewFormat.Validator
+Recommended.Editions_Proto3.JsonInput.NullValueInOtherOneofOldFormat.Validator
+Recommended.Editions_Proto3.JsonInput.StringFieldSurrogateInWrongOrder
+Recommended.Editions_Proto3.JsonInput.StringFieldUnpairedHighSurrogate
+Recommended.Editions_Proto3.JsonInput.StringFieldUnpairedLowSurrogate
+Recommended.Editions_Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
+Recommended.Editions_Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
+Recommended.Editions_Proto3.ValueRejectInfNumberValue.JsonOutput
+Recommended.Editions_Proto3.ValueRejectNanNumberValue.JsonOutput
+Required.Editions_Proto3.DurationProtoInputTooLarge.JsonOutput
+Required.Editions_Proto3.DurationProtoInputTooSmall.JsonOutput
+Required.Editions_Proto3.JsonInput.Any.ProtobufOutput
+Required.Editions_Proto3.JsonInput.AnyNested.ProtobufOutput
+Required.Editions_Proto3.JsonInput.AnyUnorderedTypeTag.ProtobufOutput
+Required.Editions_Proto3.JsonInput.AnyWktRepresentationWithBadType
+Required.Editions_Proto3.JsonInput.AnyWktRepresentationWithEmptyTypeAndValue
+Required.Editions_Proto3.JsonInput.DoubleFieldTooLarge
+Required.Editions_Proto3.JsonInput.DoubleFieldTooSmall
+Required.Editions_Proto3.JsonInput.EnumFieldUnknownValue.Validator
+Required.Editions_Proto3.JsonInput.FloatFieldTooLarge
+Required.Editions_Proto3.JsonInput.FloatFieldTooSmall
+Required.Editions_Proto3.JsonInput.Int64FieldMaxValueNotQuoted.JsonOutput
+Required.Editions_Proto3.JsonInput.Int64FieldMaxValueNotQuoted.ProtobufOutput
+Required.Editions_Proto3.JsonInput.Int64FieldMinValueNotQuoted.JsonOutput
+Required.Editions_Proto3.JsonInput.Int64FieldMinValueNotQuoted.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampJsonInputLowercaseT
+Required.Editions_Proto3.JsonInput.TimestampJsonInputLowercaseZ
+Required.Editions_Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampLittleAfterEpochlValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampLittleBeforeEpochValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampLittleBeforeEpochValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampMaxValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampMaxValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampNanoAfterEpochlValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampNanoAfterEpochlValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampNanoBeforeEpochValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampNanoBeforeEpochValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.TimestampRepeatedValue.JsonOutput
+Required.Editions_Proto3.JsonInput.TimestampRepeatedValue.ProtobufOutput
+Required.Editions_Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
+Required.Editions_Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.ProtobufOutput
+Required.Editions_Proto3.ProtobufInput.UnknownOrdering.ProtobufOutput
+Required.Editions_Proto3.ProtobufInput.UnknownVarint.ProtobufOutput
+Required.Editions_Proto3.TimestampProtoInputTooLarge.JsonOutput
+Required.Editions_Proto3.TimestampProtoInputTooSmall.JsonOutput
+
+# unsupported: the fourteen EXPANDED repeated fields (unpacked_*), which the
+# binary codecs refuse (input::unsupported_feature) and the subset drops,
+# where proto3's `[packed = false]` twins generate. These cases set them.
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.BOOL.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.BOOL.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.DOUBLE.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.DOUBLE.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.ENUM.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.ENUM.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FIXED32.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FIXED32.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FIXED64.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FIXED64.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FLOAT.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.FLOAT.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.INT32.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.INT32.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.INT64.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.INT64.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SFIXED32.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SFIXED32.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SFIXED64.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SFIXED64.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SINT32.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SINT32.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SINT64.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.SINT64.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.UINT32.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.UINT32.UnpackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.UINT64.PackedInput.UnpackedOutput.ProtobufOutput
+Recommended.Editions_Proto3.ProtobufInput.ValidDataRepeated.UINT64.UnpackedInput.UnpackedOutput.ProtobufOutput
+
+# unsupported: the merged message sets corecursive.unpacked_int32, one of
+# the EXPANDED fields the subset drops.
+Recommended.Editions_Proto3.ProtobufInput.ValidDataOneofBinary.MESSAGE.Merge.ProtobufOutput
+Required.Editions_Proto3.ProtobufInput.ValidDataOneof.MESSAGE.Merge.JsonOutput
+Required.Editions_Proto3.ProtobufInput.ValidDataOneof.MESSAGE.Merge.ProtobufOutput
+
+# unsupported: delimited message fields and delimited extensions
+# (message_encoding = DELIMITED), which elm-connect refuses and the subset
+# drops; the binary decoders fail on the group wire type.
+Required.Editions.ProtobufInput.ValidDelimitedExtension.GroupLike.ProtobufOutput
+Required.Editions.ProtobufInput.ValidDelimitedExtension.NotGroupLike.ProtobufOutput
+Required.Editions.ProtobufInput.ValidDelimitedField.GroupLike.JsonOutput
+Required.Editions.ProtobufInput.ValidDelimitedField.GroupLike.ProtobufOutput
+Required.Editions.ProtobufInput.ValidDelimitedField.NotGroupLike.JsonOutput
+Required.Editions.ProtobufInput.ValidDelimitedField.NotGroupLike.ProtobufOutput
