@@ -49,6 +49,15 @@ fetchMemo =
 -}
 descriptorFetchMemo : Proto.Method.Descriptor
 descriptorFetchMemo =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "GetNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`fetchMemo`](#fetchMemo): its types and HTTP bindings, as data.
+-}
+fullDescriptorFetchMemo : Proto.Method.Descriptor
+fullDescriptorFetchMemo =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
         Proto.Method.IdempotencyUnknown

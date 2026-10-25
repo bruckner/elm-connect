@@ -128,6 +128,15 @@ The returned payload should only contain the request info.
 -}
 descriptorUnary : Proto.Method.Descriptor
 descriptorUnary =
+    Proto.Method.endpoint "connectrpc.conformance.v1.ConformanceService"
+        "Unary"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`unary`](#unary): its types and HTTP bindings, as data.
+-}
+fullDescriptorUnary : Proto.Method.Descriptor
+fullDescriptorUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "Unary"
         Proto.Method.IdempotencyUnknown
@@ -144,6 +153,15 @@ return an unimplemented error when invoked.
 -}
 descriptorUnimplemented : Proto.Method.Descriptor
 descriptorUnimplemented =
+    Proto.Method.endpoint "connectrpc.conformance.v1.ConformanceService"
+        "Unimplemented"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`unimplemented`](#unimplemented): its types and HTTP bindings, as data.
+-}
+fullDescriptorUnimplemented : Proto.Method.Descriptor
+fullDescriptorUnimplemented =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "Unimplemented"
         Proto.Method.IdempotencyUnknown
@@ -161,6 +179,15 @@ leverage query parameters to send data.
 -}
 descriptorIdempotentUnary : Proto.Method.Descriptor
 descriptorIdempotentUnary =
+    Proto.Method.endpoint "connectrpc.conformance.v1.ConformanceService"
+        "IdempotentUnary"
+        Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The full descriptor of [`idempotentUnary`](#idempotentUnary): its types and HTTP bindings, as data.
+-}
+fullDescriptorIdempotentUnary : Proto.Method.Descriptor
+fullDescriptorIdempotentUnary =
     Proto.Method.descriptor "connectrpc.conformance.v1.ConformanceService"
         "IdempotentUnary"
         Proto.Method.IdempotencyNoSideEffects

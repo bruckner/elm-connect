@@ -74,31 +74,33 @@ routeListArchived0 request_ =
 -}
 descriptorListArchived : Proto.Method.Descriptor
 descriptorListArchived =
+    Proto.Method.endpoint "msgs.v1.Archive"
+        "ListArchived"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`listArchived`](#listArchived): its types and HTTP bindings, as data.
+-}
+fullDescriptorListArchived : Proto.Method.Descriptor
+fullDescriptorListArchived =
     Proto.Method.descriptor "msgs.v1.Archive"
         "ListArchived"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`listArchived`](#listArchived), as data.
--}
-bindingsListArchived : List Proto.Http.Binding
-bindingsListArchived =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "messages"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        ]

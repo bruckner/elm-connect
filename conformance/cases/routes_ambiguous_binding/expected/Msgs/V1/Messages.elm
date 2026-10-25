@@ -316,54 +316,56 @@ routeTouch0 request_ =
 -}
 descriptorGetMessage : Proto.Method.Descriptor
 descriptorGetMessage =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "GetMessage"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getMessage`](#getMessage): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetMessage : Proto.Method.Descriptor
+fullDescriptorGetMessage =
     Proto.Method.descriptor "msgs.v1.Messages"
         "GetMessage"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`getMessage`](#getMessage), as data.
--}
-bindingsGetMessage : List Proto.Http.Binding
-bindingsGetMessage =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    , Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "messages"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        ]
 
 
 {-| One more segment: another shape, no warning.
@@ -373,40 +375,42 @@ bindingsGetMessage =
 -}
 descriptorGetSub : Proto.Method.Descriptor
 descriptorGetSub =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "GetSub"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getSub`](#getSub): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetSub : Proto.Method.Descriptor
+fullDescriptorGetSub =
     Proto.Method.descriptor "msgs.v1.Messages"
         "GetSub"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`getSub`](#getSub), as data.
--}
-bindingsGetSub : List Proto.Http.Binding
-bindingsGetSub =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "messages"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                , template = []
-                }
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.sub ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                    , template = []
+                    }
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.sub ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+                ]
+            }
+        ]
 
 
 {-| GetMessage's template under another method: no warning.
@@ -416,67 +420,71 @@ bindingsGetSub =
 -}
 descriptorUpdateMessage : Proto.Method.Descriptor
 descriptorUpdateMessage =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "UpdateMessage"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`updateMessage`](#updateMessage): its types and HTTP bindings, as data.
+-}
+fullDescriptorUpdateMessage : Proto.Method.Descriptor
+fullDescriptorUpdateMessage =
     Proto.Method.descriptor "msgs.v1.Messages"
         "UpdateMessage"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`updateMessage`](#updateMessage), as data.
--}
-bindingsUpdateMessage : List Proto.Http.Binding
-bindingsUpdateMessage =
-    [ Proto.Http.binding
-        { method = "PATCH"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.wholeBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc ListMessages(MessageRequest) returns (Message)`
 -}
 descriptorListMessages : Proto.Method.Descriptor
 descriptorListMessages =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "ListMessages"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`listMessages`](#listMessages): its types and HTTP bindings, as data.
+-}
+fullDescriptorListMessages : Proto.Method.Descriptor
+fullDescriptorListMessages =
     Proto.Method.descriptor "msgs.v1.Messages"
         "ListMessages"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`listMessages`](#listMessages), as data.
--}
-bindingsListMessages : List Proto.Http.Binding
-bindingsListMessages =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "messages"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        ]
 
 
 {-| Two custom kinds of one method and shape: warns.
@@ -486,73 +494,77 @@ bindingsListMessages =
 -}
 descriptorCheckMessage : Proto.Method.Descriptor
 descriptorCheckMessage =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "CheckMessage"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`checkMessage`](#checkMessage): its types and HTTP bindings, as data.
+-}
+fullDescriptorCheckMessage : Proto.Method.Descriptor
+fullDescriptorCheckMessage =
     Proto.Method.descriptor "msgs.v1.Messages"
         "CheckMessage"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`checkMessage`](#checkMessage), as data.
--}
-bindingsCheckMessage : List Proto.Http.Binding
-bindingsCheckMessage =
-    [ Proto.Http.binding
-        { method = "HEAD"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Just "check"
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Just "check"
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        ]
 
 
 {-| `rpc CheckById(MessageRequest) returns (Message)`
 -}
 descriptorCheckById : Proto.Method.Descriptor
 descriptorCheckById =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "CheckById"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`checkById`](#checkById): its types and HTTP bindings, as data.
+-}
+fullDescriptorCheckById : Proto.Method.Descriptor
+fullDescriptorCheckById =
     Proto.Method.descriptor "msgs.v1.Messages"
         "CheckById"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`checkById`](#checkById), as data.
--}
-bindingsCheckById : List Proto.Http.Binding
-bindingsCheckById =
-    [ Proto.Http.binding
-        { method = "HEAD"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "messages"
-            , Proto.Http.variable
-                { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                , template = []
-                }
-            ]
-        , customVerb = Just "check"
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "messages"
+                , Proto.Http.variable
+                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Just "check"
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+                ]
+            }
+        ]
 
 
 {-| A rule on another method's implicit route: warns.
@@ -562,27 +574,29 @@ bindingsCheckById =
 -}
 descriptorTouch : Proto.Method.Descriptor
 descriptorTouch =
+    Proto.Method.endpoint "msgs.v1.Messages"
+        "Touch"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`touch`](#touch): its types and HTTP bindings, as data.
+-}
+fullDescriptorTouch : Proto.Method.Descriptor
+fullDescriptorTouch =
     Proto.Method.descriptor "msgs.v1.Messages"
         "Touch"
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        []
-
-
-{-| The HTTP bindings of [`touch`](#touch), as data.
--}
-bindingsTouch : List Proto.Http.Binding
-bindingsTouch =
-    [ Proto.Http.binding
-        { method = "POST"
-        , path =
-            [ Proto.Http.literal "msgs.v1.Messages"
-            , Proto.Http.literal "ListMessages"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.wholeBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "msgs.v1.Messages"
+                , Proto.Http.literal "ListMessages"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]

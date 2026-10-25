@@ -400,322 +400,340 @@ routePing0 request_ =
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "GetNote"
+        Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The full descriptor of [`getNote`](#getNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetNote : Proto.Method.Descriptor
+fullDescriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
         Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`getNote`](#getNote), as data.
--}
-bindingsGetNote : List Proto.Http.Binding
-bindingsGetNote =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.GetNoteRequest.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    , Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.GetNoteRequest.name ]
-                , template = [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
 -}
 descriptorListNotes : Proto.Method.Descriptor
 descriptorListNotes =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "ListNotes"
+        Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The full descriptor of [`listNotes`](#listNotes): its types and HTTP bindings, as data.
+-}
+fullDescriptorListNotes : Proto.Method.Descriptor
+fullDescriptorListNotes =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ListNotes"
         Proto.Method.IdempotencyNoSideEffects
         "notes.v1.ListNotesRequest"
         "notes.v1.ListNotesResponse"
-        []
-
-
-{-| The HTTP bindings of [`listNotes`](#listNotes), as data.
--}
-bindingsListNotes : List Proto.Http.Binding
-bindingsListNotes =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.ListNotesRequest.parent ]
-                , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
-                }
-            , Proto.Http.literal "notes"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Just Notes.V1.ListNotesResponse.notes
-        , query =
-            [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.visibility ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.since ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.tags ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.archived ]
-            , Proto.Http.param [ Notes.V1.ListNotesRequest.revision ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ListNotesRequest.parent ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                    }
+                , Proto.Http.literal "notes"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Just Notes.V1.ListNotesResponse.notes
+            , query =
+                [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.visibility ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter, Notes.V1.ListNotesRequestFilter.since ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.tags ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.archived ]
+                , Proto.Http.param [ Notes.V1.ListNotesRequest.revision ]
+                ]
+            }
+        ]
 
 
 {-| `rpc CreateNote(CreateNoteRequest) returns (Note)`
 -}
 descriptorCreateNote : Proto.Method.Descriptor
 descriptorCreateNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "CreateNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`createNote`](#createNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorCreateNote : Proto.Method.Descriptor
+fullDescriptorCreateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "CreateNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.CreateNoteRequest"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`createNote`](#createNote), as data.
--}
-bindingsCreateNote : List Proto.Http.Binding
-bindingsCreateNote =
-    [ Proto.Http.binding
-        { method = "POST"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.CreateNoteRequest.parent ]
-                , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
-                }
-            , Proto.Http.literal "notes"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.CreateNoteRequest.parent ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard ]
+                    }
+                , Proto.Http.literal "notes"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc UpdateNote(UpdateNoteRequest) returns (Note)`
 -}
 descriptorUpdateNote : Proto.Method.Descriptor
 descriptorUpdateNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "UpdateNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`updateNote`](#updateNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorUpdateNote : Proto.Method.Descriptor
+fullDescriptorUpdateNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "UpdateNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.UpdateNoteRequest"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`updateNote`](#updateNote), as data.
--}
-bindingsUpdateNote : List Proto.Http.Binding
-bindingsUpdateNote =
-    [ Proto.Http.binding
-        { method = "PATCH"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "PATCH"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
+                ]
+            }
+        ]
 
 
 {-| `rpc ReplaceNote(Note) returns (Note)`
 -}
 descriptorReplaceNote : Proto.Method.Descriptor
 descriptorReplaceNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "ReplaceNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`replaceNote`](#replaceNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorReplaceNote : Proto.Method.Descriptor
+fullDescriptorReplaceNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ReplaceNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.Note"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`replaceNote`](#replaceNote), as data.
--}
-bindingsReplaceNote : List Proto.Http.Binding
-bindingsReplaceNote =
-    [ Proto.Http.binding
-        { method = "PUT"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.Note.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.wholeBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "PUT"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.Note.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`
 -}
 descriptorDeleteNote : Proto.Method.Descriptor
 descriptorDeleteNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "DeleteNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`deleteNote`](#deleteNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorDeleteNote : Proto.Method.Descriptor
+fullDescriptorDeleteNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "DeleteNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.DeleteNoteRequest"
         "google.protobuf.Empty"
-        []
-
-
-{-| The HTTP bindings of [`deleteNote`](#deleteNote), as data.
--}
-bindingsDeleteNote : List Proto.Http.Binding
-bindingsDeleteNote =
-    [ Proto.Http.binding
-        { method = "DELETE"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Notes.V1.DeleteNoteRequest.force ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "DELETE"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Notes.V1.DeleteNoteRequest.force ]
+                ]
+            }
+        ]
 
 
 {-| `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`
 -}
 descriptorArchiveNote : Proto.Method.Descriptor
 descriptorArchiveNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "ArchiveNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`archiveNote`](#archiveNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorArchiveNote : Proto.Method.Descriptor
+fullDescriptorArchiveNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ArchiveNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.ArchiveNoteRequest"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`archiveNote`](#archiveNote), as data.
--}
-bindingsArchiveNote : List Proto.Http.Binding
-bindingsArchiveNote =
-    [ Proto.Http.binding
-        { method = "POST"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Just "archive"
-        , body = Proto.Http.wholeBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Just "archive"
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc ReadFile(ReadFileRequest) returns (Summary)`
 -}
 descriptorReadFile : Proto.Method.Descriptor
 descriptorReadFile =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "ReadFile"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`readFile`](#readFile): its types and HTTP bindings, as data.
+-}
+fullDescriptorReadFile : Proto.Method.Descriptor
+fullDescriptorReadFile =
     Proto.Method.descriptor "notes.v1.NotesService"
         "ReadFile"
         Proto.Method.IdempotencyUnknown
         "notes.v1.ReadFileRequest"
         "notes.v1.Summary"
-        []
-
-
-{-| The HTTP bindings of [`readFile`](#readFile), as data.
--}
-bindingsReadFile : List Proto.Http.Binding
-bindingsReadFile =
-    [ Proto.Http.binding
-        { method = "HEAD"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Notes.V1.ReadFileRequest.path ]
-                , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.ReadFileRequest.path ]
+                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "Ping"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ping`](#ping): its types and HTTP bindings, as data.
+-}
+fullDescriptorPing : Proto.Method.Descriptor
+fullDescriptorPing =
     Proto.Method.descriptor "notes.v1.NotesService"
         "Ping"
         Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Empty"
-        []
-
-
-{-| The HTTP bindings of [`ping`](#ping), as data.
--}
-bindingsPing : List Proto.Http.Binding
-bindingsPing =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "ping"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "ping"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
 
 
 {-| No HTTP rule: called over the implicit route.
@@ -725,6 +743,15 @@ bindingsPing =
 -}
 descriptorSummarize : Proto.Method.Descriptor
 descriptorSummarize =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "Summarize"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`summarize`](#summarize): its types and HTTP bindings, as data.
+-}
+fullDescriptorSummarize : Proto.Method.Descriptor
+fullDescriptorSummarize =
     Proto.Method.descriptor "notes.v1.NotesService"
         "Summarize"
         Proto.Method.IdempotencyUnknown

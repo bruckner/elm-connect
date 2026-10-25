@@ -73,27 +73,29 @@ routeClear0 request_ =
 -}
 descriptorClear : Proto.Method.Descriptor
 descriptorClear =
+    Proto.Method.endpoint "notes.v1.LegacyService"
+        "Clear"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`clear`](#clear): its types and HTTP bindings, as data.
+-}
+fullDescriptorClear : Proto.Method.Descriptor
+fullDescriptorClear =
     Proto.Method.descriptor "notes.v1.LegacyService"
         "Clear"
         Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Empty"
-        []
-
-
-{-| The HTTP bindings of [`clear`](#clear), as data.
--}
-bindingsClear : List Proto.Http.Binding
-bindingsClear =
-    [ Proto.Http.binding
-        { method = "PURGE"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "notes"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "PURGE"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "notes"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]

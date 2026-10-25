@@ -268,10 +268,10 @@ pub fn emit_with_queries(
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     for message in &package.messages {
-        if let Some(params) = queries.get(&message.proto_full_name) {
-            if let Some(decl) = emitter.query_encoder(&messages, message, params) {
-                encoders.push(decl);
-            }
+        if let Some(params) = queries.get(&message.proto_full_name)
+            && let Some(decl) = emitter.query_encoder(&messages, message, params)
+        {
+            encoders.push(decl);
         }
     }
     if !encoders.is_empty() {
@@ -397,9 +397,7 @@ pub fn emit_service(
         decls.push(Decl::Comment("DESCRIPTORS".into()));
         for method in &service.methods {
             decls.push(emitter.method_descriptor(&service.proto_full_name, method));
-            if !method.routes.is_empty() {
-                decls.push(emitter.method_bindings(method));
-            }
+            decls.push(emitter.method_full_descriptor(&service.proto_full_name, method));
         }
     }
     let mut module = emitter.module(package, decls);
@@ -1196,17 +1194,16 @@ mod tests {
         assert_eq!(sections, ["CALLS", "ROUTES", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "{ encode = T.V1.encodeA\n            , decode = T.V1.decodeA\n            , \
-             descriptor = descriptorGet\n",
+            "(Proto.Method.methodWith T.V1.encodeA\n            T.V1.decodeA\n            \
+             descriptorGet\n",
             // Qualified, or `identity` would be the method itself.
-            "{ encode = Basics.identity\n            , decode = Proto.Json.empty\n            , \
-             descriptor = descriptorIdentity\n",
-            "{ encode = Proto.Json.encodeInt64AsInt\n            , decode = Proto.Json.any\n            \
-             , descriptor = descriptorTicks\n",
+            "(Proto.Method.methodWith Basics.identity\n            Proto.Json.empty\n",
+            "(Proto.Method.methodWith Proto.Json.encodeInt64AsInt\n            Proto.Json.any\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
-             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
-             Proto.Method.IdempotencyUnknown\n        \
-             \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
+             Proto.Method.endpoint \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Method.IdempotencyUnknown\n",
+            "fullDescriptorGet =\n    Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

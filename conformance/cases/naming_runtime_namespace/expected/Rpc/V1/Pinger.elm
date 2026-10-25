@@ -49,6 +49,15 @@ send =
 -}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
+    Proto.Method.endpoint "rpc.v1.Pinger"
+        "Send"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`send`](#send): its types and HTTP bindings, as data.
+-}
+fullDescriptorSend : Proto.Method.Descriptor
+fullDescriptorSend =
     Proto.Method.descriptor "rpc.v1.Pinger"
         "Send"
         Proto.Method.IdempotencyUnknown

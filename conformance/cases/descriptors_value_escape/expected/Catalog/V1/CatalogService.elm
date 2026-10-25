@@ -83,34 +83,36 @@ routeGetEntry0 request_ =
 -}
 descriptorGetEntry : Proto.Method.Descriptor
 descriptorGetEntry =
+    Proto.Method.endpoint "catalog.v1.CatalogService"
+        "GetEntry"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getEntry`](#getEntry): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetEntry : Proto.Method.Descriptor
+fullDescriptorGetEntry =
     Proto.Method.descriptor "catalog.v1.CatalogService"
         "GetEntry"
         Proto.Method.IdempotencyUnknown
         "catalog.v1.GetEntryRequest"
         "catalog.v1.Entry"
-        []
-
-
-{-| The HTTP bindings of [`getEntry`](#getEntry), as data.
--}
-bindingsGetEntry : List Proto.Http.Binding
-bindingsGetEntry =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Catalog.V1.GetEntryRequest.name ]
-                , template = [ Proto.Http.literal "entries", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Catalog.V1.GetEntryRequest.descriptor_ ]
-            , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.descriptor_ ]
-            , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.count ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Catalog.V1.GetEntryRequest.name ]
+                    , template = [ Proto.Http.literal "entries", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Catalog.V1.GetEntryRequest.descriptor_ ]
+                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.descriptor_ ]
+                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.count ]
+                ]
+            }
+        ]

@@ -68,6 +68,15 @@ send =
 -}
 descriptorForward : Proto.Method.Descriptor
 descriptorForward =
+    Proto.Method.endpoint "envelope.v1.Relay"
+        "Forward"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`forward`](#forward): its types and HTTP bindings, as data.
+-}
+fullDescriptorForward : Proto.Method.Descriptor
+fullDescriptorForward =
     Proto.Method.descriptor "envelope.v1.Relay"
         "Forward"
         Proto.Method.IdempotencyUnknown
@@ -80,6 +89,15 @@ descriptorForward =
 -}
 descriptorSend : Proto.Method.Descriptor
 descriptorSend =
+    Proto.Method.endpoint "envelope.v1.Relay"
+        "Send"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`send`](#send): its types and HTTP bindings, as data.
+-}
+fullDescriptorSend : Proto.Method.Descriptor
+fullDescriptorSend =
     Proto.Method.descriptor "envelope.v1.Relay"
         "Send"
         Proto.Method.IdempotencyUnknown

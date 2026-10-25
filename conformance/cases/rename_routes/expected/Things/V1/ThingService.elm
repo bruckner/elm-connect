@@ -74,33 +74,35 @@ routeGetThing0 request_ =
 -}
 descriptorGetThing : Proto.Method.Descriptor
 descriptorGetThing =
+    Proto.Method.endpoint "things.v1.ThingService"
+        "GetThing"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getThing`](#getThing): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetThing : Proto.Method.Descriptor
+fullDescriptorGetThing =
     Proto.Method.descriptor "things.v1.ThingService"
         "GetThing"
         Proto.Method.IdempotencyUnknown
         "things.v1.GetThingRequest"
         "things.v1.Thing"
-        []
-
-
-{-| The HTTP bindings of [`getThing`](#getThing), as data.
--}
-bindingsGetThing : List Proto.Http.Binding
-bindingsGetThing =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Things.V1.GetThingRequest.resource ]
-                , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Things.V1.GetThingRequest.limit ]
-            , Proto.Http.param [ Things.V1.GetThingRequest.filter, Things.V1.Criteria.status ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Things.V1.GetThingRequest.resource ]
+                    , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Things.V1.GetThingRequest.limit ]
+                , Proto.Http.param [ Things.V1.GetThingRequest.filter, Things.V1.Criteria.status ]
+                ]
+            }
+        ]

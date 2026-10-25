@@ -1,7 +1,7 @@
 module Proto.Method exposing
     ( Method, method, methodWith
     , encodeRequest, responseDecoder, toDescriptor
-    , Descriptor, descriptor
+    , Descriptor, descriptor, endpoint
     , service, name, idempotency, input, output, bindings
     , Idempotency(..)
     )
@@ -26,7 +26,7 @@ any other union.
 
 # Descriptors
 
-@docs Descriptor, descriptor
+@docs Descriptor, descriptor, endpoint
 
 
 # Reading a descriptor
@@ -196,6 +196,23 @@ descriptor serviceName methodName level inputType outputType methodBindings =
         }
 
 
+{-| A method's descriptor holding only what a call reads: the full name of
+its service, its name and its idempotency. Its types' names are `""` and it
+has no bindings. Generated code builds the descriptor its call carries with
+this, and writes the full one, types and HTTP rule as data, as a separate
+value (`fullDescriptorGetNote`) that a program keeps only if it refers to it:
+
+    descriptorGetNote =
+        Proto.Method.endpoint "notes.v1.NotesService"
+            "GetNote"
+            Proto.Method.IdempotencyNoSideEffects
+
+-}
+endpoint : String -> String -> Idempotency -> Descriptor
+endpoint serviceName methodName level =
+    descriptor serviceName methodName level "" "" []
+
+
 {-| The full name of its service, such as `notes.v1.NotesService`.
 -}
 service : Descriptor -> String
@@ -218,14 +235,17 @@ idempotency (Descriptor m) =
     m.idempotency
 
 
-{-| The full name of its request type, such as `notes.v1.GetNoteRequest`.
+{-| The full name of its request type, such as `notes.v1.GetNoteRequest`;
+`""` for a descriptor built by [`endpoint`](#endpoint), as a generated call's
+is.
 -}
 input : Descriptor -> String
 input (Descriptor m) =
     m.input
 
 
-{-| The full name of its response type, such as `notes.v1.Note`.
+{-| The full name of its response type, such as `notes.v1.Note`; `""` for a
+descriptor built by [`endpoint`](#endpoint).
 -}
 output : Descriptor -> String
 output (Descriptor m) =

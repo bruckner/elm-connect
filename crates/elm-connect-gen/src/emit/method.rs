@@ -11,7 +11,7 @@ use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
-    apply, inline_list, list, pvar, qualified, record, stacked_apply, string, ty, ty_fn, var,
+    apply, inline_list, list, pvar, qualified, record, stacked_apply, string, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
@@ -25,14 +25,45 @@ impl Emitter {
     /// Every name in it is qualified, so it cannot clash with the package
     /// module's names or the runtime's, whatever the method is called.
     pub(super) fn method_descriptor(&mut self, service: &str, method: &Method) -> Decl {
-        let idempotency = self.reference((
+        let idempotency = self.idempotency(method);
+        let body = stacked_apply(
+            self.reference((PROTO_METHOD, "endpoint")),
+            [
+                string(service),
+                string(method.proto_name.clone()),
+                idempotency,
+            ],
+        );
+        Decl::Value {
+            doc: Some(docs::descriptor(&method.doc, None)),
+            name: method.descriptor_name(),
+            annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
+    fn idempotency(&mut self, method: &Method) -> Expr {
+        self.reference((
             PROTO_METHOD,
             match method.idempotency {
                 Idempotency::Unknown => "IdempotencyUnknown",
                 Idempotency::NoSideEffects => "IdempotencyNoSideEffects",
                 Idempotency::Idempotent => "IdempotencyIdempotent",
             },
-        ));
+        ))
+    }
+
+    /// A method's full descriptor, `fullDescriptorGetNote`: its types and
+    /// its HTTP bindings as data besides what its call carries, for a
+    /// program that reads them; a call never refers to it.
+    pub(super) fn method_full_descriptor(&mut self, service: &str, method: &Method) -> Decl {
+        let idempotency = self.idempotency(method);
+        let bindings: Vec<Expr> = method
+            .routes
+            .iter()
+            .map(|route| self.binding(route))
+            .collect();
         let body = stacked_apply(
             self.reference((PROTO_METHOD, "descriptor")),
             [
@@ -41,12 +72,15 @@ impl Emitter {
                 idempotency,
                 string(proto_full_name(&method.input)),
                 string(proto_full_name(&method.output)),
-                list([]),
+                list(bindings),
             ],
         );
         Decl::Value {
-            doc: Some(docs::descriptor(&method.doc, None)),
-            name: method.descriptor_name(),
+            doc: Some(format!(
+                "The full descriptor of [`{}`](#{}): its types and HTTP bindings, as data.",
+                method.elm_name, method.elm_name
+            )),
+            name: format!("fullDescriptor{}", capitalized(&method.elm_name)),
             annotation: self.library_type(PROTO_METHOD, "Descriptor", []),
             params: Vec::new(),
             body,
@@ -92,29 +126,8 @@ impl Emitter {
         }
     }
 
-    /// `bindingsGetNote : List Proto.Http.Binding`: the method's HTTP
-    /// bindings as data, which no call refers to.
-    pub(super) fn method_bindings(&mut self, method: &Method) -> Decl {
-        let bindings: Vec<Expr> = method
-            .routes
-            .iter()
-            .map(|route| self.binding(route))
-            .collect();
-        let binding = self.library_type(PROTO_HTTP, "Binding", []);
-        Decl::Value {
-            doc: Some(format!(
-                "The HTTP bindings of [`{}`](#{}), as data.",
-                method.elm_name, method.elm_name
-            )),
-            name: bindings_name(method),
-            annotation: ty("List", [binding]),
-            params: Vec::new(),
-            body: list(bindings),
-        }
-    }
-
-    /// `routeGetNote0 : GetNoteRequest -> ( Rpc.Route.Route, Maybe
-    /// Rpc.Route.PathError )`, one per binding.
+    /// `routeGetNote0 : GetNoteRequest -> Rpc.Route.Route`, one per
+    /// binding.
     pub(super) fn method_routes(
         &mut self,
         messages: &Messages,
@@ -292,10 +305,6 @@ fn route_name(method: &Method, index: usize) -> String {
 }
 
 /// `bindingsGetNote`: a method's bindings as data.
-fn bindings_name(method: &Method) -> String {
-    format!("bindings{}", capitalized(&method.elm_name))
-}
-
 fn capitalized(name: &str) -> String {
     let mut chars = name.chars();
     match chars.next() {

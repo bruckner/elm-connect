@@ -50,6 +50,15 @@ ping =
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
+    Proto.Method.endpoint "ping.v1.Ping"
+        "Ping"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ping`](#ping): its types and HTTP bindings, as data.
+-}
+fullDescriptorPing : Proto.Method.Descriptor
+fullDescriptorPing =
     Proto.Method.descriptor "ping.v1.Ping"
         "Ping"
         Proto.Method.IdempotencyUnknown

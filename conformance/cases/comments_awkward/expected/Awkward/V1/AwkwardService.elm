@@ -92,27 +92,29 @@ An unclosed fence in a method's comment.
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
+    Proto.Method.endpoint "awkward.v1.AwkwardService"
+        "Ping"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ping`](#ping): its types and HTTP bindings, as data.
+-}
+fullDescriptorPing : Proto.Method.Descriptor
+fullDescriptorPing =
     Proto.Method.descriptor "awkward.v1.AwkwardService"
         "Ping"
         Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Empty"
-        []
-
-
-{-| The HTTP bindings of [`ping`](#ping), as data.
--}
-bindingsPing : List Proto.Http.Binding
-bindingsPing =
-    [ Proto.Http.binding
-        { method = "HEAD"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "ping"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "HEAD"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "ping"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]

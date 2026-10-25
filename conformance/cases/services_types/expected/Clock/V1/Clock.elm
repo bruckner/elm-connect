@@ -226,6 +226,15 @@ set =
 -}
 descriptorNow : Proto.Method.Descriptor
 descriptorNow =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Now"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`now`](#now): its types and HTTP bindings, as data.
+-}
+fullDescriptorNow : Proto.Method.Descriptor
+fullDescriptorNow =
     Proto.Method.descriptor "clock.v1.Clock"
         "Now"
         Proto.Method.IdempotencyUnknown
@@ -238,6 +247,15 @@ descriptorNow =
 -}
 descriptorSleep : Proto.Method.Descriptor
 descriptorSleep =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Sleep"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`sleep`](#sleep): its types and HTTP bindings, as data.
+-}
+fullDescriptorSleep : Proto.Method.Descriptor
+fullDescriptorSleep =
     Proto.Method.descriptor "clock.v1.Clock"
         "Sleep"
         Proto.Method.IdempotencyUnknown
@@ -250,6 +268,15 @@ descriptorSleep =
 -}
 descriptorMask : Proto.Method.Descriptor
 descriptorMask =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Mask"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`mask`](#mask): its types and HTTP bindings, as data.
+-}
+fullDescriptorMask : Proto.Method.Descriptor
+fullDescriptorMask =
     Proto.Method.descriptor "clock.v1.Clock"
         "Mask"
         Proto.Method.IdempotencyUnknown
@@ -262,6 +289,15 @@ descriptorMask =
 -}
 descriptorEcho : Proto.Method.Descriptor
 descriptorEcho =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Echo"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`echo`](#echo): its types and HTTP bindings, as data.
+-}
+fullDescriptorEcho : Proto.Method.Descriptor
+fullDescriptorEcho =
     Proto.Method.descriptor "clock.v1.Clock"
         "Echo"
         Proto.Method.IdempotencyUnknown
@@ -274,6 +310,15 @@ descriptorEcho =
 -}
 descriptorTicks : Proto.Method.Descriptor
 descriptorTicks =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Ticks"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ticks`](#ticks): its types and HTTP bindings, as data.
+-}
+fullDescriptorTicks : Proto.Method.Descriptor
+fullDescriptorTicks =
     Proto.Method.descriptor "clock.v1.Clock"
         "Ticks"
         Proto.Method.IdempotencyUnknown
@@ -286,6 +331,15 @@ descriptorTicks =
 -}
 descriptorCount : Proto.Method.Descriptor
 descriptorCount =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Count"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`count`](#count): its types and HTTP bindings, as data.
+-}
+fullDescriptorCount : Proto.Method.Descriptor
+fullDescriptorCount =
     Proto.Method.descriptor "clock.v1.Clock"
         "Count"
         Proto.Method.IdempotencyUnknown
@@ -298,6 +352,15 @@ descriptorCount =
 -}
 descriptorRatio : Proto.Method.Descriptor
 descriptorRatio =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Ratio"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ratio`](#ratio): its types and HTTP bindings, as data.
+-}
+fullDescriptorRatio : Proto.Method.Descriptor
+fullDescriptorRatio =
     Proto.Method.descriptor "clock.v1.Clock"
         "Ratio"
         Proto.Method.IdempotencyUnknown
@@ -310,6 +373,15 @@ descriptorRatio =
 -}
 descriptorName : Proto.Method.Descriptor
 descriptorName =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Name"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`name`](#name): its types and HTTP bindings, as data.
+-}
+fullDescriptorName : Proto.Method.Descriptor
+fullDescriptorName =
     Proto.Method.descriptor "clock.v1.Clock"
         "Name"
         Proto.Method.IdempotencyUnknown
@@ -322,6 +394,15 @@ descriptorName =
 -}
 descriptorRaw : Proto.Method.Descriptor
 descriptorRaw =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Raw"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`raw`](#raw): its types and HTTP bindings, as data.
+-}
+fullDescriptorRaw : Proto.Method.Descriptor
+fullDescriptorRaw =
     Proto.Method.descriptor "clock.v1.Clock"
         "Raw"
         Proto.Method.IdempotencyUnknown
@@ -334,6 +415,15 @@ descriptorRaw =
 -}
 descriptorZone : Proto.Method.Descriptor
 descriptorZone =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Zone"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`zone`](#zone): its types and HTTP bindings, as data.
+-}
+fullDescriptorZone : Proto.Method.Descriptor
+fullDescriptorZone =
     Proto.Method.descriptor "clock.v1.Clock"
         "Zone"
         Proto.Method.IdempotencyUnknown
@@ -346,6 +436,15 @@ descriptorZone =
 -}
 descriptorSet : Proto.Method.Descriptor
 descriptorSet =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "Set"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`set`](#set): its types and HTTP bindings, as data.
+-}
+fullDescriptorSet : Proto.Method.Descriptor
+fullDescriptorSet =
     Proto.Method.descriptor "clock.v1.Clock"
         "Set"
         Proto.Method.IdempotencyUnknown

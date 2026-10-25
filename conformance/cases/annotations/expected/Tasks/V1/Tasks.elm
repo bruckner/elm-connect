@@ -83,6 +83,15 @@ closeTask =
 -}
 descriptorGetTask : Proto.Method.Descriptor
 descriptorGetTask =
+    Proto.Method.endpoint "tasks.v1.Tasks"
+        "GetTask"
+        Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The full descriptor of [`getTask`](#getTask): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetTask : Proto.Method.Descriptor
+fullDescriptorGetTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
         "GetTask"
         Proto.Method.IdempotencyNoSideEffects
@@ -95,6 +104,15 @@ descriptorGetTask =
 -}
 descriptorPutTask : Proto.Method.Descriptor
 descriptorPutTask =
+    Proto.Method.endpoint "tasks.v1.Tasks"
+        "PutTask"
+        Proto.Method.IdempotencyIdempotent
+
+
+{-| The full descriptor of [`putTask`](#putTask): its types and HTTP bindings, as data.
+-}
+fullDescriptorPutTask : Proto.Method.Descriptor
+fullDescriptorPutTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
         "PutTask"
         Proto.Method.IdempotencyIdempotent
@@ -107,6 +125,15 @@ descriptorPutTask =
 -}
 descriptorCloseTask : Proto.Method.Descriptor
 descriptorCloseTask =
+    Proto.Method.endpoint "tasks.v1.Tasks"
+        "CloseTask"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`closeTask`](#closeTask): its types and HTTP bindings, as data.
+-}
+fullDescriptorCloseTask : Proto.Method.Descriptor
+fullDescriptorCloseTask =
     Proto.Method.descriptor "tasks.v1.Tasks"
         "CloseTask"
         Proto.Method.IdempotencyUnknown

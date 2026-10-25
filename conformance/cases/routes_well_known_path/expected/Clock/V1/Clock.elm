@@ -195,159 +195,167 @@ routeWaitMoment0 request_ =
 -}
 descriptorGetMoment : Proto.Method.Descriptor
 descriptorGetMoment =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "GetMoment"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getMoment`](#getMoment): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetMoment : Proto.Method.Descriptor
+fullDescriptorGetMoment =
     Proto.Method.descriptor "clock.v1.Clock"
         "GetMoment"
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        []
-
-
-{-| The HTTP bindings of [`getMoment`](#getMoment), as data.
--}
-bindingsGetMoment : List Proto.Http.Binding
-bindingsGetMoment =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "at"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.at ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Clock.V1.Moment.mask ]
-            , Proto.Http.param [ Clock.V1.Moment.count ]
-            , Proto.Http.param [ Clock.V1.Moment.seen ]
-            , Proto.Http.param [ Clock.V1.Moment.wait ]
-            , Proto.Http.param [ Clock.V1.Moment.note ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "at"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.at ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Clock.V1.Moment.mask ]
+                , Proto.Http.param [ Clock.V1.Moment.count ]
+                , Proto.Http.param [ Clock.V1.Moment.seen ]
+                , Proto.Http.param [ Clock.V1.Moment.wait ]
+                , Proto.Http.param [ Clock.V1.Moment.note ]
+                ]
+            }
+        ]
 
 
 {-| `rpc MaskMoment(Moment) returns (Moment)`
 -}
 descriptorMaskMoment : Proto.Method.Descriptor
 descriptorMaskMoment =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "MaskMoment"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`maskMoment`](#maskMoment): its types and HTTP bindings, as data.
+-}
+fullDescriptorMaskMoment : Proto.Method.Descriptor
+fullDescriptorMaskMoment =
     Proto.Method.descriptor "clock.v1.Clock"
         "MaskMoment"
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        []
-
-
-{-| The HTTP bindings of [`maskMoment`](#maskMoment), as data.
--}
-bindingsMaskMoment : List Proto.Http.Binding
-bindingsMaskMoment =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "at"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.at ]
-                , template = []
-                }
-            , Proto.Http.literal "mask"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.mask ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Clock.V1.Moment.count ]
-            , Proto.Http.param [ Clock.V1.Moment.seen ]
-            , Proto.Http.param [ Clock.V1.Moment.wait ]
-            , Proto.Http.param [ Clock.V1.Moment.note ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "at"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.at ]
+                    , template = []
+                    }
+                , Proto.Http.literal "mask"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.mask ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Clock.V1.Moment.count ]
+                , Proto.Http.param [ Clock.V1.Moment.seen ]
+                , Proto.Http.param [ Clock.V1.Moment.wait ]
+                , Proto.Http.param [ Clock.V1.Moment.note ]
+                ]
+            }
+        ]
 
 
 {-| `rpc CountMoment(Moment) returns (Moment)`
 -}
 descriptorCountMoment : Proto.Method.Descriptor
 descriptorCountMoment =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "CountMoment"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`countMoment`](#countMoment): its types and HTTP bindings, as data.
+-}
+fullDescriptorCountMoment : Proto.Method.Descriptor
+fullDescriptorCountMoment =
     Proto.Method.descriptor "clock.v1.Clock"
         "CountMoment"
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        []
-
-
-{-| The HTTP bindings of [`countMoment`](#countMoment), as data.
--}
-bindingsCountMoment : List Proto.Http.Binding
-bindingsCountMoment =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "count"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.count ]
-                , template = []
-                }
-            , Proto.Http.literal "seen"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.seen ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Clock.V1.Moment.at ]
-            , Proto.Http.param [ Clock.V1.Moment.mask ]
-            , Proto.Http.param [ Clock.V1.Moment.wait ]
-            , Proto.Http.param [ Clock.V1.Moment.note ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "count"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.count ]
+                    , template = []
+                    }
+                , Proto.Http.literal "seen"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.seen ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Clock.V1.Moment.at ]
+                , Proto.Http.param [ Clock.V1.Moment.mask ]
+                , Proto.Http.param [ Clock.V1.Moment.wait ]
+                , Proto.Http.param [ Clock.V1.Moment.note ]
+                ]
+            }
+        ]
 
 
 {-| `rpc WaitMoment(Moment) returns (Moment)`
 -}
 descriptorWaitMoment : Proto.Method.Descriptor
 descriptorWaitMoment =
+    Proto.Method.endpoint "clock.v1.Clock"
+        "WaitMoment"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`waitMoment`](#waitMoment): its types and HTTP bindings, as data.
+-}
+fullDescriptorWaitMoment : Proto.Method.Descriptor
+fullDescriptorWaitMoment =
     Proto.Method.descriptor "clock.v1.Clock"
         "WaitMoment"
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        []
-
-
-{-| The HTTP bindings of [`waitMoment`](#waitMoment), as data.
--}
-bindingsWaitMoment : List Proto.Http.Binding
-bindingsWaitMoment =
-    [ Proto.Http.binding
-        { method = "POST"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.literal "wait"
-            , Proto.Http.variable
-                { fieldPath = [ Clock.V1.Moment.wait ]
-                , template = []
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.wholeBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "wait"
+                , Proto.Http.variable
+                    { fieldPath = [ Clock.V1.Moment.wait ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]

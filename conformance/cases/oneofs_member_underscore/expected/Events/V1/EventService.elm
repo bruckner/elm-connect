@@ -80,33 +80,35 @@ routeListEvents0 request_ =
 -}
 descriptorListEvents : Proto.Method.Descriptor
 descriptorListEvents =
+    Proto.Method.endpoint "events.v1.EventService"
+        "ListEvents"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`listEvents`](#listEvents): its types and HTTP bindings, as data.
+-}
+fullDescriptorListEvents : Proto.Method.Descriptor
+fullDescriptorListEvents =
     Proto.Method.descriptor "events.v1.EventService"
         "ListEvents"
         Proto.Method.IdempotencyUnknown
         "events.v1.ListEventsRequest"
         "events.v1.ListEventsResponse"
-        []
-
-
-{-| The HTTP bindings of [`listEvents`](#listEvents), as data.
--}
-bindingsListEvents : List Proto.Http.Binding
-bindingsListEvents =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Events.V1.ListEventsRequest.parent ]
-                , template = [ Proto.Http.literal "feeds", Proto.Http.wildcard ]
-                }
-            , Proto.Http.literal "events"
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query =
-            [ Proto.Http.param [ Events.V1.ListEventsRequest.legacy ]
-            ]
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Events.V1.ListEventsRequest.parent ]
+                    , template = [ Proto.Http.literal "feeds", Proto.Http.wildcard ]
+                    }
+                , Proto.Http.literal "events"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Events.V1.ListEventsRequest.legacy ]
+                ]
+            }
+        ]

@@ -100,6 +100,15 @@ type_ =
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
+    Proto.Method.endpoint "first.v1.Fetcher"
+        "GetNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getNote`](#getNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetNote : Proto.Method.Descriptor
+fullDescriptorGetNote =
     Proto.Method.descriptor "first.v1.Fetcher"
         "GetNote"
         Proto.Method.IdempotencyUnknown
@@ -112,6 +121,15 @@ descriptorGetNote =
 -}
 descriptorHttpGet : Proto.Method.Descriptor
 descriptorHttpGet =
+    Proto.Method.endpoint "first.v1.Fetcher"
+        "HTTPGet"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`httpGet`](#httpGet): its types and HTTP bindings, as data.
+-}
+fullDescriptorHttpGet : Proto.Method.Descriptor
+fullDescriptorHttpGet =
     Proto.Method.descriptor "first.v1.Fetcher"
         "HTTPGet"
         Proto.Method.IdempotencyUnknown
@@ -124,6 +142,15 @@ descriptorHttpGet =
 -}
 descriptorPing : Proto.Method.Descriptor
 descriptorPing =
+    Proto.Method.endpoint "first.v1.Fetcher"
+        "_Ping"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`ping`](#ping): its types and HTTP bindings, as data.
+-}
+fullDescriptorPing : Proto.Method.Descriptor
+fullDescriptorPing =
     Proto.Method.descriptor "first.v1.Fetcher"
         "_Ping"
         Proto.Method.IdempotencyUnknown
@@ -136,6 +163,15 @@ descriptorPing =
 -}
 descriptorType_ : Proto.Method.Descriptor
 descriptorType_ =
+    Proto.Method.endpoint "first.v1.Fetcher"
+        "Type"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`type_`](#type_): its types and HTTP bindings, as data.
+-}
+fullDescriptorType_ : Proto.Method.Descriptor
+fullDescriptorType_ =
     Proto.Method.descriptor "first.v1.Fetcher"
         "Type"
         Proto.Method.IdempotencyUnknown

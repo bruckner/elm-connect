@@ -73,30 +73,32 @@ routeGetNote0 request_ =
 -}
 descriptorGetNote : Proto.Method.Descriptor
 descriptorGetNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
+        "GetNote"
+        Proto.Method.IdempotencyUnknown
+
+
+{-| The full descriptor of [`getNote`](#getNote): its types and HTTP bindings, as data.
+-}
+fullDescriptorGetNote : Proto.Method.Descriptor
+fullDescriptorGetNote =
     Proto.Method.descriptor "notes.v1.NotesService"
         "GetNote"
         Proto.Method.IdempotencyUnknown
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
-        []
-
-
-{-| The HTTP bindings of [`getNote`](#getNote), as data.
--}
-bindingsGetNote : List Proto.Http.Binding
-bindingsGetNote =
-    [ Proto.Http.binding
-        { method = "GET"
-        , path =
-            [ Proto.Http.literal "v1"
-            , Proto.Http.variable
-                { fieldPath = [ Api.Example.Notes.V1.GetNoteRequest.name ]
-                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                }
-            ]
-        , customVerb = Nothing
-        , body = Proto.Http.noBody
-        , responseBody = Nothing
-        , query = []
-        }
-    ]
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Api.Example.Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
