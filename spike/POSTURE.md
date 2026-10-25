@@ -27,6 +27,31 @@ Two facts shape every option:
   prost-reflect's private types and in protox's encoded bytes) prost-reflect
   and protox need no prost-types change at all.
 
+### Edition 2024 (run 3)
+
+Run 3 added edition 2024 on top: prost-reflect src +933/−28 in 13 files
+(one new, `build/symbols.rs`, 572 lines) and `wkt.rs` +102 (the literals
+gain two empty fields); protox-parse src +171/−8 in 7 files; protox src
++24/−4 in 2 files; tests +1032 (prost-reflect, 18 YAML cases with
+snapshots), +168 (protox-parse, 23 snapshot lines are one
+`visibility: None` each), +327 (protox). prost-types needed nothing: its
+regeneration from protobuf 32.0 already carries `option_dependency`,
+`SymbolVisibility` and `visibility`. New public API in prost-reflect, all
+additive: `Edition::Edition2024` (the enum is already non-exhaustive),
+`SymbolVisibility`, `EnforceNamingStyle`, `DefaultSymbolVisibility`, two
+`Features` accessors, `visibility()`/`visibility_keyword()` on message and
+enum descriptors, `FileDescriptor::option_dependencies()`,
+`DescriptorPool::enforce_naming_style`. No new semver break beyond run 1's
+(`Syntax::Editions`); `Features`' new fields are private.
+
+This grows the forks by roughly two thirds of run 1's code, mostly in one
+new prost-reflect file that touches no upstream code path, so the rebase
+cost per upstream release grows little (the new file conflicts with
+nothing; the edits to existing files are small and next to run 1's). It
+does not change the verdict below: the same order (prost-reflect, then
+protox), the same versions (0.17, 0.11), one more upstream PR per crate
+or a larger first one.
+
 ## The rebase trial
 
 The fork commits were replayed as one patch per crate onto upstream heads in

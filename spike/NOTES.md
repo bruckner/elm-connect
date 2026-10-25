@@ -143,3 +143,89 @@ traps met. The commit messages under `vendor/` carry the rest.
   not apply it. `Proto.Field.withDefault` carries the text as the proto
   writes it (`FieldDescriptorProto.default_value`: C-escaped bytes, an enum
   value's name).
+
+# Notes: editions spike, run 3
+
+## Decisions
+
+- **Sizing drove going ahead** (`spike/SIZING-2024.md`): ~885 lines of fork
+  code estimated against the brief's bound of ~1,200; the result is 1,128
+  (prost-reflect 933, protox-parse 171, protox 24), plus 102 mechanical
+  lines in prost-reflect's `wkt.rs` literals. The overrun against the
+  estimate is prost-reflect's: `build/symbols.rs` (572 lines, the
+  visibility, naming and STRICT checks with protoc's messages) was sized at
+  ~360, and the missing-option-dependency and naming-flag decisions below
+  were not foreseen.
+- **Visibility does not change generated output.** A client generator emits
+  every type its files define; `export`/`local` decide which other files
+  may refer to a type, a cross-file rule the descriptor pool enforces
+  (field types, extendees, method input and output types, as protoc 35.1
+  checks them by probe; `descriptor.cc` shows the first two). A local
+  nested type of a generated file is still generated: a field of its own
+  file may use it. protobuf.dev says the same ("does not affect
+  code-generation"). Pinned by `editions_2024_visibility` and the test
+  that its modules equal those of the same files without the modifiers and
+  without `default_symbol_visibility`.
+- **Naming style is checked when a pool asks for it.** protoc's C++
+  `DescriptorPool` checks names only when told to (`enforce_naming_style_`,
+  which protoc's CLI sets); prost-reflect gains
+  `DescriptorPool::enforce_naming_style(bool)`, off by default, and protox's
+  compiler turns it on. Found by the oracle: protoc strips
+  source-retention options (both new 2024 features are SOURCE) from the
+  descriptor sets it writes without `--retain_options` and from the
+  `proto_file`s it sends plugins, so a pool that always checked names would
+  refuse `test_messages_proto3_editions.proto`'s 2024 rewrite, whose
+  STYLE_LEGACY opt-out protoc had stripped. The plugin's pool therefore
+  does not check names; protoc and buf refuse such files before any plugin
+  runs. Visibility checks stay always on: stripping only loosens them
+  (a stripped STRICT or LOCAL_ALL file reads as EXPORT_TOP_LEVEL), so they
+  cannot refuse a file protoc accepted.
+- **The CLI renders naming errors as `input::naming_style`**, one problem
+  per name, the fork's message (protoc's text without the opt-out clause)
+  and a help that names the style and the opt-out, sited at the name, in
+  place of protox's error, through
+  `elm_connect_gen::diagnostics::naming_style`, which the corpus harness
+  uses too (`front_end_case`). Through the plugin there is nothing to
+  render: protoc and buf refuse the file first (the lockstep oracle shows
+  their own messages), and the plugin's replay test skips the case as it
+  skips `editions_unknown`. The brief asked for the rendering "through the
+  CLI and the plugin"; the plugin half does not exist for this rule.
+- **A missing option dependency is not an error in the pool.** buf 1.73.0
+  leaves the option-imported file out of a plugin's request (and out of
+  its images' `option_dependency` altogether); protoc's pool tolerates a
+  missing one by default (`enforce_option_` off: a placeholder file). The
+  fork leaves it out of `option_dependencies()`. protox still loads option
+  imports from source like imports, and a missing one is its usual
+  "import not found".
+- **`input::editions` is for editions after 2024.** The corpus case is now
+  `editions_unknown` (`edition = "2025"`); the plugin's check refuses any
+  edition other than 2023 and 2024 (tested with `EDITION_99997_TEST_ONLY`).
+  The plugin claims `minimum_edition = EDITION_2023`,
+  `maximum_edition = EDITION_2024`.
+- **The 2024 rewrites of protobuf's two editions protos** change only what
+  protoc requires: `edition = "2024"`, the four `ctype` options removed
+  (2024 forbids `ctype`; the string type is a C++ matter) from each,
+  `java_multiple_files` removed from the 2023 one, and STYLE_LEGACY on the
+  proto3 one, whose JSON-name test fields (`field__name4_`, `FieldName8`,
+  …) and enum values (`moo`, `kTrue`) break STYLE2024. No
+  `test_messages_edition2024*.proto` exists at v32.0 (the tree has only
+  `unittest_lite_edition_2024.proto`, a C++ unit test).
+- **EXPANDED lifted.** One check in `check_field_features` and the
+  `UnsupportedFeature::Expanded` variant deleted; the codecs needed
+  nothing. `check` needs nothing either: the edition and its features are
+  in the protos.
+
+## Traps
+
+- `protoc -o` strips source-retention options unless `--retain_options`:
+  the oracle compares with it; without it the 2024 features vanish.
+- protoc 35.1 aborts (CHECK failure in `GetTransitiveDependencies`, exit
+  134) when an `import option` names a missing file and `-o` is given.
+- buf's `--path` takes paths relative to the directory buf runs in
+  (`mise exec -C` moves it to the repository root): pass absolute ones.
+- `git stash -u`/`pop` around an autosquash restored a staged rename into
+  the index, and the next `git add <dir>` + commit took it along; recommit
+  by path from a soft reset.
+- insta rewrites a snapshot's header (`source:`, `expression:`) when it
+  blesses under a workspace other than upstream's; the run kept the
+  upstream headers by hand so the protox-parse diff is the content line.
