@@ -329,6 +329,29 @@ func local_request_NotesService_Ping_0(ctx context.Context, marshaler runtime.Ma
 	return msg, metadata, err
 }
 
+func request_NotesService_WatchNotes_0(ctx context.Context, marshaler runtime.Marshaler, client NotesServiceClient, req *http.Request, pathParams map[string]string) (NotesService_WatchNotesClient, runtime.ServerMetadata, error) {
+	var (
+		protoReq WatchNotesRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	stream, err := client.WatchNotes(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+}
+
 // RegisterNotesServiceHandlerServer registers the http handlers for service NotesService to "mux".
 // UnaryRPC     :call NotesServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -474,6 +497,13 @@ func RegisterNotesServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			return
 		}
 		forward_NotesService_Ping_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+
+	mux.Handle(http.MethodPost, pattern_NotesService_WatchNotes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
 	return nil
@@ -634,6 +664,23 @@ func RegisterNotesServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 		}
 		forward_NotesService_Ping_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodPost, pattern_NotesService_WatchNotes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/notes.v1.NotesService/WatchNotes", runtime.WithHTTPPathPattern("/notes.v1.NotesService/WatchNotes"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_NotesService_WatchNotes_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_NotesService_WatchNotes_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -645,6 +692,7 @@ var (
 	pattern_NotesService_DeleteNote_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 2, 5, 2}, []string{"v1", "notes", "name"}, ""))
 	pattern_NotesService_ArchiveNote_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 2, 5, 2}, []string{"v1", "notes", "name"}, "archive"))
 	pattern_NotesService_Ping_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"notes.v1.NotesService", "Ping"}, ""))
+	pattern_NotesService_WatchNotes_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"notes.v1.NotesService", "WatchNotes"}, ""))
 )
 
 var (
@@ -655,4 +703,5 @@ var (
 	forward_NotesService_DeleteNote_0  = runtime.ForwardResponseMessage
 	forward_NotesService_ArchiveNote_0 = runtime.ForwardResponseMessage
 	forward_NotesService_Ping_0        = runtime.ForwardResponseMessage
+	forward_NotesService_WatchNotes_0  = runtime.ForwardResponseStream
 )

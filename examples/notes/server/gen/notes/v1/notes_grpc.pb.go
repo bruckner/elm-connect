@@ -32,6 +32,7 @@ const (
 	NotesService_DeleteNote_FullMethodName  = "/notes.v1.NotesService/DeleteNote"
 	NotesService_ArchiveNote_FullMethodName = "/notes.v1.NotesService/ArchiveNote"
 	NotesService_Ping_FullMethodName        = "/notes.v1.NotesService/Ping"
+	NotesService_WatchNotes_FullMethodName  = "/notes.v1.NotesService/WatchNotes"
 )
 
 // NotesServiceClient is the client API for NotesService service.
@@ -67,6 +68,11 @@ type NotesServiceClient interface {
 	// Answers with nothing. It has no HTTP rule, so transcoding serves it on
 	// the implicit route, `POST /notes.v1.NotesService/Ping`.
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// A server stream of `count` events, `interval_ms` apart, then the end, or
+	// with `fail` an error. It has no HTTP rule: Vanguard transcodes a server
+	// stream only to a `google.api.HttpBody`, so transcoders reach it on the
+	// implicit route.
+	WatchNotes(ctx context.Context, in *WatchNotesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NoteEvent], error)
 }
 
 type notesServiceClient struct {
@@ -147,6 +153,25 @@ func (c *notesServiceClient) Ping(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
+func (c *notesServiceClient) WatchNotes(ctx context.Context, in *WatchNotesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NoteEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NotesService_ServiceDesc.Streams[0], NotesService_WatchNotes_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WatchNotesRequest, NoteEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NotesService_WatchNotesClient = grpc.ServerStreamingClient[NoteEvent]
+
 // NotesServiceServer is the server API for NotesService service.
 // All implementations must embed UnimplementedNotesServiceServer
 // for forward compatibility.
@@ -180,6 +205,11 @@ type NotesServiceServer interface {
 	// Answers with nothing. It has no HTTP rule, so transcoding serves it on
 	// the implicit route, `POST /notes.v1.NotesService/Ping`.
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// A server stream of `count` events, `interval_ms` apart, then the end, or
+	// with `fail` an error. It has no HTTP rule: Vanguard transcodes a server
+	// stream only to a `google.api.HttpBody`, so transcoders reach it on the
+	// implicit route.
+	WatchNotes(*WatchNotesRequest, grpc.ServerStreamingServer[NoteEvent]) error
 	mustEmbedUnimplementedNotesServiceServer()
 }
 
@@ -210,6 +240,9 @@ func (UnimplementedNotesServiceServer) ArchiveNote(context.Context, *ArchiveNote
 }
 func (UnimplementedNotesServiceServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedNotesServiceServer) WatchNotes(*WatchNotesRequest, grpc.ServerStreamingServer[NoteEvent]) error {
+	return status.Error(codes.Unimplemented, "method WatchNotes not implemented")
 }
 func (UnimplementedNotesServiceServer) mustEmbedUnimplementedNotesServiceServer() {}
 func (UnimplementedNotesServiceServer) testEmbeddedByValue()                      {}
@@ -358,6 +391,17 @@ func _NotesService_Ping_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotesService_WatchNotes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchNotesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NotesServiceServer).WatchNotes(m, &grpc.GenericServerStream[WatchNotesRequest, NoteEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NotesService_WatchNotesServer = grpc.ServerStreamingServer[NoteEvent]
+
 // NotesService_ServiceDesc is the grpc.ServiceDesc for NotesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -394,6 +438,12 @@ var NotesService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NotesService_Ping_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "WatchNotes",
+			Handler:       _NotesService_WatchNotes_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "notes/v1/notes.proto",
 }

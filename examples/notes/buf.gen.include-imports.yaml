@@ -11,3 +11,5 @@ inputs:
 plugins:
   - local: protoc-gen-elm-connect
     out: elm/generated
+    opt:
+      - streaming=server

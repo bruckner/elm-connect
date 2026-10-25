@@ -43,6 +43,8 @@ const (
 	NotesServiceArchiveNoteProcedure = "/notes.v1.NotesService/ArchiveNote"
 	// NotesServicePingProcedure is the procedure name of the NotesService's Ping RPC.
 	NotesServicePingProcedure = "/notes.v1.NotesService/Ping"
+	// NotesServiceWatchNotesProcedure is the procedure name of the NotesService's WatchNotes RPC.
+	NotesServiceWatchNotesProcedure = "/notes.v1.NotesService/WatchNotes"
 )
 
 var (
@@ -98,6 +100,14 @@ var (
 			IdempotencyLevel: connect.IdempotencyNoSideEffects,
 		}
 	})
+	notesServiceWatchNotesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeServer,
+			Schema:           v1.File_notes_v1_notes_proto.Services().ByName("NotesService").Methods().ByName("WatchNotes"),
+			Procedure:        NotesServiceWatchNotesProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // NotesServiceClient is a client for the notes.v1.NotesService service.
@@ -121,12 +131,37 @@ type NotesServiceClient interface {
 	// Answers with nothing. It has no HTTP rule, so transcoding serves it on
 	// the implicit route, `POST /notes.v1.NotesService/Ping`.
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// A server stream of `count` events, `interval_ms` apart, then the end, or
+	// with `fail` an error. It has no HTTP rule: Vanguard transcodes a server
+	// stream only to a `google.api.HttpBody`, so transcoders reach it on the
+	// implicit route.
+	WatchNotes(context.Context, *v1.WatchNotesRequest) (NotesServiceWatchNotesClientStream, error)
 }
 
 // NewNotesServiceClient constructs a client for the notes.v1.NotesService service. Multiple service
 // clients may share a single connect.Client.
 func NewNotesServiceClient(client *connect.Client) NotesServiceClient {
 	return &notesServiceClient{client: client}
+}
+
+// NotesServiceWatchNotesClientStream is the client stream for the NotesService's WatchNotes RPC.
+type NotesServiceWatchNotesClientStream struct {
+	stream connect.ClientStream
+}
+
+// Receive returns the next response message from the server.
+func (s NotesServiceWatchNotesClientStream) Receive() (*v1.NoteEvent, error) {
+	var res v1.NoteEvent
+	if err := s.stream.Receive(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// Close releases the stream's resources. It is idempotent and is typically deferred to clean up a
+// stream abandoned before io.EOF.
+func (s NotesServiceWatchNotesClientStream) Close() error {
+	return s.stream.Close()
 }
 
 // NotesServiceHandler is an implementation of the notes.v1.NotesService service.
@@ -150,6 +185,11 @@ type NotesServiceHandler interface {
 	// Answers with nothing. It has no HTTP rule, so transcoding serves it on
 	// the implicit route, `POST /notes.v1.NotesService/Ping`.
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// A server stream of `count` events, `interval_ms` apart, then the end, or
+	// with `fail` an error. It has no HTTP rule: Vanguard transcodes a server
+	// stream only to a `google.api.HttpBody`, so transcoders reach it on the
+	// implicit route.
+	WatchNotes(context.Context, *v1.WatchNotesRequest, NotesServiceWatchNotesServerStream) error
 }
 
 // RegisterNotesServiceHandler registers svc as the notes.v1.NotesService implementation on server.
@@ -163,7 +203,23 @@ func RegisterNotesServiceHandler(server *connect.Server, svc NotesServiceHandler
 		connect.Method{Spec: notesServiceDeleteNoteSpec(), Handler: adapter.deleteNote},
 		connect.Method{Spec: notesServiceArchiveNoteSpec(), Handler: adapter.archiveNote},
 		connect.Method{Spec: notesServicePingSpec(), Handler: adapter.ping},
+		connect.Method{Spec: notesServiceWatchNotesSpec(), Handler: adapter.watchNotes},
 	)
+}
+
+// NotesServiceWatchNotesServerStream is the server stream for the NotesService's WatchNotes RPC.
+type NotesServiceWatchNotesServerStream struct {
+	stream connect.ServerStream
+}
+
+// SendHeaders flushes the response headers without a message. The first Send does this implicitly.
+func (s NotesServiceWatchNotesServerStream) SendHeaders() error {
+	return s.stream.SendHeaders()
+}
+
+// Send sends a response message to the client.
+func (s NotesServiceWatchNotesServerStream) Send(res *v1.NoteEvent) error {
+	return s.stream.Send(res)
 }
 
 // UnimplementedNotesServiceHandler returns CodeUnimplemented from all methods.
@@ -195,6 +251,10 @@ func (UnimplementedNotesServiceHandler) ArchiveNote(context.Context, *v1.Archive
 
 func (UnimplementedNotesServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "notes.v1.NotesService.Ping is not implemented")
+}
+
+func (UnimplementedNotesServiceHandler) WatchNotes(context.Context, *v1.WatchNotesRequest, NotesServiceWatchNotesServerStream) error {
+	return connect.NewError(connect.CodeUnimplemented, "notes.v1.NotesService.WatchNotes is not implemented")
 }
 
 type notesServiceClient struct {
@@ -255,6 +315,14 @@ func (c *notesServiceClient) Ping(ctx context.Context, req *emptypb.Empty) (*emp
 		return nil, err
 	}
 	return &res, nil
+}
+
+func (c *notesServiceClient) WatchNotes(ctx context.Context, req *v1.WatchNotesRequest) (NotesServiceWatchNotesClientStream, error) {
+	stream, err := c.client.CallServerStream(ctx, notesServiceWatchNotesSpec(), req)
+	if err != nil {
+		return NotesServiceWatchNotesClientStream{}, err
+	}
+	return NotesServiceWatchNotesClientStream{stream: stream}, nil
 }
 
 type notesServiceHandler struct{ svc NotesServiceHandler }
@@ -341,4 +409,12 @@ func (h notesServiceHandler) ping(ctx context.Context, _ connect.Spec, stream co
 		return err
 	}
 	return stream.Send(res)
+}
+
+func (h notesServiceHandler) watchNotes(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.WatchNotesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	return h.svc.WatchNotes(ctx, &req, NotesServiceWatchNotesServerStream{stream: stream})
 }

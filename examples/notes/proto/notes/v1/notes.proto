@@ -94,6 +94,24 @@ message ArchiveNoteRequest {
   string name = 1;
 }
 
+message WatchNotesRequest {
+  // How many events to send; 0 is 3.
+  int32 count = 1;
+  // Milliseconds between events; 0 is 50.
+  int32 interval_ms = 2;
+  // Resume after this event index: the first event sent is `after + 1`.
+  int64 after = 3;
+  // End the stream with FAILED_PRECONDITION and a `google.rpc.ErrorInfo`
+  // detail (reason `WATCH_ENDED`, metadata `index`) after the events.
+  bool fail = 4;
+}
+
+// One event of a watch: its index, counting from 1, and a note.
+message NoteEvent {
+  int64 index = 1;
+  Note note = 2;
+}
+
 // Notes, served over Connect and over HTTP transcoding from one process.
 //
 // Behaviours the live suite relies on:
@@ -152,6 +170,14 @@ service NotesService {
   // Answers with nothing. It has no HTTP rule, so transcoding serves it on
   // the implicit route, `POST /notes.v1.NotesService/Ping`.
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // A server stream of `count` events, `interval_ms` apart, then the end, or
+  // with `fail` an error. It has no HTTP rule: Vanguard transcodes a server
+  // stream only to a `google.api.HttpBody`, so transcoders reach it on the
+  // implicit route.
+  rpc WatchNotes(WatchNotesRequest) returns (stream NoteEvent) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }

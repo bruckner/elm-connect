@@ -380,6 +380,46 @@ func (s *store) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
+// WatchNotes sends count events interval_ms apart, numbered from after + 1,
+// each carrying a note named for its index, then ends, or with fail ends with
+// FAILED_PRECONDITION and an ErrorInfo detail naming the last index sent. A
+// client that goes away or whose deadline passes stops it between events.
+func (s *store) WatchNotes(ctx context.Context, req *notesv1.WatchNotesRequest, stream notesv1connect.NotesServiceWatchNotesServerStream) error {
+	count := req.GetCount()
+	if count == 0 {
+		count = 3
+	}
+	interval := time.Duration(req.GetIntervalMs()) * time.Millisecond
+	if interval == 0 {
+		interval = 50 * time.Millisecond
+	}
+	index := req.GetAfter()
+	for range count {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+		index++
+		name := "notes/watch-" + strconv.FormatInt(index, 10)
+		if err := stream.Send(&notesv1.NoteEvent{Index: index, Note: &notesv1.Note{Name: name, Title: "Event " + strconv.FormatInt(index, 10)}}); err != nil {
+			return err
+		}
+	}
+	if req.GetFail() {
+		detail, err := connectproto.NewErrorDetail(&errdetails.ErrorInfo{
+			Reason:   "WATCH_ENDED",
+			Domain:   domain,
+			Metadata: map[string]string{"index": strconv.FormatInt(index, 10)},
+		})
+		if err != nil {
+			return err
+		}
+		return connect.NewError(connect.CodeFailedPrecondition, "the watch ended as asked").WithDetail(detail)
+	}
+	return nil
+}
+
 // apply copies the fields of from that mask names onto to, by proto name, or
 // every field from sets when the mask is empty.
 func apply(to, from *notesv1.Note, mask *fieldmaskpb.FieldMask) error {
