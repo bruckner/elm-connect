@@ -1,0 +1,4 @@
+edition = "2023";
+package invalid;
+message M { extensions 10 to 20; }
+extend M { int32 x = 10 [features.field_presence = LEGACY_REQUIRED]; }

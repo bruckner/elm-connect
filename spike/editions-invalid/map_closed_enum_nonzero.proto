@@ -1,0 +1,4 @@
+edition = "2023";
+package invalid;
+enum E { option features.enum_type = CLOSED; ONE = 1; }
+message M { map<int32, E> m = 1; }

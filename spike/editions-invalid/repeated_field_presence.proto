@@ -1,0 +1,3 @@
+edition = "2023";
+package invalid;
+message M { repeated int32 a = 1 [features.field_presence = EXPLICIT]; }

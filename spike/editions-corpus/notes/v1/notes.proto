@@ -1,0 +1,162 @@
+// The notes example's API (examples/notes/proto/notes/v1/notes.proto),
+// translated by hand to edition 2023 with the features that keep proto3's
+// behaviour: implicit presence by default, explicit where proto3 said
+// `optional`.
+edition = "2023";
+
+// A small notes API, the example the live suite runs against. Every path of
+// the runtime has a method or a behaviour here: path, query and body bindings,
+// a custom verb, a method without an HTTP rule, errors with details, a slow
+// note for timeouts, a flaky one for retries and an echoed header.
+package notes.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/bruckner/elm-connect/examples/notes/server/gen/notes/v1;notesv1";
+option features.field_presence = IMPLICIT;
+
+// Who may read a note.
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PRIVATE = 1;
+  VISIBILITY_PUBLIC = 2;
+}
+
+// A note.
+message Note {
+  // The note's resource name, `notes/<id>`. Set by the server on creation
+  // from the title unless given.
+  string name = 1;
+  // Required: creating a note without one is INVALID_ARGUMENT.
+  string title = 2;
+  string body = 3;
+  repeated string tags = 4;
+  Visibility visibility = 5;
+  // Set by the server.
+  google.protobuf.Timestamp create_time = 6;
+  // Set by the server on every update.
+  google.protobuf.Timestamp update_time = 7;
+  // How long the note should be kept; stored, not enforced.
+  google.protobuf.Duration ttl = 8;
+  map<string, string> metadata = 9;
+  google.protobuf.Struct extra = 10;
+  // What the note is about.
+  oneof kind {
+    string text = 11;
+    string link = 12;
+  }
+  google.protobuf.Any attachment = 13;
+  // Incremented by the server on every update; unset until the first.
+  int64 revision = 14 [features.field_presence = EXPLICIT];
+}
+
+message GetNoteRequest {
+  // `notes/<id>`.
+  string name = 1;
+}
+
+message ListNotesRequest {
+  // At most this many notes; 0 is the server's default, 50.
+  int32 page_size = 1;
+  // The `next_page_token` of the previous page.
+  string page_token = 2;
+  // A substring the title must contain; empty matches every note.
+  string filter = 3;
+  // Only notes with this visibility; unspecified matches every note.
+  Visibility visibility = 4;
+}
+
+message ListNotesResponse {
+  // In name order.
+  repeated Note notes = 1;
+  // Empty on the last page.
+  string next_page_token = 2;
+}
+
+message CreateNoteRequest {
+  Note note = 1;
+}
+
+message UpdateNoteRequest {
+  // The note to update, by `note.name`, and its new fields.
+  Note note = 1;
+  // The fields of `note` to update, by proto name; empty updates every field
+  // the request sets.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteNoteRequest {
+  string name = 1;
+}
+
+message ArchiveNoteRequest {
+  string name = 1;
+}
+
+// Notes, served over Connect and over HTTP transcoding from one process.
+//
+// Behaviours the live suite relies on:
+//
+// - A request header `x-echo` is sent back as the response header `x-echo`,
+//   by every method.
+// - Any method naming `notes/slow` sleeps two seconds before answering.
+// - Any method naming `notes/flaky` fails with UNAVAILABLE the first time it is
+//   called in the server's process, and answers normally after.
+service NotesService {
+  // A note by name. A missing note is NOT_FOUND with a `google.rpc.ErrorInfo`
+  // detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
+  // `name`).
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/v1/{name=notes/*}"};
+  }
+
+  // Notes, a page at a time.
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (google.api.http) = {get: "/v1/notes"};
+  }
+
+  // A new note. An empty title is INVALID_ARGUMENT with a
+  // `google.rpc.BadRequest` detail holding one field violation, on `title`.
+  // A name already taken is ALREADY_EXISTS.
+  rpc CreateNote(CreateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1/notes"
+      body: "note"
+    };
+  }
+
+  // Changes a note's fields. A missing note is NOT_FOUND, as for GetNote.
+  rpc UpdateNote(UpdateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      patch: "/v1/{note.name=notes/*}"
+      body: "note"
+    };
+  }
+
+  // Deletes a note. A missing note is NOT_FOUND, as for GetNote.
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/{name=notes/*}"};
+  }
+
+  // Makes a note private and tags it `archived`: a custom method.
+  rpc ArchiveNote(ArchiveNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1/{name=notes/*}:archive"
+      body: "*"
+    };
+  }
+
+  // Answers with nothing. It has no HTTP rule, so transcoding serves it on
+  // the implicit route, `POST /notes.v1.NotesService/Ping`.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}

@@ -1,0 +1,3 @@
+edition = "2023";
+package invalid;
+option features.enforce_naming_style = STYLE2024;

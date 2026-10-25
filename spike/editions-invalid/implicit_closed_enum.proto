@@ -1,0 +1,4 @@
+edition = "2023";
+package invalid;
+enum E { option features.enum_type = CLOSED; ONE = 1; }
+message M { E e = 1 [features.field_presence = IMPLICIT]; }

@@ -1,0 +1,76 @@
+// Edition 2023 features at every level that may set them (file, message,
+// field, enum) and inherited by those that may not (oneof, enum value,
+// service, method): explicit, implicit and required presence, defaults,
+// closed and open enums, packed and expanded encodings, delimited messages,
+// UTF-8 validation and the JSON format.
+edition = "2023";
+
+package matrix.v1;
+
+option features.enum_type = CLOSED;
+option features.repeated_field_encoding = EXPANDED;
+option features.utf8_validation = NONE;
+
+message Matrix {
+  option features.json_format = LEGACY_BEST_EFFORT;
+
+  int32 explicit = 1;
+  int32 implicit = 2 [features.field_presence = IMPLICIT];
+  int32 with_default = 3 [default = 7];
+  int32 required = 4 [features.field_presence = LEGACY_REQUIRED];
+  repeated int32 expanded = 5;
+  repeated int32 packed = 6 [features.repeated_field_encoding = PACKED];
+  Child length_prefixed = 7;
+  Child delimited = 8 [features.message_encoding = DELIMITED];
+  repeated Child delimited_list = 9 [features.message_encoding = DELIMITED];
+  Closed closed = 10 [default = CLOSED_TWO];
+  Open open = 11 [features.field_presence = IMPLICIT];
+  string unchecked = 12;
+  string checked = 13 [features.utf8_validation = VERIFY];
+  map<string, Child> children = 14 [features.utf8_validation = VERIFY];
+  // protoc requires a map's enum values to start at 0, closed or not.
+  map<int32, Closed> closed_map = 15;
+  Sparse sparse = 19;
+  oneof choice {
+    string text = 16;
+    Child child = 17 [features.message_encoding = DELIMITED];
+  }
+  reserved 18, 20 to 21;
+  reserved retired, gone;
+
+  message Child {
+    int32 value = 1;
+  }
+
+  extensions 100 to 199;
+}
+
+extend Matrix {
+  repeated int32 ext_values = 100 [features.repeated_field_encoding = PACKED];
+  Matrix.Child ext_child = 101 [features.message_encoding = DELIMITED];
+}
+
+enum Closed {
+  reserved RETIRED_VALUE;
+  CLOSED_ZERO = 0;
+  CLOSED_ONE = 1;
+  CLOSED_TWO = 2;
+}
+
+// A closed enum need not start at 0.
+enum Sparse {
+  SPARSE_ONE = 1;
+  SPARSE_TWO = 2;
+}
+
+enum Open {
+  option features.enum_type = OPEN;
+  option features.json_format = ALLOW;
+
+  OPEN_ZERO = 0;
+  OPEN_ONE = 1;
+}
+
+service MatrixService {
+  rpc Get(Matrix) returns (Matrix);
+}

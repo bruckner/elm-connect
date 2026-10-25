@@ -1,0 +1,3 @@
+edition = "2023";
+package invalid;
+message M { int32 a = 1 [features.message_encoding = DELIMITED]; }

@@ -1,0 +1,3 @@
+syntax = "proto3";
+package invalid;
+option features.field_presence = EXPLICIT;
