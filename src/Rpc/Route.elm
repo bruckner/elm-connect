@@ -1,8 +1,8 @@
 module Rpc.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , unlessZero, optional, repeated, except
-    , bool, viaJson, jsonText, without
+    , string, int, int64, bool, float, enum, optional, repeated, unlessZero, except
+    , boolText, viaJson, jsonText, without
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
@@ -23,12 +23,12 @@ does not build one.
 
 # Query parameters
 
-@docs unlessZero, optional, repeated, except
+@docs string, int, int64, bool, float, enum, optional, repeated, unlessZero, except
 
 
 # Values and bodies
 
-@docs bool, viaJson, jsonText, without
+@docs boolText, viaJson, jsonText, without
 
 -}
 
@@ -160,23 +160,92 @@ unlessZero name zero toText value =
         [ ( name, toText value ) ]
 
 
-{-| A query parameter of a field with presence: none when unset.
+{-| A `string` or `bytes` field's parameter: none at `""`.
 -}
-optional : String -> (a -> String) -> Maybe a -> List ( String, String )
-optional name toText value =
+string : String -> String -> List ( String, String )
+string name value =
+    if value == "" then
+        []
+
+    else
+        [ ( name, value ) ]
+
+
+{-| A 32-bit integer field's parameter: none at 0.
+-}
+int : String -> Int -> List ( String, String )
+int name value =
+    if value == 0 then
+        []
+
+    else
+        [ ( name, String.fromInt value ) ]
+
+
+{-| A 64-bit integer field's parameter, held as its decimal string: none at
+`"0"`.
+-}
+int64 : String -> String -> List ( String, String )
+int64 name value =
+    if value == "0" then
+        []
+
+    else
+        [ ( name, value ) ]
+
+
+{-| A boolean field's parameter: none at `False`.
+-}
+bool : String -> Bool -> List ( String, String )
+bool name value =
+    if value then
+        [ ( name, "true" ) ]
+
+    else
+        []
+
+
+{-| A floating-point field's parameter, as proto3 JSON writes it (`NaN`,
+`Infinity`, `-Infinity` included): none at 0.
+-}
+float : String -> Float -> List ( String, String )
+float name value =
+    -- Not `value == 0`, which compiles to `!value` and so drops NaN.
+    if value /= 0 || isNaN value then
+        [ ( name, String.fromFloat value ) ]
+
+    else
+        []
+
+
+{-| An enum field's parameter, by its zero and its encoder: none at the zero.
+-}
+enum : String -> e -> (e -> Value) -> e -> List ( String, String )
+enum name zero encode value =
+    if value == zero then
+        []
+
+    else
+        [ ( name, jsonText (encode value) ) ]
+
+
+{-| A parameter of a field with presence, as text: none when unset.
+-}
+optional : String -> Maybe String -> List ( String, String )
+optional name value =
     case value of
         Just v ->
-            [ ( name, toText v ) ]
+            [ ( name, v ) ]
 
         Nothing ->
             []
 
 
-{-| A repeated field's query parameters: one per element.
+{-| A repeated field's parameters, as text: one per element.
 -}
-repeated : String -> (a -> String) -> List a -> List ( String, String )
-repeated name toText values =
-    List.map (\v -> ( name, toText v )) values
+repeated : String -> List String -> List ( String, String )
+repeated name values =
+    List.map (Tuple.pair name) values
 
 
 {-| A message's query parameters without those of the named fields: a
@@ -188,10 +257,10 @@ except names pairs =
     List.filter (\( name, _ ) -> not (List.member name names)) pairs
 
 
-{-| A boolean as path or query text.
+{-| A boolean as path text.
 -}
-bool : Bool -> String
-bool b =
+boolText : Bool -> String
+boolText b =
     if b then
         "true"
 

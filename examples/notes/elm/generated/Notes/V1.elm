@@ -611,10 +611,10 @@ decodeArchiveNoteRequest =
 queryOfListNotesRequest : ListNotesRequest -> List ( String, String )
 queryOfListNotesRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
-        , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
-        , Rpc.Route.unlessZero "filter" "" Basics.identity request_.filter
-        , Rpc.Route.unlessZero "visibility" VisibilityUnspecified (Rpc.Route.viaJson encodeVisibility) request_.visibility
+        [ Rpc.Route.int "page_size" request_.pageSize
+        , Rpc.Route.string "page_token" request_.pageToken
+        , Rpc.Route.string "filter" request_.filter
+        , Rpc.Route.enum "visibility" VisibilityUnspecified encodeVisibility request_.visibility
         ]
 
 
@@ -622,4 +622,4 @@ queryOfListNotesRequest request_ =
 -}
 queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
 queryOfUpdateNoteRequest request_ =
-    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+    Rpc.Route.optional "update_mask" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)

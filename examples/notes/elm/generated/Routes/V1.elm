@@ -778,11 +778,11 @@ decodeUpdateResourceRequest =
 queryOfGetMessageRequest : GetMessageRequest -> List ( String, String )
 queryOfGetMessageRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "message_id" "" Basics.identity request_.messageId
-        , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
-        , Rpc.Route.unlessZero "sub.subfield" "" Basics.identity (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
-        , Rpc.Route.unlessZero "user_id" "" Basics.identity request_.userId
-        , Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+        [ Rpc.Route.string "message_id" request_.messageId
+        , Rpc.Route.int64 "revision" request_.revision
+        , Rpc.Route.string "sub.subfield" (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+        , Rpc.Route.string "user_id" request_.userId
+        , Rpc.Route.string "name" request_.name
         ]
 
 
@@ -791,30 +791,29 @@ queryOfGetMessageRequest request_ =
 queryOfEverything : Everything -> List ( String, String )
 queryOfEverything request_ =
     List.concat
-        [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-        , Rpc.Route.unlessZero "count" 0 String.fromInt request_.count
-        , Rpc.Route.unlessZero "big" "0" Basics.identity request_.big
-        , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
-        , Rpc.Route.unlessZero "flag" False Rpc.Route.bool request_.flag
-        , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
-        , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
-        , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
-        , Rpc.Route.unlessZero "kind" KindUnspecified (Rpc.Route.viaJson encodeKind) request_.kind
-        , Rpc.Route.repeated "tags" Basics.identity request_.tags
-        , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson encodeKind) request_.kinds
-        , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
-        , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
-        , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
-        , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
-        , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
-        , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
-        , Rpc.Route.optional "limit" String.fromInt request_.limit
-        , Rpc.Route.optional "label" Basics.identity request_.label
-        , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
-        , Rpc.Route.unlessZero "inner.deep.b" 0 String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
-        , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+        [ Rpc.Route.string "name" request_.name
+        , Rpc.Route.int "count" request_.count
+        , Rpc.Route.int64 "big" request_.big
+        , Rpc.Route.int64 "ubig" request_.ubig
+        , Rpc.Route.bool "flag" request_.flag
+        , Rpc.Route.float "ratio" request_.ratio
+        , Rpc.Route.float "scale" request_.scale
+        , Rpc.Route.string "data" request_.data
+        , Rpc.Route.enum "kind" KindUnspecified encodeKind request_.kind
+        , Rpc.Route.repeated "tags" request_.tags
+        , Rpc.Route.repeated "kinds" (List.map (Rpc.Route.viaJson encodeKind) request_.kinds)
+        , Rpc.Route.repeated "numbers" (List.map String.fromInt request_.numbers)
+        , Rpc.Route.optional "maybe_count" (Maybe.map String.fromInt request_.maybeCount)
+        , Rpc.Route.optional "maybe_name" request_.maybeName
+        , Rpc.Route.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        , Rpc.Route.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)
+        , Rpc.Route.optional "mask" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
+        , Rpc.Route.optional "limit" (Maybe.map String.fromInt request_.limit)
+        , Rpc.Route.optional "label" request_.label
+        , Rpc.Route.string "inner.a" (Maybe.withDefault "" (Maybe.map .a request_.inner))
+        , Rpc.Route.int "inner.deep.b" (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+        , Rpc.Route.repeated "inner.deep.c" (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
         , Rpc.Route.optional "text"
-            Basics.identity
             (case request_.choice of
                 EverythingChoiceText member_ ->
                     Just member_
@@ -823,13 +822,14 @@ queryOfEverything request_ =
                     Nothing
             )
         , Rpc.Route.optional "number"
-            String.fromInt
-            (case request_.choice of
-                EverythingChoiceNumber member_ ->
-                    Just member_
+            (Maybe.map String.fromInt
+                (case request_.choice of
+                    EverythingChoiceNumber member_ ->
+                        Just member_
 
-                _ ->
-                    Nothing
+                    _ ->
+                        Nothing
+                )
             )
         ]
 
@@ -838,4 +838,4 @@ queryOfEverything request_ =
 -}
 queryOfUpdateResourceRequest : UpdateResourceRequest -> List ( String, String )
 queryOfUpdateResourceRequest request_ =
-    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+    Rpc.Route.optional "update_mask" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)

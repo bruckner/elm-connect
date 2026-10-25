@@ -286,7 +286,6 @@ decodeListEventsResponse =
 queryOfListEventsRequest : ListEventsRequest -> List ( String, String )
 queryOfListEventsRequest request_ =
     Rpc.Route.optional "_legacy"
-        Basics.identity
         (case request_.filter of
             ListEventsRequestFilterLegacy member_ ->
                 Just member_

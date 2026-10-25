@@ -141,10 +141,10 @@ decodeMoment =
 queryOfMoment : Moment -> List ( String, String )
 queryOfMoment request_ =
     List.concat
-        [ Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
-        , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
-        , Rpc.Route.optional "count" String.fromInt request_.count
-        , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
-        , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
-        , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
+        [ Rpc.Route.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        , Rpc.Route.optional "mask" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
+        , Rpc.Route.optional "count" (Maybe.map String.fromInt request_.count)
+        , Rpc.Route.optional "seen" (Maybe.map Rpc.Route.boolText request_.seen)
+        , Rpc.Route.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)
+        , Rpc.Route.string "note" request_.note
         ]

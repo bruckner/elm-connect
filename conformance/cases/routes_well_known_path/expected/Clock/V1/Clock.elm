@@ -174,7 +174,7 @@ routeCountMoment0 request_ =
             Maybe.withDefault "" (Maybe.map String.fromInt request_.count)
 
         value1_ =
-            Maybe.withDefault "" (Maybe.map Rpc.Route.bool request_.seen)
+            Maybe.withDefault "" (Maybe.map Rpc.Route.boolText request_.seen)
     in
     ( { method = "GET"
       , path = "v1/count/" ++ Rpc.Route.segment value0_ ++ "/seen/" ++ Rpc.Route.segment value1_

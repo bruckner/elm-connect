@@ -568,7 +568,7 @@ impl Emitter {
             Some(match repr {
                 Repr::String | Repr::Int64 | Repr::UInt64 => Text::Same,
                 Repr::Int32 | Repr::UInt32 => Text::Fn(qualified("String", "fromInt")),
-                Repr::Bool => Text::Fn(emitter.reference((RPC_ROUTE, "bool"))),
+                Repr::Bool => Text::Fn(emitter.reference((RPC_ROUTE, "boolText"))),
                 Repr::BytesAsBytes => return None,
                 Repr::Float | Repr::Bytes | Repr::Int64AsInt | Repr::UInt64AsInt => {
                     let encoder = emitter.value_encoder(value);
@@ -636,7 +636,9 @@ impl Emitter {
         })
     }
 
-    /// A query parameter's pairs.
+    /// A query parameter's pairs, by the `Rpc.Route` helper of its kind:
+    /// one taking the name and the value, with the zero and the text the
+    /// helper's own.
     fn query_pairs(&mut self, name: String, leaf: Leaf) -> Option<Expr> {
         let Leaf {
             read,
@@ -645,33 +647,65 @@ impl Emitter {
             presence,
         } = leaf;
         let text = self.text(value)?;
+        let mapped = |over: &str, values: Expr| match &text {
+            Text::Same => values,
+            Text::Fn(f) => apply(qualified(over, "map"), [f.clone(), values]),
+        };
         if repeated {
             let values = if read.maybe {
                 apply(qualified("Maybe", "withDefault"), [list([]), read.expr])
             } else {
                 read.expr
             };
+            let values = mapped("List", values);
             return Some(apply(
                 self.reference((RPC_ROUTE, "repeated")),
-                [string(name), text.function(), values],
+                [string(name), values],
             ));
         }
         match self.zero(value) {
             Some(zero) if !presence => {
-                let value = if read.maybe {
+                let value_expr = if read.maybe {
                     apply(qualified("Maybe", "withDefault"), [zero.clone(), read.expr])
                 } else {
                     read.expr
                 };
+                let helper = match value {
+                    ValueShape::Zeroed(Zeroed::Scalar(repr)) => match repr {
+                        Repr::String | Repr::Bytes => Some("string"),
+                        Repr::Int32 | Repr::UInt32 => Some("int"),
+                        Repr::Int64 | Repr::UInt64 => Some("int64"),
+                        Repr::Bool => Some("bool"),
+                        Repr::Float => Some("float"),
+                        Repr::Int64AsInt | Repr::UInt64AsInt | Repr::BytesAsBytes => None,
+                    },
+                    _ => None,
+                };
+                Some(match (helper, value) {
+                    (Some(helper), _) => apply(
+                        self.reference((RPC_ROUTE, helper)),
+                        [string(name), value_expr],
+                    ),
+                    (None, ValueShape::Zeroed(Zeroed::Enum(..))) => {
+                        let encoder = self.value_encoder(value);
+                        apply(
+                            self.reference((RPC_ROUTE, "enum")),
+                            [string(name), zero, encoder, value_expr],
+                        )
+                    }
+                    (None, _) => apply(
+                        self.reference((RPC_ROUTE, "unlessZero")),
+                        [string(name), zero, text.function(), value_expr],
+                    ),
+                })
+            }
+            _ if read.maybe => {
+                let values = mapped("Maybe", read.expr);
                 Some(apply(
-                    self.reference((RPC_ROUTE, "unlessZero")),
-                    [string(name), zero, text.function(), value],
+                    self.reference((RPC_ROUTE, "optional")),
+                    [string(name), values],
                 ))
             }
-            _ if read.maybe => Some(apply(
-                self.reference((RPC_ROUTE, "optional")),
-                [string(name), text.function(), read.expr],
-            )),
             _ => None,
         }
     }

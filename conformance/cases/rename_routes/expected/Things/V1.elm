@@ -212,6 +212,6 @@ decodeGetThingRequest =
 queryOfGetThingRequest : GetThingRequest -> List ( String, String )
 queryOfGetThingRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.limit
-        , Rpc.Route.unlessZero "filter.state" "" Basics.identity (Maybe.withDefault "" (Maybe.map .status request_.filter))
+        [ Rpc.Route.int "page_size" request_.limit
+        , Rpc.Route.string "filter.state" (Maybe.withDefault "" (Maybe.map .status request_.filter))
         ]

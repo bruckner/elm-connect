@@ -544,7 +544,7 @@ routeTyped0 request_ =
             String.fromInt request_.count
 
         value1_ =
-            Rpc.Route.bool request_.flag
+            Rpc.Route.boolText request_.flag
 
         value2_ =
             Rpc.Route.viaJson Routes.V1.encodeKind request_.kind

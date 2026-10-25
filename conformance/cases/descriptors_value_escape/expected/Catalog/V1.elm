@@ -256,9 +256,8 @@ decodeGetEntryRequest =
 queryOfGetEntryRequest : GetEntryRequest -> List ( String, String )
 queryOfGetEntryRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "descriptor" "" Basics.identity request_.descriptor
+        [ Rpc.Route.string "descriptor" request_.descriptor
         , Rpc.Route.optional "part.descriptor"
-            Basics.identity
             (Maybe.andThen
                 (\message_ ->
                     case message_.kind of
@@ -271,16 +270,17 @@ queryOfGetEntryRequest request_ =
                 request_.part
             )
         , Rpc.Route.optional "part.count"
-            String.fromInt
-            (Maybe.andThen
-                (\message_ ->
-                    case message_.kind of
-                        PartKindCount member_ ->
-                            Just member_
+            (Maybe.map String.fromInt
+                (Maybe.andThen
+                    (\message_ ->
+                        case message_.kind of
+                            PartKindCount member_ ->
+                                Just member_
 
-                        _ ->
-                            Nothing
+                            _ ->
+                                Nothing
+                    )
+                    request_.part
                 )
-                request_.part
             )
         ]

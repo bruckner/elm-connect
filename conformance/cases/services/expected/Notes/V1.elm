@@ -675,13 +675,13 @@ decodeSummary =
 queryOfListNotesRequest : ListNotesRequest -> List ( String, String )
 queryOfListNotesRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
-        , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
-        , Rpc.Route.unlessZero "filter.visibility" VisibilityUnspecified (Rpc.Route.viaJson encodeVisibility) (Maybe.withDefault VisibilityUnspecified (Maybe.map .visibility request_.filter))
-        , Rpc.Route.optional "filter.since" Proto.Timestamp.toString (Maybe.andThen .since request_.filter)
-        , Rpc.Route.repeated "tags" Basics.identity request_.tags
-        , Rpc.Route.optional "archived" Rpc.Route.bool request_.archived
-        , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+        [ Rpc.Route.int "page_size" request_.pageSize
+        , Rpc.Route.string "page_token" request_.pageToken
+        , Rpc.Route.enum "filter.visibility" VisibilityUnspecified encodeVisibility (Maybe.withDefault VisibilityUnspecified (Maybe.map .visibility request_.filter))
+        , Rpc.Route.optional "filter.since" (Maybe.map Proto.Timestamp.toString (Maybe.andThen .since request_.filter))
+        , Rpc.Route.repeated "tags" request_.tags
+        , Rpc.Route.optional "archived" (Maybe.map Rpc.Route.boolText request_.archived)
+        , Rpc.Route.int64 "revision" request_.revision
         ]
 
 
@@ -689,11 +689,11 @@ queryOfListNotesRequest request_ =
 -}
 queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
 queryOfUpdateNoteRequest request_ =
-    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+    Rpc.Route.optional "update_mask" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)
 
 
 {-| The query parameters of a [`DeleteNoteRequest`](#DeleteNoteRequest) whose bindings put fields in the query: every such field that holds a value.
 -}
 queryOfDeleteNoteRequest : DeleteNoteRequest -> List ( String, String )
 queryOfDeleteNoteRequest request_ =
-    Rpc.Route.unlessZero "force" False Rpc.Route.bool request_.force
+    Rpc.Route.bool "force" request_.force

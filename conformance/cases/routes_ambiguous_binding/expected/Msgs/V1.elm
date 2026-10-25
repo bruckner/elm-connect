@@ -170,7 +170,7 @@ decodeMessage =
 queryOfMessageRequest : MessageRequest -> List ( String, String )
 queryOfMessageRequest request_ =
     List.concat
-        [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-        , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
-        , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+        [ Rpc.Route.string "name" request_.name
+        , Rpc.Route.string "id" request_.id
+        , Rpc.Route.string "sub" request_.sub
         ]
