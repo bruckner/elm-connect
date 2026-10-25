@@ -205,6 +205,52 @@ bytes go unread) and leaves the unpacked binary in place, unchecked;
 `just live-envoy` then fetches the archive itself and checks it against
 the same digest (the `envoy-install` recipe).
 
+## For your own service
+
+The walkthrough above runs from a clone, with the toolchain `mise install`
+gives. In front of a gRPC service of your own you need Envoy and your
+protos, nothing of this repository's. Copy
+[`conformance/live/envoy/envoy.yaml`](../conformance/live/envoy/envoy.yaml)
+and change what is the example's in it:
+
+- The descriptor set. Build one of your protos with every import, from
+  the directory holding them, with protoc (the googleapis files on its
+  `-I`, [install.md](install.md#googleapis)):
+
+  ```sh
+  protoc -I . -I <googleapis> --include_imports --descriptor_set_out=api.binpb your/v1/service.proto
+  ```
+
+  or with buf, from your module: `buf build --as-file-descriptor-set -o api.binpb`.
+  Point both listeners' `proto_descriptor` at it, as Envoy will see the
+  path: `/etc/envoy/api.binpb` under the `docker run` below.
+- The upstream. The cluster `notes` names the example server at
+  `127.0.0.1:18080`; give it your service's address. A host name rather
+  than an IP also needs `type: STRICT_DNS` in place of `type: STATIC`,
+  which Envoy otherwise rejects as a malformed IP address. From inside a
+  container, `127.0.0.1` is the container itself: a service on the
+  Docker host is `host.docker.internal` under Docker Desktop.
+- The services. Both listeners' `services` list the services to
+  transcode, by full name (`your.v1.YourService`); leave out
+  `routes.v1.Routes`, the route fixtures' service.
+
+Beyond those three: the first route, which passes the example server's
+canned answers through, goes; the CORS block lists your pages' origins
+([A page on another origin](#a-page-on-another-origin)); and a listener
+reached through Docker's `-p` binds `0.0.0.0`, not `127.0.0.1`. Keep one
+listener if you want one error form. A copy with these changes passes
+Envoy 1.40.0's `envoy --mode validate`.
+
+Envoy's project publishes the image `envoyproxy/envoy`; from the
+directory holding `envoy.yaml` and `api.binpb`:
+
+```sh
+docker run --rm -v "$PWD/envoy.yaml:/etc/envoy/envoy.yaml:ro" -v "$PWD/api.binpb:/etc/envoy/api.binpb:ro" -p 18081:18081 envoyproxy/envoy:v1.40.0 -c /etc/envoy/envoy.yaml
+```
+
+The rest of this page, the errors and where Envoy and the fixtures
+part, holds for your service as for the example.
+
 ## Errors
 
 The same two calls, through each listener, as the live suite sends

@@ -1,10 +1,10 @@
 # Recipes for working on elm-connect. `just` lists them.
 
 # Elm sources elm-format owns: the runtime package, its tests, the live
-# runner and the browser example with its tests. The conformance corpus is checked by its own test (`cargo test
+# runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests"
+elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
 
 # Cargo's build directory, which the live suite's binaries share
 # (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
@@ -94,13 +94,16 @@ test:
 # rejects an exposed value without docs, as publishing would), and run its
 # tests. Then run the browser example's tests, which test the README
 # excerpts that are more than a call (src/Snippets) against the example's
-# generated modules. The conformance harness is compiled by `cargo test`.
-# The codec round trips' modules are generated first (codec-gen).
+# generated modules, and compile the Eliza example (docs/trying.md). The
+# conformance harness is compiled by `cargo test`. The codec round trips'
+# modules are generated first (codec-gen).
 elm-check: codec-gen
     -@elm make --output=/dev/null >/dev/null 2>&1
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
     cd examples/notes/elm && elm-test-rs
+    -@cd examples/eliza && elm make >/dev/null 2>&1
+    cd examples/eliza && elm make src/Main.elm --output=/dev/null
 
 # Write the codec round trips' Elm under tests/Generated (gitignored): the
 # modules generated from conformance/codec under each option set, the
@@ -114,7 +117,7 @@ codec-gen:
 # (examples/check-snippets.sh). The excerpts compile with the example, which
 # `example-notes-build` builds; those in its tests run in `elm-check`.
 snippets:
-    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/envoy.md docs/compared.md examples/notes/README.md
+    examples/check-snippets.sh README.md docs/install.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/envoy.md docs/compared.md docs/trying.md examples/notes/README.md examples/eliza/README.md
 
 # Audit the GitHub Actions workflows and the Dependabot configuration for
 # template injection, unpinned or vulnerable actions, leaked credentials,

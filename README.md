@@ -1,5 +1,11 @@
 # elm-connect
 
+[![CI](https://github.com/bruckner/elm-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/bruckner/elm-connect/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/elm-connect)](https://crates.io/crates/elm-connect)
+[![MSRV](https://img.shields.io/crates/msrv/elm-connect)](https://crates.io/crates/elm-connect)
+[![License](https://img.shields.io/crates/l/elm-connect)](#license)
+<!-- The Elm package badge is added when the package reaches the Elm package index, at 1.0. -->
+
 An independent Elm implementation of [ConnectRPC](https://connectrpc.com/)
 (client-side only), elm-connect allows Elm apps to call gRPC servers from
 the browser.

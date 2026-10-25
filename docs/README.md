@@ -15,6 +15,8 @@ The rest are reference pages, for when a question comes up.
   googleapis, versions.
 - [quickstart.md](quickstart.md): from a proto to a call, in `elm repl`
   and in a test.
+- [trying.md](trying.md): a real call with no server of your own,
+  against ConnectRPC's public demo server.
 - [guide.md](guide.md): working on a project that uses elm-connect:
   regenerating, `check`, reading a diagnostic, the application's
   `elm.json`. `elm-connect guide` prints it.

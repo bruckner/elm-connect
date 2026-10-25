@@ -44,6 +44,17 @@ The protos themselves are vendored, unmodified, in
 (its README.md names it), with the module's license in
 `conformance/live/suite/proto/LICENSE`.
 
+## Eliza
+
+`examples/eliza/proto/connectrpc/eliza/v1/eliza.proto` is copied
+unmodified from [connectrpc/examples-go](https://github.com/connectrpc/examples-go)
+(commit `8bde2b90ec0a7f23df3de5824bed0b6ea2043305`, the same file as the
+Buf Schema Registry's `buf.build/connectrpc/eliza` at commit
+`233fca715f49425581ec0a1b660be886`). It is Copyright The Connect Authors
+and licensed under the Apache License, Version 2.0, as its header says; a
+copy of the license is in [LICENSE-APACHE](LICENSE-APACHE). The Elm in
+`examples/eliza/generated/` is generated from it and keeps its comments.
+
 ## elm-format's Markdown parser and printer
 
 `crates/elm-connect-gen/src/elm/markdown.rs` ports two parts of

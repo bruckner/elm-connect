@@ -12,7 +12,12 @@ listed in [specs.md](specs.md).
 Until the package is published, its API reference is the documentation
 comments in `src/`, starting with `src/Rpc.elm`; `elm make
 --docs=docs.json` in a clone writes them as the package site would read
-them.
+them. To browse them as that site would show them, run
+`npx elm-doc-preview` at the root of a clone, where the package's
+`elm.json` is, and open `http://localhost:8000`
+([elm-doc-preview](https://github.com/dmy/elm-doc-preview) needs Node and
+the Elm compiler on `PATH`). From 1.0 the reference is on the package
+index, at its package page.
 
 ## The runtime's modules
 
