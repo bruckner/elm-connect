@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "implicit presence fields can't specify defaults"
+related: []
+severity: error

@@ -1,0 +1,51 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+file:
+  - edition: EDITION_2023
+    messageType:
+      - field:
+          - jsonName: map
+            label: LABEL_REPEATED
+            name: map
+            number: 1
+            options:
+              features:
+                utf8Validation: NONE
+            type: TYPE_MESSAGE
+            typeName: ".Message.MapEntry"
+          - jsonName: child
+            label: LABEL_OPTIONAL
+            name: child
+            number: 2
+            type: TYPE_MESSAGE
+            typeName: ".Message"
+        name: Message
+        nestedType:
+          - field:
+              - jsonName: key
+                label: LABEL_OPTIONAL
+                name: key
+                number: 1
+                options:
+                  features:
+                    utf8Validation: NONE
+                type: TYPE_STRING
+              - jsonName: value
+                label: LABEL_OPTIONAL
+                name: value
+                number: 2
+                options:
+                  features:
+                    utf8Validation: NONE
+                type: TYPE_MESSAGE
+                typeName: ".Message"
+            name: MapEntry
+            options:
+              mapEntry: true
+    name: test.proto
+    options:
+      features:
+        messageEncoding: DELIMITED
+    syntax: editions

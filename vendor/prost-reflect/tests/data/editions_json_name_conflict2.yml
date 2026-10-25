@@ -1,0 +1,20 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  messageType:
+  - name: Message
+    options:
+      features:
+        jsonFormat: LEGACY_BEST_EFFORT
+    field:
+    - name: foo
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      jsonName: foo
+    - name: FOO
+      number: 2
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      jsonName: FOO

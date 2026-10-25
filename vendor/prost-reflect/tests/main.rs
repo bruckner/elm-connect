@@ -6,7 +6,11 @@ use std::{
 use insta::assert_yaml_snapshot;
 use miette::JSONReportHandler;
 use prost::Message;
-use prost_reflect::{DescriptorError, DescriptorPool, DynamicMessage, ReflectMessage};
+use prost_reflect::{
+    Cardinality, DescriptorError, DescriptorPool, DynamicMessage, Edition, EnumType, FieldPresence,
+    JsonFormat, MessageEncoding, ReflectMessage, RepeatedFieldEncoding, Syntax, Utf8Validation,
+    Value,
+};
 use prost_types::FileDescriptorSet;
 
 fn test_data_dir() -> PathBuf {
@@ -210,6 +214,28 @@ check_err!(dependency_not_imported);
 check_ok!(dependency_resolution_transitive);
 check_ok!(dependency_resolution_transitive2);
 check_err!(dependency_resolution_transitive3);
+check_ok!(editions_features);
+check_ok!(editions_map_fields);
+check_err!(editions_unsupported_edition);
+check_err!(editions_missing_edition);
+check_err!(editions_features_in_proto3);
+check_err!(editions_required_label);
+check_err!(editions_group_type);
+check_err!(editions_packed_option);
+check_err!(editions_implicit_default);
+check_err!(editions_implicit_closed_enum);
+check_err!(editions_open_enum_first_value);
+check_err!(editions_oneof_field_presence);
+check_err!(editions_repeated_field_presence);
+check_err!(editions_message_implicit_presence);
+check_err!(editions_feature_unknown_value);
+check_err!(editions_feature_from_2024);
+check_err!(editions_file_legacy_required);
+check_err!(editions_json_name_conflict1);
+check_ok!(editions_json_name_conflict2);
+check_err!(editions_extension_required);
+check_err!(editions_utf8_validation_non_string);
+check_err!(editions_message_encoding_non_message);
 
 // Regression test for https://github.com/andrewhickman/prost-reflect/issues/195
 //
@@ -301,4 +327,248 @@ fn is_packed_with_present_but_empty_field_options() {
         !ext.is_packed(),
         "proto2 extension field: present-but-empty FieldOptions must not be packed"
     );
+}
+
+#[test]
+fn editions_features_resolve() {
+    let pool = check("editions_features", false).unwrap();
+    let file = pool.get_file_by_name("test.proto").unwrap();
+    assert_eq!(file.syntax(), Syntax::Editions);
+    assert_eq!(file.edition(), Edition::Edition2023);
+    // Set on the file; the rest are edition 2023's defaults.
+    assert_eq!(file.features().enum_type(), EnumType::Closed);
+    assert_eq!(file.features().utf8_validation(), Utf8Validation::None);
+    assert_eq!(file.features().field_presence(), FieldPresence::Explicit);
+    assert_eq!(
+        file.features().repeated_field_encoding(),
+        RepeatedFieldEncoding::Packed
+    );
+    assert_eq!(
+        file.features().message_encoding(),
+        MessageEncoding::LengthPrefixed
+    );
+    assert_eq!(file.features().json_format(), JsonFormat::Allow);
+
+    let message = pool.get_message_by_name("test.Message").unwrap();
+    assert_eq!(message.features().field_presence(), FieldPresence::Implicit);
+    assert_eq!(message.features().utf8_validation(), Utf8Validation::None);
+    let field = |name: &str| message.get_field_by_name(name).unwrap();
+
+    // Inherited from the message.
+    let implicit = field("implicit");
+    assert_eq!(
+        implicit.features().field_presence(),
+        FieldPresence::Implicit
+    );
+    assert!(!implicit.supports_presence());
+    assert_eq!(implicit.cardinality(), Cardinality::Optional);
+
+    let explicit = field("explicit");
+    assert_eq!(
+        explicit.features().field_presence(),
+        FieldPresence::Explicit
+    );
+    assert!(explicit.supports_presence());
+
+    let required = field("required");
+    assert!(required.is_required());
+    assert_eq!(required.cardinality(), Cardinality::Required);
+    assert!(required.supports_presence());
+
+    assert!(field("packed").is_packed());
+    assert!(!field("expanded").is_packed());
+
+    let delimited = field("delimited");
+    assert!(delimited.is_group());
+    assert!(delimited.supports_presence());
+    assert!(!field("child").is_group());
+    // Message fields have presence whatever their presence feature.
+    assert!(field("child").supports_presence());
+
+    // A oneof's features pass to its fields; oneof fields always have presence.
+    let choice = message.oneofs().next().unwrap();
+    assert_eq!(choice.features().field_presence(), FieldPresence::Explicit);
+    let in_oneof = field("in_oneof");
+    assert_eq!(
+        in_oneof.features().field_presence(),
+        FieldPresence::Explicit
+    );
+    assert!(in_oneof.supports_presence());
+
+    assert_eq!(field("with_default").default_value(), Value::I32(7));
+    assert_eq!(
+        field("text").features().utf8_validation(),
+        Utf8Validation::Verify
+    );
+
+    let child = pool.get_message_by_name("test.Message.Child").unwrap();
+    assert_eq!(child.features().field_presence(), FieldPresence::Implicit);
+    assert!(!child
+        .get_field_by_name("value")
+        .unwrap()
+        .supports_presence());
+
+    let closed = pool.get_enum_by_name("test.Closed").unwrap();
+    assert!(closed.is_closed());
+    let open = pool.get_enum_by_name("test.Open").unwrap();
+    assert!(!open.is_closed());
+    assert_eq!(
+        open.get_value(0).unwrap().features().enum_type(),
+        EnumType::Open
+    );
+    assert_eq!(
+        open.get_value(1).unwrap().features().enum_type(),
+        EnumType::Closed
+    );
+
+    let service = pool.get_service_by_name("test.Service").unwrap();
+    assert_eq!(service.features().utf8_validation(), Utf8Validation::Verify);
+    let method = service.methods().next().unwrap();
+    assert_eq!(method.features().utf8_validation(), Utf8Validation::Verify);
+
+    // An extension inherits from the scope it is declared in, not from the message it extends.
+    let ext = pool.get_extension_by_name("test.ext").unwrap();
+    assert_eq!(ext.features().field_presence(), FieldPresence::Explicit);
+    assert!(ext.is_packed());
+
+    // The edition survives encoding the pool.
+    let reencoded = DescriptorPool::decode(pool.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(
+        reencoded.get_file_by_name("test.proto").unwrap().edition(),
+        Edition::Edition2023
+    );
+}
+
+#[test]
+fn legacy_features() {
+    let pool = check("field_default_value2", false).unwrap();
+    let file = pool.files().next().unwrap();
+    assert_eq!(file.edition(), Edition::Proto2);
+    assert_eq!(file.features().enum_type(), EnumType::Closed);
+    assert_eq!(file.features().json_format(), JsonFormat::LegacyBestEffort);
+    assert_eq!(
+        file.features().repeated_field_encoding(),
+        RepeatedFieldEncoding::Expanded
+    );
+
+    let proto3 = FileDescriptorSet::default()
+        .descriptor()
+        .parent_pool()
+        .clone();
+    let any = proto3
+        .get_file_by_name("google/protobuf/any.proto")
+        .unwrap();
+    assert_eq!(any.edition(), Edition::Proto3);
+    assert_eq!(any.features().field_presence(), FieldPresence::Implicit);
+    assert_eq!(any.features().enum_type(), EnumType::Open);
+
+    // descriptor.proto is proto2: `required` fields have required presence.
+    let name_part = proto3
+        .get_message_by_name("google.protobuf.UninterpretedOption.NamePart")
+        .unwrap();
+    assert_eq!(
+        name_part
+            .get_field_by_name("name_part")
+            .unwrap()
+            .features()
+            .field_presence(),
+        FieldPresence::LegacyRequired
+    );
+}
+
+#[test]
+fn editions_binary_encoding() {
+    let pool = check("editions_features", false).unwrap();
+    let message = pool.get_message_by_name("test.Message").unwrap();
+    let child = pool.get_message_by_name("test.Message.Child").unwrap();
+
+    let mut child_value = DynamicMessage::new(child.clone());
+    child_value.set_field_by_name("value", Value::I32(1));
+
+    let mut value = DynamicMessage::new(message.clone());
+    value.set_field_by_name("implicit", Value::I32(0));
+    value.set_field_by_name("explicit", Value::I32(0));
+    value.set_field_by_name("required", Value::I32(5));
+    value.set_field_by_name("packed", Value::List(vec![Value::I32(1), Value::I32(2)]));
+    value.set_field_by_name("expanded", Value::List(vec![Value::I32(1), Value::I32(2)]));
+    value.set_field_by_name("delimited", Value::Message(child_value));
+
+    let encoded = value.encode_to_vec();
+    assert_eq!(
+        encoded,
+        [
+            // explicit = 0: set, so written although it is the default
+            0x10, 0x00, //
+            // required = 5
+            0x18, 0x05, //
+            // packed = [1, 2]: one length-delimited record
+            0x22, 0x02, 0x01, 0x02, //
+            // expanded = [1, 2]: a record per element
+            0x28, 0x01, 0x28, 0x02, //
+            // delimited: start group 6, value = 1, end group 6
+            0x33, 0x08, 0x01, 0x34,
+        ]
+    );
+
+    // The implicit-presence field set to its default was not written, so it decodes as unset.
+    let decoded = DynamicMessage::decode(message.clone(), encoded.as_slice()).unwrap();
+    let mut expected = value.clone();
+    expected.clear_field_by_name("implicit");
+    assert_eq!(decoded, expected);
+    assert!(!decoded.has_field_by_name("implicit"));
+    assert!(decoded.has_field_by_name("explicit"));
+}
+
+#[test]
+fn editions_json_and_text_format() {
+    let pool = check("editions_features", false).unwrap();
+    let message = pool.get_message_by_name("test.Message").unwrap();
+    let child = pool.get_message_by_name("test.Message.Child").unwrap();
+
+    let mut child_value = DynamicMessage::new(child);
+    child_value.set_field_by_name("value", Value::I32(1));
+
+    let mut value = DynamicMessage::new(message.clone());
+    value.set_field_by_name("explicit", Value::I32(0));
+    value.set_field_by_name("delimited", Value::Message(child_value));
+
+    // A field with explicit presence is written when set to its default; one with implicit
+    // presence is not.
+    let json = serde_json::to_value(&value).unwrap();
+    assert_eq!(
+        json,
+        serde_json::json!({ "explicit": 0, "delimited": { "value": 1 } })
+    );
+    let parsed = DynamicMessage::deserialize(
+        message.clone(),
+        serde_json::json!({ "explicit": 0, "delimited": { "value": 1 } }),
+    )
+    .unwrap();
+    assert_eq!(parsed, value);
+
+    // A delimited field is not a group in the text format unless it looks like one: this one
+    // keeps its field name.
+    let text = value.to_text_format();
+    assert_eq!(text, "explicit:0,delimited{value:1}");
+    assert_eq!(
+        DynamicMessage::parse_text_format(message, &text).unwrap(),
+        value
+    );
+}
+
+#[test]
+fn editions_map_fields_are_not_delimited() {
+    let pool = check("editions_map_fields", false).unwrap();
+    let message = pool.get_message_by_name("Message").unwrap();
+    // The file is delimited, but a map field and its entry's value are not groups.
+    let map = message.get_field_by_name("map").unwrap();
+    assert!(map.is_map());
+    assert!(!map.is_group());
+    let entry = pool.get_message_by_name("Message.MapEntry").unwrap();
+    assert!(!entry.map_entry_value_field().is_group());
+    assert_eq!(
+        entry.map_entry_key_field().features().utf8_validation(),
+        Utf8Validation::None
+    );
+    assert!(message.get_field_by_name("child").unwrap().is_group());
 }

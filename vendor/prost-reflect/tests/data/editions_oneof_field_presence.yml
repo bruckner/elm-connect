@@ -1,0 +1,18 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  messageType:
+  - name: Message
+    field:
+    - name: foo
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      oneofIndex: 0
+      options:
+        features:
+          fieldPresence: IMPLICIT
+      jsonName: foo
+    oneofDecl:
+    - name: choice

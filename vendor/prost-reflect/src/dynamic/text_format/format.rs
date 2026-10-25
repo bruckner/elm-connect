@@ -159,7 +159,7 @@ where
     fn fmt_message_field(&mut self, field: ValueAndDescriptor) -> fmt::Result {
         match field {
             ValueAndDescriptor::Field(value, desc) => {
-                if desc.is_group() {
+                if desc.is_group_like() {
                     write!(self.f, "{}", desc.kind().as_message().unwrap().name())?;
                 } else {
                     write!(self.f, "{}", desc.name())?;

@@ -1,0 +1,19 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  messageType:
+  - name: Message
+    extensionRange:
+    - start: 100
+      end: 200
+  extension:
+  - name: ext
+    number: 100
+    label: LABEL_OPTIONAL
+    type: TYPE_INT32
+    extendee: .Message
+    jsonName: ext
+    options:
+      features:
+        fieldPresence: LEGACY_REQUIRED

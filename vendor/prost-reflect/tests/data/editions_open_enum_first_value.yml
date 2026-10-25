@@ -1,0 +1,9 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  enumType:
+  - name: Open
+    value:
+    - name: ONE
+      number: 1

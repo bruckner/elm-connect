@@ -1,0 +1,44 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  options:
+    features:
+      messageEncoding: DELIMITED
+  messageType:
+  - name: Message
+    field:
+    - name: map
+      number: 1
+      label: LABEL_REPEATED
+      typeName: .Message.MapEntry
+      options:
+        features:
+          utf8Validation: NONE
+      jsonName: map
+    - name: child
+      number: 2
+      label: LABEL_OPTIONAL
+      typeName: .Message
+      jsonName: child
+    nestedType:
+    - name: MapEntry
+      field:
+      - name: key
+        number: 1
+        label: LABEL_OPTIONAL
+        type: TYPE_STRING
+        options:
+          features:
+            utf8Validation: NONE
+        jsonName: key
+      - name: value
+        number: 2
+        label: LABEL_OPTIONAL
+        typeName: .Message
+        options:
+          features:
+            utf8Validation: NONE
+        jsonName: value
+      options:
+        mapEntry: true

@@ -1,0 +1,142 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  package: test
+  options:
+    features:
+      enumType: CLOSED
+      utf8Validation: NONE
+  messageType:
+  - name: Message
+    options:
+      features:
+        fieldPresence: IMPLICIT
+    field:
+    - name: implicit
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      jsonName: implicit
+    - name: explicit
+      number: 2
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      options:
+        features:
+          fieldPresence: EXPLICIT
+      jsonName: explicit
+    - name: required
+      number: 3
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      options:
+        features:
+          fieldPresence: LEGACY_REQUIRED
+      jsonName: required
+    - name: packed
+      number: 4
+      label: LABEL_REPEATED
+      type: TYPE_INT32
+      jsonName: packed
+    - name: expanded
+      number: 5
+      label: LABEL_REPEATED
+      type: TYPE_INT32
+      options:
+        features:
+          repeatedFieldEncoding: EXPANDED
+      jsonName: expanded
+    - name: delimited
+      number: 6
+      label: LABEL_OPTIONAL
+      typeName: .test.Message.Child
+      options:
+        features:
+          messageEncoding: DELIMITED
+      jsonName: delimited
+    - name: child
+      number: 7
+      label: LABEL_OPTIONAL
+      typeName: .test.Message.Child
+      jsonName: child
+    - name: in_oneof
+      number: 8
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      oneofIndex: 0
+      jsonName: inOneof
+    - name: closed_enum
+      number: 9
+      label: LABEL_OPTIONAL
+      typeName: .test.Closed
+      options:
+        features:
+          fieldPresence: EXPLICIT
+      jsonName: closedEnum
+    - name: with_default
+      number: 10
+      label: LABEL_OPTIONAL
+      type: TYPE_INT32
+      defaultValue: '7'
+      options:
+        features:
+          fieldPresence: EXPLICIT
+      jsonName: withDefault
+    - name: text
+      number: 11
+      label: LABEL_OPTIONAL
+      type: TYPE_STRING
+      options:
+        features:
+          utf8Validation: VERIFY
+      jsonName: text
+    oneofDecl:
+    - name: choice
+      options:
+        features:
+          fieldPresence: EXPLICIT
+    nestedType:
+    - name: Child
+      field:
+      - name: value
+        number: 1
+        label: LABEL_OPTIONAL
+        type: TYPE_INT32
+        jsonName: value
+    extensionRange:
+    - start: 100
+      end: 200
+  enumType:
+  - name: Closed
+    value:
+    - name: CLOSED_ONE
+      number: 1
+  - name: Open
+    options:
+      features:
+        enumType: OPEN
+    value:
+    - name: OPEN_ZERO
+      number: 0
+    - name: OPEN_ONE
+      number: 1
+      options:
+        features:
+          enumType: CLOSED
+  service:
+  - name: Service
+    options:
+      features:
+        utf8Validation: VERIFY
+    method:
+    - name: Method
+      inputType: .test.Message
+      outputType: .test.Message
+  extension:
+  - name: ext
+    number: 100
+    label: LABEL_REPEATED
+    type: TYPE_INT32
+    extendee: .test.Message
+    jsonName: ext

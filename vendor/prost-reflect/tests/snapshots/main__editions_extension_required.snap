@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "extensions can't be required"
+related: []
+severity: error

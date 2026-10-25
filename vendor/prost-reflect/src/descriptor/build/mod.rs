@@ -1,3 +1,4 @@
+mod features;
 mod names;
 mod options;
 mod resolve;
@@ -140,6 +141,8 @@ impl DescriptorPool {
 
         debug_assert_eq!(Arc::strong_count(&self.inner), 1);
         let inner = Arc::get_mut(&mut self.inner).unwrap();
+        inner.resolve_features(offsets)?;
+
         for file in &mut inner.files[offsets.file as usize..] {
             file.prost = file.raw.to_prost();
         }

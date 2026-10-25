@@ -20,7 +20,7 @@ use crate::{
         FileIndex, Identity, MessageDescriptorInner, MessageIndex, MethodIndex,
         OneofDescriptorInner, OneofIndex, ServiceIndex,
     },
-    Syntax,
+    Edition, Features, Syntax,
 };
 
 impl DescriptorPoolInner {
@@ -51,21 +51,18 @@ impl Visitor for NameVisitor<'_> {
     fn visit_file(&mut self, path: &[i32], index: FileIndex, file: &FileDescriptorProto) {
         debug_assert_eq!(to_index(self.pool.files.len()), index);
 
-        let syntax = match file.syntax.as_deref() {
-            None | Some("proto2") => Syntax::Proto2,
-            Some("proto3") => Syntax::Proto3,
-            Some(syntax) => {
-                self.errors.push(DescriptorErrorKind::UnknownSyntax {
-                    syntax: syntax.to_owned(),
-                    found: Label::new(
-                        &self.pool.files,
-                        "found here",
-                        index,
-                        join_path(path, &[tag::file::SYNTAX]),
-                    ),
-                });
-                return;
-            }
+        // An unknown syntax or edition is reported once the file is in the pool, which its
+        // label needs; the file is built as proto2 meanwhile so its contents can be checked.
+        let (syntax, edition, syntax_error) = match file.syntax.as_deref() {
+            None | Some("proto2") => (Syntax::Proto2, Edition::Proto2, None),
+            Some("proto3") => (Syntax::Proto3, Edition::Proto3, None),
+            Some("editions") => match file.edition {
+                Some(Edition::EDITION_2023_NUMBER) => {
+                    (Syntax::Editions, Edition::Edition2023, None)
+                }
+                edition => (Syntax::Proto2, Edition::Proto2, Some(Err(edition))),
+            },
+            Some(syntax) => (Syntax::Proto2, Edition::Proto2, Some(Ok(syntax))),
         };
 
         if self
@@ -80,11 +77,43 @@ impl Visitor for NameVisitor<'_> {
         }
         self.pool.files.push(FileDescriptorInner {
             syntax,
+            edition,
+            features: Features::defaults(edition),
             raw: file.clone(),
             prost: Default::default(), // the prost descriptor is initialized from the internal descriptor once resolution is complete, to avoid needing to duplicate all modifications
             dependencies: Vec::with_capacity(file.dependency.len()),
             transitive_dependencies: HashSet::default(),
         });
+
+        match syntax_error {
+            None => (),
+            Some(Ok(syntax)) => {
+                self.errors.push(DescriptorErrorKind::UnknownSyntax {
+                    syntax: syntax.to_owned(),
+                    found: Label::new(
+                        &self.pool.files,
+                        "found here",
+                        index,
+                        join_path(path, &[tag::file::SYNTAX]),
+                    ),
+                });
+            }
+            Some(Err(edition)) => {
+                let field = match edition {
+                    Some(_) => tag::file::EDITION,
+                    None => tag::file::SYNTAX,
+                };
+                self.errors.push(DescriptorErrorKind::UnsupportedEdition {
+                    edition: edition.map(Edition::fmt_number),
+                    found: Label::new(
+                        &self.pool.files,
+                        "found here",
+                        index,
+                        join_path(path, &[field]),
+                    ),
+                });
+            }
+        }
 
         if !file.package().is_empty() {
             for (i, _) in file.package().match_indices('.') {
@@ -133,10 +162,18 @@ impl Visitor for NameVisitor<'_> {
             oneofs: Vec::with_capacity(message.oneof_decl.len()),
             extensions: Vec::new(),
             parent,
+            features: self.pool.files[file as usize].features,
         });
 
-        if self.pool.files[file as usize].syntax != Syntax::Proto2 {
-            self.check_message_field_camel_case_names(file, path, message);
+        // Editions files check JSON names once their features are resolved.
+        if self.pool.files[file as usize].syntax == Syntax::Proto3 {
+            check_message_field_camel_case_names(
+                &self.pool.files,
+                &mut self.errors,
+                file,
+                path,
+                message,
+            );
         }
     }
 
@@ -184,6 +221,7 @@ impl Visitor for NameVisitor<'_> {
             .push(OneofDescriptorInner {
                 id: Identity::new(file, path, full_name, oneof.name()),
                 fields: Vec::new(),
+                features: self.pool.files[file as usize].features,
             });
     }
 
@@ -243,7 +281,7 @@ impl Visitor for NameVisitor<'_> {
             self.errors.push(DescriptorErrorKind::EmptyEnum {
                 found: Label::new(&self.pool.files, "enum defined here", file, path.into()),
             });
-        } else if self.pool.files[file as usize].syntax != Syntax::Proto2
+        } else if self.pool.files[file as usize].syntax == Syntax::Proto3
             && enum_.value[0].number() != 0
         {
             self.errors
@@ -275,6 +313,7 @@ impl Visitor for NameVisitor<'_> {
             value_numbers: Vec::with_capacity(enum_.value.len()),
             value_names: HashMap::with_capacity(enum_.value.len()),
             allow_alias,
+            features: self.pool.files[file as usize].features,
         });
     }
 
@@ -304,6 +343,7 @@ impl Visitor for NameVisitor<'_> {
             .push(EnumValueDescriptorInner {
                 id: Identity::new(file, path, full_name, value.name()),
                 number: value.number(),
+                features: self.pool.files[file as usize].features,
             });
     }
 
@@ -363,44 +403,44 @@ impl NameVisitor<'_> {
             }
         }
     }
+}
 
-    fn check_message_field_camel_case_names(
-        &mut self,
-        file: FileIndex,
-        path: &[i32],
-        message: &DescriptorProto,
-    ) {
-        let mut names: HashMap<String, (&str, i32)> = HashMap::new();
-        for (index, field) in message.field.iter().enumerate() {
-            let name = field.name();
-            let index = index as i32;
+pub(super) fn check_message_field_camel_case_names(
+    files: &[FileDescriptorInner],
+    errors: &mut Vec<DescriptorErrorKind>,
+    file: FileIndex,
+    path: &[i32],
+    message: &DescriptorProto,
+) {
+    let mut names: HashMap<String, (&str, i32)> = HashMap::new();
+    for (index, field) in message.field.iter().enumerate() {
+        let name = field.name();
+        let index = index as i32;
 
-            match names.entry(to_lower_without_underscores(name)) {
-                hash_map::Entry::Occupied(entry) => {
-                    self.errors
-                        .push(DescriptorErrorKind::DuplicateFieldCamelCaseName {
-                            first_name: entry.get().0.to_owned(),
-                            first: Label::new(
-                                &self.pool.files,
-                                "first defined here",
-                                file,
-                                join_path(
-                                    path,
-                                    &[tag::message::FIELD, entry.get().1, tag::field::NAME],
-                                ),
-                            ),
-                            second_name: name.to_owned(),
-                            second: Label::new(
-                                &self.pool.files,
-                                "defined again here",
-                                file,
-                                join_path(path, &[tag::message::FIELD, index, tag::field::NAME]),
-                            ),
-                        })
-                }
-                hash_map::Entry::Vacant(entry) => {
-                    entry.insert((name, index));
-                }
+        match names.entry(to_lower_without_underscores(name)) {
+            hash_map::Entry::Occupied(entry) => {
+                errors.push(DescriptorErrorKind::DuplicateFieldCamelCaseName {
+                    first_name: entry.get().0.to_owned(),
+                    first: Label::new(
+                        files,
+                        "first defined here",
+                        file,
+                        join_path(
+                            path,
+                            &[tag::message::FIELD, entry.get().1, tag::field::NAME],
+                        ),
+                    ),
+                    second_name: name.to_owned(),
+                    second: Label::new(
+                        files,
+                        "defined again here",
+                        file,
+                        join_path(path, &[tag::message::FIELD, index, tag::field::NAME]),
+                    ),
+                })
+            }
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert((name, index));
             }
         }
     }

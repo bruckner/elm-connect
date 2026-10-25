@@ -1,0 +1,10 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+help: "the supported edition is '2023'"
+labels: []
+message: "a file with syntax 'editions' must set its edition"
+related: []
+severity: error

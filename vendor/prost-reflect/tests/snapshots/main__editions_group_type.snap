@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: group types are not allowed under editions; use the feature message_encoding = DELIMITED instead
+related: []
+severity: error

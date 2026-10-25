@@ -27,9 +27,9 @@ use crate::{
         MessageDescriptorInner, MethodDescriptorInner, OneofDescriptorInner,
         ServiceDescriptorInner, MAP_ENTRY_KEY_NUMBER, MAP_ENTRY_VALUE_NUMBER,
     },
-    Cardinality, DescriptorError, DescriptorPool, DynamicMessage, EnumDescriptor,
-    EnumValueDescriptor, ExtensionDescriptor, FieldDescriptor, FileDescriptor, Kind,
-    MessageDescriptor, MethodDescriptor, OneofDescriptor, ServiceDescriptor, Syntax, Value,
+    Cardinality, DescriptorError, DescriptorPool, DynamicMessage, Edition, EnumDescriptor,
+    EnumType, EnumValueDescriptor, ExtensionDescriptor, Features, FieldDescriptor, FileDescriptor,
+    Kind, MessageDescriptor, MethodDescriptor, OneofDescriptor, ServiceDescriptor, Syntax, Value,
 };
 
 impl fmt::Debug for Syntax {
@@ -37,6 +37,7 @@ impl fmt::Debug for Syntax {
         match *self {
             Syntax::Proto2 => write!(f, "proto2"),
             Syntax::Proto3 => write!(f, "proto3"),
+            Syntax::Editions => write!(f, "editions"),
         }
     }
 }
@@ -652,6 +653,9 @@ impl FileDescriptor {
     }
 
     /// Gets a reference to the raw [`FileDescriptorProto`] wrapped by this [`FileDescriptor`].
+    ///
+    /// `prost_types::FileDescriptorProto` has no `edition` field; use
+    /// [`edition`](FileDescriptor::edition), or [`encode`](FileDescriptor::encode), which keeps it.
     pub fn file_descriptor_proto(&self) -> &FileDescriptorProto {
         &self.inner().prost
     }
@@ -685,6 +689,20 @@ impl FileDescriptor {
             "google.protobuf.FileOptions",
             &self.inner().raw.options,
         )
+    }
+
+    /// Gets the edition of this file.
+    ///
+    /// Files with `syntax = "proto2"` or `syntax = "proto3"` (or with no syntax statement) have the
+    /// editions [`Proto2`](Edition::Proto2) and [`Proto3`](Edition::Proto3).
+    pub fn edition(&self) -> Edition {
+        self.inner().edition
+    }
+
+    /// Gets the resolved [features][Features] of this file: its edition's defaults, overridden by
+    /// the file's `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &FileDescriptorInner {
@@ -959,6 +977,12 @@ impl MessageDescriptor {
         self.extensions().find(|ext| ext.json_name() == name)
     }
 
+    /// Gets the resolved [features][Features] of this message, inherited from its file and any
+    /// enclosing messages and overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
+    }
+
     fn inner(&self) -> &MessageDescriptorInner {
         &self.pool.inner.messages[self.index as usize]
     }
@@ -1044,7 +1068,8 @@ impl FieldDescriptor {
         &self.inner().json_name
     }
 
-    /// Whether this field is encoded using the proto2 group encoding.
+    /// Whether this field is encoded using the proto2 group encoding: a proto2 `group`, or in an
+    /// editions file a message field with the feature `message_encoding = DELIMITED`.
     pub fn is_group(&self) -> bool {
         matches!(self.inner().kind, KindIndex::Group(_))
     }
@@ -1075,7 +1100,8 @@ impl FieldDescriptor {
         self.inner().is_packed
     }
 
-    /// Whether this field is required.
+    /// Whether this field is required: a proto2 `required` field, or in an editions file a field
+    /// with the feature `field_presence = LEGACY_REQUIRED`.
     ///
     /// For proto3 this always returns `false`.
     pub fn is_required(&self) -> bool {
@@ -1092,7 +1118,9 @@ impl FieldDescriptor {
     ///
     /// For proto2 messages this returns `true` for all non-repeated fields.
     /// For proto3 this returns `true` for message fields, and fields contained
-    /// in a `oneof`.
+    /// in a `oneof`. In editions files it returns `true` for non-repeated message fields,
+    /// fields contained in a `oneof`, and fields whose `field_presence` feature is not
+    /// `IMPLICIT`.
     pub fn supports_presence(&self) -> bool {
         self.inner().supports_presence
     }
@@ -1117,7 +1145,8 @@ impl FieldDescriptor {
     ///
     /// * If the field is a map, an empty map is returned.
     /// * If the field is `repeated`, an empty list is returned.
-    /// * If the field has a custom default value specified, that is returned (proto2 only).
+    /// * If the field has a custom default value specified, that is returned (proto2 and
+    ///   editions only).
     pub fn default_value(&self) -> Value {
         if self.is_list() {
             Value::List(Vec::default())
@@ -1132,6 +1161,30 @@ impl FieldDescriptor {
 
     pub(crate) fn is_packable(&self) -> bool {
         self.inner().kind.is_packable()
+    }
+
+    /// Whether the text format names this field by its message type, as it names proto2 groups:
+    /// a group-encoded field whose type is declared beside it in the same file and whose name is
+    /// the type's name in lower case. A delimited field in an editions file need not be.
+    pub(crate) fn is_group_like(&self) -> bool {
+        match self.inner().kind {
+            KindIndex::Group(index) => {
+                let message = MessageDescriptor {
+                    pool: self.parent_pool().clone(),
+                    index,
+                };
+                self.name() == message.name().to_ascii_lowercase()
+                    && message.parent_file() == self.parent_file()
+                    && message.parent_message().as_ref() == Some(self.parent_message())
+            }
+            _ => false,
+        }
+    }
+
+    /// Gets the resolved [features][Features] of this field, inherited from its message (or its
+    /// oneof) and overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &FieldDescriptorInner {
@@ -1257,7 +1310,8 @@ impl ExtensionDescriptor {
         &self.inner().json_name
     }
 
-    /// Whether this field is encoded using the proto2 group encoding.
+    /// Whether this field is encoded using the proto2 group encoding: a proto2 `group`, or in an
+    /// editions file a message field with the feature `message_encoding = DELIMITED`.
     pub fn is_group(&self) -> bool {
         matches!(self.inner().kind, KindIndex::Group(_))
     }
@@ -1330,6 +1384,13 @@ impl ExtensionDescriptor {
 
     pub(crate) fn is_packable(&self) -> bool {
         self.inner().kind.is_packable()
+    }
+
+    /// Gets the resolved [features][Features] of this extension, inherited from the message or
+    /// file it is declared in (not the message it extends) and overridden by its own `features`
+    /// options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &ExtensionDescriptorInner {
@@ -1513,6 +1574,19 @@ impl EnumDescriptor {
         self.raw().reserved_name.iter().map(|n| n.as_ref())
     }
 
+    /// Whether this enum is closed: a value it does not define is treated as an unknown field
+    /// rather than stored. Proto2 enums are closed; proto3 enums are open; in editions files the
+    /// `enum_type` feature decides.
+    pub fn is_closed(&self) -> bool {
+        self.inner().features.enum_type == EnumType::Closed
+    }
+
+    /// Gets the resolved [features][Features] of this enum, inherited from its file and any
+    /// enclosing messages and overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
+    }
+
     fn inner(&self) -> &EnumDescriptorInner {
         &self.pool.inner.enums[self.index as usize]
     }
@@ -1587,6 +1661,12 @@ impl EnumValueDescriptor {
     /// Gets the number representing this enum value.
     pub fn number(&self) -> i32 {
         self.inner().number
+    }
+
+    /// Gets the resolved [features][Features] of this enum value, inherited from its enum and
+    /// overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &EnumValueDescriptorInner {
@@ -1671,6 +1751,12 @@ impl OneofDescriptor {
             && self
                 .fields()
                 .all(|f| f.field_descriptor_proto().proto3_optional())
+    }
+
+    /// Gets the resolved [features][Features] of this oneof, inherited from its message and
+    /// overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &OneofDescriptorInner {
@@ -1775,6 +1861,12 @@ impl ServiceDescriptor {
             service: self.clone(),
             index,
         })
+    }
+
+    /// Gets the resolved [features][Features] of this service, inherited from its file and
+    /// overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &ServiceDescriptorInner {
@@ -1892,6 +1984,12 @@ impl MethodDescriptor {
     /// Returns `true` if the server streams multiple messages.
     pub fn is_server_streaming(&self) -> bool {
         self.raw().server_streaming()
+    }
+
+    /// Gets the resolved [features][Features] of this method, inherited from its service and
+    /// overridden by its own `features` options.
+    pub fn features(&self) -> Features {
+        self.inner().features
     }
 
     fn inner(&self) -> &MethodDescriptorInner {

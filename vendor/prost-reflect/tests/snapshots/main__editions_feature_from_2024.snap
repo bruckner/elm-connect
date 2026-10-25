@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "feature 'google.protobuf.FeatureSet.enforce_naming_style' wasn't introduced until edition 2024 and can't be used in edition 2023"
+related: []
+severity: error

@@ -17,6 +17,7 @@ pub(crate) mod file {
     pub(crate) const EXTENSION: i32 = 7;
     pub(crate) const OPTIONS: i32 = 8;
     pub(crate) const SYNTAX: i32 = 12;
+    pub(crate) const EDITION: i32 = 14;
 
     pub(crate) mod options {
         pub(crate) const JAVA_PACKAGE: i32 = 1;
@@ -156,4 +157,16 @@ pub(crate) mod method {
         pub(crate) const IDEMPOTENCY_LEVEL: i32 = 34;
         pub(crate) const UNINTERPRETED_OPTION: i32 = 999;
     }
+}
+
+/// The number of the `features` field in each options message.
+pub(crate) mod features {
+    pub(crate) const FILE: u32 = 50;
+    pub(crate) const MESSAGE: u32 = 12;
+    pub(crate) const FIELD: u32 = 21;
+    pub(crate) const ONEOF: u32 = 1;
+    pub(crate) const ENUM: u32 = 7;
+    pub(crate) const ENUM_VALUE: u32 = 2;
+    pub(crate) const SERVICE: u32 = 34;
+    pub(crate) const METHOD: u32 = 35;
 }

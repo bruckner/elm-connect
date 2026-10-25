@@ -21,6 +21,14 @@ pub(super) enum DescriptorErrorKind {
         syntax: String,
         found: Label,
     },
+    UnsupportedEdition {
+        edition: Option<String>,
+        found: Label,
+    },
+    InvalidFeature {
+        message: String,
+        found: Label,
+    },
     DuplicateFileName {
         name: String,
     },
@@ -310,6 +318,8 @@ impl DescriptorErrorKind {
         match self {
             DescriptorErrorKind::MissingRequiredField { label } => Some(label),
             DescriptorErrorKind::UnknownSyntax { found, .. } => Some(found),
+            DescriptorErrorKind::UnsupportedEdition { found, .. } => Some(found),
+            DescriptorErrorKind::InvalidFeature { found, .. } => Some(found),
             DescriptorErrorKind::DuplicateFileName { .. } => None,
             DescriptorErrorKind::FileNotFound { found, .. } => Some(found),
             DescriptorErrorKind::InvalidImportIndex => None,
@@ -346,7 +356,9 @@ impl DescriptorErrorKind {
             DescriptorErrorKind::MissingRequiredField { label } => {
                 label.resolve_span(file, source);
             }
-            DescriptorErrorKind::UnknownSyntax { found, .. } => {
+            DescriptorErrorKind::UnknownSyntax { found, .. }
+            | DescriptorErrorKind::UnsupportedEdition { found, .. }
+            | DescriptorErrorKind::InvalidFeature { found, .. } => {
                 found.resolve_span(file, source);
             }
             DescriptorErrorKind::DuplicateFileName { .. } => {}
@@ -453,6 +465,16 @@ impl fmt::Display for DescriptorErrorKind {
             DescriptorErrorKind::UnknownSyntax { syntax, .. } => {
                 write!(f, "unknown syntax '{syntax}'")
             }
+            DescriptorErrorKind::UnsupportedEdition {
+                edition: Some(edition),
+                ..
+            } => {
+                write!(f, "edition '{edition}' is not supported")
+            }
+            DescriptorErrorKind::UnsupportedEdition { edition: None, .. } => {
+                write!(f, "a file with syntax 'editions' must set its edition")
+            }
+            DescriptorErrorKind::InvalidFeature { message, .. } => f.write_str(message),
             DescriptorErrorKind::DuplicateFileName { name, .. } => {
                 write!(f, "a different file named '{name}' has already been added")
             }
@@ -617,9 +639,13 @@ impl miette::Diagnostic for DescriptorErrorKind {
 
         match self {
             DescriptorErrorKind::MissingRequiredField { .. } => None,
-            DescriptorErrorKind::UnknownSyntax { .. } => {
-                Some(Box::new("valid values are 'proto2' and 'proto3'"))
+            DescriptorErrorKind::UnknownSyntax { .. } => Some(Box::new(
+                "valid values are 'proto2', 'proto3' and 'editions'",
+            )),
+            DescriptorErrorKind::UnsupportedEdition { .. } => {
+                Some(Box::new("the supported edition is '2023'"))
             }
+            DescriptorErrorKind::InvalidFeature { .. } => None,
             DescriptorErrorKind::DuplicateFileName { .. } => None,
             DescriptorErrorKind::FileNotFound { .. } => None,
             DescriptorErrorKind::InvalidImportIndex => None,
@@ -674,7 +700,9 @@ impl miette::Diagnostic for DescriptorErrorKind {
         let mut spans = Vec::new();
         match self {
             DescriptorErrorKind::MissingRequiredField { label } => spans.extend(label.to_span()),
-            DescriptorErrorKind::UnknownSyntax { found: defined, .. } => {
+            DescriptorErrorKind::UnknownSyntax { found: defined, .. }
+            | DescriptorErrorKind::UnsupportedEdition { found: defined, .. }
+            | DescriptorErrorKind::InvalidFeature { found: defined, .. } => {
                 spans.extend(defined.to_span());
             }
             DescriptorErrorKind::DuplicateFileName { .. } => {}

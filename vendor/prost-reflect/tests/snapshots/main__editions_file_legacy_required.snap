@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "required presence can't be specified by default"
+related: []
+severity: error

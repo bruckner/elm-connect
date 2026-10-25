@@ -1,0 +1,7 @@
+file:
+- name: test.proto
+  syntax: editions
+  edition: EDITION_2023
+  options:
+    features:
+      fieldPresence: LEGACY_REQUIRED

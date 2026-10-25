@@ -1,0 +1,149 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+file:
+  - edition: EDITION_2023
+    enumType:
+      - name: Closed
+        value:
+          - name: CLOSED_ONE
+            number: 1
+      - name: Open
+        options:
+          features:
+            enumType: OPEN
+        value:
+          - name: OPEN_ZERO
+            number: 0
+          - name: OPEN_ONE
+            number: 1
+            options:
+              features:
+                enumType: CLOSED
+    extension:
+      - extendee: ".test.Message"
+        jsonName: ext
+        label: LABEL_REPEATED
+        name: ext
+        number: 100
+        type: TYPE_INT32
+    messageType:
+      - extensionRange:
+          - end: 200
+            start: 100
+        field:
+          - jsonName: implicit
+            label: LABEL_OPTIONAL
+            name: implicit
+            number: 1
+            type: TYPE_INT32
+          - jsonName: explicit
+            label: LABEL_OPTIONAL
+            name: explicit
+            number: 2
+            options:
+              features:
+                fieldPresence: EXPLICIT
+            type: TYPE_INT32
+          - jsonName: required
+            label: LABEL_OPTIONAL
+            name: required
+            number: 3
+            options:
+              features:
+                fieldPresence: LEGACY_REQUIRED
+            type: TYPE_INT32
+          - jsonName: packed
+            label: LABEL_REPEATED
+            name: packed
+            number: 4
+            type: TYPE_INT32
+          - jsonName: expanded
+            label: LABEL_REPEATED
+            name: expanded
+            number: 5
+            options:
+              features:
+                repeatedFieldEncoding: EXPANDED
+            type: TYPE_INT32
+          - jsonName: delimited
+            label: LABEL_OPTIONAL
+            name: delimited
+            number: 6
+            options:
+              features:
+                messageEncoding: DELIMITED
+            type: TYPE_MESSAGE
+            typeName: ".test.Message.Child"
+          - jsonName: child
+            label: LABEL_OPTIONAL
+            name: child
+            number: 7
+            type: TYPE_MESSAGE
+            typeName: ".test.Message.Child"
+          - jsonName: inOneof
+            label: LABEL_OPTIONAL
+            name: in_oneof
+            number: 8
+            oneofIndex: 0
+            type: TYPE_INT32
+          - jsonName: closedEnum
+            label: LABEL_OPTIONAL
+            name: closed_enum
+            number: 9
+            options:
+              features:
+                fieldPresence: EXPLICIT
+            type: TYPE_ENUM
+            typeName: ".test.Closed"
+          - defaultValue: "7"
+            jsonName: withDefault
+            label: LABEL_OPTIONAL
+            name: with_default
+            number: 10
+            options:
+              features:
+                fieldPresence: EXPLICIT
+            type: TYPE_INT32
+          - jsonName: text
+            label: LABEL_OPTIONAL
+            name: text
+            number: 11
+            options:
+              features:
+                utf8Validation: VERIFY
+            type: TYPE_STRING
+        name: Message
+        nestedType:
+          - field:
+              - jsonName: value
+                label: LABEL_OPTIONAL
+                name: value
+                number: 1
+                type: TYPE_INT32
+            name: Child
+        oneofDecl:
+          - name: choice
+            options:
+              features:
+                fieldPresence: EXPLICIT
+        options:
+          features:
+            fieldPresence: IMPLICIT
+    name: test.proto
+    options:
+      features:
+        enumType: CLOSED
+        utf8Validation: NONE
+    package: test
+    service:
+      - method:
+          - inputType: ".test.Message"
+            name: Method
+            outputType: ".test.Message"
+        name: Service
+        options:
+          features:
+            utf8Validation: VERIFY
+    syntax: editions

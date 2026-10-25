@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: field option packed is not allowed under editions; use the feature repeated_field_encoding instead
+related: []
+severity: error

@@ -16,9 +16,10 @@ mod reflect;
 pub use {prost, prost::bytes, prost_types};
 
 pub use self::descriptor::{
-    Cardinality, DescriptorError, DescriptorPool, EnumDescriptor, EnumValueDescriptor,
-    ExtensionDescriptor, FieldDescriptor, FileDescriptor, Kind, MessageDescriptor,
-    MethodDescriptor, OneofDescriptor, ServiceDescriptor, Syntax,
+    Cardinality, DescriptorError, DescriptorPool, Edition, EnumDescriptor, EnumType,
+    EnumValueDescriptor, ExtensionDescriptor, Features, FieldDescriptor, FieldPresence,
+    FileDescriptor, JsonFormat, Kind, MessageDescriptor, MessageEncoding, MethodDescriptor,
+    OneofDescriptor, RepeatedFieldEncoding, ServiceDescriptor, Syntax, Utf8Validation,
 };
 pub use self::dynamic::{DynamicMessage, MapKey, SetFieldError, UnknownField, Value};
 pub use self::reflect::ReflectMessage;

@@ -1,0 +1,6 @@
+file:
+- name: test.proto
+  syntax: proto3
+  options:
+    features:
+      fieldPresence: EXPLICIT

@@ -1,0 +1,10 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+help: "the supported edition is '2023'"
+labels: []
+message: "edition '2024' is not supported"
+related: []
+severity: error

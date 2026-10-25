@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "feature 'field_presence' must resolve to a known value, found 0"
+related: []
+severity: error

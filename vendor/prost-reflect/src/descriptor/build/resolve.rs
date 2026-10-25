@@ -136,6 +136,7 @@ impl Visitor for ResolveVisitor<'_> {
             self.parse_field_default_value(kind, field.default_value.as_deref(), file, path)
         });
 
+        let features = self.pool.files[file as usize].features;
         let message = &mut self.pool.messages[message as usize];
 
         let oneof = field.oneof_index.and_then(|oneof_index| {
@@ -158,6 +159,7 @@ impl Visitor for ResolveVisitor<'_> {
             json_name: json_name.clone(),
             cardinality,
             default,
+            features,
         });
         if let Some(existing) = message.field_numbers.insert(field.number() as u32, index) {
             self.errors.push(DescriptorErrorKind::DuplicateFieldNumber {
@@ -235,6 +237,7 @@ impl Visitor for ResolveVisitor<'_> {
         self.pool.services.push(ServiceDescriptorInner {
             id: Identity::new(file, path, full_name, service.name()),
             methods: Vec::with_capacity(service.method.len()),
+            features: self.pool.files[file as usize].features,
         });
     }
 
@@ -277,6 +280,7 @@ impl Visitor for ResolveVisitor<'_> {
                 id: Identity::new(file, path, full_name, method.name()),
                 input,
                 output,
+                features: self.pool.files[file as usize].features,
             });
     }
 
@@ -414,6 +418,7 @@ impl Visitor for ResolveVisitor<'_> {
             is_packed,
             cardinality,
             default,
+            features: self.pool.files[file as usize].features,
         });
     }
 }

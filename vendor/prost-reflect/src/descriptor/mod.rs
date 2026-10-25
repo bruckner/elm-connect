@@ -1,6 +1,7 @@
 mod api;
 mod build;
 mod error;
+mod features;
 mod global;
 mod tag;
 #[cfg(test)]
@@ -8,6 +9,10 @@ mod tests;
 pub(crate) mod types;
 
 pub use self::error::DescriptorError;
+pub use self::features::{
+    Edition, EnumType, Features, FieldPresence, JsonFormat, MessageEncoding, RepeatedFieldEncoding,
+    Utf8Validation,
+};
 use self::types::{DescriptorProto, EnumDescriptorProto};
 
 use std::{
@@ -44,6 +49,9 @@ pub enum Syntax {
     Proto2,
     /// The `proto3` syntax.
     Proto3,
+    /// The `editions` syntax: the file begins with an `edition` statement, and its
+    /// [`edition`][FileDescriptor::edition] and [features][Features] decide its behaviour.
+    Editions,
 }
 
 /// The type of a protobuf message field.
@@ -181,6 +189,8 @@ pub struct FileDescriptor {
 #[derive(Clone)]
 struct FileDescriptorInner {
     syntax: Syntax,
+    edition: Edition,
+    features: Features,
     raw: FileDescriptorProto,
     prost: prost_types::FileDescriptorProto,
     dependencies: Vec<FileIndex>,
@@ -204,6 +214,7 @@ struct MessageDescriptorInner {
     field_names: HashMap<Box<str>, FieldIndex>,
     field_json_names: HashMap<Box<str>, FieldIndex>,
     oneofs: Vec<OneofDescriptorInner>,
+    features: Features,
 }
 
 /// A oneof field in a protobuf message.
@@ -217,6 +228,7 @@ pub struct OneofDescriptor {
 struct OneofDescriptorInner {
     id: Identity,
     fields: Vec<FieldIndex>,
+    features: Features,
 }
 
 /// A protobuf message definition.
@@ -237,6 +249,7 @@ struct FieldDescriptorInner {
     supports_presence: bool,
     cardinality: Cardinality,
     default: Option<Value>,
+    features: Features,
 }
 
 /// A protobuf extension field definition.
@@ -257,6 +270,7 @@ pub struct ExtensionDescriptorInner {
     is_packed: bool,
     cardinality: Cardinality,
     default: Option<Value>,
+    features: Features,
 }
 
 /// A protobuf enum type.
@@ -274,6 +288,7 @@ struct EnumDescriptorInner {
     value_numbers: Vec<(i32, EnumValueIndex)>,
     value_names: HashMap<Box<str>, EnumValueIndex>,
     allow_alias: bool,
+    features: Features,
 }
 
 /// A value in a protobuf enum type.
@@ -287,6 +302,7 @@ pub struct EnumValueDescriptor {
 struct EnumValueDescriptorInner {
     id: Identity,
     number: i32,
+    features: Features,
 }
 
 /// A protobuf service definition.
@@ -300,6 +316,7 @@ pub struct ServiceDescriptor {
 struct ServiceDescriptorInner {
     id: Identity,
     methods: Vec<MethodDescriptorInner>,
+    features: Features,
 }
 
 /// A method definition for a [`ServiceDescriptor`].
@@ -314,6 +331,7 @@ struct MethodDescriptorInner {
     id: Identity,
     input: MessageIndex,
     output: MessageIndex,
+    features: Features,
 }
 
 impl Identity {
