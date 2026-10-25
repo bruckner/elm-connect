@@ -138,6 +138,10 @@ With `import Notes.V1 exposing (defaultNote)`,
 
 `Rpc.task` gives a `Task` instead, for chaining calls.
 
+`api.example.com` stands for your server. To send a real call before
+you have one, [trying.md](trying.md) builds a page that calls
+ConnectRPC's public demo server.
+
 ## 5. Read the result
 
 An error is one type for both transports, `Rpc.Error`, of four kinds:

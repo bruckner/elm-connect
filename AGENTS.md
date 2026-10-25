@@ -27,6 +27,8 @@ the code. To use the generator on someone else's project instead, read
   [conformance/README.md](conformance/README.md) describes each.
 - `examples/notes/`: an API, its Go server and a browser application on
   its generated client; the live suite runs against that server.
+- `examples/eliza/`: a one-call page against ConnectRPC's public demo
+  server, the program `docs/trying.md` walks through.
 - `docs/`: the user guides, [design.md](docs/design.md) (the design
   contract), [decisions.md](docs/decisions.md) and
   [roadmap.md](docs/roadmap.md).
@@ -77,6 +79,8 @@ Generated code also lives in `examples/notes/elm/generated/` and
 `conformance/live/suite/`. `just live-gen` and `just live-conformance-gen`
 regenerate them in place and then fail if they differ from what is
 committed; stage what they wrote and run them again.
+`examples/eliza/generated/` is the released CLI's output, written by the
+command in `examples/eliza/README.md`, and no recipe regenerates it.
 
 `just bless`, `just live-gen` and `just live-conformance-gen` delete
 and rewrite whole trees. Stage files by name, after reading `git
