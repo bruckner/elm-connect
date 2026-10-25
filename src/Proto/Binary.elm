@@ -8,7 +8,7 @@ module Proto.Binary exposing
     , int64, sint64, sfixed64, uint64, fixed64
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
-    , embedded
+    , embedded, messageEncoder, messageDecoder
     , timestamp, duration, fieldMask, empty, struct, listValue, value, any
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
@@ -66,7 +66,7 @@ outside ±(2^53 − 1).
 
 # Messages
 
-@docs embedded
+@docs embedded, messageEncoder, messageDecoder
 
 
 # Well-known types
@@ -126,6 +126,8 @@ type Codec a
         , isDefault : a -> Bool
         , zero : a
         , packable : Bool
+        , writeBody : a -> Encoder
+        , readBody : Int -> Decoder a
         }
 
 
@@ -138,6 +140,8 @@ scalar wire read write isDefault zero =
         , isDefault = isDefault
         , zero = zero
         , packable = wire /= 2
+        , writeBody = write
+        , readBody = \_ -> D.map Tuple.second read
         }
 
 
@@ -1029,7 +1033,25 @@ embedded write read zero =
         , isDefault = \_ -> False
         , zero = zero
         , packable = False
+        , writeBody = write
+        , readBody = read
         }
+
+
+{-| The encoder of a whole message from its codec, for a well-known type
+a method takes: `messageEncoder Proto.Binary.empty`.
+-}
+messageEncoder : Codec a -> a -> Encoder
+messageEncoder (Codec c) =
+    c.writeBody
+
+
+{-| The decoder of a whole message from its codec, given its length, for a
+well-known type a method answers.
+-}
+messageDecoder : Codec a -> Int -> Decoder a
+messageDecoder (Codec c) =
+    c.readBody
 
 
 

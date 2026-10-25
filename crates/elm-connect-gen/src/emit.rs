@@ -140,7 +140,16 @@
 //!   fields holds the wrapper, and the wrapper's decoder reads the message
 //!   through `Json.Decode.lazy`. A oneof member that closes a cycle decodes
 //!   through `Json.Decode.lazy` too (design §3.2).
+//! - Under `codec=binary` or `codec=both` each message, enum, oneof and
+//!   recursion wrapper also gets protobuf binary codecs, in two sections
+//!   after the decoders ([`binary`]); the typed values and the methods
+//!   carry them (`Proto.Message.withBinary`, `Proto.Method.withBinary`).
+//!   Under `codec=binary` messages, oneofs and wrappers get no JSON codecs
+//!   (enums keep theirs, which their typed values hold), and the typed
+//!   values and methods are built by `Proto.Message.messageBinary` and
+//!   `Proto.Method.methodBinary`.
 
+mod binary;
 mod descriptor;
 mod docs;
 mod enumeration;
@@ -161,7 +170,7 @@ use crate::ir::{
     TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Options};
+use crate::options::{Codec, EnumUnknown, Options};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -451,6 +460,8 @@ struct Emitter {
     holding: Holding,
     /// What an unknown enum value name reads as.
     enum_unknown: EnumUnknown,
+    /// Which codecs messages get.
+    codec: Codec,
     /// The options as the header's second line records them.
     recorded: String,
 }
@@ -463,6 +474,7 @@ impl Emitter {
             unqualified: BTreeMap::new(),
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
+            codec: options.codec,
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -528,28 +540,64 @@ impl Emitter {
         let mut values = vec![Decl::Comment("TYPED VALUES".into())];
         let mut encoders = vec![Decl::Comment("ENCODERS".into())];
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
+        let mut binary_encoders = vec![Decl::Comment("BINARY ENCODERS".into())];
+        let mut binary_decoders = vec![Decl::Comment("BINARY DECODERS".into())];
+        let (json, binary) = (self.codec.json(), self.codec.binary());
         for enumeration in &package.enums {
             types.push(self.enum_type(&package.module, enumeration));
             values.push(self.enum_record(&package.module, enumeration));
+            // An enum keeps its JSON codecs under `codec=binary`: its typed
+            // value holds them, and they are small.
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
+            if binary {
+                binary_encoders.push(self.enum_encoder_bytes(enumeration));
+                binary_decoders.push(self.enum_decoder_bytes(enumeration));
+            }
         }
         for shape in &messages {
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
-            encoders.push(self.message_encoder(shape));
-            decoders.push(self.message_decoder(shape));
+            if json {
+                encoders.push(self.message_encoder(shape));
+                decoders.push(self.message_decoder(shape));
+            }
+            if binary {
+                binary_encoders.push(self.message_encoder_bytes(shape));
+                binary_decoders.push(self.message_decoder_bytes(shape));
+            }
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
-                encoders.push(self.wrapper_encoder(shape.message, wrapper));
-                decoders.push(self.wrapper_decoder(shape.message, wrapper));
+                if json {
+                    encoders.push(self.wrapper_encoder(shape.message, wrapper));
+                    decoders.push(self.wrapper_decoder(shape.message, wrapper));
+                }
+                if binary {
+                    binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
+                    binary_decoders.push(self.wrapper_decoder_bytes(shape.message, wrapper));
+                }
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
-                encoders.push(self.oneof_encoder(oneof));
-                decoders.push(self.oneof_decoder(oneof));
+                if json {
+                    encoders.push(self.oneof_encoder(oneof));
+                    decoders.push(self.oneof_decoder(oneof));
+                }
+                if binary {
+                    binary_encoders.push(self.oneof_encoder_bytes(oneof));
+                }
             }
+        }
+        if !binary {
+            binary_encoders.clear();
+            binary_decoders.clear();
+        }
+        // Under `codec=binary` a package of messages alone has no JSON
+        // codecs.
+        if encoders.len() == 1 {
+            encoders.clear();
+            decoders.clear();
         }
         // A package of enums alone has no defaults.
         if messages.is_empty() {
@@ -562,6 +610,8 @@ impl Emitter {
             .chain(registry)
             .chain(encoders)
             .chain(decoders)
+            .chain(binary_encoders)
+            .chain(binary_decoders)
             .collect()
     }
 

@@ -93,11 +93,44 @@ impl Emitter {
         let message = shape.message;
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
-        let builder = self.reference((PROTO_MESSAGE, "message"));
         let descriptor = self.generated_value(
             &message.descriptor_module(package),
             DESCRIPTOR_VALUE.to_owned(),
         );
+        let encode_bytes = var(super::binary::bytes_name(message.encoder_name()));
+        let decode_bytes = var(super::binary::bytes_name(message.decoder_name()));
+        let body = match self.codec {
+            crate::options::Codec::Json | crate::options::Codec::Both => {
+                let builder = self.reference((PROTO_MESSAGE, "message"));
+                let built = apply(
+                    builder,
+                    [
+                        var(message.encoder_name()),
+                        var(message.decoder_name()),
+                        var(message.default_name()),
+                        descriptor,
+                    ],
+                );
+                if self.codec == crate::options::Codec::Both {
+                    let with = self.reference((PROTO_MESSAGE, "withBinary"));
+                    crate::elm::build::pipe(built, apply(with, [encode_bytes, decode_bytes]))
+                } else {
+                    built
+                }
+            }
+            crate::options::Codec::Binary => {
+                let builder = self.reference((PROTO_MESSAGE, "messageBinary"));
+                apply(
+                    builder,
+                    [
+                        encode_bytes,
+                        decode_bytes,
+                        var(message.default_name()),
+                        descriptor,
+                    ],
+                )
+            }
+        };
         Decl::Value {
             doc: Some(format!(
                 "The typed value of {}: its codecs, default and descriptor together.",
@@ -106,15 +139,7 @@ impl Emitter {
             name: message.value_name(),
             annotation,
             params: Vec::new(),
-            body: apply(
-                builder,
-                [
-                    var(message.encoder_name()),
-                    var(message.decoder_name()),
-                    var(message.default_name()),
-                    descriptor,
-                ],
-            ),
+            body,
         }
     }
 

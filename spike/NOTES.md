@@ -51,3 +51,55 @@ Decisions taken while building, and the alternatives, for the report.
   the codec reads and writes the exact seconds and nanoseconds.
 - **`Timestamp`** as `Time.Posix` drops nanoseconds past the millisecond when
   read, as the JSON codec does.
+
+## Generator (`codec=json|binary|both`)
+
+- Default `json`: output byte-identical (the conformance corpus, the notes
+  example and Eliza regenerate unchanged; only the option-list help text in
+  `options_invalid`'s diagnostics gains `codec`). The header records
+  `codec=binary`/`codec=both` like the other options.
+- Names: `encodeFooBytes`/`decodeFooBytes` per message, wrapper and enum, and
+  `encodeFooKindBytes` per oneof. Not reserved: a message `FooBytes` beside
+  `Foo` would collide (`encodeFooBytes` twice). Before landing, naming.rs
+  should reserve the suffix or the generator diagnose the clash.
+- An enum's binary codecs are its number conversions (`Kind -> Int`,
+  `Int -> Kind`, unknown → zero under either `enum_unknown`); Elm has no
+  negative literal patterns, so negative numbers are `if`s in the `case`'s
+  fallback.
+- Every field's codec is built at its use site
+  (`Proto.Binary.embedded encodeLeafBytes decodeLeafBytes defaultLeaf`), so a
+  decoder allocates a `Codec` record per field read. Hoisting one top-level
+  codec per message would avoid it; it needs care with recursive messages
+  (a top-level value in a cycle), which the use-site form sidesteps.
+- `codec=binary`: messages, oneofs and wrappers get no JSON codecs; enums keep
+  theirs (their typed value `Proto.Enum.enum` holds them, and transcoded
+  query parameters would need them). Such a module is for Connect's proto
+  codec only: transcoding needs JSON.
+
+## Attachment shape (additive)
+
+- `Proto.Message.withBinary encodeFooBytes decodeFooBytes`, piped after
+  `Proto.Message.message`; `Proto.Method.withBinary encodeReqBytes
+  decodeResBytes`, piped after `Proto.Method.method`. A decorator composes
+  with any constructor, so it fits the gen-routes spike's positional
+  `methodWith encode decode descriptor [ routes ]` (and its endpoint-form
+  descriptor) unchanged: `methodWith ... |> withBinary ...`.
+- `Proto.Message.messageBinary` / `Proto.Method.methodBinary` build the
+  binary-only values: their JSON encoder writes `null` and their JSON decoder
+  fails with a message naming `codec=binary`.
+- Readers: `Proto.Message.encodeBytes`/`bytesDecoder`,
+  `Proto.Method.encodeRequestBytes`/`responseBytesDecoder`, all `Maybe`.
+- Alternatives considered: (a) a second constructor taking all four codecs
+  (`methodWithBinary encode decode encodeBytes decodeBytes descriptor`):
+  positional growth, and one more variant per future codec; (b) a codec
+  record type (`{ json : ..., binary : ... }`) passed to one constructor:
+  cleaner for a third codec, but not additive. The decorator is additive
+  and DCE-neutral for JSON-only programs (the field is `Nothing`).
+- A well-known request or response type (`google.protobuf.Empty`) takes its
+  codec's whole-message halves: `Proto.Binary.messageEncoder
+  Proto.Binary.empty`, `Proto.Binary.messageDecoder Proto.Binary.empty`.
+  `Proto.WellKnown`'s typed values do not get binary codecs yet.
+- Where streaming and gRPC-Web would plug in: both frame each message as a
+  5-byte envelope (flag byte, 4-byte big-endian length) around exactly the
+  bytes `encodeFooBytes` writes, and `decodeFooBytes` takes that length;
+  nothing in the codecs changes, only `Rpc.Body`/the transport's framing.

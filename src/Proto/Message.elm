@@ -1,6 +1,6 @@
 module Proto.Message exposing
-    ( Message, message
-    , encode, decoder, default, toDescriptor
+    ( Message, message, withBinary, messageBinary
+    , encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
     , Descriptor, descriptor
     , typeName, typeUrl, fields, oneofs
     )
@@ -13,12 +13,12 @@ descriptor in a module of the message's own, beside one value per field
 (`Notes.V1.Note.descriptor : Descriptor`, `Notes.V1.Note.title`); and
 [`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type.
 
-@docs Message, message
+@docs Message, message, withBinary, messageBinary
 
 
 # Reading a typed value
 
-@docs encode, decoder, default, toDescriptor
+@docs encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
 
 
 # Descriptors
@@ -32,6 +32,8 @@ descriptor in a module of the message's own, beside one value per field
 
 -}
 
+import Bytes.Decode
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Field as Field
@@ -46,7 +48,14 @@ type Message a
         , decoder : Json.Decode.Decoder a
         , default : a
         , descriptor : Descriptor
+        , binary : Maybe (Binary a)
         }
+
+
+type alias Binary a =
+    { encode : a -> Bytes.Encode.Encoder
+    , decoder : Int -> Bytes.Decode.Decoder a
+    }
 
 
 {-| A message type from its proto3 JSON encoder and decoder, its default (the
@@ -65,7 +74,54 @@ message encodeJson jsonDecoder defaultValue messageDescriptor =
         , decoder = jsonDecoder
         , default = defaultValue
         , descriptor = messageDescriptor
+        , binary = Nothing
         }
+
+
+{-| The typed value with protobuf binary codecs too: generated code under
+`codec=both` writes
+
+    messageNote =
+        Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+            |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes
+
+The binary decoder takes the message's length in bytes, as
+[`Proto.Binary.decode`](Proto-Binary#decode) gives it.
+
+-}
+withBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> Message a -> Message a
+withBinary encodeBinary binaryDecoder (Message m) =
+    Message { m | binary = Just { encode = encodeBinary, decoder = binaryDecoder } }
+
+
+{-| A typed value with protobuf binary codecs alone, as generated code under
+`codec=binary` writes it. Its JSON encoder writes `null` and its JSON decoder
+fails.
+-}
+messageBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> a -> Descriptor -> Message a
+messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
+    Message
+        { encode = \_ -> Json.Encode.null
+        , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
+        , default = defaultValue
+        , descriptor = messageDescriptor
+        , binary = Just { encode = encodeBinary, decoder = binaryDecoder }
+        }
+
+
+{-| The protobuf binary encoder, when the typed value has one.
+-}
+encodeBytes : Message a -> Maybe (a -> Bytes.Encode.Encoder)
+encodeBytes (Message m) =
+    Maybe.map .encode m.binary
+
+
+{-| The protobuf binary decoder, when the typed value has one; it takes the
+message's length in bytes.
+-}
+bytesDecoder : Message a -> Maybe (Int -> Bytes.Decode.Decoder a)
+bytesDecoder (Message m) =
+    Maybe.map .decoder m.binary
 
 
 {-| A value as proto3 JSON.
