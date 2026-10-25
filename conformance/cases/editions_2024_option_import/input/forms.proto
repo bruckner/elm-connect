@@ -1,0 +1,12 @@
+// A file that imports another only for its options: the option applies,
+// and nothing of the imported file is generated or used as a type.
+edition = "2024";
+
+package forms.v1;
+
+import option "labels.proto";
+
+message Form {
+  string title = 1 [(labels.v1.display) = "Title"];
+  int32 count = 2;
+}

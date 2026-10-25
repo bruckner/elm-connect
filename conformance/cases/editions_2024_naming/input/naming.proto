@@ -1,0 +1,18 @@
+// Edition 2024 checks names against the style guide by default.
+edition = "2024";
+
+package naming.v1;
+
+message user_profile {
+  string displayName = 1;
+  int32 retry_2 = 2;
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  active = 1;
+}
+
+service profiles {
+  rpc get_profile(user_profile) returns (user_profile);
+}

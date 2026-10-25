@@ -23,7 +23,15 @@ rc=0
 for case_dir in "$root"/conformance/cases/editions_* "$root/conformance/cases/codec_both"; do
     case=$(basename "$case_dir")
     input=$case_dir/input
+    include=$case_dir/include
     files=$(cd "$input" && find . -name '*.proto' | sed 's|^\./||' | sort)
+    # A case's include/ holds files its input imports but does not generate.
+    includes=()
+    buf_paths=()
+    if [[ -d $include ]]; then
+        includes=(-I "$include")
+        for f in $files; do buf_paths+=(--path "$out/$case/bufws/$f"); done
+    fi
     parameter=$(cat "$case_dir/options.txt" 2>/dev/null || true)
     flags=()
     IFS=',' read -r -a pairs <<< "$parameter"
@@ -33,13 +41,14 @@ for case_dir in "$root"/conformance/cases/editions_* "$root/conformance/cases/co
     flags=("${flags[@]//_/-}")
     rm -rf "$out/$case" && mkdir -p "$out/$case"/{cli,protoc,buf,expected}
     # shellcheck disable=SC2086
-    "$cli" gen -I "$input" $files ${flags[@]+"${flags[@]}"} --out "$out/$case/cli" \
+    "$cli" gen -I "$input" ${includes[@]+"${includes[@]}"} $files ${flags[@]+"${flags[@]}"} --out "$out/$case/cli" \
         > /dev/null 2> "$out/$case/cli.err" || true
     # shellcheck disable=SC2086
-    (cd "$input" && "$protoc" -I . --plugin=protoc-gen-elm-connect="$plugin" \
+    (cd "$input" && "$protoc" -I . ${includes[@]+"${includes[@]}"} --plugin=protoc-gen-elm-connect="$plugin" \
         --elm-connect_out="$out/$case/protoc" ${parameter:+--elm-connect_opt="$parameter"} $files) \
         2> "$out/$case/protoc.err" || true
     mkdir -p "$out/$case/bufws" && cp -RL "$input"/. "$out/$case/bufws/"
+    [[ -d $include ]] && cp -RL "$include"/. "$out/$case/bufws/"
     printf 'version: v2\n' > "$out/$case/bufws/buf.yaml"
     {
         printf 'version: v2\nplugins:\n  - local: %s\n    out: %s\n' "$plugin" "$out/$case/buf"
@@ -49,7 +58,7 @@ for case_dir in "$root"/conformance/cases/editions_* "$root/conformance/cases/co
         fi
     } > "$out/$case/buf.gen.yaml"
     (cd "$out/$case/bufws" && mise exec -C "$root" -- buf generate "$out/$case/bufws" \
-        --template "$out/$case/buf.gen.yaml") 2> "$out/$case/buf.err" || true
+        --template "$out/$case/buf.gen.yaml" ${buf_paths[@]+"${buf_paths[@]}"}) 2> "$out/$case/buf.err" || true
     if [[ -f $case_dir/expected/diagnostics.txt ]]; then
         # Each problem's code ends a line, alone or after a front end's prefix.
         codes() { grep -oE '(^|: )[a-z]+::[a-z_]+$' "$1" | sed 's/^: //' | sort | uniq -c | tr -s ' ' | tr '\n' ';'; }

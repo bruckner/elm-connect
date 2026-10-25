@@ -157,9 +157,9 @@ result, trying calls in `elm repl`, and testing without a server.
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
 - JSON only: proto3 JSON, no binary protobuf.
-- proto3 and edition 2023. A proto2 file is the diagnostic
+- proto3 and editions 2023 and 2024. A proto2 file is the diagnostic
   `input::not_proto3`, a later edition is `input::editions`, and an
-  edition 2023 feature with no Elm form (delimited encoding,
+  editions feature with no Elm form (delimited encoding,
   extensions, unchecked UTF-8, the legacy JSON format) is
   `input::unsupported_feature` or `input::extensions`.
 - No streaming, no gRPC-Web.

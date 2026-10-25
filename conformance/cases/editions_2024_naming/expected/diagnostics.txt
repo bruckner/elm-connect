@@ -1,0 +1,101 @@
+input::naming_style
+
+  × Message name user_profile should be TitleCase.
+   ╭─[naming.proto:6:9]
+ 5 │
+ 6 │ message user_profile {
+   ·         ──────┬─────
+   ·               ╰── the name
+ 7 │   string displayName = 1;
+   ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.
+
+input::naming_style
+
+  × Field name displayName should be lower_snake_case.
+   ╭─[naming.proto:7:10]
+ 6 │ message user_profile {
+ 7 │   string displayName = 1;
+   ·          ─────┬─────
+   ·               ╰── the name
+ 8 │   int32 retry_2 = 2;
+   ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.
+
+input::naming_style
+
+  × Field name retry_2 contains style violating underscores.
+   ╭─[naming.proto:8:9]
+ 7 │   string displayName = 1;
+ 8 │   int32 retry_2 = 2;
+   ·         ───┬───
+   ·            ╰── the name
+ 9 │ }
+   ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.
+
+input::naming_style
+
+  × Enum value name active should be UPPER_SNAKE_CASE.
+    ╭─[naming.proto:13:3]
+ 12 │   STATUS_UNSPECIFIED = 0;
+ 13 │   active = 1;
+    ·   ───┬──
+    ·      ╰── the name
+ 14 │ }
+    ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.
+
+input::naming_style
+
+  × Service name profiles should begin with a capital letter.
+    ╭─[naming.proto:16:9]
+ 15 │
+ 16 │ service profiles {
+    ·         ────┬───
+    ·             ╰── the name
+ 17 │   rpc get_profile(user_profile) returns (user_profile);
+    ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.
+
+input::naming_style
+
+  × Method name get_profile should be TitleCase.
+    ╭─[naming.proto:17:7]
+ 16 │ service profiles {
+ 17 │   rpc get_profile(user_profile) returns (user_profile);
+    ·       ─────┬─────
+    ·            ╰── the name
+ 18 │ }
+    ╰────
+  help: Edition 2024 files follow the protobuf style guide's names by default
+        (`features.enforce_naming_style = STYLE2024`), as protoc and buf check
+        them: packages, fields and oneofs in lower_snake_case, messages,
+        enums, services and methods in TitleCase, enum values in
+        UPPER_SNAKE_CASE. Rename it, or set `features.enforce_naming_style =
+        STYLE_LEGACY` on the file or the element to keep the name.

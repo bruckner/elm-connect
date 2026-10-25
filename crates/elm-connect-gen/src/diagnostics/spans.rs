@@ -129,6 +129,25 @@ impl LineColSpan {
         }
     }
 
+    /// The span of the bytes `start` to `end` of `source`, columns in
+    /// bytes, or `None` when they are not in it.
+    pub fn from_bytes(source: &str, start: usize, end: usize) -> Option<Self> {
+        let position = |offset: usize| {
+            let before = source.get(..offset)?;
+            let line = before.matches('\n').count();
+            let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+            Some((u32::try_from(line).ok()?, u32::try_from(col).ok()?))
+        };
+        let (start_line, start_col) = position(start)?;
+        let (end_line, end_col) = position(end)?;
+        Some(LineColSpan {
+            start_line,
+            start_col,
+            end_line,
+            end_col,
+        })
+    }
+
     /// The byte span of `source` this covers, or `None` when the span does
     /// not fit the source (the source is not the text the descriptor came
     /// from).

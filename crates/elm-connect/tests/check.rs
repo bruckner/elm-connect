@@ -407,7 +407,7 @@ fn gen_warns_about_stale_files_and_deletes_nothing() {
     assert!(old.exists(), "nothing is deleted");
 }
 
-/// An edition 2023 file whose features only restate proto3 generates
+/// An edition 2023 or 2024 file whose features only restate proto3 generates
 /// what its proto3 twin does, so a tree generated from the one is current
 /// against the other: `check` compares modules, and the edition is in the
 /// protos, not in what it records.
@@ -427,6 +427,11 @@ fn the_proto3_twin_of_a_tree_is_current() {
     let out = Path::new(env!("CARGO_TARGET_TMPDIR")).join("check-twin");
     let _ = fs::remove_dir_all(&out);
     elm_connect::write(&generate("codec_both"), &out).expect("write the output");
-    let check = check_tree(&generate("editions_2023_proto3_equivalent"), &out);
-    assert!(check.is_current(), "{check:?}");
+    for twin in [
+        "editions_2023_proto3_equivalent",
+        "editions_2024_proto3_equivalent",
+    ] {
+        let check = check_tree(&generate(twin), &out);
+        assert!(check.is_current(), "{twin}: {check:?}");
+    }
 }

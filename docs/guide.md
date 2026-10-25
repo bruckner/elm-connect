@@ -38,16 +38,19 @@ missing, differs (with a diff) or is stale, and 2 when it cannot tell
 With protoc or buf, which have no `check`, regenerate and run `git diff
 --exit-code` over the output directory.
 
-## Proto3 and edition 2023
+## Proto3 and editions 2023 and 2024
 
-A proto3 file and an `edition = "2023";` file both generate. An
-edition 2023 file whose features only restate proto3 (implicit
-presence on the file, explicit on the fields proto3 marks `optional`)
-generates the same modules as the proto3 file, so moving a file to the
-edition shows no drift in `check`; any other feature shows up as the
-change it makes. A feature with no Elm form, or a later edition, is a
+A proto3 file and an `edition = "2023";` or `edition = "2024";` file
+all generate. An editions file whose features only restate proto3
+(implicit presence on the file, explicit on the fields proto3 marks
+`optional`) generates the same modules as the proto3 file, so moving a
+file to an edition shows no drift in `check`; any other feature shows
+up as the change it makes. Edition 2024's `export` and `local` and its
+`import option` change nothing generated: every message and enum of a
+file is generated, whatever its visibility. A feature with no Elm form,
+a name edition 2024's naming style refuses, or a later edition is a
 diagnostic (`input::unsupported_feature`, `input::extensions`,
-`input::editions`).
+`input::naming_style`, `input::editions`).
 
 ## Reading a diagnostic
 

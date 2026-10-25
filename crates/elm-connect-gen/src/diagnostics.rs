@@ -69,15 +69,18 @@ codes! {
     FileNotFound => "input::file_not_found",
     /// A file to generate is not proto3.
     NotProto3 => "input::not_proto3",
-    /// A file declares an edition other than 2023 (`edition = "2024";`),
-    /// which elm-connect does not support.
+    /// A file declares an edition other than 2023 and 2024, which
+    /// elm-connect does not support.
     Editions => "input::editions",
-    /// An element of an edition 2023 file has a feature value with no Elm
+    /// An element of an editions file has a feature value with no Elm
     /// form in elm-connect, such as `message_encoding = DELIMITED`.
     UnsupportedFeature => "input::unsupported_feature",
-    /// An edition 2023 file declares an extension range, or extends a
+    /// An editions file declares an extension range, or extends a
     /// message other than a `google.protobuf` options message.
     Extensions => "input::extensions",
+    /// A name in an edition 2024 file breaks the naming style the file's
+    /// `enforce_naming_style` feature asks for (`STYLE2024` by default).
+    NamingStyle => "input::naming_style",
     /// A file's name cannot be written into a generated module's header.
     FileName => "input::file_name",
     /// Two fields of a message have names that are the same once
@@ -1361,7 +1364,7 @@ impl Problem {
         )
     }
 
-    /// `file` declares an edition other than 2023, `edition` when it is
+    /// `file` declares an edition other than 2023 and 2024, `edition` when it is
     /// known (`"2024"`).
     pub fn editions(file: &str, edition: Option<&str>, site: Site) -> Self {
         let declares = match edition {
@@ -1371,14 +1374,31 @@ impl Problem {
         Problem::new(
             Code::Editions,
             format!(
-                "The file `{file}` {declares}, but elm-connect generates proto3 and edition \
-                 2023 only."
+                "The file `{file}` {declares}, but elm-connect generates proto3 and editions \
+                 2023 and 2024 only."
             ),
             "elm-connect generates from `syntax = \"proto3\";` files and from `edition = \
-             \"2023\";` files whose features have an Elm form (explicit or implicit presence, \
-             `LEGACY_REQUIRED`, open and closed enums, packed repeated fields, checked UTF-8, \
-             the proto3 JSON mapping). Declare `edition = \"2023\";` instead, if the file uses \
-             nothing a later edition added.",
+             \"2023\";` and `edition = \"2024\";` files whose features have an Elm form \
+             (explicit or implicit presence, `LEGACY_REQUIRED`, open and closed enums, packed \
+             repeated fields, checked UTF-8, the proto3 JSON mapping). Declare `edition = \
+             \"2024\";` instead, if the file uses nothing a later edition added.",
+            vec![site],
+        )
+    }
+
+    /// `message` (`Field name BadField should be lower_snake_case`), the
+    /// descriptor library's words for a name of an edition 2024 file that
+    /// breaks its naming style, sited at the name.
+    pub fn naming_style(message: &str, site: Site) -> Self {
+        Problem::new(
+            Code::NamingStyle,
+            format!("{message}."),
+            "Edition 2024 files follow the protobuf style guide's names by default \
+             (`features.enforce_naming_style = STYLE2024`), as protoc and buf check them: \
+             packages, fields and oneofs in lower_snake_case, messages, enums, services and \
+             methods in TitleCase, enum values in UPPER_SNAKE_CASE. Rename it, or set \
+             `features.enforce_naming_style = STYLE_LEGACY` on the file or the element to keep \
+             the name.",
             vec![site],
         )
     }
@@ -2030,12 +2050,12 @@ pub fn first_statement(source: &str, keyword: &str) -> Option<(String, LineColSp
 }
 
 /// The `input::editions` problem for the file `name`, whose text is
-/// `source`, when its first statement declares an edition other than 2023,
+/// `source`, when its first statement declares an edition other than 2023 and 2024,
 /// sited at that statement: what a front end reports in place of its
 /// parser's errors for an edition the parser does not know.
 pub fn unsupported_edition(name: &str, source: &str) -> Option<Problem> {
     let (edition, span) = first_statement(source, "edition")?;
-    if edition == "2023" {
+    if edition == "2023" || edition == "2024" {
         return None;
     }
     let site = Site {
@@ -2045,4 +2065,40 @@ pub fn unsupported_edition(name: &str, source: &str) -> Option<Problem> {
         within: Vec::new(),
     };
     Some(Problem::editions(name, Some(&edition), site))
+}
+
+/// The end of the descriptor library's message for a name that breaks the
+/// naming style, which is protoc's.
+const NAMING_STYLE_OPT_OUT: &str =
+    " (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)";
+
+/// The `input::naming_style` problems for a front end's `error` in the file
+/// `name`, whose text is `source`, when every problem it reports is a name
+/// that breaks its naming style: one problem per name, sited at it. `None`
+/// for any other error.
+pub fn naming_style(
+    error: &dyn miette::Diagnostic,
+    name: &str,
+    source: &str,
+) -> Option<Diagnostics> {
+    let mut diagnostics = Diagnostics::new();
+    let related = error.related().into_iter().flatten();
+    for problem in std::iter::once(error).chain(related) {
+        let text = problem.to_string();
+        let message = text.strip_suffix(NAMING_STYLE_OPT_OUT)?;
+        let span = problem
+            .labels()
+            .and_then(|mut labels| labels.next())
+            .and_then(|label| {
+                LineColSpan::from_bytes(source, label.offset(), label.offset() + label.len())
+            });
+        let site = Site {
+            file: name.to_owned(),
+            span,
+            label: "the name".into(),
+            within: Vec::new(),
+        };
+        diagnostics.push(Problem::naming_style(message, site));
+    }
+    Some(diagnostics)
 }

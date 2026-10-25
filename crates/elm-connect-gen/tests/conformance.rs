@@ -37,8 +37,7 @@ use elm_connect_gen::{GeneratedFile, HEADER_PREFIX, VERSION, generate};
 mod common;
 use common::{
     Compiled, DIAGNOSTICS, OPTIONS, WARNINGS, case_name, case_options, cases, compile_case,
-    files_under, is_diagnostics_case, placeholder_header, protos, repo_root,
-    unsupported_edition_case,
+    files_under, front_end_case, is_diagnostics_case, placeholder_header, protos, repo_root,
 };
 use similar::TextDiff;
 
@@ -58,12 +57,11 @@ struct Run {
 /// case's `options.txt`, if any, sets the generator's
 /// options.
 ///
-/// A case whose input declares an edition protox cannot parse gives the
-/// `input::editions` problem the CLI reports in place of the parser's
-/// errors.
+/// A case whose input protox refuses for an edition it cannot parse or
+/// for names that break the naming style gives the problems the CLI
+/// reports in place of protox's errors.
 fn run_generator(case: &Path) -> Result<Run, String> {
-    if let Some(problem) = unsupported_edition_case(case) {
-        let mut diagnostics = Diagnostics::from(problem);
+    if let Some(mut diagnostics) = front_end_case(case) {
         let input = case.join("input");
         let sources: HashMap<String, String> = protos(&input)
             .into_iter()
@@ -459,15 +457,22 @@ fn the_header_names_a_placeholder_version() {
     assert_eq!(placeholder_header(&elsewhere), elsewhere);
 }
 
-/// An edition 2023 file that only restates proto3 in features generates
-/// what its proto3 twin does: `editions_2023_proto3_equivalent` holds the
-/// twins of `codec_both`'s inputs, with its options, and its expected
-/// modules are `codec_both`'s, byte for byte. The golden test holds each
-/// case to the generator, so the two together hold the generator to this.
+/// An edition 2023 or 2024 file that only restates proto3 in features
+/// generates what its proto3 twin does: `editions_2023_proto3_equivalent`
+/// and `editions_2024_proto3_equivalent` hold the twins of `codec_both`'s
+/// inputs, with its options, and their expected modules are
+/// `codec_both`'s, byte for byte. The golden test holds each case to the
+/// generator, so the two together hold the generator to this.
 #[test]
-fn the_proto3_equivalent_edition_generates_its_twin() {
+fn the_proto3_equivalent_editions_generate_their_twin() {
+    for edition in ["2023", "2024"] {
+        proto3_equivalent_edition_generates_its_twin(edition);
+    }
+}
+
+fn proto3_equivalent_edition_generates_its_twin(edition: &str) {
     let cases = repo_root().join("conformance/cases");
-    let twin = cases.join("editions_2023_proto3_equivalent");
+    let twin = cases.join(format!("editions_{edition}_proto3_equivalent"));
     let proto3 = cases.join("codec_both");
     assert_eq!(
         read(&twin.join(OPTIONS)),
@@ -477,8 +482,9 @@ fn the_proto3_equivalent_edition_generates_its_twin() {
     for name in protos(&twin.join("input")) {
         let source = read(&twin.join("input").join(&name));
         assert!(
-            source.contains("\nedition = \"2023\";\n") && !source.contains("syntax ="),
-            "{name} is an edition 2023 file"
+            source.contains(&format!("\nedition = \"{edition}\";\n"))
+                && !source.contains("syntax ="),
+            "{name} is an edition {edition} file"
         );
     }
     let modules = |case: &Path| -> BTreeMap<String, String> {
@@ -506,6 +512,45 @@ fn the_proto3_equivalent_edition_generates_its_twin() {
             );
         }
     }
+}
+
+/// Visibility decides which files may use a type, not what is generated:
+/// `editions_2024_visibility` generates the same modules with its `export`
+/// and `local` modifiers and its `default_symbol_visibility` removed.
+#[test]
+fn visibility_does_not_change_the_generated_modules() {
+    let case = repo_root().join("conformance/cases/editions_2024_visibility");
+    let stripped = Path::new(env!("CARGO_TARGET_TMPDIR")).join("visibility-stripped-case");
+    let _ = fs::remove_dir_all(&stripped);
+    fs::create_dir_all(stripped.join("input")).expect("create the case");
+    let mut changed = 0;
+    for name in protos(&case.join("input")) {
+        let source = read(&case.join("input").join(&name));
+        let without: String = source
+            .lines()
+            .filter(|line| !line.contains("default_symbol_visibility"))
+            .map(|line| {
+                let indent = line.len() - line.trim_start().len();
+                let rest = &line[indent..];
+                let rest = rest
+                    .strip_prefix("export ")
+                    .or_else(|| rest.strip_prefix("local "))
+                    .unwrap_or(rest);
+                format!("{}{rest}\n", &line[..indent])
+            })
+            .collect();
+        changed += usize::from(without != source);
+        fs::write(stripped.join("input").join(&name), without).expect("write the proto");
+    }
+    assert_eq!(changed, 2, "both files carry visibility");
+    let files = |case: &Path| -> Vec<(String, String)> {
+        let run = run_generator(case).unwrap_or_else(|rendered| panic!("{rendered}"));
+        run.files
+            .into_iter()
+            .map(|file| (file.path, file.content))
+            .collect()
+    };
+    assert_eq!(files(&case), files(&stripped));
 }
 
 fn read(path: &Path) -> String {

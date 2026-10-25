@@ -1,0 +1,17 @@
+input::editions
+
+  × The file `future.proto` declares `edition = "2025"`, but elm-connect
+  │ generates proto3 and editions 2023 and 2024 only.
+   ╭─[future.proto:2:1]
+ 1 │ // An edition after 2024, which elm-connect does not generate from.
+ 2 │ edition = "2025";
+   · ────────┬────────
+   ·         ╰── the edition
+ 3 │
+   ╰────
+  help: elm-connect generates from `syntax = "proto3";` files and from
+        `edition = "2023";` and `edition = "2024";` files whose features have
+        an Elm form (explicit or implicit presence, `LEGACY_REQUIRED`, open
+        and closed enums, packed repeated fields, checked UTF-8, the proto3
+        JSON mapping). Declare `edition = "2024";` instead, if the file uses
+        nothing a later edition added.

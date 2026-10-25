@@ -1,0 +1,8 @@
+// An edition after 2024, which elm-connect does not generate from.
+edition = "2025";
+
+package future.v1;
+
+message Note {
+  string title = 1;
+}

@@ -145,16 +145,19 @@ pub fn try_compile_case(case: &Path) -> Result<Compiled, protox::Error> {
     })
 }
 
-/// The `input::editions` problem the front ends report for `case`, whose
-/// input protox cannot parse because a file declares an edition other
-/// than 2023 (`edition = "2024";`), as the CLI reports it; `None` when
-/// the case compiles, or fails for another reason.
-pub fn unsupported_edition_case(case: &Path) -> Option<elm_connect_gen::diagnostics::Problem> {
+/// The problems the CLI reports for `case` in place of protox's errors,
+/// when protox refuses its input: `input::editions` for a file that
+/// declares an edition the parser does not know (`edition = "2025";`), or
+/// `input::naming_style` for the names of an edition 2024 file that break
+/// its naming style. `None` when the case compiles, or fails for another
+/// reason. protoc refuses both itself, so neither reaches the plugin.
+pub fn front_end_case(case: &Path) -> Option<elm_connect_gen::diagnostics::Diagnostics> {
     let error = try_compile_case(case).err()?;
-    if !error.is_parse() {
-        return None;
-    }
     let name = error.file()?;
     let source = fs::read_to_string(case.join("input").join(name)).ok()?;
-    elm_connect_gen::diagnostics::unsupported_edition(name, &source)
+    if error.is_parse() {
+        let problem = elm_connect_gen::diagnostics::unsupported_edition(name, &source)?;
+        return Some(problem.into());
+    }
+    elm_connect_gen::diagnostics::naming_style(&error, name, &source)
 }

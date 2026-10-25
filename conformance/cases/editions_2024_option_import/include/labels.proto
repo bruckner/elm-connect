@@ -1,0 +1,14 @@
+// A custom option, imported only for options.
+edition = "2024";
+
+package labels.v1;
+
+import "google/protobuf/descriptor.proto";
+
+message Label {
+  string text = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  string display = 50001;
+}

@@ -117,6 +117,9 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
         if let Some(report) = proto2_problem(&error, files, &includes) {
             return Err(report);
         }
+        if let Some(report) = naming_style_problems(&error, &includes) {
+            return Err(report);
+        }
         let error = match field_name_conflict(error, &includes) {
             Ok(report) => return Err(report),
             Err(error) => error,
@@ -291,9 +294,10 @@ fn field_name_conflict(
 }
 
 /// The `input::editions` problem for a parse `error` in a file that
-/// declares an edition other than 2023, which protox cannot parse: the
-/// file is found again on `includes` and its first statement read. `None`
-/// for any other error, an edition 2023 file's among them.
+/// declares an edition other than 2023 and 2024, which protox cannot
+/// parse: the file is found again on `includes` and its first statement
+/// read. `None` for any other error, an edition 2023 or 2024 file's among
+/// them.
 fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
     if !error.is_parse() {
         return None;
@@ -304,6 +308,23 @@ fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Repor
         .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
     let problem = unsupported_edition(name, &source)?;
     Some(report(problem, name, source))
+}
+
+/// The `input::naming_style` problems for protox's `error` when it refuses
+/// only names of an edition 2024 file that break its naming style, sited
+/// in the file, found again on `includes`. `None` for any other error.
+fn naming_style_problems(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
+    if error.is_parse() || error.is_io() || error.is_file_not_found() {
+        return None;
+    }
+    let name = error.file()?;
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
+    let mut diagnostics = elm_connect_gen::diagnostics::naming_style(error, name, &source)?;
+    let sources = HashMap::from([(name.to_owned(), source)]);
+    diagnostics.attach_sources(&sources, Columns::Bytes);
+    Some(Report::new(diagnostics))
 }
 
 /// The `input::not_proto3` problem for a parse `error` in one of `files`

@@ -1,0 +1,32 @@
+// Visibility decides which files may use a type, not what is generated:
+// every message and enum here is generated, local or exported.
+edition = "2024";
+
+package shapes.v1;
+
+import "palette.proto";
+
+// Exported by default: a top-level message.
+message Shape {
+  // Local by default: nested.
+  message Point {
+    int32 x = 1;
+    int32 y = 2;
+  }
+
+  // Nested, and exported.
+  export enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_CIRCLE = 1;
+  }
+
+  repeated Point points = 1;
+  Kind kind = 2;
+  shapes.v1.palette.Color color = 3;
+  Scratch scratch = 4;
+}
+
+// Local: only this file may use it.
+local message Scratch {
+  string note = 1;
+}

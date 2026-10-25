@@ -716,8 +716,8 @@ impl Builder {
         }
     }
 
-    /// Reports `file` if it is neither proto3 nor an edition 2023 file
-    /// whose features have an Elm form, or if its name holds a control
+    /// Reports `file` if it is neither proto3 nor an edition 2023 or 2024
+    /// file whose features have an Elm form, or if its name holds a control
     /// character, which the header of its package's module would carry.
     fn check_file(&mut self, file: &FileDescriptor) {
         if file.name().chars().any(char::is_control) {
@@ -729,7 +729,10 @@ impl Builder {
             return;
         }
         if file.syntax() == Syntax::Editions {
-            if file.edition() == Edition::Edition2023 {
+            // Edition 2024 adds no feature with an Elm form of its own: symbol
+            // visibility and the naming style are rules of the descriptor
+            // pool, and a client emits every type its file defines.
+            if matches!(file.edition(), Edition::Edition2023 | Edition::Edition2024) {
                 self.check_features(file);
             } else {
                 let edition = file.edition().to_string();

@@ -76,14 +76,15 @@ a second transport and a public interface designed to be kept.
 - Binary protobuf. JSON only. Users who need `application/proto` have
   the existing stack; binary codecs are on the roadmap, as a minor.
 - gRPC-web; unary gRPC-Web, over the binary codecs, is on the roadmap.
-- proto2 syntax, and editions after 2023. A proto2 file to generate is
+- proto2 syntax, and editions after 2024. A proto2 file to generate is
   `input::not_proto3`, under the CLI also when it does not parse, as a
   proto3 file with its `syntax` line changed does not, in place of the
-  parser's errors. An edition 2023 file is generated from (§3.10); a
-  file that declares any other edition (`edition = "2024";`) is
-  `input::editions`, which the CLI reports in place of protox's parse
-  error, and which protoc reports in its own words, since the plugin
-  claims `FEATURE_SUPPORTS_EDITIONS` for edition 2023 alone.
+  parser's errors. Edition 2023 and 2024 files are generated from
+  (§3.10); a file that declares any other edition (`edition =
+  "2025";`) is `input::editions`, which the CLI reports in place of
+  protox's parse error, and which protoc reports in its own words,
+  since the plugin claims `FEATURE_SUPPORTS_EDITIONS` for editions 2023
+  to 2024.
 - Server code generation.
 
 ## 2. The layering
@@ -1706,9 +1707,9 @@ registry =
   in a module per type).
 
 
-### 3.10 Edition 2023
+### 3.10 Editions 2023 and 2024
 
-An `edition = "2023";` file is generated as a proto3 file is, its
+An `edition = "2023";` or `edition = "2024";` file is generated as a proto3 file is, its
 features read where proto3 reads its syntax. The features are
 resolved by the descriptor library, protoc's way: the edition's
 defaults, then each `features` option from the file down to the
@@ -1747,6 +1748,24 @@ element.
   binary codecs, `repeated_field_encoding = EXPANDED` and closed enums.
   A file-wide `DELIMITED` does not reach a map's entries, which are
   length-prefixed.
+- **Edition 2024** has the same defaults for these features as 2023,
+  and adds no feature with an Elm form of its own (the
+  `editions_2024_proto3_equivalent` case is `codec_both`'s twin too).
+  Its symbol visibility (`export`, `local`,
+  `default_symbol_visibility`) is a rule of which files may use a type,
+  which the descriptor library enforces as protoc does; it does not
+  change what is generated, since a client generates every type its
+  files define (`editions_2024_visibility`, and a test that its modules
+  equal those of the same files without the modifiers). `import option`
+  makes another file's options usable without its types, and changes
+  nothing generated either (`editions_2024_option_import`). Names that
+  break the naming style its `enforce_naming_style` feature asks for
+  are refused: by the CLI as `input::naming_style`, one problem per
+  name, in place of the compiler's errors; by protoc and buf themselves
+  before the plugin runs (`editions_2024_naming`). The plugin's
+  descriptor pool does not check names again: protoc strips that
+  source-retention feature from the files it sends, so a file that
+  opted out would be refused.
 
 ## 4. Calls
 

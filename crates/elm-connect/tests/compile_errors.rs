@@ -85,13 +85,71 @@ fn an_edition_2023_file_generates() {
 }
 
 #[test]
+fn an_edition_2024_file_generates() {
+    let dir = inputs(
+        "cli-edition-2024",
+        &[
+            (
+                "edition.proto",
+                "edition = \"2024\";\npackage e.v1;\nimport option \"labels.proto\";\n\
+                 export message M { local message N {} N n = 1; string a = 2 [(l.v1.text) = \"A\"]; }\n",
+            ),
+            (
+                "labels.proto",
+                "edition = \"2024\";\npackage l.v1;\nimport \"google/protobuf/descriptor.proto\";\n\
+                 extend google.protobuf.FieldOptions { string text = 50001; }\n",
+            ),
+        ],
+    );
+    let generated = elm_connect::generate(
+        &[PathBuf::from("edition.proto")],
+        std::slice::from_ref(&dir),
+        false,
+        &elm_connect_gen::Options::default(),
+    )
+    .unwrap_or_else(|report| panic!("{}", render(&report)));
+    let paths: Vec<&str> = generated.files.iter().map(|f| f.path.as_str()).collect();
+    // The local nested message is generated with the rest; the option import's
+    // package is not.
+    assert_eq!(paths, ["E/V1.elm", "E/V1/M.elm", "E/V1/MN.elm"]);
+}
+
+#[test]
+fn edition_2024_names_that_break_the_style_get_a_code() {
+    let dir = inputs(
+        "cli-edition-2024-naming",
+        &[(
+            "naming.proto",
+            "edition = \"2024\";\npackage n.v1;\nmessage bad_name { int32 camelCase = 1; }\n",
+        )],
+    );
+    let report = elm_connect::compile(&[PathBuf::from("naming.proto")], std::slice::from_ref(&dir))
+        .expect_err("the names break the style");
+    let rendered = render(&report);
+    assert_eq!(
+        rendered.matches("input::naming_style").count(),
+        2,
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Message name bad_name should be TitleCase."),
+        "{rendered}"
+    );
+    assert!(rendered.contains("╭─[naming.proto:3:9]"), "{rendered}");
+    assert!(
+        rendered.contains("Field name camelCase should be lower_snake_case."),
+        "{rendered}"
+    );
+}
+
+#[test]
 fn a_later_edition_is_refused_in_elm_connects_words() {
     let dir = inputs(
         "cli-editions",
         &[
             (
                 "edition.proto",
-                "// A later edition.\nedition = \"2024\";\npackage e.v1;\nmessage M { string a = 1; }\n",
+                "// A later edition.\nedition = \"2025\";\npackage e.v1;\nmessage M { string a = 1; }\n",
             ),
             (
                 "importer.proto",
@@ -101,15 +159,15 @@ fn a_later_edition_is_refused_in_elm_connects_words() {
     );
     for file in ["edition.proto", "importer.proto"] {
         let report = elm_connect::compile(&[PathBuf::from(file)], std::slice::from_ref(&dir))
-            .expect_err("edition 2024 is not supported");
+            .expect_err("edition 2025 is not supported");
         let rendered = render(&report);
         assert!(rendered.contains("input::editions"), "{rendered}");
         assert!(
-            rendered.contains("The file `edition.proto` declares `edition = \"2024\"`"),
+            rendered.contains("The file `edition.proto` declares `edition = \"2025\"`"),
             "{rendered}"
         );
         assert!(rendered.contains("╭─[edition.proto:2:1]"), "{rendered}");
-        assert!(rendered.contains("`edition = \"2023\";`"), "{rendered}");
+        assert!(rendered.contains("`edition = \"2024\";`"), "{rendered}");
     }
 
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_elm-connect"))

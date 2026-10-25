@@ -79,7 +79,7 @@ const CHECK_EXAMPLES: &str = "Examples:
 #[derive(Args)]
 struct GenArgs {
     /// The .proto files to generate from, relative to an include directory:
-    /// proto3, or edition 2023 where its features have an Elm form.
+    /// proto3, or edition 2023 or 2024 where its features have an Elm form.
     #[arg(required = true)]
     files: Vec<PathBuf>,
     /// A directory to search for imports; repeatable. Defaults to `.`.

@@ -38,31 +38,30 @@ struct RawProtoFiles {
     proto_file: Vec<Vec<u8>>,
 }
 
-/// The one edition the plugin generates from, and so both the least and
-/// the greatest it claims.
-const EDITION: Edition = Edition::Edition2023;
+/// The least edition the plugin generates from, and claims.
+const MINIMUM_EDITION: Edition = Edition::Edition2023;
+/// The greatest edition the plugin generates from, and claims.
+const MAXIMUM_EDITION: Edition = Edition::Edition2024;
 
 /// An `input::editions` problem for every file of `request` that declares
-/// an edition other than 2023, which protoc sends only to a plugin that
-/// claims it, but another front end may.
+/// an edition other than 2023 and 2024, which protoc sends only to a
+/// plugin that claims it, but another front end may.
 fn editions(request: &CodeGeneratorRequest) -> Diagnostics {
     let mut diagnostics = Diagnostics::new();
     for file in &request.proto_file {
-        if file.syntax() != "editions" || file.edition() == EDITION {
+        if file.syntax() != "editions"
+            || matches!(file.edition(), Edition::Edition2023 | Edition::Edition2024)
+        {
             continue;
         }
         let name = file.name().to_owned();
-        let edition = match file.edition() {
-            Edition::Edition2024 => Some("2024"),
-            _ => None,
-        };
         let site = Site {
             file: name.clone(),
             span: None,
             label: "the edition".into(),
             within: Vec::new(),
         };
-        diagnostics.push(Problem::editions(&name, edition, site));
+        diagnostics.push(Problem::editions(&name, None, site));
     }
     diagnostics
 }
@@ -151,8 +150,8 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
                 supported_features: Some(
                     Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64,
                 ),
-                minimum_edition: Some(EDITION as i32),
-                maximum_edition: Some(EDITION as i32),
+                minimum_edition: Some(MINIMUM_EDITION as i32),
+                maximum_edition: Some(MAXIMUM_EDITION as i32),
                 file: Vec::new(),
             };
             return (response, String::new());
@@ -161,8 +160,8 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     let response = |error: Option<String>, file: Vec<File>| CodeGeneratorResponse {
         error,
         supported_features: Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64),
-        minimum_edition: Some(EDITION as i32),
-        maximum_edition: Some(EDITION as i32),
+        minimum_edition: Some(MINIMUM_EDITION as i32),
+        maximum_edition: Some(MAXIMUM_EDITION as i32),
         file,
     };
     let options = match Options::from_parameter(request.parameter()) {
@@ -355,7 +354,7 @@ mod tests {
             Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64)
         );
         assert_eq!(response.minimum_edition, Some(Edition::Edition2023 as i32));
-        assert_eq!(response.maximum_edition, Some(Edition::Edition2023 as i32));
+        assert_eq!(response.maximum_edition, Some(Edition::Edition2024 as i32));
         let [file, _, _] = response.file.as_slice() else {
             panic!(
                 "expected the package's module and two descriptor modules, got {:?}",
@@ -763,10 +762,21 @@ service Uploads {
     }
 
     #[test]
-    fn every_response_claims_edition_2023_alone() {
+    fn an_edition_2024_file_generates() {
+        let (response, warnings) = run(&editions_request(Edition::Edition2024));
+        assert_eq!(response.error, None);
+        assert_eq!(warnings, "");
+        assert_eq!(names(&response), ["E/V1.elm", "E/V1/M.elm"]);
+        let module = response.file[0].content.as_deref().expect("content");
+        assert!(module.contains("{ n : Maybe Int\n"), "{module}");
+    }
+
+    #[test]
+    fn every_response_claims_editions_2023_to_2024() {
         for (request, ok) in [
             (editions_request(Edition::Edition2023), true),
-            (editions_request(Edition::Edition2024), false),
+            (editions_request(Edition::Edition2024), true),
+            (editions_request(Edition::Edition99997TestOnly), false),
             (scalars_request().encode_to_vec(), true),
             (b"not a request".to_vec(), false),
         ] {
@@ -777,18 +787,18 @@ service Uploads {
                 Some(Feature::Proto3Optional as u64 | Feature::SupportsEditions as u64)
             );
             assert_eq!(response.minimum_edition, Some(Edition::Edition2023 as i32));
-            assert_eq!(response.maximum_edition, Some(Edition::Edition2023 as i32));
+            assert_eq!(response.maximum_edition, Some(Edition::Edition2024 as i32));
         }
     }
 
     #[test]
-    fn an_edition_2024_file_is_a_diagnostic_not_a_panic() {
-        let (response, warnings) = run(&editions_request(Edition::Edition2024));
+    fn a_later_edition_is_a_diagnostic_not_a_panic() {
+        let (response, warnings) = run(&editions_request(Edition::Edition99997TestOnly));
         let error = response.error.expect("an error");
         assert!(error.starts_with("input::editions\n"), "{error}");
         assert!(error.contains("`ed.proto`"), "{error}");
-        assert!(error.contains("`edition = \"2024\"`"), "{error}");
-        assert!(error.contains("edition = \"2023\";"), "{error}");
+        assert!(error.contains("declares an edition elm-connect"), "{error}");
+        assert!(error.contains("edition = \"2024\";"), "{error}");
         assert!(response.file.is_empty());
         assert_eq!(warnings, "");
     }

@@ -1,0 +1,15 @@
+// Everything here is local unless exported.
+edition = "2024";
+
+package shapes.v1.palette;
+
+option features.default_symbol_visibility = STRICT;
+
+export enum Color {
+  COLOR_UNSPECIFIED = 0;
+  COLOR_RED = 1;
+}
+
+message Swatch {
+  Color color = 1;
+}

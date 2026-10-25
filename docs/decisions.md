@@ -892,6 +892,24 @@ LEGACY_BEST_EFFORT` are `input::unsupported_feature` or
 `input::extensions`; under the binary codecs so are `EXPANDED`
 repeated fields and closed enums. Where: design §1.3, §3.10.
 
+### Edition 2024 generated as edition 2023 is
+
+*2026-10-25.*
+
+An edition 2024 file is generated from as an edition 2023 file is:
+the edition keeps 2023's defaults for every feature with an Elm form.
+`export` and `local` decide which files may use a type, and the
+descriptor library enforces that as protoc does; a client generates
+every type its files define, so visibility changes no output (a local
+type keeps its module). `import option` makes another file's custom
+options usable and nothing else, so it changes no output either. Names
+that break the naming style (`enforce_naming_style = STYLE2024`, the
+edition's default) are `input::naming_style` under the CLI, in
+protoc's words; protoc and buf refuse them before the plugin runs, and
+the plugin's pool does not check names again, since protoc strips
+that source-retention feature from what it sends. Where: design §1.3,
+§3.10.
+
 ### One version, in lockstep, and a strict sentinel
 
 *2026-10-16.*

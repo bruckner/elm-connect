@@ -194,3 +194,43 @@ The fork's naming and visibility messages are protoc's texts (one doubled space 
 quoting of the feature value tidied); the rest keep the fork's wording. Run 1's three
 differences (`implicit_default`, `map_closed_enum_nonzero`, `json_name_conflict`) are unchanged.
 The 2023 corpus still shows 0 and 0 against both references.
+
+### Run 3: the plugin on edition 2024
+
+`spike/run-plugin-oracle.sh` now also passes a case's `include/` (as `-I` to the CLI and
+protoc; to buf as module files, generating only the input with `--path`). Result:
+
+```
+editions_2023_proto3_equivalent	20 modules	protoc=same buf=same expected=same 
+editions_2024_naming	diagnostics	expected= 6 input::naming_style;	cli= 6 input::naming_style;	protoc=	buf=
+  protoc says: naming.proto:6:9: Message name user_profile should be TitleCase (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+  buf says: naming.proto:6:9:message type name should be PascalCase
+editions_2024_option_import	2 modules	protoc=same buf=DIFFERS expected=same 
+editions_2024_proto3_equivalent	20 modules	protoc=same buf=same expected=same 
+editions_2024_visibility	8 modules	protoc=same buf=same expected=same 
+editions_closed_enum	8 modules	protoc=same buf=same expected=same 
+editions_defaults	3 modules	protoc=same buf=same expected=same 
+editions_presence	5 modules	protoc=same buf=same expected=same 
+editions_required	4 modules	protoc=same buf=same expected=same 
+editions_unknown	diagnostics	expected= 1 input::editions;	cli= 1 input::editions;	protoc=	buf=
+  protoc says: future.proto:2:11: Unknown edition "2025".
+  buf says: future.proto:2:11:unrecognized `edition` declaration value
+editions_unsupported	diagnostics	expected= 2 input::extensions; 7 input::unsupported_feature;	cli= 2 input::extensions; 7 input::unsupported_feature;	protoc= 2 input::extensions; 7 input::unsupported_feature;	buf= 2 input::extensions; 7 input::unsupported_feature;
+  protoc says: --elm-connect_out: input::unsupported_feature
+  buf says: Failure: plugin <root>/target/debug/protoc-gen-elm-connect: input::extensions
+codec_both	20 modules	protoc=same buf=same expected=same 
+```
+
+Every edition 2024 modules case but one: the CLI, protoc and buf write the same files, equal
+to the expected modules; both twins equal `codec_both`. `editions_2024_option_import` under
+buf differs in one line: buf 1.73.0 does not send a plugin the file named by `import option`
+(the request's `forms.proto` lists it in `option_dependency`, but `proto_file` lacks it), so
+the plugin cannot name the custom option, and the field's one-line declaration in its doc
+comment leaves `[(labels.v1.display) = "Title"]` out; the generated code is otherwise the same.
+protoc sends the file, and matches the CLI. The first run of this case failed outright under
+buf ("imported file 'labels.proto' has not been added"): prost-reflect now leaves out a missing
+option dependency, as protoc's descriptor pool does, rather than refusing the file.
+
+On `editions_2024_naming` and `editions_unknown`, protoc and buf refuse the file themselves,
+before the plugin runs (their first lines above), and the CLI reports `input::naming_style`
+and `input::editions` in their place. The plugin's own corpus replay skips those two cases.
