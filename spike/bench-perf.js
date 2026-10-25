@@ -43,8 +43,9 @@ async function checksum(program, task, n) {
 const allTasks = [
   'check',
   'request.connect.say', 'request.connect.note', 'request.connect.headers', 'request.connectGet.say',
-  'request.transcode.get', 'request.transcode.list', 'request.transcode.create',
-  'send.connect.say', 'send.connect.note', 'send.transcode.create', 'encode.say', 'encode.createNote',
+  'request.transcode.get', 'request.transcode.list', 'request.transcode.create', 'request.connect.tags1000',
+  'send.connect.say', 'send.connect.headers', 'send.connectGet.say', 'send.connect.note', 'send.connect.tags1000',
+  'send.transcode.create', 'encode.say', 'encode.createNote', 'encode.tags1000',
   'answer.ok.say', 'answer.ok.note', 'answer.ok.note.transcode', 'answer.connectError',
   'answer.connectErrorDetails', 'answer.statusError', 'answer.grpcError', 'answer.httpError',
   'error.toString', 'headers.splitTrailers',

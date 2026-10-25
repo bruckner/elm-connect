@@ -88,6 +88,7 @@ import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Trace
+import Rpc.Internal.Transport
 import Rpc.Internal.Wire
 import Rpc.Request
 import Rpc.Response
@@ -566,8 +567,15 @@ unsendable cfg c sent =
                 Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
 
             ( Nothing, Nothing ) ->
-                Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
-                    |> Maybe.map Rpc.Error.NoAnswer
+                -- The message is encoded again only to measure it, so only
+                -- when the transport has a limit to measure it against.
+                case Rpc.Internal.Transport.writeMaxBytes cfg.transport of
+                    Just _ ->
+                        Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
+                            |> Maybe.map Rpc.Error.NoAnswer
+
+                    Nothing ->
+                        Nothing
 
 
 {-| The code a failed attempt is retried by, or `Nothing` when trying again

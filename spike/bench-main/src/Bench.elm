@@ -116,6 +116,13 @@ createNote =
     Notes.createNote { note = Just note }
 
 
+{-| A note of 1,000 tags, about 12 KB of JSON: how the request path scales.
+-}
+bigNote : Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+bigNote =
+    Notes.createNote { note = Just { note | tags = List.map (\i -> "tag-" ++ String.fromInt i) (List.range 1 1000) } }
+
+
 getNote : Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Notes.getNote { name = "notes/42" }
@@ -422,11 +429,16 @@ tasks =
         , ( "request.transcode.get", \_ -> requestSize (Rpc.request transcodeCfg getNote) )
         , ( "request.transcode.list", \_ -> requestSize (Rpc.request transcodeCfg listNotes) )
         , ( "request.transcode.create", \_ -> requestSize (Rpc.request transcodeCfg createNote) )
+        , ( "request.connect.tags1000", \_ -> requestSize (Rpc.request connectCfg bigNote) )
         , ( "send.connect.say", \_ -> always 1 (Rpc.send connectCfg (ignore ()) say) )
+        , ( "send.connect.headers", \_ -> always 1 (Rpc.send headersCfg (ignore ()) sayWithHeaders) )
+        , ( "send.connectGet.say", \_ -> always 1 (Rpc.send getCfg (ignore ()) say) )
+        , ( "send.connect.tags1000", \_ -> always 1 (Rpc.send connectCfg (ignore ()) bigNote) )
         , ( "send.connect.note", \_ -> always 1 (Rpc.send connectCfg (ignore ()) createNote) )
         , ( "send.transcode.create", \_ -> always 1 (Rpc.send transcodeCfg (ignore ()) createNote) )
         , ( "encode.say", \_ -> encoded (Rpc.Call.requestJson say) )
         , ( "encode.createNote", \_ -> encoded (Rpc.Call.requestJson createNote) )
+        , ( "encode.tags1000", \_ -> encoded (Rpc.Call.requestJson bigNote) )
 
         -- the answer path
         , ( "answer.ok.say", \_ -> resultSize (Rpc.response connectCfg say sayAnswer) )

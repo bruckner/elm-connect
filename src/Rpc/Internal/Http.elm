@@ -275,29 +275,12 @@ tchar char =
 
 {-| Whether a browser accepts a header value: after the spaces and tabs at
 either end, which it trims, no NUL, CR or LF, and no character above U+00FF
-(XHR's values are byte strings).
+(XHR's values are byte strings). A space and a tab are such characters
+themselves, so the whole value is checked as it is, in one pass.
 -}
 validHeaderValue : String -> Bool
 validHeaderValue value =
-    String.toList value
-        |> dropWhitespace
-        |> List.reverse
-        |> dropWhitespace
-        |> List.all byteChar
-
-
-dropWhitespace : List Char -> List Char
-dropWhitespace chars =
-    case chars of
-        char :: rest ->
-            if char == ' ' || char == '\t' then
-                dropWhitespace rest
-
-            else
-                chars
-
-        [] ->
-            []
+    String.all byteChar value
 
 
 {-| A character a header value can hold: up to U+00FF, but NUL, LF and CR. A
