@@ -1,0 +1,493 @@
+---
+source: protox-parse/src/tests.rs
+expression: "FileDescriptorProto { source_code_info: None, ..file }"
+---
+FileDescriptorProto {
+    name: Some(
+        "test.proto",
+    ),
+    package: Some(
+        "editions",
+    ),
+    dependency: [],
+    public_dependency: [],
+    weak_dependency: [],
+    message_type: [
+        DescriptorProto {
+            name: Some(
+                "Message",
+            ),
+            field: [
+                FieldDescriptorProto {
+                    name: Some(
+                        "implicit",
+                    ),
+                    number: Some(
+                        1,
+                    ),
+                    label: Some(
+                        Optional,
+                    ),
+                    r#type: Some(
+                        Int32,
+                    ),
+                    type_name: None,
+                    extendee: None,
+                    default_value: None,
+                    oneof_index: None,
+                    json_name: None,
+                    options: None,
+                    proto3_optional: None,
+                },
+                FieldDescriptorProto {
+                    name: Some(
+                        "explicit",
+                    ),
+                    number: Some(
+                        2,
+                    ),
+                    label: Some(
+                        Optional,
+                    ),
+                    r#type: Some(
+                        Int32,
+                    ),
+                    type_name: None,
+                    extendee: None,
+                    default_value: Some(
+                        "3",
+                    ),
+                    oneof_index: None,
+                    json_name: None,
+                    options: Some(
+                        FieldOptions {
+                            ctype: None,
+                            packed: None,
+                            jstype: None,
+                            lazy: None,
+                            deprecated: None,
+                            weak: None,
+                            uninterpreted_option: [
+                                UninterpretedOption {
+                                    name: [
+                                        NamePart {
+                                            name_part: "features",
+                                            is_extension: false,
+                                        },
+                                        NamePart {
+                                            name_part: "field_presence",
+                                            is_extension: false,
+                                        },
+                                    ],
+                                    identifier_value: Some(
+                                        "EXPLICIT",
+                                    ),
+                                    positive_int_value: None,
+                                    negative_int_value: None,
+                                    double_value: None,
+                                    string_value: None,
+                                    aggregate_value: None,
+                                },
+                            ],
+                        },
+                    ),
+                    proto3_optional: None,
+                },
+                FieldDescriptorProto {
+                    name: Some(
+                        "values",
+                    ),
+                    number: Some(
+                        3,
+                    ),
+                    label: Some(
+                        Repeated,
+                    ),
+                    r#type: Some(
+                        Int32,
+                    ),
+                    type_name: None,
+                    extendee: None,
+                    default_value: None,
+                    oneof_index: None,
+                    json_name: None,
+                    options: None,
+                    proto3_optional: None,
+                },
+                FieldDescriptorProto {
+                    name: Some(
+                        "map",
+                    ),
+                    number: Some(
+                        4,
+                    ),
+                    label: Some(
+                        Repeated,
+                    ),
+                    r#type: Some(
+                        Message,
+                    ),
+                    type_name: Some(
+                        "MapEntry",
+                    ),
+                    extendee: None,
+                    default_value: None,
+                    oneof_index: None,
+                    json_name: None,
+                    options: Some(
+                        FieldOptions {
+                            ctype: None,
+                            packed: None,
+                            jstype: None,
+                            lazy: None,
+                            deprecated: None,
+                            weak: None,
+                            uninterpreted_option: [
+                                UninterpretedOption {
+                                    name: [
+                                        NamePart {
+                                            name_part: "features",
+                                            is_extension: false,
+                                        },
+                                        NamePart {
+                                            name_part: "utf8_validation",
+                                            is_extension: false,
+                                        },
+                                    ],
+                                    identifier_value: Some(
+                                        "NONE",
+                                    ),
+                                    positive_int_value: None,
+                                    negative_int_value: None,
+                                    double_value: None,
+                                    string_value: None,
+                                    aggregate_value: None,
+                                },
+                            ],
+                        },
+                    ),
+                    proto3_optional: None,
+                },
+                FieldDescriptorProto {
+                    name: Some(
+                        "delimited",
+                    ),
+                    number: Some(
+                        5,
+                    ),
+                    label: Some(
+                        Optional,
+                    ),
+                    r#type: None,
+                    type_name: Some(
+                        "Message",
+                    ),
+                    extendee: None,
+                    default_value: None,
+                    oneof_index: None,
+                    json_name: None,
+                    options: Some(
+                        FieldOptions {
+                            ctype: None,
+                            packed: None,
+                            jstype: None,
+                            lazy: None,
+                            deprecated: None,
+                            weak: None,
+                            uninterpreted_option: [
+                                UninterpretedOption {
+                                    name: [
+                                        NamePart {
+                                            name_part: "features",
+                                            is_extension: false,
+                                        },
+                                        NamePart {
+                                            name_part: "message_encoding",
+                                            is_extension: false,
+                                        },
+                                    ],
+                                    identifier_value: Some(
+                                        "DELIMITED",
+                                    ),
+                                    positive_int_value: None,
+                                    negative_int_value: None,
+                                    double_value: None,
+                                    string_value: None,
+                                    aggregate_value: None,
+                                },
+                            ],
+                        },
+                    ),
+                    proto3_optional: None,
+                },
+                FieldDescriptorProto {
+                    name: Some(
+                        "text",
+                    ),
+                    number: Some(
+                        6,
+                    ),
+                    label: Some(
+                        Optional,
+                    ),
+                    r#type: Some(
+                        String,
+                    ),
+                    type_name: None,
+                    extendee: None,
+                    default_value: None,
+                    oneof_index: Some(
+                        0,
+                    ),
+                    json_name: None,
+                    options: None,
+                    proto3_optional: None,
+                },
+            ],
+            extension: [],
+            nested_type: [
+                DescriptorProto {
+                    name: Some(
+                        "MapEntry",
+                    ),
+                    field: [
+                        FieldDescriptorProto {
+                            name: Some(
+                                "key",
+                            ),
+                            number: Some(
+                                1,
+                            ),
+                            label: Some(
+                                Optional,
+                            ),
+                            r#type: Some(
+                                String,
+                            ),
+                            type_name: None,
+                            extendee: None,
+                            default_value: None,
+                            oneof_index: None,
+                            json_name: Some(
+                                "key",
+                            ),
+                            options: Some(
+                                FieldOptions {
+                                    ctype: None,
+                                    packed: None,
+                                    jstype: None,
+                                    lazy: None,
+                                    deprecated: None,
+                                    weak: None,
+                                    uninterpreted_option: [
+                                        UninterpretedOption {
+                                            name: [
+                                                NamePart {
+                                                    name_part: "features",
+                                                    is_extension: false,
+                                                },
+                                                NamePart {
+                                                    name_part: "utf8_validation",
+                                                    is_extension: false,
+                                                },
+                                            ],
+                                            identifier_value: Some(
+                                                "NONE",
+                                            ),
+                                            positive_int_value: None,
+                                            negative_int_value: None,
+                                            double_value: None,
+                                            string_value: None,
+                                            aggregate_value: None,
+                                        },
+                                    ],
+                                },
+                            ),
+                            proto3_optional: None,
+                        },
+                        FieldDescriptorProto {
+                            name: Some(
+                                "value",
+                            ),
+                            number: Some(
+                                2,
+                            ),
+                            label: Some(
+                                Optional,
+                            ),
+                            r#type: None,
+                            type_name: Some(
+                                "Message",
+                            ),
+                            extendee: None,
+                            default_value: None,
+                            oneof_index: None,
+                            json_name: Some(
+                                "value",
+                            ),
+                            options: Some(
+                                FieldOptions {
+                                    ctype: None,
+                                    packed: None,
+                                    jstype: None,
+                                    lazy: None,
+                                    deprecated: None,
+                                    weak: None,
+                                    uninterpreted_option: [
+                                        UninterpretedOption {
+                                            name: [
+                                                NamePart {
+                                                    name_part: "features",
+                                                    is_extension: false,
+                                                },
+                                                NamePart {
+                                                    name_part: "utf8_validation",
+                                                    is_extension: false,
+                                                },
+                                            ],
+                                            identifier_value: Some(
+                                                "NONE",
+                                            ),
+                                            positive_int_value: None,
+                                            negative_int_value: None,
+                                            double_value: None,
+                                            string_value: None,
+                                            aggregate_value: None,
+                                        },
+                                    ],
+                                },
+                            ),
+                            proto3_optional: None,
+                        },
+                    ],
+                    extension: [],
+                    nested_type: [],
+                    enum_type: [],
+                    extension_range: [],
+                    oneof_decl: [],
+                    options: Some(
+                        MessageOptions {
+                            message_set_wire_format: None,
+                            no_standard_descriptor_accessor: None,
+                            deprecated: None,
+                            map_entry: Some(
+                                true,
+                            ),
+                            uninterpreted_option: [],
+                        },
+                    ),
+                    reserved_range: [],
+                    reserved_name: [],
+                },
+            ],
+            enum_type: [],
+            extension_range: [],
+            oneof_decl: [
+                OneofDescriptorProto {
+                    name: Some(
+                        "choice",
+                    ),
+                    options: None,
+                },
+            ],
+            options: None,
+            reserved_range: [
+                ReservedRange {
+                    start: Some(
+                        7,
+                    ),
+                    end: Some(
+                        8,
+                    ),
+                },
+                ReservedRange {
+                    start: Some(
+                        9,
+                    ),
+                    end: Some(
+                        11,
+                    ),
+                },
+            ],
+            reserved_name: [
+                "removed",
+                "gone",
+            ],
+        },
+    ],
+    enum_type: [
+        EnumDescriptorProto {
+            name: Some(
+                "Enum",
+            ),
+            value: [
+                EnumValueDescriptorProto {
+                    name: Some(
+                        "ZERO",
+                    ),
+                    number: Some(
+                        0,
+                    ),
+                    options: None,
+                },
+            ],
+            options: None,
+            reserved_range: [],
+            reserved_name: [
+                "RETIRED",
+            ],
+        },
+    ],
+    service: [],
+    extension: [],
+    options: Some(
+        FileOptions {
+            java_package: None,
+            java_outer_classname: None,
+            java_multiple_files: None,
+            java_generate_equals_and_hash: None,
+            java_string_check_utf8: None,
+            optimize_for: None,
+            go_package: None,
+            cc_generic_services: None,
+            java_generic_services: None,
+            py_generic_services: None,
+            php_generic_services: None,
+            deprecated: None,
+            cc_enable_arenas: None,
+            objc_class_prefix: None,
+            csharp_namespace: None,
+            swift_prefix: None,
+            php_class_prefix: None,
+            php_namespace: None,
+            php_metadata_namespace: None,
+            ruby_package: None,
+            uninterpreted_option: [
+                UninterpretedOption {
+                    name: [
+                        NamePart {
+                            name_part: "features",
+                            is_extension: false,
+                        },
+                        NamePart {
+                            name_part: "field_presence",
+                            is_extension: false,
+                        },
+                    ],
+                    identifier_value: Some(
+                        "IMPLICIT",
+                    ),
+                    positive_int_value: None,
+                    negative_int_value: None,
+                    double_value: None,
+                    string_value: None,
+                    aggregate_value: None,
+                },
+            ],
+        },
+    ),
+    source_code_info: None,
+    syntax: Some(
+        "editions",
+    ),
+}

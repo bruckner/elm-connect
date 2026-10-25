@@ -767,3 +767,140 @@ fn options() {
         }]),
     );
 }
+
+#[test]
+fn editions_file() {
+    let source = r#"
+        edition = "2023";
+
+        package editions;
+
+        option features.field_presence = IMPLICIT;
+
+        message Message {
+            int32 implicit = 1;
+            int32 explicit = 2 [features.field_presence = EXPLICIT, default = 3];
+            repeated int32 values = 3;
+            map<string, Message> map = 4 [features.utf8_validation = NONE];
+            Message delimited = 5 [features.message_encoding = DELIMITED];
+            oneof choice {
+                string text = 6;
+            }
+            reserved 7, 9 to 10;
+            reserved removed, gone;
+        }
+
+        enum Enum {
+            reserved RETIRED;
+            ZERO = 0;
+        }
+    "#;
+    let (file, edition) = crate::parse_with_edition("test.proto", source).unwrap();
+    assert_eq!(edition, Some(1000));
+    assert_eq!(file.syntax(), "editions");
+    // No synthetic oneofs or proto3_optional in editions; defaults are allowed; the map entry's
+    // fields carry the map field's features.
+    assert_debug_snapshot!(FileDescriptorProto {
+        source_code_info: None,
+        ..file
+    });
+}
+
+#[test]
+fn editions_parse_drops_edition() {
+    let file = parse("edition = '2023';").unwrap();
+    assert_eq!(file.syntax(), "editions");
+}
+
+#[test]
+fn editions_unknown_edition() {
+    assert_eq!(
+        parse("edition = '2024';"),
+        Err(vec![UnknownEdition {
+            edition: "2024".to_owned(),
+            span: 10..16,
+        }]),
+    );
+    assert_eq!(
+        parse("edition = 'proto3';"),
+        Err(vec![UnknownEdition {
+            edition: "proto3".to_owned(),
+            span: 10..18,
+        }]),
+    );
+}
+
+#[test]
+fn editions_field_label() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2023";
+
+            message Message {
+                optional int32 foo = 1;
+                required int32 bar = 2;
+            }
+            "#
+        ),
+        Err(vec![
+            EditionsFieldLabel {
+                label: "optional",
+                help: "fields have explicit presence by default; the option \
+                       'features.field_presence' changes it",
+                span: 78..86,
+            },
+            EditionsFieldLabel {
+                label: "required",
+                help: "use the option 'features.field_presence = LEGACY_REQUIRED'",
+                span: 118..126,
+            },
+        ]),
+    );
+}
+
+#[test]
+fn editions_group_field() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2023";
+
+            message Message {
+                repeated group Foo = 1 {};
+            }
+            "#
+        ),
+        Err(vec![EditionsGroupField { span: 78..103 }]),
+    );
+}
+
+#[test]
+fn editions_reserved_names() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2023";
+
+            message Message {
+                reserved "foo";
+            }
+            "#
+        ),
+        Err(vec![EditionsReservedNameString { span: 87..92 }]),
+    );
+    assert_eq!(
+        parse(
+            r#"
+            syntax = "proto3";
+
+            message Message {
+                reserved foo;
+            }
+            "#
+        )
+        .unwrap_err()
+        .len(),
+        1,
+    );
+}

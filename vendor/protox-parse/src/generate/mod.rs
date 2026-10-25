@@ -16,11 +16,17 @@ use crate::{
 mod lines;
 
 /// Convert the AST to a FileDescriptorProto, performing basic checks and generate group and map messages, and synthetic oneofs.
+///
+/// The file's edition is returned beside it, since `FileDescriptorProto` has no field for it.
 pub(crate) fn generate_file(
     ast: ast::File,
     name: &str,
     source: &str,
-) -> Result<FileDescriptorProto, Vec<ParseErrorKind>> {
+) -> Result<(FileDescriptorProto, Option<i32>), Vec<ParseErrorKind>> {
+    let edition = match ast.syntax {
+        ast::Syntax::Editions(edition) => Some(edition),
+        ast::Syntax::Proto2 | ast::Syntax::Proto3 => None,
+    };
     let mut ctx = Context {
         syntax: ast.syntax,
         errors: vec![],
@@ -34,12 +40,15 @@ pub(crate) fn generate_file(
     if ctx.errors.is_empty() {
         ctx.locations.sort_unstable_by(|l, r| l.path.cmp(&r.path));
 
-        Ok(FileDescriptorProto {
-            source_code_info: Some(SourceCodeInfo {
-                location: ctx.locations,
-            }),
-            ..file
-        })
+        Ok((
+            FileDescriptorProto {
+                source_code_info: Some(SourceCodeInfo {
+                    location: ctx.locations,
+                }),
+                ..file
+            },
+            edition,
+        ))
     } else {
         Err(ctx.errors)
     }
@@ -346,7 +355,7 @@ impl Context {
         self.add_span_for(&[tag::field::NUMBER], ast.number.span.clone());
         let number = self.generate_message_number(ast.number.clone());
 
-        let (proto3_optional, oneof_index) = if self.syntax != ast::Syntax::Proto2
+        let (proto3_optional, oneof_index) = if self.syntax == ast::Syntax::Proto3
             && matches!(ast.label, Some((ast::FieldLabel::Optional, _)))
         {
             if let Some(oneof_tag) = oneof_tag {
@@ -384,7 +393,7 @@ impl Context {
                     kind: "repeated",
                     span,
                 });
-            } else if self.syntax != ast::Syntax::Proto2 {
+            } else if self.syntax == ast::Syntax::Proto3 {
                 self.errors
                     .push(ParseErrorKind::Proto3DefaultValue { span });
             }
@@ -395,6 +404,7 @@ impl Context {
         let type_name;
         let label;
         let mut default_value = None;
+        let mut map_entry = None;
         match ast.kind {
             ast::FieldKind::Normal {
                 ty: ast::Ty::Named(ty),
@@ -432,10 +442,16 @@ impl Context {
                 r#type = Some(field_descriptor_proto::Type::Group);
                 type_name = Some(ast.name.value);
 
-                if self.syntax != ast::Syntax::Proto2 {
-                    self.errors.push(ParseErrorKind::Proto3GroupField {
+                match self.syntax {
+                    ast::Syntax::Proto2 => (),
+                    ast::Syntax::Proto3 => self.errors.push(ParseErrorKind::Proto3GroupField {
                         span: ast.span.clone(),
-                    });
+                    }),
+                    ast::Syntax::Editions(_) => {
+                        self.errors.push(ParseErrorKind::EditionsGroupField {
+                            span: ast.span.clone(),
+                        })
+                    }
                 }
 
                 if let Some(o) = default_value_option {
@@ -542,6 +558,7 @@ impl Context {
                     }),
                     ..Default::default()
                 });
+                map_entry = Some(messages.len() - 1);
             }
         }
 
@@ -556,6 +573,28 @@ impl Context {
         self.path.push(tag::field::OPTIONS);
         let options = self.generate_options_list(ast.options);
         self.pop_path(3);
+
+        // As protoc does, a map field's features also apply to its entry's key and value, so
+        // that their resolved features need no special case for maps.
+        if let (Some(entry), Some(options)) = (map_entry, &options) {
+            let features: Vec<_> = options
+                .iter()
+                .filter(|o| {
+                    o.name
+                        .first()
+                        .is_some_and(|n| n.name_part == "features" && !n.is_extension)
+                })
+                .cloned()
+                .collect();
+            if !features.is_empty() {
+                for field in &mut messages[entry].field {
+                    field.options = Some(FieldOptions {
+                        uninterpreted_option: features.clone(),
+                        ..Default::default()
+                    });
+                }
+            }
+        }
 
         FieldDescriptorProto {
             name: Some(name),
@@ -590,6 +629,27 @@ impl Context {
             (FieldScope::Oneof, Some((_, span))) => {
                 self.errors
                     .push(ParseErrorKind::OneofFieldWithLabel { span });
+                None
+            }
+            (_, Some((ast::FieldLabel::Optional, span)))
+                if matches!(self.syntax, ast::Syntax::Editions(_)) =>
+            {
+                self.errors.push(ParseErrorKind::EditionsFieldLabel {
+                    label: "optional",
+                    help: "fields have explicit presence by default; the option \
+                           'features.field_presence' changes it",
+                    span,
+                });
+                None
+            }
+            (_, Some((ast::FieldLabel::Required, span)))
+                if matches!(self.syntax, ast::Syntax::Editions(_)) =>
+            {
+                self.errors.push(ParseErrorKind::EditionsFieldLabel {
+                    label: "required",
+                    help: "use the option 'features.field_presence = LEGACY_REQUIRED'",
+                    span,
+                });
                 None
             }
             (FieldScope::Message | FieldScope::Extend, None)

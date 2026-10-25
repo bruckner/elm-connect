@@ -81,6 +81,7 @@ impl Eq for EqFloat {}
 
 impl Token<'_> {
     pub const SYNTAX: Token<'static> = Token::Ident("syntax");
+    pub const EDITION: Token<'static> = Token::Ident("edition");
     pub const PACKAGE: Token<'static> = Token::Ident("package");
     pub const IMPORT: Token<'static> = Token::Ident("import");
     pub const WEAK: Token<'static> = Token::Ident("weak");

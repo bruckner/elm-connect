@@ -13,6 +13,8 @@ pub(crate) enum Syntax {
     #[default]
     Proto2,
     Proto3,
+    /// An `edition` statement, with the edition's `google.protobuf.Edition` number.
+    Editions(i32),
 }
 
 #[derive(Default, Clone, Debug, PartialEq)]
@@ -548,6 +550,7 @@ impl fmt::Display for Syntax {
         match self {
             Syntax::Proto2 => write!(f, "proto2"),
             Syntax::Proto3 => write!(f, "proto3"),
+            Syntax::Editions(_) => write!(f, "editions"),
         }
     }
 }

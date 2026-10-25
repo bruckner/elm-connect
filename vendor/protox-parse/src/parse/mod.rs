@@ -13,6 +13,7 @@ use crate::{
     error::ParseErrorKind,
     join_span,
     lex::{EqFloat, Token},
+    EDITION_2023,
 };
 
 mod comments;
@@ -37,6 +38,7 @@ struct Parser<'a> {
     peek: Option<Result<(Token<'a>, Span), ()>>,
     comments: Comments,
     message_depth: u32,
+    syntax: ast::Syntax,
 }
 
 #[derive(Debug, Clone)]
@@ -63,6 +65,7 @@ impl<'a> Parser<'a> {
             comments: Comments::new(),
             peek: None,
             message_depth: 0,
+            syntax: ast::Syntax::default(),
         }
     }
 
@@ -72,11 +75,12 @@ impl<'a> Parser<'a> {
         let mut syntax = ast::Syntax::default();
         let mut syntax_span = None;
         match self.peek()? {
-            Some((Token::SYNTAX, _)) => {
+            Some((Token::SYNTAX | Token::EDITION, _)) => {
                 let (parsed_syntax, span, comments) = self.parse_syntax()?;
                 file_span = span.clone();
                 syntax = parsed_syntax;
                 syntax_span = Some((span, comments));
+                self.syntax = syntax;
             }
             Some((_, span)) => {
                 file_span = span;
@@ -140,13 +144,28 @@ impl<'a> Parser<'a> {
         })
     }
 
+    /// Parses a `syntax` or `edition` statement.
     fn parse_syntax(&mut self) -> Result<(ast::Syntax, Span, ast::Comments), ()> {
         let leading_comments = self.parse_leading_comments();
 
-        let start = self.expect_eq(Token::SYNTAX)?;
+        let is_edition = matches!(self.peek()?, Some((Token::EDITION, _)));
+        let start = self.bump();
         self.expect_eq(Token::Equals)?;
 
         let syntax = match self.peek()? {
+            Some((Token::StringLiteral(_), _)) if is_edition => {
+                let value = self.parse_string()?;
+                match value.value.as_slice() {
+                    b"2023" => ast::Syntax::Editions(EDITION_2023),
+                    bytes => {
+                        self.add_error(ParseErrorKind::UnknownEdition {
+                            edition: String::from_utf8_lossy(bytes).into_owned(),
+                            span: value.span.clone(),
+                        });
+                        return Err(());
+                    }
+                }
+            }
             Some((Token::StringLiteral(_), _)) => {
                 let value = self.parse_string()?;
                 match value.value.as_slice() {
@@ -763,14 +782,33 @@ impl<'a> Parser<'a> {
                     span: join_span(start, end),
                 })
             }
+            Some((Token::StringLiteral(_), span))
+                if matches!(self.syntax, ast::Syntax::Editions(_)) =>
+            {
+                self.add_error(ParseErrorKind::EditionsReservedNameString { span });
+                Err(())
+            }
             Some((Token::StringLiteral(_), _)) => {
-                let (names, end) = self.parse_reserved_names()?;
+                let (names, end) = self.parse_reserved_names(Self::parse_ident_string)?;
                 let comments = self.parse_trailing_comment(leading_comments);
                 Ok(ast::Reserved {
                     kind: ast::ReservedKind::Names(names),
                     comments,
                     span: join_span(start, end),
                 })
+            }
+            // Editions reserve names as identifiers rather than strings.
+            Some((Token::Ident(_), _)) if matches!(self.syntax, ast::Syntax::Editions(_)) => {
+                let (names, end) = self.parse_reserved_names(Self::parse_ident)?;
+                let comments = self.parse_trailing_comment(leading_comments);
+                Ok(ast::Reserved {
+                    kind: ast::ReservedKind::Names(names),
+                    comments,
+                    span: join_span(start, end),
+                })
+            }
+            _ if matches!(self.syntax, ast::Syntax::Editions(_)) => {
+                self.unexpected_token("a positive integer or identifier")
             }
             _ => self.unexpected_token("a positive integer or string"),
         }
@@ -801,14 +839,17 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_reserved_names(&mut self) -> Result<(Vec<ast::Ident>, Span), ()> {
-        let mut names = vec![self.parse_ident_string()?];
+    fn parse_reserved_names(
+        &mut self,
+        parse_name: fn(&mut Self) -> Result<ast::Ident, ()>,
+    ) -> Result<(Vec<ast::Ident>, Span), ()> {
+        let mut names = vec![parse_name(self)?];
 
         let end = loop {
             match self.peek_skip_comments()? {
                 Some((Token::Comma, _)) => {
                     self.bump();
-                    names.push(self.parse_ident_string()?);
+                    names.push(parse_name(self)?);
                 }
                 Some((Token::Semicolon, _)) => break self.bump(),
                 _ => self.unexpected_token("',' or ';'")?,

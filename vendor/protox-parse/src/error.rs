@@ -62,6 +62,34 @@ pub(crate) enum ParseErrorKind {
         #[label("defined here")]
         span: Span,
     },
+    #[error("unknown edition '{edition}'")]
+    #[diagnostic(help("the supported edition is '2023'"))]
+    UnknownEdition {
+        edition: String,
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("label '{label}' is not allowed in editions")]
+    #[diagnostic(help("{help}"))]
+    EditionsFieldLabel {
+        label: &'static str,
+        help: &'static str,
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("groups are not allowed in editions")]
+    #[diagnostic(help(
+        "use a message field with the option 'features.message_encoding = DELIMITED'"
+    ))]
+    EditionsGroupField {
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("reserved names must be identifiers in editions, not strings")]
+    EditionsReservedNameString {
+        #[label("defined here")]
+        span: Span,
+    },
     #[error("invalid identifier")]
     #[diagnostic(help("identifiers must consist of letters, numbers and underscores, and may not start with a number"))]
     InvalidIdentifier {
@@ -257,6 +285,10 @@ impl ParseError {
             ParseErrorKind::InvalidUtf8String { span } => Some(span.clone()),
             ParseErrorKind::NestedBlockComment { span } => Some(span.clone()),
             ParseErrorKind::UnknownSyntax { span, .. } => Some(span.clone()),
+            ParseErrorKind::UnknownEdition { span, .. } => Some(span.clone()),
+            ParseErrorKind::EditionsFieldLabel { span, .. } => Some(span.clone()),
+            ParseErrorKind::EditionsGroupField { span } => Some(span.clone()),
+            ParseErrorKind::EditionsReservedNameString { span } => Some(span.clone()),
             ParseErrorKind::InvalidIdentifier { span } => Some(span.clone()),
             ParseErrorKind::InvalidGroupName { span } => Some(span.clone()),
             ParseErrorKind::InvalidImport { span } => Some(span.clone()),
