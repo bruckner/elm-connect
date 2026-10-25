@@ -6,8 +6,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use prost_reflect::{
     Cardinality as ProtoCardinality, DescriptorPool, DynamicMessage, Edition, EnumDescriptor,
     EnumValueDescriptor, ExtensionDescriptor, Features, FieldDescriptor, FileDescriptor,
-    JsonFormat, Kind, MessageDescriptor, MethodDescriptor, RepeatedFieldEncoding, Syntax,
-    Utf8Validation, Value,
+    JsonFormat, Kind, MessageDescriptor, MethodDescriptor, Syntax, Utf8Validation, Value,
 };
 
 use super::comments::Comments;
@@ -838,7 +837,7 @@ impl Builder {
                 self.diagnostics.push(Problem::extensions(&what, site));
             }
             for field in declared_fields(&message) {
-                self.check_field_features(file, &message, &field, binary);
+                self.check_field_features(file, &message, &field);
             }
         }
         let messages = all_messages(file);
@@ -887,15 +886,14 @@ impl Builder {
         }
     }
 
-    /// Reports `field` of `message` in an edition 2023 file if a feature
-    /// it has, set on it or inherited, has no Elm form; `binary` when the
-    /// binary codecs are generated.
+    /// Reports `field` of `message` in an editions file if a feature it
+    /// has, set on it or inherited, has no Elm form. An `EXPANDED`
+    /// repeated field has one: the binary codecs write it unpacked.
     fn check_field_features(
         &mut self,
         file: &FileDescriptor,
         message: &MessageDescriptor,
         field: &FieldDescriptor,
-        binary: bool,
     ) {
         let mut scopes = feature_scopes(file, Some(message.clone()));
         if let Some(oneof) = field.containing_oneof() {
@@ -921,22 +919,12 @@ impl Builder {
         if string && features.utf8_validation() == Utf8Validation::None {
             found.push(UnsupportedFeature::Utf8None);
         }
-        if binary
-            && field.is_list()
-            && !matches!(field.kind(), Kind::Message(_) | Kind::String | Kind::Bytes)
-            && features.repeated_field_encoding() == RepeatedFieldEncoding::Expanded
-        {
-            found.push(UnsupportedFeature::Expanded);
-        }
         for feature in found {
             let inherited = inherited_from(&scopes, |f| match feature {
                 UnsupportedFeature::Delimited => {
                     f.message_encoding() == prost_reflect::MessageEncoding::Delimited
                 }
                 UnsupportedFeature::Utf8None => f.utf8_validation() == Utf8Validation::None,
-                UnsupportedFeature::Expanded => {
-                    f.repeated_field_encoding() == RepeatedFieldEncoding::Expanded
-                }
                 UnsupportedFeature::ClosedBinary | UnsupportedFeature::LegacyJson => false,
             });
             let site = self.site(
@@ -2758,7 +2746,7 @@ fn read_rule(rule: &DynamicMessage) -> HttpRule {
 
 /// Whether `field` is a repeated scalar or enum that is not packed: one
 /// declared `[packed = false]`, as proto3's scalars are packed by default,
-/// or with `repeated_field_encoding = EXPANDED` in an edition 2023 file.
+/// or with `repeated_field_encoding = EXPANDED` in an editions file.
 /// The option is read from the field's own options: the descriptor pool's
 /// `is_packed` reports such a proto3 field packed.
 fn unpacked(field: &FieldDescriptor) -> bool {

@@ -58,7 +58,7 @@ two as descriptor modifiers (`Proto.Enum.withClosed`,
 `input::not_proto3` and a later edition `input::editions`; accepting
 them turns an error into output, so it is a minor. Delimited encoding
 (groups) and extensions stay refused, and so, under the binary
-codecs, do expanded repeated fields and closed enums. Edition 2024's
+codecs, do closed enums. Edition 2024's
 visibility and option imports change nothing generated; its naming
 style is enforced as protoc enforces it (`input::naming_style`).
 Two fields of one message whose names are the same once lowercased

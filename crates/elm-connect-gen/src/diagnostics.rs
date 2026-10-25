@@ -1426,7 +1426,7 @@ impl Problem {
             None => String::new(),
         };
         let refused = match feature {
-            UnsupportedFeature::Expanded | UnsupportedFeature::ClosedBinary => {
+            UnsupportedFeature::ClosedBinary => {
                 "which the binary codecs elm-connect generates do not support"
             }
             _ => "which elm-connect does not generate",
@@ -1939,9 +1939,6 @@ pub enum UnsupportedFeature {
     /// `message_encoding = DELIMITED` on a message field: proto2's group
     /// encoding.
     Delimited,
-    /// `repeated_field_encoding = EXPANDED` on a repeated scalar or enum
-    /// field, under the binary codecs.
-    Expanded,
     /// `enum_type = CLOSED` on an enum, under the binary codecs.
     ClosedBinary,
     /// `utf8_validation = NONE` on a string field.
@@ -1955,7 +1952,6 @@ impl UnsupportedFeature {
     pub fn setting(self) -> &'static str {
         match self {
             UnsupportedFeature::Delimited => "features.message_encoding = DELIMITED",
-            UnsupportedFeature::Expanded => "features.repeated_field_encoding = EXPANDED",
             UnsupportedFeature::ClosedBinary => "features.enum_type = CLOSED",
             UnsupportedFeature::Utf8None => "features.utf8_validation = NONE",
             UnsupportedFeature::LegacyJson => "features.json_format = LEGACY_BEST_EFFORT",
@@ -1970,12 +1966,6 @@ impl UnsupportedFeature {
                 do not read or write. Set `features.message_encoding = LENGTH_PREFIXED` on the \
                 field, or on the file for all of its fields."
                 .to_owned(),
-            UnsupportedFeature::Expanded => format!(
-                "The generated binary encoders write a repeated scalar or enum field packed, \
-                 one record holding every element. Set `features.repeated_field_encoding = \
-                 PACKED`, or generate the JSON codecs alone ({json_alone}), where the encoding \
-                 does not apply."
-            ),
             UnsupportedFeature::ClosedBinary => format!(
                 "The generated binary decoders read a number an enum does not declare as its \
                  first value, where a closed enum's field would keep it as an unknown field. \

@@ -907,8 +907,9 @@ that break the naming style (`enforce_naming_style = STYLE2024`, the
 edition's default) are `input::naming_style` under the CLI, in
 protoc's words; protoc and buf refuse them before the plugin runs, and
 the plugin's pool does not check names again, since protoc strips
-that source-retention feature from what it sends. Where: design §1.3,
-§3.10.
+that source-retention feature from what it sends. `EXPANDED` repeated
+fields now generate under the binary codecs too, written unpacked as a
+proto3 `[packed = false]` field is. Where: design §1.3, §3.10.
 
 ### One version, in lockstep, and a strict sentinel
 

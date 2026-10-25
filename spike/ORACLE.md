@@ -210,18 +210,20 @@ editions_2024_proto3_equivalent	20 modules	protoc=same buf=same expected=same
 editions_2024_visibility	8 modules	protoc=same buf=same expected=same 
 editions_closed_enum	8 modules	protoc=same buf=same expected=same 
 editions_defaults	3 modules	protoc=same buf=same expected=same 
+editions_expanded	3 modules	protoc=same buf=same expected=same 
 editions_presence	5 modules	protoc=same buf=same expected=same 
 editions_required	4 modules	protoc=same buf=same expected=same 
 editions_unknown	diagnostics	expected= 1 input::editions;	cli= 1 input::editions;	protoc=	buf=
   protoc says: future.proto:2:11: Unknown edition "2025".
   buf says: future.proto:2:11:unrecognized `edition` declaration value
-editions_unsupported	diagnostics	expected= 2 input::extensions; 7 input::unsupported_feature;	cli= 2 input::extensions; 7 input::unsupported_feature;	protoc= 2 input::extensions; 7 input::unsupported_feature;	buf= 2 input::extensions; 7 input::unsupported_feature;
+editions_unsupported	diagnostics	expected= 2 input::extensions; 6 input::unsupported_feature;	cli= 2 input::extensions; 6 input::unsupported_feature;	protoc= 2 input::extensions; 6 input::unsupported_feature;	buf= 2 input::extensions; 6 input::unsupported_feature;
   protoc says: --elm-connect_out: input::unsupported_feature
   buf says: Failure: plugin <root>/target/debug/protoc-gen-elm-connect: input::extensions
 codec_both	20 modules	protoc=same buf=same expected=same 
 ```
 
-Every edition 2024 modules case but one: the CLI, protoc and buf write the same files, equal
+(`editions_expanded`, EXPANDED under `codec=both`, and `editions_unsupported` without its
+EXPANDED problem, are from the EXPANDED lift.) Every edition 2024 modules case but one: the CLI, protoc and buf write the same files, equal
 to the expected modules; both twins equal `codec_both`. `editions_2024_option_import` under
 buf differs in one line: buf 1.73.0 does not send a plugin the file named by `import option`
 (the request's `forms.proto` lists it in `option_dependency`, but `proto_file` lacks it), so

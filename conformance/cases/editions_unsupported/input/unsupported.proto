@@ -1,7 +1,7 @@
 // Features with no Elm form, under codec=both: delimited message fields,
-// unchecked UTF-8, expanded repeated fields and closed enums under the
-// binary codecs, the legacy JSON format, and extensions. A custom option,
-// an extension of a google.protobuf options message, is fine.
+// unchecked UTF-8, closed enums under the binary codecs, the legacy JSON
+// format, and extensions. A custom option, an extension of a
+// google.protobuf options message, and an expanded repeated field are fine.
 edition = "2023";
 
 package unsupported.v1;

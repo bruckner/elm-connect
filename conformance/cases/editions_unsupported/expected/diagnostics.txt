@@ -65,23 +65,6 @@ input::unsupported_feature
 
 input::unsupported_feature
 
-  × The field `unsupported.v1.Outer.counts` has
-  │ `features.repeated_field_encoding = EXPANDED`, which the binary codecs
-  │ elm-connect generates do not support.
-    ╭─[unsupported.proto:24:18]
- 23 │   string name = 2 [(note) = "unchecked, from the file"];
- 24 │   repeated int32 counts = 3 [features.repeated_field_encoding = EXPANDED];
-    ·                  ───┬──
-    ·                     ╰── this field
- 25 │   repeated string labels = 4 [features.utf8_validation = VERIFY];
-    ╰────
-  help: The generated binary encoders write a repeated scalar or enum field
-        packed, one record holding every element. Set
-        `features.repeated_field_encoding = PACKED`, or generate the JSON
-        codecs alone (`codec=json`), where the encoding does not apply.
-
-input::unsupported_feature
-
   × The message `unsupported.v1.Legacy` has `features.json_format =
   │ LEGACY_BEST_EFFORT`, which elm-connect does not generate.
     ╭─[unsupported.proto:33:9]

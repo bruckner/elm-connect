@@ -1,0 +1,24 @@
+// Repeated scalars and enums written expanded, one record per element,
+// as proto2 writes them: the binary codecs write them so, and read
+// either form.
+edition = "2023";
+
+package readings.v1;
+
+option features.repeated_field_encoding = EXPANDED;
+
+enum Unit {
+  UNIT_UNSPECIFIED = 0;
+  UNIT_CELSIUS = 1;
+}
+
+message Series {
+  // Expanded, from the file.
+  repeated int32 values = 1;
+  repeated Unit units = 2;
+  repeated double weights = 3;
+  // Packed again on the field.
+  repeated sint64 deltas = 4 [features.repeated_field_encoding = PACKED];
+  // Strings and messages are never packed.
+  repeated string labels = 5;
+}

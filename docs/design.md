@@ -1745,7 +1745,10 @@ element.
   `utf8_validation = NONE`, `json_format = LEGACY_BEST_EFFORT`
   (`input::unsupported_feature`), extension ranges and extensions of
   messages outside `google.protobuf` (`input::extensions`); under the
-  binary codecs, `repeated_field_encoding = EXPANDED` and closed enums.
+  binary codecs, closed enums. `repeated_field_encoding = EXPANDED` is
+  generated: the binary codecs write such a field unpacked, one record
+  per element, as they write a proto3 `[packed = false]` field, and
+  read either form (`editions_expanded`).
   A file-wide `DELIMITED` does not reach a map's entries, which are
   length-prefixed.
 - **Edition 2024** has the same defaults for these features as 2023,

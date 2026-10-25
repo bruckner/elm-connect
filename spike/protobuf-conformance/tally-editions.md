@@ -63,3 +63,32 @@ groupliketype = 201, delimited_field = 202, extensions 120 to 200 and the
 extensions 120, 121, 122, and unpacked_* = 89 to 102; from
 test_messages_proto3_editions, unpacked_* = 89 to 102 and the two NullValue
 fields (307, 120), as proto3's.
+
+## Run 3: EXPANDED generated under the binary codecs, and edition 2024
+
+`input::unsupported_feature` no longer refuses `repeated_field_encoding = EXPANDED` under
+`codec=binary|both`: the binary codecs write such a field unpacked (`Proto.Binary.listUnpacked`)
+and read either form. `strip-editions.sh` keeps the `unpacked_*` fields (89 to 102) of both
+editions protos now; `test_messages_proto3_editions.proto` loses only its two NullValue fields.
+The 31 EXPANDED entries left `failure_list.txt`. Same runner and flags.
+
+| Message | Cases | Passed before | Passed after | Failed after |
+|---|---:|---:|---:|---:|
+| Proto3 (`TestAllTypesProto3`) | 1468 | 1413 | 1413 | 55 |
+| Editions_Proto3 (proto3's message in edition 2023) | 1468 | 1382 | **1413** | 55 |
+| Edition 2023 (`TestAllTypesEdition2023`) | 14 | 8 | 8 | 6 |
+| Suite | 5547 (2597 skipped) | 2803 | **2834** | 116 |
+
+`CONFORMANCE SUITE PASSED: 2834 successes, 2597 skipped, 116 expected failures, 0 unexpected
+failures.` The 31 EXPANDED cases (28 `ValidDataRepeated.*.UnpackedOutput`, 3 oneof
+`MESSAGE.Merge` setting `corecursive.unpacked_int32`) pass, so Editions_Proto3 now passes and
+fails exactly where proto3 does. The 116 left: the 55 proto3 failures, their 55
+Editions_Proto3 twins (same causes), and the 6 delimited cases.
+
+Edition 2024 (`spike/protobuf-conformance/run-2024.sh`): the testee generated from the 2024
+rewrites in `spike/editions-corpus-2024/` (same packages and message names, so the runner's
+cases reach them), the same subsets, `--maximum_edition 2024`: `2834 successes, 2597 skipped,
+116 expected failures, 0 unexpected failures`, identical. The runner (v32.0-rc2) has no
+edition 2024 message of its own; the generated modules of the 2024 rewrites differ from the
+2023 ones only in four doc-comment declarations each of the two files, which lose the
+`ctype` options the rewrite drops.
