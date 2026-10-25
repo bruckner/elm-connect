@@ -28,6 +28,17 @@ decimal, timestamps in RFC 3339. The query holds only the fields that
 are set: a field with presence when it is present, any other field when
 it differs from its default.
 
+The two kinds of body leave the path's fields in or out. `body: "*"`
+sends the request without the fields the path holds, since
+`google/api/http.proto` maps to it every field the path does not:
+the notes example's `ArchiveNote`, `post: "/v1/{name=notes/*}:archive"`,
+sends `{}` to `/v1/notes/n1:archive`. `body: "<field>"` sends that
+field's value whole, a field the path holds included: `UpdateNote`,
+`patch: "/v1/{note.name=notes/*}"` with `body: "note"`, sends
+`{"name":"notes/n1","title":"x"}` to `/v1/notes/n1`, as
+[AIP-134](https://google.aip.dev/134)'s update sends its resource.
+`Rpc.request` shows either ([calling.md](calling.md#the-pure-halves)).
+
 A query parameter is named by the field's proto name, and a nested
 field by the dotted path of proto names, as `google/api/http.proto`
 says: `ListNotes` with `{ pageSize = 10, pageToken = "abc" }` sends
@@ -35,8 +46,13 @@ says: `ListNotes` with `{ pageSize = 10, pageToken = "abc" }` sends
 `filter.visibility=…`. A `google.protobuf.FieldMask` is a value like
 any other, so it goes out in its proto3 JSON form, the paths in
 lowerCamelCase joined by commas: `readMask = Just [ "create_time" ]`
-sends `read_mask=createTime`. Some servers do not read that form in the
-query (grpc-gateway, [below](#where-the-transcoders-differ)).
+sends `read_mask=createTime`. The parameter's name and its value are
+then spelled differently: `UpdateNote` with
+`updateMask = Just [ "title", "create_time" ]` sends
+`?update_mask=title%2CcreateTime`, the name by proto name and the value
+in JSON form, its comma percent-encoded. A server must read the value
+as a mask's JSON form, turning each path back into proto names; some do
+not (grpc-gateway, [below](#where-the-transcoders-differ)).
 
 A success is any 2xx, an empty body reading as `{}`, and the response
 decoded from the field `response_body` names when the rule names one.

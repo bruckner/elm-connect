@@ -405,6 +405,17 @@ Every error has a code and a message. `Rpc.Error.toString` is the two
 for logs (`not_found: no such note`). `Rpc.Error.details` gives the
 status details of one type ([descriptors.md](descriptors.md#error-details)).
 
+An `Rpc.Error` is what the call's answer was, and none of its
+constructors fits a failure the application finds in a good answer,
+such as a list missing the item it asked for: `BadResponse` and the
+others carry the `Response` they read, and `NoAnswer` a reason nothing
+came back. Give such a failure the application's own error type, one
+constructor holding an `Rpc.Error` and others for its own failures, and
+map into it where the application sends its calls, with `Task.mapError`
+on the task (see [Wrapping the sending once](#wrapping-the-sending-once))
+and `Task.andThen` failing with its own constructor when the answer
+does not serve.
+
 ### Where a status comes from
 
 `StatusError.source`, an `Rpc.Error.Source`, says where the status was

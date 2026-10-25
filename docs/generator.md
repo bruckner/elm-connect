@@ -36,7 +36,7 @@ otherwise.
 | `map<bool, V>` | `List ( Bool, V )`, since `Bool` is not `comparable` |
 | `enum Visibility` | `type Visibility = VisibilityUnspecified \| VisibilityPrivate \| …`: one constructor per value, the type's name in front of the value's with the enum's own prefix dropped (`VISIBILITY_PRIVATE` → `VisibilityPrivate`), an alias folded into its first value; with it `encodeVisibility`, `decodeVisibility` and `enumVisibility : Proto.Enum.Enum Visibility`. An unknown number decodes as the zero value; an unknown name fails, or under `enum_unknown=zero` is the zero value too |
 | `oneof kind { string text = 11; string link = 12; }` | a field `kind : NoteKind`, with `type NoteKind = NoteKindUnset \| NoteKindText String \| NoteKindLink String`; a `google.protobuf.Empty` member has no argument |
-| `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof) |
+| `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof). Code that held instants as RFC 3339 strings, from another generator or by hand, and keyed a `Dict` or a DOM id with them or sorted them, needs another key, since a `Time.Posix` is not `comparable`: `Time.posixToMillis` gives an `Int` to key with (through `String.fromInt` for an id) and to `compare`, which orders by the instant, where the strings ordered by their text |
 | `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` |
 | `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name: `Just [ "create_time" ]`. A path is not checked: a camelCase one (`"createTime"`) passes through unchanged, and goes out as the same JSON, but a mask the client decodes holds proto names, so the two do not compare equal |
 | `google.protobuf.Empty` | `()`, as a field and as a request or response |
@@ -138,6 +138,15 @@ protoc plugin, and a reference to one of its types is the diagnostic
 `generate::not_generated`, naming the ways to add it: `buf generate
 --include-imports`, the file on protoc's command line, or the CLI's
 `--include-imports`. `google.protobuf` maps to the runtime instead.
+
+Packages that refer to each other in a cycle cannot be generated at all, together or
+apart (`generate::import_cycle`), since Elm modules cannot import each
+other in a cycle. An application replacing another generator's output
+replaces all of a related set together: the modules are named after
+their packages (`Users.V1`), so the old module and the new cannot both
+be on the source directories: Elm refuses an import two files answer.
+`module_prefix` (above) names the new modules apart, for an application
+that moves over one related set at a time.
 
 The CLI alone also takes `--include-imports`, named after buf's: it
 also generates every imported file that declares a message or enum the
