@@ -248,13 +248,7 @@ routeListNotes0 : Notes.V1.ListNotesRequest -> ( Rpc.Route.Route, Maybe Rpc.Rout
 routeListNotes0 request_ =
     ( { method = "GET"
       , path = "v1/notes"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
-                , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
-                , Rpc.Route.unlessZero "filter" "" Basics.identity request_.filter
-                , Rpc.Route.unlessZero "visibility" Notes.V1.VisibilityUnspecified (Rpc.Route.viaJson Notes.V1.encodeVisibility) request_.visibility
-                ]
+      , query = Notes.V1.queryOfListNotesRequest request_
       , body = Nothing
       }
     , Nothing
@@ -284,7 +278,7 @@ routeUpdateNote0 request_ =
     in
     ( { method = "PATCH"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+      , query = Notes.V1.queryOfUpdateNoteRequest request_
       , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
       }
     , Rpc.Route.checkSegments "note.name" [ "notes", "*" ] value0_

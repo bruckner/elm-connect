@@ -9,6 +9,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Rpc.Route
 import Things.V1.Criteria
 import Things.V1.GetThingRequest
 import Things.V1.Thing
@@ -200,3 +201,17 @@ decodeGetThingRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
         |> Proto.Json.field "filter" Nothing (Json.Decode.map Just decodeCriteria)
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`GetThingRequest`](#GetThingRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfGetThingRequest : GetThingRequest -> List ( String, String )
+queryOfGetThingRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.limit
+        , Rpc.Route.unlessZero "filter.state" "" Basics.identity (Maybe.withDefault "" (Maybe.map .status request_.filter))
+        ]

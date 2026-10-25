@@ -66,16 +66,7 @@ routeListEvents0 request_ =
     in
     ( { method = "GET"
       , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/events"
-      , query =
-            Rpc.Route.optional "_legacy"
-                Basics.identity
-                (case request_.filter of
-                    Events.V1.ListEventsRequestFilterLegacy member_ ->
-                        Just member_
-
-                    _ ->
-                        Nothing
-                )
+      , query = Events.V1.queryOfListEventsRequest request_
       , body = Nothing
       }
     , Rpc.Route.checkSegments "parent" [ "feeds", "*" ] value0_

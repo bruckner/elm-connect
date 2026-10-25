@@ -21,7 +21,6 @@ import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
-import Proto.Timestamp
 import Proto.Version
 import Rpc
 import Rpc.Route
@@ -320,16 +319,7 @@ routeListNotes0 request_ =
     in
     ( { method = "GET"
       , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/notes"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
-                , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
-                , Rpc.Route.unlessZero "filter.visibility" Notes.V1.VisibilityUnspecified (Rpc.Route.viaJson Notes.V1.encodeVisibility) (Maybe.withDefault Notes.V1.VisibilityUnspecified (Maybe.map .visibility request_.filter))
-                , Rpc.Route.optional "filter.since" Proto.Timestamp.toString (Maybe.andThen .since request_.filter)
-                , Rpc.Route.repeated "tags" Basics.identity request_.tags
-                , Rpc.Route.optional "archived" Rpc.Route.bool request_.archived
-                , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
-                ]
+      , query = Notes.V1.queryOfListNotesRequest request_
       , body = Nothing
       }
     , Rpc.Route.checkSegments "parent" [ "users", "*" ] value0_
@@ -363,7 +353,7 @@ routeUpdateNote0 request_ =
     in
     ( { method = "PATCH"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+      , query = Notes.V1.queryOfUpdateNoteRequest request_
       , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
       }
     , Rpc.Route.checkSegments "note.name" [ "notes", "*" ] value0_
@@ -397,7 +387,7 @@ routeDeleteNote0 request_ =
     in
     ( { method = "DELETE"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query = Rpc.Route.unlessZero "force" False Rpc.Route.bool request_.force
+      , query = Notes.V1.queryOfDeleteNoteRequest request_
       , body = Nothing
       }
     , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_

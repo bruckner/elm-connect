@@ -6,7 +6,7 @@
 //! applications are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::route_fn::{Messages, REQUEST, RPC_ROUTE};
+use super::route_fn::{Messages, Queries, REQUEST, RPC_ROUTE};
 use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{Decl, Expr, Type};
@@ -131,12 +131,24 @@ impl Emitter {
 
     /// `routeGetNote0 : GetNoteRequest -> ( Rpc.Route.Route, Maybe
     /// Rpc.Route.PathError )`, one per binding.
-    pub(super) fn method_routes(&mut self, messages: &Messages, method: &Method) -> Vec<Decl> {
+    pub(super) fn method_routes(
+        &mut self,
+        messages: &Messages,
+        queries: &Queries,
+        method: &Method,
+    ) -> Vec<Decl> {
         let mut decls = Vec::new();
         for (index, route) in method.routes.iter().enumerate() {
             let binding = self.binding(route);
             let encode_request = self.request_encoder(&method.input);
-            let typed = self.route_body(messages, &method.input, route, binding, encode_request);
+            let typed = self.route_body(
+                messages,
+                queries,
+                &method.input,
+                route,
+                binding,
+                encode_request,
+            );
             let request = self.method_type(&method.input);
             let error = self.library_type(RPC_ROUTE, "PathError", []);
             let built = self.library_type(RPC_ROUTE, "Route", []);

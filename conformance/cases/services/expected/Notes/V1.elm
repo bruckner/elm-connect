@@ -21,7 +21,9 @@ import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Version
+import Rpc.Route
 import Time
 
 
@@ -662,3 +664,36 @@ decodeSummary : Json.Decode.Decoder Summary
 decodeSummary =
     Json.Decode.succeed Summary
         |> Proto.Json.field "text" "" Json.Decode.string
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`ListNotesRequest`](#ListNotesRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfListNotesRequest : ListNotesRequest -> List ( String, String )
+queryOfListNotesRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
+        , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
+        , Rpc.Route.unlessZero "filter.visibility" VisibilityUnspecified (Rpc.Route.viaJson encodeVisibility) (Maybe.withDefault VisibilityUnspecified (Maybe.map .visibility request_.filter))
+        , Rpc.Route.optional "filter.since" Proto.Timestamp.toString (Maybe.andThen .since request_.filter)
+        , Rpc.Route.repeated "tags" Basics.identity request_.tags
+        , Rpc.Route.optional "archived" Rpc.Route.bool request_.archived
+        , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+        ]
+
+
+{-| The query parameters of a [`UpdateNoteRequest`](#UpdateNoteRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
+queryOfUpdateNoteRequest request_ =
+    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+
+
+{-| The query parameters of a [`DeleteNoteRequest`](#DeleteNoteRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfDeleteNoteRequest : DeleteNoteRequest -> List ( String, String )
+queryOfDeleteNoteRequest request_ =
+    Rpc.Route.unlessZero "force" False Rpc.Route.bool request_.force

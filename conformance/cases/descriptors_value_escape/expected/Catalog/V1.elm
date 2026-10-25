@@ -12,6 +12,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -244,3 +245,42 @@ decodeGetEntryRequest =
         |> Proto.Json.field "name" "" Json.Decode.string
         |> Proto.Json.field "descriptor" "" Json.Decode.string
         |> Proto.Json.field "part" Nothing (Json.Decode.map Just decodePart)
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`GetEntryRequest`](#GetEntryRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfGetEntryRequest : GetEntryRequest -> List ( String, String )
+queryOfGetEntryRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "descriptor" "" Basics.identity request_.descriptor
+        , Rpc.Route.optional "part.descriptor"
+            Basics.identity
+            (Maybe.andThen
+                (\message_ ->
+                    case message_.kind of
+                        PartKindDescriptor member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                )
+                request_.part
+            )
+        , Rpc.Route.optional "part.count"
+            String.fromInt
+            (Maybe.andThen
+                (\message_ ->
+                    case message_.kind of
+                        PartKindCount member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                )
+                request_.part
+            )
+        ]

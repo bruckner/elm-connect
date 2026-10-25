@@ -217,11 +217,7 @@ routeGetMessage0 request_ =
     in
     ( { method = "GET"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "id" "" Basics.identity request_.id
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
       , body = Nothing
       }
     , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
@@ -238,11 +234,7 @@ routeGetMessage1 request_ =
     in
     ( { method = "GET"
       , path = "v1/messages/" ++ Rpc.Route.segment value0_
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
       , body = Nothing
       }
     , Rpc.Route.checkSegment "id" "*" value0_
@@ -262,7 +254,7 @@ routeGetSub0 request_ =
     in
     ( { method = "GET"
       , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
-      , query = Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+      , query = Rpc.Route.except [ "id", "sub" ] (Msgs.V1.queryOfMessageRequest request_)
       , body = Nothing
       }
     , Rpc.Route.firstInvalid
@@ -295,12 +287,7 @@ routeListMessages0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Rout
 routeListMessages0 request_ =
     ( { method = "GET"
       , path = "v1/messages"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-                , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Msgs.V1.queryOfMessageRequest request_
       , body = Nothing
       }
     , Nothing
@@ -317,11 +304,7 @@ routeCheckMessage0 request_ =
     in
     ( { method = "HEAD"
       , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":check"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "id" "" Basics.identity request_.id
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Rpc.Route.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
       , body = Nothing
       }
     , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
@@ -338,11 +321,7 @@ routeCheckById0 request_ =
     in
     ( { method = "HEAD"
       , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ ":check"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Rpc.Route.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
       , body = Nothing
       }
     , Rpc.Route.checkSegment "id" "*" value0_

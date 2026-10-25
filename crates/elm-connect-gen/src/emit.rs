@@ -150,6 +150,8 @@ mod method;
 mod oneof;
 mod recursion;
 mod route_fn;
+
+pub use self::route_fn::{Queries, queries};
 mod scalar;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -250,8 +252,32 @@ const VERSION_VALUE_DOC: &str = "The elm-connect release this module was generat
 /// constructor under a name its code also uses unqualified for a
 /// library's, every such name.
 pub fn emit(package: &Package, options: &Options) -> Result<Module, Vec<ReservedName>> {
+    emit_with_queries(package, options, &[], &Queries::new())
+}
+
+/// [`emit`], with a query encoder for each message `queries` holds
+/// parameters of, reading fields of the messages of `packages`.
+pub fn emit_with_queries(
+    package: &Package,
+    options: &Options,
+    packages: &[Package],
+    queries: &Queries,
+) -> Result<Module, Vec<ReservedName>> {
+    let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
-    let decls = emitter.package(package);
+    let mut decls = emitter.package(package);
+    let mut encoders = Vec::new();
+    for message in &package.messages {
+        if let Some(params) = queries.get(&message.proto_full_name) {
+            if let Some(decl) = emitter.query_encoder(&messages, message, params) {
+                encoders.push(decl);
+            }
+        }
+    }
+    if !encoders.is_empty() {
+        decls.push(Decl::Comment("QUERY ENCODERS".into()));
+        decls.extend(encoders);
+    }
     let reserved = emitter.reserved_names(package, options);
     if !reserved.is_empty() {
         return Err(reserved);
@@ -354,16 +380,9 @@ pub fn emit_service(
     service: &Service,
     options: &Options,
     packages: &[Package],
+    queries: &Queries,
 ) -> Module {
-    let messages: route_fn::Messages = packages
-        .iter()
-        .chain(std::iter::once(package))
-        .flat_map(|p| {
-            p.messages
-                .iter()
-                .map(move |m| (m.proto_full_name.as_str(), (m, &p.module)))
-        })
-        .collect();
+    let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
@@ -373,7 +392,7 @@ pub fn emit_service(
         }
         decls.push(Decl::Comment("ROUTES".into()));
         for method in &service.methods {
-            decls.extend(emitter.method_routes(&messages, method));
+            decls.extend(emitter.method_routes(&messages, queries, method));
         }
         decls.push(Decl::Comment("DESCRIPTORS".into()));
         for method in &service.methods {
@@ -386,6 +405,19 @@ pub fn emit_service(
     let mut module = emitter.module(package, decls);
     module.doc = Some(docs::service(service));
     module
+}
+
+/// Every message of `packages` and `package` by full proto name.
+fn all_messages<'p>(package: &'p Package, packages: &'p [Package]) -> route_fn::Messages<'p> {
+    packages
+        .iter()
+        .chain(std::iter::once(package))
+        .flat_map(|p| {
+            p.messages
+                .iter()
+                .map(move |m| (m.proto_full_name.as_str(), (m, &p.module)))
+        })
+        .collect()
 }
 
 /// A message whose every field and oneof member has a shape.
@@ -829,7 +861,13 @@ mod tests {
             methods: Vec::new(),
             doc: crate::ir::Doc::default(),
         };
-        let module = emit_service(&package(Vec::new()), &service, &Options::default(), &[]);
+        let module = emit_service(
+            &package(Vec::new()),
+            &service,
+            &Options::default(),
+            &[],
+            &Queries::new(),
+        );
         assert!(matches!(
             module.decls.as_slice(),
             [Decl::Value { name, .. }] if name == VERSION_VALUE
@@ -1127,7 +1165,13 @@ mod tests {
             int64: Int64::Int,
             ..Options::default()
         };
-        let module = emit_service(&package(Vec::new()), &service, &options, &[]);
+        let module = emit_service(
+            &package(Vec::new()),
+            &service,
+            &options,
+            &[],
+            &Queries::new(),
+        );
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,

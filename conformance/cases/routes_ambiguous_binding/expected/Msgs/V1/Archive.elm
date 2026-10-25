@@ -61,12 +61,7 @@ routeListArchived0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Rout
 routeListArchived0 request_ =
     ( { method = "GET"
       , path = "v1/messages"
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
-                , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
-                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
-                ]
+      , query = Msgs.V1.queryOfMessageRequest request_
       , body = Nothing
       }
     , Nothing

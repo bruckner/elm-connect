@@ -64,11 +64,7 @@ routeGetThing0 request_ =
     in
     ( { method = "GET"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.limit
-                , Rpc.Route.unlessZero "filter.state" "" Basics.identity (Maybe.withDefault "" (Maybe.map .status request_.filter))
-                ]
+      , query = Things.V1.queryOfGetThingRequest request_
       , body = Nothing
       }
     , Rpc.Route.checkSegments "name" [ "things", "*" ] value0_

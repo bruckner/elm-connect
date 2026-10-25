@@ -18,6 +18,7 @@ import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Version
 import Routes.V1.Deep
 import Routes.V1.Everything
@@ -30,6 +31,7 @@ import Routes.V1.Message
 import Routes.V1.Resource
 import Routes.V1.UpdateMessageRequest
 import Routes.V1.UpdateResourceRequest
+import Rpc.Route
 import Time
 
 
@@ -765,3 +767,75 @@ decodeUpdateResourceRequest =
     Json.Decode.succeed UpdateResourceRequest
         |> Proto.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`GetMessageRequest`](#GetMessageRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfGetMessageRequest : GetMessageRequest -> List ( String, String )
+queryOfGetMessageRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "message_id" "" Basics.identity request_.messageId
+        , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+        , Rpc.Route.unlessZero "sub.subfield" "" Basics.identity (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+        , Rpc.Route.unlessZero "user_id" "" Basics.identity request_.userId
+        , Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+        ]
+
+
+{-| The query parameters of a [`Everything`](#Everything) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfEverything : Everything -> List ( String, String )
+queryOfEverything request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+        , Rpc.Route.unlessZero "count" 0 String.fromInt request_.count
+        , Rpc.Route.unlessZero "big" "0" Basics.identity request_.big
+        , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
+        , Rpc.Route.unlessZero "flag" False Rpc.Route.bool request_.flag
+        , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
+        , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
+        , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
+        , Rpc.Route.unlessZero "kind" KindUnspecified (Rpc.Route.viaJson encodeKind) request_.kind
+        , Rpc.Route.repeated "tags" Basics.identity request_.tags
+        , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson encodeKind) request_.kinds
+        , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
+        , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
+        , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
+        , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+        , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+        , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+        , Rpc.Route.optional "limit" String.fromInt request_.limit
+        , Rpc.Route.optional "label" Basics.identity request_.label
+        , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
+        , Rpc.Route.unlessZero "inner.deep.b" 0 String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+        , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+        , Rpc.Route.optional "text"
+            Basics.identity
+            (case request_.choice of
+                EverythingChoiceText member_ ->
+                    Just member_
+
+                _ ->
+                    Nothing
+            )
+        , Rpc.Route.optional "number"
+            String.fromInt
+            (case request_.choice of
+                EverythingChoiceNumber member_ ->
+                    Just member_
+
+                _ ->
+                    Nothing
+            )
+        ]
+
+
+{-| The query parameters of a [`UpdateResourceRequest`](#UpdateResourceRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfUpdateResourceRequest : UpdateResourceRequest -> List ( String, String )
+queryOfUpdateResourceRequest request_ =
+    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask

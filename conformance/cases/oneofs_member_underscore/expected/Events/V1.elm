@@ -12,6 +12,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -274,3 +275,22 @@ decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
     Json.Decode.succeed ListEventsResponse
         |> Proto.Json.field "events" [] (Json.Decode.list decodeEvent)
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`ListEventsRequest`](#ListEventsRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfListEventsRequest : ListEventsRequest -> List ( String, String )
+queryOfListEventsRequest request_ =
+    Rpc.Route.optional "_legacy"
+        Basics.identity
+        (case request_.filter of
+            ListEventsRequestFilterLegacy member_ ->
+                Just member_
+
+            _ ->
+                Nothing
+        )

@@ -1,7 +1,7 @@
 module Rpc.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , unlessZero, optional, repeated
+    , unlessZero, optional, repeated, except
     , bool, viaJson, jsonText, without
     )
 
@@ -23,7 +23,7 @@ does not build one.
 
 # Query parameters
 
-@docs unlessZero, optional, repeated
+@docs unlessZero, optional, repeated, except
 
 
 # Values and bodies
@@ -177,6 +177,15 @@ optional name toText value =
 repeated : String -> (a -> String) -> List a -> List ( String, String )
 repeated name toText values =
     List.map (\v -> ( name, toText v )) values
+
+
+{-| A message's query parameters without those of the named fields: a
+binding's query, from its request message's query encoder less the fields
+its path and body hold.
+-}
+except : List String -> List ( String, String ) -> List ( String, String )
+except names pairs =
+    List.filter (\( name, _ ) -> not (List.member name names)) pairs
 
 
 {-| A boolean as path or query text.

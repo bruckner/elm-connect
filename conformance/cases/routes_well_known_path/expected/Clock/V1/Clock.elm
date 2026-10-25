@@ -135,14 +135,7 @@ routeGetMoment0 request_ =
     in
     ( { method = "GET"
       , path = "v1/at/" ++ Rpc.Route.segment value0_
-      , query =
-            List.concat
-                [ Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
-                , Rpc.Route.optional "count" String.fromInt request_.count
-                , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
-                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
-                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
-                ]
+      , query = Rpc.Route.except [ "at" ] (Clock.V1.queryOfMoment request_)
       , body = Nothing
       }
     , Rpc.Route.checkSegment "at" "*" value0_
@@ -162,13 +155,7 @@ routeMaskMoment0 request_ =
     in
     ( { method = "GET"
       , path = "v1/at/" ++ Rpc.Route.segment value0_ ++ "/mask/" ++ Rpc.Route.segment value1_
-      , query =
-            List.concat
-                [ Rpc.Route.optional "count" String.fromInt request_.count
-                , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
-                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
-                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
-                ]
+      , query = Rpc.Route.except [ "at", "mask" ] (Clock.V1.queryOfMoment request_)
       , body = Nothing
       }
     , Rpc.Route.firstInvalid
@@ -191,13 +178,7 @@ routeCountMoment0 request_ =
     in
     ( { method = "GET"
       , path = "v1/count/" ++ Rpc.Route.segment value0_ ++ "/seen/" ++ Rpc.Route.segment value1_
-      , query =
-            List.concat
-                [ Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
-                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
-                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
-                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
-                ]
+      , query = Rpc.Route.except [ "count", "seen" ] (Clock.V1.queryOfMoment request_)
       , body = Nothing
       }
     , Rpc.Route.firstInvalid

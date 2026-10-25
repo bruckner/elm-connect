@@ -16,7 +16,7 @@ use super::{Emitter, JSON_ENCODE, PROTO_HTTP};
 use crate::elm::ast::{BinOp, Expr, LetBinding, ModuleName, Pattern};
 use crate::elm::build::{apply, binop, lambda, list, qualified, record, string, var};
 use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, TypeRef};
-use crate::route::{Body, PathSegment, Route, Segment};
+use crate::route::{Body, FieldPath, PathSegment, Route, Segment};
 
 /// The runtime's routes, home of the helpers route functions call.
 pub(super) const RPC_ROUTE: &str = "Rpc.Route";
@@ -27,6 +27,67 @@ pub(super) const REQUEST: &str = "request_";
 
 /// Every generated message by full proto name, with its package's module.
 pub(crate) type Messages<'p> = HashMap<&'p str, (&'p Message, &'p IrModule)>;
+
+/// Each request message's query parameters over every binding of every
+/// generated method taking it, in field declaration order, depth first:
+/// what the message's query encoder (`queryOfEverything`) writes. A
+/// binding's own query is this less the fields its path and body hold.
+pub type Queries = HashMap<String, Vec<FieldPath>>;
+
+/// The [`Queries`] of `packages`, ordered by `pool`'s declarations.
+pub fn queries(pool: &prost_reflect::DescriptorPool, packages: &[crate::ir::Package]) -> Queries {
+    let mut queries: Queries = HashMap::new();
+    for package in packages {
+        for service in &package.services {
+            for method in &service.methods {
+                let TypeRef::Message(name) = &method.input else {
+                    continue;
+                };
+                for route in &method.routes {
+                    let params = queries.entry(name.proto_full_name.clone()).or_default();
+                    for param in &route.query {
+                        if !params.contains(&param.field) {
+                            params.push(param.field.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    queries.retain(|_, params| !params.is_empty());
+    for (name, params) in queries.iter_mut() {
+        if let Some(message) = pool.get_message_by_name(name) {
+            params.sort_by_cached_key(|param| declaration_key(&message, &param.proto));
+        }
+    }
+    queries
+}
+
+/// The position of each field of `path` among its message's fields, as
+/// declared.
+fn declaration_key(message: &prost_reflect::MessageDescriptor, path: &[String]) -> Vec<usize> {
+    let mut key = Vec::new();
+    let mut message = Some(message.clone());
+    for name in path {
+        let Some(current) = message.take() else {
+            break;
+        };
+        let Some(index) = current.fields().position(|f| f.name() == name) else {
+            break;
+        };
+        key.push(index);
+        let field = current.fields().nth(index).expect("the field found");
+        if let prost_reflect::Kind::Message(next) = field.kind() {
+            message = Some(next);
+        }
+    }
+    key
+}
+
+/// The name of a message's query encoder in its package's module.
+pub(super) fn query_encoder_name(message: &Message) -> String {
+    format!("queryOf{}", message.elm_name)
+}
 
 /// One step of a field path through the typed request.
 enum Step<'p> {
@@ -86,12 +147,13 @@ impl Emitter {
     pub(super) fn route_body(
         &mut self,
         messages: &Messages,
+        queries: &Queries,
         input: &TypeRef,
         route: &Route,
         binding: Expr,
         encode_request: Expr,
     ) -> Typed {
-        match self.typed_route(messages, input, route, encode_request.clone()) {
+        match self.typed_route(messages, queries, input, route, encode_request.clone()) {
             Some(body) => Typed {
                 body,
                 interpreted: false,
@@ -109,6 +171,7 @@ impl Emitter {
     fn typed_route(
         &mut self,
         messages: &Messages,
+        queries: &Queries,
         input: &TypeRef,
         route: &Route,
         encode_request: Expr,
@@ -201,16 +264,32 @@ impl Emitter {
             .rev()
             .reduce(|right, left| binop(BinOp::Append, left, right))
             .unwrap_or_else(|| string(""));
-        // The query.
-        let mut params = Vec::new();
-        for param in &route.query {
-            let read = self.read(messages, request?, &param.field.proto)?;
-            params.push(self.query_pairs(param.field.dotted(), read)?);
-        }
-        let query = match params.len() {
-            0 => list([]),
-            1 => params.pop().unwrap(),
-            _ => apply(qualified("List", "concat"), [list(params)]),
+        // The query: the request message's query encoder, less the fields
+        // this binding's path and body hold.
+        let query = if route.query.is_empty() {
+            list([])
+        } else {
+            let request = request?;
+            let all = queries.get(&request.proto_full_name)?;
+            if !self.query_typed(messages, request, all) {
+                return None;
+            }
+            let module = messages.get(request.proto_full_name.as_str())?.1;
+            let encoder = self.generated_value(module, query_encoder_name(request));
+            let pairs = apply(encoder, [var(REQUEST)]);
+            let excluded: Vec<Expr> = all
+                .iter()
+                .filter(|field| !route.query.iter().any(|param| &param.field == *field))
+                .map(|field| string(field.dotted()))
+                .collect();
+            if excluded.is_empty() {
+                pairs
+            } else {
+                apply(
+                    self.reference((RPC_ROUTE, "except")),
+                    [crate::elm::build::inline_list(excluded), pairs],
+                )
+            }
         };
         // The body.
         let body = match &route.body {
@@ -290,6 +369,70 @@ impl Emitter {
         })
     }
 
+    /// `message`'s query encoder over `params`, `queryOfEverything :
+    /// Everything -> List ( String, String )`, or `None` when a parameter
+    /// cannot be typed.
+    pub(super) fn query_encoder(
+        &mut self,
+        messages: &Messages,
+        message: &Message,
+        params: &[FieldPath],
+    ) -> Option<crate::elm::ast::Decl> {
+        let body = self.query_encoder_body(messages, message, params)?;
+        let pair = crate::elm::ast::Type::Tuple(vec![
+            crate::elm::build::ty("String", []),
+            crate::elm::build::ty("String", []),
+        ]);
+        Some(crate::elm::ast::Decl::Value {
+            doc: Some(format!(
+                "The query parameters of a [`{0}`](#{0}) whose bindings put fields in the query: every such field that holds a value.",
+                message.elm_name
+            )),
+            name: query_encoder_name(message),
+            annotation: crate::elm::build::ty_fn(
+                [crate::elm::build::ty(message.elm_name.clone(), [])],
+                crate::elm::build::ty("List", [pair]),
+            ),
+            params: vec![crate::elm::build::pvar(REQUEST)],
+            body,
+        })
+    }
+
+    /// The body of `message`'s query encoder over `params`, or `None` when
+    /// a parameter cannot be typed.
+    pub(super) fn query_encoder_body(
+        &mut self,
+        messages: &Messages,
+        message: &Message,
+        params: &[FieldPath],
+    ) -> Option<Expr> {
+        let mut pairs = Vec::new();
+        for param in params {
+            let read = self.read(messages, message, &param.proto)?;
+            pairs.push(self.query_pairs(param.dotted(), read)?);
+        }
+        Some(match pairs.len() {
+            0 => list([]),
+            1 => pairs.pop().unwrap(),
+            _ => apply(qualified("List", "concat"), [list(pairs)]),
+        })
+    }
+
+    /// Whether `message`'s query encoder over `params` can be typed, checked
+    /// without touching this module's imports.
+    fn query_typed(&self, messages: &Messages, message: &Message, params: &[FieldPath]) -> bool {
+        let mut scratch = Emitter {
+            module: self.module.clone(),
+            imports: Default::default(),
+            unqualified: Default::default(),
+            holding: self.holding,
+            enum_unknown: self.enum_unknown,
+        };
+        scratch
+            .query_encoder_body(messages, message, params)
+            .is_some()
+    }
+
     /// The value at a field path of the request.
     fn read<'p>(
         &mut self,
@@ -361,14 +504,17 @@ impl Emitter {
                 Step::Member(oneof, variant, module) => {
                     let holding = field::field_holding(variant.jstype, self.holding);
                     let value = field::value_shape(&variant.ty, holding);
+                    let own = *module == self.module;
                     let ctor = |name: &str| -> Pattern {
                         Pattern::Ctor {
-                            module: Some(ModuleName::new(module.to_string())),
+                            module: (!own).then(|| ModuleName::new(module.to_string())),
                             name: name.to_owned(),
                             args: vec![Pattern::Var("member_".into())],
                         }
                     };
-                    self.imports.entry(module.to_string()).or_default();
+                    if !own {
+                        self.imports.entry(module.to_string()).or_default();
+                    }
                     let get = |subject: Expr, just: &str, nothing: &str| {
                         crate::elm::build::case(
                             crate::elm::build::access(subject, oneof.elm_field_name.clone()),

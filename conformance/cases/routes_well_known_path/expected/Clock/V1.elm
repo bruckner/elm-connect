@@ -15,7 +15,9 @@ import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Version
+import Rpc.Route
 import Time
 
 
@@ -128,3 +130,21 @@ decodeMoment =
         |> Proto.Json.field "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
         |> Proto.Json.field "note" "" Json.Decode.string
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`Moment`](#Moment) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfMoment : Moment -> List ( String, String )
+queryOfMoment request_ =
+    List.concat
+        [ Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+        , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+        , Rpc.Route.optional "count" String.fromInt request_.count
+        , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
+        , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+        , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
+        ]

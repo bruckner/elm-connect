@@ -19,6 +19,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -158,3 +159,18 @@ decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
     Json.Decode.succeed Message
         |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`MessageRequest`](#MessageRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfMessageRequest : MessageRequest -> List ( String, String )
+queryOfMessageRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+        , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
+        , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+        ]

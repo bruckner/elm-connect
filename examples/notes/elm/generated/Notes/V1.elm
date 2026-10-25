@@ -28,6 +28,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Rpc.Route
 import Time
 
 
@@ -599,3 +600,26 @@ decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest
         |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`ListNotesRequest`](#ListNotesRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfListNotesRequest : ListNotesRequest -> List ( String, String )
+queryOfListNotesRequest request_ =
+    List.concat
+        [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
+        , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
+        , Rpc.Route.unlessZero "filter" "" Basics.identity request_.filter
+        , Rpc.Route.unlessZero "visibility" VisibilityUnspecified (Rpc.Route.viaJson encodeVisibility) request_.visibility
+        ]
+
+
+{-| The query parameters of a [`UpdateNoteRequest`](#UpdateNoteRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
+queryOfUpdateNoteRequest request_ =
+    Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask

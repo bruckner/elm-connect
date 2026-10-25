@@ -68,36 +68,7 @@ routeGetEntry0 request_ =
     in
     ( { method = "GET"
       , path = "v1/" ++ Rpc.Route.segments value0_
-      , query =
-            List.concat
-                [ Rpc.Route.unlessZero "descriptor" "" Basics.identity request_.descriptor
-                , Rpc.Route.optional "part.descriptor"
-                    Basics.identity
-                    (Maybe.andThen
-                        (\message_ ->
-                            case message_.kind of
-                                Catalog.V1.PartKindDescriptor member_ ->
-                                    Just member_
-
-                                _ ->
-                                    Nothing
-                        )
-                        request_.part
-                    )
-                , Rpc.Route.optional "part.count"
-                    String.fromInt
-                    (Maybe.andThen
-                        (\message_ ->
-                            case message_.kind of
-                                Catalog.V1.PartKindCount member_ ->
-                                    Just member_
-
-                                _ ->
-                                    Nothing
-                        )
-                        request_.part
-                    )
-                ]
+      , query = Catalog.V1.queryOfGetEntryRequest request_
       , body = Nothing
       }
     , Rpc.Route.checkSegments "name" [ "entries", "*" ] value0_
