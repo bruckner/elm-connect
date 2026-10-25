@@ -100,3 +100,46 @@ traps met. The commit messages under `vendor/` carry the rest.
   `spike/run-notes-twin.sh` (39 modules through the plugin under buf, equal
   to examples/notes/elm/generated; 11 through the CLI, equal to the proto3
   file's).
+- **prost-types is vendored and regenerated** (operator's scope change for
+  this run). Command, from the worktree, with protoc 35.1 from its existing
+  install and prost-build 0.14.4 (the prost-types release's own):
+  `mise exec -- env PROTOC=$HOME/.local/share/mise/installs/protoc/35.1/bin/protoc
+  cargo run --manifest-path spike/tools/prost-types-gen/Cargo.toml --
+  spike/ref/src OUT`, then `OUT/google.protobuf.rs` → `src/protobuf.rs` and
+  `OUT/google.protobuf.compiler.rs` → `src/compiler.rs`. Inputs: protobuf
+  v32.0's descriptor.proto, compiler/plugin.proto and the well-known types
+  prost-types carries, fetched read-only into `spike/ref/src`. The
+  configuration (compile_well_known_types, `btree_map(["."])`, the
+  `arbitrary` derive on every type) turned out to be exactly upstream's own
+  bootstrap test (prost `tests/src/bootstrap.rs`), which regenerates the same
+  files from the repository's `tests/src/include` protos; an upstream PR is
+  that directory updated to v32.0 and the two files regenerated. The first
+  attempt lacked `btree_map` (the crate is no_std-capable and uses
+  BTreeMap), which the crate's own `conversions.rs` caught at once. Three
+  plugin.proto doc comments come out differently from the shipped files
+  (upstream's comment sanitizer has changed since); clippy flags 28 of the
+  regenerated doc lists as over-indented. Neither is in the gate, which does
+  not lint vendor/.
+- **What the side channels became.** protox-parse's `parse_with_edition` is
+  removed (`parse` sets `FileDescriptorProto.edition`); protox's
+  `parse_source` and its use of `File::encoded` for editions files are
+  removed, so `protox/src` is upstream's again; prost-reflect's
+  `from_prost`/`to_prost` carry the edition. prost-reflect keeps its private
+  `edition` field and `Edition` enumeration in its own descriptor types,
+  since those types, not prost-types', are what its pool decodes into. The
+  wkt.rs literals fill prost-types' new options fields with defaults, so
+  the embedded descriptor.proto still lacks its own `edition_defaults` etc.
+  (the resolver keeps its table, as before).
+- **Required fields are a `Maybe`.** `LEGACY_REQUIRED` keeps one Elm form
+  per presence: the field is held and coded as an optional one, and only
+  its descriptor (`CardinalityRequired`) and its declaration say required.
+  A plain value would need a third field shape (encoder that always writes,
+  decoder that fails when absent, and a cycle-safe form for a required
+  message field). Decoding does not fail on a missing required field; the
+  conformance suite has no edition 2023 case that tests it.
+- **Defaults are descriptor data.** A field with a default has explicit
+  presence (protoc refuses one on an implicit field), so it is a `Maybe`
+  and its default is the value it means while `Nothing`; generated code does
+  not apply it. `Proto.Field.withDefault` carries the text as the proto
+  writes it (`FieldDescriptorProto.default_value`: C-escaped bytes, an enum
+  value's name).
