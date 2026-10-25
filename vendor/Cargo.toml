@@ -4,9 +4,10 @@
 # workspace (../Cargo.toml) excludes this directory and uses the crates
 # through [patch.crates-io].
 [workspace]
-members = ["prost-reflect", "protox-parse", "protox"]
+members = ["prost-reflect", "prost-types", "protox-parse", "protox"]
 resolver = "2"
 
 [patch.crates-io]
 prost-reflect = { path = "prost-reflect" }
+prost-types = { path = "prost-types" }
 protox-parse = { path = "protox-parse" }

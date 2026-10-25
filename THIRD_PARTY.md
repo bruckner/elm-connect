@@ -93,6 +93,21 @@ They are Copyright Andrew Hickman and licensed under the MIT License or the
 Apache License, Version 2.0, at your option; each crate's directory carries
 its `LICENSE-MIT` and `LICENSE-APACHE`.
 
+## prost-types
+
+`vendor/prost-types/` is [prost-types](https://github.com/tokio-rs/prost)
+0.14.4, extracted from its crates.io package (the package names upstream
+commit `13646cde7eab75c81b3047767aa0a86e7dbecf12`), used in place of the
+crates.io release through `[patch.crates-io]` in `Cargo.toml` and built
+in `vendor/Cargo.toml` beside the crates above. It is carried here with its
+descriptor and plugin types regenerated from protobuf 32.0, so that they
+hold an edition and its features: the commit that imports it is
+unmodified, and every change since is a commit of its own.
+
+It is Copyright Dan Burkert, Lucio Franco, Casper Meijn and the Tokio
+Contributors, and licensed under the Apache License, Version 2.0; its
+directory carries its `LICENSE`.
+
 ## Protocol Buffers test protos
 
 `spike/editions-corpus/test_messages_edition2023.proto` and

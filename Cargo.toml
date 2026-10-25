@@ -33,9 +33,10 @@ protox = "0.10"
 serde_json = "1"
 similar = "3"
 
-# protox and prost-reflect with protobuf editions support, vendored under
-# vendor/ (THIRD_PARTY.md says from where and what changed).
+# protox, prost-reflect and prost-types with protobuf editions support,
+# vendored under vendor/ (THIRD_PARTY.md says from where and what changed).
 [patch.crates-io]
 prost-reflect = { path = "vendor/prost-reflect" }
+prost-types = { path = "vendor/prost-types" }
 protox = { path = "vendor/protox" }
 protox-parse = { path = "vendor/protox-parse" }
