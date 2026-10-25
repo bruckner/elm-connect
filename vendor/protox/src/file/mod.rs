@@ -75,6 +75,21 @@ pub struct FileMetadata {
     pub(crate) is_import: bool,
 }
 
+/// Parses a source file. An editions file is also encoded with its edition, which
+/// [`FileDescriptorProto`] has no field for, so that the descriptor pool sees it.
+fn parse_source(name: &str, source: &str) -> Result<(FileDescriptorProto, Option<Bytes>), Error> {
+    let (descriptor, edition) = protox_parse::parse_with_edition(name, source)?;
+    let encoded = edition.map(|edition| {
+        let mut buf = descriptor.encode_to_vec();
+        prost::encoding::int32::encode(FILE_DESCRIPTOR_PROTO_EDITION, &edition, &mut buf);
+        Bytes::from(buf)
+    });
+    Ok((descriptor, encoded))
+}
+
+/// The number of `FileDescriptorProto.edition`.
+const FILE_DESCRIPTOR_PROTO_EDITION: u32 = 14;
+
 impl File {
     /// Read a protobuf source file from the filesystem into a new instance of [`File`]
     ///
@@ -145,13 +160,13 @@ impl File {
             .read_to_string(&mut buf)
             .map_err(map_io_err)?;
 
-        let descriptor = protox_parse::parse(name, &buf)?;
+        let (descriptor, encoded) = parse_source(name, &buf)?;
 
         Ok(File {
             path: Some(path.to_owned()),
             source: Some(buf),
             descriptor,
-            encoded: None,
+            encoded,
         })
     }
 
@@ -187,13 +202,13 @@ impl File {
     /// });
     /// ```
     pub fn from_source(name: &str, source: &str) -> Result<Self, Error> {
-        let descriptor = protox_parse::parse(name, source)?;
+        let (descriptor, encoded) = parse_source(name, source)?;
 
         Ok(File {
             path: None,
             source: Some(source.to_owned()),
             descriptor,
-            encoded: None,
+            encoded,
         })
     }
 
@@ -247,6 +262,8 @@ impl File {
     /// Returns the parsed value of the source file.
     ///
     /// This is typically equivalent to calling [`parse()`](protox_parse::parse()) on the string returned by [`source()`](File::source).
+    /// For a file that begins with an `edition` statement, the descriptor has `syntax` set to
+    /// `"editions"` but cannot hold the edition itself; the compiler keeps it.
     pub fn file_descriptor_proto(&self) -> &FileDescriptorProto {
         &self.descriptor
     }

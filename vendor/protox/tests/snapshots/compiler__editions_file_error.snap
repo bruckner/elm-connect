@@ -1,0 +1,14 @@
+---
+source: protox/tests/compiler.rs
+expression: "check_err(&[(\"editions.proto\",\nr#\"edition = \"2023\";\n\nmessage Message {\n    int32 foo = 1 [features.field_presence = IMPLICIT, default = 1];\n}\n\"#)])"
+---
+causes: []
+filename: editions.proto
+labels:
+  - label: found here
+    span:
+      length: 1
+      offset: 102
+message: "implicit presence fields can't specify defaults"
+related: []
+severity: error

@@ -412,3 +412,79 @@ fn name_resolution_incorrect() {
     );
     assert_eq!(format!("{}", error.help().unwrap()), "The innermost scope is searched first in name resolution. Consider using a leading '.' (i.e., '.foo.Foo') to start from the outermost scope.");
 }
+
+const EDITIONS_SOURCE: &str = r#"
+edition = "2023";
+
+package editions;
+
+option features.field_presence = IMPLICIT;
+
+message Message {
+    int32 implicit = 1;
+    int32 explicit = 2 [features.field_presence = EXPLICIT];
+    repeated int32 expanded = 3 [features.repeated_field_encoding = EXPANDED];
+    Message delimited = 4 [features.message_encoding = DELIMITED];
+    map<string, string> map = 5 [features.utf8_validation = NONE];
+}
+
+enum Closed {
+    option features.enum_type = CLOSED;
+    ONE = 1;
+}
+"#;
+
+#[test]
+fn editions_file() {
+    let compiler = check(&[("editions.proto", EDITIONS_SOURCE)]).unwrap();
+
+    let pool = compiler.descriptor_pool();
+    let file = pool.get_file_by_name("editions.proto").unwrap();
+    assert_eq!(file.edition(), prost_reflect::Edition::Edition2023);
+    let message = pool.get_message_by_name("editions.Message").unwrap();
+    assert!(!message
+        .get_field_by_name("implicit")
+        .unwrap()
+        .supports_presence());
+    assert!(message
+        .get_field_by_name("explicit")
+        .unwrap()
+        .supports_presence());
+    assert!(!message.get_field_by_name("expanded").unwrap().is_packed());
+    assert!(message.get_field_by_name("delimited").unwrap().is_group());
+    let entry = message.get_field_by_name("map").unwrap().kind();
+    let entry = entry.as_message().unwrap();
+    assert_eq!(
+        entry.map_entry_value_field().features().utf8_validation(),
+        prost_reflect::Utf8Validation::None
+    );
+    assert!(pool
+        .get_enum_by_name("editions.Closed")
+        .unwrap()
+        .is_closed());
+
+    // The encoded set keeps the edition, which prost_types::FileDescriptorProto cannot hold.
+    let encoded = compiler.encode_file_descriptor_set();
+    let decoded = DescriptorPool::decode(encoded.as_slice()).unwrap();
+    assert_eq!(
+        decoded
+            .get_file_by_name("editions.proto")
+            .unwrap()
+            .edition(),
+        prost_reflect::Edition::Edition2023
+    );
+    assert_eq!(compiler.file_descriptor_set().file[0].syntax(), "editions");
+}
+
+#[test]
+fn editions_file_error() {
+    assert_yaml_snapshot!(check_err(&[(
+        "editions.proto",
+        r#"edition = "2023";
+
+message Message {
+    int32 foo = 1 [features.field_presence = IMPLICIT, default = 1];
+}
+"#
+    )]));
+}
