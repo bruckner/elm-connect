@@ -1,0 +1,12 @@
+# The workspace that builds and tests the vendored crates against each
+# other, as their upstream workspaces would: `cargo test --manifest-path
+# vendor/Cargo.toml --workspace --all-features`. The repository's own
+# workspace (../Cargo.toml) excludes this directory and uses the crates
+# through [patch.crates-io].
+[workspace]
+members = ["prost-reflect", "protox-parse", "protox"]
+resolver = "2"
+
+[patch.crates-io]
+prost-reflect = { path = "prost-reflect" }
+protox-parse = { path = "protox-parse" }

@@ -555,8 +555,6 @@ dependencies = [
 [[package]]
 name = "prost-reflect"
 version = "0.16.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01b80ea363c31af2de2b92e3c07ed1156628f7838c4afb4df75ee78a37fedbd1"
 dependencies = [
  "base64",
  "logos",
@@ -590,8 +588,6 @@ dependencies = [
 [[package]]
 name = "protox"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f43240d7f22cf77d1625885e547acf874dd63cd2790f29f4a38e86256f41996f"
 dependencies = [
  "bytes",
  "miette",
@@ -605,8 +601,6 @@ dependencies = [
 [[package]]
 name = "protox-parse"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34efee6fad0cf6d71642d20a66bfe0c281919c9577e7c66d20360dfcb7549272"
 dependencies = [
  "logos",
  "miette",

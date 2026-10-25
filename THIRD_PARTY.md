@@ -72,3 +72,23 @@ and the elm-format contributors. Both are licensed under the BSD 3-Clause
 License; copies are in
 [`crates/elm-connect-gen/third_party/elm-format/`](crates/elm-connect-gen/third_party/elm-format/),
 which ships inside the `elm-connect-gen` crate.
+
+## protox and prost-reflect
+
+`vendor/protox-parse/`, `vendor/protox/` and `vendor/prost-reflect/` are
+[protox](https://github.com/andrewhickman/protox) 0.10.0 (with its parser,
+protox-parse 0.10.0) and [prost-reflect](https://github.com/andrewhickman/prost-reflect)
+0.16.5, extracted from their crates.io packages (the packages name upstream
+commits `847875cd44a3e3f71e7e3acee984732699302ed6` and
+`2d0e1847a07d2582ae3edf84dbb80f2684961fef`). The workspace uses them in place
+of the crates.io releases through `[patch.crates-io]` in `Cargo.toml`. They
+are carried here with changes that add protobuf editions support: the
+commit that imports them is unmodified, and every change since is a commit
+of its own, so `git log -- vendor/` lists them. protox-parse's test
+snapshots, which its package does not ship, are restored from the upstream
+commit so that its tests run. `vendor/Cargo.toml` is the workspace that
+builds and tests the three crates.
+
+They are Copyright Andrew Hickman and licensed under the MIT License or the
+Apache License, Version 2.0, at your option; each crate's directory carries
+its `LICENSE-MIT` and `LICENSE-APACHE`.

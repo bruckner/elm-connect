@@ -4,6 +4,10 @@ members = [
     "crates/protoc-gen-elm-connect",
     "crates/elm-connect",
 ]
+# The vendored crates are path patches, not members: the gate's fmt,
+# clippy and tests stay on this repository's code, and vendor/Cargo.toml
+# is the workspace that runs their own tests (THIRD_PARTY.md).
+exclude = ["vendor"]
 resolver = "2"
 
 [workspace.package]
@@ -28,3 +32,10 @@ prost-types = "0.14"
 protox = "0.10"
 serde_json = "1"
 similar = "3"
+
+# protox and prost-reflect with protobuf editions support, vendored under
+# vendor/ (THIRD_PARTY.md says from where and what changed).
+[patch.crates-io]
+prost-reflect = { path = "vendor/prost-reflect" }
+protox = { path = "vendor/protox" }
+protox-parse = { path = "vendor/protox-parse" }
