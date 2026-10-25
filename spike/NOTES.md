@@ -261,3 +261,29 @@ Decisions taken while building, and the alternatives, for the report.
   encoders that cannot refuse out-of-range values, 64-bit numbers through
   Float, lenient JSON parsing, unknown enum names), classified in
   `conformance/protobuf/failure_list.txt`.
+
+## Merge semantics, specified (run-1 Q8; over an hour, not built)
+
+Protobuf merges a singular message field (and a oneof's message member, if
+the same member is set) that arrives twice; repeated fields inside it
+concatenate, scalars take the last value. The shape that fits the
+generated code:
+
+- Generate `mergeFooBytes : Foo -> Int -> Bytes.Decode.Decoder Foo` as
+  `Proto.Binary.message (finish existing) step finish`, and
+  `decodeFooBytes = mergeFooBytes defaultFoo`. The trick: `finish` only
+  reverses the repeated fields, an involution, so applied to a finished
+  value it gives back the in-progress state the step function conses onto.
+- `Proto.Binary.embedded` takes the merge function instead of the decoder
+  (`embedded encodeFooBytes mergeFooBytes defaultFoo`); its `Codec` gains
+  `readInto : a -> Decoder ( Int, a )`.
+- A singular message field's step becomes
+  `Proto.Binary.fieldInto codec value.foo (\v -> { value | foo = Just v }) wire`,
+  reading into `Maybe.withDefault zero existing`; a oneof member's passes
+  the member's current value from a generated `case` (`Nothing` for another
+  member). Boxed recursive types (`Tree_`) get `mergeTree_Bytes (Tree_ v)`.
+- Packed run for a singular scalar: take its last element. Duplicate keys of
+  a `bool` map: replace (the `List ( Bool, v )` holding needs a dedup).
+- Cost: one more top-level function per message, a few bytes per message
+  field step; all generated, nothing public changes but `embedded`'s
+  argument (a public runtime function the generated code calls).
