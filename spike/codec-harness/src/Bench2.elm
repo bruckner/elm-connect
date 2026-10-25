@@ -9,6 +9,7 @@ sample's hex or from encoding the large input), untimed; each message on
 Modes: `decodeJson`, `encodeJson`, `decodeBinary`, `encodeBinary`, and for
 the 1,000-leaf input the experiments `encodeSized`, `decodeHoisted`,
 `decodeInline`. `wire` answers the inputs' binary as hex on `texts`.
+
 -}
 
 import BothCodecs
