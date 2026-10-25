@@ -175,6 +175,24 @@ impl GenArgs {
         Ok(options)
     }
 
+    /// The `elm-connect gen` command with these files, include paths,
+    /// output directory and `--include-imports`, but no options.
+    fn gen_command(&self) -> String {
+        let word = |path: &PathBuf| elm_connect::shell_word(&path.display().to_string());
+        let mut command = String::from("elm-connect gen");
+        for include in &self.includes {
+            command.push_str(&format!(" -I {}", word(include)));
+        }
+        for file in &self.files {
+            command.push_str(&format!(" {}", word(file)));
+        }
+        command.push_str(&format!(" --out {}", word(&self.out)));
+        if self.include_imports {
+            command.push_str(" --include-imports");
+        }
+        command
+    }
+
     /// Generates as the flags say, printing any warnings to stderr.
     fn generate(&self) -> miette::Result<Generated> {
         let generated = elm_connect::generate(
@@ -294,7 +312,7 @@ fn generate(args: &GenArgs) -> miette::Result<ExitCode> {
 fn check(args: &GenArgs) -> miette::Result<ExitCode> {
     let generated = args.generate()?;
     let check = elm_connect::check(&generated.files, &args.out)?;
-    print!("{}", check.render());
+    print!("{}", check.render(&args.gen_command()));
     Ok(if check.is_current() {
         ExitCode::SUCCESS
     } else {
