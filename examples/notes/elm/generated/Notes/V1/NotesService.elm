@@ -17,6 +17,7 @@ Behaviours the live suite relies on:
 
 -}
 
+import Json.Encode
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -30,6 +31,7 @@ import Proto.Json
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -57,9 +59,16 @@ Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            descriptorGetNote
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeGetNoteRequest
+            , decode = Notes.V1.decodeNote
+            , descriptor = descriptorGetNote
+            , routes =
+                [ { route = routeGetNote0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -75,9 +84,16 @@ Described by [`descriptorListNotes`](#descriptorListNotes).
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            descriptorListNotes
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeListNotesRequest
+            , decode = Notes.V1.decodeListNotesResponse
+            , descriptor = descriptorListNotes
+            , routes =
+                [ { route = routeListNotes0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -95,9 +111,16 @@ Described by [`descriptorCreateNote`](#descriptorCreateNote).
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            descriptorCreateNote
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeCreateNoteRequest
+            , decode = Notes.V1.decodeNote
+            , descriptor = descriptorCreateNote
+            , routes =
+                [ { route = routeCreateNote0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -113,9 +136,16 @@ Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            descriptorUpdateNote
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeUpdateNoteRequest
+            , decode = Notes.V1.decodeNote
+            , descriptor = descriptorUpdateNote
+            , routes =
+                [ { route = routeUpdateNote0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -131,9 +161,16 @@ Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
-            descriptorDeleteNote
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeDeleteNoteRequest
+            , decode = Proto.Json.empty
+            , descriptor = descriptorDeleteNote
+            , routes =
+                [ { route = routeDeleteNote0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -149,9 +186,16 @@ Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
-            descriptorArchiveNote
+        (Proto.Method.methodWith
+            { encode = Notes.V1.encodeArchiveNoteRequest
+            , decode = Notes.V1.decodeNote
+            , descriptor = descriptorArchiveNote
+            , routes =
+                [ { route = routeArchiveNote0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -168,10 +212,117 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
+        (Proto.Method.methodWith
+            { encode = Proto.Json.encodeEmpty
+            , decode = Proto.Json.empty
+            , descriptor = descriptorPing
+            , routes = []
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getNote`](#getNote): `GET /v1/notes/*`.
+-}
+routeGetNote0 : Notes.V1.GetNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = []
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`listNotes`](#listNotes): `GET /v1/notes`.
+-}
+routeListNotes0 : Notes.V1.ListNotesRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListNotes0 request_ =
+    ( { method = "GET"
+      , path = "v1/notes"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.pageSize
+                , Rpc.Route.unlessZero "page_token" "" Basics.identity request_.pageToken
+                , Rpc.Route.unlessZero "filter" "" Basics.identity request_.filter
+                , Rpc.Route.unlessZero "visibility" Notes.V1.VisibilityUnspecified (Rpc.Route.viaJson Notes.V1.encodeVisibility) request_.visibility
+                ]
+      , body = Nothing
+      }
+    , Nothing
+    )
+
+
+{-| Binding 0 of [`createNote`](#createNote): `POST /v1/notes`.
+-}
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCreateNote0 request_ =
+    ( { method = "POST"
+      , path = "v1/notes"
+      , query = []
+      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+      }
+    , Nothing
+    )
+
+
+{-| Binding 0 of [`updateNote`](#updateNote): `PATCH /v1/notes/*`.
+-}
+routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateNote0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map .name request_.note)
+    in
+    ( { method = "PATCH"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+      }
+    , Rpc.Route.checkSegments "note.name" [ "notes", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`deleteNote`](#deleteNote): `DELETE /v1/notes/*`.
+-}
+routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeDeleteNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "DELETE"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = []
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`archiveNote`](#archiveNote): `POST /v1/notes/*:archive`.
+-}
+routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeArchiveNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "POST"
+      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":archive"
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
+      }
+    , Rpc.Route.checkSegments "name" [ "notes", "*" ] value0_
+    )
 
 
 
@@ -192,21 +343,28 @@ descriptorGetNote =
         Proto.Method.IdempotencyNoSideEffects
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
-                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getNote`](#getNote), as data.
+-}
+bindingsGetNote : List Proto.Http.Binding
+bindingsGetNote =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| Notes, a page at a time.
@@ -221,23 +379,30 @@ descriptorListNotes =
         Proto.Method.IdempotencyNoSideEffects
         "notes.v1.ListNotesRequest"
         "notes.v1.ListNotesResponse"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "notes"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
-                , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
-                , Proto.Http.param [ Notes.V1.ListNotesRequest.filter ]
-                , Proto.Http.param [ Notes.V1.ListNotesRequest.visibility ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`listNotes`](#listNotes), as data.
+-}
+bindingsListNotes : List Proto.Http.Binding
+bindingsListNotes =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "notes"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Notes.V1.ListNotesRequest.pageSize ]
+            , Proto.Http.param [ Notes.V1.ListNotesRequest.pageToken ]
+            , Proto.Http.param [ Notes.V1.ListNotesRequest.filter ]
+            , Proto.Http.param [ Notes.V1.ListNotesRequest.visibility ]
+            ]
+        }
+    ]
 
 
 {-| A new note. An empty title is INVALID\_ARGUMENT with a
@@ -254,18 +419,25 @@ descriptorCreateNote =
         Proto.Method.IdempotencyUnknown
         "notes.v1.CreateNoteRequest"
         "notes.v1.Note"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "notes"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`createNote`](#createNote), as data.
+-}
+bindingsCreateNote : List Proto.Http.Binding
+bindingsCreateNote =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "notes"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.bodyField Notes.V1.CreateNoteRequest.note
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| Changes a note's fields. A missing note is NOT\_FOUND, as for GetNote.
@@ -280,23 +452,30 @@ descriptorUpdateNote =
         Proto.Method.IdempotencyUnknown
         "notes.v1.UpdateNoteRequest"
         "notes.v1.Note"
-        [ Proto.Http.binding
-            { method = "PATCH"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
-                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`updateNote`](#updateNote), as data.
+-}
+bindingsUpdateNote : List Proto.Http.Binding
+bindingsUpdateNote =
+    [ Proto.Http.binding
+        { method = "PATCH"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Notes.V1.UpdateNoteRequest.note, Notes.V1.Note.name ]
+                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.bodyField Notes.V1.UpdateNoteRequest.note
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Notes.V1.UpdateNoteRequest.updateMask ]
+            ]
+        }
+    ]
 
 
 {-| Deletes a note. A missing note is NOT\_FOUND, as for GetNote.
@@ -311,21 +490,28 @@ descriptorDeleteNote =
         Proto.Method.IdempotencyUnknown
         "notes.v1.DeleteNoteRequest"
         "google.protobuf.Empty"
-        [ Proto.Http.binding
-            { method = "DELETE"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
-                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`deleteNote`](#deleteNote), as data.
+-}
+bindingsDeleteNote : List Proto.Http.Binding
+bindingsDeleteNote =
+    [ Proto.Http.binding
+        { method = "DELETE"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Notes.V1.DeleteNoteRequest.name ]
+                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| Makes a note private and tags it `archived`: a custom method.
@@ -340,21 +526,28 @@ descriptorArchiveNote =
         Proto.Method.IdempotencyUnknown
         "notes.v1.ArchiveNoteRequest"
         "notes.v1.Note"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
-                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Just "archive"
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`archiveNote`](#archiveNote), as data.
+-}
+bindingsArchiveNote : List Proto.Http.Binding
+bindingsArchiveNote =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Notes.V1.ArchiveNoteRequest.name ]
+                , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Just "archive"
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| Answers with nothing. It has no HTTP rule, so transcoding serves it on
