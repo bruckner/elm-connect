@@ -702,6 +702,20 @@ until then: a long policy overflowed `setTimeout` into a tight loop,
 and clients retried a recovering server in lockstep. Where: design
 §5.1.
 
+### A deadline on top of per-attempt timeouts
+
+*2026-10-24.*
+
+A retry policy takes an overall deadline, `Rpc.Retry.withDeadline`,
+none by default. The timeout was already per attempt, matching gRPC's
+per-try timeout, so a policy of five attempts with a 10 s timeout could
+take fifty seconds and its waits; the gap was the overall bound, which
+gRPC gets from the call's deadline. The loop stops before a wait that
+would reach the deadline, and also cuts each attempt's timeout to what
+is left of it: stopping between attempts alone would let the last one
+run its full timeout past the deadline, and clipping makes it a true
+deadline. Where: design §5.1.
+
 ### The call's module, the body and argument order
 
 *2026-10-13 to 2026-10-16.*

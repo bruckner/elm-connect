@@ -123,9 +123,11 @@ hooks and sent through functions of its own, can be added beside
 
 Today a cancelled call reports nothing, and a call sent with a retry
 policy has no tracker, so it cannot be cancelled
-([design §5.2](design.md#52-rpc)). A model-held state machine (`Rpc.Pending`,
-stepped by an `update`) that owns the retry loop would make a retried
-call cancellable and have every call report exactly one outcome; a
+([design §5.2](design.md#52-rpc)); an application that must cancel one
+runs the loop itself, with `Rpc.Retry.next` and `Rpc.Call.withoutRetry`.
+A model-held state machine (`Rpc.Pending`, stepped by an `update`) that
+owns the retry loop would make a retried call cancellable and have
+every call report exactly one outcome; a
 streaming transport would need the same machine, and would share it.
 An addition beside `Rpc.send` and `Rpc.task`: a minor.
 

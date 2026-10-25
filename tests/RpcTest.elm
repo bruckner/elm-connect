@@ -2,6 +2,7 @@ module RpcTest exposing (suite)
 
 import Dict
 import Expect
+import Fuzz exposing (Fuzzer)
 import Http
 import Json.Decode
 import Json.Encode
@@ -17,13 +18,16 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Internal.Call
 import Rpc.Internal.Http
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Trace
+import Rpc.Internal.Wire
 import Rpc.Retry
 import Rpc.Trace
 import Rpc.Transport
-import Test exposing (Test, describe, test)
+import Test exposing (Test, describe, fuzz, test)
+import Time
 
 
 type alias GetNote =
@@ -781,7 +785,254 @@ retries =
                 )
                     |> Expect.equal ( Nothing, Nothing )
         , describe "jitter" (jitters policy)
+        , describe "the schedule" (schedules policy)
+        , describe "the deadline" (deadlines policy)
+        , describe "a call's own policy" (overrides policy)
         ]
+
+
+{-| The moment after a first failed attempt of a call without side effects,
+failing with `Unavailable`, at the start of the epoch.
+-}
+moment : Retry.Moment
+moment =
+    { tried = 1
+    , code = Unavailable
+    , idempotency = IdempotencyNoSideEffects
+    , now = Time.millisToPosix 0
+    , elapsed = 0
+    }
+
+
+schedules : Rpc.Retry.Retry -> List Test
+schedules policy =
+    let
+        waits retry =
+            List.map (\tried -> Retry.wait retry { moment | tried = tried })
+
+        jittered =
+            Rpc.Retry.on [ Unavailable ] |> Rpc.Retry.withAttempts 6
+    in
+    [ test "the attempts limit stops it" <|
+        \_ ->
+            waits policy [ 1, 2, 3, 4 ]
+                |> Expect.equal [ Just 100, Just 200, Nothing, Nothing ]
+    , test "a code not listed stops it" <|
+        \_ ->
+            ( Retry.wait policy { moment | code = NotFound }
+            , Retry.wait policy { moment | code = Unavailable }
+            )
+                |> Expect.equal ( Nothing, Just 100 )
+    , test "idempotent-only stops a method that may have side effects" <|
+        \_ ->
+            [ IdempotencyNoSideEffects, IdempotencyIdempotent, IdempotencyUnknown ]
+                |> List.map (\idempotency -> Retry.wait policy { moment | idempotency = idempotency })
+                |> Expect.equal [ Just 100, Just 100, Nothing ]
+    , test "the wait doubles up to the cap" <|
+        \_ ->
+            waits (policy |> Rpc.Retry.withAttempts 6 |> Rpc.Retry.withMaxBackoff 500) [ 1, 2, 3, 4, 5 ]
+                |> Expect.equal [ Just 100, Just 200, Just 400, Just 500, Just 500 ]
+    , test "without jitter the wait is the bound" <|
+        \_ ->
+            List.range 0 99
+                |> List.map (\ms -> Retry.wait policy { moment | now = Time.millisToPosix (1760000000000 + ms) })
+                |> List.all ((==) (Just 100))
+                |> Expect.equal True
+    , test "with jitter the wait is from zero to the bound" <|
+        \_ ->
+            List.range 0 999
+                |> List.concatMap
+                    (\ms ->
+                        List.map2
+                            (\tried bound ->
+                                case Retry.wait jittered { moment | tried = tried, now = Time.millisToPosix (1760000000000 + ms) } of
+                                    Just wait ->
+                                        wait >= 0 && wait <= bound
+
+                                    Nothing ->
+                                        False
+                            )
+                            [ 1, 2, 3 ]
+                            [ 200, 400, 800 ]
+                    )
+                |> List.all identity
+                |> Expect.equal True
+    , fuzz moments "next is the wait the loop takes" <|
+        \( retry, at ) ->
+            Retry.step (Just retry) at.idempotency Just { tried = at.tried, now = at.now, elapsed = at.elapsed } (Err at.code)
+                |> Expect.equal (Rpc.Retry.next retry at)
+    , test "the loop does not wait after a success, without a policy, or for a failure trying again cannot help" <|
+        \_ ->
+            ( Retry.step (Just policy) IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Ok ())
+            , Retry.step Nothing IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Err Unavailable)
+            , Retry.step (Just policy) IdempotencyNoSideEffects (\_ -> Nothing) { tried = 1, now = moment.now, elapsed = 0 } (Err Unavailable)
+            )
+                |> Expect.equal ( Nothing, Nothing, Nothing )
+    ]
+
+
+{-| Policies with and without jitter and a deadline, each with a moment after
+a failed attempt: any code, idempotency and attempt count, at any time.
+-}
+moments : Fuzzer ( Rpc.Retry.Retry, Retry.Moment )
+moments =
+    let
+        retry =
+            Fuzz.map4
+                (\attempts backoff jitter deadline ->
+                    Rpc.Retry.on [ Unavailable, ResourceExhausted, DeadlineExceeded ]
+                        |> Rpc.Retry.withAttempts attempts
+                        |> Rpc.Retry.withBackoff backoff
+                        |> (if jitter then
+                                identity
+
+                            else
+                                Rpc.Retry.withoutJitter
+                           )
+                        |> (case deadline of
+                                Just ms ->
+                                    Rpc.Retry.withDeadline ms
+
+                                Nothing ->
+                                    identity
+                           )
+                )
+                (Fuzz.intRange 0 8)
+                (Fuzz.floatRange 0 5000)
+                Fuzz.bool
+                (Fuzz.maybe (Fuzz.floatRange -100 60000))
+
+        at =
+            Fuzz.map5 Retry.Moment
+                (Fuzz.intRange 1 10)
+                (Fuzz.oneOfValues [ Unavailable, ResourceExhausted, DeadlineExceeded, NotFound, Internal ])
+                (Fuzz.oneOfValues [ IdempotencyNoSideEffects, IdempotencyIdempotent, IdempotencyUnknown ])
+                (Fuzz.map Time.millisToPosix (Fuzz.intRange 0 2000000000000))
+                (Fuzz.floatRange 0 60000)
+    in
+    Fuzz.pair retry at
+
+
+deadlines : Rpc.Retry.Retry -> List Test
+deadlines policy =
+    let
+        bounded =
+            policy |> Rpc.Retry.withAttempts 10 |> Rpc.Retry.withDeadline 1000
+    in
+    [ test "a wait that would reach the deadline stops it" <|
+        \_ ->
+            [ 0, 899, 900, 2000 ]
+                |> List.map (\elapsed -> Retry.wait bounded { moment | elapsed = elapsed })
+                |> Expect.equal [ Just 100, Just 100, Nothing, Nothing ]
+    , test "a deadline that is not a positive finite number is none" <|
+        \_ ->
+            [ 0, -5, 0 / 0, 1 / 0 ]
+                |> List.map (\ms -> Retry.wait (policy |> Rpc.Retry.withDeadline ms) { moment | elapsed = 1.0e9 })
+                |> Expect.equal (List.repeat 4 (Just 100))
+    , test "an attempt's budget is what is left of the deadline, at least 1 ms" <|
+        \_ ->
+            [ 0, 400, 999.5, 5000 ]
+                |> List.map (Retry.budget bounded)
+                |> Expect.equal [ Just 1000, Just 600, Just 1, Just 1 ]
+    , test "without a deadline there is no budget" <|
+        \_ ->
+            Retry.budget policy 400
+                |> Expect.equal Nothing
+    , test "an attempt's timeout is the smaller of its own and the budget" <|
+        \_ ->
+            [ ( Nothing, Nothing ), ( Nothing, Just 500 ), ( Just 300, Nothing ), ( Just 300, Just 500 ), ( Just 300, Just 100 ) ]
+                |> List.map (\( left, timeout ) -> Retry.attemptTimeout left timeout)
+                |> Expect.equal [ Nothing, Just 500, Just 300, Just 300, Just 100 ]
+    , test "a clipped Connect attempt tells the server the clipped timeout" <|
+        \_ ->
+            let
+                c =
+                    getNote { name = "notes/42" } |> Rpc.Call.withTimeout 5000
+
+                cfg =
+                    { base | timeout = Nothing }
+            in
+            Rpc.request cfg c
+                |> Rpc.Internal.Wire.withBudget cfg c (Just 299.5)
+                |> (\sent -> ( sent.timeout, List.filter (\( name, _ ) -> name == "Connect-Timeout-Ms") sent.headers ))
+                |> Expect.equal ( Just 299.5, [ ( "Connect-Timeout-Ms", "300" ) ] )
+    , test "an attempt without a timeout takes the budget as its timeout" <|
+        \_ ->
+            let
+                c =
+                    getNote { name = "notes/42" }
+            in
+            Rpc.request base c
+                |> Rpc.Internal.Wire.withBudget base c (Just 700)
+                |> (\sent -> ( sent.timeout, List.member ( "Connect-Timeout-Ms", "700" ) sent.headers ))
+                |> Expect.equal ( Just 700, True )
+    , test "an attempt within the budget, or without one, is sent as it is" <|
+        \_ ->
+            let
+                c =
+                    getNote { name = "notes/42" } |> Rpc.Call.withTimeout 200
+
+                sent =
+                    Rpc.request base c
+            in
+            ( Rpc.Internal.Wire.withBudget base c (Just 700) sent == sent
+            , Rpc.Internal.Wire.withBudget base c Nothing sent == sent
+            )
+                |> Expect.equal ( True, True )
+    , test "a transcoded attempt over a binding is clipped without a header" <|
+        \_ ->
+            let
+                c =
+                    listNotes { name = "notes/42" }
+
+                cfg =
+                    { base | transport = Rpc.Transport.transcode }
+
+                sent =
+                    Rpc.request cfg c
+            in
+            Rpc.Internal.Wire.withBudget cfg c (Just 700) sent
+                |> Expect.equal { sent | timeout = Just 700 }
+    ]
+
+
+overrides : Rpc.Retry.Retry -> List Test
+overrides policy =
+    let
+        retrying =
+            { base | retry = Just policy }
+
+        own =
+            Rpc.Retry.on [ NotFound ]
+
+        inEffect cfg c =
+            Rpc.Internal.Call.retryIn cfg.retry c
+    in
+    [ test "a call without a choice takes the config's" <|
+        \_ ->
+            ( inEffect retrying (getNote { name = "x" }), inEffect base (getNote { name = "x" }) )
+                |> Expect.equal ( Just policy, Nothing )
+    , test "withRetry replaces the config's, or gives one where it has none" <|
+        \_ ->
+            ( inEffect retrying (getNote { name = "x" } |> Rpc.Call.withRetry own)
+            , inEffect base (getNote { name = "x" } |> Rpc.Call.withRetry own)
+            )
+                |> Expect.equal ( Just own, Just own )
+    , test "withoutRetry leaves none in effect" <|
+        \_ ->
+            inEffect retrying (getNote { name = "x" } |> Rpc.Call.withoutRetry)
+                |> Expect.equal Nothing
+    , test "the last choice made holds" <|
+        \_ ->
+            ( inEffect retrying (getNote { name = "x" } |> Rpc.Call.withoutRetry |> Rpc.Call.withRetry own)
+            , inEffect retrying (getNote { name = "x" } |> Rpc.Call.withRetry own |> Rpc.Call.withoutRetry)
+            )
+                |> Expect.equal ( Just own, Nothing )
+    , test "the choice does not change the request" <|
+        \_ ->
+            Rpc.request retrying (getNote { name = "x" } |> Rpc.Call.withoutRetry)
+                |> Expect.equal (Rpc.request retrying (getNote { name = "x" }))
+    ]
 
 
 jitters : Rpc.Retry.Retry -> List Test

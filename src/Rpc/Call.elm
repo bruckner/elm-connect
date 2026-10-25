@@ -1,6 +1,6 @@
 module Rpc.Call exposing
     ( Call
-    , withHeaders, withTimeout, withTracker, viaBinding
+    , withHeaders, withTimeout, withRetry, withoutRetry, withTracker, viaBinding
     , method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
     )
 
@@ -17,7 +17,7 @@ reads it back.
 
 # Adjusting a call
 
-@docs withHeaders, withTimeout, withTracker, viaBinding
+@docs withHeaders, withTimeout, withRetry, withoutRetry, withTracker, viaBinding
 
 
 # Reading a call
@@ -29,6 +29,7 @@ reads it back.
 import Json.Encode exposing (Value)
 import Proto.Method as Method exposing (Idempotency, Method)
 import Rpc.Internal.Call as Internal
+import Rpc.Retry exposing (Retry)
 
 
 {-| A method applied to its request: everything needed to send it, and the
@@ -78,8 +79,10 @@ withHeaders extra (Internal.Call c) =
         |> Rpc.Call.withTimeout 10000
 
 One that is not a positive number (`0`, a negative number, NaN or infinity)
-is ignored, and the config's applies. With a retry policy, the timeout
-applies to each attempt.
+is ignored, and the config's applies. With a retry policy in effect
+([`withRetry`](#withRetry)), the timeout applies to each attempt, and a
+policy's deadline ([`Rpc.Retry.withDeadline`](Rpc-Retry#withDeadline))
+shortens it to what is left of the deadline.
 
 -}
 withTimeout : Float -> Call req res -> Call req res
@@ -87,9 +90,41 @@ withTimeout ms (Internal.Call c) =
     Internal.Call { c | timeout = Just ms }
 
 
+{-| A retry policy for this call, in place of the config's `retry`
+([`Rpc.Retry`](Rpc-Retry)).
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withRetry
+            (Rpc.Retry.on [ Rpc.Code.Unavailable ]
+                |> Rpc.Retry.withAttempts 5
+            )
+
+-}
+withRetry : Retry -> Call req res -> Call req res
+withRetry policy (Internal.Call c) =
+    Internal.Call { c | retry = Internal.OwnRetry policy }
+
+
+{-| Send this call once, whatever the config's `retry` says: for a call the
+user may cancel ([`withTracker`](#withTracker)), and for a call the
+application retries on its own ([`Rpc.Retry.next`](Rpc-Retry#next)).
+
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withoutRetry
+        |> Rpc.Call.withTracker "note-42"
+        |> Rpc.send config GotNote
+
+-}
+withoutRetry : Call req res -> Call req res
+withoutRetry (Internal.Call c) =
+    Internal.Call { c | retry = Internal.NoRetry }
+
+
 {-| A tracker for this call, so [`Rpc.cancel`](Rpc#cancel) can cancel it.
-elm/http tracks commands only, so only [`Rpc.send`](Rpc#send) without a
-[`Retry`](Rpc-Retry#Retry) policy uses it; the other ways of sending ignore it.
+elm/http tracks commands only, so only [`Rpc.send`](Rpc#send) without a retry
+policy in effect uses it: with no `retry` in the config, or with
+[`withoutRetry`](#withoutRetry) on the call. The other ways of sending ignore
+it.
 -}
 withTracker : String -> Call req res -> Call req res
 withTracker tracker (Internal.Call c) =

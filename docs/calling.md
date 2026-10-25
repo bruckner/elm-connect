@@ -171,6 +171,7 @@ on : List Code -> Retry
 withAttempts : Int -> Retry -> Retry
 withBackoff : Float -> Retry -> Retry
 withMaxBackoff : Float -> Retry -> Retry
+withDeadline : Float -> Retry -> Retry
 withoutJitter : Retry -> Retry
 allowNonIdempotent : Retry -> Retry
 ```
@@ -186,7 +187,14 @@ code is one of `codes`. Its defaults:
   failed together do not retry together (`withoutJitter` waits each
   bound in full);
 - only calls of a method declared `NO_SIDE_EFFECTS` or `IDEMPOTENT`
-  (`option idempotency_level`).
+  (`option idempotency_level`);
+- no deadline (`withDeadline`).
+
+The call's timeout already applies to each attempt, so without a
+deadline the worst case is the attempts times the timeout, plus the
+waits. A deadline bounds them all together: no wait begins that would
+end past it, and each attempt's timeout, `Connect-Timeout-Ms` included,
+is cut to what is left of it.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#retry
 retrying : Rpc.Config
@@ -252,8 +260,9 @@ decides which retry a failure should get.
   a user to ask. The application also owns any wait the user should see
   or may cancel, since a policy's waits are invisible and `send` with a
   policy takes no tracker ([Cancelling](#cancelling)). An application
-  that retries a call on its own sends it with `retry = Nothing` in that
-  call's config, unless it means the two to stack.
+  that retries a call on its own sends it with `Rpc.Call.withoutRetry`
+  (or with `retry = Nothing` in that call's config), unless it means the
+  two to stack.
 - **Both**, the common shape: the policy covers the blips and the
   application the structural failures. They multiply: every replay the
   application makes is itself retried by the policy, so a queue of ten
@@ -261,18 +270,97 @@ decides which retry a failure should get.
   requests. Declared idempotency is what keeps that to calls that can
   stand it.
 
+### Driving the loop yourself
+
+```elm src/Rpc/Retry.elm excerpt
+next : Retry -> { tried : Int, code : Code, idempotency : Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
+```
+
+An application that runs the loop itself, to show that it is waiting,
+to let the user cancel or to refresh something between attempts, still
+gets the policy's waits, cap, attempt limit, jitter and deadline from
+`Rpc.Retry.next`: the wait the runtime's own loop would take, or
+`Nothing` to give up. It sends each attempt with `Rpc.Call.withoutRetry`,
+or the two loops stack.
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#driving
+type NoteState
+    = Loading
+    | Waiting Float
+    | Loaded Notes.V1.Note
+    | Failed Rpc.Error
+
+
+type alias Retrying =
+    { started : Time.Posix, note : NoteState }
+
+
+type NoteMsg
+    = TryAgain Int
+    | GotNote Int Time.Posix (Result Rpc.Error Notes.V1.Note)
+
+
+notePolicy : Rpc.Retry.Retry
+notePolicy =
+    Rpc.Retry.on [ Rpc.Code.Unavailable ]
+        |> Rpc.Retry.withAttempts 5
+        |> Rpc.Retry.withDeadline 30000
+
+
+attemptNote : Int -> Cmd NoteMsg
+attemptNote tried =
+    Notes.getNote { name = "notes/42" }
+        |> Rpc.Call.withoutRetry
+        |> Rpc.task (Rpc.config "https://api.example.com")
+        |> Task.map Ok
+        |> Task.onError (\err -> Task.succeed (Err err))
+        |> Task.andThen (\result -> Task.map (\now -> GotNote tried now result) Time.now)
+        |> Task.perform identity
+
+
+updateNote : NoteMsg -> Retrying -> ( Retrying, Cmd NoteMsg )
+updateNote msg model =
+    case msg of
+        TryAgain tried ->
+            ( { model | note = Loading }, attemptNote tried )
+
+        GotNote _ _ (Ok note) ->
+            ( { model | note = Loaded note }, Cmd.none )
+
+        GotNote tried now (Err err) ->
+            case
+                Rpc.Retry.next notePolicy
+                    { tried = tried
+                    , code = Rpc.Error.code err
+                    , idempotency = Rpc.Call.idempotency (Notes.getNote { name = "notes/42" })
+                    , now = now
+                    , elapsed = toFloat (Time.posixToMillis now - Time.posixToMillis model.started)
+                    }
+            of
+                Just ms ->
+                    ( { model | note = Waiting ms }
+                    , Process.sleep ms |> Task.perform (\_ -> TryAgain (tried + 1))
+                    )
+
+                Nothing ->
+                    ( { model | note = Failed err }, Cmd.none )
+```
+
 ## Adjusting one call
 
 ```elm src/Rpc/Call.elm excerpt
 withHeaders : List ( String, String ) -> Call req res -> Call req res
 withTimeout : Float -> Call req res -> Call req res
+withRetry : Retry -> Call req res -> Call req res
+withoutRetry : Call req res -> Call req res
 withTracker : String -> Call req res -> Call req res
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 ```
 
 `Rpc.Call` adjusts a call before it is sent: headers after the config's,
-a timeout in milliseconds in place of the config's, a tracker for
-cancelling, and, for transcoding, another of the rule's bindings (`0` is
+a timeout in milliseconds in place of the config's, a retry policy in
+place of the config's (`withRetry`) or none (`withoutRetry`), a tracker
+for cancelling, and, for transcoding, another of the rule's bindings (`0` is
 the rule's own, `1` and up its `additional_bindings`).
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#per-call
@@ -315,9 +403,11 @@ elm/http's requests do, so the application records that it withdrew the
 call where it cancels, and ignores a result that arrives after: an
 answer already queued when the cancel ran is still delivered.
 
-Only `Rpc.send` without a retry policy puts the tracker on its request.
-A call sent with a retry policy, or with `Rpc.task`, `Rpc.taskTraced`
-or `Rpc.sendTraced`, cannot be cancelled this way.
+Only `Rpc.send` without a retry policy in effect puts the tracker on its
+request; under a config with a policy, a call the user may cancel is
+sent with `Rpc.Call.withoutRetry`. A call sent with a retry policy, or
+with `Rpc.task`, `Rpc.taskTraced` or `Rpc.sendTraced`, cannot be
+cancelled this way.
 
 ## Outside the browser
 
