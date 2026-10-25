@@ -299,7 +299,9 @@ rpc shared call =
   read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, built by
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
   `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
-  `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`), or
+  `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`;
+  `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
+  `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3), or
   implementation kept out of the public modules so that they read as API
   (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
   `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2). A type one
@@ -3401,7 +3403,13 @@ Within a major version:
   `Proto.EnumValue` and `Proto.Method` (§3.9), with `Rpc.Call`, `Proto.Any.Any` and
   `Proto.Registry.Registry`; so are the types a config holds or the
   runtime gives, `Rpc.Transport.Transport`, `Rpc.Retry.Retry`,
-  `Rpc.Trace.Trace` and `Rpc.Body.Body`. The records an application
+  `Rpc.Trace.Trace` and `Rpc.Body.Body`. `Proto.Method.Method` and
+  `Proto.Message.Message` are aliases of unions in
+  `Proto.Internal.Method` and `Proto.Internal.Message`, the descriptor a
+  type parameter, so that what another runtime module must read from
+  them can be added later without a major: an opaque union of the
+  public module turned into an alias is one, so the change came before
+  the first publish. The records an application
   builds or reads with record syntax are frozen within a major:
   `Rpc.Config`, `Rpc.Request.Request`, `Rpc.Response.Response`
   (which `Rpc` also names `Rpc.Request` and `Rpc.Response`) and

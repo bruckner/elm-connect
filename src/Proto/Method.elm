@@ -43,10 +43,13 @@ any other union.
 import Json.Decode
 import Json.Encode
 import Proto.Http exposing (Binding)
+import Proto.Internal.Method as Internal
 
 
 {-| A method taking a `req` and answering a `res`. It is opaque: built by
-[`method`](#method) and read by the functions below.
+[`method`](#method) and read by the functions below. The package site and
+compiler errors may show it as `Proto.Internal.Method.Method`, its name
+inside the package.
 
 It holds what sending a call needs: the request's encoder, the response's
 decoder and the method's descriptor. The types'
@@ -54,12 +57,8 @@ decoder and the method's descriptor. The types'
 trees, are not part of it.
 
 -}
-type Method req res
-    = Method
-        { encodeRequest : req -> Json.Encode.Value
-        , responseDecoder : Json.Decode.Decoder res
-        , descriptor : Descriptor
-        }
+type alias Method req res =
+    Internal.Method Descriptor req res
 
 
 {-| A method from its request's proto3 JSON encoder, its response's proto3
@@ -83,7 +82,7 @@ JSON decoder and its descriptor. Generated code writes:
 -}
 method : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Descriptor -> Method req res
 method encode decoder methodDescriptor =
-    Method
+    Internal.Method
         { encodeRequest = encode
         , responseDecoder = decoder
         , descriptor = methodDescriptor
@@ -93,14 +92,14 @@ method encode decoder methodDescriptor =
 {-| A request as proto3 JSON.
 -}
 encodeRequest : Method req res -> req -> Json.Encode.Value
-encodeRequest (Method m) =
+encodeRequest (Internal.Method m) =
     m.encodeRequest
 
 
 {-| The response's proto3 JSON decoder.
 -}
 responseDecoder : Method req res -> Json.Decode.Decoder res
-responseDecoder (Method m) =
+responseDecoder (Internal.Method m) =
     m.responseDecoder
 
 
@@ -109,7 +108,7 @@ the full names of its types, and its HTTP bindings, read by the functions
 below.
 -}
 toDescriptor : Method req res -> Descriptor
-toDescriptor (Method m) =
+toDescriptor (Internal.Method m) =
     m.descriptor
 
 
