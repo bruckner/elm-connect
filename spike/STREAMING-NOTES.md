@@ -56,10 +56,12 @@ EndStreamResponse):
   noting since unary trailers are `trailer-` prefixed headers.)
 - **End-stream is mandatory.** The server MUST send an EndStreamResponse as the
   last message. **Addition:** a body that ends without one is therefore a
-  transport failure, not a clean end; connect-es raises
-  `missing EndStreamResponse` (code `unknown`/internal). The core reports it as
-  `error` with reason `"missing end-stream"`, mapped to `NoAnswer NetworkError`
-  in Elm so the session reconnects.
+  transport failure, not a clean end. connect-web 2.2.0 throws the string
+  `"missing EndStreamResponse"` (read back as code `unknown`); the shared
+  connect-node transport raises `protocol error: missing EndStreamResponse`
+  with `invalid_argument`. The core reports it as
+  `error` with reason `"truncated"`, mapped to `NoAnswer NetworkError` in Elm
+  (code `unavailable`) so a session retrying on `Unavailable` reconnects.
 
 ## grpc-gateway (https://github.com/grpc-ecosystem/grpc-gateway, `runtime/handler.go`, `ForwardResponseStream`)
 

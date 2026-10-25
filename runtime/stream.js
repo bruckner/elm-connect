@@ -15,8 +15,9 @@
 //   { kind: "end", status, error, metadata }   the end; `error` is null or the
 //                                              error object as the server sent it
 //   { kind: "error", reason, message }         no answer: "network", "timeout",
-//                                              "protocol" (a body that breaks
-//                                              its framing), "compressed"
+//                                              "truncated" (a Connect body cut
+//                                              short), "protocol" (a body that
+//                                              breaks its framing), "compressed"
 // A cancelled stream emits nothing more.
 
 const END_STREAM = 0x02;
@@ -78,8 +79,8 @@ function connectParser() {
       return frames;
     },
     finish() {
-      if (buffer.length > 0) throw new StreamError("protocol", "the body ended inside a message");
-      if (!ended) throw new StreamError("protocol", "the body ended without an end-stream message");
+      if (buffer.length > 0) throw new StreamError("truncated", "the body ended inside a message");
+      if (!ended) throw new StreamError("truncated", "the body ended without an end-stream message");
       return [];
     },
   };
@@ -267,7 +268,7 @@ function errorBody(text) {
 export function createStreams(emit, fetchImpl = globalThis.fetch.bind(globalThis)) {
   const live = new Map();
 
-  async function open(id, { url, method = "POST", headers = [], body = null, framing = "connect", timeoutMs = null }) {
+  async function open(id, { url, method = "POST", headers = [], body = null, framing = "connect", timeoutMs = null, withCredentials = false }) {
     cancel(id);
     const controller = new AbortController();
     const entry = { controller, timedOut: false, timer: null };
@@ -288,6 +289,7 @@ export function createStreams(emit, fetchImpl = globalThis.fetch.bind(globalThis
         headers,
         body: body === null ? undefined : framing === "connect" ? envelope(body) : body,
         signal: controller.signal,
+        credentials: withCredentials ? "include" : "same-origin",
       });
       const responseHeaders = {};
       response.headers.forEach((value, name) => {

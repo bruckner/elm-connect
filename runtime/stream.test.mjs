@@ -66,9 +66,9 @@ test("connect: a compressed message is refused", () => {
   assert.throws(() => parseAll("connect", [frame(1, note)]), { reason: "compressed" });
 });
 
-test("connect: a body without end-stream is a protocol error", () => {
-  assert.throws(() => parseAll("connect", [frame(0, note)]), { reason: "protocol", message: /without an end-stream/ });
-  assert.throws(() => parseAll("connect", [frame(0, note).subarray(0, 8)]), { reason: "protocol", message: /inside a message/ });
+test("connect: a body without end-stream is truncated", () => {
+  assert.throws(() => parseAll("connect", [frame(0, note)]), { reason: "truncated", message: /without an end-stream/ });
+  assert.throws(() => parseAll("connect", [frame(0, note).subarray(0, 8)]), { reason: "truncated", message: /inside a message/ });
 });
 
 test("connect: data after end-stream is a protocol error", () => {
