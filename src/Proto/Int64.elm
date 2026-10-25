@@ -49,7 +49,7 @@ toInt text =
                 < 16
                 || (String.length significant == 16 && significant <= maxSafe)
     in
-    if String.isEmpty digits || not (String.all Char.isDigit digits) || not fits then
+    if String.isEmpty digits || not (String.all digit digits) || not fits then
         Nothing
 
     else
@@ -65,6 +65,15 @@ toInt text =
 
         else
             Just magnitude
+
+
+{-| An ASCII digit. `String.all` reads from the end and takes a low surrogate
+without its high half together with the code unit before it, whose code the
+pair then has; such a pair is two units long.
+-}
+digit : Char -> Bool
+digit char =
+    Char.isDigit char && String.length (String.fromChar char) == 1
 
 
 maxSafe : String

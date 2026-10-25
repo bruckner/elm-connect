@@ -86,14 +86,11 @@ fractionAndZone : String -> Maybe ( Int, Int )
 fractionAndZone rest =
     if String.startsWith "." rest then
         let
-            fraction =
-                String.dropLeft 1 rest
-                    |> String.toList
-                    |> takeWhile Char.isDigit
-                    |> String.fromList
-
             places =
-                String.length fraction
+                leadingDigits (String.dropLeft 1 rest)
+
+            fraction =
+                String.slice 1 (1 + places) rest
         in
         if places >= 1 && places <= 9 then
             Maybe.map2 Tuple.pair
@@ -349,23 +346,20 @@ pad width number =
     String.padLeft width '0' (String.fromInt number)
 
 
-{-| The leading items `keep` accepts. It accumulates and reverses, so its
-stack depth stays constant however long the input.
+{-| How many ASCII digits `text` starts with. `String.foldl` reads from the
+start; `String.toList` reads from the end, and on text starting with a low
+surrogate without its high half never returns.
 -}
-takeWhile : (a -> Bool) -> List a -> List a
-takeWhile keep items =
-    takeWhileHelp keep items []
-
-
-takeWhileHelp : (a -> Bool) -> List a -> List a -> List a
-takeWhileHelp keep items kept =
-    case items of
-        first :: rest ->
-            if keep first then
-                takeWhileHelp keep rest (first :: kept)
+leadingDigits : String -> Int
+leadingDigits text =
+    String.foldl
+        (\char ( count, counting ) ->
+            if counting && Char.isDigit char then
+                ( count + 1, True )
 
             else
-                List.reverse kept
-
-        [] ->
-            List.reverse kept
+                ( count, False )
+        )
+        ( 0, True )
+        text
+        |> Tuple.first

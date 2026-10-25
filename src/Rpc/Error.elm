@@ -82,7 +82,8 @@ type Error
   - `InvalidPathValue`: over transcoding, a request field the path holds
     (`field`, its JSON names joined with `.`) whose value the variable's
     `template` cannot match, such as `""` or `notes/a/b` for
-    `{name=notes/*}`. Nothing was sent.
+    `{name=notes/*}`, or which holds a surrogate without its pair, as text
+    cut inside a character by `String.left` can. Nothing was sent.
   - `RequestTooLarge`: the request message, as JSON, was longer in UTF-8
     bytes (`size`) than the transport sends (`limit`,
     [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes)). Nothing was

@@ -30,7 +30,8 @@ it differs from its default.
 
 A path value must match its variable's template as `google/api/http.proto`
 defines it, and one that cannot, an empty one or `notes/a/b` for
-`{name=notes/*}`, is not sent: the call fails with
+`{name=notes/*}`, is not sent; nor is one holding a surrogate without
+its pair, which no URL can carry: the call fails with
 `NoAnswer (InvalidPathValue { field, template })` naming the field, while
 `Rpc.request` still builds the URL it would have used.
 

@@ -299,6 +299,21 @@ pathValues =
                 , refused (named [ Proto.Http.doubleWildcard, Proto.Http.literal "x" ]) """{"name":"a/b/x"}"""
                 ]
                     |> Expect.equal (List.repeat 6 Nothing)
+        , test "a value holding a lone surrogate matches no template" <|
+            \_ ->
+                [ refused (named []) """{"name":"\\udc00x"}"""
+                , refused (named [ Proto.Http.wildcard ]) """{"name":"x\\udc00"}"""
+                , refused (named notes) """{"name":"notes/\\ud800"}"""
+                , refused (named [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]) """{"name":"files/a/\\udc00\\udc01"}"""
+                , refused (named []) """{"name":"\\ud83d\\ude00"}"""
+                ]
+                    |> Expect.equal
+                        [ Just { field = "name", template = "*" }
+                        , Just { field = "name", template = "*" }
+                        , Just { field = "name", template = "notes/*" }
+                        , Just { field = "name", template = "files/**" }
+                        , Nothing
+                        ]
         , test "a literal-only template takes its literal alone" <|
             \_ ->
                 ( refused (named [ Proto.Http.literal "me" ]) """{"name":"me"}""", refused (named [ Proto.Http.literal "me" ]) """{"name":"you"}""" )
@@ -380,6 +395,11 @@ queries =
                     }
                     """{"author":"","only":"KIND_UNSPECIFIED","since":"1970-01-01T00:00:00Z","limit":0,"data":""}"""
                     |> Expect.equal "https://api.example.com/v1?author=&only=KIND_UNSPECIFIED&since=1970-01-01T00%3A00%3A00Z&limit=0"
+        , test "a lone surrogate in a value is written as U+FFFD" <|
+            \_ ->
+                url { rule | query = [ Proto.Http.param [ field "tags" "tags" CardinalityRepeated (KindScalar ScalarString) ] ] }
+                    """{"tags":["\\udc00a","b\\ud800"]}"""
+                    |> Expect.equal "https://api.example.com/v1?tags=%EF%BF%BDa&tags=b%EF%BF%BD"
         , test "the parameter's name is the dotted proto names, its value read by JSON names" <|
             \_ ->
                 url { rule | query = [ Proto.Http.param [ sub "sub_message" "subMessage", string "page_token" "pageToken" ] ] }
