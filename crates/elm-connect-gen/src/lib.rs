@@ -36,8 +36,8 @@ use prost_reflect::DescriptorPool;
 pub use crate::diagnostics::{Code, Diagnostics, Problem};
 pub use crate::ir::ModuleName;
 pub use crate::options::{
-    Bytes, EnumUnknown, Int64, KEYS as OPTION_KEYS, Options, Spelling, Streaming, UnboundMethods,
-    default_value as option_default, parse_module_prefix, parse_rename,
+    Bytes, Codec, EnumUnknown, Int64, KEYS as OPTION_KEYS, Options, Spelling, Streaming,
+    UnboundMethods, default_value as option_default, parse_module_prefix, parse_rename,
 };
 
 /// The version of the generator, stamped into everything it emits.

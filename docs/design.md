@@ -303,7 +303,7 @@ rpc shared call =
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
   `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
   `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
-  `Proto.Message` will run, §5.5), or
+  `Proto.Message` holds, §5.5), or
   implementation kept out of the public modules so that they read as API
   (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
   `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2). A type one
@@ -1544,8 +1544,9 @@ registry =
   in declaration order, each oneof's members where the oneof is, each
   value documented (what the field is, and its oneof). The package
   module's sections are types, defaults, typed values (each enum's,
-  then each message's), the registry, encoders and decoders; a package
-  without types has the registry alone.
+  then each message's), the registry, encoders and decoders, then
+  under `codec=binary` or `codec=both` binary encoders and binary
+  decoders (§3.10); a package without types has the registry alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
   `Proto.Thing.Thing a` the typed value carrying it beside the type's
@@ -1561,7 +1562,11 @@ registry =
   decoder default descriptor` (read by `encode`, `decoder`, `default`,
   `toDescriptor`), `Proto.Enum.enum encode decoder zero descriptor`
   (likewise, with `toName`, `fromName`, `toNumber`, `fromNumber`) and
-  `Proto.Method.method encodeRequest responseDecoder descriptor` (§4). Why: an Elm record alias that generated code writes
+  `Proto.Method.method encodeRequest responseDecoder descriptor` (§4),
+  and given binary codecs by a modifier, `Proto.Message.withBinary` and
+  `Proto.Method.withBinary`, or built with them alone by
+  `Proto.Message.messageBinary` and `Proto.Method.methodBinary`
+  (§3.10). Why: an Elm record alias that generated code writes
   as a literal can never gain a field. The field is a major by Elm's
   package rules, and every module generated before it stops compiling
   on the literal rather than on the sentinel (§8.2). Built by a
@@ -1712,6 +1717,51 @@ registry =
   in decisions.md (No option to leave the descriptors out; Descriptors
   in a module per type).
 
+### 3.10 Binary codecs
+
+- **The option.** `codec=json|binary|both` (CLI `--codec`), default
+  `json`, whose output is byte for byte what it was before the option
+  existed. The second header line records it like the others
+  (`-- Options: codec=both`), and `check` regenerates with it.
+- **What `binary` and `both` add.** Two sections after the decoders,
+  binary encoders and binary decoders, written against `Proto.Binary`
+  (§5.5): per message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
+  `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` and
+  `decodeFooBytes = mergeFooBytes defaultFoo`; per enum its number
+  conversions, `encodeBarBytes : Bar -> Int` and
+  `decodeBarBytes : Int -> Bar` (an unknown number reads as the zero
+  value, a negative number is an `if` in the fallback, since Elm has no
+  negative literal patterns); per oneof an encoder of its set member;
+  per recursion wrapper a pair that unwraps and wraps through
+  `Proto.Binary.map`, so the merges of a cycle refer to each other
+  through functions only. An encoder is `Bytes.Encode.sequence` of one
+  field helper per field in field-number order, a oneof's encoder where
+  its first member's number falls; a merge is `Proto.Binary.merge` of a
+  step that `case`s on the field number into a record update and a
+  finish that reverses the lists the step built front first. A
+  repeated scalar declared `[packed = false]` is written with
+  `listUnpacked`, the option read from the field's own options (the
+  descriptor pool reports such a field packed). A well-known request or
+  response type takes the runtime's codec through
+  `Proto.Binary.messageEncoder` and `Proto.Binary.messageDecoder`.
+  `int64=` and `bytes=` choose the codecs as they choose the JSON ones
+  (`int64AsInt`, `bytesAsBytes`).
+- **The attachment.** Under `both` each typed value and method is built
+  as before and given its binary codecs by a modifier:
+  `Proto.Message.message … |> Proto.Message.withBinary encodeNoteBytes
+  decodeNoteBytes`, `Proto.Method.method … |> Proto.Method.withBinary
+  …`, the arguments stacked as `Proto.Method.method`'s are. Under
+  `binary` messages, oneofs and wrappers get no JSON codecs (enums keep
+  theirs, which `Proto.Enum.Enum` holds), and the values are built by
+  `Proto.Message.messageBinary` and `Proto.Method.methodBinary`, whose
+  JSON encoder writes `null` and whose JSON decoder fails.
+  `Proto.Message.encodeBytes`/`bytesDecoder`,
+  `Proto.Method.encodeRequestBytes`/`responseBytesDecoder` (each a
+  `Maybe`) and `Proto.Method.hasJson` read them back. A program that
+  never builds a value with binary codecs carries none of their code.
+- **Checked** by the corpus cases `codec_both` (the codec protos under
+  `codec=both`) and `codec_binary`.
+
 ## 4. Calls
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
@@ -1823,6 +1873,10 @@ keeps.
   built by `Proto.Method.descriptor` from the fully-qualified service
   name and the method's name as declared, together its Connect path,
   its idempotency, the full names of its types and its bindings.
+  Under `codec=both` the method is given its binary codecs by
+  `|> Proto.Method.withBinary`, the request type's `encode…Bytes` and
+  the response type's `decode…Bytes`; under `codec=binary` it is built
+  by `Proto.Method.methodBinary` from those alone (§3.10).
   The descriptor's name is `descriptor` followed by the method's Elm
   name with its first letter uppercased, so a `rename` renames both. No
   `Proto.Method.Method` value is generated; `Rpc.Call.method` and
@@ -2772,9 +2826,9 @@ a handful of field helpers that binary codecs are written with
 (`merge`, `field`, `fieldInto`, `repeated`, `mapEntry`, `skip` to
 read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `dict`, `boolMap` to write). Generated code calls it; an application
-meets `decode`, `encode` and `Decoder`. Nothing generates binary codecs
-yet, and no transport sends them: the module comes first because the
-generator's binary output and the proto codec are written against it.
+meets `decode`, `encode` and `Decoder`. The generator writes binary
+codecs against it under `codec=binary` or `codec=both` (§3.10); no
+transport sends them yet (roadmap: binary protobuf).
 
 - **A decoder knows its length.** elm/bytes has no end-of-input test,
   no position and no backtracking, so a decoder cannot find where a
@@ -2786,7 +2840,7 @@ generator's binary output and the proto codec are written against it.
   the representation can change without touching user code; Elm
   0.19.2's `--optimize` compiles the one-constructor wrapper to
   `identity`. It is defined in `Proto.Internal.Binary`, since
-  `Proto.Message` will run one and `Proto.Binary` imports
+  `Proto.Message` holds one and `Proto.Binary` imports
   `Proto.Message` through `Proto.Json`, and the package site shows the
   internal name.
 - **Encoding is deterministic.** Fields go in field-number order; a

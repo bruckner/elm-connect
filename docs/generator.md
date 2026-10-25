@@ -97,6 +97,7 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
+| `codec` | `--codec` | `json` (default), `binary`, `both` | Which codecs messages get. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak. `both`: protobuf binary codecs beside the JSON ones. `binary`: the binary codecs alone; enums keep their JSON codecs. See [Binary codecs](#binary-codecs): no transport sends binary yet. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -135,6 +136,68 @@ generated with, in the plugin parameter's form, each option not at its
 default in the order of the table above: `-- Options:
 int64=int, module_prefix=Api`, or `-- Options: defaults`. The plugin and
 the CLI record the same options the same way.
+
+## Binary codecs
+
+Under `codec=both` or `codec=binary` each package module gains two
+sections after its decoders, binary encoders and binary decoders,
+written against the runtime's `Proto.Binary`:
+
+| Proto | Elm |
+|---|---|
+| `message Note` | `encodeNoteBytes : Note -> Bytes.Encode.Encoder`; `decodeNoteBytes : Proto.Binary.Decoder Note`; `mergeNoteBytes : Note -> Proto.Binary.Decoder Note`, which reads a `Note` into the one given, as protobuf merges a message that arrives twice (`decodeNoteBytes` is `mergeNoteBytes defaultNote`) |
+| `enum Visibility` | `encodeVisibilityBytes : Visibility -> Int` and `decodeVisibilityBytes : Int -> Visibility`, the number conversions; an unknown number reads as the zero value |
+| a oneof | an encoder of its set member, `encodeNoteKindBytes` |
+| a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes` |
+| `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
+
+The typed values and the methods carry them. Under `codec=both` a
+typed value is built as under `json` and given its binary codecs by
+`Proto.Message.withBinary` (the `codec_both` corpus case):
+
+```elm conformance/cases/codec_both/expected/Codec/V1.elm excerpt
+messageLeaf : Proto.Message.Message Leaf
+messageLeaf =
+    Proto.Message.message encodeLeaf decodeLeaf defaultLeaf Codec.V1.Leaf.descriptor
+        |> Proto.Message.withBinary encodeLeafBytes decodeLeafBytes
+```
+
+and a method by `Proto.Method.method … |> Proto.Method.withBinary`,
+given the request type's `encode…Bytes` and the response type's
+`decode…Bytes`. Under `codec=binary` both are built from the binary
+codecs alone (the `codec_binary` case):
+
+```elm conformance/cases/codec_binary/expected/Ledger/V1/LedgerService.elm excerpt
+getEntry =
+    Rpc.call
+        (Proto.Method.methodBinary Ledger.V1.encodeGetEntryRequestBytes
+            Ledger.V1.decodeEntryBytes
+            descriptorGetEntry
+        )
+```
+
+`Proto.Message.encodeBytes` and `bytesDecoder`, and
+`Proto.Method.encodeRequestBytes` and `responseBytesDecoder`, read them
+back (`Nothing` without binary codecs); `Proto.Binary.encode` and
+`Proto.Binary.decode` run them on a whole body.
+
+`codec=binary` drops the JSON codecs of messages, oneofs and recursion
+wrappers: `encodeNote` and `decodeNote` are not generated. Enums keep
+theirs, since `Proto.Enum.Enum` holds them. The typed values are built
+by `Proto.Message.messageBinary` and the methods by
+`Proto.Method.methodBinary`, whose JSON encoder writes `null` and whose
+JSON decoder fails; `Proto.Method.hasJson` tells such a method apart.
+Such a method cannot be sent over transcoding, which speaks JSON only.
+
+`int64` and `bytes` apply to the binary codecs as to the JSON ones: the
+same Elm types, so a value read from binary is the record JSON would
+give. A 64-bit integer held as `Int` fails to decode outside
+±(2^53 − 1); `bytes=bytes` reads a `bytes` field without a base64 round
+trip.
+
+No transport sends protobuf binary yet: calls go as JSON, and a call of
+a method generated under `codec=binary` sends `null`. Connect's proto
+codec is next ([roadmap](roadmap.md#binary-protobuf)).
 
 ## Imported packages
 

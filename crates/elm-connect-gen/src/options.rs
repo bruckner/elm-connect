@@ -25,6 +25,9 @@ pub struct Options {
     /// What an enum value the generated decoder does not know reads as
     /// (`enum_unknown=`, design §3.3).
     pub enum_unknown: EnumUnknown,
+    /// Which codecs messages get (`codec=`): proto3 JSON, protobuf binary,
+    /// or both.
+    pub codec: Codec,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
@@ -136,6 +139,7 @@ impl Options {
                 "enum_unknown" => {
                     value_of(key, value, EnumUnknown::VALUES).map(|v| options.enum_unknown = v)
                 }
+                "codec" => value_of(key, value, Codec::VALUES).map(|v| options.codec = v),
                 "rename" => options.add_rename(value),
                 _ => parse_module_prefix(value).map(|v| options.module_prefix = Some(v)),
             };
@@ -192,6 +196,7 @@ impl Options {
             self.enum_unknown.as_str(),
             EnumUnknown::VALUES,
         );
+        set("codec", self.codec.as_str(), Codec::VALUES);
         for (proto, elm) in &self.rename {
             pairs.push(format!("rename={proto}:{elm}"));
         }
@@ -212,18 +217,20 @@ pub fn default_value(key: &str) -> Option<&'static str> {
         "unbound_methods" => UnboundMethods::VALUES,
         "streaming" => Streaming::VALUES,
         "enum_unknown" => EnumUnknown::VALUES,
+        "codec" => Codec::VALUES,
         _ => return None,
     };
     values.first().copied()
 }
 
 /// The plugin parameter's keys.
-pub const KEYS: [&str; 7] = [
+pub const KEYS: [&str; 8] = [
     "int64",
     "bytes",
     "unbound_methods",
     "streaming",
     "enum_unknown",
+    "codec",
     "rename",
     "module_prefix",
 ];
@@ -446,6 +453,58 @@ impl std::str::FromStr for EnumUnknown {
     }
 }
 
+/// Which codecs the generated messages get.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Codec {
+    /// proto3 JSON, which Connect's JSON codec and transcoding speak.
+    #[default]
+    Json,
+    /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
+    /// Connect's proto codec; messages get no JSON codecs.
+    Binary,
+    /// Both, the binary codecs beside the JSON ones.
+    Both,
+}
+
+impl Codec {
+    /// The values the option takes, as written, the default first.
+    pub const VALUES: &'static [&'static str] = &["json", "binary", "both"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Codec::Json => "json",
+            Codec::Binary => "binary",
+            Codec::Both => "both",
+        }
+    }
+
+    /// Whether messages get proto3 JSON codecs.
+    pub fn json(self) -> bool {
+        matches!(self, Codec::Json | Codec::Both)
+    }
+
+    /// Whether messages get protobuf binary codecs.
+    pub fn binary(self) -> bool {
+        matches!(self, Codec::Binary | Codec::Both)
+    }
+}
+
+impl std::str::FromStr for Codec {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "json" => Ok(Codec::Json),
+            "binary" => Ok(Codec::Binary),
+            "both" => Ok(Codec::Both),
+            _ => Err(format!(
+                "`codec` is `json`, `binary` or `both`, not `{value}`"
+            )),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -519,6 +578,12 @@ mod tests {
         );
         assert!(error("enum_unknown=variant").contains("`fail` or `zero`"));
         assert!(error("enum_unknown=zero,enum_unknown=zero").contains("more than once"));
+        let codec = |parameter| parse(parameter).map(|o| o.codec);
+        assert_eq!(codec(""), Ok(Codec::Json));
+        assert_eq!(codec("codec=binary"), Ok(Codec::Binary));
+        assert_eq!(codec("codec=both,int64=int"), Ok(Codec::Both));
+        assert!(error("codec=proto").contains("`json`, `binary` or `both`"));
+        assert!(error("codec=both,codec=json").contains("more than once"));
     }
 
     #[test]
@@ -526,12 +591,12 @@ mod tests {
         let recorded = |parameter| parse(parameter).map(|o| o.recorded());
         assert_eq!(recorded(""), Ok(Vec::new()));
         assert_eq!(
-            recorded("int64=string,bytes=string,streaming=error,enum_unknown=fail"),
+            recorded("int64=string,bytes=string,streaming=error,enum_unknown=fail,codec=json"),
             Ok(Vec::new())
         );
         assert_eq!(
             recorded(
-                "module_prefix=Api,rename=b.C:D,enum_unknown=zero,rename=a.B:C,\
+                "module_prefix=Api,rename=b.C:D,codec=both,enum_unknown=zero,rename=a.B:C,\
                  unbound_methods=error,streaming=skip,bytes=bytes,int64=int"
             ),
             Ok([
@@ -540,6 +605,7 @@ mod tests {
                 "unbound_methods=error",
                 "streaming=skip",
                 "enum_unknown=zero",
+                "codec=both",
                 "rename=a.B:C",
                 "rename=b.C:D",
                 "module_prefix=Api",
@@ -553,6 +619,7 @@ mod tests {
             "unbound_methods",
             "streaming",
             "enum_unknown",
+            "codec",
         ] {
             assert!(default_value(key).is_some(), "{key}");
         }

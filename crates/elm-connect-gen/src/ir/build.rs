@@ -1940,6 +1940,7 @@ impl Builder {
                     ty,
                     cyclic: false,
                     jstype: jstype(&field),
+                    unpacked: unpacked(&field),
                     annotations,
                     doc,
                 });
@@ -2466,6 +2467,21 @@ fn read_rule(rule: &DynamicMessage) -> HttpRule {
         response_body: string("response_body"),
         additional_bindings,
     }
+}
+
+/// Whether `field` is a repeated scalar or enum that is not packed: one
+/// declared `[packed = false]`, as proto3's scalars are packed by default.
+/// The option is read from the field's own options: the descriptor pool's
+/// `is_packed` reports such a field packed.
+fn unpacked(field: &FieldDescriptor) -> bool {
+    field.is_list()
+        && field
+            .field_descriptor_proto()
+            .options
+            .as_ref()
+            .and_then(|options| options.packed)
+            == Some(false)
+        && !matches!(field.kind(), Kind::Message(_) | Kind::String | Kind::Bytes)
 }
 
 /// The `jstype` option of `field` when its values are 64-bit integers;

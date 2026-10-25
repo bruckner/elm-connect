@@ -156,7 +156,9 @@ result, trying calls in `elm repl`, and testing without a server.
 
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
-- JSON only: proto3 JSON, no binary protobuf.
+- Calls in proto3 JSON only. The generator can write protobuf binary
+  codecs (`codec=both`, [docs/generator.md](docs/generator.md#binary-codecs)),
+  but no transport sends them yet.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
   a file that declares an edition is `input::editions`.
 - No streaming, no gRPC-Web.
