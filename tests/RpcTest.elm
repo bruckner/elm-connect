@@ -202,6 +202,19 @@ percentEncoding =
             \_ -> encode "😀" |> Expect.equal "%F0%9F%98%80"
         , test "writes a lone surrogate as U+FFFD" <|
             \_ -> encode (String.left 1 "😀") |> Expect.equal "%EF%BF%BD"
+        , test "writes a lone low surrogate as U+FFFD wherever it is" <|
+            \_ ->
+                [ "\u{DC00}a", "a\u{DC00}b", "a\u{DC00}", "\u{DC00}", "\u{DC00}\u{DC01}", "\u{D800}a", String.right 1 "😀" ++ "x" ]
+                    |> List.map encode
+                    |> Expect.equal [ "%EF%BF%BDa", "a%EF%BF%BDb", "a%EF%BF%BD", "%EF%BF%BD", "%EF%BF%BD%EF%BF%BD", "%EF%BF%BDa", "%EF%BF%BDx" ]
+        , test "a route's literal text with a lone low surrogate is written with U+FFFD" <|
+            \_ ->
+                List.map Rpc.Internal.Http.encodeRouteText [ "\u{DC00}x", "x\u{DC00}", "%41\u{DC00}" ]
+                    |> Expect.equal [ "%EF%BF%BDx", "x%EF%BF%BD", "%41%EF%BF%BD" ]
+        , test "decoding reads a lone low surrogate as U+FFFD" <|
+            \_ ->
+                List.map Rpc.Internal.Http.percentDecode [ "\u{DC00}a", "a\u{DC00}%41", "\u{DC00}" ]
+                    |> Expect.equal [ Just "�a", Just "a�A", Just "�" ]
         , test "decodes 100,000 characters without exhausting the stack" <|
             \_ ->
                 Rpc.Internal.Http.percentDecode (String.repeat 100000 "x")

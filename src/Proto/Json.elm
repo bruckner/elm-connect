@@ -1367,8 +1367,10 @@ which may lie outside them.
 scientific : String -> Maybe { digits : String, point : Int }
 scientific text =
     let
+        -- A low surrogate without its high half is read with the unit
+        -- before it, a digit perhaps, as one character two units long.
         allDigits part =
-            not (String.isEmpty part) && String.all Char.isDigit part
+            not (String.isEmpty part) && String.all (\char -> Char.isDigit char && String.length (String.fromChar char) == 1) part
 
         exponentOf part =
             if allDigits (String.dropLeft 1 part) && (String.startsWith "+" part || String.startsWith "-" part) then
@@ -1639,6 +1641,13 @@ bytes =
 
 isBase64 : String -> Bool
 isBase64 text =
+    -- Checked first: only text of these characters is safe to read from the
+    -- end, as `String.any` and `trailingCount` do (see `isBase64Char`).
+    String.all (\char -> isBase64Char char || char == '=') text && base64Shape text
+
+
+base64Shape : String -> Bool
+base64Shape text =
     let
         body =
             dropPadding text
@@ -1664,9 +1673,15 @@ isBase64 text =
         && (padding == 0 || (partial /= 0 && padding == 4 - partial))
 
 
+{-| A character of either base64 alphabet. elm/core's `String.all` reads a
+string from its end and takes a low surrogate without its high half together
+with the code unit before it, a letter perhaps, as one character two units
+long; at the start of the text, with what lies before the string, where
+reading on would never return. Its length refuses it.
+-}
 isBase64Char : Char -> Bool
 isBase64Char char =
-    Char.isAlphaNum char || char == '+' || char == '/' || char == '-' || char == '_'
+    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || char == '+' || char == '/' || char == '-' || char == '_')
 
 
 dropPadding : String -> String
@@ -1820,17 +1835,23 @@ capitalize word =
     String.toUpper (String.left 1 word) ++ String.dropLeft 1 word
 
 
+{-| Each ASCII capital of `name` as `_` and its small letter. Read from the
+start: `String.toList` reads from the end, and on text starting with a low
+surrogate without its high half never returns.
+-}
 snakeCase : String -> String
 snakeCase name =
-    String.toList name
-        |> List.concatMap
-            (\char ->
-                if Char.isUpper char then
-                    [ '_', Char.toLower char ]
+    String.foldl
+        (\char written ->
+            if Char.isUpper char then
+                Char.toLower char :: '_' :: written
 
-                else
-                    [ char ]
-            )
+            else
+                char :: written
+        )
+        []
+        name
+        |> List.reverse
         |> String.fromList
 
 

@@ -49,6 +49,28 @@ that does not fit the length.
 -}
 fromBase64 : String -> Maybe Bytes
 fromBase64 text =
+    -- Checked first: only text of these characters is safe to read from the
+    -- end, as `String.any` and `String.toList` do (see `base64Char`).
+    if String.all base64Char text then
+        decodeBase64 text
+
+    else
+        Nothing
+
+
+{-| A character base64 text can hold: either alphabet or padding. elm/core's
+`String.all` reads a string from its end and takes a low surrogate without its
+high half together with the code unit before it, a letter perhaps, as one
+character two units long; at the start of the text, with what lies before the
+string, where reading on would never return. Its length refuses it.
+-}
+base64Char : Char -> Bool
+base64Char char =
+    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_=")
+
+
+decodeBase64 : String -> Maybe Bytes
+decodeBase64 text =
     let
         body =
             dropPadding text

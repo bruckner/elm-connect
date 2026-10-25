@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue, wellFormed)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -19,14 +19,13 @@ import Task exposing (Task)
 
 
 {-| Percent-encode `text` as UTF-8, keeping the characters `keep` accepts and
-writing every other byte as `%XX` with uppercase hex digits. A high surrogate
-left without its pair, which a string holds when it was cut inside a
-character, has no UTF-8 form and is written as U+FFFD, the replacement
+writing every other byte as `%XX` with uppercase hex digits. A surrogate
+without its pair has no UTF-8 form and is written as U+FFFD, the replacement
 character, as the WHATWG URL encoder writes it.
 -}
 percentEncode : (Char -> Bool) -> String -> String
 percentEncode keep text =
-    String.foldr
+    foldrScalars
         (\char encoded ->
             if keep char then
                 String.cons char encoded
@@ -38,12 +37,113 @@ percentEncode keep text =
         text
 
 
+{-| `String.foldr` over the characters of `text`, each surrogate without its
+pair read as U+FFFD. elm/core's `String.foldr` reads a string from its end
+and takes a low surrogate together with the code unit before it for one
+character, whose code is that unit's when the unit is not a high surrogate;
+one at the start is taken with what lies before the string, and the fold
+then never returns. The leading ones are read off first, from the start.
+-}
+foldrScalars : (Char -> b -> b) -> b -> String -> b
+foldrScalars step initial text =
+    let
+        ( leading, rest ) =
+            leadingLows 0 text
+
+        folded =
+            String.foldr
+                (\char state ->
+                    let
+                        code =
+                            Char.toCode char
+                    in
+                    if String.length (String.fromChar char) == 1 then
+                        -- A lone high surrogate's code is NaN.
+                        if code >= 0 then
+                            step char state
+
+                        else
+                            step replacement state
+
+                    else if code >= 0x00010000 then
+                        step char state
+
+                    else
+                        step (scalar code) (step replacement state)
+                )
+                initial
+                rest
+    in
+    List.foldl (\_ state -> step replacement state) folded (List.repeat leading ())
+
+
+{-| How many lone low surrogates `text` starts with, and the text after them.
+-}
+leadingLows : Int -> String -> ( Int, String )
+leadingLows count text =
+    case String.uncons text of
+        Just ( first, rest ) ->
+            if String.length (String.fromChar first) == 1 && surrogate (Char.toCode first) then
+                leadingLows (count + 1) rest
+
+            else
+                ( count, text )
+
+        Nothing ->
+            ( count, text )
+
+
+{-| Whether every character of `text` is a Unicode scalar value: it holds no
+surrogate without its pair, so it has a UTF-8 form. `String.all` reads from
+the end as `String.foldr` does, and stops at the first character this
+refuses: a low surrogate taken with a unit that is not its high half, a lone
+high surrogate, or one at the start taken with what lies before the string.
+-}
+wellFormed : String -> Bool
+wellFormed =
+    String.all
+        (\char ->
+            let
+                code =
+                    Char.toCode char
+            in
+            case String.length (String.fromChar char) of
+                1 ->
+                    code < 0xD800 || code > 0xDFFF
+
+                2 ->
+                    code >= 0x00010000
+
+                _ ->
+                    False
+        )
+
+
+surrogate : Int -> Bool
+surrogate code =
+    code >= 0xD800 && code <= 0xDFFF
+
+
+scalar : Int -> Char
+scalar code =
+    if surrogate code then
+        replacement
+
+    else
+        Char.fromCode code
+
+
+replacement : Char
+replacement =
+    '�'
+
+
 {-| Decode `%XX` escapes as UTF-8; `Nothing` when an escape is malformed or
 the bytes are not UTF-8.
 -}
 percentDecode : String -> Maybe String
 percentDecode text =
-    bytesOf (String.toList text) []
+    bytesOf (foldrScalars (::) [] text) []
         |> Maybe.andThen (\bytes -> decodeUtf8 (List.reverse bytes) [])
 
 
@@ -157,6 +257,9 @@ unreserved char =
     Char.isAlphaNum char && Char.toCode char < 128 || char == '-' || char == '_' || char == '.' || char == '~'
 
 
+{-| The UTF-8 bytes of a Unicode scalar value, which `foldrScalars` makes of
+every character it reads.
+-}
 utf8 : Int -> List Int
 utf8 code =
     if code < 0x80 then
@@ -166,13 +269,6 @@ utf8 code =
         [ 0xC0 + Bitwise.shiftRightBy 6 code
         , continuation code
         ]
-
-    else if isNaN (toFloat code) || (code >= 0xD800 && code <= 0xDFFF) then
-        -- A high surrogate left without its pair, as when a string is cut
-        -- inside a character, reaches here with no code: `Char.toCode`
-        -- gives NaN for it. Its value is written as U+FFFD, since no byte
-        -- sequence is UTF-8 for it.
-        utf8 0xFFFD
 
     else if code < 0x00010000 then
         [ 0xE0 + Bitwise.shiftRightBy 12 code
@@ -210,7 +306,7 @@ every other byte percent-encoded.
 -}
 encodeRouteText : String -> String
 encodeRouteText text =
-    routeText (String.toList text) []
+    routeText (foldrScalars (::) [] text) []
         |> List.reverse
         |> String.concat
 

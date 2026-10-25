@@ -117,6 +117,8 @@ pathText json fieldPath zero =
 {-| The first path variable of a binding whose value its template cannot
 match, by its JSON field path and its template. A request carrying it can
 never reach the method: no server route matches it, or a different one does.
+A value holding a surrogate without its pair matches none: it has no UTF-8
+form, so no URL holds it as it is.
 -}
 invalidPathValue : Rule -> Value -> Maybe { field : String, template : String }
 invalidPathValue rule json =
@@ -125,7 +127,11 @@ invalidPathValue rule json =
             Nothing
 
         (Variable fieldPath template zero) :: rest ->
-            if matches template (pathText json fieldPath zero) then
+            let
+                value =
+                    pathText json fieldPath zero
+            in
+            if Internal.wellFormed value && matches template value then
                 invalidPathValue { rule | path = rest } json
 
             else

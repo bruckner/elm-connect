@@ -2134,7 +2134,10 @@ breaking it (roadmap).
   of one segment (`{name}`, `{name=*}`, or a literal alone, which only
   that literal matches) takes any value, its `/` escaped as `%2F`; any
   other is split at each `/`, every segment non-empty, a literal
-  matching itself, `*` one segment and `**` any number. Such a request
+  matching itself, `*` one segment and `**` any number. A value holding
+  a surrogate without its pair (half of a character cut by
+  `String.left`, say) matches none: it has no UTF-8 form, so no URL
+  carries it as it is. Such a request
   can never reach the method: `GET /v1/` or `/v1/notes/a/b` for
   `{name=notes/*}` meets no route, or another method's, and the 404
   reads as `Unimplemented`. The value is never altered to fit, as a
@@ -2512,7 +2515,13 @@ default, and is `Nothing` for a number the method has no binding of
 - Path variables are percent-encoded (every byte but RFC 3986's
   unreserved characters); a variable matching one segment (`{name}`,
   `{name=*}`) escapes `/` as `%2F`, any other keeps it. A value its
-  template cannot match is not sent (§5.1). A wildcard
+  template cannot match, or holding a surrogate without its pair, is
+  not sent (§5.1). A query value or a hand-built literal holding one
+  is written with U+FFFD in its place, as the WHATWG URL encoder writes
+  it. Text is read through a fold that takes such a surrogate apart
+  from its neighbours: elm/core's `String.foldr` and `String.all` read
+  from the end and take a low surrogate with the code unit before it,
+  and at the start of a string never return. A wildcard
   outside a variable never reaches the runtime (`route::template`).
 - A binding's literal segments and custom verb are written as RFC 3986
   `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they
