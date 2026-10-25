@@ -1,22 +1,29 @@
-module Rpc.Body exposing (Body, none, text, toText)
+module Rpc.Body exposing (Body, none, text, bytes, toText, toBytes)
 
 {-| The body of an [`Rpc.Request`](Rpc#Request) or an
-[`Rpc.Response`](Rpc#Response): none, or text, a request's JSON sent as
-`application/json` or an answer's body as it arrived.
+[`Rpc.Response`](Rpc#Response): none, text or bytes. A request's JSON is text,
+sent as `application/json`; its protobuf binary, under
+[`Rpc.Transport.withCodec Proto`](Rpc-Transport#withCodec), is bytes, sent as
+`application/proto`. An answer's body is as it arrived: text, or bytes when
+the call was read as protobuf binary.
 
     Rpc.Body.toText request.body == Just "{\"name\":\"notes/42\"}"
 
-@docs Body, none, text, toText
+@docs Body, none, text, bytes, toText, toBytes
 
 -}
 
+import Bytes exposing (Bytes)
 
-{-| A body. It is opaque: make one with [`none`](#none) or
-[`text`](#text) and read it with [`toText`](#toText).
+
+{-| A body. It is opaque: make one with [`none`](#none), [`text`](#text) or
+[`bytes`](#bytes) and read it with [`toText`](#toText) and
+[`toBytes`](#toBytes).
 -}
 type Body
     = None
     | Text String
+    | Binary Bytes
 
 
 {-| No body, as a GET has.
@@ -34,7 +41,15 @@ text =
     Text
 
 
-{-| The body's text, or `Nothing` when there is none.
+{-| A body of bytes: a request's is sent as `application/proto`, an answer's
+is what arrived when the call was read as protobuf binary.
+-}
+bytes : Bytes -> Body
+bytes =
+    Binary
+
+
+{-| The body's text, or `Nothing` when there is none or it is bytes.
 -}
 toText : Body -> Maybe String
 toText body =
@@ -44,3 +59,18 @@ toText body =
 
         Text content ->
             Just content
+
+        Binary _ ->
+            Nothing
+
+
+{-| The body's bytes, or `Nothing` when there is none or it is text.
+-}
+toBytes : Body -> Maybe Bytes
+toBytes body =
+    case body of
+        Binary content ->
+            Just content
+
+        _ ->
+            Nothing

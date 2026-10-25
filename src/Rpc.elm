@@ -4,7 +4,7 @@ module Rpc exposing
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
-    , Request, request, response, taskFromRequest, splitTrailers
+    , Request, request, response, responseBytes, taskFromRequest, splitTrailers
     )
 
 {-| Call RPCs: unary and JSON-encoded, over the
@@ -72,10 +72,11 @@ sends and how it reads the answer can be checked without a server, and an
 application can rewrite a request before sending it with
 [`taskFromRequest`](#taskFromRequest).
 
-@docs Request, request, response, taskFromRequest, splitTrailers
+@docs Request, request, response, responseBytes, taskFromRequest, splitTrailers
 
 -}
 
+import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
 import Json.Encode
@@ -88,6 +89,7 @@ import Rpc.Internal.Call
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
 import Rpc.Internal.Trace
+import Rpc.Internal.Transport
 import Rpc.Internal.Wire
 import Rpc.Request
 import Rpc.Response
@@ -274,7 +276,11 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
             request cfg c
     in
     if Rpc.Internal.Call.retryIn cfg.retry c == Nothing && unsendable cfg c sent == Nothing then
-        Internal.send (response cfg c) toMsg fields.tracker sent
+        if Rpc.Internal.Transport.proto cfg.transport then
+            Internal.sendBytes (responseBytes cfg c) toMsg fields.tracker sent
+
+        else
+            Internal.send (response cfg c) toMsg fields.tracker sent
 
     else
         Task.attempt toMsg (taskFromRequest cfg c sent)
@@ -415,6 +421,10 @@ as its body and `Connect-Protocol-Version: 1`. With
 `IdempotencyNoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
 would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows.
+Under [`withCodec Proto`](Rpc-Transport#withCodec) the body is the request's
+protobuf binary, sent as `application/proto`, and the GET's query
+`connect=v1&encoding=proto&base64=1&message=…`, the binary as unpadded
+URL-safe base64.
 A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
 The config's headers come first, then the call's.
 
@@ -456,10 +466,33 @@ answer longer than the transport's
 [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) is not decoded: it is
 `NoAnswer (ResponseTooLarge { limit, size })`.
 
+Under [`withCodec Proto`](Rpc-Transport#withCodec) a successful answer is
+protobuf binary, which text cannot hold faithfully: read the answer as bytes
+with [`responseBytes`](#responseBytes). Read as text, it is a `BadResponse`.
+
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
 response cfg =
     Rpc.Internal.Answer.toResult cfg.transport
+
+
+{-| What an answer read as bytes (`Http.expectBytesResponse`) means, as
+[`response`](#response) reads one read as text. A call under
+[`withCodec Proto`](Rpc-Transport#withCodec) is read so: its successful
+answer is the response's protobuf binary, which must come as
+`application/proto` (or with no content type), and its error answer is JSON,
+read as [`response`](#response) reads it. Under the JSON codec the bytes are
+read as the answer's UTF-8 text.
+
+    Http.request
+        { …
+        , expect = Http.expectBytesResponse GotNote (Rpc.responseBytes config call)
+        }
+
+-}
+responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
+responseBytes cfg =
+    Rpc.Internal.Answer.toResultBytes cfg.transport
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -529,8 +562,13 @@ attempt cfg c sent =
                 (Rpc.Call.idempotency c)
                 retryCode
                 (\left ->
-                    Rpc.Internal.Wire.withBudget cfg c left sent
-                        |> Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                    if Rpc.Internal.Transport.proto cfg.transport then
+                        Rpc.Internal.Wire.withBudget cfg c left sent
+                            |> Internal.taskBytes (\answer -> Ok ( Internal.metadataOf answer, responseBytes cfg c answer ))
+
+                    else
+                        Rpc.Internal.Wire.withBudget cfg c left sent
+                            |> Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
                 )
 
 
@@ -549,8 +587,9 @@ firstAttempt cfg c sent =
 fragment; a path value its variable's template cannot match, which no server
 can route to the method; a header a browser refuses, on which XHR's
 `setRequestHeader` throws outside elm/http's handler and stops the program for
-good; or a request message over the transport's write limit. The path values
-and the message are the call's, whatever a rewritten request carries.
+good; a method without codecs for the transport's codec; or a request
+message over the transport's write limit. The path values and the message are
+the call's, whatever a rewritten request carries.
 -}
 unsendable : Config -> Call req res -> Request -> Maybe Error
 unsendable cfg c sent =
@@ -566,8 +605,13 @@ unsendable cfg c sent =
                 Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
 
             ( Nothing, Nothing ) ->
-                Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))
-                    |> Maybe.map Rpc.Error.NoAnswer
+                case Rpc.Internal.Wire.missingCodec cfg c of
+                    Just reason ->
+                        Just (Rpc.Error.NoAnswer reason)
+
+                    Nothing ->
+                        Rpc.Internal.Wire.requestTooLarge cfg c
+                            |> Maybe.map Rpc.Error.NoAnswer
 
 
 {-| The code a failed attempt is retried by, or `Nothing` when trying again

@@ -1,2 +1,4 @@
 out-*/
 codec-harness/elm-stuff/
+live-both/elm-stuff/
+conformance-runner/

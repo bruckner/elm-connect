@@ -91,6 +91,11 @@ type Error
     (`size`), than the transport reads (`limit`,
     [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes)). The body was
     dropped without decoding, so the error keeps no `Response`.
+  - `MissingCodec`: the method (`method`, as `service/Method`) has no codecs
+    for the transport's codec (`codec`, `"proto"` or `"json"`,
+    [`withCodec`](Rpc-Transport#withCodec)): it was generated without binary
+    codecs and the transport sends protobuf binary, or with binary codecs
+    alone and the transport sends JSON. Nothing was sent.
 
 These are every way a request can fail before an answer is read, and the type
 is fixed.
@@ -104,6 +109,7 @@ type Reason
     | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
+    | MissingCodec { method : String, codec : String }
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -158,7 +164,7 @@ type Source
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
     `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
     value `InvalidArgument`, a request or a response over its limit
-    `ResourceExhausted`.
+    `ResourceExhausted`, a missing codec `Internal`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
 reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
@@ -201,6 +207,9 @@ code error =
         NoAnswer (ResponseTooLarge _) ->
             Code.ResourceExhausted
 
+        NoAnswer (MissingCodec _) ->
+            Code.Internal
+
 
 {-| An error's message:
 
@@ -215,7 +224,7 @@ code error =
     <template>` or, as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
     for a request and `… readMaxBytes <limit>` for a response, both in
-    bytes. A bad URL is printed as its scheme, host and path, without the
+    bytes, or `<method> has no <codec> codec`. A bad URL is printed as its scheme, host and path, without the
     user and password a URL can hold, and without its query and fragment,
     which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
@@ -259,6 +268,9 @@ message error =
 
         NoAnswer (ResponseTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
+
+        NoAnswer (MissingCodec missing) ->
+            missing.method ++ " has no " ++ missing.codec ++ " codec"
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

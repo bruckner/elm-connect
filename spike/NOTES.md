@@ -103,3 +103,61 @@ Decisions taken while building, and the alternatives, for the report.
   5-byte envelope (flag byte, 4-byte big-endian length) around exactly the
   bytes `encodeFooBytes` writes, and `decodeFooBytes` takes that length;
   nothing in the codecs changes, only `Rpc.Body`/the transport's framing.
+
+## Transport (run 2)
+
+- **`Rpc.Body`** gains a bytes kind: `Rpc.Body.bytes`, `Rpc.Body.toBytes`.
+  `toText` of a bytes body is `Nothing`. The body's kind picks the content
+  type: text is sent as `application/json`, bytes as `application/proto`. The
+  constructor is opaque, so the new kind is additive for code that builds and
+  reads bodies; code that pattern-matched could not (the type is opaque).
+- **`Rpc.Transport.Codec(..)` = `Json | Proto`, `withCodec`, `codec`.** Kept
+  as a flag inside the internal `Connect` options (`proto : Bool`), so
+  `Transport` stays `==`-comparable and the public `Codec` union lives in
+  `Rpc.Transport` without an import cycle. `withCodec` on `transcode` is
+  ignored, as `withMaxGetUrl` is on a transport that never GETs (documented):
+  transcoding is JSON by definition. The implicit route over transcoding
+  (Connect's POST) stays JSON too.
+- **POST** carries `Proto.Binary.encode`'s bytes; **GET** is
+  `?connect=v1&encoding=proto&base64=1&message=<unpadded URL-safe base64>`.
+  Connect accepts padded or unpadded; unpadded keeps `=` out of the query.
+- **Answers.** A new public `Rpc.responseBytes : Config -> Call -> Http.Response
+  Bytes -> Result Error res`; `Rpc.response` keeps its `String` signature.
+  `send`/`task`/`taskTraced` choose `Http.expectBytesResponse`/`bytesResolver`
+  when the transport is Connect+Proto. Over Proto a 200 is decoded with the
+  method's binary decoder; it must be `application/proto` or carry no
+  content type (any other is a `BadResponse` naming it, the bytes kept as
+  `Rpc.Body.bytes`). Any non-200 is decoded as UTF-8 text and read by the
+  unchanged error path, so a Connect error stays a JSON `Rpc.Error`
+  (`RpcStatus … ConnectBody`). `responseBytes` under the JSON codec reads the
+  bytes as UTF-8 and behaves as `response`. `response` (text) under Proto
+  fails a 200 with a `BadResponse` pointing at `responseBytes`: XHR's text
+  decoding is lossy for binary, so reading it would silently corrupt.
+  Alternative considered: change `Rpc.response` to take bytes always (one
+  function, but a breaking signature change and a UTF-8 decode in Elm for
+  every JSON answer).
+- **Run-1 Q6, the rule:** a call whose method lacks the transport's codec is
+  refused unsent with a new `Rpc.Error.Reason`, `MissingCodec { method,
+  codec }` (`"proto"`: JSON-only method under `withCodec Proto`; `"json"`: a
+  `codec=binary` method under JSON or transcoding). Code `Internal`, like
+  `InvalidHeader`, since it is a local configuration fault; never retried
+  (it is found by `unsendable`, before the retry loop, as `InvalidHeader` is). `Proto.Method.hasJson` is new so the
+  runtime can tell a binary-only method. Alternatives: (a) fall back to JSON
+  per method under Proto (silent mixed codecs; makes a half-generated program
+  "work" but hides the cost the user opted out of); (b) a phantom codec type
+  on `Method`/`Call` so the compiler refuses the mix (sound, but every
+  signature grows a parameter: not additive). Adding a `Reason` constructor
+  is a breaking change for exhaustive matches; before 1.0 that is the moment
+  to reserve it.
+- **Sizes:** `withWriteMaxBytes` measures the binary (encoded only when a
+  limit is set); `withReadMaxBytes` the answer's bytes.
+- **Trace:** a bytes request body is `"body": null` plus `"bodyBase64"`; the
+  key appears only for bytes, so JSON traces are byte-identical to before.
+- **Live harness:** an envelope's config takes `"codec": "json"|"proto"`;
+  `xhr.mjs` sends DataView/ArrayBuffer bodies and answers
+  `responseType = "arraybuffer"`; the halves path uses `Rpc.responseBytes`
+  under Proto. The committed example and suite bindings stay JSON-only; the
+  Proto runs use `spike/live-both/elm.json`, which compiles the same
+  `Live.elm` against notes and the conformance suite generated with
+  `codec=both` into `target/live/{notes,suite}-both`
+  (`spike/live-both/build.sh` generates and builds `build/elm-both.js`).

@@ -1,6 +1,6 @@
 module Proto.Method exposing
     ( Method, method, withBinary, methodBinary
-    , encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder
+    , encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder, hasJson
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
     , Idempotency(..)
@@ -21,7 +21,7 @@ any other union.
 
 # Reading a typed value
 
-@docs encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder
+@docs encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder, hasJson
 
 
 # Descriptors
@@ -62,6 +62,7 @@ type Method req res
         , responseDecoder : Json.Decode.Decoder res
         , descriptor : Descriptor
         , binary : Maybe (Binary req res)
+        , json : Bool
         }
 
 
@@ -97,6 +98,7 @@ method encode decoder methodDescriptor =
         , responseDecoder = decoder
         , descriptor = methodDescriptor
         , binary = Nothing
+        , json = True
         }
 
 
@@ -127,6 +129,7 @@ methodBinary encodeBinary binaryDecoder methodDescriptor =
         , responseDecoder = Json.Decode.fail (name methodDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
         , descriptor = methodDescriptor
         , binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder }
+        , json = False
         }
 
 
@@ -143,6 +146,15 @@ takes the response's length in bytes.
 responseBytesDecoder : Method req res -> Maybe (Int -> Bytes.Decode.Decoder res)
 responseBytesDecoder (Method m) =
     Maybe.map .responseDecoder m.binary
+
+
+{-| Whether the method has proto3 JSON codecs: `False` for one built with
+[`methodBinary`](#methodBinary), whose calls only Connect's proto codec can
+send.
+-}
+hasJson : Method req res -> Bool
+hasJson (Method m) =
+    m.json
 
 
 {-| A request as proto3 JSON.

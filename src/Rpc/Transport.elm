@@ -1,7 +1,8 @@
 module Rpc.Transport exposing
     ( Transport, connect, connectGet, transcode
     , withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
-    , name
+    , Codec(..), withCodec
+    , name, codec
     )
 
 {-| The protocol calls are sent over: the `transport` of a
@@ -19,9 +20,14 @@ It is data, like the rest of a config: transports built alike are `==`.
 @docs withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
 
 
+# Codecs
+
+@docs Codec, withCodec
+
+
 # Reading
 
-@docs name
+@docs name, codec
 
 -}
 
@@ -42,7 +48,7 @@ POSTed, as connect-es does by default.
 -}
 connect : Transport
 connect =
-    Internal.Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }
+    Internal.Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing, proto = False }
 
 
 {-| Connect, with a call of a method without side effects
@@ -56,7 +62,7 @@ proxy logs. Servers and proxies cap URL length too;
 -}
 connectGet : Transport
 connectGet =
-    Internal.Connect { get = True, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }
+    Internal.Connect { get = True, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing, proto = False }
 
 
 {-| HTTP transcoding, by the method's `google.api.http` rule. A method without
@@ -88,8 +94,8 @@ withMaxGetUrl limit transport =
             Internal.Transcode options
 
 
-{-| Refuse a successful answer whose body is longer than this many bytes of
-UTF-8, before decoding it: the call fails with
+{-| Refuse a successful answer whose body is longer than this many bytes,
+before decoding it: the call fails with
 [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code is
 `ResourceExhausted`, as connect-go's `WithReadMaxBytes` and connect-node's
 `readMaxBytes` fail it. Every transport starts with no limit. An answer that
@@ -99,7 +105,8 @@ is an error is read whatever its size, for the status it states.
         |> Rpc.Transport.withReadMaxBytes 1000000
 
 The size is that of the body as the browser decoded it, written back as
-UTF-8, so it is the bytes on the wire for any body that is UTF-8. The
+UTF-8, so it is the bytes on the wire for any body that is UTF-8; under
+[`withCodec Proto`](#withCodec) it is the body's bytes as they came. The
 browser has already received the body by then: the limit keeps an
 oversized response from being decoded and held, not from being downloaded.
 A limit below 1 refuses every body that is not empty, and
@@ -118,7 +125,8 @@ withReadMaxBytes limit transport =
 
 {-| Refuse to send a call whose request message is longer than this many bytes
 of UTF-8, as its JSON: the body of a POST, or for a GET the JSON before it is
-percent-encoded into the query. The call fails with
+percent-encoded into the query; under [`withCodec Proto`](#withCodec), its
+protobuf binary, before any base64. The call fails with
 [`NoAnswer (RequestTooLarge { limit, size })`](Rpc-Error#Reason), whose code
 is `ResourceExhausted`, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` fail it, and nothing is sent. Every transport starts with no
@@ -137,6 +145,60 @@ withWriteMaxBytes limit transport =
 
         Internal.Transcode options ->
             Internal.Transcode { options | writeMaxBytes = Just limit }
+
+
+{-| How request and response messages travel over Connect: as proto3 JSON
+(`application/json`, every transport's default), or as protobuf binary
+(`application/proto`), which needs the binary codecs that code generated with
+`codec=both` or `codec=binary` carries.
+-}
+type Codec
+    = Json
+    | Proto
+
+
+{-| Send and read messages with this codec over Connect.
+
+    Rpc.Transport.connect
+        |> Rpc.Transport.withCodec Rpc.Transport.Proto
+
+Under `Proto` a POST carries the request's protobuf binary as
+`application/proto`, and a GET ([`connectGet`](#connectGet)) the query
+`connect=v1&encoding=proto&base64=1&message=…`, the binary as unpadded
+URL-safe base64. A successful answer is read as protobuf binary; an error
+answer is JSON whatever the codec, as the Connect protocol sends it, and is
+read as it is under `Json`. Sent with [`Rpc.request`](Rpc#request) and
+elm/http directly, such an answer is read with
+[`Rpc.responseBytes`](Rpc#responseBytes).
+
+A call of a method without binary codecs under `Proto`, or of one with binary
+codecs alone (`codec=binary`) under `Json`, is not sent: it fails with
+[`NoAnswer (MissingCodec { method, codec })`](Rpc-Error#Reason).
+
+HTTP transcoding is JSON by definition, so [`transcode`](#transcode) is
+unchanged, and a method with binary codecs alone cannot be transcoded.
+
+-}
+withCodec : Codec -> Transport -> Transport
+withCodec chosen transport =
+    case transport of
+        Internal.Connect options ->
+            Internal.Connect { options | proto = chosen == Proto }
+
+        Internal.Transcode options ->
+            Internal.Transcode options
+
+
+{-| The codec messages travel in: `Json` unless
+[`withCodec`](#withCodec) chose `Proto` for a Connect transport.
+-}
+codec : Transport -> Codec
+codec transport =
+    if Internal.proto transport then
+        Proto
+
+    else
+        Json
 
 
 {-| The protocol's name, for traces and logs: `"connect"` (with GET or

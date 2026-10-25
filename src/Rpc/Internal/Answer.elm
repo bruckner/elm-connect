@@ -1,4 +1,4 @@
-module Rpc.Internal.Answer exposing (toResult)
+module Rpc.Internal.Answer exposing (toResult, toResultBytes)
 
 {-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
 stands for, from a Connect error body, a `google.rpc.Status` body or gRPC
@@ -7,11 +7,14 @@ status headers, whatever the transport. Not exposed; it is what
 as API.
 -}
 
+import Bytes exposing (Bytes)
+import Bytes.Decode
 import Dict
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Any exposing (Any)
+import Proto.Binary
 import Proto.Internal.Any
 import Proto.Json
 import Proto.Method as Method
@@ -21,7 +24,7 @@ import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Route exposing (Route(..), route)
-import Rpc.Internal.Transport exposing (Transport(..))
+import Rpc.Internal.Transport as Transport exposing (Transport(..))
 import Rpc.Response exposing (Response)
 
 
@@ -34,11 +37,14 @@ toResult transport ((Call fields) as c) answer =
         Http.GoodStatus_ metadata raw ->
             case ( transport, route transport c ) of
                 ( Connect _, _ ) ->
-                    if metadata.statusCode == 200 then
-                        within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
+                    if metadata.statusCode /= 200 then
+                        Err (failure metadata raw)
+
+                    else if Transport.proto transport && hasBinary fields.method then
+                        Err (Error.BadResponse "a protobuf binary answer is read as bytes (Rpc.responseBytes)" (answerOf metadata raw))
 
                     else
-                        Err (failure metadata raw)
+                        within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
 
                 ( Transcode _, Bound _ rule ) ->
                     within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
@@ -59,13 +65,111 @@ toResult transport ((Call fields) as c) answer =
             Err (Error.NoAnswer Error.NetworkError)
 
 
+{-| What an answer read as bytes means. Over Connect's proto codec a
+successful answer is the response's protobuf binary, and every other answer
+is JSON, read as `toResult` reads it; under any other codec the bytes are the
+answer's text.
+-}
+toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error res
+toResultBytes transport ((Call fields) as c) answer =
+    case ( Transport.proto transport, Method.responseBytesDecoder fields.method, answer ) of
+        ( True, Just decoder, Http.GoodStatus_ metadata raw ) ->
+            if metadata.statusCode /= 200 then
+                Err (failure metadata (Internal.bytesText raw))
+
+            else
+                case header "content-type" metadata |> Maybe.map mediaType of
+                    Just other ->
+                        if other == "application/proto" then
+                            decodeBinary transport decoder (Method.output (Method.toDescriptor fields.method)) metadata raw
+
+                        else
+                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (binaryAnswer metadata raw))
+
+                    Nothing ->
+                        decodeBinary transport decoder (Method.output (Method.toDescriptor fields.method)) metadata raw
+
+        _ ->
+            toResult transport c (asText answer)
+
+
+hasBinary : Method.Method req res -> Bool
+hasBinary method =
+    case Method.responseBytesDecoder method of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
+
+
+{-| A content type without its parameters, lowercased.
+-}
+mediaType : String -> String
+mediaType value =
+    String.split ";" value
+        |> List.head
+        |> Maybe.withDefault ""
+        |> String.trim
+        |> String.toLower
+
+
+decodeBinary : Transport -> (Int -> Bytes.Decode.Decoder res) -> String -> Http.Metadata -> Bytes -> Result Error res
+decodeBinary transport decoder output metadata raw =
+    case ( Transport.readMaxBytes transport, Bytes.width raw ) of
+        ( Just limit, size ) ->
+            if size > max 0 limit then
+                Err (Error.NoAnswer (Error.ResponseTooLarge { limit = limit, size = size }))
+
+            else
+                readBinary decoder output metadata raw
+
+        ( Nothing, _ ) ->
+            readBinary decoder output metadata raw
+
+
+readBinary : (Int -> Bytes.Decode.Decoder res) -> String -> Http.Metadata -> Bytes -> Result Error res
+readBinary decoder output metadata raw =
+    Proto.Binary.decode decoder raw
+        |> Result.fromMaybe (Error.BadResponse ("the body is not a " ++ output ++ " in protobuf binary") (binaryAnswer metadata raw))
+
+
+binaryAnswer : Http.Metadata -> Bytes -> Response
+binaryAnswer metadata raw =
+    { url = metadata.url
+    , statusCode = metadata.statusCode
+    , statusText = metadata.statusText
+    , headers = metadata.headers
+    , body = Rpc.Body.bytes raw
+    }
+
+
+asText : Http.Response Bytes -> Http.Response String
+asText answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            Http.GoodStatus_ metadata (Internal.bytesText raw)
+
+        Http.BadStatus_ metadata raw ->
+            Http.BadStatus_ metadata (Internal.bytesText raw)
+
+        Http.BadUrl_ url ->
+            Http.BadUrl_ url
+
+        Http.Timeout_ ->
+            Http.Timeout_
+
+        Http.NetworkError_ ->
+            Http.NetworkError_
+
+
 {-| A successful answer's body read by `decode`, unless it is longer than the
 transport reads: then it is dropped unread, and the call fails with
 `ResponseTooLarge`.
 -}
 within : Transport -> String -> (() -> Result Error res) -> Result Error res
 within transport raw decode =
-    case Rpc.Internal.Transport.readMaxBytes transport of
+    case Transport.readMaxBytes transport of
         Just limit ->
             case Internal.overLimit limit raw of
                 Just size ->

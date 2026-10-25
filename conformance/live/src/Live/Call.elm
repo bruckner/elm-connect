@@ -14,6 +14,7 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Proto.Bytes
 import Proto.Json
 import Rpc
 import Rpc.Body
@@ -21,6 +22,7 @@ import Rpc.Call
 import Rpc.Code
 import Rpc.Error
 import Rpc.Trace
+import Rpc.Transport
 import Task
 
 
@@ -271,37 +273,41 @@ sendHalves config c tracker toMsg =
             else
                 Http.request
 
-        read answer =
-            Ok ( encodeAnswer answer, Rpc.response config c answer )
+        deliver outcome =
+            case outcome of
+                Ok pair ->
+                    toMsg pair
+
+                Err impossible ->
+                    never impossible
     in
     perform
         { method = sent.method
         , headers = List.map (\( name, value ) -> Http.header name value) sent.headers
         , url = sent.url
         , body =
-            case Rpc.Body.toText sent.body of
-                Just json ->
+            case ( Rpc.Body.toText sent.body, Rpc.Body.toBytes sent.body ) of
+                ( Just json, _ ) ->
                     Http.stringBody "application/json" json
 
-                Nothing ->
+                ( Nothing, Just binary ) ->
+                    Http.bytesBody "application/proto" binary
+
+                ( Nothing, Nothing ) ->
                     Http.emptyBody
         , expect =
-            Http.expectStringResponse
-                (\outcome ->
-                    case outcome of
-                        Ok pair ->
-                            toMsg pair
+            case Rpc.Transport.codec config.transport of
+                Rpc.Transport.Proto ->
+                    Http.expectBytesResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.responseBytes config c answer ))
 
-                        Err impossible ->
-                            never impossible
-                )
-                read
+                Rpc.Transport.Json ->
+                    Http.expectStringResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.response config c answer ))
         , timeout = sent.timeout
         , tracker = tracker
         }
 
 
-encodeAnswer : Http.Response String -> Value
+encodeAnswer : Http.Response body -> Value
 encodeAnswer answer =
     let
         withMetadata metadata =
@@ -373,10 +379,18 @@ left out; the trace carries what a case wants of them.
 encodeResponse_ : Rpc.Response -> Value
 encodeResponse_ answer =
     Encode.object
-        [ ( "statusCode", Encode.int answer.statusCode )
-        , ( "statusText", Encode.string answer.statusText )
-        , ( "body", Encode.string (Maybe.withDefault "" (Rpc.Body.toText answer.body)) )
-        ]
+        ([ ( "statusCode", Encode.int answer.statusCode )
+         , ( "statusText", Encode.string answer.statusText )
+         , ( "body", Encode.string (Maybe.withDefault "" (Rpc.Body.toText answer.body)) )
+         ]
+            ++ (case Rpc.Body.toBytes answer.body of
+                    Just binary ->
+                        [ ( "bodyBase64", Encode.string (Proto.Bytes.toBase64 binary) ) ]
+
+                    Nothing ->
+                        []
+               )
+        )
 
 
 sourceToString : Rpc.Error.Source -> String
@@ -421,3 +435,6 @@ reasonToString reason =
 
         Rpc.Error.ResponseTooLarge { limit, size } ->
             "ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
+
+        Rpc.Error.MissingCodec missing ->
+            "MissingCodec " ++ missing.method ++ " " ++ missing.codec
