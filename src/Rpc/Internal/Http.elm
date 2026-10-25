@@ -371,8 +371,9 @@ quote text =
 
 
 {-| The request as a task, its response read by `resolver`. A text body is
-sent as `application/json`, a bytes body as `application/proto`;
-`withCredentials` sends cookies cross-origin (`Http.riskyTask`).
+sent as `application/json`, a bytes body as its own type
+(`Rpc.Body.contentType`); `withCredentials` sends cookies cross-origin
+(`Http.riskyTask`).
 -}
 task : Http.Resolver e a -> Request -> Task e a
 task resolver request =
@@ -427,7 +428,7 @@ body request =
         Nothing ->
             case Rpc.Body.toBytes request.body of
                 Just binary ->
-                    Http.bytesBody "application/proto" binary
+                    Http.bytesBody (Rpc.Body.contentType request.body |> Maybe.withDefault "application/proto") binary
 
                 Nothing ->
                     Http.emptyBody

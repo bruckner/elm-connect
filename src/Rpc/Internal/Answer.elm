@@ -35,7 +35,13 @@ toResult transport ((Call fields) as c) answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             case ( transport, route transport c ) of
-                ( Connect _, _ ) ->
+                ( Transcode _, Bound _ rule ) ->
+                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
+
+                ( Transcode _, Implicit ) ->
+                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
+
+                _ ->
                     if metadata.statusCode /= 200 then
                         Err (failure metadata raw)
 
@@ -46,12 +52,6 @@ toResult transport ((Call fields) as c) answer =
 
                             Nothing ->
                                 within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
-
-                ( Transcode _, Bound _ rule ) ->
-                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
-
-                ( Transcode _, Implicit ) ->
-                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -75,19 +75,28 @@ toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error
 toResultBytes transport c answer =
     case binaryReader transport c of
         Just read ->
-            read answer
+            Tuple.second (read answer)
 
         Nothing ->
             toResult transport c (asText answer)
 
 
-{-| How a call's answer is read as bytes, when the call is sent so: over
-Connect's proto codec, by a method with binary codecs.
+{-| How a call's answer is read as bytes, when the call is sent so (over
+Connect's proto codec or gRPC-Web, by a method with binary codecs): its
+metadata, gRPC-Web's body trailers among them, and what it means.
 -}
-binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> Result Error res)
+binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> ( Maybe Http.Metadata, Result Error res ))
 binaryReader transport ((Call fields) as c) =
     Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method
-        |> Maybe.map (\binary -> binary.read (Transport.readMaxBytes transport) (toResult transport c))
+        |> Maybe.map
+            (\binary ->
+                case transport of
+                    GrpcWeb _ ->
+                        \answer -> ( binary.grpcWebMetadata answer, binary.readGrpcWeb (Transport.readMaxBytes transport) (toResult transport c) answer )
+
+                    _ ->
+                        \answer -> ( Internal.metadataOf answer, binary.read (Transport.readMaxBytes transport) (toResult transport c) answer )
+            )
 
 
 asText : Http.Response Bytes -> Http.Response String

@@ -1,0 +1,23 @@
+# Connect conformance cases elm-connect's runtime fails over gRPC-Web
+# (Rpc.Transport.grpcWeb, spike/live-both/conformance-grpcweb.yaml), with
+# either way of sending; known-failing-grpcweb-halves.txt adds those only the
+# pure halves fail.
+
+# A unary answer with status 0 and no message, or with two messages: the
+# suite wants `unimplemented`; the runtime reads a malformed answer as a
+# BadResponse, whose code is `internal`, as it does over Connect.
+gRPC-Web Unexpected Responses/**/unary/ok-but-no-response
+gRPC-Web Unexpected Responses/**/unary/multiple-responses
+
+# A 200 whose content type is not gRPC-Web's and whose body holds no status:
+# the suite wants `unknown`, the runtime gives a BadResponse (`internal`), as
+# for Connect's unexpected-content-type in known-failing-proto.txt.
+gRPC-Web Unexpected Responses/**/unexpected-content-type
+
+# The request names, in an Any, the raw response the server is to send. The
+# runner builds requests from proto3 JSON, and the runtime writes an Any
+# holding a message's JSON (other than a well-known type's) to protobuf
+# binary with its type URL alone: without a registry of codecs by type URL
+# it has no binary encoder for it. The server then answers an empty message.
+# Not gRPC-Web's: any request carrying such an Any meets it.
+gRPC-Web Proto Sub-Format Responses/**

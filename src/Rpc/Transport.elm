@@ -1,5 +1,5 @@
 module Rpc.Transport exposing
-    ( Transport, connect, connectGet, transcode
+    ( Transport, connect, connectGet, transcode, grpcWeb
     , withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
     , Codec(..), withCodec
     , name, codec
@@ -12,7 +12,7 @@ module Rpc.Transport exposing
 
 It is data, like the rest of a config: transports built alike are `==`.
 
-@docs Transport, connect, connectGet, transcode
+@docs Transport, connect, connectGet, transcode, grpcWeb
 
 
 # Options
@@ -75,6 +75,29 @@ transcode =
     Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing }
 
 
+{-| [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md),
+unary calls, as connect-go, Envoy's gRPC-Web filter and grpcwebproxy serve
+it: every call POSTed to `baseUrl/service/method` as
+`application/grpc-web+proto`, its request's protobuf binary in one framed
+message, a timeout as `grpc-timeout`. The answer's status comes from the
+`grpc-status` trailer in its body, or from its headers when the server sent
+no message; an error's details from `grpc-status-details-bin`.
+
+Messages always travel as protobuf binary, so only methods generated with
+binary codecs (`codec=both` or `codec=binary`) can be called; a call of any
+other fails with [`NoAnswer (MissingCodec { method, codec })`](Rpc-Error#Reason),
+nothing sent. [`withCodec`](#withCodec) leaves it as it is. A browser reads
+`grpc-status` from the headers of a cross-origin answer only when the server
+exposes it (`Access-Control-Expose-Headers`); trailers in the body need
+nothing. A traced call ([`Rpc.sendTraced`](Rpc#sendTraced)) gives the body's
+trailers in [`Rpc.Trace.trailers`](Rpc-Trace#trailers).
+
+-}
+grpcWeb : Transport
+grpcWeb =
+    Internal.GrpcWeb { readMaxBytes = Nothing, writeMaxBytes = Nothing }
+
+
 {-| POST a call whose GET URL, the whole of it with its query, would be longer
 than this many characters, for servers and proxies that cap URL length (2048
 is a common safe value). Only [`connectGet`](#connectGet) sends a GET, so the
@@ -92,6 +115,9 @@ withMaxGetUrl limit transport =
 
         Internal.Transcode options ->
             Internal.Transcode options
+
+        Internal.GrpcWeb options ->
+            Internal.GrpcWeb options
 
 
 {-| Refuse a successful answer whose body is longer than this many bytes,
@@ -122,6 +148,9 @@ withReadMaxBytes limit transport =
         Internal.Transcode options ->
             Internal.Transcode { options | readMaxBytes = Just limit }
 
+        Internal.GrpcWeb options ->
+            Internal.GrpcWeb { options | readMaxBytes = Just limit }
+
 
 {-| Refuse to send a call whose request message is longer than this many bytes
 of UTF-8, as its JSON: the body of a POST, or for a GET the JSON before it is
@@ -145,6 +174,9 @@ withWriteMaxBytes limit transport =
 
         Internal.Transcode options ->
             Internal.Transcode { options | writeMaxBytes = Just limit }
+
+        Internal.GrpcWeb options ->
+            Internal.GrpcWeb { options | writeMaxBytes = Just limit }
 
 
 {-| How request and response messages travel over Connect: as proto3 JSON
@@ -188,9 +220,13 @@ withCodec chosen transport =
         Internal.Transcode options ->
             Internal.Transcode options
 
+        Internal.GrpcWeb options ->
+            Internal.GrpcWeb options
+
 
 {-| The codec messages travel in: `Json` unless
-[`withCodec`](#withCodec) chose `Proto` for a Connect transport.
+[`withCodec`](#withCodec) chose `Proto` for a Connect transport; `Proto`
+over [`grpcWeb`](#grpcWeb).
 -}
 codec : Transport -> Codec
 codec transport =
@@ -202,7 +238,7 @@ codec transport =
 
 
 {-| The protocol's name, for traces and logs: `"connect"` (with GET or
-without) or `"transcode"`.
+without), `"transcode"` or `"grpc-web"`.
 -}
 name : Transport -> String
 name transport =
@@ -212,3 +248,6 @@ name transport =
 
         Internal.Transcode _ ->
             "transcode"
+
+        Internal.GrpcWeb _ ->
+            "grpc-web"

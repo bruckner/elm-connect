@@ -16,6 +16,7 @@ import Json.Encode
 import Proto.Internal.Binary
 import Rpc.Body exposing (Body)
 import Rpc.Error exposing (Error, Reason)
+import Rpc.Request exposing (Request)
 
 
 type Method descriptor req res
@@ -34,6 +35,11 @@ type Method descriptor req res
   - `tooLarge`: why the request is over a write limit, if it is.
   - `read`: an answer read as bytes, given the transport's read limit and
     the reading of a text answer, which every answer but a 200 is.
+  - `grpcWebRequest`, `grpcTimeout`, `readGrpcWeb`: the same for gRPC-Web,
+    whose request is one framed message, with its timeout as gRPC writes
+    one, and whose answer holds framed messages and trailers;
+    `grpcWebMetadata`, the answer's metadata with the trailers in its body
+    added as the `trailer-` headers a Connect answer would carry.
 
 -}
 type alias Binary req res =
@@ -42,6 +48,10 @@ type alias Binary req res =
     , message : req -> ConnectMessage
     , tooLarge : Int -> req -> Maybe Reason
     , read : Maybe Int -> (Http.Response String -> Result Error res) -> Http.Response Bytes -> Result Error res
+    , grpcWebRequest : { url : String, headers : List ( String, String ), timeout : Maybe Float, withCredentials : Bool } -> req -> Request
+    , grpcTimeout : Float -> String
+    , readGrpcWeb : Maybe Int -> (Http.Response String -> Result Error res) -> Http.Response Bytes -> Result Error res
+    , grpcWebMetadata : Http.Response Bytes -> Maybe Http.Metadata
     }
 
 

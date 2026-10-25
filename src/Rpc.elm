@@ -279,7 +279,7 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
         Internal.send
             (case Rpc.Internal.Answer.binaryReader cfg.transport c of
                 Just read ->
-                    Http.expectBytesResponse toMsg read
+                    Http.expectBytesResponse toMsg (read >> Tuple.second)
 
                 Nothing ->
                     Http.expectStringResponse toMsg (response cfg c)
@@ -433,6 +433,11 @@ URL-safe base64.
 A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
 The config's headers come first, then the call's.
 
+Over [gRPC-Web](Rpc-Transport#grpcWeb), a POST goes to the same URL with the
+request's protobuf binary in one framed message, sent as
+`application/grpc-web+proto` with `X-Grpc-Web: 1`; a timeout is sent as
+`grpc-timeout`, in milliseconds rounded up.
+
 Over transcoding, the request is the binding's method, the path filled from the
 request, the query from the fields outside the path and the body, and the body
 as the binding says, with the config's headers, then the call's. Values are
@@ -570,7 +575,7 @@ attempt cfg c sent =
                     Internal.task
                         (case Rpc.Internal.Answer.binaryReader cfg.transport c of
                             Just read ->
-                                Http.bytesResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
+                                Http.bytesResolver (read >> Ok)
 
                             Nothing ->
                                 Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))

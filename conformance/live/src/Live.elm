@@ -228,7 +228,7 @@ with =
 
 transport : Decoder Transport
 transport =
-    oneOfNames "transport" [ ( "connect", Connect ), ( "transcode", Transcode ) ]
+    oneOfNames "transport" [ ( "connect", Connect ), ( "transcode", Transcode ), ( "grpcweb", GrpcWeb ) ]
 
 
 sending : Decoder Sending
@@ -261,6 +261,9 @@ config t =
 
                     Transcode ->
                         Rpc.Transport.transcode
+
+                    GrpcWeb ->
+                        Rpc.Transport.grpcWeb
                 )
                     |> withLimits
             , baseUrl = baseUrl

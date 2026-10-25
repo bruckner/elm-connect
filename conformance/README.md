@@ -362,8 +362,8 @@ An **envelope**, what the runner sends:
 }
 ```
 
-`request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
-`transcode`; everything in `config` but `baseUrl` is optional, as are
+`request` is proto3 JSON (`{}` when absent); `transport` is `connect`,
+`transcode` or `grpcweb` (which needs a build with binary codecs); everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
 own, `Rpc.Call.withHeaders`, sent after the config's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and

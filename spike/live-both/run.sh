@@ -20,3 +20,17 @@ known=../../spike/live-both/known-failing-proto.txt
 cat "$known" known-failing-send.txt > build/known-failing-proto-send.txt
 "$runner" --mode client --conf ../../spike/live-both/conformance-proto.yaml --known-failing @build/known-failing-proto-send.txt \
     -- node conformance.mjs --send sendTraced --elm build/elm-both.js
+# gRPC-Web (spike/grpc-web): the notes server's methods over
+# Rpc.Transport.grpcWeb (cases/grpcweb.json, from spike/make-grpcweb-cases.mjs),
+# then the Connect conformance suite's gRPC-Web client cases.
+cd ../..
+node conformance/live/run.mjs --serve "$server" --elm conformance/live/build/elm-both.js \
+    conformance/live/cases/grpcweb.json
+cd conformance/live
+cat ../../spike/live-both/known-failing-grpcweb.txt ../../spike/live-both/known-failing-grpcweb-halves.txt \
+    > build/known-failing-grpcweb-halves.txt
+"$runner" --mode client --conf ../../spike/live-both/conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-halves.txt \
+    -- node conformance.mjs --send halves --elm build/elm-both.js
+cat ../../spike/live-both/known-failing-grpcweb.txt known-failing-send.txt > build/known-failing-grpcweb-send.txt
+"$runner" --mode client --conf ../../spike/live-both/conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-send.txt \
+    -- node conformance.mjs --send sendTraced --elm build/elm-both.js

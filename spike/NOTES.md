@@ -414,3 +414,83 @@ leaves (theirs appends with `++`), and are slower on 64-bit-dense messages
 binary Required 480 vs 463; their JSON codecs fail nearly every case).
 Not depending on it (its `Decoder`, `Encoder` and `Int64` would enter the
 public API); open enums (`Unrecognized_ Int`) are the idea worth taking.
+
+## gRPC-Web, unary (run 3, branch spike/grpc-web)
+
+- **Shape: a third transport, `Rpc.Transport.grpcWeb`,** not a protocol
+  setting on `connect`. It shares Connect's URL (`baseUrl/service/method`)
+  and nothing else: no GET, no JSON (connect-go also serves
+  `application/grpc-web+json`, but the reason to use gRPC-Web is a server
+  or proxy that speaks only it, and those speak `+proto`), a different
+  timeout header, framing and error channel. As a Connect option it would
+  make `connectGet`, `withMaxGetUrl` and `withCodec Json` meaningless
+  combinations; as a transport they are ignored, as `withMaxGetUrl` is on
+  `transcode`. Internally `GrpcWeb { readMaxBytes, writeMaxBytes }`, `proto`
+  is always true, so `MissingCodec "proto"` refuses a JSON-only method
+  with no new rule. `Rpc.Transport.name` is `"grpc-web"`; `codec` is
+  `Proto` whatever `withCodec` says.
+- **Request:** POST, the binary in one frame (flag 0, four-byte big-endian
+  length), `X-Grpc-Web: 1`, `grpc-timeout` from the call's timeout
+  (milliseconds rounded up, `S`/`H` past eight digits); a retry budget
+  rewrites `grpc-timeout` as it rewrites `Connect-Timeout-Ms`.
+- **Content type on the body, not a header.** elm/http sets
+  `Content-Type` from the body, so a header of the same name goes out
+  joined with it (XHR appends). `Rpc.Body` gains `bytesAs : String ->
+  Bytes -> Body` and `contentType : Body -> Maybe String`; the adapter
+  sends a bytes body as its own type, and an application sending
+  `Rpc.request` itself reads it from the body (the live harness's halves
+  do). Additive: `Body` is opaque.
+- **Answer** (`Rpc.Internal.GrpcWeb.read`): a 200 with a body is read as
+  frames; the trailers frame (flag `0x80`, `name: value` lines, names
+  lowercased) holds the status, which wins over any `grpc-status` header;
+  a 200 without a body is trailers-only, its status in the headers. Status
+  0 with exactly one message is the response (`withReadMaxBytes` counts the
+  message); any other status is `RpcStatus` with `grpc-message`
+  percent-decoded and `grpc-status-details-bin` (base64, padding optional)
+  decoded as a `google.rpc.Status`, its `details` the `Any`s. `Source` is
+  `GrpcTrailers` from the body (the constructor was already reserved) and
+  `GrpcHeaders` for trailers-only. A non-200 goes through the shared error
+  path (`grpc-status` headers, else `HttpStatus`). Status 0 without a
+  message, two messages, a compressed frame, no status anywhere:
+  `BadResponse`.
+- **Body trailers reach the trace.** The bytes readers now return the
+  answer's metadata with the result; over gRPC-Web the body's trailers are
+  added as `trailer-<name>` entries, so `Rpc.Trace.trailers` and
+  `Rpc.splitTrailers` find them as they find Connect's. An application
+  reading the elm/http response itself has no reader for them yet.
+- **DCE.** The request builder, the timeout format and the reader are
+  closures in the method's bytes path, like Connect's proto path, so only
+  `withBinary` reaches `Rpc.Internal.GrpcWeb`. A JSON-only program (notes)
+  pays +197 B gzip for the transport's existence (the dispatch in
+  `Rpc.Internal.Wire.request`, the timeout header choice, the third
+  `Transport` case, `Rpc.Body.contentType`): 78,787 / 26,028 → 79,497 /
+  26,225 B minified / gzip. A `codec=both` program pays +1,118 B gzip for
+  gRPC-Web whether it uses it or not (notes-both 103,380 / 32,929 →
+  107,262 / 34,047), since every `withBinary` method carries the closures;
+  switching the notes app to `grpcWeb` adds 17 B more. Avoiding the 1.1 KB
+  for binary programs that never use gRPC-Web would need the code to come
+  from somewhere a program opts into: a generated decorator
+  (`withGrpcWeb`, a generator option) or a codec-and-transport value built
+  by the application. A transport is data and cannot carry it.
+- **Same `Rpc.Error` as Connect.** For the notes server's two error cases,
+  code, message and every detail's binary are identical over Connect (proto
+  codec) and gRPC-Web; only `Source` (`ConnectBody` vs `GrpcHeaders`:
+  connect-go answers unary errors trailers-only) and the kept answer
+  differ. A Connect detail with `debug` holds its JSON beside the binary;
+  gRPC-Web's holds the binary alone, which `Proto.Any.unpack` reads with a
+  message that has binary codecs.
+- **Text mode** (`application/grpc-web-text`, base64 over the frames): not
+  built. It would be cheap on the request (base64 of the framed bytes as a
+  text body) and on the answer (decode the text, then the same parser),
+  about 30 lines in the closure module; it exists for clients that cannot
+  send or read binary bodies, which XHR can.
+- **Server streaming over gRPC-Web, beyond `spike/streaming`'s framing:**
+  the envelope parser there already reads gRPC-Web's frames (flag, length);
+  what it adds is that the stream's end is a trailers frame rather than an
+  end-stream message, so the companion must parse `name: value` text into
+  the status, `grpc-status-details-bin` must be decoded into details in
+  Elm (this module's `statusDetails`), a stream may also end trailers-only
+  (status in the headers, no body), and `grpc-timeout` replaces
+  `Connect-Timeout-Ms` on the request. The parsers here (`frames`,
+  `trailerLines`, `settle`) are the Elm half; fetch's `ReadableStream`
+  hands the frames over.

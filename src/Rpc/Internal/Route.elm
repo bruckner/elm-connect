@@ -26,13 +26,16 @@ type Route
     | Implicit
 
 
-{-| The route a call takes over a transport: Connect always takes the implicit
-one.
+{-| The route a call takes over a transport: Connect and gRPC-Web always take
+the implicit one.
 -}
 route : Transport -> Call req res -> Route
 route transport (Call fields) =
     case transport of
         Connect _ ->
+            Implicit
+
+        GrpcWeb _ ->
             Implicit
 
         Transcode _ ->

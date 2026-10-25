@@ -66,8 +66,8 @@ methodName (Internal.Trace t) =
 
 
 {-| The name of the transport the call went over, as
-[`Rpc.Transport.name`](Rpc-Transport#name) gives it: `"connect"` or
-`"transcode"`.
+[`Rpc.Transport.name`](Rpc-Transport#name) gives it: `"connect"`,
+`"transcode"` or `"grpc-web"`.
 -}
 transport : Trace -> String
 transport (Internal.Trace t) =

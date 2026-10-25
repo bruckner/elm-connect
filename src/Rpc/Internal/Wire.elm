@@ -43,6 +43,21 @@ request cfg c =
         Connect options ->
             connectRequest options (connectMessage cfg c) cfg c
 
+        GrpcWeb _ ->
+            case Proto.Internal.Method.binaryUnder True (methodOf c) of
+                Just binary ->
+                    binary.grpcWebRequest
+                        { url = Route.connectUrl cfg.baseUrl c
+                        , headers = cfg.headers ++ callHeaders c
+                        , timeout = callTimeout cfg c
+                        , withCredentials = cfg.withCredentials
+                        }
+                        (messageOf c)
+
+                Nothing ->
+                    -- Refused before it is sent (missingCodec).
+                    connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
+
         Transcode _ ->
             case route cfg.transport c of
                 Bound _ rule ->
@@ -139,6 +154,21 @@ connectRequest options message cfg ((Call fields) as c) =
         post
 
 
+methodOf : Call req res -> Proto.Internal.Method.Method Method.Descriptor req res
+methodOf (Call fields) =
+    fields.method
+
+
+messageOf : Call req res -> req
+messageOf (Call fields) =
+    fields.message
+
+
+callHeaders : Call req res -> List ( String, String )
+callHeaders (Call fields) =
+    fields.headers
+
+
 {-| The request over one binding of a method's rule.
 -}
 transcodeRequest : Rule -> Settings c -> Call req res -> Request
@@ -191,35 +221,40 @@ withBudget cfg c left sent =
                 { sent
                     | timeout = Just ms
                     , headers =
-                        if speaksConnect cfg c then
-                            List.filter (\( name, _ ) -> String.toLower name /= "connect-timeout-ms") sent.headers
-                                ++ [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
+                        case timeoutField cfg c of
+                            Just ( name, format ) ->
+                                List.filter (\( key, _ ) -> String.toLower key /= String.toLower name) sent.headers
+                                    ++ [ ( name, format ms ) ]
 
-                        else
-                            sent.headers
+                            Nothing ->
+                                sent.headers
                 }
 
         Nothing ->
             sent
 
 
-{-| Whether the call goes over the Connect protocol, which carries its
-timeout in a header: over Connect, and over transcoding by the implicit
-route of a method without a rule.
+{-| The header the call's protocol carries its timeout in, and how it writes
+it: Connect's over Connect and over transcoding by the implicit route of a
+method without a rule, gRPC's over gRPC-Web, none over a binding.
 -}
-speaksConnect : Settings c -> Call req res -> Bool
-speaksConnect cfg c =
+timeoutField : Settings c -> Call req res -> Maybe ( String, Float -> String )
+timeoutField cfg c =
     case cfg.transport of
         Connect _ ->
-            True
+            Just ( "Connect-Timeout-Ms", timeoutMs )
+
+        GrpcWeb _ ->
+            Proto.Internal.Method.binaryUnder True (methodOf c)
+                |> Maybe.map (\binary -> ( "grpc-timeout", binary.grpcTimeout ))
 
         Transcode _ ->
             case route cfg.transport c of
                 Bound _ _ ->
-                    False
+                    Nothing
 
                 Implicit ->
-                    True
+                    Just ( "Connect-Timeout-Ms", timeoutMs )
 
 
 callTimeout : Settings c -> Call req res -> Maybe Float

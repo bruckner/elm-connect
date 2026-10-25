@@ -70,6 +70,7 @@ type Sending
 type Transport
     = Connect
     | Transcode
+    | GrpcWeb
 
 
 {-| How a dispatch table sends an envelope's call: `Err` with a reason when
@@ -294,7 +295,7 @@ sendHalves config c tracker toMsg =
                     Http.stringBody "application/json" json
 
                 ( Nothing, Just binary ) ->
-                    Http.bytesBody "application/proto" binary
+                    Http.bytesBody (Rpc.Body.contentType sent.body |> Maybe.withDefault "application/proto") binary
 
                 ( Nothing, Nothing ) ->
                     Http.emptyBody

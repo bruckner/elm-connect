@@ -73,3 +73,19 @@ The opaque `Decoder` compiles to `identity`. Size:
 | `SizeBoth`, leg 1 | 82221 | 23803 |
 | `SizeBoth`, leg 2 | 83463 | 24079 |
 | notes, `codec=json` | 78787 | 26028 |
+
+## Leg 4: gRPC-Web (branch spike/grpc-web)
+
+| program | before (spike/binary-codec) | after |
+|---|---:|---:|
+| notes, `codec=json`, Connect | 78787 / 26028 | 79497 / 26225 (+197 gzip) |
+| notes, `codec=both`, Connect | 103380 / 32929 | 107262 / 34047 (+1,118 gzip) |
+| notes, `codec=both`, `grpcWeb` | – | 107309 / 34064 (+17 over Connect) |
+
+(minified / gzip.) Live: `cases/grpcweb.json`, 22 of 22 (the notes server's
+methods, errors with details, retry, the five ways of sending, size limits,
+headers and `grpc-timeout` on the wire, timeout). Connect conformance suite,
+gRPC-Web client cases (`spike/live-both/conformance-grpcweb.yaml`, runner
+v1.0.6): 85 cases, 67 pass through the halves, 77 with `sendTraced`; the
+rest in `known-failing-grpcweb*.txt`. The Connect proto (52/51 of 56) and
+JSON (40/40, 39 + 1 of 40) runs are unchanged.

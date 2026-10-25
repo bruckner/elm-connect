@@ -14,6 +14,7 @@ import Proto.Bytes
 import Proto.Internal.Method exposing (Binary, ConnectMessage)
 import Rpc.Body
 import Rpc.Error as Error exposing (Error)
+import Rpc.Internal.GrpcWeb
 import Rpc.Internal.Http as Internal
 import Rpc.Response exposing (Response)
 
@@ -38,6 +39,10 @@ binary encode decoder output =
             else
                 Nothing
     , read = read decoder output
+    , grpcWebRequest = Rpc.Internal.GrpcWeb.request encode
+    , grpcTimeout = Rpc.Internal.GrpcWeb.timeout
+    , readGrpcWeb = Rpc.Internal.GrpcWeb.read decoder output
+    , grpcWebMetadata = Rpc.Internal.GrpcWeb.withTrailers
     }
 
 
