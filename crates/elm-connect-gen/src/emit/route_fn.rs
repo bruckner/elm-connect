@@ -61,7 +61,7 @@ impl Text {
     fn apply(&self, value: Expr) -> Expr {
         match self {
             Text::Same => value,
-            Text::Fn(f) => apply(f.clone(), [value]),
+            Text::Fn(f) => super::call(f.clone(), [value]),
         }
     }
 
