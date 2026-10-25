@@ -219,8 +219,7 @@ impl FileDescriptorProto {
             options: file.options.map(Options::from_prost),
             source_code_info: file.source_code_info,
             syntax: file.syntax,
-            // prost_types::FileDescriptorProto has no `edition` field.
-            edition: None,
+            edition: file.edition,
         }
     }
 
@@ -254,6 +253,9 @@ impl FileDescriptorProto {
             options: self.options.as_ref().map(Options::to_prost),
             source_code_info: self.source_code_info.clone(),
             syntax: self.syntax.clone(),
+            edition: self.edition,
+            // Edition 2024's option imports, which this crate does not support.
+            option_dependency: Vec::new(),
         }
     }
 }
@@ -334,6 +336,8 @@ impl DescriptorProto {
             options: self.options.as_ref().map(Options::to_prost),
             reserved_range: self.reserved_range.clone(),
             reserved_name: self.reserved_name.clone(),
+            // Edition 2024's symbol visibility, which this crate does not support.
+            visibility: None,
         }
     }
 }
@@ -434,6 +438,8 @@ impl EnumDescriptorProto {
             options: self.options.as_ref().map(Options::to_prost),
             reserved_range: self.reserved_range.clone(),
             reserved_name: self.reserved_name.clone(),
+            // Edition 2024's symbol visibility, which this crate does not support.
+            visibility: None,
         }
     }
 }

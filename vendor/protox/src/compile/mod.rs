@@ -186,10 +186,6 @@ impl Compiler {
     /// Converts all added files into an instance of [`FileDescriptorSet`](prost_types::FileDescriptorSet).
     ///
     /// Files are sorted topologically, with dependency files ordered before the files that import them.
-    ///
-    /// [`prost_types::FileDescriptorProto`] has no `edition` field, so files written in an edition
-    /// lose it here; [`encode_file_descriptor_set`](Compiler::encode_file_descriptor_set) and
-    /// [`descriptor_pool`](Compiler::descriptor_pool) keep it.
     pub fn file_descriptor_set(&self) -> prost_types::FileDescriptorSet {
         let file = self
             .pool

@@ -11,6 +11,7 @@ Ok(
         dependency: [],
         public_dependency: [],
         weak_dependency: [],
+        option_dependency: [],
         message_type: [
             DescriptorProto {
                 name: Some(
@@ -338,11 +339,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -409,11 +413,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -480,11 +487,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -551,11 +561,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -622,11 +635,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -693,11 +709,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -764,11 +783,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -835,11 +857,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -906,11 +931,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -977,11 +1005,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                     DescriptorProto {
                         name: Some(
@@ -1048,11 +1079,14 @@ Ok(
                                 map_entry: Some(
                                     true,
                                 ),
+                                deprecated_legacy_json_field_conflicts: None,
+                                features: None,
                                 uninterpreted_option: [],
                             },
                         ),
                         reserved_range: [],
                         reserved_name: [],
+                        visibility: None,
                     },
                 ],
                 enum_type: [],
@@ -1061,6 +1095,7 @@ Ok(
                 options: None,
                 reserved_range: [],
                 reserved_name: [],
+                visibility: None,
             },
         ],
         enum_type: [],
@@ -1853,5 +1888,6 @@ Ok(
             },
         ),
         syntax: None,
+        edition: None,
     },
 )

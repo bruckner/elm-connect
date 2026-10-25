@@ -795,8 +795,8 @@ fn editions_file() {
             ZERO = 0;
         }
     "#;
-    let (file, edition) = crate::parse_with_edition("test.proto", source).unwrap();
-    assert_eq!(edition, Some(1000));
+    let file = crate::parse("test.proto", source).unwrap();
+    assert_eq!(file.edition, Some(1000));
     assert_eq!(file.syntax(), "editions");
     // No synthetic oneofs or proto3_optional in editions; defaults are allowed; the map entry's
     // fields carry the map field's features.
@@ -807,9 +807,11 @@ fn editions_file() {
 }
 
 #[test]
-fn editions_parse_drops_edition() {
+fn editions_parse_sets_edition() {
     let file = parse("edition = '2023';").unwrap();
     assert_eq!(file.syntax(), "editions");
+    assert_eq!(file.edition(), prost_types::Edition::Edition2023);
+    assert_eq!(parse("syntax = 'proto3';").unwrap().edition, None);
 }
 
 #[test]

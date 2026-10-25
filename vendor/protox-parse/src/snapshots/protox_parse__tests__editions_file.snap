@@ -12,6 +12,7 @@ FileDescriptorProto {
     dependency: [],
     public_dependency: [],
     weak_dependency: [],
+    option_dependency: [],
     message_type: [
         DescriptorProto {
             name: Some(
@@ -65,8 +66,15 @@ FileDescriptorProto {
                             packed: None,
                             jstype: None,
                             lazy: None,
+                            unverified_lazy: None,
                             deprecated: None,
                             weak: None,
+                            debug_redact: None,
+                            retention: None,
+                            targets: [],
+                            edition_defaults: [],
+                            features: None,
+                            feature_support: None,
                             uninterpreted_option: [
                                 UninterpretedOption {
                                     name: [
@@ -140,8 +148,15 @@ FileDescriptorProto {
                             packed: None,
                             jstype: None,
                             lazy: None,
+                            unverified_lazy: None,
                             deprecated: None,
                             weak: None,
+                            debug_redact: None,
+                            retention: None,
+                            targets: [],
+                            edition_defaults: [],
+                            features: None,
+                            feature_support: None,
                             uninterpreted_option: [
                                 UninterpretedOption {
                                     name: [
@@ -192,8 +207,15 @@ FileDescriptorProto {
                             packed: None,
                             jstype: None,
                             lazy: None,
+                            unverified_lazy: None,
                             deprecated: None,
                             weak: None,
+                            debug_redact: None,
+                            retention: None,
+                            targets: [],
+                            edition_defaults: [],
+                            features: None,
+                            feature_support: None,
                             uninterpreted_option: [
                                 UninterpretedOption {
                                     name: [
@@ -277,8 +299,15 @@ FileDescriptorProto {
                                     packed: None,
                                     jstype: None,
                                     lazy: None,
+                                    unverified_lazy: None,
                                     deprecated: None,
                                     weak: None,
+                                    debug_redact: None,
+                                    retention: None,
+                                    targets: [],
+                                    edition_defaults: [],
+                                    features: None,
+                                    feature_support: None,
                                     uninterpreted_option: [
                                         UninterpretedOption {
                                             name: [
@@ -331,8 +360,15 @@ FileDescriptorProto {
                                     packed: None,
                                     jstype: None,
                                     lazy: None,
+                                    unverified_lazy: None,
                                     deprecated: None,
                                     weak: None,
+                                    debug_redact: None,
+                                    retention: None,
+                                    targets: [],
+                                    edition_defaults: [],
+                                    features: None,
+                                    feature_support: None,
                                     uninterpreted_option: [
                                         UninterpretedOption {
                                             name: [
@@ -373,11 +409,14 @@ FileDescriptorProto {
                             map_entry: Some(
                                 true,
                             ),
+                            deprecated_legacy_json_field_conflicts: None,
+                            features: None,
                             uninterpreted_option: [],
                         },
                     ),
                     reserved_range: [],
                     reserved_name: [],
+                    visibility: None,
                 },
             ],
             enum_type: [],
@@ -413,6 +452,7 @@ FileDescriptorProto {
                 "removed",
                 "gone",
             ],
+            visibility: None,
         },
     ],
     enum_type: [
@@ -436,6 +476,7 @@ FileDescriptorProto {
             reserved_name: [
                 "RETIRED",
             ],
+            visibility: None,
         },
     ],
     service: [],
@@ -452,7 +493,6 @@ FileDescriptorProto {
             cc_generic_services: None,
             java_generic_services: None,
             py_generic_services: None,
-            php_generic_services: None,
             deprecated: None,
             cc_enable_arenas: None,
             objc_class_prefix: None,
@@ -462,6 +502,7 @@ FileDescriptorProto {
             php_namespace: None,
             php_metadata_namespace: None,
             ruby_package: None,
+            features: None,
             uninterpreted_option: [
                 UninterpretedOption {
                     name: [
@@ -489,5 +530,8 @@ FileDescriptorProto {
     source_code_info: None,
     syntax: Some(
         "editions",
+    ),
+    edition: Some(
+        Edition2023,
     ),
 }

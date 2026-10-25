@@ -30,7 +30,7 @@ const EDITION_2023: i32 = 1000;
 /// imported files.
 ///
 /// A file that begins with an `edition` statement parses to a descriptor with `syntax` set to
-/// `"editions"`; use [`parse_with_edition()`] to get its edition too.
+/// `"editions"` and `edition` set to the edition (`EDITION_2023`).
 ///
 /// # Examples
 ///
@@ -79,32 +79,6 @@ const EDITION_2023: i32 = 1000;
 /// })
 /// ```
 pub fn parse(name: &str, source: &str) -> Result<FileDescriptorProto, ParseError> {
-    parse_with_edition(name, source).map(|(file, _)| file)
-}
-
-/// Parses a single protobuf source file, as [`parse()`] does, and also returns the file's edition
-/// when it begins with an `edition` statement.
-///
-/// The edition is a value of the `google.protobuf.Edition` enum (`1000` for
-/// `edition = "2023";`). It is returned separately because [`FileDescriptorProto`] has no field
-/// for it: an editions file parses to a descriptor with `syntax` set to `"editions"`, and a
-/// descriptor pool needs the edition beside it.
-///
-/// # Examples
-///
-/// ```
-/// # use protox_parse::parse_with_edition;
-/// let (file, edition) = parse_with_edition("foo.proto", "edition = \"2023\";").unwrap();
-/// assert_eq!(file.syntax(), "editions");
-/// assert_eq!(edition, Some(1000));
-///
-/// let (_, edition) = parse_with_edition("bar.proto", "syntax = \"proto3\";").unwrap();
-/// assert_eq!(edition, None);
-/// ```
-pub fn parse_with_edition(
-    name: &str,
-    source: &str,
-) -> Result<(FileDescriptorProto, Option<i32>), ParseError> {
     if source.len() > MAX_FILE_LEN {
         return Err(ParseError::new(
             vec![error::ParseErrorKind::FileTooLarge],

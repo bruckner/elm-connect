@@ -16,13 +16,11 @@ use crate::{
 mod lines;
 
 /// Convert the AST to a FileDescriptorProto, performing basic checks and generate group and map messages, and synthetic oneofs.
-///
-/// The file's edition is returned beside it, since `FileDescriptorProto` has no field for it.
 pub(crate) fn generate_file(
     ast: ast::File,
     name: &str,
     source: &str,
-) -> Result<(FileDescriptorProto, Option<i32>), Vec<ParseErrorKind>> {
+) -> Result<FileDescriptorProto, Vec<ParseErrorKind>> {
     let edition = match ast.syntax {
         ast::Syntax::Editions(edition) => Some(edition),
         ast::Syntax::Proto2 | ast::Syntax::Proto3 => None,
@@ -40,15 +38,13 @@ pub(crate) fn generate_file(
     if ctx.errors.is_empty() {
         ctx.locations.sort_unstable_by(|l, r| l.path.cmp(&r.path));
 
-        Ok((
-            FileDescriptorProto {
-                source_code_info: Some(SourceCodeInfo {
-                    location: ctx.locations,
-                }),
-                ..file
-            },
+        Ok(FileDescriptorProto {
+            source_code_info: Some(SourceCodeInfo {
+                location: ctx.locations,
+            }),
             edition,
-        ))
+            ..file
+        })
     } else {
         Err(ctx.errors)
     }
@@ -183,6 +179,8 @@ impl Context {
             }),
             source_code_info: None,
             syntax,
+            edition: None,
+            option_dependency: vec![],
         }
     }
 
@@ -335,6 +333,7 @@ impl Context {
             }),
             reserved_range,
             reserved_name,
+            visibility: None,
         }
     }
 
@@ -895,6 +894,7 @@ impl Context {
             end: end.map(|n| n + 1),
             options: options.map(|uninterpreted_option| ExtensionRangeOptions {
                 uninterpreted_option,
+                ..Default::default()
             }),
         }
     }
@@ -944,6 +944,7 @@ impl Context {
             name: Some(oneof.name.value),
             options: options.map(|uninterpreted_option| OneofOptions {
                 uninterpreted_option,
+                ..Default::default()
             }),
         }
     }
@@ -1035,6 +1036,7 @@ impl Context {
             }),
             reserved_range,
             reserved_name,
+            visibility: None,
         }
     }
 

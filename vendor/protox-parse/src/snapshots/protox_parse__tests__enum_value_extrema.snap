@@ -11,6 +11,7 @@ Ok(
         dependency: [],
         public_dependency: [],
         weak_dependency: [],
+        option_dependency: [],
         message_type: [],
         enum_type: [
             EnumDescriptorProto {
@@ -49,6 +50,7 @@ Ok(
                 options: None,
                 reserved_range: [],
                 reserved_name: [],
+                visibility: None,
             },
         ],
         service: [],
@@ -268,5 +270,6 @@ Ok(
         syntax: Some(
             "proto3",
         ),
+        edition: None,
     },
 )

@@ -81,7 +81,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: None,
                     objc_class_prefix: Some("GPB".into()),
@@ -92,6 +91,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -143,7 +143,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: None,
                     objc_class_prefix: Some("GPB".into()),
@@ -154,6 +153,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -767,7 +767,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -778,6 +777,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -1055,7 +1055,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: None,
                     objc_class_prefix: Some("GPB".into()),
@@ -1066,6 +1065,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -1585,6 +1585,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -1621,6 +1622,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -2438,6 +2440,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: Some(true),
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -2780,6 +2783,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: Some(true),
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -2943,6 +2947,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: Some(true),
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3383,6 +3388,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: Some(true),
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3821,6 +3827,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3842,6 +3849,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3863,6 +3871,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3884,6 +3893,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3905,6 +3915,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3926,6 +3937,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3947,6 +3959,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -3971,6 +3984,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                     deprecated: None,
                                     weak: None,
                                     uninterpreted_option: vec![],
+                                    ..Default::default()
                                 })),
                                 proto3_optional: None,
                             },
@@ -4370,6 +4384,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                         deprecated: None,
                                         weak: None,
                                         uninterpreted_option: vec![],
+                                        ..Default::default()
                                     })),
                                     proto3_optional: None,
                                 },
@@ -4391,6 +4406,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                         deprecated: None,
                                         weak: None,
                                         uninterpreted_option: vec![],
+                                        ..Default::default()
                                     })),
                                     proto3_optional: None,
                                 },
@@ -4491,6 +4507,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                         deprecated: None,
                                         weak: None,
                                         uninterpreted_option: vec![],
+                                        ..Default::default()
                                     })),
                                     proto3_optional: None,
                                 },
@@ -4694,7 +4711,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -4705,6 +4721,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: None,
@@ -4769,7 +4786,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -4780,6 +4796,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -4817,7 +4834,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -4828,6 +4844,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -4877,7 +4894,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -4888,6 +4904,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -4957,6 +4974,7 @@ fn make_descriptor() -> FileDescriptorSet {
                                 deprecated: None,
                                 map_entry: Some(true),
                                 uninterpreted_option: vec![],
+                                ..Default::default()
                             })),
                             reserved_range: vec![],
                             reserved_name: vec![],
@@ -5111,7 +5129,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -5122,6 +5139,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -5186,7 +5204,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -5197,6 +5214,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -5440,7 +5458,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: Some(true),
                     objc_class_prefix: Some("GPB".into()),
@@ -5451,6 +5468,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: Some("proto3".into()),
@@ -5761,7 +5779,6 @@ fn make_descriptor() -> FileDescriptorSet {
                     cc_generic_services: None,
                     java_generic_services: None,
                     py_generic_services: None,
-                    php_generic_services: None,
                     deprecated: None,
                     cc_enable_arenas: None,
                     objc_class_prefix: None,
@@ -5772,6 +5789,7 @@ fn make_descriptor() -> FileDescriptorSet {
                     php_metadata_namespace: None,
                     ruby_package: None,
                     uninterpreted_option: vec![],
+                    ..Default::default()
                 })),
                 source_code_info: None,
                 syntax: None,

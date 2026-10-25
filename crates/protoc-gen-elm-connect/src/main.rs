@@ -171,6 +171,8 @@ fn run(bytes: &[u8]) -> (CodeGeneratorResponse, String) {
     let response = |error: Option<String>, file: Vec<File>| CodeGeneratorResponse {
         error,
         supported_features: Some(Feature::Proto3Optional as u64),
+        minimum_edition: None,
+        maximum_edition: None,
         file,
     };
     let options = match Options::from_parameter(request.parameter()) {

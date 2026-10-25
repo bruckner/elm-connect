@@ -11,6 +11,7 @@ Ok(
         dependency: [],
         public_dependency: [],
         weak_dependency: [],
+        option_dependency: [],
         message_type: [
             DescriptorProto {
                 name: Some(
@@ -34,6 +35,7 @@ Ok(
                     },
                 ],
                 reserved_name: [],
+                visibility: None,
             },
         ],
         enum_type: [],
@@ -154,5 +156,6 @@ Ok(
             },
         ),
         syntax: None,
+        edition: None,
     },
 )

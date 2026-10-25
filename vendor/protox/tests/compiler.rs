@@ -463,7 +463,7 @@ fn editions_file() {
         .unwrap()
         .is_closed());
 
-    // The encoded set keeps the edition, which prost_types::FileDescriptorProto cannot hold.
+    // The encoded set and the prost_types set both keep the edition.
     let encoded = compiler.encode_file_descriptor_set();
     let decoded = DescriptorPool::decode(encoded.as_slice()).unwrap();
     assert_eq!(
@@ -473,7 +473,18 @@ fn editions_file() {
             .edition(),
         prost_reflect::Edition::Edition2023
     );
-    assert_eq!(compiler.file_descriptor_set().file[0].syntax(), "editions");
+    let set = compiler.file_descriptor_set();
+    assert_eq!(set.file[0].syntax(), "editions");
+    assert_eq!(set.file[0].edition(), prost_types::Edition::Edition2023);
+    let mut from_prost = DescriptorPool::new();
+    from_prost.add_file_descriptor_set(set).unwrap();
+    assert_eq!(
+        from_prost
+            .get_file_by_name("editions.proto")
+            .unwrap()
+            .edition(),
+        prost_reflect::Edition::Edition2023
+    );
 }
 
 #[test]

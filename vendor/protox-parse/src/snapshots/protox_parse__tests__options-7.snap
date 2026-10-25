@@ -11,6 +11,7 @@ Ok(
         dependency: [],
         public_dependency: [],
         weak_dependency: [],
+        option_dependency: [],
         message_type: [],
         enum_type: [],
         service: [],
@@ -27,7 +28,6 @@ Ok(
                 cc_generic_services: None,
                 java_generic_services: None,
                 py_generic_services: None,
-                php_generic_services: None,
                 deprecated: None,
                 cc_enable_arenas: None,
                 objc_class_prefix: None,
@@ -37,6 +37,7 @@ Ok(
                 php_namespace: None,
                 php_metadata_namespace: None,
                 ruby_package: None,
+                features: None,
                 uninterpreted_option: [
                     UninterpretedOption {
                         name: [
@@ -107,5 +108,6 @@ Ok(
             },
         ),
         syntax: None,
+        edition: None,
     },
 )

@@ -15,6 +15,7 @@ Ok(
         weak_dependency: [
             0,
         ],
+        option_dependency: [],
         message_type: [],
         enum_type: [],
         service: [],
@@ -66,5 +67,6 @@ Ok(
             },
         ),
         syntax: None,
+        edition: None,
     },
 )

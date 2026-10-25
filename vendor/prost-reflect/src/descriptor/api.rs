@@ -653,9 +653,6 @@ impl FileDescriptor {
     }
 
     /// Gets a reference to the raw [`FileDescriptorProto`] wrapped by this [`FileDescriptor`].
-    ///
-    /// `prost_types::FileDescriptorProto` has no `edition` field; use
-    /// [`edition`](FileDescriptor::edition), or [`encode`](FileDescriptor::encode), which keeps it.
     pub fn file_descriptor_proto(&self) -> &FileDescriptorProto {
         &self.inner().prost
     }

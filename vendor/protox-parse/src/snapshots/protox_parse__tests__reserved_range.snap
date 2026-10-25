@@ -11,6 +11,7 @@ Ok(
         dependency: [],
         public_dependency: [],
         weak_dependency: [],
+        option_dependency: [],
         message_type: [
             DescriptorProto {
                 name: Some(
@@ -28,6 +29,8 @@ Ok(
                         no_standard_descriptor_accessor: None,
                         deprecated: None,
                         map_entry: None,
+                        deprecated_legacy_json_field_conflicts: None,
+                        features: None,
                         uninterpreted_option: [
                             UninterpretedOption {
                                 name: [
@@ -59,6 +62,7 @@ Ok(
                     },
                 ],
                 reserved_name: [],
+                visibility: None,
             },
         ],
         enum_type: [],
@@ -211,5 +215,6 @@ Ok(
             },
         ),
         syntax: None,
+        edition: None,
     },
 )
