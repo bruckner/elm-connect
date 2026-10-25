@@ -303,6 +303,35 @@ the JSON is not an array.
 -}
 spelledAs : List String -> Value -> Spelled
 spelledAs names json =
+    case names of
+        [ name ] ->
+            if isInherited name then
+                spelledAsAny names json
+
+            else
+                -- One spelling, as most fields have: the general case below
+                -- without its list work.
+                case probe name json of
+                    Nothing ->
+                        if isObject json then
+                            Spelled (Ok Nothing)
+
+                        else
+                            NotAnObject
+
+                    Just found ->
+                        if isArray json then
+                            NotAnObject
+
+                        else
+                            Spelled (Ok (Just found))
+
+        _ ->
+            spelledAsAny names json
+
+
+spelledAsAny : List String -> Value -> Spelled
+spelledAsAny names json =
     if List.any isInherited names then
         case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
             Ok keys ->
@@ -1215,23 +1244,31 @@ int64 =
 wide : Width -> Decoder String
 wide width =
     Json.Decode.oneOf
-        [ Json.Decode.map (\text -> ( text, quote text )) Json.Decode.string
-        , Json.Decode.map (\int -> ( String.fromInt int, String.fromInt int )) Json.Decode.int
+        [ Json.Decode.map (\text -> ( text, True )) Json.Decode.string
+        , Json.Decode.map (\int -> ( String.fromInt int, False )) Json.Decode.int
         ]
         |> Json.Decode.andThen
-            (\( text, shown ) ->
+            (\( text, quoted ) ->
+                let
+                    shown () =
+                        if quoted then
+                            quote text
+
+                        else
+                            text
+                in
                 case wideInteger width text of
                     Ok decimal ->
                         Json.Decode.succeed decimal
 
                     Err NotDecimal ->
-                        Json.Decode.fail ("Expecting a decimal integer, but got " ++ shown)
+                        Json.Decode.fail ("Expecting a decimal integer, but got " ++ shown ())
 
                     Err NotInteger ->
-                        Json.Decode.fail ("Expecting an integer, but got " ++ shown)
+                        Json.Decode.fail ("Expecting an integer, but got " ++ shown ())
 
                     Err OutOfRange ->
-                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width ++ ", but got " ++ shown)
+                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width ++ ", but got " ++ shown ())
             )
 
 
@@ -1328,6 +1365,33 @@ canonicalInteger text =
             else
                 ( "", text )
     in
+    if isCanonicalNatural unsigned && String.length unsigned <= 20 && not (sign == "-" && unsigned == "0") then
+        -- Already canonical, as almost every 64-bit integer a server writes is:
+        -- the digits are the answer, without taking them apart.
+        Ok text
+
+    else
+        canonicalFrom sign unsigned
+
+
+{-| Whether text is a natural number's canonical decimal digits: `0`, or
+digits not beginning with `0`.
+-}
+isCanonicalNatural : String -> Bool
+isCanonicalNatural text =
+    case String.uncons text of
+        Just ( '0', rest ) ->
+            String.isEmpty rest
+
+        Just ( first, _ ) ->
+            Char.isDigit first && String.all Char.isDigit text
+
+        Nothing ->
+            False
+
+
+canonicalFrom : String -> String -> Result IntegerProblem String
+canonicalFrom sign unsigned =
     case scientific unsigned of
         Nothing ->
             Err NotDecimal
@@ -1504,7 +1568,7 @@ uint64AsInt =
 int64Form : Numeric -> Decoder Int
 int64Form form =
     let
-        outOfRange =
+        outOfRange () =
             Json.Decode.fail
                 ("Expecting an integer from -9007199254740991 to 9007199254740991, "
                     ++ "the 64-bit integers an Elm Int holds exactly, but got "
@@ -1519,7 +1583,7 @@ int64Form form =
 
                 Ok _ ->
                     if abs number > 9007199254740991 then
-                        outOfRange
+                        outOfRange ()
 
                     else
                         Json.Decode.succeed (round number)
@@ -1533,7 +1597,7 @@ int64Form form =
                     Json.Decode.fail ("Expecting an integer, but got " ++ quote text)
 
                 Err OutOfRange ->
-                    outOfRange
+                    outOfRange ()
 
                 Ok decimal ->
                     case Proto.Int64.toInt decimal of
@@ -1541,7 +1605,7 @@ int64Form form =
                             Json.Decode.succeed int
 
                         Nothing ->
-                            outOfRange
+                            outOfRange ()
 
 
 {-| Encode a 64-bit integer held as an `Int` as proto3 JSON writes one: its
