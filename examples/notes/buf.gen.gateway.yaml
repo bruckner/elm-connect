@@ -1,5 +1,5 @@
 # `buf generate --template buf.gen.gateway.yaml`, run here by `just live-gen`
-# beside buf.gen.yaml: grpc-gateway's reverse proxy for notes.v1 and
+# after buf.gen.server.yaml: grpc-gateway's reverse proxy for notes.v1 and
 # routes.v1, beside the types in server/gen. generate_unbound_methods serves
 # a method without a rule at its implicit route, POST
 # /<package>.<Service>/<Method> with body "*".

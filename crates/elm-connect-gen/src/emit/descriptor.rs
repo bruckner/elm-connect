@@ -232,7 +232,8 @@ impl Emitter {
             doc: Some(format!(
                 "The descriptors of this package's types, of the packages it imports and of \
                  the well-known types, by full name. It resolves the message types a \
-                 descriptor names, and the type of a {}.",
+                 descriptor names, and the type of a {} (its source at this release; the \
+                 package site documents it once the runtime is published there).",
                 docs::runtime("Proto.Any", "Any")
             )),
             name: REGISTRY.to_owned(),

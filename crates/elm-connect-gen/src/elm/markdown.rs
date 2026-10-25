@@ -2215,8 +2215,8 @@ mod tests {
          \x20 - binding 0: `GET /v1/a`;\n\
          \x20 - binding 1: `GET /v1/b`, body `*`.\n\n\
          Described by [`descriptorGet`](#descriptorGet).",
-        "Holds a [`Proto.Any.Any`](https://package.elm-lang.org/packages/\
-         bruckner/elm-connect/latest/Proto-Any#Any).",
+        "Holds a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/\
+         0.1.0/src/Proto/Any.elm).",
         "[`message s.v1.M`](S-V1-M#descriptor)\n\n\
          \x20 - [`descriptor`](S-V1-M#descriptor_): The a. Required.\n\
          \x20 - [`type_`](S-V1-M#type_)\n\

@@ -1308,6 +1308,53 @@ impl Problem {
         )
     }
 
+    /// `file`, named on the command line, or imported at `imported` (a
+    /// site in the importing file), is under none of the include paths
+    /// `searched`, as written; `absent` is each of those that is not a
+    /// directory, with why: `does not exist` or `is not a directory`.
+    pub fn file_not_found(
+        file: &str,
+        imported: Option<Site>,
+        searched: &[String],
+        absent: &[(String, &str)],
+    ) -> Self {
+        let (message, site) = match imported {
+            Some(site) => (
+                format!(
+                    "The file `{}` imports `{file}`, which is under none of the include paths.",
+                    site.file
+                ),
+                site,
+            ),
+            None => (
+                format!("The file `{file}` is under none of the include paths."),
+                Site {
+                    file: file.to_owned(),
+                    span: None,
+                    label: "not found".into(),
+                    within: Vec::new(),
+                },
+            ),
+        };
+        let searched: Vec<String> = searched.iter().map(|path| format!("`{path}`")).collect();
+        let absent: String = absent
+            .iter()
+            .map(|(path, why)| format!(" `{path}` {why}."))
+            .collect();
+        Problem::new(
+            Code::FileNotFound,
+            message,
+            format!(
+                "The include paths searched were {} (`-I`, `.` when none is given), then the \
+                 `google/protobuf` files and the `google/api` annotations elm-connect bundles.\
+                 {absent} Add the directory the file is under with `-I`, and name it relative \
+                 to that directory.",
+                searched.join(", ")
+            ),
+            vec![site],
+        )
+    }
+
     /// `file` declares an edition, `edition` when it is known (`"2023"`).
     pub fn editions(file: &str, edition: Option<&str>, site: Site) -> Self {
         let declares = match edition {

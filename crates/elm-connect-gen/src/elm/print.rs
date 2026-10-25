@@ -54,7 +54,10 @@ pub fn print_module(module: &Module) -> String {
     // elm-format puts two blank lines between a comment above the header
     // and the header.
     let mut out = match &module.header {
-        Some(comment) => format!("-- {comment}\n\n\n"),
+        Some(comment) => {
+            let lines: Vec<String> = comment.lines().map(|line| format!("-- {line}\n")).collect();
+            format!("{}\n\n", lines.concat())
+        }
         None => String::new(),
     };
     let _ = writeln!(

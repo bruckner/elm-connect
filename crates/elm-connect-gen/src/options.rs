@@ -165,8 +165,60 @@ impl Options {
     }
 }
 
+impl Options {
+    /// The options as a generated module's header records them, in the
+    /// plugin parameter's form: each option not at its default as
+    /// `key=value`, in the order of [`KEYS`], a `rename` once per entry
+    /// in proto-name order. Empty for the defaults. An option given its
+    /// default is left out, so a header written before an option existed
+    /// still reads as that option's default.
+    pub fn recorded(&self) -> Vec<String> {
+        let mut pairs = Vec::new();
+        let mut set = |key: &str, value: &str, default: &[&str]| {
+            if default.first() != Some(&value) {
+                pairs.push(format!("{key}={value}"));
+            }
+        };
+        set("int64", self.int64.as_str(), Int64::VALUES);
+        set("bytes", self.bytes.as_str(), Bytes::VALUES);
+        set(
+            "unbound_methods",
+            self.unbound_methods.as_str(),
+            UnboundMethods::VALUES,
+        );
+        set("streaming", self.streaming.as_str(), Streaming::VALUES);
+        set(
+            "enum_unknown",
+            self.enum_unknown.as_str(),
+            EnumUnknown::VALUES,
+        );
+        for (proto, elm) in &self.rename {
+            pairs.push(format!("rename={proto}:{elm}"));
+        }
+        if let Some(prefix) = &self.module_prefix {
+            pairs.push(format!("module_prefix={prefix}"));
+        }
+        pairs
+    }
+}
+
+/// The value an option takes when it is not given, as written: `string`
+/// for `int64`; `None` for `rename` and `module_prefix`, which are absent
+/// unless given, and for a key that is no option.
+pub fn default_value(key: &str) -> Option<&'static str> {
+    let values = match key {
+        "int64" => Int64::VALUES,
+        "bytes" => Bytes::VALUES,
+        "unbound_methods" => UnboundMethods::VALUES,
+        "streaming" => Streaming::VALUES,
+        "enum_unknown" => EnumUnknown::VALUES,
+        _ => return None,
+    };
+    values.first().copied()
+}
+
 /// The plugin parameter's keys.
-const KEYS: [&str; 7] = [
+pub const KEYS: [&str; 7] = [
     "int64",
     "bytes",
     "unbound_methods",
@@ -218,6 +270,14 @@ pub enum Int64 {
 impl Int64 {
     /// The values the option takes, as written, the default first.
     pub const VALUES: &'static [&'static str] = &["string", "int"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Int64::String => "string",
+            Int64::Int => "int",
+        }
+    }
 }
 
 impl std::str::FromStr for Int64 {
@@ -247,6 +307,14 @@ pub enum Bytes {
 impl Bytes {
     /// The values the option takes, as written, the default first.
     pub const VALUES: &'static [&'static str] = &["string", "bytes"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Bytes::String => "string",
+            Bytes::Bytes => "bytes",
+        }
+    }
 }
 
 impl std::str::FromStr for Bytes {
@@ -278,6 +346,14 @@ pub enum UnboundMethods {
 impl UnboundMethods {
     /// The values the option takes, as written, the default first.
     pub const VALUES: &'static [&'static str] = &["implicit", "error"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnboundMethods::Implicit => "implicit",
+            UnboundMethods::Error => "error",
+        }
+    }
 }
 
 impl std::str::FromStr for UnboundMethods {
@@ -309,6 +385,14 @@ pub enum Streaming {
 impl Streaming {
     /// The values the option takes, as written, the default first.
     pub const VALUES: &'static [&'static str] = &["error", "skip"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Streaming::Error => "error",
+            Streaming::Skip => "skip",
+        }
+    }
 }
 
 impl std::str::FromStr for Streaming {
@@ -340,6 +424,14 @@ pub enum EnumUnknown {
 impl EnumUnknown {
     /// The values the option takes, as written, the default first.
     pub const VALUES: &'static [&'static str] = &["fail", "zero"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            EnumUnknown::Fail => "fail",
+            EnumUnknown::Zero => "zero",
+        }
+    }
 }
 
 impl std::str::FromStr for EnumUnknown {
@@ -427,6 +519,45 @@ mod tests {
         );
         assert!(error("enum_unknown=variant").contains("`fail` or `zero`"));
         assert!(error("enum_unknown=zero,enum_unknown=zero").contains("more than once"));
+    }
+
+    #[test]
+    fn the_header_records_options_off_their_defaults_in_a_fixed_order() {
+        let recorded = |parameter| parse(parameter).map(|o| o.recorded());
+        assert_eq!(recorded(""), Ok(Vec::new()));
+        assert_eq!(
+            recorded("int64=string,bytes=string,streaming=error,enum_unknown=fail"),
+            Ok(Vec::new())
+        );
+        assert_eq!(
+            recorded(
+                "module_prefix=Api,rename=b.C:D,enum_unknown=zero,rename=a.B:C,\
+                 unbound_methods=error,streaming=skip,bytes=bytes,int64=int"
+            ),
+            Ok([
+                "int64=int",
+                "bytes=bytes",
+                "unbound_methods=error",
+                "streaming=skip",
+                "enum_unknown=zero",
+                "rename=a.B:C",
+                "rename=b.C:D",
+                "module_prefix=Api",
+            ]
+            .map(str::to_owned)
+            .to_vec())
+        );
+        for key in [
+            "int64",
+            "bytes",
+            "unbound_methods",
+            "streaming",
+            "enum_unknown",
+        ] {
+            assert!(default_value(key).is_some(), "{key}");
+        }
+        assert_eq!(default_value("rename"), None);
+        assert_eq!(default_value("module_prefix"), None);
     }
 
     #[test]

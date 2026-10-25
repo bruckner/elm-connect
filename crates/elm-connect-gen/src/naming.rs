@@ -31,17 +31,15 @@ macro_rules! runtime_package {
 /// The runtime package's name.
 pub const RUNTIME_PACKAGE: &str = runtime_package!();
 
-/// The runtime package's documentation on the package site, to which a
-/// module's page name and an anchor are appended
-/// (`Proto-Message#Descriptor`). It names `latest` because the site has
-/// no path for a major or minor version, only for an exact release, and
-/// generated code is not tied to one: its `elmConnectVersion_` pins the
-/// minor version it was generated for.
-pub const RUNTIME_DOCS: &str = concat!(
-    "https://package.elm-lang.org/packages/",
-    runtime_package!(),
-    "/latest/"
-);
+macro_rules! repository_blobs {
+    () => {
+        "https://github.com/bruckner/elm-connect/blob/"
+    };
+}
+
+/// The repository's files on GitHub at some revision, which follows,
+/// then `/` and a path from the repository root.
+pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 
 /// The repository's files on GitHub at the release tag of this crate's
 /// version, to which a path from the repository root is appended
@@ -50,11 +48,7 @@ pub const RUNTIME_DOCS: &str = concat!(
 /// binary so links the docs that describe it, not `main`'s, which move on
 /// after it. A build between releases carries the last release's version,
 /// and links that release's docs.
-pub const REPOSITORY_FILES: &str = concat!(
-    "https://github.com/bruckner/elm-connect/blob/",
-    env!("CARGO_PKG_VERSION"),
-    "/"
-);
+pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
 pub const RUNTIME_MODULES: [&str; 25] = [

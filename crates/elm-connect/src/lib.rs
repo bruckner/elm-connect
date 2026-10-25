@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{
-    Code, Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
+    Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
     field_name_conflicts,
 };
 use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
@@ -122,10 +122,7 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
             Err(error) => error,
         };
         if error.is_file_not_found() {
-            return Err(Report::new(NotFound {
-                error,
-                includes: includes.clone(),
-            }));
+            return Err(not_found(&error, &includes));
         }
         return Err(error.into());
     }
@@ -148,63 +145,87 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
     })
 }
 
-/// protox's error for a file or import found on no include path, as protox
-/// renders it, with a help naming the include paths it searched.
-#[derive(Debug)]
-struct NotFound {
-    error: protox::Error,
-    includes: Vec<PathBuf>,
-}
-
-impl std::fmt::Display for NotFound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.error, f)
+/// The `input::file_not_found` problem for protox's `error` that a file
+/// named on the command line, or one it imports, is on no include path:
+/// sited at the import, with its snippet, when an import is missing, and
+/// at the file, with none, when a file named on the command line is.
+/// protox exposes the missing name only in its message, so it is read
+/// from there.
+fn not_found(error: &protox::Error, includes: &[PathBuf]) -> Report {
+    let text = error.to_string();
+    // `file 'a.proto' not found`, `import 'a.proto' not found` and `file
+    // 'a.proto' is not in any include path`.
+    let quoted = text
+        .split_once('\'')
+        .and_then(|(_, rest)| rest.rsplit_once('\''))
+        .map_or(text.as_str(), |(name, _)| name);
+    let searched: Vec<String> = includes
+        .iter()
+        .map(|include| include.display().to_string())
+        .collect();
+    // An include path that is no directory is the likelier mistake.
+    let absent: Vec<(String, &str)> = includes
+        .iter()
+        .filter(|include| !include.is_dir())
+        .map(|include| {
+            let why = if include.exists() {
+                "is not a directory"
+            } else {
+                "does not exist"
+            };
+            (include.display().to_string(), why)
+        })
+        .collect();
+    let importer = text
+        .starts_with("import ")
+        .then(|| error.file())
+        .flatten()
+        .map(str::to_owned);
+    let Some(importer) = importer else {
+        return Report::new(Diagnostics::from(Problem::file_not_found(
+            quoted, None, &searched, &absent,
+        )));
+    };
+    let source = includes
+        .iter()
+        .find_map(|include| fs::read_to_string(include.join(&importer)).ok());
+    let span = error
+        .labels()
+        .and_then(|mut labels| labels.next())
+        .zip(source.as_deref())
+        .and_then(|(label, source)| {
+            line_col_span(source, label.offset(), label.offset() + label.len())
+        });
+    let site = Site {
+        file: importer.clone(),
+        span,
+        label: "imported here".into(),
+        within: Vec::new(),
+    };
+    let problem = Problem::file_not_found(quoted, Some(site), &searched, &absent);
+    match source {
+        Some(source) => report(problem, &importer, source),
+        None => Report::new(Diagnostics::from(problem)),
     }
 }
 
-impl std::error::Error for NotFound {}
-
-impl Diagnostic for NotFound {
-    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        Some(Box::new(Code::FileNotFound.as_str()))
-    }
-
-    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        let searched: Vec<String> = self
-            .includes
-            .iter()
-            .map(|include| format!("`{}`", include.display()))
-            .collect();
-        // An include path that is no directory is the likelier mistake.
-        let missing: String = self
-            .includes
-            .iter()
-            .filter(|include| !include.is_dir())
-            .map(|include| {
-                let what = if include.exists() {
-                    "is not a directory"
-                } else {
-                    "does not exist"
-                };
-                format!(" `{}` {what}.", include.display())
-            })
-            .collect();
-        Some(Box::new(format!(
-            "The include paths searched were {} (`-I`, `.` when none is given), then the \
-             `google/protobuf` files and the `google/api` annotations elm-connect bundles.\
-             {missing} Add the directory the file is under with `-I`, and name it relative to \
-             that directory.",
-            searched.join(", ")
-        )))
-    }
-
-    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-        self.error.source_code()
-    }
-
-    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
-        self.error.labels()
-    }
+/// The line and column span, columns in bytes, of the bytes `start` to
+/// `end` of `source`.
+fn line_col_span(source: &str, start: usize, end: usize) -> Option<LineColSpan> {
+    let position = |offset: usize| {
+        let before = source.get(..offset)?;
+        let line = before.matches('\n').count();
+        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
+        Some((u32::try_from(line).ok()?, u32::try_from(col).ok()?))
+    };
+    let (start_line, start_col) = position(start)?;
+    let (end_line, end_col) = position(end)?;
+    Some(LineColSpan {
+        start_line,
+        start_col,
+        end_line,
+        end_col,
+    })
 }
 
 /// protox's refusal of two fields of a message whose names are the same
@@ -500,6 +521,23 @@ pub struct Check {
     /// Each module or file that drifted, sorted by path; empty when the
     /// tree is current.
     pub drift: Vec<Drift>,
+    /// The drifted modules whose header records other options than the
+    /// run's, grouped by the options they record; empty when every one
+    /// records the run's options or records none.
+    pub other_options: Vec<OtherOptions>,
+}
+
+/// Drifted modules under the output directory whose header records other
+/// options than the run was given.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OtherOptions {
+    /// The options the modules record, `key=value` each, as
+    /// [`Options::recorded`] gives them.
+    pub on_disk: Vec<String>,
+    /// The options the run records.
+    pub generated: Vec<String>,
+    /// The modules' paths under the output directory, sorted.
+    pub paths: Vec<String>,
 }
 
 /// The line comment that opens every module elm-connect generates.
@@ -551,9 +589,29 @@ fn header_files(content: &str) -> impl Iterator<Item = &str> {
         .flat_map(|files| files.split(", "))
 }
 
+/// The options the second header line of `content` records, `key=value`
+/// each: `["streaming=skip"]` of `-- Options: streaming=skip`, none of
+/// `-- Options: defaults`. `None` when the module has no such line, as one
+/// written before the header recorded its options has not.
+fn header_options(content: &str) -> Option<Vec<String>> {
+    let mut lines = content.lines();
+    lines.next()?.strip_prefix(&header_start())?;
+    let recorded = lines
+        .next()?
+        .strip_prefix("-- ")?
+        .strip_prefix(elm_connect_gen::OPTIONS_PREFIX)?;
+    Some(if recorded == elm_connect_gen::DEFAULT_OPTIONS {
+        Vec::new()
+    } else {
+        recorded.split(", ").map(str::to_owned).collect()
+    })
+}
+
 /// Compares `files`, as generating gives them, with the tree under `out`:
 /// a module whose file is missing, a file whose content differs, and a
-/// [`stale`] file. A missing `out` is a tree with nothing in it.
+/// [`stale`] file; and, of those that differ or are stale, the ones whose
+/// header records other options than `files`. A missing `out` is a tree
+/// with nothing in it.
 pub fn check(files: &[GeneratedFile], out: &Path) -> Result<Check, Report> {
     let mut drift = Vec::new();
     for file in files {
@@ -581,11 +639,52 @@ pub fn check(files: &[GeneratedFile], out: &Path) -> Result<Check, Report> {
         drift.push(Drift::Stale { path });
     }
     drift.sort_by(|a, b| a.path().cmp(b.path()));
+    let other_options = match files.first().and_then(|file| header_options(&file.content)) {
+        Some(generated) => other_options(&drift, out, &generated)?,
+        None => Vec::new(),
+    };
     Ok(Check {
         out: out.to_owned(),
         modules: files.len(),
         drift,
+        other_options,
     })
+}
+
+/// The modules of `drift` that differ or are stale and whose header
+/// records options other than `generated`, grouped by those options.
+fn other_options(
+    drift: &[Drift],
+    out: &Path,
+    generated: &[String],
+) -> Result<Vec<OtherOptions>, Report> {
+    let mut groups: Vec<OtherOptions> = Vec::new();
+    for drift in drift {
+        let read;
+        let content = match drift {
+            Drift::Differs { on_disk, .. } => on_disk.as_str(),
+            Drift::Stale { path } => {
+                let full = out.join(path);
+                read = fs::read_to_string(&full)
+                    .into_diagnostic()
+                    .wrap_err_with(|| format!("reading {}", full.display()))?;
+                read.as_str()
+            }
+            Drift::Missing { .. } => continue,
+        };
+        let Some(on_disk) = header_options(content).filter(|on_disk| on_disk != generated) else {
+            continue;
+        };
+        match groups.iter_mut().find(|group| group.on_disk == on_disk) {
+            Some(group) => group.paths.push(drift.path().to_owned()),
+            None => groups.push(OtherOptions {
+                on_disk,
+                generated: generated.to_vec(),
+                paths: vec![drift.path().to_owned()],
+            }),
+        }
+    }
+    Ok(groups)
 }
 
 impl Drift {
@@ -605,8 +704,9 @@ impl Check {
 
     /// When the tree differs only in the version it names, the version or
     /// versions that generated it: every drifted module is one whose file
-    /// differs only on its header line and its `elmConnectVersion_` line,
-    /// and none is missing or stale. `None` otherwise.
+    /// differs only on its header lines and its `elmConnectVersion_`
+    /// line, names another version than this one, and records no other
+    /// options, and none is missing or stale. `None` otherwise.
     pub fn version_only(&self) -> Option<Vec<String>> {
         let mut versions = BTreeSet::new();
         for drift in &self.drift {
@@ -619,15 +719,24 @@ impl Check {
             if without_version(on_disk) != without_version(generated) {
                 return None;
             }
-            versions.insert(header_version(on_disk)?.to_owned());
+            let version = header_version(on_disk)?;
+            if version == elm_connect_gen::VERSION {
+                return None;
+            }
+            versions.insert(version.to_owned());
         }
-        (!versions.is_empty()).then(|| versions.into_iter().collect())
+        (!versions.is_empty() && self.other_options.is_empty())
+            .then(|| versions.into_iter().collect())
     }
 
-    /// The report a person reads: nothing to say when current, the
-    /// versions when only they differ, and otherwise each missing and
-    /// stale file and a unified diff of each that differs.
-    pub fn render(&self) -> String {
+    /// The report a person reads: nothing to say when current; the
+    /// options that differ, and the command that regenerates with the
+    /// ones on disk, when modules record other options than the run's;
+    /// the versions when only they differ; and otherwise each missing and
+    /// stale file and a unified diff of each that differs. `regenerate` is the
+    /// `elm-connect gen` command with the check's files, `-I` and `--out`
+    /// and no options, which the options message completes.
+    pub fn render(&self, regenerate: &str) -> String {
         let out = self.out.display();
         if self.is_current() {
             return format!(
@@ -636,6 +745,16 @@ impl Check {
             );
         }
         let mut report = String::new();
+        if !self.other_options.is_empty() {
+            for group in &self.other_options {
+                report.push_str(&group.render(&self.out, regenerate, self.other_options.len() > 1));
+            }
+            report.push_str(
+                "To give them this check's options instead, run `elm-connect gen` with the same \
+                 arguments as this check, and delete any stale file.\n",
+            );
+            return report;
+        }
         if let Some(versions) = self.version_only() {
             let by = versions.join(", ");
             report.push_str(&format!(
@@ -674,10 +793,91 @@ impl Check {
             }
         }
         report.push_str(&format!(
-            "The generated modules under {out} are out of date; run `elm-connect gen` with the \
-             same arguments to regenerate them, and delete any stale file.\n"
+            "The generated modules under {out} are out of date: these protos, with these \
+             options, give other modules. Run `elm-connect gen` with the same arguments to \
+             regenerate them, and delete any stale file.\n"
         ));
         report
+    }
+}
+
+impl OtherOptions {
+    /// What differs, an option a line, and the command that regenerates
+    /// the modules with the options on disk; naming the modules when
+    /// `several` groups differ.
+    fn render(&self, out: &Path, regenerate: &str, several: bool) -> String {
+        let out = out.display();
+        let which = if several {
+            let paths: Vec<String> = self
+                .paths
+                .iter()
+                .map(|path| format!("{out}/{path}"))
+                .collect();
+            paths.join(", ")
+        } else {
+            format!("The modules under {out}")
+        };
+        let mut report =
+            format!("{which} were generated with other options than this check was given:\n");
+        for key in elm_connect_gen::OPTION_KEYS {
+            let on_disk = values_of(&self.on_disk, key);
+            let generated = values_of(&self.generated, key);
+            if on_disk != generated {
+                report.push_str(&format!(
+                    "  --{}: {} on disk, {} here\n",
+                    key.replace('_', "-"),
+                    describe(key, &on_disk),
+                    describe(key, &generated)
+                ));
+            }
+        }
+        let flags: String = self
+            .on_disk
+            .iter()
+            .filter_map(|pair| pair.split_once('='))
+            .map(|(key, value)| format!(" --{} {}", key.replace('_', "-"), shell_word(value)))
+            .collect();
+        report.push_str(&format!(
+            "To regenerate them with the options on disk, run:\n  {regenerate}{flags}\n"
+        ));
+        report
+    }
+}
+
+/// The values `recorded` gives the option `key`, in order.
+fn values_of<'a>(recorded: &'a [String], key: &str) -> Vec<&'a str> {
+    recorded
+        .iter()
+        .filter_map(|pair| pair.split_once('='))
+        .filter(|(k, _)| *k == key)
+        .map(|(_, value)| value)
+        .collect()
+}
+
+/// The option `key`'s `values` for a reader: each quoted, or its default
+/// when there are none.
+fn describe(key: &str, values: &[&str]) -> String {
+    if values.is_empty() {
+        return match elm_connect_gen::option_default(key) {
+            Some(default) => format!("`{default}` (the default)"),
+            None => "none".to_owned(),
+        };
+    }
+    let quoted: Vec<String> = values.iter().map(|value| format!("`{value}`")).collect();
+    quoted.join(", ")
+}
+
+/// `word` as one word of a POSIX shell command: itself when it holds
+/// nothing a shell treats specially, single-quoted otherwise.
+pub fn shell_word(word: &str) -> String {
+    let plain = !word.is_empty()
+        && word
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"_-./:=@%+,".contains(&b));
+    if plain {
+        word.to_owned()
+    } else {
+        format!("'{}'", word.replace('\'', "'\\''"))
     }
 }
 
@@ -689,12 +889,16 @@ fn header_version(content: &str) -> Option<&str> {
 }
 
 /// `content` with the version on its header line and the `Proto.Version`
-/// value its `elmConnectVersion_` names both blanked, so two modules that
-/// differ only in the release that generated them compare equal.
+/// value its `elmConnectVersion_` names both blanked, and its options line
+/// left out, so two modules that differ only in the release that
+/// generated them compare equal, a release whose header recorded no
+/// options among them.
 fn without_version(content: &str) -> String {
+    let has_options = header_options(content).is_some();
     content
         .lines()
         .enumerate()
+        .filter(|(index, _)| !(has_options && *index == 1))
         .map(|(index, line)| {
             if index == 0
                 && let Some(version) = header_version(content)

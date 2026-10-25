@@ -35,17 +35,10 @@ fn scalars_case_generates_its_expected_output() {
             out.join("Scalars/V1/Scalars.elm"),
         ]
     );
-    // The corpus carries `0.1.X` for the version on the header line.
-    let expected = fs::read_to_string(case.join("expected/Scalars/V1.elm"))
-        .expect("blessed")
-        .replacen(
-            &format!(
-                "elm-connect {} ",
-                elm_connect_gen::HEADER_VERSION_PLACEHOLDER
-            ),
-            &format!("elm-connect {} ", elm_connect_gen::VERSION),
-            1,
-        );
+    // The corpus carries `0.1.X` for the version.
+    let expected = elm_connect_gen::real_version(
+        &fs::read_to_string(case.join("expected/Scalars/V1.elm")).expect("blessed"),
+    );
     let actual = fs::read_to_string(&written[0]).expect("written");
     assert!(
         actual == expected,
