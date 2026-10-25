@@ -101,7 +101,9 @@ method encode decoder ((Descriptor d) as methodDescriptor) =
 {-| A method whose routes are functions of its typed request, one per
 binding of its rule in order, each with the JSON name of the response field
 its answer is read from (`responseBody`, `Nothing` for the whole response).
-Generated code writes:
+A route function gives the binding's route whatever the request holds, and
+the first path value its variable's template cannot match, which sending
+refuses. Generated code writes:
 
     getNote =
         Rpc.call
@@ -122,7 +124,7 @@ methodWith :
     { encode : req -> Json.Encode.Value
     , decode : Json.Decode.Decoder res
     , descriptor : Descriptor
-    , routes : List { route : req -> Result PathError Route, responseBody : Maybe String }
+    , routes : List { route : req -> ( Route, Maybe PathError ), responseBody : Maybe String }
     }
     -> Method req res
 methodWith m =
@@ -130,21 +132,7 @@ methodWith m =
         { encodeRequest = m.encode
         , responseDecoder = m.decode
         , descriptor = m.descriptor
-        , routes =
-            List.map
-                (\r ->
-                    { build =
-                        \req ->
-                            case r.route req of
-                                Ok built ->
-                                    ( built, Nothing )
-
-                                Err problem ->
-                                    ( { method = "", path = "", query = [], body = Nothing }, Just problem )
-                    , responseBody = r.responseBody
-                    }
-                )
-                m.routes
+        , routes = List.map (\r -> { build = r.route, responseBody = r.responseBody }) m.routes
         }
 
 

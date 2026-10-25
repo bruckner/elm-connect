@@ -252,16 +252,12 @@ last list =
     List.head (List.reverse list)
 
 
-{-| The route a binding makes of a request's proto3 JSON, as
+{-| The route a binding makes of a request's proto3 JSON, and the first path
+value its variable's template cannot match, as
 [`Proto.Method.method`](Proto-Method#method) builds a call's: for a
 descriptor written as data. Generated code builds its routes from the typed
 request instead ([`Proto.Method.methodWith`](Proto-Method#methodWith)).
 -}
-interpret : Binding -> (Json.Encode.Value -> Result PathError Route)
-interpret (Internal.Binding rule) json =
-    case Proto.Internal.Interpret.route rule json of
-        ( built, Nothing ) ->
-            Ok built
-
-        ( _, Just problem ) ->
-            Err problem
+interpret : Binding -> Json.Encode.Value -> ( Route, Maybe PathError )
+interpret (Internal.Binding rule) =
+    Proto.Internal.Interpret.route rule

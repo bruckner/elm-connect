@@ -1,13 +1,15 @@
 module Rpc.Route exposing
     ( Route, PathError
-    , segment, segments
-    , scalar, optional, repeated
-    , jsonText, without
+    , segment, segments, checkSegment, checkSegments, firstInvalid
+    , unlessZero, optional, repeated
+    , bool, viaJson, jsonText, without
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
 generated route functions build it from a typed request:
-`routeGetNote0 : GetNoteRequest -> Result PathError Route`. The helpers
+`routeGetNote0 : GetNoteRequest -> ( Route, Maybe PathError )`: the route,
+built whatever the request holds, and the first path value its variable's
+template cannot match. The helpers
 below are what such functions call; application code reads a `Route` and
 does not build one.
 
@@ -16,17 +18,17 @@ does not build one.
 
 # Path variables
 
-@docs segment, segments
+@docs segment, segments, checkSegment, checkSegments, firstInvalid
 
 
 # Query parameters
 
-@docs scalar, optional, repeated
+@docs unlessZero, optional, repeated
 
 
 # Values and bodies
 
-@docs jsonText, without
+@docs bool, viaJson, jsonText, without
 
 -}
 
@@ -57,13 +59,27 @@ type alias PathError =
     { field : String, template : String }
 
 
-{-| A variable of one segment: `segment "name" "*" value` for `{name}` or
-`{name=*}`, which takes any value but `""`, and `segment "v" "v1" value` for
-`{v=v1}`, which takes only the literal. The value is percent-encoded with
-`/` escaped.
+{-| A variable of one segment's value, percent-encoded with `/` escaped.
 -}
-segment : String -> String -> String -> Result PathError String
-segment field template value =
+segment : String -> String
+segment =
+    Internal.percentEncode Internal.unreserved
+
+
+{-| A variable of several segments' value, percent-encoded with each `/`
+kept.
+-}
+segments : String -> String
+segments =
+    Internal.percentEncode (\char -> Internal.unreserved char || char == '/')
+
+
+{-| Whether a variable of one segment matches its value: `checkSegment "name"
+"*" value` for `{name}` or `{name=*}`, which takes any value but `""`, and
+`checkSegment "v" "v1" value` for `{v=v1}`, which takes only the literal.
+-}
+checkSegment : String -> String -> String -> Maybe PathError
+checkSegment field template value =
     let
         ok =
             if template == "*" then
@@ -73,28 +89,43 @@ segment field template value =
                 value == template
     in
     if ok then
-        Ok (Internal.percentEncode Internal.unreserved value)
+        Nothing
 
     else
-        Err { field = field, template = template }
+        Just { field = field, template = template }
 
 
-{-| A variable of several segments, by its template's segments
-(`[ "notes", "*" ]` for `{name=notes/*}`, `"**"` for any number): the value
-split at each `/` must have non-empty segments that match. The value is
-percent-encoded, each `/` kept.
+{-| Whether a variable of several segments matches its value, by its
+template's segments (`[ "notes", "*" ]` for `{name=notes/*}`, `"**"` for any
+number): the value split at each `/` must have non-empty segments that
+match.
 -}
-segments : String -> List String -> String -> Result PathError String
-segments field template value =
+checkSegments : String -> List String -> String -> Maybe PathError
+checkSegments field template value =
     let
         parts =
             String.split "/" value
     in
     if List.all ((/=) "") parts && matchParts template parts then
-        Ok (Internal.percentEncode (\char -> Internal.unreserved char || char == '/') value)
+        Nothing
 
     else
-        Err { field = field, template = String.join "/" template }
+        Just { field = field, template = String.join "/" template }
+
+
+{-| The first problem of a route's path variables, in path order.
+-}
+firstInvalid : List (Maybe PathError) -> Maybe PathError
+firstInvalid checks =
+    case checks of
+        [] ->
+            Nothing
+
+        (Just problem) :: _ ->
+            Just problem
+
+        Nothing :: rest ->
+            firstInvalid rest
 
 
 matchParts : List String -> List String -> Bool
@@ -117,16 +148,16 @@ matchParts template parts =
             False
 
 
-{-| A query parameter of a field without presence: none when its text is
-the field's default's (`zero`).
+{-| A query parameter of a field without presence, by its name, its proto3
+default and its text: none at the default.
 -}
-scalar : String -> String -> String -> List ( String, String )
-scalar name zero text =
-    if text == zero then
+unlessZero : String -> a -> (a -> String) -> a -> List ( String, String )
+unlessZero name zero toText value =
+    if value == zero then
         []
 
     else
-        [ ( name, text ) ]
+        [ ( name, toText value ) ]
 
 
 {-| A query parameter of a field with presence: none when unset.
@@ -146,6 +177,26 @@ optional name toText value =
 repeated : String -> (a -> String) -> List a -> List ( String, String )
 repeated name toText values =
     List.map (\v -> ( name, toText v )) values
+
+
+{-| A boolean as path or query text.
+-}
+bool : Bool -> String
+bool b =
+    if b then
+        "true"
+
+    else
+        "false"
+
+
+{-| A value's path or query text, by its proto3 JSON encoder: for the types
+whose text is their JSON's (enums, floating-point numbers, bytes, field
+masks).
+-}
+viaJson : (a -> Value) -> a -> String
+viaJson encode value =
+    jsonText (encode value)
 
 
 {-| A scalar's proto3 JSON as path or query text: a string as it is, a
