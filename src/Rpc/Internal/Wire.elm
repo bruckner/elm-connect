@@ -1,4 +1,4 @@
-module Rpc.Internal.Wire exposing (Settings, request, withBudget)
+module Rpc.Internal.Wire exposing (Settings, invalidPathValue, request, withBudget)
 
 {-| The request each transport sends for a call: Connect's POST, or its GET of
 a method without side effects, and transcoding's request over a binding,
@@ -117,6 +117,20 @@ transcodeRequest rule cfg ((Call fields) as c) =
     , timeout = callTimeout cfg c
     , withCredentials = cfg.withCredentials
     }
+
+
+{-| The first path variable of the call's binding whose value its template
+cannot match, read from the call's request; `Nothing` over Connect and the
+implicit route, which have no path variables.
+-}
+invalidPathValue : Settings c -> Call req res -> Maybe { field : String, template : String }
+invalidPathValue cfg c =
+    case route cfg.transport c of
+        Bound _ rule ->
+            Route.invalidPathValue rule (Rpc.Call.requestJson c)
+
+        Implicit ->
+            Nothing
 
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline

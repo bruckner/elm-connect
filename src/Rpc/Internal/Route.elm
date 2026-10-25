@@ -1,4 +1,4 @@
-module Rpc.Internal.Route exposing (Route(..), bindingBody, connectUrl, route, transcodeUrl)
+module Rpc.Internal.Route exposing (Route(..), bindingBody, connectUrl, invalidPathValue, route, transcodeUrl)
 
 {-| Where a call goes over HTTP: the binding of its `google.api.http` rule it
 takes, the URL that binding's path and query make of the request, and the
@@ -92,9 +92,7 @@ pathSegment json segment =
                     else
                         \char -> Internal.unreserved char || char == '/'
             in
-            lookup fieldPath json
-                |> Maybe.andThen scalarText
-                |> Maybe.withDefault zero
+            pathText json fieldPath zero
                 |> Internal.percentEncode keep
 
         -- Generated bindings never hold a wildcard outside a variable: no
@@ -104,6 +102,107 @@ pathSegment json segment =
 
         DoubleWildcard ->
             ""
+
+
+{-| A path variable's value, before encoding: its scalar text, or the text of
+the field's default when the JSON has none.
+-}
+pathText : Value -> List String -> String -> String
+pathText json fieldPath zero =
+    lookup fieldPath json
+        |> Maybe.andThen scalarText
+        |> Maybe.withDefault zero
+
+
+{-| The first path variable of a binding whose value its template cannot
+match, by its JSON field path and its template. A request carrying it can
+never reach the method: no server route matches it, or a different one does.
+-}
+invalidPathValue : Rule -> Value -> Maybe { field : String, template : String }
+invalidPathValue rule json =
+    case rule.path of
+        [] ->
+            Nothing
+
+        (Variable fieldPath template zero) :: rest ->
+            if matches template (pathText json fieldPath zero) then
+                invalidPathValue { rule | path = rest } json
+
+            else
+                Just { field = String.join "." fieldPath, template = templateText template }
+
+        _ :: rest ->
+            invalidPathValue { rule | path = rest } json
+
+
+{-| Whether a value matches a variable's template as `google.api.http` defines
+it. A single-segment value is one segment whatever it holds, since its `/` is
+escaped; a multi-segment value is split at each `/`, and every segment must
+be non-empty: a literal matches itself, `*` one segment and `**` any number.
+-}
+matches : List Segment -> String -> Bool
+matches template value =
+    if single template then
+        case template of
+            [ Literal written ] ->
+                value == written
+
+            _ ->
+                value /= ""
+
+    else
+        let
+            parts =
+                String.split "/" value
+        in
+        List.all ((/=) "") parts && matchParts template parts
+
+
+matchParts : List Segment -> List String -> Bool
+matchParts template parts =
+    case ( template, parts ) of
+        ( [], [] ) ->
+            True
+
+        ( (Literal written) :: rest, part :: others ) ->
+            written == part && matchParts rest others
+
+        ( Wildcard :: rest, _ :: others ) ->
+            matchParts rest others
+
+        ( DoubleWildcard :: rest, _ ) ->
+            List.range 0 (List.length parts)
+                |> List.any (\taken -> matchParts rest (List.drop taken parts))
+
+        _ ->
+            False
+
+
+{-| A variable's template as `google.api.http` writes it.
+-}
+templateText : List Segment -> String
+templateText template =
+    if List.isEmpty template then
+        "*"
+
+    else
+        template
+            |> List.map
+                (\segment ->
+                    case segment of
+                        Literal written ->
+                            written
+
+                        Wildcard ->
+                            "*"
+
+                        DoubleWildcard ->
+                            "**"
+
+                        Variable _ _ _ ->
+                            ""
+                )
+            |> String.join "/"
 
 
 single : List Segment -> Bool

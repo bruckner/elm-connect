@@ -94,8 +94,10 @@ JSON, or `null` there, as under an unset message, is the text of the field's
 proto3 default, read from the last descriptor's kind: `""` for a string or
 bytes, `false`, `0` for any number, and an enum's zero value's name. Proto3
 reads the field as its default, and a server parsing the segment as the
-field's type rejects an empty one. The value is not checked against the
-template: the server does that.
+field's type rejects an empty one. Sending refuses a call whose value the
+template cannot match, `""` included, with
+[`InvalidPathValue`](Rpc-Error#Reason); [`Rpc.request`](Rpc#request) still
+builds its URL.
 
 -}
 variable : { fieldPath : List Proto.Field.Descriptor, template : List Segment } -> Segment
