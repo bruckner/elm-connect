@@ -1,0 +1,33 @@
+name: Protobuf conformance
+
+# The protobuf conformance suite against the runtime's proto3 JSON codecs
+# (`just protobuf-conformance`, conformance/README.md). It runs only when
+# dispatched by hand: it is not part of the gate. The runner is fetched and
+# checked against its pinned SHA-256 (fetch-runner.sh) on every run, not
+# restored from a cache.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protobuf-conformance:
+    name: just protobuf-conformance (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          # The mise release that wrote mise.lock; move the two together.
+          version: 2026.9.4
+          install_args: rust node just github:elm/compiler
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Cache Elm's packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.elm
+          key: protobuf-conformance-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'conformance/protobuf/elm.json') }}
+      - run: just protobuf-conformance

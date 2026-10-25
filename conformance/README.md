@@ -604,3 +604,30 @@ what its unpacker has read), and then leaves the unpacked binary in
 place, unchecked; the Justfile's `envoy-install` removes it and fetches,
 checks and unpacks the archive itself, against the same digest. CI
 caches `~/.local/share/func-e`, keyed on `envoy-version`.
+
+## The protobuf conformance suite
+
+`protobuf/` holds a testee for
+[protobuf's conformance suite](https://github.com/protocolbuffers/protobuf/tree/main/conformance):
+its `conformance_test_runner` sends the testee messages of
+`test_messages_proto3.proto` in one format and checks what it writes back,
+against protobuf's own parsers. The testee reads and writes them with the
+runtime and the Elm generated from that proto, so the suite tests the
+proto3 JSON codecs with an oracle independent of prost-reflect, which the
+codec round trips use.
+
+```sh
+just protobuf-conformance
+```
+
+fetches the runner (v32.0-rc2, prebuilt by bufbuild/protobuf-conformance,
+checked against its SHA-256), checks that `protobuf/generated/` and the
+committed proto are current, compiles the testee and runs the suite with
+`--enforce_recommended`. It must fail exactly the cases in
+`protobuf/failure_list.txt`: an unlisted failure fails the run, and so
+does a listed case that passes. Only JSON in and JSON out runs (289
+cases); protobuf binary, JSPB, text, proto2 and editions are answered
+`skipped`. It is in neither `just check` nor `just live`, and CI runs it
+only when dispatched by hand (`protobuf-conformance.yml`).
+`protobuf/README.md` says what runs, how the proto was made from
+protobuf's and how to read the failure list.

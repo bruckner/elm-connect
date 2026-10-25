@@ -4,7 +4,7 @@
 # runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
+elm_dirs := "src tests conformance/live/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
 
 # Cargo's build directory, which the live suite's binaries share
 # (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
@@ -330,6 +330,38 @@ live-conformance-gen:
     git diff --exit-code -- conformance/live/suite
     @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
 
+# The protobuf conformance suite (conformance/README.md): protobuf's
+# conformance_test_runner, fetched at its pinned release, drives the testee
+# in conformance/protobuf, the runtime and the Elm generated from
+# test_messages_proto3.proto, over the suite's proto3 JSON cases; binary,
+# JSPB and text cases are answered skipped. Before the run, the generated Elm
+# must be current (`elm-connect check`) and the committed proto must be the
+# runner's copy with its NullValue fields stripped. The run must pass but for
+# failure_list.txt, and a listed case that passes fails it too. Not part of
+# `check` or `live`: it needs the network for the runner, and CI runs it only
+# when asked (protobuf-conformance.yml).
+protobuf-conformance:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cargo build -p elm-connect
+    cd conformance/protobuf
+    {{target}}/debug/elm-connect check -I proto google/protobuf/test_messages_proto3.proto --out generated
+    runner="$(./fetch-runner.sh)"
+    ./strip-null-value.sh "$runner/include/google/protobuf/test_messages_proto3.proto" build/test_messages_proto3.proto
+    diff build/test_messages_proto3.proto proto/google/protobuf/test_messages_proto3.proto
+    elm make > /dev/null 2>&1 || true
+    elm make src/Testee.elm --optimize --output=build/testee.js
+    mkdir -p build/run
+    "$runner/bin/conformance_test_runner" --enforce_recommended --maximum_edition PROTO3 \
+        --failure_list failure_list.txt --output_dir build/run ./testee.sh
+
+# Regenerate the protobuf conformance testee's Elm from its proto with the
+# CLI built from this checkout. The generated modules are committed; run
+# this after a generator change and commit what changed.
+protobuf-conformance-gen:
+    cargo build -p elm-connect
+    cd conformance/protobuf && {{target}}/debug/elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --out generated
+
 # The Buf Schema Registry modules the vendored protos come from, at the
 # commits they were exported from; protos-refresh re-exports them.
 googleapis_module := "buf.build/googleapis/googleapis:c17df5b2beca46928cc87d5656bd5343" # gitleaks:allow (a BSR commit)
@@ -388,4 +420,5 @@ clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
+    rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build
     rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist
