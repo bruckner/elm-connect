@@ -87,6 +87,7 @@ import Json.Encode
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Internal.Any as InternalAny exposing (Any, Payload(..))
+import Proto.Json as ProtoJson
 import Time
 
 
@@ -1292,10 +1293,11 @@ writeValue json =
 
 
 {-| `google.protobuf.Any`: read, it holds the packed message's binary, which
-[`Proto.Any.unpack`](Proto-Any#unpack) does not decode (`BinaryOnly`).
-An `Any` holding JSON, as one read from proto3 JSON or packed from a value,
-is written with its type URL alone: the binary of its message is not at
-hand.
+[`Proto.Any.unpack`](Proto-Any#unpack) decodes with a message that has binary
+codecs. Written, an `Any` packed from such a message writes its binary; one
+holding a well-known type's JSON (read from proto3 JSON) is converted to
+binary; one holding another message's JSON alone is written with its type
+URL alone, since that message's binary encoder is not at hand.
 -}
 any : Codec Any
 any =
@@ -1326,8 +1328,84 @@ writeAny (InternalAny.Any url payload) =
         InBinary base64 ->
             E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
 
-        InJson _ ->
-            implicit string 1 url
+        InBoth _ base64 ->
+            E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
+
+        InJson json ->
+            case wellKnownJson (InternalAny.nameOf url) json of
+                Just body ->
+                    E.sequence [ implicit string 1 url, implicit bytesAsBytes 2 (E.encode body) ]
+
+                Nothing ->
+                    implicit string 1 url
+
+
+{-| A well-known type's proto3 JSON as its binary body, by the type's full
+name; `Nothing` for another type or JSON that is not the type's.
+-}
+wellKnownJson : String -> Json.Encode.Value -> Maybe Encoder
+wellKnownJson name json =
+    let
+        convert : Json.Decode.Decoder a -> Codec a -> Maybe Encoder
+        convert decoder codec =
+            Json.Decode.decodeValue decoder json
+                |> Result.toMaybe
+                |> Maybe.map (messageEncoder codec)
+    in
+    case name of
+        "google.protobuf.Timestamp" ->
+            convert ProtoJson.timestamp timestamp
+
+        "google.protobuf.Duration" ->
+            convert ProtoJson.duration duration
+
+        "google.protobuf.FieldMask" ->
+            convert ProtoJson.fieldMask fieldMask
+
+        "google.protobuf.Empty" ->
+            convert ProtoJson.empty empty
+
+        "google.protobuf.Struct" ->
+            convert ProtoJson.struct struct
+
+        "google.protobuf.ListValue" ->
+            convert ProtoJson.listValue listValue
+
+        "google.protobuf.Value" ->
+            convert Json.Decode.value value
+
+        "google.protobuf.Any" ->
+            convert ProtoJson.any any
+
+        "google.protobuf.DoubleValue" ->
+            convert ProtoJson.float doubleValue
+
+        "google.protobuf.FloatValue" ->
+            convert ProtoJson.float floatValue
+
+        "google.protobuf.Int64Value" ->
+            convert ProtoJson.int64 int64Value
+
+        "google.protobuf.UInt64Value" ->
+            convert ProtoJson.uint64 uint64Value
+
+        "google.protobuf.Int32Value" ->
+            convert ProtoJson.int32 int32Value
+
+        "google.protobuf.UInt32Value" ->
+            convert ProtoJson.uint32 uint32Value
+
+        "google.protobuf.BoolValue" ->
+            convert Json.Decode.bool boolValue
+
+        "google.protobuf.StringValue" ->
+            convert Json.Decode.string stringValue
+
+        "google.protobuf.BytesValue" ->
+            convert ProtoJson.bytes bytesValue
+
+        _ ->
+            Nothing
 
 
 wrapper : Codec v -> Codec v

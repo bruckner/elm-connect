@@ -54,8 +54,9 @@ request cfg c =
                     connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
 
 
-{-| A request message as Connect sends it: its body as a POST, and its
-`encoding` and `message` query parameters as a GET.
+{-| A request message as Connect sends it: its body as a POST, and as a GET
+the query parameters before `message` (`encoding`, and `base64` for binary)
+and `message`'s value.
 -}
 type alias ConnectMessage =
     { body : Body.Body, encoding : String, query : String }
@@ -68,7 +69,7 @@ jsonMessage c =
             Json.Encode.encode 0 (Rpc.Call.requestJson c)
     in
     { body = Body.text json
-    , encoding = "json"
+    , encoding = "encoding=json"
     , query = Internal.percentEncode Internal.unreserved json
     }
 
@@ -82,7 +83,7 @@ connectMessage options c =
     case ( options.proto, requestBytes c ) of
         ( True, Just binary ) ->
             { body = Body.bytes binary
-            , encoding = "proto&base64=1"
+            , encoding = "base64=1&encoding=proto"
             , query = base64Url (Proto.Bytes.toBase64 binary)
             }
 
@@ -139,9 +140,11 @@ connectRequest options message cfg ((Call fields) as c) =
                 Nothing ->
                     []
 
+        -- The query parameters in the order the protocol recommends, so a
+        -- cache keys one request one way.
         getUrl =
             url
-                ++ "?connect=v1&encoding="
+                ++ "?connect=v1&"
                 ++ message.encoding
                 ++ "&message="
                 ++ message.query

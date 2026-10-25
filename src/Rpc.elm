@@ -423,7 +423,7 @@ as its body and `Connect-Protocol-Version: 1`. With
 would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows.
 Under [`withCodec Proto`](Rpc-Transport#withCodec) the body is the request's
 protobuf binary, sent as `application/proto`, and the GET's query
-`connect=v1&encoding=proto&base64=1&message=…`, the binary as unpadded
+`connect=v1&base64=1&encoding=proto&message=…`, the binary as unpadded
 URL-safe base64.
 A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
 The config's headers come first, then the call's.

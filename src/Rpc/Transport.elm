@@ -164,7 +164,7 @@ type Codec
 
 Under `Proto` a POST carries the request's protobuf binary as
 `application/proto`, and a GET ([`connectGet`](#connectGet)) the query
-`connect=v1&encoding=proto&base64=1&message=…`, the binary as unpadded
+`connect=v1&base64=1&encoding=proto&message=…`, the binary as unpadded
 URL-safe base64. A successful answer is read as protobuf binary; an error
 answer is JSON whatever the codec, as the Connect protocol sends it, and is
 read as it is under `Json`. Sent with [`Rpc.request`](Rpc#request) and

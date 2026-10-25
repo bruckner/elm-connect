@@ -320,7 +320,8 @@ detailList =
 
 {-| A Connect error detail: the message's full name as `type`, its protobuf
 binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
-holds when present. Without it the `Any` holds the binary alone.
+holds beside the binary when present. Without it the `Any` holds the binary
+alone.
 -}
 connectDetail : Decoder Any
 connectDetail =
@@ -335,7 +336,7 @@ connectDetail =
                 )
                 (case debug of
                     Just json ->
-                        Proto.Internal.Any.InJson json
+                        Proto.Internal.Any.InBoth json binary
 
                     Nothing ->
                         Proto.Internal.Any.InBinary binary

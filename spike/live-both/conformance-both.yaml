@@ -1,0 +1,25 @@
+# What elm-connect's runtime supports, for the Connect conformance suite's
+# runner (connectconformance --mode client; schema: the Features message of
+# connectrpc/conformance/v1/config.proto). Design section 7, live
+# verification: unary calls over the Connect protocol, JSON only, HTTP/1.1
+# without TLS (elm/http cannot choose a protocol, and the browser does the
+# TLS), no compression, and GET for idempotent methods. Streaming, the binary
+# codec, gRPC and gRPC-Web are declared unsupported here rather than listed
+# as known to fail.
+features:
+  versions: [HTTP_VERSION_1]
+  protocols: [PROTOCOL_CONNECT]
+  codecs: [CODEC_JSON, CODEC_PROTO]
+  compressions: [COMPRESSION_IDENTITY]
+  streamTypes: [STREAM_TYPE_UNARY]
+  supportsH2c: false
+  supportsTls: false
+  supportsTlsClientCerts: false
+  # An XMLHttpRequest cannot read HTTP trailers; Connect's unary calls do not
+  # use them.
+  supportsTrailers: false
+  supportsHalfDuplexBidiOverHttp1: false
+  supportsConnectGet: true
+  # Rpc.Transport.withReadMaxBytes, applied when a request sets
+  # message_receive_limit.
+  supportsMessageReceiveLimit: true

@@ -1,0 +1,22 @@
+# Connect conformance cases elm-connect's runtime fails under the proto
+# codec (spike/live-both/conformance-proto.yaml). The suite runs these
+# error-body suites only when the proto codec is listed, so they are new to
+# the runtime, but none is about the codec: each is how Rpc.Internal.Answer
+# reads a Connect error body or a content type, whatever the codec.
+
+# A Connect error body without "code", or with "code": null, and a "message":
+# the suite wants the message read and the code from the HTTP status; the
+# runtime reads such a body as an HttpStatus error (its message is the status
+# text), a deliberate choice its tests pin.
+Connect Error and End-Stream/**/error/missing-code
+Connect Error and End-Stream/**/error/null-code
+
+# A code name the protocol does not define: the suite wants the code from the
+# HTTP status, the runtime reads it as `unknown`.
+Connect Error and End-Stream/**/error/unrecognized-code
+
+# A 200 whose content type is not a Connect codec's (image/jpeg): the suite
+# wants `unknown`, the runtime gives a BadResponse, whose code is `internal`
+# (as it is for application/json under the proto codec, which the suite wants
+# `internal` for).
+Connect Unexpected Responses/**/unexpected-content-type

@@ -169,6 +169,9 @@ problemWord problem =
         Proto.Any.BinaryOnly ->
             "binary only"
 
+        Proto.Any.Binary ->
+            "binary"
+
 
 suite : Test
 suite =

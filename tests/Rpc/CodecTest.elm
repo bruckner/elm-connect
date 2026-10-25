@@ -160,8 +160,8 @@ requests =
                 [ "x", "?>" ]
                     |> List.map (\name -> Rpc.request protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
                     |> Expect.equal
-                        [ ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&encoding=proto&base64=1&message=CgF4", True )
-                        , ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&encoding=proto&base64=1&message=CgI_Pg", True )
+                        [ ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4", True )
+                        , ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgI_Pg", True )
                         ]
         , test "Json is the default and undoes Proto" <|
             \_ ->

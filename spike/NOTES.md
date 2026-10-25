@@ -119,7 +119,7 @@ Decisions taken while building, and the alternatives, for the report.
   transcoding is JSON by definition. The implicit route over transcoding
   (Connect's POST) stays JSON too.
 - **POST** carries `Proto.Binary.encode`'s bytes; **GET** is
-  `?connect=v1&encoding=proto&base64=1&message=<unpadded URL-safe base64>`.
+  `?connect=v1&base64=1&encoding=proto&message=<unpadded URL-safe base64>`.
   Connect accepts padded or unpadded; unpadded keeps `=` out of the query.
 - **Answers.** A new public `Rpc.responseBytes : Config -> Call -> Http.Response
   Bytes -> Result Error res`; `Rpc.response` keeps its `String` signature.
@@ -180,3 +180,42 @@ Decisions taken while building, and the alternatives, for the report.
 - Q2 (size* vs copy): +6 % encode speed for a size function per message;
   kept the copy. Q3 (hoisting): 1 %, kept the use-site form; a hoisted
   recursive codec does compile.
+
+## Server oracle (run 2)
+
+- **Notes server over `application/proto`:** `conformance/live/cases/proto.json`,
+  25 cases against the `codec=both` build (`spike/live-both/run.sh`): every
+  notes method POSTed as binary, errors still read as JSON `Rpc.Error`s with
+  their `google.rpc` details, GET as `base64=1&encoding=proto`, size limits
+  on binary bytes, all five ways of sending, retry, the canned
+  status/`grpc-status` answers; transcoding under Vanguard and grpc-gateway
+  ignores the codec and stays JSON. `proto-missing.json` (2 cases, JSON-only
+  build) checks `MissingCodec` is refused unsent. All pass. Envoy was not run
+  (it needs func-e's download; the codec cannot reach transcoding's code path).
+- **Found by it, fixed (run-1 Q4):** `CreateNote` with an `attachment`
+  Timestamp read from proto3 JSON silently stored an empty Timestamp: the
+  binary `Any` writer wrote the type URL alone. Now (a) `Proto.Any.pack` of a
+  message with binary codecs keeps its binary too (`Payload` gains `InBoth`;
+  internal), (b) the binary writer converts a well-known type's JSON form to
+  binary, (c) `Proto.Any.unpack` reads a binary-only `Any` with a message
+  that has binary codecs (new `Problem` constructor `Binary` for bytes that
+  do not decode; `BinaryOnly` now means "no binary codecs to read it with"),
+  (d) a Connect error detail with `debug` keeps its binary beside the JSON.
+  Still lossy: an `Any` holding a non-well-known message's JSON alone (read
+  from proto3 JSON) is written with its type URL alone; fixing that needs a
+  codec registry (type URL → codecs), which generated code could provide per
+  package beside `registry`.
+- **Connect conformance, proto codec:** `conformance.mjs` selects the codec
+  per request and reads results back from binary (`okBinary`,
+  `detailsBinary`, which the runner now reports), and maps a `BadResponse` to
+  `internal` as `Rpc.Error.code` does. `spike/live-both/conformance-proto.yaml`
+  lists `CODEC_PROTO` alone: 56 cases (halves) / 56 (sendTraced, 1 known
+  from known-failing-send.txt); 52 / 51 pass. The 4 failures
+  (`spike/live-both/known-failing-proto.txt`) are codec-independent
+  error-body readings the proto-only suites exercise: missing/null `code`
+  (suite: message from body, code from HTTP status; runtime: HttpStatus
+  error), unrecognized code name (suite: from HTTP status; runtime:
+  `unknown`), and a non-Connect content type on a 200 (suite: `unknown`;
+  runtime: BadResponse = `internal`). Fixed on the way: GET query parameters
+  in the protocol's recommended order (`connect, base64, encoding, message`).
+  The JSON run is unchanged: 40/40 halves, 39+1 known sendTraced.
