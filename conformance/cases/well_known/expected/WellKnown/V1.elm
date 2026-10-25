@@ -303,23 +303,23 @@ decodeEvent =
         |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
         |> Proto.Json.field "total" Nothing (Json.Decode.map Just Proto.Json.uint32)
         |> Proto.Json.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.field "nickname" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "nickname" Nothing (Json.Decode.map Just Proto.Json.string)
         |> Proto.Json.field "avatar" Nothing (Json.Decode.map Just Proto.Json.bytes)
         |> Proto.Json.field "history" [] (Json.Decode.list Proto.Json.timestamp)
-        |> Proto.Json.field "limits" Dict.empty (Json.Decode.dict Proto.Json.duration)
+        |> Proto.Json.field "limits" Dict.empty (Proto.Json.stringDict Proto.Json.duration)
         |> Proto.Json.field "values" [] (Json.Decode.list Json.Decode.value)
         |> Proto.Json.field "counts" [] (Json.Decode.list Proto.Json.int32)
         |> Proto.Json.field "acked" () Proto.Json.empty
         |> Proto.Json.field "pings" [] (Json.Decode.list Proto.Json.empty)
-        |> Proto.Json.field "seen" Dict.empty (Json.Decode.dict Proto.Json.empty)
+        |> Proto.Json.field "seen" Dict.empty (Proto.Json.stringDict Proto.Json.empty)
         |> Proto.Json.field "records" [] (Json.Decode.list Proto.Json.struct)
-        |> Proto.Json.field "columns" Dict.empty (Json.Decode.dict Proto.Json.listValue)
+        |> Proto.Json.field "columns" Dict.empty (Proto.Json.stringDict Proto.Json.listValue)
         |> Proto.Json.valueFieldEither "lastValue" "last_value"
-        |> Proto.Json.field "settings" Dict.empty (Json.Decode.dict Json.Decode.value)
+        |> Proto.Json.field "settings" Dict.empty (Proto.Json.stringDict Json.Decode.value)
         |> Proto.Json.field "nothing" () Proto.Json.nullValue
         |> Proto.Json.fieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
         |> Proto.Json.field "nulls" [] (Json.Decode.list Proto.Json.nullValue)
-        |> Proto.Json.fieldEither "nullMap" "null_map" Dict.empty (Json.Decode.dict Proto.Json.nullValue)
+        |> Proto.Json.fieldEither "nullMap" "null_map" Dict.empty (Proto.Json.stringDict Proto.Json.nullValue)
         |> Proto.Json.oneof decodeEventWhen
 
 

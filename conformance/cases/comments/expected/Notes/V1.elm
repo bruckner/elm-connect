@@ -513,13 +513,13 @@ decodeLegacy =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.fieldEither "heading" "title" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.fieldEither "heading" "title" "" Proto.Json.string
         |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.field "labels" Dict.empty (Json.Decode.dict Json.Decode.string)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.field "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
         |> Proto.Json.field "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.field "subject" "" Json.Decode.string
+        |> Proto.Json.field "subject" "" Proto.Json.string
         |> Proto.Json.field "created" Nothing (Json.Decode.map Just Proto.Json.timestamp)
         |> Proto.Json.oneof decodeNoteLastEvent
 
@@ -540,7 +540,7 @@ decodeNoteLastEvent =
 decodeNoteEdit : Json.Decode.Decoder NoteEdit
 decodeNoteEdit =
     Json.Decode.succeed NoteEdit
-        |> Proto.Json.field "author" "" Json.Decode.string
+        |> Proto.Json.field "author" "" Proto.Json.string
 
 
 {-| Decodes a [`Draft`](#Draft) from proto3 JSON.
@@ -548,7 +548,7 @@ decodeNoteEdit =
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Json.Decode.succeed Draft
-        |> Proto.Json.field "text" "" Json.Decode.string
+        |> Proto.Json.field "text" "" Proto.Json.string
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
@@ -556,7 +556,7 @@ decodeDraft =
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
@@ -564,7 +564,7 @@ decodeGetNoteRequest =
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Json.Decode.succeed ListNotesRequest
-        |> Proto.Json.field "parent" "" Json.Decode.string
+        |> Proto.Json.field "parent" "" Proto.Json.string
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from proto3 JSON.

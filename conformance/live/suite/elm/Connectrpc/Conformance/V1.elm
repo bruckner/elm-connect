@@ -3083,18 +3083,18 @@ decodeTestSuiteConnectVersionMode =
 decodeClientCompatRequest : Json.Decode.Decoder ClientCompatRequest
 decodeClientCompatRequest =
     Json.Decode.succeed ClientCompatRequest
-        |> Proto.Json.fieldEither "testName" "test_name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
         |> Proto.Json.fieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
         |> Proto.Json.field "protocol" ProtocolUnspecified decodeProtocol
         |> Proto.Json.field "codec" CodecUnspecified decodeCodec
         |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
-        |> Proto.Json.field "host" "" Json.Decode.string
+        |> Proto.Json.field "host" "" Proto.Json.string
         |> Proto.Json.field "port" 0 Proto.Json.uint32
         |> Proto.Json.fieldEither "serverTlsCert" "server_tls_cert" "" Proto.Json.bytes
         |> Proto.Json.fieldEither "clientTlsCreds" "client_tls_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
         |> Proto.Json.fieldEither "messageReceiveLimit" "message_receive_limit" 0 Proto.Json.uint32
-        |> Proto.Json.field "service" Nothing (Json.Decode.map Just Json.Decode.string)
-        |> Proto.Json.field "method" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "service" Nothing (Json.Decode.map Just Proto.Json.string)
+        |> Proto.Json.field "method" Nothing (Json.Decode.map Just Proto.Json.string)
         |> Proto.Json.fieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
         |> Proto.Json.fieldEither "useGetHttpMethod" "use_get_http_method" False Json.Decode.bool
         |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
@@ -3130,7 +3130,7 @@ decodeClientCompatRequestCancelCancelTiming =
 decodeClientCompatResponse : Json.Decode.Decoder ClientCompatResponse
 decodeClientCompatResponse =
     Json.Decode.succeed ClientCompatResponse
-        |> Proto.Json.fieldEither "testName" "test_name" "" Json.Decode.string
+        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
         |> Proto.Json.oneof decodeClientCompatResponseResult
 
 
@@ -3156,7 +3156,7 @@ decodeClientResponseResult =
         |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "numUnsentRequests" "num_unsent_requests" 0 Proto.Json.int32
         |> Proto.Json.fieldEither "httpStatusCode" "http_status_code" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.field "feedback" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "feedback" [] (Json.Decode.list Proto.Json.string)
 
 
 {-| Decodes a [`ClientErrorResult`](#ClientErrorResult) from proto3 JSON.
@@ -3164,7 +3164,7 @@ decodeClientResponseResult =
 decodeClientErrorResult : Json.Decode.Decoder ClientErrorResult
 decodeClientErrorResult =
     Json.Decode.succeed ClientErrorResult
-        |> Proto.Json.field "message" "" Json.Decode.string
+        |> Proto.Json.field "message" "" Proto.Json.string
 
 
 {-| Decodes a [`WireDetails`](#WireDetails) from proto3 JSON.
@@ -3175,7 +3175,7 @@ decodeWireDetails =
         |> Proto.Json.fieldEither "actualStatusCode" "actual_status_code" 0 Proto.Json.int32
         |> Proto.Json.fieldEither "connectErrorRaw" "connect_error_raw" Nothing (Json.Decode.map Just Proto.Json.struct)
         |> Proto.Json.fieldEither "actualHttpTrailers" "actual_http_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "actualGrpcwebTrailers" "actual_grpcweb_trailers" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.fieldEither "actualGrpcwebTrailers" "actual_grpcweb_trailers" Nothing (Json.Decode.map Just Proto.Json.string)
 
 
 {-| Decodes a [`Config`](#Config) from proto3 JSON.
@@ -3249,7 +3249,7 @@ decodeServerCompatRequest =
 decodeServerCompatResponse : Json.Decode.Decoder ServerCompatResponse
 decodeServerCompatResponse =
     Json.Decode.succeed ServerCompatResponse
-        |> Proto.Json.field "host" "" Json.Decode.string
+        |> Proto.Json.field "host" "" Proto.Json.string
         |> Proto.Json.field "port" 0 Proto.Json.uint32
         |> Proto.Json.fieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
 
@@ -3424,7 +3424,7 @@ decodeError : Json.Decode.Decoder Error
 decodeError =
     Json.Decode.succeed Error
         |> Proto.Json.field "code" CodeUnspecified decodeCode
-        |> Proto.Json.field "message" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.field "message" Nothing (Json.Decode.map Just Proto.Json.string)
         |> Proto.Json.field "details" [] (Json.Decode.list Proto.Json.any)
 
 
@@ -3433,8 +3433,8 @@ decodeError =
 decodeHeader : Json.Decode.Decoder Header
 decodeHeader =
     Json.Decode.succeed Header
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "value" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "value" [] (Json.Decode.list Proto.Json.string)
 
 
 {-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from proto3 JSON.
@@ -3442,8 +3442,8 @@ decodeHeader =
 decodeRawHTTPRequest : Json.Decode.Decoder RawHTTPRequest
 decodeRawHTTPRequest =
     Json.Decode.succeed RawHTTPRequest
-        |> Proto.Json.field "verb" "" Json.Decode.string
-        |> Proto.Json.field "uri" "" Json.Decode.string
+        |> Proto.Json.field "verb" "" Proto.Json.string
+        |> Proto.Json.field "uri" "" Proto.Json.string
         |> Proto.Json.field "headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "rawQueryParams" "raw_query_params" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "encodedQueryParams" "encoded_query_params" [] (Json.Decode.list decodeRawHTTPRequestEncodedQueryParam)
@@ -3466,7 +3466,7 @@ decodeRawHTTPRequestBody =
 decodeRawHTTPRequestEncodedQueryParam : Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
 decodeRawHTTPRequestEncodedQueryParam =
     Json.Decode.succeed RawHTTPRequestEncodedQueryParam
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "value" Nothing (Json.Decode.map Just decodeMessageContents)
         |> Proto.Json.fieldEither "base64Encode" "base64_encode" False Json.Decode.bool
 
@@ -3487,7 +3487,7 @@ decodeMessageContentsData =
     Proto.Json.members "data"
         MessageContentsDataUnset
         [ Proto.Json.member "binary" (Json.Decode.map MessageContentsDataBinary Proto.Json.bytes)
-        , Proto.Json.member "text" (Json.Decode.map MessageContentsDataText Json.Decode.string)
+        , Proto.Json.member "text" (Json.Decode.map MessageContentsDataText Proto.Json.string)
         , Proto.Json.memberEither "binaryMessage" "binary_message" (Json.Decode.map MessageContentsDataBinaryMessage Proto.Json.any)
         ]
 
@@ -3537,7 +3537,7 @@ decodeRawHTTPResponseBody =
 decodeTestSuite : Json.Decode.Decoder TestSuite
 decodeTestSuite =
     Json.Decode.succeed TestSuite
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "mode" TestSuiteTestModeUnspecified decodeTestSuiteTestMode
         |> Proto.Json.fieldEither "testCases" "test_cases" [] (Json.Decode.list decodeTestCase)
         |> Proto.Json.fieldEither "relevantProtocols" "relevant_protocols" [] (Json.Decode.list decodeProtocol)

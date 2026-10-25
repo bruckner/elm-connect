@@ -49,7 +49,8 @@ pub(super) enum FieldShape<'p> {
 /// name one integer fail (design §3.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum KeyShape {
-    /// `String`: `string` keys, taken as they are.
+    /// `String`: `string` keys, refused when one holds a surrogate
+    /// without its pair, as a `string` value is.
     String,
     /// `Int`: signed 32-bit integer keys.
     Int32,
@@ -284,7 +285,7 @@ impl Emitter {
             FieldShape::Dict(key, value) => {
                 let value = self.value_decoder(value);
                 let dict = match key {
-                    KeyShape::String => self.reference((JSON_DECODE, "dict")),
+                    KeyShape::String => self.reference((PROTO_JSON, "stringDict")),
                     KeyShape::Int32 => self.reference((PROTO_JSON, "int32Dict")),
                     KeyShape::UInt32 => self.reference((PROTO_JSON, "uint32Dict")),
                     KeyShape::Int64 => self.reference((PROTO_JSON, "int64Dict")),

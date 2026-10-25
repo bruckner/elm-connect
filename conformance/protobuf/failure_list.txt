@@ -33,9 +33,3 @@ Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
 
 # Fix candidate, lenient parsing: a field named twice in one object.
 Recommended.Proto3.JsonInput.FieldNameDuplicate
-
-# Fix candidate, lenient parsing: a string with an unpaired UTF-16
-# surrogate escape.
-Recommended.Proto3.JsonInput.StringFieldSurrogateInWrongOrder
-Recommended.Proto3.JsonInput.StringFieldUnpairedHighSurrogate
-Recommended.Proto3.JsonInput.StringFieldUnpairedLowSurrogate

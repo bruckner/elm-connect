@@ -85,6 +85,11 @@ suite =
                 , Json.Encode.encode 0 (Enum.encode WellKnown.nullValue (Enum.default WellKnown.nullValue))
                 )
                     |> Expect.equal ( ( "google.protobuf.NullValue", "" ), ( 0, Just (), Just () ), "null" )
+        , test "StringValue refuses a surrogate without its pair" <|
+            \_ ->
+                [ "\"a\"", "\"\\udc00\"" ]
+                    |> List.map (Json.Decode.decodeString (Message.decoder WellKnown.stringValue) >> Result.toMaybe)
+                    |> Expect.equal [ Just "a", Nothing ]
         , test "Value's default is null" <|
             \_ ->
                 ( Message.typeName (Message.toDescriptor WellKnown.value), Json.Encode.encode 0 (Message.default WellKnown.value) )

@@ -1126,15 +1126,15 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "optionalFloat" "optional_float" 0.0 Proto.Json.float32
         |> Proto.Json.fieldEither "optionalDouble" "optional_double" 0.0 Proto.Json.float
         |> Proto.Json.fieldEither "optionalBool" "optional_bool" False Json.Decode.bool
-        |> Proto.Json.fieldEither "optionalString" "optional_string" "" Json.Decode.string
+        |> Proto.Json.fieldEither "optionalString" "optional_string" "" Proto.Json.string
         |> Proto.Json.fieldEither "optionalBytes" "optional_bytes" "" Proto.Json.bytes
         |> Proto.Json.fieldEither "optionalNestedMessage" "optional_nested_message" Nothing (Json.Decode.map Just decodeTestAllTypesProto3NestedMessage_)
         |> Proto.Json.fieldEither "optionalForeignMessage" "optional_foreign_message" Nothing (Json.Decode.map Just decodeForeignMessage)
         |> Proto.Json.fieldEither "optionalNestedEnum" "optional_nested_enum" TestAllTypesProto3NestedEnumFoo decodeTestAllTypesProto3NestedEnum
         |> Proto.Json.fieldEither "optionalForeignEnum" "optional_foreign_enum" ForeignEnumForeignFoo decodeForeignEnum
         |> Proto.Json.fieldEither "optionalAliasedEnum" "optional_aliased_enum" TestAllTypesProto3AliasedEnumAliasFoo decodeTestAllTypesProto3AliasedEnum
-        |> Proto.Json.fieldEither "optionalStringPiece" "optional_string_piece" "" Json.Decode.string
-        |> Proto.Json.fieldEither "optionalCord" "optional_cord" "" Json.Decode.string
+        |> Proto.Json.fieldEither "optionalStringPiece" "optional_string_piece" "" Proto.Json.string
+        |> Proto.Json.fieldEither "optionalCord" "optional_cord" "" Proto.Json.string
         |> Proto.Json.fieldEither "recursiveMessage" "recursive_message" Nothing (Json.Decode.map Just decodeTestAllTypesProto3_)
         |> Proto.Json.fieldEither "repeatedInt32" "repeated_int32" [] (Json.Decode.list Proto.Json.int32)
         |> Proto.Json.fieldEither "repeatedInt64" "repeated_int64" [] (Json.Decode.list Proto.Json.int64)
@@ -1149,14 +1149,14 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "repeatedFloat" "repeated_float" [] (Json.Decode.list Proto.Json.float32)
         |> Proto.Json.fieldEither "repeatedDouble" "repeated_double" [] (Json.Decode.list Proto.Json.float)
         |> Proto.Json.fieldEither "repeatedBool" "repeated_bool" [] (Json.Decode.list Json.Decode.bool)
-        |> Proto.Json.fieldEither "repeatedString" "repeated_string" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.fieldEither "repeatedString" "repeated_string" [] (Json.Decode.list Proto.Json.string)
         |> Proto.Json.fieldEither "repeatedBytes" "repeated_bytes" [] (Json.Decode.list Proto.Json.bytes)
         |> Proto.Json.fieldEither "repeatedNestedMessage" "repeated_nested_message" [] (Json.Decode.list decodeTestAllTypesProto3NestedMessage_)
         |> Proto.Json.fieldEither "repeatedForeignMessage" "repeated_foreign_message" [] (Json.Decode.list decodeForeignMessage)
         |> Proto.Json.fieldEither "repeatedNestedEnum" "repeated_nested_enum" [] (Json.Decode.list decodeTestAllTypesProto3NestedEnum)
         |> Proto.Json.fieldEither "repeatedForeignEnum" "repeated_foreign_enum" [] (Json.Decode.list decodeForeignEnum)
-        |> Proto.Json.fieldEither "repeatedStringPiece" "repeated_string_piece" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.fieldEither "repeatedCord" "repeated_cord" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.fieldEither "repeatedStringPiece" "repeated_string_piece" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.fieldEither "repeatedCord" "repeated_cord" [] (Json.Decode.list Proto.Json.string)
         |> Proto.Json.fieldEither "packedInt32" "packed_int32" [] (Json.Decode.list Proto.Json.int32)
         |> Proto.Json.fieldEither "packedInt64" "packed_int64" [] (Json.Decode.list Proto.Json.int64)
         |> Proto.Json.fieldEither "packedUint32" "packed_uint32" [] (Json.Decode.list Proto.Json.uint32)
@@ -1198,12 +1198,12 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "mapInt32Float" "map_int32_float" Dict.empty (Proto.Json.int32Dict Proto.Json.float32)
         |> Proto.Json.fieldEither "mapInt32Double" "map_int32_double" Dict.empty (Proto.Json.int32Dict Proto.Json.float)
         |> Proto.Json.fieldEither "mapBoolBool" "map_bool_bool" [] (Proto.Json.boolMap Json.Decode.bool)
-        |> Proto.Json.fieldEither "mapStringString" "map_string_string" Dict.empty (Json.Decode.dict Json.Decode.string)
-        |> Proto.Json.fieldEither "mapStringBytes" "map_string_bytes" Dict.empty (Json.Decode.dict Proto.Json.bytes)
-        |> Proto.Json.fieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Json.Decode.dict decodeTestAllTypesProto3NestedMessage_)
-        |> Proto.Json.fieldEither "mapStringForeignMessage" "map_string_foreign_message" Dict.empty (Json.Decode.dict decodeForeignMessage)
-        |> Proto.Json.fieldEither "mapStringNestedEnum" "map_string_nested_enum" Dict.empty (Json.Decode.dict decodeTestAllTypesProto3NestedEnum)
-        |> Proto.Json.fieldEither "mapStringForeignEnum" "map_string_foreign_enum" Dict.empty (Json.Decode.dict decodeForeignEnum)
+        |> Proto.Json.fieldEither "mapStringString" "map_string_string" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+        |> Proto.Json.fieldEither "mapStringBytes" "map_string_bytes" Dict.empty (Proto.Json.stringDict Proto.Json.bytes)
+        |> Proto.Json.fieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Proto.Json.stringDict decodeTestAllTypesProto3NestedMessage_)
+        |> Proto.Json.fieldEither "mapStringForeignMessage" "map_string_foreign_message" Dict.empty (Proto.Json.stringDict decodeForeignMessage)
+        |> Proto.Json.fieldEither "mapStringNestedEnum" "map_string_nested_enum" Dict.empty (Proto.Json.stringDict decodeTestAllTypesProto3NestedEnum)
+        |> Proto.Json.fieldEither "mapStringForeignEnum" "map_string_foreign_enum" Dict.empty (Proto.Json.stringDict decodeForeignEnum)
         |> Proto.Json.oneof decodeTestAllTypesProto3OneofField
         |> Proto.Json.fieldEither "optionalBoolWrapper" "optional_bool_wrapper" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.fieldEither "optionalInt32Wrapper" "optional_int32_wrapper" Nothing (Json.Decode.map Just Proto.Json.int32)
@@ -1212,7 +1212,7 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "optionalUint64Wrapper" "optional_uint64_wrapper" Nothing (Json.Decode.map Just Proto.Json.uint64)
         |> Proto.Json.fieldEither "optionalFloatWrapper" "optional_float_wrapper" Nothing (Json.Decode.map Just Proto.Json.float32)
         |> Proto.Json.fieldEither "optionalDoubleWrapper" "optional_double_wrapper" Nothing (Json.Decode.map Just Proto.Json.float)
-        |> Proto.Json.fieldEither "optionalStringWrapper" "optional_string_wrapper" Nothing (Json.Decode.map Just Json.Decode.string)
+        |> Proto.Json.fieldEither "optionalStringWrapper" "optional_string_wrapper" Nothing (Json.Decode.map Just Proto.Json.string)
         |> Proto.Json.fieldEither "optionalBytesWrapper" "optional_bytes_wrapper" Nothing (Json.Decode.map Just Proto.Json.bytes)
         |> Proto.Json.fieldEither "repeatedBoolWrapper" "repeated_bool_wrapper" [] (Json.Decode.list Json.Decode.bool)
         |> Proto.Json.fieldEither "repeatedInt32Wrapper" "repeated_int32_wrapper" [] (Json.Decode.list Proto.Json.int32)
@@ -1221,7 +1221,7 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "repeatedUint64Wrapper" "repeated_uint64_wrapper" [] (Json.Decode.list Proto.Json.uint64)
         |> Proto.Json.fieldEither "repeatedFloatWrapper" "repeated_float_wrapper" [] (Json.Decode.list Proto.Json.float32)
         |> Proto.Json.fieldEither "repeatedDoubleWrapper" "repeated_double_wrapper" [] (Json.Decode.list Proto.Json.float)
-        |> Proto.Json.fieldEither "repeatedStringWrapper" "repeated_string_wrapper" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.fieldEither "repeatedStringWrapper" "repeated_string_wrapper" [] (Json.Decode.list Proto.Json.string)
         |> Proto.Json.fieldEither "repeatedBytesWrapper" "repeated_bytes_wrapper" [] (Json.Decode.list Proto.Json.bytes)
         |> Proto.Json.fieldEither "optionalDuration" "optional_duration" Nothing (Json.Decode.map Just Proto.Json.duration)
         |> Proto.Json.fieldEither "optionalTimestamp" "optional_timestamp" Nothing (Json.Decode.map Just Proto.Json.timestamp)
@@ -1272,7 +1272,7 @@ decodeTestAllTypesProto3OneofField =
         TestAllTypesProto3OneofFieldUnset
         [ Proto.Json.memberEither "oneofUint32" "oneof_uint32" (Json.Decode.map TestAllTypesProto3OneofFieldOneofUint32 Proto.Json.uint32)
         , Proto.Json.memberEither "oneofNestedMessage" "oneof_nested_message" (Json.Decode.map TestAllTypesProto3OneofFieldOneofNestedMessage (Json.Decode.lazy (\_ -> decodeTestAllTypesProto3NestedMessage)))
-        , Proto.Json.memberEither "oneofString" "oneof_string" (Json.Decode.map TestAllTypesProto3OneofFieldOneofString Json.Decode.string)
+        , Proto.Json.memberEither "oneofString" "oneof_string" (Json.Decode.map TestAllTypesProto3OneofFieldOneofString Proto.Json.string)
         , Proto.Json.memberEither "oneofBytes" "oneof_bytes" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBytes Proto.Json.bytes)
         , Proto.Json.memberEither "oneofBool" "oneof_bool" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBool Json.Decode.bool)
         , Proto.Json.memberEither "oneofUint64" "oneof_uint64" (Json.Decode.map TestAllTypesProto3OneofFieldOneofUint64 Proto.Json.uint64)

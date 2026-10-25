@@ -143,7 +143,7 @@ encodeTag value =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string
         |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
 
 
@@ -152,4 +152,4 @@ decodeNote =
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag
-        |> Proto.Json.field "label" "" Json.Decode.string
+        |> Proto.Json.field "label" "" Proto.Json.string

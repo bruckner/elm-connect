@@ -515,15 +515,15 @@ decodeVisibility =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "title" "" Json.Decode.string
-        |> Proto.Json.field "body" "" Json.Decode.string
-        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "title" "" Proto.Json.string
+        |> Proto.Json.field "body" "" Proto.Json.string
+        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
         |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
         |> Proto.Json.fieldEither "createTime" "create_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
         |> Proto.Json.fieldEither "updateTime" "update_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
         |> Proto.Json.field "ttl" Nothing (Json.Decode.map Just Proto.Json.duration)
-        |> Proto.Json.field "metadata" Dict.empty (Json.Decode.dict Json.Decode.string)
+        |> Proto.Json.field "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.string)
         |> Proto.Json.field "extra" Nothing (Json.Decode.map Just Proto.Json.struct)
         |> Proto.Json.oneof decodeNoteKind
         |> Proto.Json.field "attachment" Nothing (Json.Decode.map Just Proto.Json.any)
@@ -536,8 +536,8 @@ decodeNoteKind : Json.Decode.Decoder NoteKind
 decodeNoteKind =
     Proto.Json.members "kind"
         NoteKindUnset
-        [ Proto.Json.member "text" (Json.Decode.map NoteKindText Json.Decode.string)
-        , Proto.Json.member "link" (Json.Decode.map NoteKindLink Json.Decode.string)
+        [ Proto.Json.member "text" (Json.Decode.map NoteKindText Proto.Json.string)
+        , Proto.Json.member "link" (Json.Decode.map NoteKindLink Proto.Json.string)
         ]
 
 
@@ -546,7 +546,7 @@ decodeNoteKind =
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
@@ -555,8 +555,8 @@ decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Json.Decode.succeed ListNotesRequest
         |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
-        |> Proto.Json.fieldEither "pageToken" "page_token" "" Json.Decode.string
-        |> Proto.Json.field "filter" "" Json.Decode.string
+        |> Proto.Json.fieldEither "pageToken" "page_token" "" Proto.Json.string
+        |> Proto.Json.field "filter" "" Proto.Json.string
         |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
 
 
@@ -566,7 +566,7 @@ decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
     Json.Decode.succeed ListNotesResponse
         |> Proto.Json.field "notes" [] (Json.Decode.list decodeNote)
-        |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Json.Decode.string
+        |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
 
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from proto3 JSON.
@@ -591,7 +591,7 @@ decodeUpdateNoteRequest =
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
     Json.Decode.succeed DeleteNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
@@ -599,4 +599,4 @@ decodeDeleteNoteRequest =
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string

@@ -99,4 +99,4 @@ encodeNote value =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string

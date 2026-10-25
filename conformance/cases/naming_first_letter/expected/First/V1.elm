@@ -230,20 +230,20 @@ encodeLinkTarget value =
 decodeURLPath : Json.Decode.Decoder URLPath
 decodeURLPath =
     Json.Decode.succeed URLPath
-        |> Proto.Json.field "Label" "" Json.Decode.string
-        |> Proto.Json.field "ID" "" Json.Decode.string
-        |> Proto.Json.field "URL" "" Json.Decode.string
-        |> Proto.Json.field "URLPath" "" Json.Decode.string
-        |> Proto.Json.field "HTTPRequest" "" Json.Decode.string
+        |> Proto.Json.field "Label" "" Proto.Json.string
+        |> Proto.Json.field "ID" "" Proto.Json.string
+        |> Proto.Json.field "URL" "" Proto.Json.string
+        |> Proto.Json.field "URLPath" "" Proto.Json.string
+        |> Proto.Json.field "HTTPRequest" "" Proto.Json.string
         |> Proto.Json.field "XCoord" 0.0 Proto.Json.float
-        |> Proto.Json.field "ABCDef" "" Json.Decode.string
-        |> Proto.Json.fieldEither "Internal" "_internal" "" Json.Decode.string
-        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
-        |> Proto.Json.field "Type" "" Json.Decode.string
-        |> Proto.Json.field "IDs" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.field "URLs" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.field "APIs" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.field "UUIDs" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "ABCDef" "" Proto.Json.string
+        |> Proto.Json.fieldEither "Internal" "_internal" "" Proto.Json.string
+        |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
+        |> Proto.Json.field "Type" "" Proto.Json.string
+        |> Proto.Json.field "IDs" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.field "URLs" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.field "APIs" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.field "UUIDs" [] (Json.Decode.list Proto.Json.string)
 
 
 {-| Decodes a [`Link`](#Link) from proto3 JSON.
@@ -251,7 +251,7 @@ decodeURLPath =
 decodeLink : Json.Decode.Decoder Link
 decodeLink =
     Json.Decode.succeed Link
-        |> Proto.Json.fieldEither "Label" "__Label" "" Json.Decode.string
+        |> Proto.Json.fieldEither "Label" "__Label" "" Proto.Json.string
         |> Proto.Json.oneof decodeLinkTarget
 
 
@@ -261,6 +261,6 @@ decodeLinkTarget : Json.Decode.Decoder LinkTarget
 decodeLinkTarget =
     Proto.Json.members "Target"
         LinkTargetUnset
-        [ Proto.Json.member "URL" (Json.Decode.map LinkTargetURL Json.Decode.string)
+        [ Proto.Json.member "URL" (Json.Decode.map LinkTargetURL Proto.Json.string)
         , Proto.Json.member "Count" (Json.Decode.map LinkTargetCount Proto.Json.int32)
         ]

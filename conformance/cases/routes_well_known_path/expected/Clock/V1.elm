@@ -128,4 +128,4 @@ decodeMoment =
         |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
         |> Proto.Json.field "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
-        |> Proto.Json.field "note" "" Json.Decode.string
+        |> Proto.Json.field "note" "" Proto.Json.string

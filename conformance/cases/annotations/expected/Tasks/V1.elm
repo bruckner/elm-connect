@@ -247,13 +247,13 @@ decodeState =
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Json.Decode.succeed Task
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "title" "" Proto.Json.string
         |> Proto.Json.field "state" StateUnspecified decodeState
-        |> Proto.Json.field "labels" [] (Json.Decode.list Json.Decode.string)
-        |> Proto.Json.field "owner" "" Json.Decode.string
-        |> Proto.Json.field "notes" "" Json.Decode.string
-        |> Proto.Json.field "made" "" Json.Decode.string
+        |> Proto.Json.field "labels" [] (Json.Decode.list Proto.Json.string)
+        |> Proto.Json.field "owner" "" Proto.Json.string
+        |> Proto.Json.field "notes" "" Proto.Json.string
+        |> Proto.Json.field "made" "" Proto.Json.string
         |> Proto.Json.oneof decodeTaskDue
 
 
@@ -263,8 +263,8 @@ decodeTaskDue : Json.Decode.Decoder TaskDue
 decodeTaskDue =
     Proto.Json.members "due"
         TaskDueUnset
-        [ Proto.Json.member "date" (Json.Decode.map TaskDueDate Json.Decode.string)
-        , Proto.Json.member "never" (Json.Decode.map TaskDueNever Json.Decode.string)
+        [ Proto.Json.member "date" (Json.Decode.map TaskDueDate Proto.Json.string)
+        , Proto.Json.member "never" (Json.Decode.map TaskDueNever Proto.Json.string)
         ]
 
 
@@ -273,4 +273,4 @@ decodeTaskDue =
 decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
     Json.Decode.succeed GetTaskRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string

@@ -279,12 +279,12 @@ decodeHttpMethod =
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag
-        |> Proto.Json.field "type" "" Json.Decode.string
+        |> Proto.Json.field "type" "" Proto.Json.string
         |> Proto.Json.field "if" False Json.Decode.bool
         |> Proto.Json.field "port" 0 Proto.Json.int32
-        |> Proto.Json.field "alias" "" Json.Decode.string
-        |> Proto.Json.fieldEither "screenName" "display_name" "" Json.Decode.string
-        |> Proto.Json.fieldEither "httpUrl" "http_url" "" Json.Decode.string
+        |> Proto.Json.field "alias" "" Proto.Json.string
+        |> Proto.Json.fieldEither "screenName" "display_name" "" Proto.Json.string
+        |> Proto.Json.fieldEither "httpUrl" "http_url" "" Proto.Json.string
         |> Proto.Json.fieldEither "v2Count" "v2_count" 0 Proto.Json.int32
         |> Proto.Json.field "shape" ShapeUnspecified decodeShape
         |> Proto.Json.field "method" HttpMethodUnspecified decodeHttpMethod
@@ -297,6 +297,6 @@ decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
     Proto.Json.members "case"
         TagCaseUnset
-        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Json.Decode.string)
+        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.string)
         , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
         ]

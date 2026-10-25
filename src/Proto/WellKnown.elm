@@ -178,7 +178,7 @@ boolValue =
 -}
 stringValue : Message String
 stringValue =
-    message Json.Encode.string Json.Decode.string "" Descriptors.stringValue
+    message Json.Encode.string Proto.Json.string "" Descriptors.stringValue
 
 
 {-| `google.protobuf.BytesValue`, its base64 text.

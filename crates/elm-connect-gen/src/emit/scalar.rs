@@ -53,7 +53,8 @@ pub(super) enum Repr {
     UInt64AsInt,
     /// `Bool`.
     Bool,
-    /// `String`.
+    /// `String`: decoded only when it holds no UTF-16 surrogate without
+    /// its pair.
     String,
     /// `String` holding base64, as on the wire.
     Bytes,
@@ -143,7 +144,7 @@ pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
         Repr::UInt64 => (PROTO_JSON, "uint64"),
         Repr::UInt64AsInt => (PROTO_JSON, "uint64AsInt"),
         Repr::Bool => (JSON_DECODE, "bool"),
-        Repr::String => (JSON_DECODE, "string"),
+        Repr::String => (PROTO_JSON, "string"),
         Repr::Bytes => (PROTO_JSON, "bytes"),
         Repr::BytesAsBytes => (PROTO_JSON, "bytesAsBytes"),
     }

@@ -800,6 +800,14 @@ just the form encoders write.
   A string is read as `Proto.Json.int64` reads one, then range-checked,
   so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
   for a 64-bit value and for every integer map key.
+- Strings through `Proto.Json.string`, and `string` map keys through
+  `Proto.Json.stringDict`, which fail on one holding a UTF-16
+  surrogate without its pair (`"\udc00"`): JavaScript's JSON parser
+  reads the escape into the string as it is, and such a string is not
+  Unicode text and has no UTF-8 form. The check reads each string once
+  (`String.all`); in the performance spike's benchmark, decoding a note
+  took about 5 % longer and a page of 1,000 notes about 1 %, and a map
+  of 1,000 string keys and values 17 %.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`, through `Proto.Json.float` (`double`) and
   `Proto.Json.float32` (`float`). A number past a double's range fails
@@ -832,8 +840,8 @@ just the form encoders write.
   when they differ, JSON name first:
 
   ```elm
-  |> Proto.Json.field "title" "" Json.Decode.string
-  |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+  |> Proto.Json.field "title" "" Proto.Json.string
+  |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
@@ -848,7 +856,7 @@ just the form encoders write.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
   `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `field "tags" [] (Json.Decode.list Json.Decode.string)`,
+  repeated one `field "tags" [] (Json.Decode.list Proto.Json.string)`,
   and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields

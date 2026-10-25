@@ -40,6 +40,7 @@ suite =
         , floatTests
         , float32Tests
         , nullValueTests
+        , stringTests
         , bytesTests
         , wellKnownTests
         ]
@@ -1167,6 +1168,43 @@ floatTests =
             \_ -> encodesTo (Proto.Json.encodeFloat (1 / 0)) "\"Infinity\""
         , test "encodes negative infinity as a string" <|
             \_ -> encodesTo (Proto.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
+        ]
+
+
+stringTests : Test
+stringTests =
+    describe "string"
+        [ test "text, a surrogate pair included" <|
+            \_ ->
+                [ "\"\"", "\"note\"", "\"\\ud83d\\ude00\"", "\"a😀b\"", "\"\\ud800\\udc00\"", "\"\\udbff\\udfff\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.string)
+                    |> Expect.equal [ Ok "", Ok "note", Ok "😀", Ok "a😀b", Ok "𐀀", Ok "\u{10FFFF}" ]
+        , test "a surrogate without its pair fails, wherever it is" <|
+            \_ ->
+                failsOnEach Proto.Json.string
+                    [ "\"\\udc00\""
+                    , "\"\\ud800\""
+                    , "\"\\ude01\\ud83d\""
+                    , "\"a\\udc00\""
+                    , "\"\\udc00a\""
+                    , "\"a\\ud800b\""
+                    , "\"\\udc00\\udc00\""
+                    , "\"😀\\udc00\""
+                    , "\"\\ud800😀\""
+                    ]
+        , Test.fuzz Fuzz.string "every string of Unicode text decodes as it is" <|
+            \text ->
+                Json.Decode.decodeString Proto.Json.string (Json.Encode.encode 0 (Json.Encode.string text))
+                    |> Expect.equal (Ok text)
+        , test "a map key with a surrogate without its pair fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ ->
+                        Json.Decode.decodeString (Proto.Json.stringDict Json.Decode.int) "{\"a\":1,\"😀\":2}"
+                            |> Expect.equal (Ok (Dict.fromList [ ( "a", 1 ), ( "😀", 2 ) ]))
+                    , \_ -> failsOnEach (Proto.Json.stringDict Json.Decode.int) [ "{\"\\udc00\":1}", "{\"a\":1,\"b\\ud800\":2}" ]
+                    ]
+                    ()
         ]
 
 

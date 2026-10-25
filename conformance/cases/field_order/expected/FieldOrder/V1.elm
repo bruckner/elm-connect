@@ -238,11 +238,11 @@ decodeMood =
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Json.Decode.succeed Draft
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string
         |> Proto.Json.oneof decodeDraftBody
         |> Proto.Json.field "mood" MoodUnspecified decodeMood
         |> Proto.Json.field "margin" Nothing (Json.Decode.map Just decodeDraftMargin)
-        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
 
 
 {-| Decodes a [`DraftBody`](#DraftBody) from the members of its message's JSON object.
@@ -251,7 +251,7 @@ decodeDraftBody : Json.Decode.Decoder DraftBody
 decodeDraftBody =
     Proto.Json.members "body"
         DraftBodyUnset
-        [ Proto.Json.member "text" (Json.Decode.map DraftBodyText Json.Decode.string)
+        [ Proto.Json.member "text" (Json.Decode.map DraftBodyText Proto.Json.string)
         , Proto.Json.member "blob" (Json.Decode.map DraftBodyBlob Proto.Json.bytes)
         ]
 
