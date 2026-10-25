@@ -4,6 +4,7 @@ expression: "match parser.parse_message() {\n    Ok(value) => Ok(value),\n    Er
 ---
 Ok(
     Message {
+        visibility: None,
         name: Ident {
             value: "Foo",
             span: 8..11,

@@ -4,6 +4,7 @@ expression: "if parser.lexer.extras.errors.is_empty() {\n        Ok(result.unwra
 ---
 Ok(
     Enum {
+        visibility: None,
         name: Ident {
             value: "Foo",
             span: 5..8,

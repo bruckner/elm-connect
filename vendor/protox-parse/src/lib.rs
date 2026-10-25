@@ -23,6 +23,8 @@ const MAX_MESSAGE_FIELD_NUMBER: i32 = 536_870_911;
 
 /// `google.protobuf.Edition.EDITION_2023`.
 const EDITION_2023: i32 = 1000;
+/// `google.protobuf.Edition.EDITION_2024`.
+const EDITION_2024: i32 = 1001;
 
 /// Parses a single protobuf source file into a [`FileDescriptorProto`].
 ///
@@ -30,7 +32,7 @@ const EDITION_2023: i32 = 1000;
 /// imported files.
 ///
 /// A file that begins with an `edition` statement parses to a descriptor with `syntax` set to
-/// `"editions"` and `edition` set to the edition (`EDITION_2023`).
+/// `"editions"` and `edition` set to the edition (`EDITION_2023` or `EDITION_2024`).
 ///
 /// # Examples
 ///

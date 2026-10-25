@@ -11,6 +11,7 @@ pub(crate) mod file {
     pub(crate) const EXTENSION: i32 = 7;
     pub(crate) const OPTIONS: i32 = 8;
     pub(crate) const SYNTAX: i32 = 12;
+    pub(crate) const OPTION_DEPENDENCY: i32 = 15;
 }
 
 pub(crate) mod message {

@@ -5,7 +5,7 @@ expression: "if parser.lexer.extras.errors.is_empty() {\n        Ok(result.unwra
 Err(
     [
         UnexpectedToken {
-            expected: "a string literal, 'public' or 'weak'",
+            expected: "a string literal, 'public', 'weak' or 'option'",
             found: ";",
             span: 7..8,
         },

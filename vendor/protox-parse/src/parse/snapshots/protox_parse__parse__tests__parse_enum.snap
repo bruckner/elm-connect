@@ -4,6 +4,7 @@ expression: "match parser.parse_enum() {\n    Ok(value) => Ok(value),\n    Err((
 ---
 Ok(
     Enum {
+        visibility: None,
         name: Ident {
             value: "Foo",
             span: 5..8,

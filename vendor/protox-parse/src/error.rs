@@ -63,7 +63,7 @@ pub(crate) enum ParseErrorKind {
         span: Span,
     },
     #[error("unknown edition '{edition}'")]
-    #[diagnostic(help("the supported edition is '2023'"))]
+    #[diagnostic(help("the supported editions are '2023' and '2024'"))]
     UnknownEdition {
         edition: String,
         #[label("defined here")]
@@ -87,6 +87,28 @@ pub(crate) enum ParseErrorKind {
     },
     #[error("reserved names must be identifiers in editions, not strings")]
     EditionsReservedNameString {
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("option imports are not supported before edition 2024")]
+    OptionImportBeforeEdition2024 {
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("imports must precede any option imports")]
+    #[diagnostic(help("this keeps the order of the file's imports when it is printed back"))]
+    ImportAfterOptionImport {
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("weak imports are not supported in edition 2024 and above")]
+    #[diagnostic(help("use 'import option' instead"))]
+    WeakImportInEdition2024 {
+        #[label("defined here")]
+        span: Span,
+    },
+    #[error("'local' and 'export' visibility modifiers are valid only on 'message' and 'enum'")]
+    InvalidVisibilityModifier {
         #[label("defined here")]
         span: Span,
     },
@@ -289,6 +311,10 @@ impl ParseError {
             ParseErrorKind::EditionsFieldLabel { span, .. } => Some(span.clone()),
             ParseErrorKind::EditionsGroupField { span } => Some(span.clone()),
             ParseErrorKind::EditionsReservedNameString { span } => Some(span.clone()),
+            ParseErrorKind::OptionImportBeforeEdition2024 { span } => Some(span.clone()),
+            ParseErrorKind::ImportAfterOptionImport { span } => Some(span.clone()),
+            ParseErrorKind::WeakImportInEdition2024 { span } => Some(span.clone()),
+            ParseErrorKind::InvalidVisibilityModifier { span } => Some(span.clone()),
             ParseErrorKind::InvalidIdentifier { span } => Some(span.clone()),
             ParseErrorKind::InvalidGroupName { span } => Some(span.clone()),
             ParseErrorKind::InvalidImport { span } => Some(span.clone()),

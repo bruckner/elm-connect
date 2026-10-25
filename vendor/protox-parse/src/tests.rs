@@ -817,9 +817,9 @@ fn editions_parse_sets_edition() {
 #[test]
 fn editions_unknown_edition() {
     assert_eq!(
-        parse("edition = '2024';"),
+        parse("edition = '2025';"),
         Err(vec![UnknownEdition {
-            edition: "2024".to_owned(),
+            edition: "2025".to_owned(),
             span: 10..16,
         }]),
     );
@@ -905,4 +905,142 @@ fn editions_reserved_names() {
         .len(),
         1,
     );
+}
+
+#[test]
+fn edition_2024_file() {
+    let source = r#"
+        edition = "2024";
+
+        package editions;
+
+        import "dep.proto";
+        import option "options.proto";
+
+        // An exported message.
+        export message Message {
+            local message Nested {}
+            export enum Kind {
+                KIND_UNSPECIFIED = 0;
+            }
+            Nested nested = 1 [(custom) = true];
+        }
+
+        local enum Hidden {
+            HIDDEN_UNSPECIFIED = 0;
+        }
+
+        message Plain {}
+    "#;
+    let file = crate::parse("test.proto", source).unwrap();
+    assert_eq!(file.edition, Some(1001));
+    assert_eq!(file.dependency, ["dep.proto"]);
+    assert_eq!(file.option_dependency, ["options.proto"]);
+
+    let message = &file.message_type[0];
+    assert_eq!(
+        message.visibility(),
+        prost_types::SymbolVisibility::VisibilityExport
+    );
+    assert_eq!(
+        message.nested_type[0].visibility(),
+        prost_types::SymbolVisibility::VisibilityLocal
+    );
+    assert_eq!(
+        message.enum_type[0].visibility(),
+        prost_types::SymbolVisibility::VisibilityExport
+    );
+    assert_eq!(
+        file.enum_type[0].visibility(),
+        prost_types::SymbolVisibility::VisibilityLocal
+    );
+    assert_eq!(file.message_type[1].visibility, None);
+
+    // The leading comment belongs to the message, the modifier aside; the option import has a
+    // location of its own.
+    let locations = &file.source_code_info.as_ref().unwrap().location;
+    let message_location = locations.iter().find(|l| l.path == [4, 0]).unwrap();
+    assert_eq!(
+        message_location.leading_comments(),
+        " An exported message.\n"
+    );
+    assert!(locations.iter().any(|l| l.path == [15, 0]));
+}
+
+#[test]
+fn edition_2024_option_import_order() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2024";
+            import option "options.proto";
+            import "dep.proto";
+            "#
+        ),
+        Err(vec![ImportAfterOptionImport { span: 86..105 }]),
+    );
+}
+
+#[test]
+fn option_import_before_edition_2024() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2023";
+            import option "options.proto";
+            "#
+        ),
+        Err(vec![OptionImportBeforeEdition2024 { span: 50..56 }]),
+    );
+    assert_eq!(
+        parse("syntax = 'proto3'; import option 'options.proto';"),
+        Err(vec![OptionImportBeforeEdition2024 { span: 26..32 }]),
+    );
+}
+
+#[test]
+fn edition_2024_weak_import() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2024";
+            import weak "dep.proto";
+            "#
+        ),
+        Err(vec![WeakImportInEdition2024 { span: 50..54 }]),
+    );
+    assert!(parse("edition = '2023'; import weak 'dep.proto';").is_ok());
+}
+
+#[test]
+fn edition_2024_visibility_modifier_placement() {
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2024";
+            export service Service {}
+            "#
+        ),
+        Err(vec![InvalidVisibilityModifier { span: 43..49 }]),
+    );
+    assert_eq!(
+        parse(
+            r#"
+            edition = "2024";
+            message Message {
+                local int32 field = 1;
+            }
+            "#
+        ),
+        Err(vec![InvalidVisibilityModifier { span: 77..82 }]),
+    );
+}
+
+#[test]
+fn visibility_modifier_before_edition_2024() {
+    // Before edition 2024 `export` and `local` are ordinary identifiers: a top-level statement
+    // cannot start with one, and in a message one names a field's type.
+    assert!(parse("edition = '2023'; export message Message {}").is_err());
+    let file = parse("edition = '2023'; message Message { local field = 1; }").unwrap();
+    assert_eq!(file.message_type[0].field[0].type_name(), "local");
 }

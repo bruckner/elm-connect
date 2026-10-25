@@ -105,6 +105,15 @@ pub(crate) struct Import {
 pub(crate) enum ImportKind {
     Weak,
     Public,
+    /// `import option`, which makes only the file's extensions available, for use in options.
+    Option,
+}
+
+/// An `export` or `local` modifier on a message or enum.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Visibility {
+    Export,
+    Local,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -141,6 +150,7 @@ pub(crate) struct OptionList {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Message {
+    pub visibility: std::option::Option<(Visibility, Span)>,
     pub name: Ident,
     pub body: MessageBody,
     pub comments: Comments,
@@ -274,6 +284,7 @@ pub(crate) enum ReservedRangeEnd {
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Enum {
+    pub visibility: std::option::Option<(Visibility, Span)>,
     pub name: Ident,
     pub options: Vec<Option>,
     pub values: Vec<EnumValue>,
@@ -542,6 +553,14 @@ impl From<Vec<Ident>> for FullIdent {
     fn from(parts: Vec<Ident>) -> Self {
         debug_assert!(!parts.is_empty());
         FullIdent { parts }
+    }
+}
+
+impl Syntax {
+    /// Whether this is an edition at least as new as `edition`, a `google.protobuf.Edition`
+    /// number.
+    pub(crate) fn is_edition_at_least(self, edition: i32) -> bool {
+        matches!(self, Syntax::Editions(e) if e >= edition)
     }
 }
 

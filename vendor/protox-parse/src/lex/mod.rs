@@ -86,6 +86,8 @@ impl Token<'_> {
     pub const IMPORT: Token<'static> = Token::Ident("import");
     pub const WEAK: Token<'static> = Token::Ident("weak");
     pub const PUBLIC: Token<'static> = Token::Ident("public");
+    pub const EXPORT: Token<'static> = Token::Ident("export");
+    pub const LOCAL: Token<'static> = Token::Ident("local");
     pub const ENUM: Token<'static> = Token::Ident("enum");
     pub const OPTION: Token<'static> = Token::Ident("option");
     pub const SERVICE: Token<'static> = Token::Ident("service");

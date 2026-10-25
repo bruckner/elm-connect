@@ -22,6 +22,7 @@ Ok(
         items: [
             Message(
                 Message {
+                    visibility: None,
                     name: Ident {
                         value: "Foo",
                         span: 36..39,

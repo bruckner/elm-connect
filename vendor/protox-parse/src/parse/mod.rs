@@ -13,7 +13,7 @@ use crate::{
     error::ParseErrorKind,
     join_span,
     lex::{EqFloat, Token},
-    EDITION_2023,
+    EDITION_2023, EDITION_2024,
 };
 
 mod comments;
@@ -56,6 +56,12 @@ enum Statement {
     Enum(ast::Enum),
     Service(ast::Service),
     Extend(ast::Extend),
+}
+
+/// A message or enum that carries a visibility modifier.
+enum VisibleType {
+    Message(ast::Message),
+    Enum(ast::Enum),
 }
 
 impl<'a> Parser<'a> {
@@ -109,7 +115,20 @@ impl<'a> Parser<'a> {
                                 package = Some(new_package);
                             }
                         }
-                        Statement::Import(import) => imports.push(import),
+                        Statement::Import(import) => {
+                            let is_option =
+                                matches!(import.kind, Some((ast::ImportKind::Option, _)));
+                            if !is_option
+                                && imports.iter().any(|i: &ast::Import| {
+                                    matches!(i.kind, Some((ast::ImportKind::Option, _)))
+                                })
+                            {
+                                self.add_error(ParseErrorKind::ImportAfterOptionImport {
+                                    span: import.span.clone(),
+                                });
+                            }
+                            imports.push(import)
+                        }
                         Statement::Option(option) => options.push(option),
                         Statement::Message(message) => items.push(ast::FileItem::Message(message)),
                         Statement::Enum(enm) => items.push(ast::FileItem::Enum(enm)),
@@ -157,6 +176,7 @@ impl<'a> Parser<'a> {
                 let value = self.parse_string()?;
                 match value.value.as_slice() {
                     b"2023" => ast::Syntax::Editions(EDITION_2023),
+                    b"2024" => ast::Syntax::Editions(EDITION_2024),
                     bytes => {
                         self.add_error(ParseErrorKind::UnknownEdition {
                             edition: String::from_utf8_lossy(bytes).into_owned(),
@@ -202,6 +222,12 @@ impl<'a> Parser<'a> {
             Some((Token::EXTEND, _)) => Ok(Some(Statement::Extend(self.parse_extend()?))),
             Some((Token::MESSAGE, _)) => Ok(Some(Statement::Message(self.parse_message()?))),
             Some((Token::ENUM, _)) => Ok(Some(Statement::Enum(self.parse_enum()?))),
+            Some((Token::EXPORT | Token::LOCAL, _)) if self.has_visibility() => {
+                match self.parse_visible_type()? {
+                    VisibleType::Message(message) => Ok(Some(Statement::Message(message))),
+                    VisibleType::Enum(enm) => Ok(Some(Statement::Enum(enm))),
+                }
+            }
             Some((Token::SERVICE, _)) => Ok(Some(Statement::Service(self.parse_service()?))),
             None => Ok(None),
             _ => self.unexpected_token(
@@ -236,14 +262,26 @@ impl<'a> Parser<'a> {
         let kind = match self.peek_skip_comments()? {
             Some((Token::WEAK, span)) => {
                 self.bump();
+                if self.syntax.is_edition_at_least(EDITION_2024) {
+                    self.add_error(ParseErrorKind::WeakImportInEdition2024 { span: span.clone() });
+                }
                 Some((ast::ImportKind::Weak, span))
+            }
+            Some((Token::OPTION, span)) => {
+                self.bump();
+                if !self.syntax.is_edition_at_least(EDITION_2024) {
+                    self.add_error(ParseErrorKind::OptionImportBeforeEdition2024 {
+                        span: span.clone(),
+                    });
+                }
+                Some((ast::ImportKind::Option, span))
             }
             Some((Token::PUBLIC, span)) => {
                 self.bump();
                 Some((ast::ImportKind::Public, span))
             }
             Some((Token::StringLiteral(_), _)) => None,
-            _ => self.unexpected_token("a string literal, 'public' or 'weak'")?,
+            _ => self.unexpected_token("a string literal, 'public', 'weak' or 'option'")?,
         };
 
         let (value, value_span) = self.parse_utf8_string()?;
@@ -268,7 +306,43 @@ impl<'a> Parser<'a> {
 
     fn parse_message(&mut self) -> Result<ast::Message, ()> {
         let leading_comments = self.parse_leading_comments();
+        self.parse_message_after_comments(leading_comments, None)
+    }
 
+    /// Whether `export` and `local` modifiers are parsed: from edition 2024. In older files the
+    /// words are ordinary identifiers, as protoc treats them.
+    fn has_visibility(&self) -> bool {
+        self.syntax.is_edition_at_least(EDITION_2024)
+    }
+
+    /// Parses a message or enum preceded by an `export` or `local` modifier.
+    fn parse_visible_type(&mut self) -> Result<VisibleType, ()> {
+        let leading_comments = self.parse_leading_comments();
+        let visibility = match self.peek()? {
+            Some((Token::EXPORT, _)) => ast::Visibility::Export,
+            _ => ast::Visibility::Local,
+        };
+        let span = self.bump();
+        let visibility = Some((visibility, span.clone()));
+        match self.peek_skip_comments()? {
+            Some((Token::MESSAGE, _)) => Ok(VisibleType::Message(
+                self.parse_message_after_comments(leading_comments, visibility)?,
+            )),
+            Some((Token::ENUM, _)) => Ok(VisibleType::Enum(
+                self.parse_enum_after_comments(leading_comments, visibility)?,
+            )),
+            _ => {
+                self.add_error(ParseErrorKind::InvalidVisibilityModifier { span });
+                Err(())
+            }
+        }
+    }
+
+    fn parse_message_after_comments(
+        &mut self,
+        leading_comments: (Vec<String>, Option<String>),
+        visibility: Option<(ast::Visibility, Span)>,
+    ) -> Result<ast::Message, ()> {
         let start = self.expect_eq(Token::MESSAGE)?;
 
         let name = self.parse_ident()?;
@@ -279,6 +353,7 @@ impl<'a> Parser<'a> {
         let (body, end) = self.parse_nested_message_body(start.clone())?;
 
         Ok(ast::Message {
+            visibility,
             name,
             body,
             comments,
@@ -311,6 +386,14 @@ impl<'a> Parser<'a> {
                 Some((Token::ENUM, _)) => items.push(ast::MessageItem::Enum(self.parse_enum()?)),
                 Some((Token::MESSAGE, _)) => {
                     items.push(ast::MessageItem::Message(self.parse_message()?))
+                }
+                Some((Token::EXPORT | Token::LOCAL, _)) if self.has_visibility() => {
+                    match self.parse_visible_type()? {
+                        VisibleType::Message(message) => {
+                            items.push(ast::MessageItem::Message(message))
+                        }
+                        VisibleType::Enum(enm) => items.push(ast::MessageItem::Enum(enm)),
+                    }
                 }
                 Some((Token::EXTEND, _)) => {
                     items.push(ast::MessageItem::Extend(self.parse_extend()?))
@@ -635,7 +718,14 @@ impl<'a> Parser<'a> {
 
     fn parse_enum(&mut self) -> Result<ast::Enum, ()> {
         let leading_comments = self.parse_leading_comments();
+        self.parse_enum_after_comments(leading_comments, None)
+    }
 
+    fn parse_enum_after_comments(
+        &mut self,
+        leading_comments: (Vec<String>, Option<String>),
+        visibility: Option<(ast::Visibility, Span)>,
+    ) -> Result<ast::Enum, ()> {
         let start = self.expect_eq(Token::ENUM)?;
 
         let name = self.parse_ident()?;
@@ -668,6 +758,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(ast::Enum {
+            visibility,
             name,
             options,
             reserved,

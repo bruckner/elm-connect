@@ -78,7 +78,21 @@ impl Context {
         let mut dependency = Vec::with_capacity(ast.imports.len());
         let mut public_dependency = Vec::new();
         let mut weak_dependency = Vec::new();
+        let mut option_dependency = Vec::new();
         for import in ast.imports {
+            if let Some((ast::ImportKind::Option, _)) = import.kind {
+                self.add_comments_for(
+                    &[
+                        tag::file::OPTION_DEPENDENCY,
+                        index_to_i32(option_dependency.len()),
+                    ],
+                    import.span,
+                    import.comments,
+                );
+                option_dependency.push(import.value);
+                continue;
+            }
+
             let index = index_to_i32(dependency.len());
 
             self.add_comments_for(
@@ -109,7 +123,7 @@ impl Context {
                     );
                     weak_dependency.push(index);
                 }
-                None => (),
+                Some((ast::ImportKind::Option, _)) | None => (),
             }
         }
 
@@ -180,7 +194,7 @@ impl Context {
             source_code_info: None,
             syntax,
             edition: None,
-            option_dependency: vec![],
+            option_dependency,
         }
     }
 
@@ -192,6 +206,7 @@ impl Context {
 
         DescriptorProto {
             name,
+            visibility: ast.visibility.map(generate_visibility),
             ..self.generate_message_body_descriptor(ast.body)
         }
     }
@@ -1036,7 +1051,7 @@ impl Context {
             }),
             reserved_range,
             reserved_name,
-            visibility: None,
+            visibility: ast.visibility.map(generate_visibility),
         }
     }
 
@@ -1334,4 +1349,11 @@ fn take_option(options: &mut Option<ast::OptionList>, name: &str) -> Option<ast:
     }
 
     None
+}
+
+fn generate_visibility((visibility, _): (ast::Visibility, Span)) -> i32 {
+    match visibility {
+        ast::Visibility::Export => prost_types::SymbolVisibility::VisibilityExport as i32,
+        ast::Visibility::Local => prost_types::SymbolVisibility::VisibilityLocal as i32,
+    }
 }
