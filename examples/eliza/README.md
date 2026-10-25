@@ -18,7 +18,7 @@ The generated modules were written from this directory with
 elm-connect gen -I proto connectrpc/eliza/v1/eliza.proto --streaming skip --out generated
 ```
 
-which leaves out the service's two streaming methods. To build and open
+which leaves out the service's two streaming methods. In this repository, `just eliza-gen` runs it with the CLI built from the checkout. To build and open
 the page:
 
 ```sh
