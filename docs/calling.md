@@ -151,10 +151,46 @@ connectGet =
 Transports built alike are `==`. `Rpc.Transport.name` gives
 `"connect"` or `"transcode"`, for logs.
 
+### Choosing the codec
+
+```elm src/Rpc/Transport.elm excerpt
+type Codec
+    = Json
+    | Proto
+withCodec : Codec -> Transport -> Transport
+codec : Transport -> Codec
+```
+
+Messages travel as proto3 JSON unless a Connect transport is given
+`Rpc.Transport.withCodec Rpc.Transport.Proto`: then a POST carries the
+request's protobuf binary as `application/proto`, a GET the query
+`connect=v1&base64=1&encoding=proto&message=…` with the binary in
+unpadded URL-safe base64, and a successful answer is read as binary,
+which must come as `application/proto` or with no content type. Error
+answers are JSON whatever the codec, as the protocol sends them, and are
+read as they are under `Json`. Binary needs the codecs the generator
+writes with `codec=both` (binary beside JSON, so either codec works) or
+`codec=binary` (binary alone, for Connect's proto codec only;
+[generator.md](generator.md)). Pick it for a server that serves only
+`application/proto`, for smaller messages (a 1,000-element repeated
+message takes 55 % fewer bytes than its JSON, 39 % fewer once both are
+gzipped), or to read error details that arrive
+without their JSON; JSON stays the readable default, which every
+transcoder takes and a browser's network panel shows.
+
+A call whose method lacks the codec the transport sends, one generated
+with JSON alone under `Proto` or with binary alone under `Json` or over
+transcoding, is not sent: it fails with
+`NoAnswer (MissingCodec { method, codec })`, code `Internal`, before any
+retry, rather than falling back to the other codec. `transcode` is JSON
+by definition, so `withCodec` leaves it as it is, as `withMaxGetUrl`
+does ([transcoding.md](transcoding.md)).
+
 ### Size limits
 
 `Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
-`n` bytes of UTF-8, on either transport, as connect-go's
+`n` bytes (of UTF-8, or of the binary under the proto codec), on either
+transport, as connect-go's
 `WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
 `NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
@@ -162,8 +198,8 @@ an error answer is still read for its status. The browser has received
 the body by then, so the limit bounds what is decoded and held, not what
 is downloaded.
 
-`Rpc.Transport.withWriteMaxBytes n` caps the request message's JSON the
-same way, as connect-go's `WithSendMaxBytes` and connect-node's
+`Rpc.Transport.withWriteMaxBytes n` caps the request message's JSON, or
+its binary under the proto codec, the same way, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` do: a call over it is never sent, and fails with
 `NoAnswer (RequestTooLarge { limit, size })`. Neither has a limit by
 default, as in connect-node; connect-go reads at most 4 MiB unless told
@@ -456,15 +492,19 @@ type Error
   `Unimplemented`; 429, 502, 503 and 504 are `Unavailable`).
 - `BadResponse`: the server answered with success, but the body did not
   decode as the response, as when the schema drifted between client and
-  server; code `Internal`, the message quoting elm/json's problem.
+  server, or under the proto codec came as another content type than
+  `application/proto`; code `Internal`, the message quoting elm/json's
+  problem or naming the content type.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
   how a browser's CORS refusal arrives), a `BadUrl` or an
   `InvalidHeader` (both `Internal`, and never sent), an
   `InvalidPathValue`, a transcoded call's path value its template
-  cannot match (`InvalidArgument`, never sent), or a request or
+  cannot match (`InvalidArgument`, never sent), a request or
   answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
-  both `ResourceExhausted`).
+  both `ResourceExhausted`), or a method without the codec the
+  transport sends (`MissingCodec`, `Internal`, never sent; see
+  [Choosing the codec](#choosing-the-codec)).
 
 The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
@@ -577,6 +617,7 @@ notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
 ```elm src/Rpc.elm excerpt
 request : Config -> Call req res -> Request
 response : Config -> Call req res -> Http.Response String -> Result Error res
+responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 ```
 
@@ -590,9 +631,21 @@ sends and how it reads an answer without a server
 `Rpc.taskFromRequest` sends a request in place of the call's own and
 reads the answer as the call's, with the config's retry policy.
 
+Under the proto codec a successful answer is binary, which text cannot
+hold (the browser has replaced what is not UTF-8 by then), so a call
+sent by hand reads its answer as bytes, with `Http.expectBytesResponse`
+and `Rpc.responseBytes`; read as text, it is a `BadResponse` naming
+`Rpc.responseBytes`. Under JSON both work, and `Rpc.response` is the one
+to pair with `Http.expectStringResponse`: the browser decodes the text
+natively, and a program that reads nothing as bytes carries no
+elm/bytes. `Rpc.Transport.codec` says which a config needs. A request's
+body is text (`Rpc.Body.toText`) or bytes (`Rpc.Body.toBytes`), sent as
+the type `Rpc.Body.contentType` gives.
+
 A request's `headers` are those the runtime and the config add, not all
-that go out: sending a request with a body adds
-`Content-Type: application/json`, which elm/http sets from the body, and
+that go out: sending a request with a body adds its `Content-Type`
+(`application/json`, or `application/proto` under the proto codec), which
+elm/http sets from the body, and
 the browser adds its own, so a test of `Rpc.request` sees neither.
 
 `Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
@@ -661,5 +714,5 @@ signed cfg call =
         |> Rpc.taskFromRequest cfg call
 ```
 
-A request's body is sent as `application/json`, which elm/http adds:
+A request's body is sent as its content type, which elm/http adds:
 `headers` does not list `Content-Type`.

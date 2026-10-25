@@ -9,21 +9,26 @@
 //! `messageNote : Proto.Message.Message Note` and `enumVisibility :
 //! Proto.Enum.Enum Visibility`, each built from its type's codecs,
 //! default and descriptor, and `registry : Proto.Registry.Registry`,
-//! built from the descriptors alone.
+//! built from the descriptors alone; under `codec=both`, also
+//! `binaryRegistry`, built from codecs alone, which the binary encoders
+//! write an `Any` with.
 
 use std::collections::BTreeSet;
 
+use super::binary::{PROTO_BINARY, bytes_name, well_known_codec};
+use super::field::value_shape;
+use super::scalar::Holding;
 use super::{
     Emitter, MessageShape, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD, PROTO_MESSAGE,
     PROTO_REGISTRY, RecordField, docs,
 };
 use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
+use crate::elm::build::{apply, inline_list, int, lambda, list, pipe, pvar, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
-    TypeRef,
+    TypeRef, WellKnown,
 };
-use crate::naming::{DESCRIPTOR_VALUE, REGISTRY};
+use crate::naming::{BINARY_REGISTRY, DESCRIPTOR_VALUE, ENCODER_ARGUMENT, REGISTRY};
 
 /// One field or oneof member of a message, as its descriptor module
 /// declares it.
@@ -268,6 +273,82 @@ impl Emitter {
         }
     }
 
+    /// `binaryRegistry : Proto.Registry.Registry`, under `codec=both`: the
+    /// conversion of each of the package's messages, and of each
+    /// well-known type they hold, from proto3 JSON to protobuf binary
+    /// (`Proto.Registry.withBinary`), after those of the generated packages
+    /// whose messages they hold. The binary encoders write an `Any` field
+    /// with it (`Proto.Binary.anyWith`), so that one holding a message's
+    /// JSON alone, as one read from proto3 JSON does, is written as the
+    /// message's binary.
+    ///
+    /// It is apart from `registry` and built from the codecs, not the
+    /// typed values, so that it brings no descriptors: a program that
+    /// encodes a message holding an `Any` keeps every message's JSON
+    /// decoder and binary encoder, and no more.
+    pub(super) fn binary_registry(&mut self, package: &Package) -> Decl {
+        let union = self.reference((PROTO_REGISTRY, "union"));
+        let imported: Vec<Expr> = packages_of_messages_held(package)
+            .into_iter()
+            .map(|module| self.generated_value(&module, BINARY_REGISTRY.to_owned()))
+            .collect();
+        let mut body = match imported
+            .into_iter()
+            .rev()
+            .reduce(|right, left| apply(union.clone(), [left, right]))
+        {
+            Some(registries) => registries,
+            None => self.reference((PROTO_REGISTRY, "empty")),
+        };
+        let with_binary = self.reference((PROTO_REGISTRY, "withBinary"));
+        for message in &package.messages {
+            let entry = apply(
+                with_binary.clone(),
+                [
+                    string(message.proto_full_name.clone()),
+                    var(message.decoder_name()),
+                    var(bytes_name(message.encoder_name())),
+                ],
+            );
+            body = pipe(body, entry);
+        }
+        for known in well_known_held(package) {
+            let decoder =
+                self.value_decoder(value_shape(&TypeRef::WellKnown(known), Holding::TEXT));
+            let codec = self.reference((PROTO_BINARY, well_known_codec(known, Holding::TEXT)));
+            let encoder = self.reference((PROTO_BINARY, "messageEncoder"));
+            // `Any`'s binary encoder writes with this registry, under a
+            // lambda, so that the value does not refer to itself directly.
+            let encode = if known == WellKnown::Any {
+                let with = self.reference((PROTO_BINARY, "anyWith"));
+                lambda(
+                    [pvar(ENCODER_ARGUMENT)],
+                    apply(
+                        encoder,
+                        [apply(with, [var(BINARY_REGISTRY)]), var(ENCODER_ARGUMENT)],
+                    ),
+                )
+            } else {
+                apply(encoder, [codec])
+            };
+            let entry = apply(
+                with_binary.clone(),
+                [string(known.proto_full_name().to_owned()), decoder, encode],
+            );
+            body = pipe(body, entry);
+        }
+        Decl::Value {
+            doc: Some(format!(
+                "The protobuf binary codecs of this package's messages, of those of the                  packages it imports and of the well-known types they hold, by full name:                  the binary encoders write a {} with it, so that one holding a message's                  JSON, as one read from proto3 JSON does, is written as the message's binary.",
+                docs::runtime("Proto.Any", "Any")
+            )),
+            name: BINARY_REGISTRY.to_owned(),
+            annotation: self.library_type(PROTO_REGISTRY, "Registry", []),
+            params: Vec::new(),
+            body,
+        }
+    }
+
     /// `Proto.Field.descriptor name jsonName number cardinality kind`,
     /// then a modifier for each property the field has beyond those: its
     /// oneof, its behavior, its deprecation. A field without any is the
@@ -380,6 +461,43 @@ fn imported_packages(package: &Package) -> BTreeSet<ModuleName> {
         .filter(|module| **module != package.module)
         .cloned()
         .collect()
+}
+
+/// The other generated packages whose messages the package's messages
+/// hold, as [`imported_packages`] finds them but for enums: a package of
+/// enums alone has no `binaryRegistry`.
+fn packages_of_messages_held(package: &Package) -> BTreeSet<ModuleName> {
+    held_types(package)
+        .filter_map(|ty| match ty {
+            TypeRef::Message(name) => Some(&name.module),
+            _ => None,
+        })
+        .filter(|module| **module != package.module)
+        .cloned()
+        .collect()
+}
+
+/// The well-known types the package's messages hold, in declaration order
+/// of [`WellKnown`].
+fn well_known_held(package: &Package) -> BTreeSet<WellKnown> {
+    held_types(package)
+        .filter_map(|ty| match ty {
+            TypeRef::WellKnown(known) => Some(*known),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The type of every field and oneof member of the package's messages.
+fn held_types(package: &Package) -> impl Iterator<Item = &TypeRef> {
+    package.messages.iter().flat_map(|message| {
+        message.fields.iter().map(|field| &field.ty).chain(
+            message
+                .oneofs
+                .iter()
+                .flat_map(|oneof| oneof.variants.iter().map(|variant| &variant.ty)),
+        )
+    })
 }
 
 /// The fields of a message's descriptor module, in declaration order:

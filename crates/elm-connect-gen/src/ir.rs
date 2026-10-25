@@ -606,7 +606,7 @@ pub enum MapKey {
 
 /// The `google.protobuf` types elm-connect maps (design §3.5). Every other
 /// `google.protobuf` type is a diagnostic instead.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WellKnown {
     /// `google.protobuf.Timestamp`
     Timestamp,

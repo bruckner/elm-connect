@@ -73,8 +73,6 @@ a second transport and a public interface designed to be kept.
   with `streaming=skip` is left out (§3.8). Server streaming is planned
   as a minor release ([roadmap.md](roadmap.md)); client and
   bidirectional streaming cannot be done from a browser.
-- Binary protobuf. JSON only. Users who need `application/proto` have
-  the existing stack; binary codecs are on the roadmap, as a minor.
 - gRPC-web; unary gRPC-Web, over the binary codecs, is on the roadmap.
 - proto2 syntax, and editions. A proto2 file to generate is
   `input::not_proto3`, under the CLI also when it does not parse, as a
@@ -326,9 +324,11 @@ rpc shared call =
   noun, and no helper shares a name with an elm/json function of
   another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
-  module imports an `Rpc` one, and `Rpc` reads two internal modules of
-  the `Proto` side, `Proto.Internal.Binding` and `Proto.Internal.Any`,
-  and no others, so that the codecs could become a package of their own
+  module imports an `Rpc` one, and `Rpc` reads three internal modules of
+  the `Proto` side, `Proto.Internal.Binding`, `Proto.Internal.Any` and
+  `Proto.Internal.Method` (for the bytes path a method with binary codecs
+  carries, whose types are therefore elm/core's, elm/bytes' and
+  elm/http's, §5.3), and no others, so that the codecs could become a package of their own
   without changing ([decisions.md](decisions.md#no-package-split)).
 - **Generated codecs are `encodeX` and `decodeX`.** A package module's codecs for a message or enum are the
   pair `encodeNote : Note -> Json.Encode.Value` and
@@ -1773,6 +1773,22 @@ registry =
   never builds a value with binary codecs carries none of their code.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them.
+- **`Any` fields** are written, under `both`, with
+  `Proto.Binary.anyWith binaryRegistry` (§5.5): `binaryRegistry`, beside
+  `registry` in the package's module, holds the conversion of each of the
+  package's messages (`Proto.Registry.withBinary "notes.v1.Note"
+  decodeNote encodeNoteBytes`) and of each well-known type they hold from
+  proto3 JSON to binary, after the `binaryRegistry` of each package whose
+  messages they hold, so that an `Any` read from proto3 JSON is written
+  as its message's binary. It is a value apart from `registry`, built
+  from codecs rather than typed values, so that neither brings the
+  other's code: a program that writes a message holding an `Any` keeps
+  every message's JSON decoder and binary encoder, and no descriptors;
+  one that reads descriptors keeps no codecs. An `Any` is read with
+  plain `Proto.Binary.any`, which needs no conversion, so a program that
+  only reads binary keeps none of them. Under `binary`, which has no
+  JSON decoders, `Any` fields take `Proto.Binary.any`, which writes an
+  `Any` holding JSON alone with its type URL alone.
 - **Checked** by the binary round trips (§7) and the corpus cases
   `codec_both` (the codec protos under `codec=both`) and
   `codec_binary`.
@@ -1891,7 +1907,10 @@ keeps.
   Under `codec=both` the method is given its binary codecs by
   `|> Proto.Method.withBinary`, the request type's `encode…Bytes` and
   the response type's `decode…Bytes`; under `codec=binary` it is built
-  by `Proto.Method.methodBinary` from those alone (§3.10).
+  by `Proto.Method.methodBinary` from those alone (§3.10). `withBinary`
+  builds the method's bytes path there, as closures in the method's
+  value (§5.3, the proto codec), so only a program whose methods have
+  binary codecs carries it.
   The descriptor's name is `descriptor` followed by the method's Elm
   name with its first letter uppercased, so a `rename` renames both. No
   `Proto.Method.Method` value is generated; `Rpc.Call.method` and
@@ -2353,6 +2372,7 @@ type alias Request = Rpc.Request.Request
 type alias Response = Rpc.Response.Response
 request : Config -> Call req res -> Request
 response : Config -> Call req res -> Http.Response String -> Result Error res
+responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Config -> Call req res -> Request -> Task Error res
 splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
 ```
@@ -2362,9 +2382,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   stable JSON form for logs, deduplication keys and queues.
 - The codecs are the method's, read by `Proto.Method.encodeRequest`
   and `responseDecoder` (the typed values' `Proto.Message.encode` and
-  `decoder` for `Any` and error details). Another encoding's codecs
-  would arrive as a modifier of the opaque `Method` and `Message`
-  (§3.9), not as a field beside these (roadmap: binary protobuf).
+  `decoder` for `Any` and error details), and its binary codecs, given
+  by the modifier `Proto.Method.withBinary` (§3.10), read by
+  `encodeRequestBytes` and `responseBytesDecoder`.
 - A call's modifiers and readers live in `Rpc.Call`, the module its
   type is named in, as each opaque type has its own; `Rpc.call`, the
   constructor generated code applies, stays in `Rpc` beside an alias
@@ -2384,13 +2404,22 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `Request` is the data form of the record `Http.request` takes,
   without `expect` and `tracker`: elm/http has no request value of its
   own, and its headers and body are opaque. Headers are pairs, the body
-  an opaque `Rpc.Body` (`none`, `text`, read by `toText`), and
-  `withCredentials` picks `Http.request` or `Http.riskyRequest`. It
-  stays a record, so a rewriter changes it with record syntax, and is
-  frozen. The body is an opaque `Body` so that the bytes that streaming
-  envelopes, gRPC-web, binary protobuf and compression need can arrive
-  as another kind of `Body` (`bytes`), a minor, rather than as a field
-  (roadmap).
+  an opaque `Rpc.Body` (`none`, `text`, `bytes` and `bytesAs` for a
+  content type of its own, read by `toText`, `toBytes` and
+  `contentType`), and `withCredentials` picks `Http.request` or
+  `Http.riskyRequest`. It stays a record, so a rewriter changes it with
+  record syntax, and is frozen. `toText` is text only: bytes are never
+  read as text, so a body's kind is never guessed. The body is opaque so
+  that the kinds streaming envelopes and compression need can arrive as
+  more constructors, a minor, rather than as fields (roadmap).
+- `response` reads an answer elm/http read as text, `responseBytes` one
+  read as bytes (`Http.expectBytesResponse`): under the proto codec a
+  successful answer is protobuf binary, which text cannot hold, since
+  the browser has replaced what is not UTF-8 by then. Two functions
+  rather than one reading bytes: a JSON answer read as text is decoded
+  by the browser, natively, and a program that reads none as bytes
+  carries no elm/bytes. `send`, `task` and `taskTraced` pick the one the
+  call's codec needs.
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
@@ -2509,9 +2538,62 @@ all 40 passing.
 - Bindings are carried on the call and ignored, `viaBinding` too:
   Connect has one route per method.
 - The runtime's dependencies beyond core, json and time: elm/http
-  (which brings elm/bytes and elm/file). Percent-encoding is written out
+  (which brings elm/bytes and elm/file), and elm/bytes for the binary
+  codecs. Percent-encoding is written out
   in the runtime rather than taken from elm/url, whose `percentEncode`
   keeps `!*'()`, which the transcoding rules require escaped.
+
+#### The proto codec
+
+`Rpc.Transport.withCodec Proto` sends Connect's proto codec; `Json`, the
+default, is everything above. Run by the live suite against connect-go
+(`cases/proto.json`: every method, the five ways of sending, errors with
+details, both size limits, GET), and by the Connect conformance suite's
+unary test cases with the proto codec (§7).
+
+- **The setting is data.** The codec is a flag in the `Connect`
+  transport's options, so transports built alike are still `==` and a
+  config holds no function (§5.1). `withCodec` leaves `transcode` as it
+  is, as `withMaxGetUrl` does: transcoding is JSON by definition, and so
+  is the implicit route.
+- **Requests.** A POST carries `Proto.Binary.encode` of the request as an
+  `application/proto` body (`Rpc.Body.bytes`). A GET carries
+  `?connect=v1&base64=1&encoding=proto&message=<base64>`, the binary in
+  unpadded URL-safe base64, in the order the protocol recommends; the
+  base64 is computed only for a call that goes as a GET.
+- **Answers.** A 200 is the response's protobuf binary, read as bytes,
+  and must come as `application/proto` or with no content type, or it is
+  a `BadResponse` keeping the bytes. Any other answer is the protocol's
+  JSON error, decoded as UTF-8 and read as under `Json` (§5.4), so errors
+  are JSON whatever the codec. `withReadMaxBytes` measures the answer's
+  bytes, `withWriteMaxBytes` the request's binary, encoded only when a
+  limit is set. A trace gives a bytes request body as `body: null` and
+  `bodyBase64`.
+- **`MissingCodec`.** A call of a method without binary codecs under
+  `Proto`, or of one with binary codecs alone (`codec=binary`) under
+  `Json` or over transcoding, is `NoAnswer (MissingCodec { method,
+  codec })`, `Internal`, refused before the retry loop runs and before
+  any other check, since no attempt could succeed and the method has no
+  message to read path values from. It is not a fallback to the other
+  codec: a call that silently changed codec would change what the server
+  sees.
+- **The bytes path lives in the method.** `Proto.Method.withBinary`
+  builds, from the method's binary codecs, closures in its value: the
+  request as Connect sends it (the POST body, and the GET's base64 behind
+  a thunk), the write-limit check, the reading of a binary answer, and a
+  body's base64 for a trace; `Proto.Message.withBinary` builds an `Any`'s
+  base64 halves likewise. `Rpc` reaches them only through a method under
+  the proto codec. Elm's dead-code elimination is by reference, so a
+  program whose methods carry no binary codecs reaches no
+  `Proto.Binary`, no `Proto.Bytes` and none of elm/bytes, whose kernel
+  comes whole with a single `Bytes.width` anywhere on the generic path.
+  What such a program still pays, a few hundred bytes gzipped, is the
+  setting itself: the codec dispatch and the `MissingCodec` check, the
+  bytes kind of `Body` and the choice between a text and a bytes answer,
+  and `Any`'s binary-aware payload. Nothing below it could carry less
+  while the codec stays a transport setting chosen at run time; choosing
+  it where the method is built would be a different public shape
+  (decisions.md: the codec is a transport setting).
 
 #### Transcode
 
@@ -2822,15 +2904,17 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `Any` objects; a Connect body as `{"type": <name>, "value": <base64
   binary>, "debug": <JSON, optional>}`, read as an `Any` of that type
   (`type.googleapis.com/` prefixed unless the name holds a `/`) whose
-  payload is `debug` when present and the binary alone otherwise. Each
+  payload is `debug` beside the binary when present and the binary alone
+  otherwise. Each
   detail is read in either form whichever body it came in, the proto3
   form first; one in neither form is left out rather than losing the
   error's code and message with it.
 - `Rpc.Error.details : Proto.Message.Message a -> Error -> List a` gives
   the details that are of that type and decode, in order; only an
-  `RpcStatus` error has any. A binary-only detail never decodes: details meant for
-  this client need their JSON on the wire, as `debug` in a Connect body
-  or, as always, in a `google.rpc.Status` body.
+  `RpcStatus` error has any. A binary-only detail decodes with a message
+  that has binary codecs (`codec=both`); for one without, details meant
+  for this client need their JSON on the wire, as `debug` in a Connect
+  body or, as always, in a `google.rpc.Status` body.
 
 ### 5.5 The binary wire format
 
@@ -2842,8 +2926,8 @@ a handful of field helpers that binary codecs are written with
 read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `dict`, `boolMap` to write). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
-codecs against it under `codec=binary` or `codec=both` (§3.10); no
-transport sends them yet (roadmap: binary protobuf).
+codecs against it under `codec=binary` or `codec=both` (§3.10), and
+Connect's proto codec sends them (§5.3).
 
 - **A decoder knows its length.** elm/bytes has no end-of-input test,
   no position and no backtracking, so a decoder cannot find where a
@@ -2893,11 +2977,21 @@ transport sends them yet (roadmap: binary protobuf).
   message read and written again loses them (roadmap: unknown fields).
   A group, field number 0, a length past the end of its message and a
   varint longer than ten bytes fail the decode.
-- **`Any`**, read, holds the packed message's binary. Written, an `Any`
-  holding binary writes it back; one holding a well-known type's JSON
-  form (read from proto3 JSON) is converted to binary; one holding
-  another message's JSON is written with its type URL alone, since that
-  message's binary encoder is not at hand.
+- **`Any`**, read, holds the packed message's binary, which
+  `Proto.Any.unpack` decodes with a message that has binary codecs
+  (`Problem.Binary` when it does not decode). `Proto.Any.pack` of such a
+  message keeps its binary beside its JSON, so the `Any` is written in
+  either form, and so does a Connect error detail with `debug`. Written,
+  an `Any` holding binary writes it back. One holding a message's JSON
+  alone, as one read from proto3 JSON does, needs the message's codecs
+  to be written as binary: `Proto.Binary.anyWith registry` takes them
+  from a registry (`Proto.Registry.withBinary`), as generated code does
+  with its package's `binaryRegistry` (§3.10), and writes the type URL
+  alone for a type the registry lacks; plain `any` has none. The
+  conversion, the well-known types' included, is in the registry rather
+  than in the writer, so a program pays for the JSON decoders only of
+  the types its registry lists: a program generated with `codec=binary`
+  reaches no `Proto.Json` and no `Proto.Timestamp` through an `Any`.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
 

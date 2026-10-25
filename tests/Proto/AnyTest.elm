@@ -86,6 +86,9 @@ outcome =
 
                     BinaryOnly ->
                         "binary only"
+
+                    Binary ->
+                        "binary"
             )
         )
 

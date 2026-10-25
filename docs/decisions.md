@@ -618,6 +618,29 @@ client has one: an Elm program also runs headless under Node, between
 connect-web and connect-node, and server streaming will check each
 message against the same limit. Where: design §1, §5.1, §5.4.
 
+### The codec is a transport setting
+
+*2026-10-25.*
+
+Connect's proto codec is chosen by `Rpc.Transport.withCodec`, as
+connect-go and connect-es choose a codec on the client or transport, not
+per call (`Rpc.Call.withCodec`, more surface for the same code) and not
+by the generator option alone (`codec=binary|both` says which codecs
+exist, so `both` can still send either). It is a flag in the transport's
+options, so a config stays data and transports built alike are `==`; the
+code that writes and reads binary is in closures that
+`Proto.Method.withBinary` builds into a method, so a program without
+binary codecs carries none of it. Such a program pays a few hundred
+bytes gzipped for the setting itself, the dispatch, the bytes kind of
+`Rpc.Body` and `Any`'s payload (design §5.3). A method without the
+codec the transport sends is `NoAnswer (MissingCodec { method, codec
+})`, reserved in `Rpc.Error.Reason` before 1.0 freezes it; falling back
+to the other codec was rejected, since a call would then change what
+the server sees without saying so. The answer of a call read by hand
+is `Rpc.responseBytes` beside `Rpc.response`, so that text answers stay
+decoded by the browser and elm/bytes stays out of JSON-only programs.
+Where: design §5.2, §5.3, §5.4.
+
 ### `Proto.Field.Behavior` keeps unknown numbers
 
 *2026-10-21.*

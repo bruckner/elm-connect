@@ -1,4 +1,4 @@
-module Rpc.Internal.Answer exposing (toResult)
+module Rpc.Internal.Answer exposing (binaryReader, toResult, toResultBytes)
 
 {-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
 stands for, from a Connect error body, a `google.rpc.Status` body or gRPC
@@ -7,12 +7,14 @@ status headers, whatever the transport. Not exposed; it is what
 as API.
 -}
 
+import Bytes exposing (Bytes)
 import Dict
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
+import Proto.Internal.Method exposing (Read(..))
 import Proto.Json
 import Proto.Method as Method
 import Rpc.Body
@@ -21,7 +23,7 @@ import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Route exposing (Route(..), route)
-import Rpc.Internal.Transport exposing (Transport(..))
+import Rpc.Internal.Transport as Transport exposing (Transport(..))
 import Rpc.Response exposing (Response)
 
 
@@ -34,11 +36,18 @@ toResult transport ((Call fields) as c) answer =
         Http.GoodStatus_ metadata raw ->
             case ( transport, route transport c ) of
                 ( Connect _, _ ) ->
-                    if metadata.statusCode == 200 then
-                        within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
+                    if metadata.statusCode /= 200 then
+                        Err (failure metadata raw)
 
                     else
-                        Err (failure metadata raw)
+                        case Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method of
+                            Just _ ->
+                                -- Text cannot hold protobuf binary faithfully:
+                                -- the browser has replaced what is not UTF-8.
+                                Err (Error.BadResponse "a protobuf binary answer is read as bytes (Rpc.responseBytes)" (answerOf metadata raw))
+
+                            Nothing ->
+                                within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
 
                 ( Transcode _, Bound _ rule ) ->
                     within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
@@ -59,13 +68,86 @@ toResult transport ((Call fields) as c) answer =
             Err (Error.NoAnswer Error.NetworkError)
 
 
+{-| What an answer read as bytes means. Over Connect's proto codec a
+successful answer is the response's protobuf binary, and every other answer
+is JSON, read as `toResult` reads it; under any other codec the bytes are the
+answer's text.
+-}
+toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error res
+toResultBytes transport c answer =
+    case binaryReader transport c of
+        Just read ->
+            read answer
+
+        Nothing ->
+            toResult transport c (asText answer)
+
+
+{-| How a call's answer is read as bytes, when it is sent so: over Connect's
+proto codec, by a method with binary codecs. The reader is the method's own
+(`Proto.Method.withBinary` built it), so only a program with binary codecs
+carries it.
+-}
+binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> Result Error res)
+binaryReader transport ((Call fields) as c) =
+    Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method
+        |> Maybe.map
+            (\binary answer ->
+                case binary.read (Transport.readMaxBytes transport) answer of
+                    Read value ->
+                        Ok value
+
+                    TooLong over ->
+                        Err (Error.NoAnswer (Error.ResponseTooLarge over))
+
+                    NotBinary problem metadata raw ->
+                        Err (Error.BadResponse problem (bytesAnswer metadata raw))
+
+                    AsText text ->
+                        toResult transport c text
+            )
+
+
+{-| An answer of bytes as an error keeps it.
+-}
+bytesAnswer : Http.Metadata -> Bytes -> Response
+bytesAnswer metadata raw =
+    { url = metadata.url
+    , statusCode = metadata.statusCode
+    , statusText = metadata.statusText
+    , headers = metadata.headers
+    , body = Rpc.Body.bytes raw
+    }
+
+
+{-| An answer of bytes as UTF-8 text.
+-}
+asText : Http.Response Bytes -> Http.Response String
+asText answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            Http.GoodStatus_ metadata (Internal.bytesText raw)
+
+        Http.BadStatus_ metadata raw ->
+            Http.BadStatus_ metadata (Internal.bytesText raw)
+
+        Http.BadUrl_ url ->
+            Http.BadUrl_ url
+
+        Http.Timeout_ ->
+            Http.Timeout_
+
+        Http.NetworkError_ ->
+            Http.NetworkError_
+
+
 {-| A successful answer's body read by `decode`, unless it is longer than the
 transport reads: then it is dropped unread, and the call fails with
 `ResponseTooLarge`.
 -}
 within : Transport -> String -> (() -> Result Error res) -> Result Error res
 within transport raw decode =
-    case Rpc.Internal.Transport.readMaxBytes transport of
+    case Transport.readMaxBytes transport of
         Just limit ->
             case Internal.overLimit limit raw of
                 Just size ->
@@ -216,7 +298,8 @@ detailList =
 
 {-| A Connect error detail: the message's full name as `type`, its protobuf
 binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
-holds when present. Without it the `Any` holds the binary alone.
+holds beside the binary when present. Without it the `Any` holds the binary
+alone.
 -}
 connectDetail : Decoder Any
 connectDetail =
@@ -231,7 +314,7 @@ connectDetail =
                 )
                 (case debug of
                     Just json ->
-                        Proto.Internal.Any.InJson json
+                        Proto.Internal.Any.InBoth json binary
 
                     Nothing ->
                         Proto.Internal.Any.InBinary binary

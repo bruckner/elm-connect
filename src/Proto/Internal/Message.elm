@@ -23,9 +23,13 @@ type Message descriptor a
 
 
 {-| The protobuf binary codecs, which `Proto.Message.withBinary` and
-`Proto.Message.messageBinary` give.
+`Proto.Message.messageBinary` give, and a value's binary as base64 and back,
+which an `Any` holds. Only a message with binary codecs carries that code, so
+a program without any carries none of it.
 -}
 type alias Binary a =
     { encode : a -> Bytes.Encode.Encoder
     , decoder : Proto.Internal.Binary.Decoder a
+    , toBase64 : a -> String
+    , fromBase64 : String -> Maybe a
     }

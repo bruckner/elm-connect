@@ -15,8 +15,8 @@ For each sample:
     JSON the value read from the canonical JSON writes (an `Any` aside: one
     read from binary holds its packed message's binary);
   - and the value read from the canonical JSON encodes as the same bytes,
-    but where it holds an `Any`, whose JSON the binary encoder cannot write
-    as binary.
+    an `Any` holding JSON among them: the package's registry has the binary
+    codecs of every message and well-known type a sample packs.
 
 -}
 
@@ -123,16 +123,9 @@ sampleTests codec sample =
                                         )
                     , test "the canonical JSON encodes as the binary" <|
                         \_ ->
-                            case sample.binaryJson of
-                                Just _ ->
-                                    -- It holds an Any, which the binary
-                                    -- encoder writes with its type URL alone.
-                                    Expect.pass
-
-                                Nothing ->
-                                    fromJson sample.canonical
-                                        |> Result.map toHex
-                                        |> Expect.equal (Ok sample.binary)
+                            fromJson sample.canonical
+                                |> Result.map toHex
+                                |> Expect.equal (Ok sample.binary)
                     ]
            )
 

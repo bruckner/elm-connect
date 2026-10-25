@@ -31,21 +31,6 @@ JSON array by default, newline-delimited JSON with
 `Rpc.Transport`, so it is a minor too, and it comes with server
 streaming over Connect, not before.
 
-## Binary protobuf
-
-`application/proto` bodies instead of JSON. The wire format is in the
-runtime, `Proto.Binary` ([design §5.5](design.md#55-the-binary-wire-format)),
-and the generator writes binary codecs beside the JSON ones under
-`codec=both`, or alone under `codec=binary`, attached to the
-`Proto.Message.Message` and `Proto.Method.Method` values by `withBinary`
-([design §3.10](design.md#310-binary-codecs)); the default output is
-unchanged. What remains is the transport: a bytes kind of `Rpc.Body`, a
-codec setting on `Rpc.Transport` that sends Connect's proto codec, an
-answer read as bytes, and the binary payload of an `Any` holding a
-message that is not well known. A minor. The codecs do not reuse
-elm-protocol-buffers' types, so that another package's major never
-forces one here.
-
 ## Unknown fields
 
 A field a decoder does not know is skipped, in proto3 JSON and in
@@ -62,9 +47,11 @@ field, a minor. Two protobuf conformance cases need it.
 ## gRPC-Web, unary
 
 The protocol elm-grpc speaks, for servers that serve gRPC-Web and not
-Connect. It is a setting on `Rpc.Transport` over the binary codec,
-plus reading gRPC-Web's frames and trailers out of a whole response
-body. A minor, after binary protobuf.
+Connect. It is a transport of its own, `Rpc.Transport.grpcWeb`, over
+the binary codecs Connect's proto codec already sends
+([calling.md](calling.md#choosing-the-codec)), plus reading gRPC-Web's
+frames and trailers out of a whole response body. A minor; it is the
+next one planned.
 
 ## Editions and proto2
 

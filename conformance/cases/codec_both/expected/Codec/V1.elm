@@ -900,6 +900,44 @@ registry =
         (Proto.Registry.union Codec.Other.V1.registry Proto.Registry.wellKnown)
 
 
+{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.1.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+-}
+binaryRegistry : Proto.Registry.Registry
+binaryRegistry =
+    Codec.Other.V1.binaryRegistry
+        |> Proto.Registry.withBinary "codec.v1.Scalars" decodeScalars encodeScalarsBytes
+        |> Proto.Registry.withBinary "codec.v1.Optionals" decodeOptionals encodeOptionalsBytes
+        |> Proto.Registry.withBinary "codec.v1.Repeated" decodeRepeated encodeRepeatedBytes
+        |> Proto.Registry.withBinary "codec.v1.Maps" decodeMaps encodeMapsBytes
+        |> Proto.Registry.withBinary "codec.v1.Choice" decodeChoice encodeChoiceBytes
+        |> Proto.Registry.withBinary "codec.v1.Names" decodeNames encodeNamesBytes
+        |> Proto.Registry.withBinary "codec.v1.Outer" decodeOuter encodeOuterBytes
+        |> Proto.Registry.withBinary "codec.v1.Outer.Inner" decodeOuterInner encodeOuterInnerBytes
+        |> Proto.Registry.withBinary "codec.v1.Tree" decodeTree encodeTreeBytes
+        |> Proto.Registry.withBinary "codec.v1.WellKnown" decodeWellKnown encodeWellKnownBytes
+        |> Proto.Registry.withBinary "codec.v1.Wrappers" decodeWrappers encodeWrappersBytes
+        |> Proto.Registry.withBinary "codec.v1.Across" decodeAcross encodeAcrossBytes
+        |> Proto.Registry.withBinary "codec.v1.Leaf" decodeLeaf encodeLeafBytes
+        |> Proto.Registry.withBinary "codec.v1.Everything" decodeEverything encodeEverythingBytes
+        |> Proto.Registry.withBinary "google.protobuf.Timestamp" Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp)
+        |> Proto.Registry.withBinary "google.protobuf.Duration" Proto.Json.duration (Proto.Binary.messageEncoder Proto.Binary.duration)
+        |> Proto.Registry.withBinary "google.protobuf.FieldMask" Proto.Json.fieldMask (Proto.Binary.messageEncoder Proto.Binary.fieldMask)
+        |> Proto.Registry.withBinary "google.protobuf.Empty" Proto.Json.empty (Proto.Binary.messageEncoder Proto.Binary.empty)
+        |> Proto.Registry.withBinary "google.protobuf.Any" Proto.Json.any (\value -> Proto.Binary.messageEncoder (Proto.Binary.anyWith binaryRegistry) value)
+        |> Proto.Registry.withBinary "google.protobuf.Struct" Proto.Json.struct (Proto.Binary.messageEncoder Proto.Binary.struct)
+        |> Proto.Registry.withBinary "google.protobuf.Value" Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value)
+        |> Proto.Registry.withBinary "google.protobuf.ListValue" Proto.Json.listValue (Proto.Binary.messageEncoder Proto.Binary.listValue)
+        |> Proto.Registry.withBinary "google.protobuf.DoubleValue" Proto.Json.float (Proto.Binary.messageEncoder Proto.Binary.doubleValue)
+        |> Proto.Registry.withBinary "google.protobuf.FloatValue" Proto.Json.float (Proto.Binary.messageEncoder Proto.Binary.floatValue)
+        |> Proto.Registry.withBinary "google.protobuf.Int64Value" Proto.Json.int64 (Proto.Binary.messageEncoder Proto.Binary.int64Value)
+        |> Proto.Registry.withBinary "google.protobuf.UInt64Value" Proto.Json.uint64 (Proto.Binary.messageEncoder Proto.Binary.uint64Value)
+        |> Proto.Registry.withBinary "google.protobuf.Int32Value" Proto.Json.int32 (Proto.Binary.messageEncoder Proto.Binary.int32Value)
+        |> Proto.Registry.withBinary "google.protobuf.UInt32Value" Proto.Json.uint32 (Proto.Binary.messageEncoder Proto.Binary.uint32Value)
+        |> Proto.Registry.withBinary "google.protobuf.BoolValue" Json.Decode.bool (Proto.Binary.messageEncoder Proto.Binary.boolValue)
+        |> Proto.Registry.withBinary "google.protobuf.StringValue" Json.Decode.string (Proto.Binary.messageEncoder Proto.Binary.stringValue)
+        |> Proto.Registry.withBinary "google.protobuf.BytesValue" Proto.Json.bytes (Proto.Binary.messageEncoder Proto.Binary.bytesValue)
+
+
 
 -- ENCODERS
 
@@ -1841,7 +1879,7 @@ encodeTreeLinkBytes value =
 encodeWellKnownBytes : WellKnown -> Bytes.Encode.Encoder
 encodeWellKnownBytes value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional Proto.Binary.any 1 value.any
+        [ Proto.Binary.optional (Proto.Binary.anyWith binaryRegistry) 1 value.any
         , Proto.Binary.optional Proto.Binary.struct 2 value.struct
         , Proto.Binary.optional Proto.Binary.listValue 3 value.list
         , Proto.Binary.optional Proto.Binary.value 4 value.value
@@ -1849,7 +1887,7 @@ encodeWellKnownBytes value =
         , Proto.Binary.optional Proto.Binary.duration 6 value.duration
         , Proto.Binary.optional Proto.Binary.fieldMask 7 value.mask
         , Proto.Binary.present Proto.Binary.empty 8 value.empty
-        , Proto.Binary.list Proto.Binary.any 9 value.anys
+        , Proto.Binary.list (Proto.Binary.anyWith binaryRegistry) 9 value.anys
         , Proto.Binary.list Proto.Binary.value 10 value.values
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 11 value.valueMap
         , Proto.Binary.list Proto.Binary.timestamp 12 value.timestamps

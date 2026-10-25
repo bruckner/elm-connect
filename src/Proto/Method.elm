@@ -40,12 +40,17 @@ any other union.
 
 -}
 
+import Bytes
+import Bytes.Decode
 import Bytes.Encode
+import Dict
+import Http
 import Json.Decode
 import Json.Encode
 import Proto.Binary
+import Proto.Bytes
 import Proto.Http exposing (Binding)
-import Proto.Internal.Method as Internal
+import Proto.Internal.Method as Internal exposing (Read(..))
 
 
 {-| A method taking a `req` and answering a `res`. It is opaque: built by
@@ -109,7 +114,7 @@ method encode decoder methodDescriptor =
 -}
 withBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method req res -> Method req res
 withBinary encodeBinary binaryDecoder (Internal.Method m) =
-    Internal.Method { m | binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder } }
+    Internal.Method { m | binary = Just (binary encodeBinary binaryDecoder (output m.descriptor)) }
 
 
 {-| A method with protobuf binary codecs alone, as generated code under
@@ -123,9 +128,158 @@ methodBinary encodeBinary binaryDecoder methodDescriptor =
         { encodeRequest = \_ -> Json.Encode.null
         , responseDecoder = Json.Decode.fail (name methodDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
         , descriptor = methodDescriptor
-        , binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder }
+        , binary = Just (binary encodeBinary binaryDecoder (output methodDescriptor))
         , json = False
         }
+
+
+{-| The binary codecs and the bytes path Connect's proto codec takes with
+them. They are built here, under `withBinary`, so that a program without
+binary codecs carries none of that code, nor elm/bytes': a single
+`Bytes.width` on the path every call takes would bring its kernel whole.
+-}
+binary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> String -> Internal.Binary req res
+binary encodeBinary binaryDecoder responseName =
+    { encodeRequest = encodeBinary
+    , responseDecoder = binaryDecoder
+    , message =
+        \value ->
+            let
+                bytes =
+                    Proto.Binary.encode encodeBinary value
+            in
+            { bytes = bytes, base64Url = \() -> base64Url (Proto.Bytes.toBase64 bytes) }
+    , tooLarge =
+        \limit value ->
+            limit
+                |> Maybe.andThen
+                    (\most ->
+                        let
+                            size =
+                                Bytes.width (Proto.Binary.encode encodeBinary value)
+                        in
+                        if size > max 0 most then
+                            Just { limit = most, size = size }
+
+                        else
+                            Nothing
+                    )
+    , read = read binaryDecoder responseName
+    , base64 = Proto.Bytes.toBase64
+    }
+
+
+{-| A 200 must come as `application/proto` or with no content type; every
+other answer is text.
+-}
+read : Proto.Binary.Decoder res -> String -> Maybe Int -> Http.Response Bytes.Bytes -> Read res
+read binaryDecoder responseName limit answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            if metadata.statusCode /= 200 then
+                AsText (Http.GoodStatus_ metadata (text raw))
+
+            else
+                case contentType metadata of
+                    Just other ->
+                        if other == "application/proto" then
+                            readBinary binaryDecoder responseName limit metadata raw
+
+                        else
+                            NotBinary ("content-type " ++ other ++ ", not application/proto") metadata raw
+
+                    Nothing ->
+                        readBinary binaryDecoder responseName limit metadata raw
+
+        Http.BadStatus_ metadata raw ->
+            AsText (Http.BadStatus_ metadata (text raw))
+
+        Http.BadUrl_ url ->
+            AsText (Http.BadUrl_ url)
+
+        Http.Timeout_ ->
+            AsText Http.Timeout_
+
+        Http.NetworkError_ ->
+            AsText Http.NetworkError_
+
+
+readBinary : Proto.Binary.Decoder res -> String -> Maybe Int -> Http.Metadata -> Bytes.Bytes -> Read res
+readBinary binaryDecoder responseName limit metadata raw =
+    let
+        size =
+            Bytes.width raw
+    in
+    case limit of
+        Just most ->
+            if size > max 0 most then
+                TooLong { limit = most, size = size }
+
+            else
+                decodeBinary binaryDecoder responseName metadata raw
+
+        Nothing ->
+            decodeBinary binaryDecoder responseName metadata raw
+
+
+decodeBinary : Proto.Binary.Decoder res -> String -> Http.Metadata -> Bytes.Bytes -> Read res
+decodeBinary binaryDecoder responseName metadata raw =
+    case Proto.Binary.decode binaryDecoder raw of
+        Just value ->
+            Read value
+
+        Nothing ->
+            NotBinary ("the body is not a " ++ responseName ++ " in protobuf binary") metadata raw
+
+
+{-| Bytes as UTF-8 text; `""` when they are not UTF-8.
+-}
+text : Bytes.Bytes -> String
+text raw =
+    Bytes.Decode.decode (Bytes.Decode.string (Bytes.width raw)) raw
+        |> Maybe.withDefault ""
+
+
+{-| The answer's content type without its parameters, lowercased, whatever
+the header name's case.
+-}
+contentType : Http.Metadata -> Maybe String
+contentType metadata =
+    metadata.headers
+        |> Dict.toList
+        |> List.filter (\( k, _ ) -> String.toLower k == "content-type")
+        |> List.head
+        |> Maybe.map
+            (\( _, value ) ->
+                String.split ";" value
+                    |> List.head
+                    |> Maybe.withDefault ""
+                    |> String.trim
+                    |> String.toLower
+            )
+
+
+{-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
+binary.
+-}
+base64Url : String -> String
+base64Url =
+    String.foldr
+        (\char done ->
+            case char of
+                '+' ->
+                    String.cons '-' done
+
+                '/' ->
+                    String.cons '_' done
+
+                '=' ->
+                    done
+
+                _ ->
+                    String.cons char done
+        )
+        ""
 
 
 {-| The request's protobuf binary encoder, when the method has one.
@@ -143,7 +297,8 @@ responseBytesDecoder (Internal.Method m) =
 
 
 {-| Whether the method has proto3 JSON codecs: `False` for one built with
-[`methodBinary`](#methodBinary).
+[`methodBinary`](#methodBinary), whose calls only Connect's proto codec
+([`Rpc.Transport.withCodec`](Rpc-Transport#withCodec)) can send.
 -}
 hasJson : Method req res -> Bool
 hasJson (Internal.Method m) =
