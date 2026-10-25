@@ -142,7 +142,9 @@ pub fn generate_with_imports(
                     files.push(file(&descriptors));
                 }
                 for service in package.services.iter().filter(|s| !s.methods.is_empty()) {
-                    files.push(file(&emit::emit_service(package, service, options)));
+                    files.push(file(&emit::emit_service(
+                        package, service, options, &packages,
+                    )));
                 }
             }
             Err(reserved) => {

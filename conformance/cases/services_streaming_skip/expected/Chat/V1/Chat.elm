@@ -33,13 +33,17 @@ Described by [`descriptorSend`](#descriptorSend).
 send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call
-        (Proto.Method.method Chat.V1.encodeLine
-            Chat.V1.decodeLine
-            descriptorSend
+        (Proto.Method.methodWith
+            { encode = Chat.V1.encodeLine
+            , decode = Chat.V1.decodeLine
+            , descriptor = descriptorSend
+            , routes = []
+            }
         )
 
 
 
+-- ROUTES
 -- DESCRIPTORS
 
 

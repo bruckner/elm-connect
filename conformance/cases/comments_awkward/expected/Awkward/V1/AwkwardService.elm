@@ -18,6 +18,7 @@ import Proto.Json
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -49,10 +50,34 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorPing
+        (Proto.Method.methodWith
+            { encode = Proto.Json.encodeEmpty
+            , decode = Proto.Json.empty
+            , descriptor = descriptorPing
+            , routes =
+                [ { route = routePing0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`ping`](#ping): `HEAD /v1/ping`.
+-}
+routePing0 : () -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routePing0 request_ =
+    ( { method = "HEAD"
+      , path = "v1/ping"
+      , query = []
+      , body = Nothing
+      }
+    , Nothing
+    )
 
 
 
@@ -77,15 +102,22 @@ descriptorPing =
         Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Empty"
-        [ Proto.Http.binding
-            { method = "HEAD"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "ping"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`ping`](#ping), as data.
+-}
+bindingsPing : List Proto.Http.Binding
+bindingsPing =
+    [ Proto.Http.binding
+        { method = "HEAD"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "ping"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]

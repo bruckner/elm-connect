@@ -6,8 +6,12 @@ module Routes.V1.Routes exposing (..)
 {-| `service routes.v1.Routes`
 -}
 
+import Json.Encode
+import Proto.Duration
 import Proto.Http
+import Proto.Json
 import Proto.Method
+import Proto.Timestamp
 import Proto.Version
 import Routes.V1
 import Routes.V1.Deep
@@ -21,6 +25,7 @@ import Routes.V1.Resource
 import Routes.V1.UpdateMessageRequest
 import Routes.V1.UpdateResourceRequest
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -51,9 +56,25 @@ Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorGetMessage
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeGetMessageRequest
+            , decode = Routes.V1.decodeMessage
+            , descriptor = descriptorGetMessage
+            , routes =
+                [ { route = routeGetMessage0
+                  , responseBody = Nothing
+                  }
+                , { route = routeGetMessage1
+                  , responseBody = Nothing
+                  }
+                , { route = routeGetMessage2
+                  , responseBody = Nothing
+                  }
+                , { route = routeGetMessage3
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -69,9 +90,16 @@ Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUpdateMessage
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeUpdateMessageRequest
+            , decode = Routes.V1.decodeMessage
+            , descriptor = descriptorUpdateMessage
+            , routes =
+                [ { route = routeUpdateMessage0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -85,9 +113,16 @@ Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
-            descriptorUpdateMessageWhole
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeMessage
+            , decode = Routes.V1.decodeMessage
+            , descriptor = descriptorUpdateMessageWhole
+            , routes =
+                [ { route = routeUpdateMessageWhole0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -101,9 +136,16 @@ Described by [`descriptorPostSub`](#descriptorPostSub).
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorPostSub
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeGetMessageRequest
+            , decode = Routes.V1.decodeMessage
+            , descriptor = descriptorPostSub
+            , routes =
+                [ { route = routePostSub0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -117,9 +159,16 @@ Described by [`descriptorQuery`](#descriptorQuery).
 query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorQuery
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeEverything
+            , decode = Routes.V1.decodeEverything
+            , descriptor = descriptorQuery
+            , routes =
+                [ { route = routeQuery0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -133,9 +182,16 @@ Described by [`descriptorSingle`](#descriptorSingle).
 single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorSingle
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeEverything
+            , decode = Routes.V1.decodeEverything
+            , descriptor = descriptorSingle
+            , routes =
+                [ { route = routeSingle0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -149,9 +205,16 @@ Described by [`descriptorMulti`](#descriptorMulti).
 multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorMulti
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeEverything
+            , decode = Routes.V1.decodeEverything
+            , descriptor = descriptorMulti
+            , routes =
+                [ { route = routeMulti0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -165,9 +228,16 @@ Described by [`descriptorTyped`](#descriptorTyped).
 typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            descriptorTyped
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeEverything
+            , decode = Routes.V1.decodeEverything
+            , descriptor = descriptorTyped
+            , routes =
+                [ { route = routeTyped0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -181,9 +251,16 @@ Described by [`descriptorFiles`](#descriptorFiles).
 files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorFiles
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeFileRequest
+            , decode = Routes.V1.decodeFileRequest
+            , descriptor = descriptorFiles
+            , routes =
+                [ { route = routeFiles0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -197,9 +274,16 @@ Described by [`descriptorCancel`](#descriptorCancel).
 cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeResource
-            Routes.V1.decodeResource
-            descriptorCancel
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeResource
+            , decode = Routes.V1.decodeResource
+            , descriptor = descriptorCancel
+            , routes =
+                [ { route = routeCancel0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -213,9 +297,16 @@ Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
-            descriptorUpdateResource
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeUpdateResourceRequest
+            , decode = Routes.V1.decodeResource
+            , descriptor = descriptorUpdateResource
+            , routes =
+                [ { route = routeUpdateResource0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -229,9 +320,16 @@ Described by [`descriptorHead`](#descriptorHead).
 head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            descriptorHead
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeFileRequest
+            , decode = Routes.V1.decodeFileRequest
+            , descriptor = descriptorHead
+            , routes =
+                [ { route = routeHead0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -249,10 +347,481 @@ Described by [`descriptorUnbound`](#descriptorUnbound).
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            descriptorUnbound
+        (Proto.Method.methodWith
+            { encode = Routes.V1.encodeGetMessageRequest
+            , decode = Routes.V1.decodeMessage
+            , descriptor = descriptorUnbound
+            , routes = []
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
+-}
+routeGetMessage0 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "message_id" "" Basics.identity request_.messageId
+                , Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+                , Rpc.Route.unlessZero "sub.subfield" "" Basics.identity (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+                , Rpc.Route.unlessZero "user_id" "" Basics.identity request_.userId
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    )
+
+
+{-| Binding 1 of [`getMessage`](#getMessage): `GET /v1/messages/*/*`.
+-}
+routeGetMessage1 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage1 request_ =
+    let
+        value0_ =
+            request_.messageId
+
+        value1_ =
+            Maybe.withDefault "" (Maybe.map .subfield request_.sub)
+    in
+    ( { method = "GET"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+                , Rpc.Route.unlessZero "user_id" "" Basics.identity request_.userId
+                , Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "messageId" "*" value0_
+        , Rpc.Route.checkSegment "sub.subfield" "*" value1_
+        ]
+    )
+
+
+{-| Binding 2 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
+-}
+routeGetMessage2 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage2 request_ =
+    let
+        value0_ =
+            request_.messageId
+    in
+    ( { method = "GET"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+                , Rpc.Route.unlessZero "sub.subfield" "" Basics.identity (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+                , Rpc.Route.unlessZero "user_id" "" Basics.identity request_.userId
+                , Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegment "messageId" "*" value0_
+    )
+
+
+{-| Binding 3 of [`getMessage`](#getMessage): `GET /v1/users/*/messages/*`.
+-}
+routeGetMessage3 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage3 request_ =
+    let
+        value0_ =
+            request_.userId
+
+        value1_ =
+            request_.messageId
+    in
+    ( { method = "GET"
+      , path = "v1/users/" ++ Rpc.Route.segment value0_ ++ "/messages/" ++ Rpc.Route.segment value1_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "revision" "0" Basics.identity request_.revision
+                , Rpc.Route.unlessZero "sub.subfield" "" Basics.identity (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+                , Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "userId" "*" value0_
+        , Rpc.Route.checkSegment "messageId" "*" value1_
+        ]
+    )
+
+
+{-| Binding 0 of [`updateMessage`](#updateMessage): `PATCH /v1/messages/*`.
+-}
+routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessage0 request_ =
+    let
+        value0_ =
+            request_.messageId
+    in
+    ( { method = "PATCH"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_
+      , query = []
+      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
+      }
+    , Rpc.Route.checkSegment "messageId" "*" value0_
+    )
+
+
+{-| Binding 0 of [`updateMessageWhole`](#updateMessageWhole): `PATCH /v1/messages/*`.
+-}
+routeUpdateMessageWhole0 : Routes.V1.Message -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessageWhole0 request_ =
+    let
+        value0_ =
+            request_.messageId
+    in
+    ( { method = "PATCH"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
+      }
+    , Rpc.Route.checkSegment "messageId" "*" value0_
+    )
+
+
+{-| Binding 0 of [`postSub`](#postSub): `POST /v1/subs/*`.
+-}
+routePostSub0 : Routes.V1.GetMessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routePostSub0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map .subfield request_.sub)
+    in
+    ( { method = "POST"
+      , path = "v1/subs/" ++ Rpc.Route.segment value0_
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
+      }
+    , Rpc.Route.checkSegment "sub.subfield" "*" value0_
+    )
+
+
+{-| Binding 0 of [`query`](#query): `GET /v1/query`.
+-}
+routeQuery0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeQuery0 request_ =
+    ( { method = "GET"
+      , path = "v1/query"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "count" 0 String.fromInt request_.count
+                , Rpc.Route.unlessZero "big" "0" Basics.identity request_.big
+                , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
+                , Rpc.Route.unlessZero "flag" False Rpc.Route.bool request_.flag
+                , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
+                , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
+                , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
+                , Rpc.Route.unlessZero "kind" Routes.V1.KindUnspecified (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kind
+                , Rpc.Route.repeated "tags" Basics.identity request_.tags
+                , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kinds
+                , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
+                , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
+                , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
+                , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "limit" String.fromInt request_.limit
+                , Rpc.Route.optional "label" Basics.identity request_.label
+                , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
+                , Rpc.Route.unlessZero "inner.deep.b" 0 String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.optional "text"
+                    Basics.identity
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceText member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                , Rpc.Route.optional "number"
+                    String.fromInt
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceNumber member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                ]
+      , body = Nothing
+      }
+    , Nothing
+    )
+
+
+{-| Binding 0 of [`single`](#single): `GET /v1/single/*`.
+-}
+routeSingle0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeSingle0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/single/" ++ Rpc.Route.segment value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "count" 0 String.fromInt request_.count
+                , Rpc.Route.unlessZero "big" "0" Basics.identity request_.big
+                , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
+                , Rpc.Route.unlessZero "flag" False Rpc.Route.bool request_.flag
+                , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
+                , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
+                , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
+                , Rpc.Route.unlessZero "kind" Routes.V1.KindUnspecified (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kind
+                , Rpc.Route.repeated "tags" Basics.identity request_.tags
+                , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kinds
+                , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
+                , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
+                , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
+                , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "limit" String.fromInt request_.limit
+                , Rpc.Route.optional "label" Basics.identity request_.label
+                , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
+                , Rpc.Route.unlessZero "inner.deep.b" 0 String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.optional "text"
+                    Basics.identity
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceText member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                , Rpc.Route.optional "number"
+                    String.fromInt
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceNumber member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegment "name" "*" value0_
+    )
+
+
+{-| Binding 0 of [`multi`](#multi): `GET /v1/things/*`.
+-}
+routeMulti0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeMulti0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "count" 0 String.fromInt request_.count
+                , Rpc.Route.unlessZero "big" "0" Basics.identity request_.big
+                , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
+                , Rpc.Route.unlessZero "flag" False Rpc.Route.bool request_.flag
+                , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
+                , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
+                , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
+                , Rpc.Route.unlessZero "kind" Routes.V1.KindUnspecified (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kind
+                , Rpc.Route.repeated "tags" Basics.identity request_.tags
+                , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kinds
+                , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
+                , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
+                , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
+                , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "limit" String.fromInt request_.limit
+                , Rpc.Route.optional "label" Basics.identity request_.label
+                , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
+                , Rpc.Route.unlessZero "inner.deep.b" 0 String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.optional "text"
+                    Basics.identity
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceText member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                , Rpc.Route.optional "number"
+                    String.fromInt
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceNumber member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`typed`](#typed): `DELETE /v1/typed/*/*/*/*/*`.
+-}
+routeTyped0 : Routes.V1.Everything -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeTyped0 request_ =
+    let
+        value0_ =
+            String.fromInt request_.count
+
+        value1_ =
+            Rpc.Route.bool request_.flag
+
+        value2_ =
+            (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kind
+
+        value3_ =
+            request_.big
+
+        value4_ =
+            String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+    in
+    ( { method = "DELETE"
+      , path = "v1/typed/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_ ++ "/" ++ Rpc.Route.segment value2_ ++ "/" ++ Rpc.Route.segment value3_ ++ "/" ++ Rpc.Route.segment value4_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "ubig" "0" Basics.identity request_.ubig
+                , Rpc.Route.unlessZero "ratio" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.ratio
+                , Rpc.Route.unlessZero "scale" 0.0 (Rpc.Route.viaJson Proto.Json.encodeFloat) request_.scale
+                , Rpc.Route.unlessZero "data" "" (Rpc.Route.viaJson Proto.Json.encodeBytes) request_.data
+                , Rpc.Route.repeated "tags" Basics.identity request_.tags
+                , Rpc.Route.repeated "kinds" (Rpc.Route.viaJson Routes.V1.encodeKind) request_.kinds
+                , Rpc.Route.repeated "numbers" String.fromInt request_.numbers
+                , Rpc.Route.optional "maybe_count" String.fromInt request_.maybeCount
+                , Rpc.Route.optional "maybe_name" Basics.identity request_.maybeName
+                , Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "limit" String.fromInt request_.limit
+                , Rpc.Route.optional "label" Basics.identity request_.label
+                , Rpc.Route.unlessZero "inner.a" "" Basics.identity (Maybe.withDefault "" (Maybe.map .a request_.inner))
+                , Rpc.Route.repeated "inner.deep.c" Basics.identity (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+                , Rpc.Route.optional "text"
+                    Basics.identity
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceText member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                , Rpc.Route.optional "number"
+                    String.fromInt
+                    (case request_.choice of
+                        Routes.V1.EverythingChoiceNumber member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                    )
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "count" "*" value0_
+        , Rpc.Route.checkSegment "flag" "*" value1_
+        , Rpc.Route.checkSegment "kind" "*" value2_
+        , Rpc.Route.checkSegment "big" "*" value3_
+        , Rpc.Route.checkSegment "inner.deep.b" "*" value4_
+        ]
+    )
+
+
+{-| Binding 0 of [`files`](#files): `GET /v1/files/**`.
+-}
+routeFiles0 : Routes.V1.FileRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeFiles0 request_ =
+    let
+        value0_ =
+            request_.path
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = []
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
+    )
+
+
+{-| Binding 0 of [`cancel`](#cancel): `POST /v1/operations/*:cancel`.
+-}
+routeCancel0 : Routes.V1.Resource -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCancel0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "POST"
+      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":cancel"
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
+      }
+    , Rpc.Route.checkSegments "name" [ "operations", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`updateResource`](#updateResource): `PATCH /v1/resources/*`.
+-}
+routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateResource0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map .name request_.resource)
+    in
+    ( { method = "PATCH"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = Rpc.Route.optional "update_mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask
+      , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
+      }
+    , Rpc.Route.checkSegments "resource.name" [ "resources", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`head`](#head): `HEAD /v1/files/**`.
+-}
+routeHead0 : Routes.V1.FileRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeHead0 request_ =
+    let
+        value0_ =
+            request_.path
+    in
+    ( { method = "HEAD"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = []
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "path" [ "files", "**" ] value0_
+    )
 
 
 
@@ -271,93 +840,100 @@ descriptorGetMessage =
         Proto.Method.IdempotencyUnknown
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.name ]
-                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.GetMessageRequest.messageId ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
-                ]
-            }
-        , Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
-                ]
-            }
-        , Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
-                ]
-            }
-        , Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "users"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.userId ]
-                    , template = []
-                    }
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
-                , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getMessage`](#getMessage), as data.
+-}
+bindingsGetMessage : List Proto.Http.Binding
+bindingsGetMessage =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.name ]
+                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.GetMessageRequest.messageId ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
+            ]
+        }
+    , Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
+            ]
+        }
+    , Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.userId ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
+            ]
+        }
+    , Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "users"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.userId ]
+                , template = []
+                }
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.messageId ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.GetMessageRequest.revision ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+            , Proto.Http.param [ Routes.V1.GetMessageRequest.name ]
+            ]
+        }
+    ]
 
 
 {-| google/api/http.proto's body examples.
@@ -372,22 +948,29 @@ descriptorUpdateMessage =
         Proto.Method.IdempotencyUnknown
         "routes.v1.UpdateMessageRequest"
         "routes.v1.Message"
-        [ Proto.Http.binding
-            { method = "PATCH"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.UpdateMessageRequest.messageId ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.bodyField Routes.V1.UpdateMessageRequest.message
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`updateMessage`](#updateMessage), as data.
+-}
+bindingsUpdateMessage : List Proto.Http.Binding
+bindingsUpdateMessage =
+    [ Proto.Http.binding
+        { method = "PATCH"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.UpdateMessageRequest.messageId ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.bodyField Routes.V1.UpdateMessageRequest.message
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc UpdateMessageWhole(Message) returns (Message)`
@@ -399,22 +982,29 @@ descriptorUpdateMessageWhole =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Message"
         "routes.v1.Message"
-        [ Proto.Http.binding
-            { method = "PATCH"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Message.messageId ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`updateMessageWhole`](#updateMessageWhole), as data.
+-}
+bindingsUpdateMessageWhole : List Proto.Http.Binding
+bindingsUpdateMessageWhole =
+    [ Proto.Http.binding
+        { method = "PATCH"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Message.messageId ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc PostSub(GetMessageRequest) returns (Message)`
@@ -426,22 +1016,29 @@ descriptorPostSub =
         Proto.Method.IdempotencyUnknown
         "routes.v1.GetMessageRequest"
         "routes.v1.Message"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "subs"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`postSub`](#postSub), as data.
+-}
+bindingsPostSub : List Proto.Http.Binding
+bindingsPostSub =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "subs"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.GetMessageRequest.sub, Routes.V1.GetMessageRequestSubMessage.subfield ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc Query(Everything) returns (Everything)`
@@ -453,43 +1050,50 @@ descriptorQuery =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "query"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.Everything.name ]
-                , Proto.Http.param [ Routes.V1.Everything.count ]
-                , Proto.Http.param [ Routes.V1.Everything.big ]
-                , Proto.Http.param [ Routes.V1.Everything.ubig ]
-                , Proto.Http.param [ Routes.V1.Everything.flag ]
-                , Proto.Http.param [ Routes.V1.Everything.ratio ]
-                , Proto.Http.param [ Routes.V1.Everything.scale ]
-                , Proto.Http.param [ Routes.V1.Everything.data ]
-                , Proto.Http.param [ Routes.V1.Everything.kind ]
-                , Proto.Http.param [ Routes.V1.Everything.tags ]
-                , Proto.Http.param [ Routes.V1.Everything.kinds ]
-                , Proto.Http.param [ Routes.V1.Everything.numbers ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
-                , Proto.Http.param [ Routes.V1.Everything.at ]
-                , Proto.Http.param [ Routes.V1.Everything.wait ]
-                , Proto.Http.param [ Routes.V1.Everything.mask ]
-                , Proto.Http.param [ Routes.V1.Everything.limit ]
-                , Proto.Http.param [ Routes.V1.Everything.label ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
-                , Proto.Http.param [ Routes.V1.Everything.text ]
-                , Proto.Http.param [ Routes.V1.Everything.number ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`query`](#query), as data.
+-}
+bindingsQuery : List Proto.Http.Binding
+bindingsQuery =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "query"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.Everything.name ]
+            , Proto.Http.param [ Routes.V1.Everything.count ]
+            , Proto.Http.param [ Routes.V1.Everything.big ]
+            , Proto.Http.param [ Routes.V1.Everything.ubig ]
+            , Proto.Http.param [ Routes.V1.Everything.flag ]
+            , Proto.Http.param [ Routes.V1.Everything.ratio ]
+            , Proto.Http.param [ Routes.V1.Everything.scale ]
+            , Proto.Http.param [ Routes.V1.Everything.data ]
+            , Proto.Http.param [ Routes.V1.Everything.kind ]
+            , Proto.Http.param [ Routes.V1.Everything.tags ]
+            , Proto.Http.param [ Routes.V1.Everything.kinds ]
+            , Proto.Http.param [ Routes.V1.Everything.numbers ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+            , Proto.Http.param [ Routes.V1.Everything.at ]
+            , Proto.Http.param [ Routes.V1.Everything.wait ]
+            , Proto.Http.param [ Routes.V1.Everything.mask ]
+            , Proto.Http.param [ Routes.V1.Everything.limit ]
+            , Proto.Http.param [ Routes.V1.Everything.label ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+            , Proto.Http.param [ Routes.V1.Everything.text ]
+            , Proto.Http.param [ Routes.V1.Everything.number ]
+            ]
+        }
+    ]
 
 
 {-| `rpc Single(Everything) returns (Everything)`
@@ -501,46 +1105,53 @@ descriptorSingle =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "single"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.name ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.Everything.count ]
-                , Proto.Http.param [ Routes.V1.Everything.big ]
-                , Proto.Http.param [ Routes.V1.Everything.ubig ]
-                , Proto.Http.param [ Routes.V1.Everything.flag ]
-                , Proto.Http.param [ Routes.V1.Everything.ratio ]
-                , Proto.Http.param [ Routes.V1.Everything.scale ]
-                , Proto.Http.param [ Routes.V1.Everything.data ]
-                , Proto.Http.param [ Routes.V1.Everything.kind ]
-                , Proto.Http.param [ Routes.V1.Everything.tags ]
-                , Proto.Http.param [ Routes.V1.Everything.kinds ]
-                , Proto.Http.param [ Routes.V1.Everything.numbers ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
-                , Proto.Http.param [ Routes.V1.Everything.at ]
-                , Proto.Http.param [ Routes.V1.Everything.wait ]
-                , Proto.Http.param [ Routes.V1.Everything.mask ]
-                , Proto.Http.param [ Routes.V1.Everything.limit ]
-                , Proto.Http.param [ Routes.V1.Everything.label ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
-                , Proto.Http.param [ Routes.V1.Everything.text ]
-                , Proto.Http.param [ Routes.V1.Everything.number ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`single`](#single), as data.
+-}
+bindingsSingle : List Proto.Http.Binding
+bindingsSingle =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "single"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.name ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.Everything.count ]
+            , Proto.Http.param [ Routes.V1.Everything.big ]
+            , Proto.Http.param [ Routes.V1.Everything.ubig ]
+            , Proto.Http.param [ Routes.V1.Everything.flag ]
+            , Proto.Http.param [ Routes.V1.Everything.ratio ]
+            , Proto.Http.param [ Routes.V1.Everything.scale ]
+            , Proto.Http.param [ Routes.V1.Everything.data ]
+            , Proto.Http.param [ Routes.V1.Everything.kind ]
+            , Proto.Http.param [ Routes.V1.Everything.tags ]
+            , Proto.Http.param [ Routes.V1.Everything.kinds ]
+            , Proto.Http.param [ Routes.V1.Everything.numbers ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+            , Proto.Http.param [ Routes.V1.Everything.at ]
+            , Proto.Http.param [ Routes.V1.Everything.wait ]
+            , Proto.Http.param [ Routes.V1.Everything.mask ]
+            , Proto.Http.param [ Routes.V1.Everything.limit ]
+            , Proto.Http.param [ Routes.V1.Everything.label ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+            , Proto.Http.param [ Routes.V1.Everything.text ]
+            , Proto.Http.param [ Routes.V1.Everything.number ]
+            ]
+        }
+    ]
 
 
 {-| `rpc Multi(Everything) returns (Everything)`
@@ -552,45 +1163,52 @@ descriptorMulti =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.name ]
-                    , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.Everything.count ]
-                , Proto.Http.param [ Routes.V1.Everything.big ]
-                , Proto.Http.param [ Routes.V1.Everything.ubig ]
-                , Proto.Http.param [ Routes.V1.Everything.flag ]
-                , Proto.Http.param [ Routes.V1.Everything.ratio ]
-                , Proto.Http.param [ Routes.V1.Everything.scale ]
-                , Proto.Http.param [ Routes.V1.Everything.data ]
-                , Proto.Http.param [ Routes.V1.Everything.kind ]
-                , Proto.Http.param [ Routes.V1.Everything.tags ]
-                , Proto.Http.param [ Routes.V1.Everything.kinds ]
-                , Proto.Http.param [ Routes.V1.Everything.numbers ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
-                , Proto.Http.param [ Routes.V1.Everything.at ]
-                , Proto.Http.param [ Routes.V1.Everything.wait ]
-                , Proto.Http.param [ Routes.V1.Everything.mask ]
-                , Proto.Http.param [ Routes.V1.Everything.limit ]
-                , Proto.Http.param [ Routes.V1.Everything.label ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
-                , Proto.Http.param [ Routes.V1.Everything.text ]
-                , Proto.Http.param [ Routes.V1.Everything.number ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`multi`](#multi), as data.
+-}
+bindingsMulti : List Proto.Http.Binding
+bindingsMulti =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.name ]
+                , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.Everything.count ]
+            , Proto.Http.param [ Routes.V1.Everything.big ]
+            , Proto.Http.param [ Routes.V1.Everything.ubig ]
+            , Proto.Http.param [ Routes.V1.Everything.flag ]
+            , Proto.Http.param [ Routes.V1.Everything.ratio ]
+            , Proto.Http.param [ Routes.V1.Everything.scale ]
+            , Proto.Http.param [ Routes.V1.Everything.data ]
+            , Proto.Http.param [ Routes.V1.Everything.kind ]
+            , Proto.Http.param [ Routes.V1.Everything.tags ]
+            , Proto.Http.param [ Routes.V1.Everything.kinds ]
+            , Proto.Http.param [ Routes.V1.Everything.numbers ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+            , Proto.Http.param [ Routes.V1.Everything.at ]
+            , Proto.Http.param [ Routes.V1.Everything.wait ]
+            , Proto.Http.param [ Routes.V1.Everything.mask ]
+            , Proto.Http.param [ Routes.V1.Everything.limit ]
+            , Proto.Http.param [ Routes.V1.Everything.label ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+            , Proto.Http.param [ Routes.V1.Everything.text ]
+            , Proto.Http.param [ Routes.V1.Everything.number ]
+            ]
+        }
+    ]
 
 
 {-| `rpc Typed(Everything) returns (Everything)`
@@ -602,58 +1220,65 @@ descriptorTyped =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Everything"
         "routes.v1.Everything"
-        [ Proto.Http.binding
-            { method = "DELETE"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "typed"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.count ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.flag ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.kind ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.big ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.Everything.name ]
-                , Proto.Http.param [ Routes.V1.Everything.ubig ]
-                , Proto.Http.param [ Routes.V1.Everything.ratio ]
-                , Proto.Http.param [ Routes.V1.Everything.scale ]
-                , Proto.Http.param [ Routes.V1.Everything.data ]
-                , Proto.Http.param [ Routes.V1.Everything.tags ]
-                , Proto.Http.param [ Routes.V1.Everything.kinds ]
-                , Proto.Http.param [ Routes.V1.Everything.numbers ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
-                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
-                , Proto.Http.param [ Routes.V1.Everything.at ]
-                , Proto.Http.param [ Routes.V1.Everything.wait ]
-                , Proto.Http.param [ Routes.V1.Everything.mask ]
-                , Proto.Http.param [ Routes.V1.Everything.limit ]
-                , Proto.Http.param [ Routes.V1.Everything.label ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
-                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
-                , Proto.Http.param [ Routes.V1.Everything.text ]
-                , Proto.Http.param [ Routes.V1.Everything.number ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`typed`](#typed), as data.
+-}
+bindingsTyped : List Proto.Http.Binding
+bindingsTyped =
+    [ Proto.Http.binding
+        { method = "DELETE"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "typed"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.count ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.flag ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.kind ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.big ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.Everything.name ]
+            , Proto.Http.param [ Routes.V1.Everything.ubig ]
+            , Proto.Http.param [ Routes.V1.Everything.ratio ]
+            , Proto.Http.param [ Routes.V1.Everything.scale ]
+            , Proto.Http.param [ Routes.V1.Everything.data ]
+            , Proto.Http.param [ Routes.V1.Everything.tags ]
+            , Proto.Http.param [ Routes.V1.Everything.kinds ]
+            , Proto.Http.param [ Routes.V1.Everything.numbers ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+            , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+            , Proto.Http.param [ Routes.V1.Everything.at ]
+            , Proto.Http.param [ Routes.V1.Everything.wait ]
+            , Proto.Http.param [ Routes.V1.Everything.mask ]
+            , Proto.Http.param [ Routes.V1.Everything.limit ]
+            , Proto.Http.param [ Routes.V1.Everything.label ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+            , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+            , Proto.Http.param [ Routes.V1.Everything.text ]
+            , Proto.Http.param [ Routes.V1.Everything.number ]
+            ]
+        }
+    ]
 
 
 {-| `rpc Files(FileRequest) returns (FileRequest)`
@@ -665,21 +1290,28 @@ descriptorFiles =
         Proto.Method.IdempotencyUnknown
         "routes.v1.FileRequest"
         "routes.v1.FileRequest"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.FileRequest.path ]
-                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`files`](#files), as data.
+-}
+bindingsFiles : List Proto.Http.Binding
+bindingsFiles =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.FileRequest.path ]
+                , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc Cancel(Resource) returns (Resource)`
@@ -691,21 +1323,28 @@ descriptorCancel =
         Proto.Method.IdempotencyUnknown
         "routes.v1.Resource"
         "routes.v1.Resource"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.Resource.name ]
-                    , template = [ Proto.Http.literal "operations", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Just "cancel"
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`cancel`](#cancel), as data.
+-}
+bindingsCancel : List Proto.Http.Binding
+bindingsCancel =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.Resource.name ]
+                , template = [ Proto.Http.literal "operations", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Just "cancel"
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`
@@ -717,23 +1356,30 @@ descriptorUpdateResource =
         Proto.Method.IdempotencyUnknown
         "routes.v1.UpdateResourceRequest"
         "routes.v1.Resource"
-        [ Proto.Http.binding
-            { method = "PATCH"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.UpdateResourceRequest.resource, Routes.V1.Resource.name ]
-                    , template = [ Proto.Http.literal "resources", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.bodyField Routes.V1.UpdateResourceRequest.resource
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Routes.V1.UpdateResourceRequest.updateMask ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`updateResource`](#updateResource), as data.
+-}
+bindingsUpdateResource : List Proto.Http.Binding
+bindingsUpdateResource =
+    [ Proto.Http.binding
+        { method = "PATCH"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.UpdateResourceRequest.resource, Routes.V1.Resource.name ]
+                , template = [ Proto.Http.literal "resources", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.bodyField Routes.V1.UpdateResourceRequest.resource
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Routes.V1.UpdateResourceRequest.updateMask ]
+            ]
+        }
+    ]
 
 
 {-| `rpc Head(FileRequest) returns (FileRequest)`
@@ -745,21 +1391,28 @@ descriptorHead =
         Proto.Method.IdempotencyUnknown
         "routes.v1.FileRequest"
         "routes.v1.FileRequest"
-        [ Proto.Http.binding
-            { method = "HEAD"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Routes.V1.FileRequest.path ]
-                    , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`head`](#head), as data.
+-}
+bindingsHead : List Proto.Http.Binding
+bindingsHead =
+    [ Proto.Http.binding
+        { method = "HEAD"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Routes.V1.FileRequest.path ]
+                , template = [ Proto.Http.literal "files", Proto.Http.doubleWildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the

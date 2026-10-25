@@ -13,6 +13,7 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -40,10 +41,67 @@ Described by [`descriptorGetEntry`](#descriptorGetEntry).
 getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.method Catalog.V1.encodeGetEntryRequest
-            Catalog.V1.decodeEntry
-            descriptorGetEntry
+        (Proto.Method.methodWith
+            { encode = Catalog.V1.encodeGetEntryRequest
+            , decode = Catalog.V1.decodeEntry
+            , descriptor = descriptorGetEntry
+            , routes =
+                [ { route = routeGetEntry0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getEntry`](#getEntry): `GET /v1/entries/*`.
+-}
+routeGetEntry0 : Catalog.V1.GetEntryRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetEntry0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "descriptor" "" Basics.identity request_.descriptor
+                , Rpc.Route.optional "part.descriptor"
+                    Basics.identity
+                    (Maybe.andThen
+                        (\message_ ->
+                            case message_.kind of
+                                Catalog.V1.PartKindDescriptor member_ ->
+                                    Just member_
+
+                                _ ->
+                                    Nothing
+                        )
+                        request_.part
+                    )
+                , Rpc.Route.optional "part.count"
+                    String.fromInt
+                    (Maybe.andThen
+                        (\message_ ->
+                            case message_.kind of
+                                Catalog.V1.PartKindCount member_ ->
+                                    Just member_
+
+                                _ ->
+                                    Nothing
+                        )
+                        request_.part
+                    )
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "entries", "*" ] value0_
+    )
 
 
 
@@ -64,22 +122,29 @@ descriptorGetEntry =
         Proto.Method.IdempotencyUnknown
         "catalog.v1.GetEntryRequest"
         "catalog.v1.Entry"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Catalog.V1.GetEntryRequest.name ]
-                    , template = [ Proto.Http.literal "entries", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Catalog.V1.GetEntryRequest.descriptor_ ]
-                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.descriptor_ ]
-                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.count ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getEntry`](#getEntry), as data.
+-}
+bindingsGetEntry : List Proto.Http.Binding
+bindingsGetEntry =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Catalog.V1.GetEntryRequest.name ]
+                , template = [ Proto.Http.literal "entries", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Catalog.V1.GetEntryRequest.descriptor_ ]
+            , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.descriptor_ ]
+            , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.count ]
+            ]
+        }
+    ]

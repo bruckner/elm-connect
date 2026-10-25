@@ -12,6 +12,7 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -38,10 +39,47 @@ Described by [`descriptorListEvents`](#descriptorListEvents).
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call
-        (Proto.Method.method Events.V1.encodeListEventsRequest
-            Events.V1.decodeListEventsResponse
-            descriptorListEvents
+        (Proto.Method.methodWith
+            { encode = Events.V1.encodeListEventsRequest
+            , decode = Events.V1.decodeListEventsResponse
+            , descriptor = descriptorListEvents
+            , routes =
+                [ { route = routeListEvents0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`listEvents`](#listEvents): `GET /v1/feeds/*/events`.
+-}
+routeListEvents0 : Events.V1.ListEventsRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListEvents0 request_ =
+    let
+        value0_ =
+            request_.parent
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_ ++ "/events"
+      , query =
+            Rpc.Route.optional "_legacy"
+                Basics.identity
+                (case request_.filter of
+                    Events.V1.ListEventsRequestFilterLegacy member_ ->
+                        Just member_
+
+                    _ ->
+                        Nothing
+                )
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "parent" [ "feeds", "*" ] value0_
+    )
 
 
 
@@ -61,21 +99,28 @@ descriptorListEvents =
         Proto.Method.IdempotencyUnknown
         "events.v1.ListEventsRequest"
         "events.v1.ListEventsResponse"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Events.V1.ListEventsRequest.parent ]
-                    , template = [ Proto.Http.literal "feeds", Proto.Http.wildcard ]
-                    }
-                , Proto.Http.literal "events"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Events.V1.ListEventsRequest.legacy ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`listEvents`](#listEvents), as data.
+-}
+bindingsListEvents : List Proto.Http.Binding
+bindingsListEvents =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Events.V1.ListEventsRequest.parent ]
+                , template = [ Proto.Http.literal "feeds", Proto.Http.wildcard ]
+                }
+            , Proto.Http.literal "events"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Events.V1.ListEventsRequest.legacy ]
+            ]
+        }
+    ]

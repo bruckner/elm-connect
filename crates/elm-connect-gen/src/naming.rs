@@ -57,9 +57,10 @@ pub const REPOSITORY_FILES: &str = concat!(
 );
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 25] = [
+pub const RUNTIME_MODULES: [&str; 26] = [
     "Rpc",
     "Rpc.Call",
+    "Rpc.Route",
     "Rpc.Code",
     "Rpc.Error",
     "Rpc.Transport",

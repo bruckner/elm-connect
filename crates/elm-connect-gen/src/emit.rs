@@ -149,6 +149,7 @@ mod message;
 mod method;
 mod oneof;
 mod recursion;
+mod route_fn;
 mod scalar;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -348,7 +349,21 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
 /// The Elm module of `service`, one of `package`'s: a call and a
 /// descriptor per method, in two sections, the calls a program uses
 /// first.
-pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
+pub fn emit_service(
+    package: &Package,
+    service: &Service,
+    options: &Options,
+    packages: &[Package],
+) -> Module {
+    let messages: route_fn::Messages = packages
+        .iter()
+        .chain(std::iter::once(package))
+        .flat_map(|p| {
+            p.messages
+                .iter()
+                .map(move |m| (m.proto_full_name.as_str(), (m, &p.module)))
+        })
+        .collect();
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
@@ -356,9 +371,16 @@ pub fn emit_service(package: &Package, service: &Service, options: &Options) -> 
         for method in &service.methods {
             decls.push(emitter.method(&service.proto_full_name, method));
         }
+        decls.push(Decl::Comment("ROUTES".into()));
+        for method in &service.methods {
+            decls.extend(emitter.method_routes(&messages, method));
+        }
         decls.push(Decl::Comment("DESCRIPTORS".into()));
         for method in &service.methods {
             decls.push(emitter.method_descriptor(&service.proto_full_name, method));
+            if !method.routes.is_empty() {
+                decls.push(emitter.method_bindings(method));
+            }
         }
     }
     let mut module = emitter.module(package, decls);
@@ -807,7 +829,7 @@ mod tests {
             methods: Vec::new(),
             doc: crate::ir::Doc::default(),
         };
-        let module = emit_service(&package(Vec::new()), &service, &Options::default());
+        let module = emit_service(&package(Vec::new()), &service, &Options::default(), &[]);
         assert!(matches!(
             module.decls.as_slice(),
             [Decl::Value { name, .. }] if name == VERSION_VALUE
@@ -1105,7 +1127,7 @@ mod tests {
             int64: Int64::Int,
             ..Options::default()
         };
-        let module = emit_service(&package(Vec::new()), &service, &options);
+        let module = emit_service(&package(Vec::new()), &service, &options, &[]);
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
@@ -1127,15 +1149,16 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
+        assert_eq!(sections, ["CALLS", "ROUTES", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",
+            "{ encode = T.V1.encodeA\n            , decode = T.V1.decodeA\n            , \
+             descriptor = descriptorGet\n",
             // Qualified, or `identity` would be the method itself.
-            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n            \
-             descriptorIdentity\n",
-            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
-             Proto.Json.any\n            descriptorTicks\n",
+            "{ encode = Basics.identity\n            , decode = Proto.Json.empty\n            , \
+             descriptor = descriptorIdentity\n",
+            "{ encode = Proto.Json.encodeInt64AsInt\n            , decode = Proto.Json.any\n            \
+             , descriptor = descriptorTicks\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \

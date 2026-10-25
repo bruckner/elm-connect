@@ -33,13 +33,17 @@ Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call
-        (Proto.Method.method Notes.Api.encodeGetNoteRequest
-            Notes.Api.decodeMemo
-            descriptorFetchMemo
+        (Proto.Method.methodWith
+            { encode = Notes.Api.encodeGetNoteRequest
+            , decode = Notes.Api.decodeMemo
+            , descriptor = descriptorFetchMemo
+            , routes = []
+            }
         )
 
 
 
+-- ROUTES
 -- DESCRIPTORS
 
 

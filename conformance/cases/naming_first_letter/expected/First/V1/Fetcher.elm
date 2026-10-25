@@ -33,9 +33,12 @@ Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 getNote =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorGetNote
+        (Proto.Method.methodWith
+            { encode = First.V1.encodeURLPath
+            , decode = First.V1.decodeURLPath
+            , descriptor = descriptorGetNote
+            , routes = []
+            }
         )
 
 
@@ -49,9 +52,12 @@ Described by [`descriptorHttpGet`](#descriptorHttpGet).
 httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 httpGet =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorHttpGet
+        (Proto.Method.methodWith
+            { encode = First.V1.encodeURLPath
+            , decode = First.V1.decodeURLPath
+            , descriptor = descriptorHttpGet
+            , routes = []
+            }
         )
 
 
@@ -65,9 +71,12 @@ Described by [`descriptorPing`](#descriptorPing).
 ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 ping =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorPing
+        (Proto.Method.methodWith
+            { encode = First.V1.encodeURLPath
+            , decode = First.V1.decodeURLPath
+            , descriptor = descriptorPing
+            , routes = []
+            }
         )
 
 
@@ -81,13 +90,17 @@ Described by [`descriptorType_`](#descriptorType_).
 type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
 type_ =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            descriptorType_
+        (Proto.Method.methodWith
+            { encode = First.V1.encodeURLPath
+            , decode = First.V1.decodeURLPath
+            , descriptor = descriptorType_
+            , routes = []
+            }
         )
 
 
 
+-- ROUTES
 -- DESCRIPTORS
 
 

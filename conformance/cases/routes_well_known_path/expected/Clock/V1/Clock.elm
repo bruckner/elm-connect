@@ -8,10 +8,14 @@ module Clock.V1.Clock exposing (..)
 
 import Clock.V1
 import Clock.V1.Moment
+import Proto.Duration
 import Proto.Http
+import Proto.Json
 import Proto.Method
+import Proto.Timestamp
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -35,9 +39,16 @@ Described by [`descriptorGetMoment`](#descriptorGetMoment).
 getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 getMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorGetMoment
+        (Proto.Method.methodWith
+            { encode = Clock.V1.encodeMoment
+            , decode = Clock.V1.decodeMoment
+            , descriptor = descriptorGetMoment
+            , routes =
+                [ { route = routeGetMoment0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -51,9 +62,16 @@ Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
 maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 maskMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorMaskMoment
+        (Proto.Method.methodWith
+            { encode = Clock.V1.encodeMoment
+            , decode = Clock.V1.decodeMoment
+            , descriptor = descriptorMaskMoment
+            , routes =
+                [ { route = routeMaskMoment0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -67,9 +85,16 @@ Described by [`descriptorCountMoment`](#descriptorCountMoment).
 countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 countMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorCountMoment
+        (Proto.Method.methodWith
+            { encode = Clock.V1.encodeMoment
+            , decode = Clock.V1.decodeMoment
+            , descriptor = descriptorCountMoment
+            , routes =
+                [ { route = routeCountMoment0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -83,10 +108,120 @@ Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
 waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
 waitMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            descriptorWaitMoment
+        (Proto.Method.methodWith
+            { encode = Clock.V1.encodeMoment
+            , decode = Clock.V1.decodeMoment
+            , descriptor = descriptorWaitMoment
+            , routes =
+                [ { route = routeWaitMoment0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getMoment`](#getMoment): `GET /v1/at/*`.
+-}
+routeGetMoment0 : Clock.V1.Moment -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMoment0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+    in
+    ( { method = "GET"
+      , path = "v1/at/" ++ Rpc.Route.segment value0_
+      , query =
+            List.concat
+                [ Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "count" String.fromInt request_.count
+                , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegment "at" "*" value0_
+    )
+
+
+{-| Binding 0 of [`maskMoment`](#maskMoment): `GET /v1/at/*/mask/*`.
+-}
+routeMaskMoment0 : Clock.V1.Moment -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeMaskMoment0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+
+        value1_ =
+            Maybe.withDefault "" (Maybe.map (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
+    in
+    ( { method = "GET"
+      , path = "v1/at/" ++ Rpc.Route.segment value0_ ++ "/mask/" ++ Rpc.Route.segment value1_
+      , query =
+            List.concat
+                [ Rpc.Route.optional "count" String.fromInt request_.count
+                , Rpc.Route.optional "seen" Rpc.Route.bool request_.seen
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "at" "*" value0_
+        , Rpc.Route.checkSegment "mask" "*" value1_
+        ]
+    )
+
+
+{-| Binding 0 of [`countMoment`](#countMoment): `GET /v1/count/*/seen/*`.
+-}
+routeCountMoment0 : Clock.V1.Moment -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCountMoment0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map String.fromInt request_.count)
+
+        value1_ =
+            Maybe.withDefault "" (Maybe.map Rpc.Route.bool request_.seen)
+    in
+    ( { method = "GET"
+      , path = "v1/count/" ++ Rpc.Route.segment value0_ ++ "/seen/" ++ Rpc.Route.segment value1_
+      , query =
+            List.concat
+                [ Rpc.Route.optional "at" Proto.Timestamp.toString request_.at
+                , Rpc.Route.optional "mask" (Rpc.Route.viaJson Proto.Json.encodeFieldMask) request_.mask
+                , Rpc.Route.optional "wait" Proto.Duration.toString request_.wait
+                , Rpc.Route.unlessZero "note" "" Basics.identity request_.note
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "count" "*" value0_
+        , Rpc.Route.checkSegment "seen" "*" value1_
+        ]
+    )
+
+
+{-| Binding 0 of [`waitMoment`](#waitMoment): `POST /v1/wait/*`.
+-}
+routeWaitMoment0 : Clock.V1.Moment -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeWaitMoment0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
+    in
+    ( { method = "POST"
+      , path = "v1/wait/" ++ Rpc.Route.segment value0_
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
+      }
+    , Rpc.Route.checkSegment "wait" "*" value0_
+    )
 
 
 
@@ -102,28 +237,35 @@ descriptorGetMoment =
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "at"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.at ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Clock.V1.Moment.mask ]
-                , Proto.Http.param [ Clock.V1.Moment.count ]
-                , Proto.Http.param [ Clock.V1.Moment.seen ]
-                , Proto.Http.param [ Clock.V1.Moment.wait ]
-                , Proto.Http.param [ Clock.V1.Moment.note ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getMoment`](#getMoment), as data.
+-}
+bindingsGetMoment : List Proto.Http.Binding
+bindingsGetMoment =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "at"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.at ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Clock.V1.Moment.mask ]
+            , Proto.Http.param [ Clock.V1.Moment.count ]
+            , Proto.Http.param [ Clock.V1.Moment.seen ]
+            , Proto.Http.param [ Clock.V1.Moment.wait ]
+            , Proto.Http.param [ Clock.V1.Moment.note ]
+            ]
+        }
+    ]
 
 
 {-| `rpc MaskMoment(Moment) returns (Moment)`
@@ -135,32 +277,39 @@ descriptorMaskMoment =
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "at"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.at ]
-                    , template = []
-                    }
-                , Proto.Http.literal "mask"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.mask ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Clock.V1.Moment.count ]
-                , Proto.Http.param [ Clock.V1.Moment.seen ]
-                , Proto.Http.param [ Clock.V1.Moment.wait ]
-                , Proto.Http.param [ Clock.V1.Moment.note ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`maskMoment`](#maskMoment), as data.
+-}
+bindingsMaskMoment : List Proto.Http.Binding
+bindingsMaskMoment =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "at"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.at ]
+                , template = []
+                }
+            , Proto.Http.literal "mask"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.mask ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Clock.V1.Moment.count ]
+            , Proto.Http.param [ Clock.V1.Moment.seen ]
+            , Proto.Http.param [ Clock.V1.Moment.wait ]
+            , Proto.Http.param [ Clock.V1.Moment.note ]
+            ]
+        }
+    ]
 
 
 {-| `rpc CountMoment(Moment) returns (Moment)`
@@ -172,32 +321,39 @@ descriptorCountMoment =
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "count"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.count ]
-                    , template = []
-                    }
-                , Proto.Http.literal "seen"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.seen ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Clock.V1.Moment.at ]
-                , Proto.Http.param [ Clock.V1.Moment.mask ]
-                , Proto.Http.param [ Clock.V1.Moment.wait ]
-                , Proto.Http.param [ Clock.V1.Moment.note ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`countMoment`](#countMoment), as data.
+-}
+bindingsCountMoment : List Proto.Http.Binding
+bindingsCountMoment =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "count"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.count ]
+                , template = []
+                }
+            , Proto.Http.literal "seen"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.seen ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Clock.V1.Moment.at ]
+            , Proto.Http.param [ Clock.V1.Moment.mask ]
+            , Proto.Http.param [ Clock.V1.Moment.wait ]
+            , Proto.Http.param [ Clock.V1.Moment.note ]
+            ]
+        }
+    ]
 
 
 {-| `rpc WaitMoment(Moment) returns (Moment)`
@@ -209,19 +365,26 @@ descriptorWaitMoment =
         Proto.Method.IdempotencyUnknown
         "clock.v1.Moment"
         "clock.v1.Moment"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "wait"
-                , Proto.Http.variable
-                    { fieldPath = [ Clock.V1.Moment.wait ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`waitMoment`](#waitMoment), as data.
+-}
+bindingsWaitMoment : List Proto.Http.Binding
+bindingsWaitMoment =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "wait"
+            , Proto.Http.variable
+                { fieldPath = [ Clock.V1.Moment.wait ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]

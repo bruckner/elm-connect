@@ -16,6 +16,7 @@ import Proto.Json
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -39,10 +40,34 @@ Described by [`descriptorClear`](#descriptorClear).
 clear : () -> Rpc.Call () ()
 clear =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            descriptorClear
+        (Proto.Method.methodWith
+            { encode = Proto.Json.encodeEmpty
+            , decode = Proto.Json.empty
+            , descriptor = descriptorClear
+            , routes =
+                [ { route = routeClear0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`clear`](#clear): `PURGE /v1/notes`.
+-}
+routeClear0 : () -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeClear0 request_ =
+    ( { method = "PURGE"
+      , path = "v1/notes"
+      , query = []
+      , body = Nothing
+      }
+    , Nothing
+    )
 
 
 
@@ -58,15 +83,22 @@ descriptorClear =
         Proto.Method.IdempotencyUnknown
         "google.protobuf.Empty"
         "google.protobuf.Empty"
-        [ Proto.Http.binding
-            { method = "PURGE"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "notes"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`clear`](#clear), as data.
+-}
+bindingsClear : List Proto.Http.Binding
+bindingsClear =
+    [ Proto.Http.binding
+        { method = "PURGE"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "notes"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]

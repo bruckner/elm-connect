@@ -6,11 +6,12 @@
 //! applications are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
+use super::route_fn::{Messages, REQUEST, RPC_ROUTE};
 use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
-    apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
+    apply, inline_list, list, pvar, qualified, record, stacked_apply, string, ty, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
@@ -32,11 +33,6 @@ impl Emitter {
                 Idempotency::Idempotent => "IdempotencyIdempotent",
             },
         ));
-        let bindings: Vec<Expr> = method
-            .routes
-            .iter()
-            .map(|route| self.binding(route))
-            .collect();
         let body = stacked_apply(
             self.reference((PROTO_METHOD, "descriptor")),
             [
@@ -45,7 +41,7 @@ impl Emitter {
                 idempotency,
                 string(proto_full_name(&method.input)),
                 string(proto_full_name(&method.output)),
-                list(bindings),
+                list([]),
             ],
         );
         Decl::Value {
@@ -73,13 +69,33 @@ impl Emitter {
         let response = self.method_type(&method.output);
         let encode_request = self.request_encoder(&method.input);
         let response_decoder = self.response_decoder(&method.output);
-        let built = stacked_apply(
-            self.reference((PROTO_METHOD, "method")),
-            [
-                encode_request,
-                response_decoder,
-                var(method.descriptor_name()),
-            ],
+        let routes: Vec<Expr> = method
+            .routes
+            .iter()
+            .enumerate()
+            .map(|(index, route)| {
+                record([
+                    ("route", var(route_name(method, index))),
+                    (
+                        "responseBody",
+                        maybe(
+                            route
+                                .response_body
+                                .as_ref()
+                                .map(|top| string(top.field.json[0].clone())),
+                        ),
+                    ),
+                ])
+            })
+            .collect();
+        let built = apply(
+            self.reference((PROTO_METHOD, "methodWith")),
+            [record([
+                ("encode", encode_request),
+                ("decode", response_decoder),
+                ("descriptor", var(method.descriptor_name())),
+                ("routes", list(routes)),
+            ])],
         );
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
@@ -92,6 +108,60 @@ impl Emitter {
         }
     }
 
+    /// `bindingsGetNote : List Proto.Http.Binding`: the method's HTTP
+    /// bindings as data, which no call refers to.
+    pub(super) fn method_bindings(&mut self, method: &Method) -> Decl {
+        let bindings: Vec<Expr> = method
+            .routes
+            .iter()
+            .map(|route| self.binding(route))
+            .collect();
+        let binding = self.library_type(PROTO_HTTP, "Binding", []);
+        Decl::Value {
+            doc: Some(format!(
+                "The HTTP bindings of [`{}`](#{}), as data.",
+                method.elm_name, method.elm_name
+            )),
+            name: bindings_name(method),
+            annotation: ty("List", [binding]),
+            params: Vec::new(),
+            body: list(bindings),
+        }
+    }
+
+    /// `routeGetNote0 : GetNoteRequest -> ( Rpc.Route.Route, Maybe
+    /// Rpc.Route.PathError )`, one per binding.
+    pub(super) fn method_routes(&mut self, messages: &Messages, method: &Method) -> Vec<Decl> {
+        let mut decls = Vec::new();
+        for (index, route) in method.routes.iter().enumerate() {
+            let binding = self.binding(route);
+            let encode_request = self.request_encoder(&method.input);
+            let typed = self.route_body(messages, &method.input, route, binding, encode_request);
+            let request = self.method_type(&method.input);
+            let error = self.library_type(RPC_ROUTE, "PathError", []);
+            let built = self.library_type(RPC_ROUTE, "Route", []);
+            decls.push(Decl::Value {
+                doc: Some(format!(
+                    "Binding {index} of [`{}`](#{}): `{} {}`{}.",
+                    method.elm_name,
+                    method.elm_name,
+                    route.verb.as_str(),
+                    route.shape(),
+                    if typed.interpreted {
+                        ", interpreted"
+                    } else {
+                        ""
+                    }
+                )),
+                name: route_name(method, index),
+                annotation: ty_fn([request], Type::Tuple(vec![built, ty("Maybe", [error])])),
+                params: vec![pvar(REQUEST)],
+                body: typed.body,
+            });
+        }
+        decls
+    }
+
     /// The JSON encoder of a method's request type: the generated
     /// `encodeFoo`, or for a well-known type the runtime's encoder a field
     /// of that type uses, in the Elm form the `int64` option gives the
@@ -101,7 +171,7 @@ impl Emitter {
     /// dead-code elimination keeps a top-level value whole, so a typed value
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
-    fn request_encoder(&mut self, ty: &TypeRef) -> Expr {
+    pub(super) fn request_encoder(&mut self, ty: &TypeRef) -> Expr {
         match method_shape(ty, self.holding) {
             // Qualified: a method may be called `identity`, and its own
             // name would then refer to itself.
@@ -218,6 +288,24 @@ impl Emitter {
     /// descriptor module, which the module then imports.
     fn field_ref(&mut self, field: &FieldRef) -> Expr {
         self.generated_value(&field.module, field.name.clone())
+    }
+}
+
+/// `routeGetNote0`: the route function of a method's binding.
+fn route_name(method: &Method, index: usize) -> String {
+    format!("route{}{index}", capitalized(&method.elm_name))
+}
+
+/// `bindingsGetNote`: a method's bindings as data.
+fn bindings_name(method: &Method) -> String {
+    format!("bindings{}", capitalized(&method.elm_name))
+}
+
+fn capitalized(name: &str) -> String {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
     }
 }
 

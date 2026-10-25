@@ -10,6 +10,7 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 import Things.V1
 import Things.V1.Criteria
 import Things.V1.GetThingRequest
@@ -36,10 +37,42 @@ Described by [`descriptorGetThing`](#descriptorGetThing).
 getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
 getThing =
     Rpc.call
-        (Proto.Method.method Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
-            descriptorGetThing
+        (Proto.Method.methodWith
+            { encode = Things.V1.encodeGetThingRequest
+            , decode = Things.V1.decodeThing
+            , descriptor = descriptorGetThing
+            , routes =
+                [ { route = routeGetThing0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getThing`](#getThing): `GET /v1/things/*`.
+-}
+routeGetThing0 : Things.V1.GetThingRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetThing0 request_ =
+    let
+        value0_ =
+            request_.resource
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "page_size" 0 String.fromInt request_.limit
+                , Rpc.Route.unlessZero "filter.state" "" Basics.identity (Maybe.withDefault "" (Maybe.map .status request_.filter))
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "things", "*" ] value0_
+    )
 
 
 
@@ -55,21 +88,28 @@ descriptorGetThing =
         Proto.Method.IdempotencyUnknown
         "things.v1.GetThingRequest"
         "things.v1.Thing"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Things.V1.GetThingRequest.resource ]
-                    , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Things.V1.GetThingRequest.limit ]
-                , Proto.Http.param [ Things.V1.GetThingRequest.filter, Things.V1.Criteria.status ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getThing`](#getThing), as data.
+-}
+bindingsGetThing : List Proto.Http.Binding
+bindingsGetThing =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Things.V1.GetThingRequest.resource ]
+                , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Things.V1.GetThingRequest.limit ]
+            , Proto.Http.param [ Things.V1.GetThingRequest.filter, Things.V1.Criteria.status ]
+            ]
+        }
+    ]

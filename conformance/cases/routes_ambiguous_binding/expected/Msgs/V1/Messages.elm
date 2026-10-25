@@ -12,6 +12,7 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -40,9 +41,19 @@ Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorGetMessage
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorGetMessage
+            , routes =
+                [ { route = routeGetMessage0
+                  , responseBody = Nothing
+                  }
+                , { route = routeGetMessage1
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -58,9 +69,16 @@ Described by [`descriptorGetSub`](#descriptorGetSub).
 getSub : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 getSub =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorGetSub
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorGetSub
+            , routes =
+                [ { route = routeGetSub0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -76,9 +94,16 @@ Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorUpdateMessage
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorUpdateMessage
+            , routes =
+                [ { route = routeUpdateMessage0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -92,9 +117,16 @@ Described by [`descriptorListMessages`](#descriptorListMessages).
 listMessages : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 listMessages =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorListMessages
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorListMessages
+            , routes =
+                [ { route = routeListMessages0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -110,9 +142,16 @@ Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
 checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 checkMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorCheckMessage
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorCheckMessage
+            , routes =
+                [ { route = routeCheckMessage0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -126,9 +165,16 @@ Described by [`descriptorCheckById`](#descriptorCheckById).
 checkById : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 checkById =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorCheckById
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorCheckById
+            , routes =
+                [ { route = routeCheckById0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
 
 
@@ -144,10 +190,176 @@ Described by [`descriptorTouch`](#descriptorTouch).
 touch : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 touch =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorTouch
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorTouch
+            , routes =
+                [ { route = routeTouch0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
+-}
+routeGetMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "GET"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "id" "" Basics.identity request_.id
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    )
+
+
+{-| Binding 1 of [`getMessage`](#getMessage): `GET /v1/messages/*`.
+-}
+routeGetMessage1 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetMessage1 request_ =
+    let
+        value0_ =
+            request_.id
+    in
+    ( { method = "GET"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegment "id" "*" value0_
+    )
+
+
+{-| Binding 0 of [`getSub`](#getSub): `GET /v1/messages/*/*`.
+-}
+routeGetSub0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeGetSub0 request_ =
+    let
+        value0_ =
+            request_.id
+
+        value1_ =
+            request_.sub
+    in
+    ( { method = "GET"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ "/" ++ Rpc.Route.segment value1_
+      , query = Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+      , body = Nothing
+      }
+    , Rpc.Route.firstInvalid
+        [ Rpc.Route.checkSegment "id" "*" value0_
+        , Rpc.Route.checkSegment "sub" "*" value1_
+        ]
+    )
+
+
+{-| Binding 0 of [`updateMessage`](#updateMessage): `PATCH /v1/messages/*`.
+-}
+routeUpdateMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeUpdateMessage0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "PATCH"
+      , path = "v1/" ++ Rpc.Route.segments value0_
+      , query = []
+      , body = Just (Rpc.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
+      }
+    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`listMessages`](#listMessages): `GET /v1/messages`.
+-}
+routeListMessages0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListMessages0 request_ =
+    ( { method = "GET"
+      , path = "v1/messages"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Nothing
+    )
+
+
+{-| Binding 0 of [`checkMessage`](#checkMessage): `HEAD /v1/messages/*:check`.
+-}
+routeCheckMessage0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCheckMessage0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    ( { method = "HEAD"
+      , path = "v1/" ++ Rpc.Route.segments value0_ ++ ":check"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "id" "" Basics.identity request_.id
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegments "name" [ "messages", "*" ] value0_
+    )
+
+
+{-| Binding 0 of [`checkById`](#checkById): `HEAD /v1/messages/*:check`.
+-}
+routeCheckById0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeCheckById0 request_ =
+    let
+        value0_ =
+            request_.id
+    in
+    ( { method = "HEAD"
+      , path = "v1/messages/" ++ Rpc.Route.segment value0_ ++ ":check"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Rpc.Route.checkSegment "id" "*" value0_
+    )
+
+
+{-| Binding 0 of [`touch`](#touch): `POST /msgs.v1.Messages/ListMessages`.
+-}
+routeTouch0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeTouch0 request_ =
+    ( { method = "POST"
+      , path = "msgs.v1.Messages/ListMessages"
+      , query = []
+      , body = Just (Msgs.V1.encodeMessageRequest request_)
+      }
+    , Nothing
+    )
 
 
 
@@ -166,42 +378,49 @@ descriptorGetMessage =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        , Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getMessage`](#getMessage), as data.
+-}
+bindingsGetMessage : List Proto.Http.Binding
+bindingsGetMessage =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    , Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    ]
 
 
 {-| One more segment: another shape, no warning.
@@ -216,28 +435,35 @@ descriptorGetSub =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                    , template = []
-                    }
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.sub ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`getSub`](#getSub), as data.
+-}
+bindingsGetSub : List Proto.Http.Binding
+bindingsGetSub =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                , template = []
+                }
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.sub ]
+                , template = []
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+            ]
+        }
+    ]
 
 
 {-| GetMessage's template under another method: no warning.
@@ -252,21 +478,28 @@ descriptorUpdateMessage =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "PATCH"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`updateMessage`](#updateMessage), as data.
+-}
+bindingsUpdateMessage : List Proto.Http.Binding
+bindingsUpdateMessage =
+    [ Proto.Http.binding
+        { method = "PATCH"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]
 
 
 {-| `rpc ListMessages(MessageRequest) returns (Message)`
@@ -278,22 +511,29 @@ descriptorListMessages =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`listMessages`](#listMessages), as data.
+-}
+bindingsListMessages : List Proto.Http.Binding
+bindingsListMessages =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    ]
 
 
 {-| Two custom kinds of one method and shape: warns.
@@ -308,24 +548,31 @@ descriptorCheckMessage =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "HEAD"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.name ]
-                    , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
-                    }
-                ]
-            , customVerb = Just "check"
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`checkMessage`](#checkMessage), as data.
+-}
+bindingsCheckMessage : List Proto.Http.Binding
+bindingsCheckMessage =
+    [ Proto.Http.binding
+        { method = "HEAD"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.name ]
+                , template = [ Proto.Http.literal "messages", Proto.Http.wildcard ]
+                }
+            ]
+        , customVerb = Just "check"
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    ]
 
 
 {-| `rpc CheckById(MessageRequest) returns (Message)`
@@ -337,25 +584,32 @@ descriptorCheckById =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "HEAD"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                , Proto.Http.variable
-                    { fieldPath = [ Msgs.V1.MessageRequest.id ]
-                    , template = []
-                    }
-                ]
-            , customVerb = Just "check"
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`checkById`](#checkById), as data.
+-}
+bindingsCheckById : List Proto.Http.Binding
+bindingsCheckById =
+    [ Proto.Http.binding
+        { method = "HEAD"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            , Proto.Http.variable
+                { fieldPath = [ Msgs.V1.MessageRequest.id ]
+                , template = []
+                }
+            ]
+        , customVerb = Just "check"
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    ]
 
 
 {-| A rule on another method's implicit route: warns.
@@ -370,15 +624,22 @@ descriptorTouch =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "POST"
-            , path =
-                [ Proto.Http.literal "msgs.v1.Messages"
-                , Proto.Http.literal "ListMessages"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.wholeBody
-            , responseBody = Nothing
-            , query = []
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`touch`](#touch), as data.
+-}
+bindingsTouch : List Proto.Http.Binding
+bindingsTouch =
+    [ Proto.Http.binding
+        { method = "POST"
+        , path =
+            [ Proto.Http.literal "msgs.v1.Messages"
+            , Proto.Http.literal "ListMessages"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.wholeBody
+        , responseBody = Nothing
+        , query = []
+        }
+    ]

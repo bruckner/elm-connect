@@ -12,6 +12,7 @@ import Proto.Http
 import Proto.Method
 import Proto.Version
 import Rpc
+import Rpc.Route
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -37,10 +38,39 @@ Described by [`descriptorListArchived`](#descriptorListArchived).
 listArchived : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
 listArchived =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            descriptorListArchived
+        (Proto.Method.methodWith
+            { encode = Msgs.V1.encodeMessageRequest
+            , decode = Msgs.V1.decodeMessage
+            , descriptor = descriptorListArchived
+            , routes =
+                [ { route = routeListArchived0
+                  , responseBody = Nothing
+                  }
+                ]
+            }
         )
+
+
+
+-- ROUTES
+
+
+{-| Binding 0 of [`listArchived`](#listArchived): `GET /v1/messages`.
+-}
+routeListArchived0 : Msgs.V1.MessageRequest -> ( Rpc.Route.Route, Maybe Rpc.Route.PathError )
+routeListArchived0 request_ =
+    ( { method = "GET"
+      , path = "v1/messages"
+      , query =
+            List.concat
+                [ Rpc.Route.unlessZero "name" "" Basics.identity request_.name
+                , Rpc.Route.unlessZero "id" "" Basics.identity request_.id
+                , Rpc.Route.unlessZero "sub" "" Basics.identity request_.sub
+                ]
+      , body = Nothing
+      }
+    , Nothing
+    )
 
 
 
@@ -59,19 +89,26 @@ descriptorListArchived =
         Proto.Method.IdempotencyUnknown
         "msgs.v1.MessageRequest"
         "msgs.v1.Message"
-        [ Proto.Http.binding
-            { method = "GET"
-            , path =
-                [ Proto.Http.literal "v1"
-                , Proto.Http.literal "messages"
-                ]
-            , customVerb = Nothing
-            , body = Proto.Http.noBody
-            , responseBody = Nothing
-            , query =
-                [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
-                , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
-                ]
-            }
-        ]
+        []
+
+
+{-| The HTTP bindings of [`listArchived`](#listArchived), as data.
+-}
+bindingsListArchived : List Proto.Http.Binding
+bindingsListArchived =
+    [ Proto.Http.binding
+        { method = "GET"
+        , path =
+            [ Proto.Http.literal "v1"
+            , Proto.Http.literal "messages"
+            ]
+        , customVerb = Nothing
+        , body = Proto.Http.noBody
+        , responseBody = Nothing
+        , query =
+            [ Proto.Http.param [ Msgs.V1.MessageRequest.name ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.id ]
+            , Proto.Http.param [ Msgs.V1.MessageRequest.sub ]
+            ]
+        }
+    ]
