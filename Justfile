@@ -4,7 +4,7 @@
 # runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
+elm_dirs := "src tests conformance/live/src conformance/live/json conformance/live/both/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
 
 # Cargo's build directory, which the live suite's binaries share
 # (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
@@ -171,11 +171,12 @@ bless:
 # route fixtures against its routes.v1 echo service under Vanguard; then the
 # transcoding cases and the route fixtures again under grpc-gateway, which
 # the server mounts at /gateway; then under Envoy (live-envoy); then the
-# Connect conformance suite. Not part of `check`: it needs Go, and the
+# Connect conformance suite; then the proto codec's legs (live-proto). Not
+# part of `check`: it needs Go, and the
 # network for Go's modules, npm's packages, Envoy and connectconformance
 # (buf generates from vendored protos); CI runs it as its own job. It builds
 # the browser example too, so the README's excerpts of it compile.
-live: live-gen live-build example-notes-build && live-envoy live-conformance
+live: live-gen live-build example-notes-build && live-envoy live-conformance live-proto
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
@@ -315,6 +316,38 @@ live-conformance: live-conformance-gen live-build
     "$runner" --mode client --conf conformance.yaml --known-failing @known-failing.txt -- node conformance.mjs --send halves
     cat known-failing.txt known-failing-send.txt > build/known-failing-send.txt
     "$runner" --mode client --conf conformance.yaml --known-failing @build/known-failing-send.txt -- node conformance.mjs --send sendTraced
+
+# The proto codec over Connect (conformance/README.md): the example's Elm
+# and the Connect suite's, generated with codec=both into
+# conformance/live/build/both (not committed: the codec=json bindings are,
+# and the corpus covers the generator), and the runner built against them
+# from conformance/live/both; then the example server called over
+# application/proto (cases/proto.json), the JSON cases again on that build,
+# a method with one codec refused under the other (cases/proto-missing.json),
+# and the Connect conformance suite with the proto codec
+# (conformance-proto.yaml), through the pure halves and with Rpc.sendTraced.
+# Transcoding stays JSON whatever the codec, so its legs above cover it.
+live-proto: live-gen live-conformance-gen live-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="{{target}}/live/bin"
+    out="$PWD/conformance/live/build/both"
+    rm -rf "$out"
+    mkdir -p "$out"
+    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"proto"},{"directory":"routes"}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"codec=both"}]}')
+    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"codec=both"}]}')
+    (cd conformance/live/suite && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"."}],"plugins":[{"local":"protoc-gen-elm-connect","out":"suite","opt":"streaming=skip,codec=both"}]}')
+    (cd conformance/live/both && (elm make > /dev/null 2>&1 || true) && elm make ../src/Live.elm --output=../build/elm-both.js)
+    server="$bin/notes-server"
+    both=conformance/live/build/elm-both.js
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/proto.json conformance/live/cases/proto-missing.json
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/notes.json
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/transcode.json
+    cd conformance/live
+    runner="$(./fetch-conformance.sh)"
+    "$runner" --mode client --conf conformance-proto.yaml --known-failing @known-failing-proto.txt -- node conformance.mjs --send halves --elm build/elm-both.js
+    cat known-failing-proto.txt known-failing-send.txt > build/known-failing-proto-send.txt
+    "$runner" --mode client --conf conformance-proto.yaml --known-failing @build/known-failing-proto-send.txt -- node conformance.mjs --send sendTraced --elm build/elm-both.js
 
 # Install the live runner's npm packages as package-lock.json pins them, and
 # regenerate the conformance suite's Elm and JavaScript with buf from its

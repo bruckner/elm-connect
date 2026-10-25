@@ -15,7 +15,7 @@ import Live.Call exposing (Entry, entry)
 table : List ( ( String, String ), Entry msg )
 table =
     List.map (\( name, e ) -> ( ( "connectrpc.conformance.v1.ConformanceService", name ), e ))
-        [ ( "Unary", entry Service.unary V1.decodeUnaryRequest V1.encodeUnaryResponse )
-        , ( "IdempotentUnary", entry Service.idempotentUnary V1.decodeIdempotentUnaryRequest V1.encodeIdempotentUnaryResponse )
-        , ( "Unimplemented", entry Service.unimplemented V1.decodeUnimplementedRequest V1.encodeUnimplementedResponse )
+        [ ( "Unary", entry Service.unary V1.decodeUnaryRequest V1.messageUnaryResponse )
+        , ( "IdempotentUnary", entry Service.idempotentUnary V1.decodeIdempotentUnaryRequest V1.messageIdempotentUnaryResponse )
+        , ( "Unimplemented", entry Service.unimplemented V1.decodeUnimplementedRequest V1.messageUnimplementedResponse )
         ]

@@ -1,0 +1,24 @@
+# What elm-connect's runtime supports with the proto codec, for the Connect
+# conformance suite's runner (connectconformance --mode client; schema: the
+# Features message of connectrpc/conformance/v1/config.proto): as
+# conformance.yaml, with protobuf binary
+# (Rpc.Transport.withCodec Rpc.Transport.Proto) in place of JSON. `just
+# live-proto` runs it against the runner built on bindings generated with
+# codec=both (conformance/live/both); conformance.yaml stays the JSON run.
+features:
+  versions: [HTTP_VERSION_1]
+  protocols: [PROTOCOL_CONNECT]
+  codecs: [CODEC_PROTO]
+  compressions: [COMPRESSION_IDENTITY]
+  streamTypes: [STREAM_TYPE_UNARY]
+  supportsH2c: false
+  supportsTls: false
+  supportsTlsClientCerts: false
+  # An XMLHttpRequest cannot read HTTP trailers; Connect's unary calls do not
+  # use them.
+  supportsTrailers: false
+  supportsHalfDuplexBidiOverHttp1: false
+  supportsConnectGet: true
+  # Rpc.Transport.withReadMaxBytes, applied when a request sets
+  # message_receive_limit.
+  supportsMessageReceiveLimit: true

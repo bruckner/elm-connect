@@ -49,12 +49,16 @@ users of protoc-gen-elm.
 
 Pre-release, version 0.1.0. The generator and the runtime work: unary
 methods over Connect and over `google.api.http` transcoding, proto3
-JSON, Elm 0.19.0 to 0.19.2. The runtime passes the unary JSON test cases
-of the official [Connect conformance suite](https://github.com/connectrpc/conformance)
+JSON and, over Connect, protobuf binary, Elm 0.19.0 to 0.19.2. The
+runtime passes the unary JSON test cases of the official
+[Connect conformance suite](https://github.com/connectrpc/conformance)
 (v1.0.6), with the features declared in
 [`conformance/live/conformance.yaml`](conformance/live/conformance.yaml):
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
-calls and Connect GET. A live suite runs every method over Connect
+calls and Connect GET; with the proto codec
+([`conformance-proto.yaml`](conformance/live/conformance-proto.yaml))
+it passes all but four error-body cases that do not depend on the
+codec. A live suite runs every method over Connect
 against connect-go v2.0.1 and over transcoding against Vanguard v0.5.0
 and grpc-gateway v2.32.0, with the route fixtures under both
 transcoders.

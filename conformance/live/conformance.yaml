@@ -3,9 +3,10 @@
 # connectrpc/conformance/v1/config.proto). Design section 7, live
 # verification: unary calls over the Connect protocol, JSON only, HTTP/1.1
 # without TLS (elm/http cannot choose a protocol, and the browser does the
-# TLS), no compression, and GET for idempotent methods. Streaming, the binary
-# codec, gRPC and gRPC-Web are declared unsupported here rather than listed
-# as known to fail.
+# TLS), no compression, and GET for idempotent methods. Streaming, gRPC and
+# gRPC-Web are declared unsupported here rather than listed as known to fail;
+# the proto codec has a run of its own, conformance-proto.yaml (`just
+# live-proto`).
 features:
   versions: [HTTP_VERSION_1]
   protocols: [PROTOCOL_CONNECT]
