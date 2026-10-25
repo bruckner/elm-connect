@@ -1,4 +1,4 @@
-module Rpc.Internal.Answer exposing (toResult)
+module Rpc.Internal.Answer exposing (connectBody, statusBody, toResult)
 
 {-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
 stands for, from a Connect error body, a `google.rpc.Status` body or gRPC

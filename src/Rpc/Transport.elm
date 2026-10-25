@@ -1,6 +1,7 @@
 module Rpc.Transport exposing
     ( Transport, connect, connectGet, transcode
     , withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
+    , StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, withStreamFraming
     , name
     )
 
@@ -17,6 +18,11 @@ It is data, like the rest of a config: transports built alike are `==`.
 # Options
 
 @docs withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
+
+
+# Stream framing
+
+@docs StreamFraming, gatewayNdjson, envoyArray, envoyNdjson, envoySse, withStreamFraming
 
 
 # Reading
@@ -66,7 +72,7 @@ serve: the request Connect would POST.
 -}
 transcode : Transport
 transcode =
-    Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing }
+    Internal.Transcode { readMaxBytes = Nothing, writeMaxBytes = Nothing, streamFraming = Internal.GatewayNdjson }
 
 
 {-| POST a call whose GET URL, the whole of it with its query, would be longer
@@ -150,3 +156,56 @@ name transport =
 
         Internal.Transcode _ ->
             "transcode"
+
+
+{-| How a transcoder frames the messages of a server stream
+([`Rpc.Stream`](Rpc-Stream)). Connect has one framing, its envelopes, so this
+matters over [`transcode`](#transcode) alone.
+-}
+type alias StreamFraming =
+    Internal.StreamFraming
+
+
+{-| grpc-gateway's: a `{"result": …}` object per line, and an `{"error": …}`
+line for a failure. The default.
+-}
+gatewayNdjson : StreamFraming
+gatewayNdjson =
+    Internal.GatewayNdjson
+
+
+{-| Envoy's gRPC-JSON transcoder's default: one JSON array of the messages.
+-}
+envoyArray : StreamFraming
+envoyArray =
+    Internal.EnvoyArray
+
+
+{-| Envoy with `stream_newline_delimited`: a message per line.
+-}
+envoyNdjson : StreamFraming
+envoyNdjson =
+    Internal.EnvoyNdjson
+
+
+{-| Envoy with `stream_sse_style_delimited`: a `data:` event per message.
+-}
+envoySse : StreamFraming
+envoySse =
+    Internal.EnvoySse
+
+
+{-| The framing a transcoder streams in. Over Connect it changes nothing.
+
+    Rpc.Transport.transcode
+        |> Rpc.Transport.withStreamFraming Rpc.Transport.envoyArray
+
+-}
+withStreamFraming : StreamFraming -> Transport -> Transport
+withStreamFraming framing transport =
+    case transport of
+        Internal.Connect _ ->
+            transport
+
+        Internal.Transcode options ->
+            Internal.Transcode { options | streamFraming = framing }

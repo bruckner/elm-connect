@@ -1,5 +1,6 @@
 module Proto.Method exposing
     ( Method, method
+    , ServerStreaming, serverStreaming, streamingMethod
     , encodeRequest, responseDecoder, toDescriptor
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -17,6 +18,11 @@ prefix (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside
 any other union.
 
 @docs Method, method
+
+
+# Server streaming
+
+@docs ServerStreaming, serverStreaming, streamingMethod
 
 
 # Reading a typed value
@@ -88,6 +94,39 @@ method encode decoder methodDescriptor =
         , responseDecoder = decoder
         , descriptor = methodDescriptor
         }
+
+
+{-| A server-streaming method: one `req` answered by a stream of `res`. It is
+opaque, built by [`serverStreaming`](#serverStreaming) and given to
+[`Rpc.Stream.call`](Rpc-Stream#call); [`Rpc.call`](Rpc#call) does not take
+it, so a stream is never sent as a unary call.
+-}
+type ServerStreaming req res
+    = ServerStreaming (Method req res)
+
+
+{-| A server-streaming method from its request's encoder, its messages' decoder
+and its descriptor. Generated code writes:
+
+    watchNotes =
+        Rpc.Stream.call
+            (Proto.Method.serverStreaming Notes.V1.encodeWatchNotesRequest
+                Notes.V1.decodeNoteEvent
+                descriptorWatchNotes
+            )
+
+-}
+serverStreaming : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Descriptor -> ServerStreaming req res
+serverStreaming encode decoder methodDescriptor =
+    ServerStreaming (method encode decoder methodDescriptor)
+
+
+{-| The codecs and descriptor of a server-streaming method, read with the
+functions below: the decoder decodes one message of the stream.
+-}
+streamingMethod : ServerStreaming req res -> Method req res
+streamingMethod (ServerStreaming m) =
+    m
 
 
 {-| A request as proto3 JSON.
