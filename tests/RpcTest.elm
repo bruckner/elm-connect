@@ -1319,6 +1319,21 @@ headerRules =
             \_ ->
                 Rpc.Internal.Http.validHeaderValue (String.left 1 "😀")
                     |> Expect.equal False
+        , test "a lone low surrogate is refused wherever it is, in a value or a name" <|
+            \_ ->
+                let
+                    texts =
+                        [ "\u{DC00}abc", "a\u{DC00}bc", "abc\u{DC00}", "\u{DC00}", String.right 1 "😀" ++ "x" ]
+                in
+                ( List.map Rpc.Internal.Http.validHeaderValue texts
+                , List.map Rpc.Internal.Http.validHeaderName texts
+                , Rpc.Internal.Http.invalidHeader [ ( "X-A", "1" ), ( "X-B", "a\u{DC00}" ) ]
+                )
+                    |> Expect.equal ( List.repeat 5 False, List.repeat 5 False, Just "X-B" )
+        , test "a surrogate pair is one character above U+00FF" <|
+            \_ ->
+                ( Rpc.Internal.Http.validHeaderValue "a😀b", Rpc.Internal.Http.validHeaderName "a😀b" )
+                    |> Expect.equal ( False, False )
         , test "a name must be a token" <|
             \_ ->
                 [ "X-Request-Id", "x_y.z~!#$%&'*+^`|", "", "Bad Name", "a:b", "a\nb", "Ä", "(x)" ]
