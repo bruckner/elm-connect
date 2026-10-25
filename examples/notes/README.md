@@ -48,12 +48,23 @@ network tab beside it.
 
 The generator and the runtime install as
 [`docs/install.md`](../../docs/install.md) says. This example uses buf,
-which takes the plugin from `PATH`; `buf.gen.yaml` names it:
+which takes the plugin from `PATH`. `buf.gen.yaml` names it alone, so
+`protoc-gen-elm-connect` on `PATH` is all it needs:
 
 ```yaml examples/notes/buf.gen.yaml
-- local: protoc-gen-elm-connect
-  out: elm/generated
+version: v2
+inputs:
+  - directory: proto
+  - directory: routes
+plugins:
+  - local: protoc-gen-elm-connect
+    out: elm/generated
 ```
+
+The example's Go server has templates of its own:
+`buf.gen.server.yaml` generates its stubs, and `buf.gen.gateway.yaml`
+and `buf.gen.gateway-apart.yaml` grpc-gateway's proxies, each needing
+its Go plugins on `PATH`.
 
 From this directory, either of these generates the client:
 
@@ -76,8 +87,9 @@ module into `Google.Rpc`:
 buf generate --template buf.gen.google-rpc.yaml
 ```
 
-`just live-gen` runs both and fails if the output differs from what is
-committed. It then runs `buf generate --include-imports --template
+`just live-gen` runs these two and the server's three, with every
+plugin built into its build directory, and fails if the output differs
+from what is committed. It then runs `buf generate --include-imports --template
 buf.gen.include-imports.yaml` into a scratch directory and fails unless
 that gives the same files: with every import asked for, the plugin still
 writes no `Google.Api` module, since it skips `google/api/http.proto`

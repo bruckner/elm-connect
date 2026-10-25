@@ -261,8 +261,9 @@ envoy-install:
     tar -xJf "$tmp/envoy.tar.xz" -C "$dir" --strip-components 1
     func-e run --version > /dev/null
 
-# Regenerate the example's Go stubs, grpc-gateway's proxies (two templates;
-# buf.gen.gateway.yaml says why) and the Elm client with buf, and fail if
+# Regenerate the example's Elm client (buf.gen.yaml), Go stubs
+# (buf.gen.server.yaml), grpc-gateway's proxies (two templates;
+# buf.gen.gateway.yaml says why) and google.rpc's Elm with buf, and fail if
 # they differ from what is committed (or staged). The plugins are built into
 # the build directory's live/bin: protoc-gen-go, protoc-gen-connect-go, protoc-gen-go-grpc and
 # protoc-gen-grpc-gateway at the versions the server's go.mod pins,
@@ -279,6 +280,7 @@ live-gen:
     cargo build -p protoc-gen-elm-connect
     cp {{target}}/debug/protoc-gen-elm-connect {{target}}/live/bin/
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate
+    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.server.yaml
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway.yaml
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway-apart.yaml
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
