@@ -4,14 +4,16 @@ module Rpc exposing
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
-    , Request, request, response, taskFromRequest, splitTrailers
+    , Request, request, response, responseBytes, taskFromRequest, splitTrailers
     )
 
-{-| Call RPCs: unary and JSON-encoded, over the
+{-| Call RPCs: unary, over the
 [Connect protocol](https://connectrpc.com/docs/protocol/) as connect-go,
 connect-es, connect-python and Envoy's Connect-gRPC bridge serve it, or over
 HTTP transcoding, the REST mapping `google.api.http` rules describe, as
-grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it.
+grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it. Messages
+travel as proto3 JSON, or over Connect as protobuf binary
+([`Rpc.Transport.withCodec`](Rpc-Transport#withCodec)).
 
     Notes.V1.NotesService.getNote { name = "notes/42" }
         |> Rpc.send (Rpc.config "https://api.example.com") GotNote
@@ -72,13 +74,13 @@ sends and how it reads the answer can be checked without a server, and an
 application can rewrite a request before sending it with
 [`taskFromRequest`](#taskFromRequest).
 
-@docs Request, request, response, taskFromRequest, splitTrailers
+@docs Request, request, response, responseBytes, taskFromRequest, splitTrailers
 
 -}
 
+import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
-import Json.Encode
 import Proto.Method exposing (Method)
 import Rpc.Call
 import Rpc.Code exposing (Code)
@@ -243,9 +245,10 @@ cannot stop it.
 
 A call whose URL or headers cannot be sent (see [`Config`](#Config)), whose
 path value cannot match its variable's template (see [`request`](#request)),
-or whose request is over the transport's
-[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes), is not: it fails with
-`NoAnswer`, and nothing reaches elm/http.
+whose method has no codecs for the messages the transport sends
+([`withCodec`](Rpc-Transport#withCodec)), or whose request is over the
+transport's [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes), is not:
+it fails with `NoAnswer`, and nothing reaches elm/http.
 
 -}
 task : Config -> Call req res -> Task Error res
@@ -274,7 +277,16 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
             request cfg c
     in
     if Rpc.Internal.Call.retryIn cfg.retry c == Nothing && unsendable cfg c sent == Nothing then
-        Internal.send (response cfg c) toMsg fields.tracker sent
+        Internal.send
+            (case Rpc.Internal.Answer.binaryReader cfg.transport c of
+                Just read ->
+                    Http.expectBytesResponse toMsg read
+
+                Nothing ->
+                    Http.expectStringResponse toMsg (response cfg c)
+            )
+            fields.tracker
+            sent
 
     else
         Task.attempt toMsg (taskFromRequest cfg c sent)
@@ -415,6 +427,10 @@ as its body and `Connect-Protocol-Version: 1`. With
 `IdempotencyNoSideEffects` method is a GET of the same URL with the query
 `connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
 would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows.
+Under [`withCodec Proto`](Rpc-Transport#withCodec) the body is the request's
+protobuf binary, sent as `application/proto`, and the GET's query is
+`connect=v1&base64=1&encoding=proto&message=…`, the binary as unpadded
+URL-safe base64.
 A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
 The config's headers come first, then the call's.
 
@@ -456,10 +472,36 @@ answer longer than the transport's
 [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) is not decoded: it is
 `NoAnswer (ResponseTooLarge { limit, size })`.
 
+Under [`withCodec Proto`](Rpc-Transport#withCodec) a successful answer is
+protobuf binary, which text cannot hold faithfully: read such an answer as
+bytes, with [`responseBytes`](#responseBytes). Read as text, it is a
+`BadResponse`.
+
 -}
 response : Config -> Call req res -> Http.Response String -> Result Error res
 response cfg =
     Rpc.Internal.Answer.toResult cfg.transport
+
+
+{-| What an answer read as bytes means, as [`response`](#response) reads one
+read as text. A call under [`withCodec Proto`](Rpc-Transport#withCodec) is
+read so: its successful answer is the response's protobuf binary, which must
+come as `application/proto` or with no content type, or it is a
+`BadResponse` keeping the bytes; its error answer is JSON, read as
+[`response`](#response) reads it. Under the JSON codec the bytes are read as
+the answer's UTF-8 text.
+
+    Http.request
+        { …
+        , body = …
+        , expect = Http.expectBytesResponse GotNote (Rpc.responseBytes config call)
+        , …
+        }
+
+-}
+responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
+responseBytes cfg =
+    Rpc.Internal.Answer.toResultBytes cfg.transport
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -529,8 +571,15 @@ attempt cfg c sent =
                 (Rpc.Call.idempotency c)
                 retryCode
                 (\left ->
-                    Rpc.Internal.Wire.withBudget cfg c left sent
-                        |> Internal.task (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                    Internal.task
+                        (case Rpc.Internal.Answer.binaryReader cfg.transport c of
+                            Just read ->
+                                Http.bytesResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
+
+                            Nothing ->
+                                Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
+                        )
+                        (Rpc.Internal.Wire.withBudget cfg c left sent)
                 )
 
 
@@ -549,8 +598,10 @@ firstAttempt cfg c sent =
 fragment; a path value its variable's template cannot match, which no server
 can route to the method; a header a browser refuses, on which XHR's
 `setRequestHeader` throws outside elm/http's handler and stops the program for
-good; or a request message over the transport's write limit. The path values
-and the message are the call's, whatever a rewritten request carries.
+good; a method without codecs for the messages the transport sends; or a
+request message over the transport's write limit. The path values and the
+message are the call's, whatever a rewritten request carries. A missing codec
+is found before the retry policy runs, since no attempt could succeed.
 -}
 unsendable : Config -> Call req res -> Request -> Maybe Error
 unsendable cfg c sent =
@@ -558,16 +609,23 @@ unsendable cfg c sent =
         Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
 
     else
-        case ( Rpc.Internal.Wire.invalidPathValue cfg c, Internal.invalidHeader sent.headers ) of
-            ( Just path, _ ) ->
-                Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidPathValue path))
+        case Rpc.Internal.Wire.missingCodec cfg c of
+            Just reason ->
+                -- First: a method without the codec has no message to read
+                -- path values from or measure.
+                Just (Rpc.Error.NoAnswer reason)
 
-            ( Nothing, Just name ) ->
-                Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
+            Nothing ->
+                case ( Rpc.Internal.Wire.invalidPathValue cfg c, Internal.invalidHeader sent.headers ) of
+                    ( Just path, _ ) ->
+                        Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidPathValue path))
 
-            ( Nothing, Nothing ) ->
-                Internal.requestTooLarge cfg.transport (\() -> Json.Encode.encode 0 (Rpc.Call.requestJson c))
-                    |> Maybe.map Rpc.Error.NoAnswer
+                    ( Nothing, Just name ) ->
+                        Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
+
+                    ( Nothing, Nothing ) ->
+                        Rpc.Internal.Wire.requestTooLarge cfg c
+                            |> Maybe.map Rpc.Error.NoAnswer
 
 
 {-| The code a failed attempt is retried by, or `Nothing` when trying again

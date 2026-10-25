@@ -64,6 +64,13 @@ not (grpc-gateway, [below](#where-the-transcoders-differ)).
 A success is any 2xx, an empty body reading as `{}`, and the response
 decoded from the field `response_body` names when the rule names one.
 
+Transcoding stays JSON whatever the codec: `Rpc.Transport.withCodec
+Rpc.Transport.Proto` sends protobuf binary over Connect only, and leaves
+`transcode` as it is, the implicit route included. A method generated
+with binary codecs alone (`codec=binary`) has no JSON to send, so its
+call over transcoding fails with `NoAnswer (MissingCodec { method,
+codec = "json" })`, unsent ([calling.md](calling.md#choosing-the-codec)).
+
 ## Methods without an HTTP rule
 
 A method without a `google.api.http` rule is generated like the rest.

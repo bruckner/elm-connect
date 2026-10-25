@@ -35,6 +35,7 @@ descriptor in a module of the message's own, beside one value per field
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Bytes
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
@@ -82,7 +83,7 @@ the package site may show as `Proto.Internal.Binary.Decoder`.
 -}
 withBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a -> Message a
 withBinary encodeBinary binaryDecoder (Internal.Message m) =
-    Internal.Message { m | binary = Just { encode = encodeBinary, decoder = binaryDecoder } }
+    Internal.Message { m | binary = Just (binary encodeBinary binaryDecoder) }
 
 
 {-| A message type with protobuf binary codecs alone, as generated code under
@@ -101,8 +102,24 @@ messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
         , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
         , default = defaultValue
         , descriptor = messageDescriptor
-        , binary = Just { encode = encodeBinary, decoder = binaryDecoder }
+        , binary = Just (binary encodeBinary binaryDecoder)
         }
+
+
+{-| The binary codecs, with a value's binary as base64 and back, which an
+`Any` holds. They are built here, under `withBinary`, so that a program
+without binary codecs carries none of that code.
+-}
+binary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Internal.Binary a
+binary encodeBinary binaryDecoder =
+    { encode = encodeBinary
+    , decoder = binaryDecoder
+    , toBase64 = \value -> Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeBinary value))
+    , fromBase64 =
+        \base64 ->
+            Proto.Bytes.fromBase64 base64
+                |> Maybe.andThen (Proto.Internal.Binary.run binaryDecoder)
+    }
 
 
 {-| The protobuf binary encoder, when the message type has one.

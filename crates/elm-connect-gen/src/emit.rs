@@ -535,7 +535,10 @@ impl Emitter {
             .iter()
             .map(|message| message_shape(message, &by_name, self.holding))
             .collect();
-        let registry = vec![Decl::Comment("REGISTRY".into()), self.registry(package)];
+        let mut registry = vec![Decl::Comment("REGISTRY".into()), self.registry(package)];
+        if self.codec.json() && self.codec.binary() && !messages.is_empty() {
+            registry.push(self.binary_registry(package));
+        }
         if messages.is_empty() && package.enums.is_empty() {
             return registry;
         }

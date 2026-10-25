@@ -2171,7 +2171,21 @@ encodeAny (InternalAny.Any url payload) =
             ( "@type", Json.Encode.string url )
     in
     case payload of
-        InJson json ->
+        InBinary base64 ->
+            if String.isEmpty url && String.isEmpty base64 then
+                Json.Encode.object []
+
+            else
+                Json.Encode.object
+                    [ ( "type", Json.Encode.string (InternalAny.nameOf url) )
+                    , ( "value", Json.Encode.string base64 )
+                    ]
+
+        _ ->
+            let
+                json =
+                    InternalAny.jsonOf payload
+            in
             if hasJsonForm url then
                 Json.Encode.object [ typed, ( "value", json ) ]
 
@@ -2184,16 +2198,6 @@ encodeAny (InternalAny.Any url payload) =
                         -- Only a hand-built record writes a message as other
                         -- than an object; this keeps its JSON whole.
                         Json.Encode.object [ typed, ( "value", json ) ]
-
-        InBinary base64 ->
-            if String.isEmpty url && String.isEmpty base64 then
-                Json.Encode.object []
-
-            else
-                Json.Encode.object
-                    [ ( "type", Json.Encode.string (InternalAny.nameOf url) )
-                    , ( "value", Json.Encode.string base64 )
-                    ]
 
 
 {-| The well-known types whose proto3 JSON is not an object of their fields. An

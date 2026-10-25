@@ -169,6 +169,9 @@ problemWord problem =
         Proto.Any.BinaryOnly ->
             "binary only"
 
+        Proto.Any.Binary ->
+            "binary"
+
 
 suite : Test
 suite =
@@ -1399,6 +1402,7 @@ traces =
                 , transport = "connect"
                 , binding = Nothing
                 , request = sent
+                , requestBase64 = Nothing
                 , httpStatus = status
                 , headers = Dict.fromList [ ( "content-type", "application/json" ) ]
                 , trailers = Dict.empty

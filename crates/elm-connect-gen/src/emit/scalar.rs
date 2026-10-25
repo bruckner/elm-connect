@@ -17,6 +17,12 @@ pub(super) struct Holding {
 }
 
 impl Holding {
+    /// 64-bit integers and `bytes` as text, the default options' form.
+    pub(super) const TEXT: Holding = Holding {
+        int64: Int64::String,
+        bytes: Bytes::String,
+    };
+
     /// What the options say where no field says otherwise.
     pub(super) fn of(options: &Options) -> Self {
         Holding {

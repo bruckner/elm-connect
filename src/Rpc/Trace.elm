@@ -175,7 +175,9 @@ a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
 are in milliseconds; `binding`, `httpStatus`, the body and the timeout are
-`null` when absent.
+`null` when absent. A request body of protobuf binary
+([`withCodec Proto`](Rpc-Transport#withCodec)) is `null` as `body` and is
+given as base64 under one more key, `bodyBase64`.
 
 The request holds what was sent, the config's headers included, so a bearer
 token in them is in the JSON too; [`toString`](#toString) leaves the request
@@ -191,13 +193,21 @@ toJson (Internal.Trace t) =
         , ( "binding", maybe Encode.int t.binding )
         , ( "request"
           , Encode.object
-                [ ( "method", Encode.string t.request.method )
-                , ( "url", Encode.string t.request.url )
-                , ( "headers", Encode.list (\( k, v ) -> Encode.list Encode.string [ k, v ]) t.request.headers )
-                , ( "body", maybe Encode.string (Body.toText t.request.body) )
-                , ( "timeout", maybe Encode.float t.request.timeout )
-                , ( "withCredentials", Encode.bool t.request.withCredentials )
-                ]
+                ([ ( "method", Encode.string t.request.method )
+                 , ( "url", Encode.string t.request.url )
+                 , ( "headers", Encode.list (\( k, v ) -> Encode.list Encode.string [ k, v ]) t.request.headers )
+                 , ( "body", maybe Encode.string (Body.toText t.request.body) )
+                 , ( "timeout", maybe Encode.float t.request.timeout )
+                 , ( "withCredentials", Encode.bool t.request.withCredentials )
+                 ]
+                    ++ (case t.requestBase64 of
+                            Just base64 ->
+                                [ ( "bodyBase64", Encode.string base64 ) ]
+
+                            Nothing ->
+                                []
+                       )
+                )
           )
         , ( "httpStatus", maybe Encode.int t.httpStatus )
         , ( "headers", Encode.dict identity Encode.string t.headers )
