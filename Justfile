@@ -359,6 +359,14 @@ protos-refresh:
     cp -R "$tmp/conformance/connectrpc" "$tmp/conformance/LICENSE" "$dest/"
 
 # Build the notes example: the server, and the browser application into
+# Regenerate the Eliza example's Elm (docs/trying.md) with the CLI built from
+# this checkout, the command its README gives a reader with the released
+# binary. The generated modules are committed; run this after a generator
+# change and commit what changed.
+eliza-gen:
+    cargo build -p elm-connect
+    cd examples/eliza && {{target}}/debug/elm-connect gen -I proto connectrpc/eliza/v1/eliza.proto --streaming skip --out generated
+
 # examples/notes/elm/dist (index.html and elm.js, optimized), and compile the
 # README's excerpts in src/Snippets with it. The bare `elm make` resolves
 # dependencies first, as in elm-check.
