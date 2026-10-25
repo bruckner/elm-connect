@@ -339,16 +339,7 @@ mod tests {
     /// The expected module at `path` in the corpus, with the generator's
     /// version where the corpus has the placeholder `0.1.X`.
     fn blessed(path: &std::path::Path) -> String {
-        std::fs::read_to_string(path)
-            .expect("the blessed output")
-            .replacen(
-                &format!(
-                    "elm-connect {} ",
-                    elm_connect_gen::HEADER_VERSION_PLACEHOLDER
-                ),
-                &format!("elm-connect {} ", elm_connect_gen::VERSION),
-                1,
-            )
+        elm_connect_gen::real_version(&std::fs::read_to_string(path).expect("the blessed output"))
     }
 
     fn round_trip(request: CodeGeneratorRequest) -> CodeGeneratorResponse {

@@ -19,7 +19,7 @@ use std::fmt::Display;
 
 use crate::elm::markdown;
 use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Package, Service};
-use crate::naming::RUNTIME_DOCS;
+use crate::naming::REPOSITORY_FILES;
 
 /// `text` as a Markdown code span.
 pub(super) fn code(text: &str) -> String {
@@ -94,13 +94,16 @@ fn takes_an(name: &str) -> bool {
     "aeiou".contains(first.to_ascii_lowercase())
 }
 
-/// A link to the declaration `name` of the runtime's module `module` on
-/// the package site, an absolute URL, which an editor's hover makes
-/// clickable where it does not follow a page link.
+/// A link to the declaration `name` of the runtime's module `module`: to
+/// the module's source in the repository at this release, an absolute
+/// URL, which an editor's hover makes clickable where it does not follow
+/// a page link. The package site has a page only for a release on its
+/// index, and none for a major or minor version that generated code
+/// could name.
 pub(super) fn runtime(module: &str, name: &str) -> String {
     link(
         &format!("{module}.{name}"),
-        &format!("{RUNTIME_DOCS}{}#{name}", page(&module)),
+        &format!("{REPOSITORY_FILES}src/{}.elm", module.replace('.', "/")),
     )
 }
 
@@ -543,8 +546,11 @@ mod tests {
         assert_eq!(local("Note_"), "[`Note_`](#Note_)");
         assert_eq!(
             runtime("Proto.Message", "Descriptor"),
-            "[`Proto.Message.Descriptor`](https://package.elm-lang.org/packages/\
-             bruckner/elm-connect/latest/Proto-Message#Descriptor)"
+            format!(
+                "[`Proto.Message.Descriptor`](https://github.com/bruckner/elm-connect/blob/\
+                 {}/src/Proto/Message.elm)",
+                crate::VERSION
+            )
         );
     }
 

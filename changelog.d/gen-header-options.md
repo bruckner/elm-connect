@@ -13,3 +13,7 @@
   to the catalogue, in elm-connect's words (``The file `a.proto` imports
   `b.proto`, which is under none of the include paths.``) rather than
   protox's.
+- The `registry` doc comment links `Proto.Any.Any` to its source in the
+  repository at the generator's release, and says the package site
+  documents it once the runtime is published there; the link to the
+  package site's `latest` page failed while the runtime is not on it.
