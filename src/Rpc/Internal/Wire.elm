@@ -9,7 +9,6 @@ since `Rpc`, which defines `Config`, imports it.
 -}
 
 import Json.Encode
-import Proto.Internal.Binding exposing (Rule)
 import Proto.Method as Method exposing (Idempotency(..))
 import Rpc.Body as Body
 import Rpc.Call
@@ -19,6 +18,7 @@ import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Route as Route exposing (Route(..), route)
 import Rpc.Internal.Transport exposing (Transport(..))
 import Rpc.Request exposing (Request)
+import Rpc.Route
 
 
 {-| The fields of an `Rpc.Config` a request is built from.
@@ -43,8 +43,8 @@ request cfg c =
 
         Transcode _ ->
             case route cfg.transport c of
-                Bound _ rule ->
-                    transcodeRequest rule cfg c
+                Bound _ bound ->
+                    transcodeRequest (Tuple.first (bound.build (Rpc.Call.requestMessage c))) cfg c
 
                 Implicit ->
                     connectRequest { get = False, maxGetUrl = Nothing } cfg c
@@ -102,18 +102,14 @@ connectRequest options cfg ((Call fields) as c) =
         }
 
 
-{-| The request over one binding of a method's rule.
+{-| The request over one binding's route.
 -}
-transcodeRequest : Rule -> Settings c -> Call req res -> Request
-transcodeRequest rule cfg ((Call fields) as c) =
-    let
-        json =
-            Rpc.Call.requestJson c
-    in
-    { method = rule.method
-    , url = Route.transcodeUrl cfg.baseUrl rule json
+transcodeRequest : Rpc.Route.Route -> Settings c -> Call req res -> Request
+transcodeRequest r cfg ((Call fields) as c) =
+    { method = r.method
+    , url = Route.transcodeUrl cfg.baseUrl r
     , headers = cfg.headers ++ fields.headers
-    , body = Route.bindingBody rule json
+    , body = Route.transcodeBody r
     , timeout = callTimeout cfg c
     , withCredentials = cfg.withCredentials
     }
@@ -126,8 +122,8 @@ implicit route, which have no path variables.
 invalidPathValue : Settings c -> Call req res -> Maybe { field : String, template : String }
 invalidPathValue cfg c =
     case route cfg.transport c of
-        Bound _ rule ->
-            Route.invalidPathValue rule (Rpc.Call.requestJson c)
+        Bound _ bound ->
+            Tuple.second (bound.build (Rpc.Call.requestMessage c))
 
         Implicit ->
             Nothing

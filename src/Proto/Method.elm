@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, method
+    ( Method, method, methodWith
     , encodeRequest, responseDecoder, toDescriptor
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -16,7 +16,7 @@ The descriptor's idempotency is a union whose constructors carry its name as a
 prefix (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside
 any other union.
 
-@docs Method, method
+@docs Method, method, methodWith
 
 
 # Reading a typed value
@@ -43,6 +43,10 @@ any other union.
 import Json.Decode
 import Json.Encode
 import Proto.Http exposing (Binding)
+import Proto.Internal.Binding
+import Proto.Internal.Interpret
+import Proto.Internal.Method as Internal
+import Rpc.Route exposing (PathError, Route)
 
 
 {-| A method taking a `req` and answering a `res`. It is opaque: built by
@@ -54,12 +58,8 @@ decoder and the method's descriptor. The types'
 trees, are not part of it.
 
 -}
-type Method req res
-    = Method
-        { encodeRequest : req -> Json.Encode.Value
-        , responseDecoder : Json.Decode.Decoder res
-        , descriptor : Descriptor
-        }
+type alias Method req res =
+    Internal.Method Descriptor req res
 
 
 {-| A method from its request's proto3 JSON encoder, its response's proto3
@@ -82,25 +82,83 @@ JSON decoder and its descriptor. Generated code writes:
 
 -}
 method : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Descriptor -> Method req res
-method encode decoder methodDescriptor =
-    Method
+method encode decoder ((Descriptor d) as methodDescriptor) =
+    Internal.Method
         { encodeRequest = encode
         , responseDecoder = decoder
         , descriptor = methodDescriptor
+        , routes =
+            List.map
+                (\(Proto.Internal.Binding.Binding rule) ->
+                    { build = \req -> Proto.Internal.Interpret.route rule (encode req)
+                    , responseBody = rule.responseBody
+                    }
+                )
+                d.bindings
+        }
+
+
+{-| A method whose routes are functions of its typed request, one per
+binding of its rule in order, each with the JSON name of the response field
+its answer is read from (`responseBody`, `Nothing` for the whole response).
+Generated code writes:
+
+    getNote =
+        Rpc.call
+            (Proto.Method.methodWith
+                { encode = Notes.V1.encodeGetNoteRequest
+                , decode = Notes.V1.decodeNote
+                , descriptor = descriptorGetNote
+                , routes = [ { route = routeGetNote0, responseBody = Nothing } ]
+                }
+            )
+
+The descriptor's bindings are not read: a program that does not refer to
+them keeps none, nor the interpreter that [`method`](#method) builds its
+routes with.
+
+-}
+methodWith :
+    { encode : req -> Json.Encode.Value
+    , decode : Json.Decode.Decoder res
+    , descriptor : Descriptor
+    , routes : List { route : req -> Result PathError Route, responseBody : Maybe String }
+    }
+    -> Method req res
+methodWith m =
+    Internal.Method
+        { encodeRequest = m.encode
+        , responseDecoder = m.decode
+        , descriptor = m.descriptor
+        , routes =
+            List.map
+                (\r ->
+                    { build =
+                        \req ->
+                            case r.route req of
+                                Ok built ->
+                                    ( built, Nothing )
+
+                                Err problem ->
+                                    ( { method = "", path = "", query = [], body = Nothing }, Just problem )
+                    , responseBody = r.responseBody
+                    }
+                )
+                m.routes
         }
 
 
 {-| A request as proto3 JSON.
 -}
 encodeRequest : Method req res -> req -> Json.Encode.Value
-encodeRequest (Method m) =
+encodeRequest (Internal.Method m) =
     m.encodeRequest
 
 
 {-| The response's proto3 JSON decoder.
 -}
 responseDecoder : Method req res -> Json.Decode.Decoder res
-responseDecoder (Method m) =
+responseDecoder (Internal.Method m) =
     m.responseDecoder
 
 
@@ -109,7 +167,7 @@ the full names of its types, and its HTTP bindings, read by the functions
 below.
 -}
 toDescriptor : Method req res -> Descriptor
-toDescriptor (Method m) =
+toDescriptor (Internal.Method m) =
     m.descriptor
 
 

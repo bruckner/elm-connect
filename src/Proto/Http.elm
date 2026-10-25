@@ -3,6 +3,7 @@ module Proto.Http exposing
     , Segment, literal, variable, wildcard, doubleWildcard
     , Body, noBody, wholeBody, bodyField
     , Param, param
+    , interpret
     )
 
 {-| A method's `google.api.http` rule as data: its bindings, each a verb, a
@@ -16,12 +17,20 @@ them under the Transcode transport.
 @docs Body, noBody, wholeBody, bodyField
 @docs Param, param
 
+
+# Interpreting a binding
+
+@docs interpret
+
 -}
 
+import Json.Encode
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Internal.Binding as Internal
+import Proto.Internal.Interpret
+import Rpc.Route exposing (PathError, Route)
 
 
 {-| One binding of a method's `google.api.http` rule, built by
@@ -241,3 +250,18 @@ defaultText fields =
 last : List a -> Maybe a
 last list =
     List.head (List.reverse list)
+
+
+{-| The route a binding makes of a request's proto3 JSON, as
+[`Proto.Method.method`](Proto-Method#method) builds a call's: for a
+descriptor written as data. Generated code builds its routes from the typed
+request instead ([`Proto.Method.methodWith`](Proto-Method#methodWith)).
+-}
+interpret : Binding -> (Json.Encode.Value -> Result PathError Route)
+interpret (Internal.Binding rule) json =
+    case Proto.Internal.Interpret.route rule json of
+        ( built, Nothing ) ->
+            Ok built
+
+        ( _, Just problem ) ->
+            Err problem

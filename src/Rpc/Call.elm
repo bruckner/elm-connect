@@ -27,6 +27,7 @@ reads it back.
 -}
 
 import Json.Encode exposing (Value)
+import Proto.Internal.Method
 import Proto.Method as Method exposing (Idempotency, Method)
 import Rpc.Internal.Call as Internal
 import Rpc.Retry exposing (Retry)
@@ -145,11 +146,16 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Internal.Call c) =
-    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
+    if index >= 0 && index < routeCount c.method then
         Just (Internal.Call { c | binding = index })
 
     else
         Nothing
+
+
+routeCount : Method req res -> Int
+routeCount (Proto.Internal.Method.Method m) =
+    List.length m.routes
 
 
 

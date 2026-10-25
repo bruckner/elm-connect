@@ -40,8 +40,8 @@ toResult transport ((Call fields) as c) answer =
                     else
                         Err (failure metadata raw)
 
-                ( Transcode _, Bound _ rule ) ->
-                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
+                ( Transcode _, Bound _ bound ) ->
+                    within transport raw (\_ -> decodeBody (responseDecoder bound.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
 
                 ( Transcode _, Implicit ) ->
                     within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
