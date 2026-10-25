@@ -28,6 +28,7 @@ build() { # name dir main
 for p in "${programs[@]}"; do
     case "$p" in
         notes) build notes examples/notes/elm src/Main.elm ;;
+        notes-both) build notes-both spike/notes-both ../../examples/notes/elm/src/Main.elm ;;
         *) build "$p" spike/codec-harness "src/$p.elm" ;;
     esac
 done

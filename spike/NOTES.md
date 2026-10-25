@@ -161,3 +161,22 @@ Decisions taken while building, and the alternatives, for the report.
   `Live.elm` against notes and the conformance suite generated with
   `codec=both` into `target/live/{notes,suite}-both`
   (`spike/live-both/build.sh` generates and builds `build/elm-both.js`).
+
+## Measurements (run 2; numbers in `measurements-run2.md`)
+
+- Binary decode in Elm is 0.46–1.93x JSON's time: faster where proto3
+  JSON's decoders probe (oneofs, `Tree`, `Everything`), slower on flat
+  scalars, well-known types and long repeats (1,000 leaves: 855 vs 444 µs).
+  Encode is always slower, 1.1–3.5x (1,000 leaves: 721 vs 259 µs):
+  `JSON.stringify` is native, `Bytes.Encode.sequence` trees are not.
+- Generated binary codecs are ~1.5x the JSON ones unminified but smaller
+  minified+gzipped (7.1 vs 9.2 KB for the corpus): their code is
+  repetitive and they drop `Proto.Timestamp`.
+- The transport path costs a JSON-only program 2.2 KB gzip (notes example),
+  because `Rpc.send` reaches the bytes path statically. Moving it behind
+  `withBinary` (the method carrying a closure that sends bytes) would let DCE
+  drop it, but `Proto.Method` cannot import `Rpc.Internal` (cycle); it needs
+  the method type in an internal module both sides import. Not done here.
+- Q2 (size* vs copy): +6 % encode speed for a size function per message;
+  kept the copy. Q3 (hoisting): 1 %, kept the use-site form; a hoisted
+  recursive codec does compile.

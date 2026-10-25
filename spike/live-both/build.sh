@@ -10,6 +10,9 @@ mkdir -p target/live
 (cd examples/notes && PATH="$plugin:$PATH" buf generate \
     --template '{"version":"v2","inputs":[{"directory":"proto"},{"directory":"routes"}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes-both","opt":"codec=both"}]}' \
     -o "$root/target/live" 2> /dev/null)
+(cd examples/notes && PATH="$plugin:$PATH" buf generate \
+    --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes-both","opt":"codec=both"}]}' \
+    -o "$root/target/live" 2> /dev/null)
 (cd conformance/live/suite && PATH="$plugin:$PATH" buf generate \
     --template '{"version":"v2","inputs":[{"directory":"."}],"plugins":[{"local":"protoc-gen-elm-connect","out":"suite-both","opt":"streaming=skip,codec=both"}]}' \
     -o "$root/target/live" 2> /dev/null)
