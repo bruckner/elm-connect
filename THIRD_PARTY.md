@@ -92,3 +92,13 @@ builds and tests the three crates.
 They are Copyright Andrew Hickman and licensed under the MIT License or the
 Apache License, Version 2.0, at your option; each crate's directory carries
 its `LICENSE-MIT` and `LICENSE-APACHE`.
+
+## Protocol Buffers test protos
+
+`spike/editions-corpus/test_messages_edition2023.proto` and
+`spike/editions-corpus/test_messages_proto3_editions.proto` are copied
+unmodified from [protobuf](https://github.com/protocolbuffers/protobuf) at
+the tag `v32.0` (`conformance/test_protos/` and `editions/golden/`), as
+reference input for the editions spike. They are Copyright Google Inc. and
+licensed under the BSD 3-Clause License, as their headers say; the license
+is beside them in `spike/editions-corpus/LICENSE-protobuf`.
