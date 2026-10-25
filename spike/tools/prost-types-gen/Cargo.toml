@@ -1,0 +1,15 @@
+# Regenerates vendor/prost-types/src/protobuf.rs and src/compiler.rs from
+# protobuf's .proto files with prost-build, the way the prost-types release
+# is generated. Usage (PROTOC set to a protoc binary):
+#   cargo run --manifest-path spike/tools/prost-types-gen/Cargo.toml -- INCLUDE OUT
+# where INCLUDE holds google/protobuf/*.proto and compiler/plugin.proto.
+[package]
+name = "prost-types-gen"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+prost-build = "=0.14.4"
