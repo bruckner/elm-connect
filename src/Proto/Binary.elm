@@ -1,7 +1,7 @@
 module Proto.Binary exposing
-    ( decode, encode
+    ( decode, encode, Decoder, map
     , Codec
-    , message, field, repeated, mapEntry, skip
+    , merge, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
@@ -17,9 +17,9 @@ module Proto.Binary exposing
 {-| The protobuf binary wire format, over elm/bytes: the helpers generated
 binary codecs (`encodeNoteBytes`, `decodeNoteBytes`) are written with.
 
-A message decoder takes the number of bytes the message occupies, since
-elm/bytes cannot tell a decoder where its input ends: run one on a whole
-input with [`decode`](#decode).
+A message's [`Decoder`](#Decoder) reads it from a whole input with
+[`decode`](#decode), or into a value already read, as protobuf merges a
+message that arrives twice.
 
     Proto.Binary.decode Notes.V1.decodeNoteBytes body
     --> Just note
@@ -28,16 +28,17 @@ Encoders write fields in field-number order, leave out a field without
 presence at its default, and write a map's entries in the order of its
 `Dict` (a `bool`-keyed map's `False` entry first), so the same value always
 gives the same bytes. Decoders read fields in any order, the last of a
-repeated singular field winning, read a repeated scalar packed or not, and
-skip a field they do not know by its wire type; a group, a field of the
-wrong wire type, a length past the end and a varint longer than ten bytes
-fail.
+repeated singular field winning and a message field merged into the one
+read before it, read a repeated scalar packed or not, and skip a field they
+do not know, or one of a wire type its declaration does not take, by its
+wire type; a group, a length past the end and a varint longer than ten
+bytes fail.
 
 64-bit integers are held as the generated code holds them: a decimal
 `String`, exact, or an `Int` (the `AsInt` codecs) that fails to decode
 outside ±(2^53 − 1).
 
-@docs decode, encode
+@docs decode, encode, Decoder, map
 
 
 # Codecs
@@ -47,7 +48,7 @@ outside ±(2^53 − 1).
 
 # Decoding a message
 
-@docs message, field, repeated, mapEntry, skip
+@docs merge, field, fieldInto, repeated, mapEntry, insertBool, skip
 
 
 # Encoding a message
@@ -79,7 +80,7 @@ outside ±(2^53 − 1).
 
 import Bitwise
 import Bytes exposing (Bytes, Endianness(..))
-import Bytes.Decode as D exposing (Decoder, Step(..))
+import Bytes.Decode as D exposing (Step(..))
 import Bytes.Encode as E exposing (Encoder)
 import Dict exposing (Dict)
 import Json.Decode
@@ -87,6 +88,7 @@ import Json.Encode
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Internal.Any as InternalAny exposing (Any, Payload(..))
+import Proto.Internal.Binary as Internal
 import Proto.Json as ProtoJson
 import Time
 
@@ -98,9 +100,32 @@ import Time
 {-| Decode a whole input as one message, with its generated decoder
 (`decodeNoteBytes`); `Nothing` when the bytes are not that message.
 -}
-decode : (Int -> Decoder a) -> Bytes -> Maybe a
-decode decoder input =
-    D.decode (decoder (Bytes.width input)) input
+decode : Decoder a -> Bytes -> Maybe a
+decode =
+    Internal.run
+
+
+{-| How a message is read from protobuf binary: generated code gives one per
+message, `decodeNoteBytes : Decoder Note`, and one reading into a value
+already read, `mergeNoteBytes : Note -> Decoder Note`. Run one with
+[`decode`](#decode). The package site and compiler errors may show it as
+`Proto.Internal.Binary.Decoder`, its name inside the package.
+-}
+type alias Decoder a =
+    Internal.Decoder a
+
+
+{-| A decoder whose value is changed by a function, as generated code wraps
+a message that closes a cycle.
+-}
+map : (a -> b) -> Decoder a -> Decoder b
+map f (Internal.Decoder decoder) =
+    Internal.Decoder (\width -> D.map f (decoder width))
+
+
+run : Decoder a -> Int -> D.Decoder a
+run (Internal.Decoder decoder) =
+    decoder
 
 
 {-| Encode a message with its generated encoder (`encodeNoteBytes`).
@@ -122,17 +147,18 @@ has one by [`embedded`](#embedded).
 type Codec a
     = Codec
         { wire : Int
-        , read : Decoder ( Int, a )
+        , read : D.Decoder ( Int, a )
         , write : a -> Encoder
         , isDefault : a -> Bool
         , zero : a
         , packable : Bool
         , writeBody : a -> Encoder
-        , readBody : Int -> Decoder a
+        , readBody : Int -> D.Decoder a
+        , readInto : a -> D.Decoder ( Int, a )
         }
 
 
-scalar : Int -> Decoder ( Int, a ) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+scalar : Int -> D.Decoder ( Int, a ) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
 scalar wire read write isDefault zero =
     Codec
         { wire = wire
@@ -143,6 +169,7 @@ scalar wire read write isDefault zero =
         , packable = wire /= 2
         , writeBody = write
         , readBody = \_ -> D.map Tuple.second read
+        , readInto = \_ -> read
         }
 
 
@@ -150,31 +177,42 @@ scalar wire read write isDefault zero =
 -- DECODING A MESSAGE
 
 
-{-| A message decoder: from its default, a step that reads one field into
-the value so far given the field's number and wire type, and a function
-applied once every field is read (the generated code reverses its lists
-there). The result takes the number of bytes the message occupies.
+{-| A message decoder reading into `start`: from a step that reads one field
+into the value so far given the field's number and wire type, and a
+function applied once every field is read. Generated code reverses its
+lists there, which is why `merge` applies it to `start` too: a finished
+value's lists turned back the way the step builds them, so repeated fields
+read into a value add to its elements.
 
-    decodeLeafBytes : Int -> Bytes.Decode.Decoder Leaf
-    decodeLeafBytes =
-        Proto.Binary.message defaultLeaf
+    mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
+    mergeLeafBytes =
+        Proto.Binary.merge
             (\number wire value ->
                 case number of
                     1 ->
-                        Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire
+                        Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                     _ ->
                         Proto.Binary.skip wire value
             )
             identity
 
+    decodeLeafBytes : Proto.Binary.Decoder Leaf
+    decodeLeafBytes =
+        mergeLeafBytes defaultLeaf
+
 -}
-message : a -> (Int -> Int -> a -> Decoder ( Int, a )) -> (a -> a) -> Int -> Decoder a
+merge : (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> a -> Decoder a
+merge step finish start =
+    Internal.Decoder (\width -> D.loop ( width, finish start ) (messageStep step finish))
+
+
+message : a -> (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> Int -> D.Decoder a
 message default step finish width =
     D.loop ( width, default ) (messageStep step finish)
 
 
-messageStep : (Int -> Int -> a -> Decoder ( Int, a )) -> (a -> a) -> ( Int, a ) -> Decoder (Step ( Int, a ) a)
+messageStep : (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> ( Int, a ) -> D.Decoder (Step ( Int, a ) a)
 messageStep step finish ( remaining, acc ) =
     if remaining == 0 then
         D.succeed (Done (finish acc))
@@ -200,23 +238,45 @@ messageStep step finish ( remaining, acc ) =
 
 
 {-| Read a singular field, or a oneof member, of wire type `wire` and set
-it with the function given.
+it with the function given; a field of another wire type is skipped,
+leaving `current` as it is, as protobuf reads it: an unknown field.
 -}
-field : Codec v -> (v -> a) -> Int -> Decoder ( Int, a )
-field (Codec c) set wire =
+field : Codec v -> (v -> a) -> Int -> a -> D.Decoder ( Int, a )
+field (Codec c) set wire current =
     if wire == c.wire then
         D.map (\( width, v ) -> ( width, set v )) c.read
 
     else
-        D.fail
+        skip wire current
+
+
+{-| Read a singular message field, or a oneof's message member, into the
+message read before it (`existing`, `Nothing` when none was), as protobuf
+merges a message that arrives twice, and set it with the function given.
+-}
+fieldInto : Codec v -> Maybe v -> (v -> a) -> Int -> a -> D.Decoder ( Int, a )
+fieldInto (Codec c) existing set wire current =
+    if wire == c.wire then
+        D.map (\( width, v ) -> ( width, set v ))
+            (case existing of
+                Just before ->
+                    c.readInto before
+
+                Nothing ->
+                    c.read
+            )
+
+    else
+        skip wire current
 
 
 {-| Read an element of a repeated field, or all of a packed run of them,
 onto the front of the elements read so far (`existing`); the message's
-finishing function reverses the list.
+finishing function reverses the list. A field of another wire type is
+skipped, leaving `current` as it is.
 -}
-repeated : Codec v -> (List v -> a) -> List v -> Int -> Decoder ( Int, a )
-repeated (Codec c) set existing wire =
+repeated : Codec v -> (List v -> a) -> List v -> Int -> a -> D.Decoder ( Int, a )
+repeated (Codec c) set existing wire current =
     if wire == c.wire then
         D.map (\( width, v ) -> ( width, set (v :: existing) )) c.read
 
@@ -229,10 +289,10 @@ repeated (Codec c) set existing wire =
                 )
 
     else
-        D.fail
+        skip wire current
 
 
-packedStep : Decoder ( Int, v ) -> ( Int, List v ) -> Decoder (Step ( Int, List v ) (List v))
+packedStep : D.Decoder ( Int, v ) -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (List v))
 packedStep read ( remaining, acc ) =
     if remaining == 0 then
         D.succeed (Done acc)
@@ -245,12 +305,14 @@ packedStep read ( remaining, acc ) =
 
 
 {-| Read one entry of a map field, its key and value defaulting to their
-codecs' defaults when left out, and insert it with the function given.
+codecs' defaults when left out, and insert it with the function given; an
+entry for a key read before replaces it. A field of another wire type is
+skipped, leaving `current` as it is.
 -}
-mapEntry : Codec k -> Codec v -> (k -> v -> a) -> Int -> Decoder ( Int, a )
-mapEntry (Codec k) (Codec v) insert wire =
+mapEntry : Codec k -> Codec v -> (k -> v -> a) -> Int -> a -> D.Decoder ( Int, a )
+mapEntry (Codec k) (Codec v) insert wire current =
     if wire /= 2 then
-        D.fail
+        skip wire current
 
     else
         varint32
@@ -261,7 +323,14 @@ mapEntry (Codec k) (Codec v) insert wire =
                 )
 
 
-entryStep : Int -> Decoder ( Int, k ) -> Int -> Decoder ( Int, v ) -> ( Int, ( k, v ) ) -> Decoder (Step ( Int, ( k, v ) ) ( k, v ))
+{-| A `bool`-keyed map's entry, put in place of any for the same key.
+-}
+insertBool : Bool -> v -> List ( Bool, v ) -> List ( Bool, v )
+insertBool key item entries =
+    ( key, item ) :: List.filter (\( k, _ ) -> k /= key) entries
+
+
+entryStep : Int -> D.Decoder ( Int, k ) -> Int -> D.Decoder ( Int, v ) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) ( k, v ))
 entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as current ) =
     if remaining == 0 then
         D.succeed (Done current)
@@ -286,7 +355,7 @@ entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as curr
                     else if number == 2 && wire == valueWire then
                         D.map (\( width, next ) -> Loop ( remaining - tagWidth - width, ( key_, next ) )) readItem
 
-                    else if number == 1 || number == 2 || number == 0 then
+                    else if number == 0 then
                         D.fail
 
                     else
@@ -297,12 +366,12 @@ entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as curr
 {-| Skip a field the message does not know, by its wire type, leaving the
 value as it is. A group (wire types 3 and 4) fails.
 -}
-skip : Int -> a -> Decoder ( Int, a )
+skip : Int -> a -> D.Decoder ( Int, a )
 skip wire unchanged =
     D.map (\width -> ( width, unchanged )) (skipValue wire)
 
 
-skipValue : Int -> Decoder Int
+skipValue : Int -> D.Decoder Int
 skipValue wire =
     case wire of
         0 ->
@@ -434,7 +503,7 @@ delimited body =
 {-| A varint's width and its low 32 bits, unsigned; up to ten bytes are
 read, the bits past the 32nd dropped.
 -}
-varint32 : Decoder ( Int, Int )
+varint32 : D.Decoder ( Int, Int )
 varint32 =
     D.unsignedInt8
         |> D.andThen
@@ -447,7 +516,7 @@ varint32 =
             )
 
 
-varint32Step : ( Int, Int ) -> Decoder (Step ( Int, Int ) ( Int, Int ))
+varint32Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
 varint32Step ( index, low ) =
     D.unsignedInt8
         |> D.andThen
@@ -499,7 +568,7 @@ type U64
     = U64 Int Int
 
 
-varint64 : Decoder ( Int, U64 )
+varint64 : D.Decoder ( Int, U64 )
 varint64 =
     D.unsignedInt8
         |> D.andThen
@@ -512,7 +581,7 @@ varint64 =
             )
 
 
-varint64Step : ( Int, Int, Int ) -> Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
+varint64Step : ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
 varint64Step ( index, high, low ) =
     D.unsignedInt8
         |> D.andThen
@@ -786,7 +855,7 @@ unzigzag64 (U64 high low) =
         (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.or (Bitwise.shiftRightZfBy 1 low) (Bitwise.shiftLeftBy 31 high)) mask))
 
 
-fixed64Read : Decoder ( Int, U64 )
+fixed64Read : D.Decoder ( Int, U64 )
 fixed64Read =
     D.map2 (\low high -> ( 8, U64 high low )) (D.unsignedInt32 LE) (D.unsignedInt32 LE)
 
@@ -799,7 +868,7 @@ fixed64Write (U64 high low) =
 {-| A 64-bit codec from how the bits are read and written and how they are
 held.
 -}
-wide : Int -> Decoder ( Int, U64 ) -> (U64 -> Encoder) -> (U64 -> Maybe a) -> (a -> U64) -> a -> Codec a
+wide : Int -> D.Decoder ( Int, U64 ) -> (U64 -> Encoder) -> (U64 -> Maybe a) -> (a -> U64) -> a -> Codec a
 wide wire read write hold unhold zero =
     scalar wire
         (read
@@ -969,7 +1038,7 @@ bool =
         False
 
 
-varint64Any : Decoder ( Int, Int )
+varint64Any : D.Decoder ( Int, Int )
 varint64Any =
     D.map (\( width, U64 high low ) -> ( width, high + low )) varint64
 
@@ -985,7 +1054,7 @@ string =
         ""
 
 
-rawBytes : Decoder ( Int, Bytes )
+rawBytes : D.Decoder ( Int, Bytes )
 rawBytes =
     varint32 |> D.andThen (\( width, length ) -> D.map (\b -> ( width + length, b )) (D.bytes length))
 
@@ -1030,21 +1099,35 @@ enum toNumber fromNumber =
 -- MESSAGES
 
 
-{-| A message field's codec, from the message's generated encoder, decoder
-and default: length-delimited, and written whenever present.
+{-| A message field's codec, from the message's generated encoder, its
+decoder into a value read before (`mergeNoteBytes`) and its default:
+length-delimited, and written whenever present.
 -}
-embedded : (a -> Encoder) -> (Int -> Decoder a) -> a -> Codec a
-embedded write read zero =
+embedded : (a -> Encoder) -> (a -> Decoder a) -> a -> Codec a
+embedded write into zero =
+    let
+        readInto existing =
+            varint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (run (into existing) length))
+    in
     Codec
         { wire = 2
-        , read = varint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (read length))
+        , read = readInto zero
         , write = \v -> delimited (write v)
         , isDefault = \_ -> False
         , zero = zero
         , packable = False
         , writeBody = write
-        , readBody = read
+        , readBody = \length -> run (into zero) length
+        , readInto = readInto
         }
+
+
+{-| A well-known type's codec from a decoder that reads it whole: one that
+arrives twice replaces the one before.
+-}
+embeddedWhole : (a -> Encoder) -> (Int -> D.Decoder a) -> a -> Codec a
+embeddedWhole write read zero =
+    embedded write (\_ -> Internal.Decoder read) zero
 
 
 {-| The encoder of a whole message from its codec, for a well-known type
@@ -1055,12 +1138,12 @@ messageEncoder (Codec c) =
     c.writeBody
 
 
-{-| The decoder of a whole message from its codec, given its length, for a
-well-known type a method answers.
+{-| The decoder of a whole message from its codec, for a well-known type a
+method answers.
 -}
-messageDecoder : Codec a -> Int -> Decoder a
+messageDecoder : Codec a -> Decoder a
 messageDecoder (Codec c) =
-    c.readBody
+    Internal.Decoder c.readBody
 
 
 
@@ -1072,19 +1155,19 @@ millisecond are dropped when read.
 -}
 timestamp : Codec Time.Posix
 timestamp =
-    embedded writeTimestamp readTimestamp (Time.millisToPosix 0)
+    embeddedWhole writeTimestamp readTimestamp (Time.millisToPosix 0)
 
 
-readTimestamp : Int -> Decoder Time.Posix
+readTimestamp : Int -> D.Decoder Time.Posix
 readTimestamp =
     message ( 0, 0 )
         (\number wire ( seconds, nanos ) ->
             case number of
                 1 ->
-                    field int64AsInt (\v -> ( v, nanos )) wire
+                    field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
 
                 2 ->
-                    field int32 (\v -> ( seconds, v )) wire
+                    field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
 
                 _ ->
                     skip wire ( seconds, nanos )
@@ -1109,19 +1192,19 @@ writeTimestamp posix =
 -}
 duration : Codec Duration
 duration =
-    embedded writeDuration readDuration (Proto.Duration.fromParts 0 0)
+    embeddedWhole writeDuration readDuration (Proto.Duration.fromParts 0 0)
 
 
-readDuration : Int -> Decoder Duration
+readDuration : Int -> D.Decoder Duration
 readDuration =
     message ( 0, 0 )
         (\number wire ( seconds, nanos ) ->
             case number of
                 1 ->
-                    field int64AsInt (\v -> ( v, nanos )) wire
+                    field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
 
                 2 ->
-                    field int32 (\v -> ( seconds, v )) wire
+                    field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
 
                 _ ->
                     skip wire ( seconds, nanos )
@@ -1144,11 +1227,11 @@ binary form carries them.
 -}
 fieldMask : Codec (List String)
 fieldMask =
-    embedded (list string 1)
+    embeddedWhole (list string 1)
         (message []
             (\number wire paths ->
                 if number == 1 then
-                    repeated string identity paths wire
+                    repeated string identity paths wire paths
 
                 else
                     skip wire paths
@@ -1162,21 +1245,21 @@ fieldMask =
 -}
 empty : Codec ()
 empty =
-    embedded (\() -> nothing) (message () (\_ wire acc -> skip wire acc) identity) ()
+    embeddedWhole (\() -> nothing) (message () (\_ wire acc -> skip wire acc) identity) ()
 
 
 {-| `google.protobuf.Struct` as its members.
 -}
 struct : Codec (Dict String Json.Encode.Value)
 struct =
-    embedded writeStruct readStruct Dict.empty
+    embeddedWhole writeStruct readStruct Dict.empty
 
 
 {-| `google.protobuf.ListValue` as its elements.
 -}
 listValue : Codec (List Json.Encode.Value)
 listValue =
-    embedded writeList readList []
+    embeddedWhole writeList readList []
 
 
 {-| `google.protobuf.Value` as JSON: an object's members are written in
@@ -1184,20 +1267,20 @@ key order.
 -}
 value : Codec Json.Encode.Value
 value =
-    embedded writeValue readValue Json.Encode.null
+    embeddedWhole writeValue readValue Json.Encode.null
 
 
 valueCodec : () -> Codec Json.Encode.Value
 valueCodec () =
-    embedded writeValue readValue Json.Encode.null
+    embeddedWhole writeValue readValue Json.Encode.null
 
 
-readStruct : Int -> Decoder (Dict String Json.Encode.Value)
+readStruct : Int -> D.Decoder (Dict String Json.Encode.Value)
 readStruct =
     message Dict.empty
         (\number wire members ->
             if number == 1 then
-                mapEntry string (valueCodec ()) (\k v -> Dict.insert k v members) wire
+                mapEntry string (valueCodec ()) (\k v -> Dict.insert k v members) wire members
 
             else
                 skip wire members
@@ -1210,12 +1293,12 @@ writeStruct members =
     dict string (valueCodec ()) 1 members
 
 
-readList : Int -> Decoder (List Json.Encode.Value)
+readList : Int -> D.Decoder (List Json.Encode.Value)
 readList =
     message []
         (\number wire items ->
             if number == 1 then
-                repeated (valueCodec ()) identity items wire
+                repeated (valueCodec ()) identity items wire items
 
             else
                 skip wire items
@@ -1228,28 +1311,28 @@ writeList items =
     list (valueCodec ()) 1 items
 
 
-readValue : Int -> Decoder Json.Encode.Value
+readValue : Int -> D.Decoder Json.Encode.Value
 readValue =
     message Json.Encode.null
         (\number wire current ->
             case number of
                 1 ->
-                    field int32 (\_ -> Json.Encode.null) wire
+                    field int32 (\_ -> Json.Encode.null) wire current
 
                 2 ->
-                    field double Json.Encode.float wire
+                    field double Json.Encode.float wire current
 
                 3 ->
-                    field string Json.Encode.string wire
+                    field string Json.Encode.string wire current
 
                 4 ->
-                    field bool Json.Encode.bool wire
+                    field bool Json.Encode.bool wire current
 
                 5 ->
-                    field (embedded writeStruct readStruct Dict.empty) (Json.Encode.dict identity identity) wire
+                    field (embeddedWhole writeStruct readStruct Dict.empty) (Json.Encode.dict identity identity) wire current
 
                 6 ->
-                    field (embedded writeList readList []) (Json.Encode.list identity) wire
+                    field (embeddedWhole writeList readList []) (Json.Encode.list identity) wire current
 
                 _ ->
                     skip wire current
@@ -1291,10 +1374,10 @@ writeValue json =
             present string 3 s
 
         Ok (JArray items) ->
-            present (embedded writeList readList []) 6 items
+            present (embeddedWhole writeList readList []) 6 items
 
         Ok (JObject members) ->
-            present (embedded writeStruct readStruct Dict.empty) 5 members
+            present (embeddedWhole writeStruct readStruct Dict.empty) 5 members
 
         _ ->
             present int32 1 0
@@ -1309,19 +1392,19 @@ URL alone, since that message's binary encoder is not at hand.
 -}
 any : Codec Any
 any =
-    embedded writeAny readAny (InternalAny.Any "" (InBinary ""))
+    embeddedWhole writeAny readAny (InternalAny.Any "" (InBinary ""))
 
 
-readAny : Int -> Decoder Any
+readAny : Int -> D.Decoder Any
 readAny =
     message ( "", "" )
         (\number wire ( url, payload ) ->
             case number of
                 1 ->
-                    field string (\v -> ( v, payload )) wire
+                    field string (\v -> ( v, payload )) wire ( url, payload )
 
                 2 ->
-                    field bytes (\v -> ( url, v )) wire
+                    field bytes (\v -> ( url, v )) wire ( url, payload )
 
                 _ ->
                     skip wire ( url, payload )
@@ -1419,10 +1502,10 @@ wellKnownJson name json =
 wrapper : Codec v -> Codec v
 wrapper ((Codec c) as inner) =
     embedded (implicit inner 1)
-        (message c.zero
+        (merge
             (\number wire current ->
                 if number == 1 then
-                    field inner identity wire
+                    field inner identity wire current
 
                 else
                     skip wire current

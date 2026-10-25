@@ -92,19 +92,20 @@ fromHex text =
 {-| A one-field message whose field 1 is of `codec`, as generated code
 writes it.
 -}
-single : B.Codec a -> a -> { encode : a -> Bytes.Encode.Encoder, decode : Int -> Bytes.Decode.Decoder a }
+single : B.Codec a -> a -> { encode : a -> Bytes.Encode.Encoder, decode : B.Decoder a }
 single codec zero =
     { encode = B.present codec 1
     , decode =
-        B.message zero
+        B.merge
             (\number wireType current ->
                 if number == 1 then
-                    B.field codec identity wireType
+                    B.field codec identity wireType current
 
                 else
                     B.skip wireType current
             )
             identity
+            zero
     }
 
 
@@ -356,10 +357,10 @@ delimited =
         , test "a nested message, length-prefixed" <|
             \_ ->
                 -- Message { 3: Leaf { 1: 150 } }, from the encoding guide.
-                toHex (B.encode encodeSample { sampleDefault | leaf = Just { count = 150 } })
+                toHex (B.encode encodeSample { sampleDefault | leaf = Just { leafDefault | count = 150 } })
                     |> Expect.equal "1a03089601"
-        , test "a field of the wrong wire type fails" <|
-            \_ -> reads B.string "" identity "08 01" Nothing
+        , test "a field of the wrong wire type is skipped, as an unknown field" <|
+            \_ -> reads B.string "" identity "08 01" (Just "")
         ]
 
 
@@ -381,7 +382,13 @@ type alias Sample =
 
 type alias Leaf =
     { count : Int
+    , marks : List Int
     }
+
+
+leafDefault : Leaf
+leafDefault =
+    { count = 0, marks = [] }
 
 
 type Pick
@@ -398,21 +405,24 @@ sampleDefault =
 
 encodeLeaf : Leaf -> Bytes.Encode.Encoder
 encodeLeaf value =
-    Bytes.Encode.sequence [ B.implicit B.int32 1 value.count ]
+    Bytes.Encode.sequence [ B.implicit B.int32 1 value.count, B.list B.int32 2 value.marks ]
 
 
-decodeLeaf : Int -> Bytes.Decode.Decoder Leaf
-decodeLeaf =
-    B.message { count = 0 }
+mergeLeaf : Leaf -> B.Decoder Leaf
+mergeLeaf =
+    B.merge
         (\number wireType value ->
             case number of
                 1 ->
-                    B.field B.int32 (\v -> { value | count = v }) wireType
+                    B.field B.int32 (\v -> { value | count = v }) wireType value
+
+                2 ->
+                    B.repeated B.int32 (\v -> { value | marks = v }) value.marks wireType value
 
                 _ ->
                     B.skip wireType value
         )
-        identity
+        (\value -> { value | marks = List.reverse value.marks })
 
 
 encodeSample : Sample -> Bytes.Encode.Encoder
@@ -420,7 +430,7 @@ encodeSample value =
     Bytes.Encode.sequence
         [ B.implicit B.int32 1 value.number
         , B.implicit B.string 2 value.name
-        , B.optional (B.embedded encodeLeaf decodeLeaf { count = 0 }) 3 value.leaf
+        , B.optional (B.embedded encodeLeaf mergeLeaf leafDefault) 3 value.leaf
         , B.list B.int32 4 value.counts
         , B.list B.string 5 value.names
         , B.dict B.string B.int32 6 value.table
@@ -445,45 +455,46 @@ encodePick pick =
             B.present B.empty 10 ()
 
 
-decodeSample : Int -> Bytes.Decode.Decoder Sample
+decodeSample : B.Decoder Sample
 decodeSample =
-    B.message sampleDefault
+    B.merge
         (\number wireType value ->
             case number of
                 1 ->
-                    B.field B.int32 (\v -> { value | number = v }) wireType
+                    B.field B.int32 (\v -> { value | number = v }) wireType value
 
                 2 ->
-                    B.field B.string (\v -> { value | name = v }) wireType
+                    B.field B.string (\v -> { value | name = v }) wireType value
 
                 3 ->
-                    B.field (B.embedded encodeLeaf decodeLeaf { count = 0 }) (\v -> { value | leaf = Just v }) wireType
+                    B.fieldInto (B.embedded encodeLeaf mergeLeaf leafDefault) value.leaf (\v -> { value | leaf = Just v }) wireType value
 
                 4 ->
-                    B.repeated B.int32 (\v -> { value | counts = v }) value.counts wireType
+                    B.repeated B.int32 (\v -> { value | counts = v }) value.counts wireType value
 
                 5 ->
-                    B.repeated B.string (\v -> { value | names = v }) value.names wireType
+                    B.repeated B.string (\v -> { value | names = v }) value.names wireType value
 
                 6 ->
-                    B.mapEntry B.string B.int32 (\k v -> { value | table = Dict.insert k v value.table }) wireType
+                    B.mapEntry B.string B.int32 (\k v -> { value | table = Dict.insert k v value.table }) wireType value
 
                 7 ->
-                    B.mapEntry B.bool B.string (\k v -> { value | flags = ( k, v ) :: value.flags }) wireType
+                    B.mapEntry B.bool B.string (\k v -> { value | flags = B.insertBool k v value.flags }) wireType value
 
                 8 ->
-                    B.field B.string (\v -> { value | pick = PickText v }) wireType
+                    B.field B.string (\v -> { value | pick = PickText v }) wireType value
 
                 9 ->
-                    B.field B.int64 (\v -> { value | pick = PickBig v }) wireType
+                    B.field B.int64 (\v -> { value | pick = PickBig v }) wireType value
 
                 10 ->
-                    B.field B.empty (\_ -> { value | pick = PickNothing }) wireType
+                    B.field B.empty (\_ -> { value | pick = PickNothing }) wireType value
 
                 _ ->
                     B.skip wireType value
         )
         (\value -> { value | counts = List.reverse value.counts, names = List.reverse value.names, flags = List.reverse value.flags })
+        sampleDefault
 
 
 showSample : Sample -> String
@@ -491,7 +502,7 @@ showSample s =
     String.join " | "
         [ String.fromInt s.number
         , s.name
-        , Maybe.withDefault "-" (Maybe.map (String.fromInt << .count) s.leaf)
+        , Maybe.withDefault "-" (Maybe.map (\leaf -> String.fromInt leaf.count ++ "/" ++ String.join "," (List.map String.fromInt leaf.marks)) s.leaf)
         , String.join "," (List.map String.fromInt s.counts)
         , String.join "," s.names
         , String.join "," (List.map (\( k, v ) -> k ++ "=" ++ String.fromInt v) (Dict.toList s.table))
@@ -565,6 +576,20 @@ messages =
             \_ -> decodesAs "120178 089601" { sampleDefault | number = 150, name = "x" }
         , test "the last of a repeated singular field wins" <|
             \_ -> decodesAs "0801 0802 0803" { sampleDefault | number = 3 }
+        , test "a message field arriving twice is merged: scalars the last, lists joined" <|
+            \_ -> decodesAs "1a05 0801 120101 1a03 120103 1a00" { sampleDefault | leaf = Just { count = 1, marks = [ 1, 3 ] } }
+        , test "a message field read after another is merged into it, a later scalar winning" <|
+            \_ -> decodesAs "1a02 0805 1a02 0807" { sampleDefault | leaf = Just { count = 7, marks = [] } }
+        , test "a field of a wire type its declaration does not take is skipped" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodesAs "0d01020304 1201 78" { sampleDefault | name = "x" }
+                    , \_ -> decodesAs "0802 0a020304" { sampleDefault | number = 2 }
+                    , \_ -> decodesAs "3207 0d61626364 1005" { sampleDefault | table = Dict.fromList [ ( "", 5 ) ] }
+                    ]
+                    ()
+        , test "a bool-keyed map's later entry for a key replaces the earlier" <|
+            \_ -> decodesAs "3a05 0801 120161 3a05 0801 120162" { sampleDefault | flags = [ ( True, "b" ) ] }
         , test "the last oneof member wins" <|
             \_ -> decodesAs "4201 61 4801 5200 4202 6263" { sampleDefault | pick = PickText "bc" }
         , test "an Empty member is written, and reads as set" <|

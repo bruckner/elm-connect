@@ -51,3 +51,25 @@ the binary `Any` writer's well-known JSON conversion, added later in run 2,
 pulls `Proto.Json` (18.8 KB unminified) and `Proto.Timestamp` (6.5 KB) into
 every binary program. Corpus binary codecs (SizeBinary − SizeNullBytes):
 10466 B gzip, against JSON's 9209 (SizeJson − SizeNull).
+
+## Leg 2: merge and the opaque decoder
+
+Speed, interleaved (run 2's compiled bench `spike/out-run2/bench2.js`, then
+this build, twice; µs per input, binary only):
+
+| input | before | after | change |
+|---|---:|---:|---:|
+| corpus decode | 8.41, 8.51 | 8.91, 8.89 | +5 % |
+| corpus encode | 5.40, 5.12 | 5.29, 5.51 | noise |
+| 1,000 leaves decode | 901, 896 | 938, 935 | +4 % |
+| 1,000 leaves encode | 827, 754 | 730, 820 | noise |
+
+The opaque `Decoder` compiles to `identity`. Size:
+
+| program | minified | gzip |
+|---|---:|---:|
+| `SizeBinary`, leg 1 | 62177 | 18037 |
+| `SizeBinary`, leg 2 | 63421 | 18340 |
+| `SizeBoth`, leg 1 | 82221 | 23803 |
+| `SizeBoth`, leg 2 | 83463 | 24079 |
+| notes, `codec=json` | 78787 | 26028 |

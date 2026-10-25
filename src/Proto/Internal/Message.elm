@@ -7,10 +7,10 @@ descriptor is a parameter because its type, with its readers, stays in
 `Proto.Message`.
 -}
 
-import Bytes.Decode
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Internal.Binary
 
 
 type Message descriptor a
@@ -28,7 +28,7 @@ type Message descriptor a
 -}
 type alias Binary a =
     { encode : a -> Bytes.Encode.Encoder
-    , decoder : Int -> Bytes.Decode.Decoder a
+    , decoder : Proto.Internal.Binary.Decoder a
     , toBase64 : a -> String
     , fromBase64 : String -> Maybe a
     }

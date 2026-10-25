@@ -6,7 +6,6 @@ it, so only a program whose methods have binary codecs reaches this module.
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Decode
 import Bytes.Encode
 import Dict
 import Http
@@ -22,7 +21,7 @@ import Rpc.Response exposing (Response)
 {-| The bytes path of a method from its binary codecs and the full name of
 its response type.
 -}
-binary : (req -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder res) -> String -> Binary req res
+binary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> String -> Binary req res
 binary encode decoder output =
     { encodeRequest = encode
     , responseDecoder = decoder
@@ -81,7 +80,7 @@ base64Url =
 `application/proto` or with no content type; every other answer is text,
 read by `readText`.
 -}
-read : (Int -> Bytes.Decode.Decoder res) -> String -> Maybe Int -> (Http.Response String -> Result Error res) -> Http.Response Bytes -> Result Error res
+read : Proto.Binary.Decoder res -> String -> Maybe Int -> (Http.Response String -> Result Error res) -> Http.Response Bytes -> Result Error res
 read decoder output limit readText answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
@@ -135,7 +134,7 @@ mediaType value =
         |> String.toLower
 
 
-decodeBinary : (Int -> Bytes.Decode.Decoder res) -> String -> Maybe Int -> Http.Metadata -> Bytes -> Result Error res
+decodeBinary : Proto.Binary.Decoder res -> String -> Maybe Int -> Http.Metadata -> Bytes -> Result Error res
 decodeBinary decoder output limit metadata raw =
     case limit of
         Just most ->
@@ -149,7 +148,7 @@ decodeBinary decoder output limit metadata raw =
             readBinary decoder output metadata raw
 
 
-readBinary : (Int -> Bytes.Decode.Decoder res) -> String -> Http.Metadata -> Bytes -> Result Error res
+readBinary : Proto.Binary.Decoder res -> String -> Http.Metadata -> Bytes -> Result Error res
 readBinary decoder output metadata raw =
     Proto.Binary.decode decoder raw
         |> Result.fromMaybe (Error.BadResponse ("the body is not a " ++ output ++ " in protobuf binary") (binaryAnswer metadata raw))

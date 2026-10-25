@@ -565,6 +565,7 @@ impl Emitter {
             }
             if binary {
                 binary_encoders.push(self.message_encoder_bytes(shape));
+                binary_decoders.push(self.message_merge_bytes(shape));
                 binary_decoders.push(self.message_decoder_bytes(shape));
             }
             if let Some(wrapper) = &shape.message.wrapper {

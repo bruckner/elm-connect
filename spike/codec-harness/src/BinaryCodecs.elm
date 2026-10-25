@@ -13,7 +13,7 @@ import Proto.Binary
 import Proto.Bytes
 
 
-entry : (Int -> Bytes.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> String -> Maybe String
+entry : Proto.Binary.Decoder a -> (a -> Bytes.Encode.Encoder) -> String -> Maybe String
 entry decoder encode input =
     Proto.Bytes.fromBase64 input
         |> Maybe.andThen (Proto.Binary.decode decoder)

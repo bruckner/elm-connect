@@ -8,14 +8,6 @@
 
 # --- Binary ---
 
-# ours: a singular message field (or a oneof's message member) arriving
-# twice is replaced, not merged (spike/NOTES.md, merge semantics).
-Required.Proto3.ProtobufInput.RepeatedScalarMessageMerge.JsonOutput
-Required.Proto3.ProtobufInput.RepeatedScalarMessageMerge.ProtobufOutput
-Required.Proto3.ProtobufInput.ValidDataOneof.MESSAGE.Merge.JsonOutput
-Required.Proto3.ProtobufInput.ValidDataOneof.MESSAGE.Merge.ProtobufOutput
-Recommended.Proto3.ProtobufInput.ValidDataOneofBinary.MESSAGE.Merge.ProtobufOutput
-
 # spec choice: unknown fields are skipped, not kept and written back.
 Required.Proto3.ProtobufInput.UnknownOrdering.ProtobufOutput
 Required.Proto3.ProtobufInput.UnknownVarint.ProtobufOutput

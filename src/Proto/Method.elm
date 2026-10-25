@@ -40,10 +40,10 @@ any other union.
 
 -}
 
-import Bytes.Decode
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Http exposing (Binding)
 import Proto.Internal.Method as Internal
 import Rpc.Internal.Binary
@@ -105,7 +105,7 @@ generated code under `codec=both` writes
             Notes.V1.decodeNoteBytes
 
 -}
-withBinary : (req -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder res) -> Method req res -> Method req res
+withBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method req res -> Method req res
 withBinary encodeBinary binaryDecoder (Internal.Method m) =
     Internal.Method { m | binary = Just (Rpc.Internal.Binary.binary encodeBinary binaryDecoder (output m.descriptor)) }
 
@@ -114,7 +114,7 @@ withBinary encodeBinary binaryDecoder (Internal.Method m) =
 encoder writes `null` and its JSON decoder fails, so it is for Connect's
 proto codec only, not for transcoding.
 -}
-methodBinary : (req -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder res) -> Descriptor -> Method req res
+methodBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Descriptor -> Method req res
 methodBinary encodeBinary binaryDecoder methodDescriptor =
     Internal.Method
         { encodeRequest = \_ -> Json.Encode.null
@@ -132,10 +132,9 @@ encodeRequestBytes (Internal.Method m) =
     Maybe.map .encodeRequest m.binary
 
 
-{-| The response's protobuf binary decoder, when the method has one; it
-takes the response's length in bytes.
+{-| The response's protobuf binary decoder, when the method has one.
 -}
-responseBytesDecoder : Method req res -> Maybe (Int -> Bytes.Decode.Decoder res)
+responseBytesDecoder : Method req res -> Maybe (Proto.Binary.Decoder res)
 responseBytesDecoder (Internal.Method m) =
     Maybe.map .responseDecoder m.binary
 

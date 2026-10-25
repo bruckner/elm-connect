@@ -27,7 +27,7 @@ type alias Entry =
     }
 
 
-entry : Json.Decode.Decoder a -> (a -> Json.Encode.Value) -> (Int -> Bytes.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Entry
+entry : Json.Decode.Decoder a -> (a -> Json.Encode.Value) -> Proto.Binary.Decoder a -> (a -> Bytes.Encode.Encoder) -> Entry
 entry decoder encode decoderBytes encodeBytes =
     { decodeJson =
         \input ->

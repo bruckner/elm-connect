@@ -23,7 +23,7 @@ defaultNode =
 
 codecNode : Proto.Binary.Codec Node
 codecNode =
-    Proto.Binary.embedded encodeNode decodeNode defaultNode
+    Proto.Binary.embedded encodeNode mergeNode defaultNode
 
 
 encodeNode : Node -> E.Encoder
@@ -31,22 +31,28 @@ encodeNode (Node n) =
     E.sequence [ Proto.Binary.implicit Proto.Binary.string 1 n.label, Proto.Binary.list codecNode 2 n.children ]
 
 
-decodeNode : Int -> Bytes.Decode.Decoder Node
-decodeNode =
-    Proto.Binary.message { label = "", children = [] }
+mergeNode : Node -> Proto.Binary.Decoder Node
+mergeNode (Node start) =
+    Proto.Binary.merge
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated codecNode (\v -> { value | children = v }) value.children wire
+                    Proto.Binary.repeated codecNode (\v -> { value | children = v }) value.children wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value -> { value | children = List.reverse value.children })
-        >> Bytes.Decode.map Node
+        start
+        |> Proto.Binary.map Node
+
+
+decodeNode : Proto.Binary.Decoder Node
+decodeNode =
+    mergeNode defaultNode
 
 
 main : Program () () ()

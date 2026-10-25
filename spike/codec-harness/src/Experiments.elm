@@ -81,32 +81,34 @@ encodeRepeatedSized value =
 
 leafCodec : Proto.Binary.Codec V1.Leaf
 leafCodec =
-    Proto.Binary.embedded V1.encodeLeafBytes V1.decodeLeafBytes V1.defaultLeaf
+    Proto.Binary.embedded V1.encodeLeafBytes V1.mergeLeafBytes V1.defaultLeaf
 
 
-decodeRepeatedHoisted : Int -> Bytes.Decode.Decoder V1.Repeated
+decodeRepeatedHoisted : Proto.Binary.Decoder V1.Repeated
 decodeRepeatedHoisted =
-    Proto.Binary.message V1.defaultRepeated
+    Proto.Binary.merge
         (\number wire value ->
             case number of
                 11 ->
-                    Proto.Binary.repeated leafCodec (\v -> { value | leaves = v }) value.leaves wire
+                    Proto.Binary.repeated leafCodec (\v -> { value | leaves = v }) value.leaves wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value -> { value | leaves = List.reverse value.leaves })
+        V1.defaultRepeated
 
 
-decodeRepeatedInline : Int -> Bytes.Decode.Decoder V1.Repeated
+decodeRepeatedInline : Proto.Binary.Decoder V1.Repeated
 decodeRepeatedInline =
-    Proto.Binary.message V1.defaultRepeated
+    Proto.Binary.merge
         (\number wire value ->
             case number of
                 11 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded V1.encodeLeafBytes V1.decodeLeafBytes V1.defaultLeaf) (\v -> { value | leaves = v }) value.leaves wire
+                    Proto.Binary.repeated (Proto.Binary.embedded V1.encodeLeafBytes V1.mergeLeafBytes V1.defaultLeaf) (\v -> { value | leaves = v }) value.leaves wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value -> { value | leaves = List.reverse value.leaves })
+        V1.defaultRepeated

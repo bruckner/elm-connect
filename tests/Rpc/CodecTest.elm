@@ -39,18 +39,19 @@ decodeTitle =
     Json.Decode.field "title" Json.Decode.string
 
 
-decodeTitleBytes : Int -> Bytes.Decode.Decoder String
+decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.message ""
+    Proto.Binary.merge
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string identity wire
+                    Proto.Binary.field Proto.Binary.string identity wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         identity
+        ""
 
 
 descriptor : String -> Idempotency -> Proto.Method.Descriptor

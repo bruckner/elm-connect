@@ -1,20 +1,23 @@
 //! Protobuf binary codecs, under `codec=binary` or `codec=both`: per
-//! message `encodeFooBytes : Foo -> Bytes.Encode.Encoder` and
-//! `decodeFooBytes : Int -> Bytes.Decode.Decoder Foo` (the message's
-//! length in bytes given, as `Proto.Binary.decode` gives it), per enum its
-//! number conversions `encodeBarBytes : Bar -> Int` and
-//! `decodeBarBytes : Int -> Bar`, per oneof an encoder of its set member,
-//! and per recursion wrapper a pair that unwraps and wraps.
+//! message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
+//! `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` (reading into a value
+//! read before, as protobuf merges a message arriving twice) and
+//! `decodeFooBytes : Proto.Binary.Decoder Foo` (`mergeFooBytes` of the
+//! default), per enum its number conversions `encodeBarBytes : Bar -> Int`
+//! and `decodeBarBytes : Int -> Bar`, per oneof an encoder of its set
+//! member, and per recursion wrapper a pair that unwraps and wraps.
 //!
 //! An encoder is `Bytes.Encode.sequence` of one `Proto.Binary` field
 //! helper per field in field-number order, each oneof's encoder where its
-//! first member's number falls. A decoder is `Proto.Binary.message` of the
-//! message's default, a step that `case`s on the field number into a
-//! record update (an unknown number skipped by its wire type), and a
-//! finishing function that reverses the lists the step built front-first.
-//! Every value's codec is a `Proto.Binary.Codec`: the runtime's for a
-//! scalar or well-known type, `Proto.Binary.enum` of an enum's
-//! conversions, `Proto.Binary.embedded` of a message's codecs and default.
+//! first member's number falls. A merge is `Proto.Binary.merge` of a step
+//! that `case`s on the field number into a record update (an unknown
+//! number skipped by its wire type) and a finishing function that reverses
+//! the lists the step built front-first. A singular message field, and a
+//! oneof's message member, is read into the message read before it
+//! (`Proto.Binary.fieldInto`). Every value's codec is a
+//! `Proto.Binary.Codec`: the runtime's for a scalar or well-known type,
+//! `Proto.Binary.enum` of an enum's conversions, `Proto.Binary.embedded`
+//! of a message's encoder, merge and default.
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
@@ -31,8 +34,6 @@ use crate::options::Int64;
 
 /// elm/bytes' encoders.
 pub(super) const BYTES_ENCODE: &str = "Bytes.Encode";
-/// elm/bytes' decoders.
-pub(super) const BYTES_DECODE: &str = "Bytes.Decode";
 /// The runtime package's wire format.
 pub(super) const PROTO_BINARY: &str = "Proto.Binary";
 
@@ -45,12 +46,21 @@ const NUMBER: &str = "number";
 const WIRE: &str = "wire";
 const ITEM: &str = "v";
 const KEY: &str = "k";
-const WIDTH: &str = "width";
 
 /// The binary codec's name beside a JSON codec's: `encodeNote` becomes
 /// `encodeNoteBytes`.
 pub(super) fn bytes_name(json_name: String) -> String {
     format!("{json_name}Bytes")
+}
+
+/// The binary merge beside a decoder's name: `decodeNote` becomes
+/// `mergeNoteBytes`. `merge` is a prefix like the others
+/// (`crate::naming::default_name`), none of which it begins or ends.
+fn merge_name(decoder_name: String) -> String {
+    let type_name = decoder_name
+        .strip_prefix("decode")
+        .expect("a decoder's name starts with decode");
+    format!("merge{type_name}Bytes")
 }
 
 /// The runtime codec of a scalar of `kind`, held as `holding` says.
@@ -170,7 +180,7 @@ impl Emitter {
                     embedded,
                     [
                         var(bytes_name(wrapper.encoder_name())),
-                        var(bytes_name(wrapper.decoder_name())),
+                        var(merge_name(wrapper.decoder_name())),
                         apply(var(wrapper.elm_name.clone()), [default]),
                     ],
                 )
@@ -184,7 +194,7 @@ impl Emitter {
             }
             (TypeRef::Message(name), None) => {
                 let encode = self.generated_value(&name.module, bytes_name(name.encoder_name()));
-                let decode = self.generated_value(&name.module, bytes_name(name.decoder_name()));
+                let decode = self.generated_value(&name.module, merge_name(name.decoder_name()));
                 let default = self.generated_value(&name.module, default_name(&name.name));
                 let embedded = self.binary("embedded");
                 apply(embedded, [encode, decode, default])
@@ -203,8 +213,13 @@ impl Emitter {
     }
 
     fn bytes_decoder_type(&mut self, of: Type) -> Type {
-        let decoder = self.library_type(BYTES_DECODE, "Decoder", [of]);
-        Type::Function(Box::new(ty(self.core("Int"), [])), Box::new(decoder))
+        self.library_type(PROTO_BINARY, "Decoder", [of])
+    }
+
+    /// `Foo -> Proto.Binary.Decoder Foo`.
+    fn bytes_merge_type(&mut self, of: Type) -> Type {
+        let decoder = self.bytes_decoder_type(of.clone());
+        Type::Function(Box::new(of), Box::new(decoder))
     }
 
     /// `encodeFooBytes : Foo -> Bytes.Encode.Encoder`.
@@ -280,11 +295,32 @@ impl Emitter {
         }
     }
 
-    /// `decodeFooBytes : Int -> Bytes.Decode.Decoder Foo`.
+    /// `decodeFooBytes : Proto.Binary.Decoder Foo`, `mergeFooBytes` of the
+    /// default.
     pub(super) fn message_decoder_bytes(&mut self, shape: &MessageShape) -> Decl {
+        let annotation = self.bytes_decoder_type(ty(shape.message.elm_name.clone(), []));
+        Decl::Value {
+            doc: Some(format!(
+                "Decodes {} from protobuf binary.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: bytes_name(shape.message.decoder_name()),
+            annotation,
+            params: Vec::new(),
+            body: apply(
+                var(merge_name(shape.message.decoder_name())),
+                [var(shape.message.default_name())],
+            ),
+        }
+    }
+
+    /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
+    /// into the one given, as protobuf merges a message arriving twice.
+    pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
         let wire = || var(WIRE);
+        let record = || var(ENCODER_ARGUMENT);
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
             let current = access(var(ENCODER_ARGUMENT), name);
@@ -292,17 +328,28 @@ impl Emitter {
             let step = match field_shape {
                 FieldShape::Plain(_) => {
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
-                    apply(self.binary("field"), [codec, set, wire()])
+                    apply(self.binary("field"), [codec, set, wire(), record()])
+                }
+                FieldShape::Maybe(_) if matches!(field.ty, TypeRef::Message(_)) => {
+                    let just = apply(var(self.core("Just")), [var(ITEM)]);
+                    let set = lambda([pvar(ITEM)], update(name, just));
+                    apply(
+                        self.binary("fieldInto"),
+                        [codec, current, set, wire(), record()],
+                    )
                 }
                 FieldShape::Maybe(_) | FieldShape::Json => {
                     let just = apply(var(self.core("Just")), [var(ITEM)]);
                     let set = lambda([pvar(ITEM)], update(name, just));
-                    apply(self.binary("field"), [codec, set, wire()])
+                    apply(self.binary("field"), [codec, set, wire(), record()])
                 }
                 FieldShape::List(_) => {
                     reversed.push(name.to_owned());
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
-                    apply(self.binary("repeated"), [codec, set, current, wire()])
+                    apply(
+                        self.binary("repeated"),
+                        [codec, set, current, wire(), record()],
+                    )
                 }
                 FieldShape::Dict(..) => {
                     let Cardinality::Map(key) = field.cardinality else {
@@ -312,15 +359,15 @@ impl Emitter {
                     let insert = self.reference((super::CORE_DICT, "insert"));
                     let inserted = apply(insert, [var(KEY), var(ITEM), current]);
                     let set = lambda([pvar(KEY), pvar(ITEM)], update(name, inserted));
-                    apply(self.binary("mapEntry"), [key, codec, set, wire()])
+                    apply(self.binary("mapEntry"), [key, codec, set, wire(), record()])
                 }
                 FieldShape::BoolMap(_) => {
                     reversed.push(name.to_owned());
                     let key = self.binary("bool");
-                    let pair = Expr::Tuple(vec![var(KEY), var(ITEM)]);
-                    let consed = binop(BinOp::Cons, pair, current);
-                    let set = lambda([pvar(KEY), pvar(ITEM)], update(name, consed));
-                    apply(self.binary("mapEntry"), [key, codec, set, wire()])
+                    let insert = self.binary("insertBool");
+                    let inserted = apply(insert, [var(KEY), var(ITEM), current]);
+                    let set = lambda([pvar(KEY), pvar(ITEM)], update(name, inserted));
+                    apply(self.binary("mapEntry"), [key, codec, set, wire(), record()])
                 }
             };
             branches.push((field.number, step));
@@ -339,10 +386,25 @@ impl Emitter {
                     let member = apply(var(variant.elm_ctor.clone()), [var(ITEM)]);
                     lambda([pvar(ITEM)], update(name, member))
                 };
-                branches.push((
-                    variant.number,
-                    apply(self.binary("field"), [codec, set, wire()]),
-                ));
+                let step = if matches!(variant.ty, TypeRef::Message(_)) {
+                    // The member read before, when it is this one.
+                    let just = apply(var(self.core("Just")), [var(ONEOF_MEMBER)]);
+                    let nothing = var(self.core("Nothing"));
+                    let existing = case(
+                        access(var(ENCODER_ARGUMENT), name),
+                        [
+                            (pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]), just),
+                            (Pattern::Wildcard, nothing),
+                        ],
+                    );
+                    apply(
+                        self.binary("fieldInto"),
+                        [codec, existing, set, wire(), record()],
+                    )
+                } else {
+                    apply(self.binary("field"), [codec, set, wire(), record()])
+                };
+                branches.push((variant.number, step));
             }
         }
         branches.sort_by_key(|(number, _)| *number);
@@ -381,17 +443,17 @@ impl Emitter {
                 },
             )
         };
-        let message = self.binary("message");
-        let annotation = self.bytes_decoder_type(ty(shape.message.elm_name.clone(), []));
+        let merge = self.binary("merge");
+        let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));
         Decl::Value {
             doc: Some(format!(
-                "Decodes {} from protobuf binary, given its length in bytes.",
+                "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
                 docs::a_local(&shape.message.elm_name)
             )),
-            name: bytes_name(shape.message.decoder_name()),
+            name: merge_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(message, [var(shape.message.default_name()), step, finish]),
+            body: apply(merge, [step, finish]),
         }
     }
 
@@ -461,25 +523,28 @@ impl Emitter {
         }
     }
 
-    /// `decodeNode_Bytes width = Bytes.Decode.map Node_ (decodeNodeBytes
-    /// width)`: a function, so the decoders of a cycle refer to each other
-    /// through functions only.
+    /// `mergeNode_Bytes (Node_ value) = Proto.Binary.map Node_
+    /// (mergeNodeBytes value)`: a function, so the merges of a cycle refer
+    /// to each other through functions only.
     pub(super) fn wrapper_decoder_bytes(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
-        let map = self.reference((BYTES_DECODE, "map"));
-        let annotation = self.bytes_decoder_type(ty(wrapper.elm_name.clone(), []));
+        let map = self.binary("map");
+        let annotation = self.bytes_merge_type(ty(wrapper.elm_name.clone(), []));
         Decl::Value {
             doc: Some(format!(
-                "Decodes {} from protobuf binary, given its length in bytes.",
+                "Decodes {} from protobuf binary into the one given.",
                 docs::a_local(&wrapper.elm_name)
             )),
-            name: bytes_name(wrapper.decoder_name()),
+            name: merge_name(wrapper.decoder_name()),
             annotation,
-            params: vec![pvar(WIDTH)],
+            params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
             body: apply(
                 map,
                 [
                     var(wrapper.elm_name.clone()),
-                    apply(var(bytes_name(message.decoder_name())), [var(WIDTH)]),
+                    apply(
+                        var(merge_name(message.decoder_name())),
+                        [var(ENCODER_ARGUMENT)],
+                    ),
                 ],
             ),
         }

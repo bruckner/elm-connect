@@ -32,13 +32,12 @@ descriptor in a module of the message's own, beside one value per field
 
 -}
 
-import Bytes
-import Bytes.Decode
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
 import Proto.Field as Field
+import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
 
 
@@ -78,11 +77,11 @@ message encodeJson jsonDecoder defaultValue messageDescriptor =
         Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
             |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes
 
-The binary decoder takes the message's length in bytes, as
-[`Proto.Binary.decode`](Proto-Binary#decode) gives it.
+The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder),
+which the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
-withBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> Message a -> Message a
+withBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a -> Message a
 withBinary encodeBinary binaryDecoder (Internal.Message m) =
     Internal.Message { m | binary = Just (binary encodeBinary binaryDecoder) }
 
@@ -91,7 +90,7 @@ withBinary encodeBinary binaryDecoder (Internal.Message m) =
 `codec=binary` writes it. Its JSON encoder writes `null` and its JSON decoder
 fails.
 -}
-messageBinary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> a -> Descriptor -> Message a
+messageBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> a -> Descriptor -> Message a
 messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
     Internal.Message
         { encode = \_ -> Json.Encode.null
@@ -106,7 +105,7 @@ messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
 They are built here, under `withBinary`, so that a program without binary
 codecs carries none of that code.
 -}
-binary : (a -> Bytes.Encode.Encoder) -> (Int -> Bytes.Decode.Decoder a) -> Internal.Binary a
+binary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Internal.Binary a
 binary encodeBinary binaryDecoder =
     { encode = encodeBinary
     , decoder = binaryDecoder
@@ -114,7 +113,7 @@ binary encodeBinary binaryDecoder =
     , fromBase64 =
         \base64 ->
             Proto.Bytes.fromBase64 base64
-                |> Maybe.andThen (\bytes -> Bytes.Decode.decode (binaryDecoder (Bytes.width bytes)) bytes)
+                |> Maybe.andThen (Proto.Internal.Binary.run binaryDecoder)
     }
 
 
@@ -125,10 +124,9 @@ encodeBytes (Internal.Message m) =
     Maybe.map .encode m.binary
 
 
-{-| The protobuf binary decoder, when the typed value has one; it takes the
-message's length in bytes.
+{-| The protobuf binary decoder, when the typed value has one.
 -}
-bytesDecoder : Message a -> Maybe (Int -> Bytes.Decode.Decoder a)
+bytesDecoder : Message a -> Maybe (Proto.Internal.Binary.Decoder a)
 bytesDecoder (Internal.Message m) =
     Maybe.map .decoder m.binary
 

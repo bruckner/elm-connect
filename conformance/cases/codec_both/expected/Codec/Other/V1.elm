@@ -8,7 +8,6 @@ module Codec.Other.V1 exposing (..)
 boundary (docs/design.md §7, conformance/README.md "Codec round trips").
 -}
 
-import Bytes.Decode
 import Bytes.Encode
 import Codec.Other.V1.Remote
 import Codec.Other.V1.Shade
@@ -216,12 +215,11 @@ decodeShadeBytes number =
             ShadeUnspecified
 
 
-{-| Decodes a [`Remote`](#Remote) from protobuf binary, given its length in bytes.
+{-| Decodes a [`Remote`](#Remote) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-decodeRemoteBytes : Int -> Bytes.Decode.Decoder Remote
-decodeRemoteBytes =
-    Proto.Binary.message
-        defaultRemote
+mergeRemoteBytes : Remote -> Proto.Binary.Decoder Remote
+mergeRemoteBytes =
+    Proto.Binary.merge
         (\number wire value ->
             case number of
                 1 ->
@@ -233,6 +231,7 @@ decodeRemoteBytes =
                             }
                         )
                         wire
+                        value
 
                 2 ->
                     Proto.Binary.field
@@ -243,6 +242,7 @@ decodeRemoteBytes =
                             }
                         )
                         wire
+                        value
 
                 3 ->
                     Proto.Binary.field
@@ -253,8 +253,16 @@ decodeRemoteBytes =
                             }
                         )
                         wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         identity
+
+
+{-| Decodes a [`Remote`](#Remote) from protobuf binary.
+-}
+decodeRemoteBytes : Proto.Binary.Decoder Remote
+decodeRemoteBytes =
+    mergeRemoteBytes defaultRemote

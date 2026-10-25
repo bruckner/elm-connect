@@ -4,8 +4,8 @@ Decisions taken while building, and the alternatives, for the report.
 
 ## Proto.Binary (runtime)
 
-- **A message decoder takes its byte length** (`Int -> Bytes.Decode.Decoder a`),
-  not a bare `Bytes.Decode.Decoder a`. elm/bytes has no end-of-input test, no
+- **A message decoder takes its byte length**, now inside the opaque
+  `Proto.Binary.Decoder a` (run 3, below); it was `Int -> Bytes.Decode.Decoder a`. elm/bytes has no end-of-input test, no
   position and no backtracking (`oneOf`), so a decoder cannot find where a
   message ends on its own; every read reports its width and the message loop
   counts down the length. `Proto.Binary.decode decodeXBytes bytes` supplies
@@ -36,10 +36,9 @@ Decisions taken while building, and the alternatives, for the report.
   unit, 64-bit keys held as text by their text, so `"-1" < "10" < "2"`), a
   `bool` map's `False` first. Deterministic per value, not protobuf-go's
   deterministic order for 64-bit keys held as text.
-- **Not done**: a singular message field arriving twice is replaced, not
-  merged (protobuf merges); a packed run arriving for a singular scalar field
-  fails (protobuf takes its last element); a duplicate key in a `bool` map is
-  kept twice.
+- **Merge** (run 3, below): a singular message field arriving twice is
+  merged; a field of a wire type its declaration does not take is skipped
+  as unknown; a duplicate key in a `bool` map replaces the earlier entry.
 - **`Any`**: read, it holds the packed message's binary (`InBinary`), as an
   `Any` from a Connect error detail does, so `Proto.Any.unpack` gives
   `BinaryOnly`. An `Any` holding JSON (decoded from proto3 JSON, or `pack`ed)
@@ -260,7 +259,7 @@ Decisions taken while building, and the alternatives, for the report.
   Float, lenient JSON parsing, unknown enum names), classified in
   `conformance/protobuf/failure_list.txt`.
 
-## Merge semantics, specified (run-1 Q8; over an hour, not built)
+## Merge semantics, specified (run 2; built in run 3, see the next section)
 
 Protobuf merges a singular message field (and a oneof's message member, if
 the same member is set) that arrives twice; repeated fields inside it
@@ -342,3 +341,62 @@ generated code:
   `Proto.Timestamp` from every binary program. Corpus binary codecs are now
   10.5 KB gzip against JSON's 9.2. The same closure trick applies (attach
   the conversion where JSON produced the `Any`); not done here.
+
+## Merge and the decoder type (run 3)
+
+- **Generated shape.** Per message `mergeFooBytes : Foo -> Proto.Binary.Decoder
+  Foo` = `Proto.Binary.merge step finish`, and `decodeFooBytes :
+  Proto.Binary.Decoder Foo` = `mergeFooBytes defaultFoo`. `merge step finish
+  start` loops from `finish start`: `finish` only reverses lists, an
+  involution, so a finished value is turned back into the in-progress
+  state the step conses onto, and repeated fields read into it append.
+  `Proto.Binary.embedded encodeFooBytes mergeFooBytes defaultFoo`; its
+  `Codec` gains `readInto`. A singular message field's step is
+  `Proto.Binary.fieldInto codec value.foo (\v -> { value | foo = Just v })
+  wire value`; a oneof's message member passes `case value.pick of Member m
+  -> Just m; _ -> Nothing`. A recursion wrapper gets `mergeTree_Bytes
+  (Tree_ value) = Proto.Binary.map Tree_ (mergeTreeBytes value)` in place
+  of `decodeTree_Bytes`. `merge` is a new value prefix beside
+  `encode`/`decode`/`default`/`message`/`enum` and is no prefix of them.
+- **Every field helper takes the record** (`field codec set wire value`,
+  `repeated`, `mapEntry`, `fieldInto`): a field of a wire type its
+  declaration does not take is skipped as an unknown field, leaving the
+  record as it is. **Deviation from the brief:** the brief (and run 2's
+  spec above) says a packed run for a singular scalar takes its last
+  element. protobuf-go does not: `consumeInt32` and every singular
+  consumer return `errUnknown` on a wire-type mismatch, which files the
+  field as unknown (`internal/impl/codec_gen.go`, v1.36.12). Taking the
+  last element would read data the reference implementation ignores, so
+  the runtime follows it. Before, such a field failed the whole decode.
+- **`bool` maps:** `Proto.Binary.insertBool` replaces an earlier entry for
+  the key. `Dict` maps already took the last.
+- **Not merged:** well-known types held as Elm values (`Timestamp`,
+  `Duration`, `Struct`, `ListValue`, `Value`, `FieldMask`, `Any`) replace
+  the one before (`embeddedWhole`); the wrappers merge, being plain
+  messages. No suite case exercises it.
+- **Q1, decided: the opaque `Proto.Binary.Decoder a`.** It costs nothing:
+  Elm 0.19.2 `--optimize` compiles a one-constructor, one-field type to
+  `identity` (`var $author$project$Proto$Internal$Binary$Decoder =
+  $elm$core$Basics$identity`), so wrapping and unwrapping vanish. It
+  hides the byte length a decoder takes (plumbing elm/bytes forces) and
+  let the merge change land without touching the decoder's public type.
+  It lives in `Proto.Internal.Binary` and `Proto.Binary.Decoder` is an
+  alias, because `Proto.Message` runs one and `Proto.Binary` imports
+  `Proto.Message` through `Proto.Json`/`Proto.Any`; the package site shows
+  the internal name, as for `Any`.
+- **Cost of merge**, interleaved runs of the bench (run 2's compiled
+  `bench2.js` against this build, twice each): binary decode of the corpus
+  8.41/8.51 → 8.91/8.89 µs (+5 %), of the 1,000 leaves 901/896 → 938/935
+  µs (+4 %); encode unchanged within noise (that run-to-run noise is
+  ±10 % on this machine today). The first build was +19 % on decode and
+  slower on encode, because `embedded` applied the merge to the default
+  eagerly for `readBody`, at every use site; making it lazy and building
+  `merge`'s decoder as one closure brought it to the figures above. Size:
+  `SizeBinary` +1,244 B minified, +303 B gzip.
+- **Conformance:** the five merge cases pass and left `failure_list.txt`.
+  1,413 of 1,468 proto3 cases pass (was 1,408): Required 1,099/1,135,
+  Recommended 314/333; binary→binary Required 480/482 and Recommended
+  216/216 (the two left are unknown fields not kept). Tally in
+  `protobuf-conformance/tally-v32.0-rc2-merge.md`.
+- `spike/codec-harness/src/Experiments.elm` and `HoistCycle.elm` (run 2's
+  Q2/Q3 experiments) are ported to the new API so `Bench2` still builds.

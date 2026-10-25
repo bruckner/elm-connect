@@ -9,11 +9,11 @@ with `Idempotency` and its readers, stays in `Proto.Method`.
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Decode
 import Bytes.Encode
 import Http
 import Json.Decode
 import Json.Encode
+import Proto.Internal.Binary
 import Rpc.Body exposing (Body)
 import Rpc.Error exposing (Error, Reason)
 
@@ -38,7 +38,7 @@ type Method descriptor req res
 -}
 type alias Binary req res =
     { encodeRequest : req -> Bytes.Encode.Encoder
-    , responseDecoder : Int -> Bytes.Decode.Decoder res
+    , responseDecoder : Proto.Internal.Binary.Decoder res
     , message : req -> ConnectMessage
     , tooLarge : Int -> req -> Maybe Reason
     , read : Maybe Int -> (Http.Response String -> Result Error res) -> Http.Response Bytes -> Result Error res
