@@ -397,6 +397,33 @@ requests =
                 [ length - 1, length, length + 1 ]
                     |> List.map (\limit -> (Rpc.request (getting (Just limit)) (getNote { name = "x" })).method)
                     |> Expect.equal [ "POST", "GET", "GET" ]
+        , test "a POST's URL is the method's, with no query" <|
+            \_ ->
+                let
+                    length =
+                        String.length (Rpc.request (getting Nothing) (getNote { name = "x" })).url
+                in
+                [ Rpc.request base (getNote { name = "x" })
+                , Rpc.request (getting (Just (length - 1))) (getNote { name = "x" })
+                , Rpc.request (getting Nothing) (createNote { name = "x" })
+                , Rpc.request (getting Nothing) (deleteNote { name = "x" })
+                ]
+                    |> List.map .url
+                    |> Expect.equal
+                        [ "https://api.example.com/notes.v1.Notes/GetNote"
+                        , "https://api.example.com/notes.v1.Notes/GetNote"
+                        , "https://api.example.com/notes.v1.Notes/CreateNote"
+                        , "https://api.example.com/notes.v1.Notes/DeleteNote"
+                        ]
+        , test "a GET at or under withMaxGetUrl's limit carries the whole message in its URL" <|
+            \_ ->
+                let
+                    url =
+                        "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&encoding=json&message=%7B%22name%22%3A%22x%22%7D"
+                in
+                [ Nothing, Just (String.length url), Just (String.length url + 1) ]
+                    |> List.map (\limit -> Rpc.request (getting limit) (getNote { name = "x" }) |> (\r -> ( r.method, r.url )))
+                    |> Expect.equal (List.repeat 3 ( "GET", url ))
         , test "Connect ignores the binding chosen" <|
             \_ ->
                 listNotes { name = "x" }
@@ -1220,7 +1247,7 @@ sendLimits =
             Json.Encode.encode 0 (Rpc.Call.requestJson call)
 
         refused transport limit =
-            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) json
+            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) (\() -> json)
                 |> Maybe.map (\reason -> ( reason, Rpc.Error.code (NoAnswer reason), Rpc.Error.message (NoAnswer reason) ))
     in
     describe "withWriteMaxBytes"
@@ -1243,7 +1270,12 @@ sendLimits =
         , test "every transport starts with no limit" <|
             \_ ->
                 [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (String.repeat 100000 "x"))
+                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (\() -> String.repeat 100000 "x"))
+                    |> Expect.equal [ Nothing, Nothing, Nothing ]
+        , test "with no limit the message is not encoded to be measured" <|
+            \_ ->
+                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
+                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (\() -> Debug.todo "the message was encoded"))
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "checkConfig reports a limit below 1, not one of 1 or more" <|
             \_ ->
@@ -1273,6 +1305,16 @@ headerRules =
                 [ "  Bearer x  ", "\tx\t", "x\n", "\u{000D}\nx" ]
                     |> List.map Rpc.Internal.Http.validHeaderValue
                     |> Expect.equal [ True, True, False, False ]
+        , test "spaces and tabs anywhere are fine, an invalid character between them is not" <|
+            \_ ->
+                [ " ", "\t\t", " a b ", "a \t b", " \n ", "\t名\t", "  a\u{0000}  " ]
+                    |> List.map Rpc.Internal.Http.validHeaderValue
+                    |> Expect.equal [ True, True, True, True, False, False, False ]
+        , test "control characters but NUL, LF and CR are fine, as is U+00FF, not U+0100" <|
+            \_ ->
+                [ "\u{0001}", "\u{001F}", "\u{007F}", "\u{0085}", "ÿ", "Ā" ]
+                    |> List.map Rpc.Internal.Http.validHeaderValue
+                    |> Expect.equal [ True, True, True, True, True, False ]
         , test "a lone surrogate is refused" <|
             \_ ->
                 Rpc.Internal.Http.validHeaderValue (String.left 1 "😀")

@@ -275,29 +275,12 @@ tchar char =
 
 {-| Whether a browser accepts a header value: after the spaces and tabs at
 either end, which it trims, no NUL, CR or LF, and no character above U+00FF
-(XHR's values are byte strings).
+(XHR's values are byte strings). A space and a tab are such characters
+themselves, so the whole value is checked as it is, in one pass.
 -}
 validHeaderValue : String -> Bool
 validHeaderValue value =
-    String.toList value
-        |> dropWhitespace
-        |> List.reverse
-        |> dropWhitespace
-        |> List.all byteChar
-
-
-dropWhitespace : List Char -> List Char
-dropWhitespace chars =
-    case chars of
-        char :: rest ->
-            if char == ' ' || char == '\t' then
-                dropWhitespace rest
-
-            else
-                chars
-
-        [] ->
-            []
+    String.all byteChar value
 
 
 {-| A character a header value can hold: up to U+00FF, but NUL, LF and CR. A
@@ -541,14 +524,15 @@ utf8Width code =
         3
 
 
-{-| Why a call whose request message is `json` must not be sent over a
-transport: its UTF-8 length is over the transport's write limit.
+{-| Why a call whose request message `json` encodes must not be sent over a
+transport: its UTF-8 length is over the transport's write limit. The message
+is encoded only when the transport has a limit to measure it against.
 -}
-requestTooLarge : Transport -> String -> Maybe Error.Reason
+requestTooLarge : Transport -> (() -> String) -> Maybe Error.Reason
 requestTooLarge transport json =
     Transport.writeMaxBytes transport
         |> Maybe.andThen
             (\limit ->
-                overLimit limit json
+                overLimit limit (json ())
                     |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
             )
