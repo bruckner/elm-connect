@@ -39,9 +39,3 @@ Recommended.Proto3.JsonInput.FieldNameDuplicate
 Recommended.Proto3.JsonInput.StringFieldSurrogateInWrongOrder
 Recommended.Proto3.JsonInput.StringFieldUnpairedHighSurrogate
 Recommended.Proto3.JsonInput.StringFieldUnpairedLowSurrogate
-
-# Fix candidate, generator: google.protobuf.NullValue has no Elm mapping
-# (types::unsupported_well_known), so the testee's proto leaves out the
-# fields that hold one (strip-null-value.sh) and these are read as unknown.
-Recommended.Proto3.JsonInput.NullValueInOtherOneofNewFormat.Validator
-Recommended.Proto3.JsonInput.NullValueInOtherOneofOldFormat.Validator

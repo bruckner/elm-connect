@@ -7,7 +7,8 @@ module WellKnown.V1 exposing (..)
 {-| Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
 runtime's Duration, FieldMask as its paths, Empty as () without
 presence, Struct and ListValue as a Dict and a List of JSON values,
-Value as a Maybe of JSON, and the wrappers as a Maybe of their scalar.
+Value as a Maybe of JSON, the wrappers as a Maybe of their scalar, and
+the enum NullValue as () without presence.
 -}
 
 import Dict exposing (Dict)
@@ -65,6 +66,11 @@ elmConnectVersion_ =
   - [`lastValue`](WellKnown-V1-Event#lastValue): An optional Value is the same Maybe; its JSON name differs, so it
     decodes with valueFieldEither. A map of Value holds it bare.
   - [`settings`](WellKnown-V1-Event#settings)
+  - [`nothing`](WellKnown-V1-Event#nothing): NullValue's one value carries nothing: (), never written, `optional`
+    or not. Lists and maps hold it as null.
+  - [`maybeNothing`](WellKnown-V1-Event#maybeNothing)
+  - [`nulls`](WellKnown-V1-Event#nulls)
+  - [`nullMap`](WellKnown-V1-Event#nullMap)
   - `when`: See [`EventWhen`](#EventWhen).
 
 -}
@@ -96,6 +102,10 @@ type alias Event =
     , columns : Dict String (List Json.Encode.Value)
     , lastValue : Maybe Json.Encode.Value
     , settings : Dict String Json.Encode.Value
+    , nothing : ()
+    , maybeNothing : ()
+    , nulls : List ()
+    , nullMap : Dict String ()
     , when : EventWhen
     }
 
@@ -108,6 +118,7 @@ type alias Event =
   - [`EventWhenWhenever`](WellKnown-V1-Event#whenever)
   - [`EventWhenSchedule`](WellKnown-V1-Event#schedule)
   - [`EventWhenDates`](WellKnown-V1-Event#dates)
+  - [`EventWhenNever`](WellKnown-V1-Event#never): Set by null, its only JSON: a constructor without arguments.
 
 -}
 type EventWhen
@@ -117,6 +128,7 @@ type EventWhen
     | EventWhenWhenever Json.Encode.Value
     | EventWhenSchedule (Dict String Json.Encode.Value)
     | EventWhenDates (List Json.Encode.Value)
+    | EventWhenNever
 
 
 
@@ -154,6 +166,10 @@ defaultEvent =
     , columns = Dict.empty
     , lastValue = Nothing
     , settings = Dict.empty
+    , nothing = ()
+    , maybeNothing = ()
+    , nulls = []
+    , nullMap = Dict.empty
     , when = EventWhenUnset
     }
 
@@ -222,6 +238,10 @@ encodeEvent value =
          , ( "columns", Proto.Json.dictField identity Proto.Json.encodeListValue value.columns )
          , ( "lastValue", value.lastValue )
          , ( "settings", Proto.Json.dictField identity identity value.settings )
+         , ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
+         , ( "maybeNothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.maybeNothing )
+         , ( "nulls", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nulls )
+         , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
          ]
             ++ encodeEventWhen value.when
         )
@@ -253,6 +273,10 @@ encodeEventWhen value =
 
         EventWhenDates member ->
             [ ( "dates", Just (Proto.Json.encodeListValue member) )
+            ]
+
+        EventWhenNever ->
+            [ ( "never", Just Json.Encode.null )
             ]
 
 
@@ -292,6 +316,10 @@ decodeEvent =
         |> Proto.Json.field "columns" Dict.empty (Json.Decode.dict Proto.Json.listValue)
         |> Proto.Json.valueFieldEither "lastValue" "last_value"
         |> Proto.Json.field "settings" Dict.empty (Json.Decode.dict Json.Decode.value)
+        |> Proto.Json.field "nothing" () Proto.Json.nullValue
+        |> Proto.Json.fieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
+        |> Proto.Json.field "nulls" [] (Json.Decode.list Proto.Json.nullValue)
+        |> Proto.Json.fieldEither "nullMap" "null_map" Dict.empty (Json.Decode.dict Proto.Json.nullValue)
         |> Proto.Json.oneof decodeEventWhen
 
 
@@ -306,4 +334,5 @@ decodeEventWhen =
         , Proto.Json.valueMember "whenever" EventWhenWhenever
         , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule Proto.Json.struct)
         , Proto.Json.member "dates" (Json.Decode.map EventWhenDates Proto.Json.listValue)
+        , Proto.Json.nullValueMember "never" EventWhenNever
         ]

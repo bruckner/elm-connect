@@ -5,6 +5,7 @@ import Expect
 import Json.Decode
 import Json.Encode
 import Proto.Duration as Duration
+import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Message as Message exposing (Message)
 import Proto.WellKnown as WellKnown
@@ -77,6 +78,13 @@ suite =
                 , Json.Decode.decodeString (Message.decoder WellKnown.doubleValue) "1e300" |> Result.toMaybe
                 )
                     |> Expect.equal ( Nothing, Just 1.0e300 )
+        , test "NullValue's typed value: its descriptor, name and number" <|
+            \_ ->
+                ( ( Enum.typeName (Enum.toDescriptor WellKnown.nullValue), Enum.toName WellKnown.nullValue () )
+                , ( Enum.toNumber WellKnown.nullValue (), Enum.fromName WellKnown.nullValue "NULL_VALUE", Enum.fromNumber WellKnown.nullValue 0 )
+                , Json.Encode.encode 0 (Enum.encode WellKnown.nullValue (Enum.default WellKnown.nullValue))
+                )
+                    |> Expect.equal ( ( "google.protobuf.NullValue", "" ), ( 0, Just (), Just () ), "null" )
         , test "Value's default is null" <|
             \_ ->
                 ( Message.typeName (Message.toDescriptor WellKnown.value), Json.Encode.encode 0 (Message.default WellKnown.value) )

@@ -7,9 +7,11 @@ module ProtobufTestMessages.Proto3.TestAllTypesProto3 exposing (..)
 {-| The descriptor of `protobuf_test_messages.proto3.TestAllTypesProto3` and its fields.
 -}
 
+import Proto.Enum
 import Proto.Field
 import Proto.Message
 import Proto.Version
+import Proto.WellKnown
 import ProtobufTestMessages.Proto3.ForeignEnum
 import ProtobufTestMessages.Proto3.TestAllTypesProto3AliasedEnum
 import ProtobufTestMessages.Proto3.TestAllTypesProto3NestedEnum
@@ -138,6 +140,7 @@ descriptor =
         , oneofFloat
         , oneofDouble
         , oneofEnum
+        , oneofNullValue
         , optionalBoolWrapper
         , optionalInt32Wrapper
         , optionalInt64Wrapper
@@ -162,6 +165,7 @@ descriptor =
         , optionalStruct
         , optionalAny
         , optionalValue
+        , optionalNullValue
         , repeatedDuration
         , repeatedTimestamp
         , repeatedFieldmask
@@ -915,6 +919,14 @@ oneofEnum =
         |> Proto.Field.inOneof "oneof_field"
 
 
+{-| `google.protobuf.NullValue oneof_null_value = 120;`, in oneof `oneof_field`
+-}
+oneofNullValue : Proto.Field.Descriptor
+oneofNullValue =
+    Proto.Field.descriptor "oneof_null_value" "oneofNullValue" 120 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+        |> Proto.Field.inOneof "oneof_field"
+
+
 {-| Well-known types
 
 `google.protobuf.BoolValue optional_bool_wrapper = 201;`
@@ -1084,6 +1096,13 @@ optionalAny =
 optionalValue : Proto.Field.Descriptor
 optionalValue =
     Proto.Field.descriptor "optional_value" "optionalValue" 306 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
+
+
+{-| `google.protobuf.NullValue optional_null_value = 307;`
+-}
+optionalNullValue : Proto.Field.Descriptor
+optionalNullValue =
+    Proto.Field.descriptor "optional_null_value" "optionalNullValue" 307 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
 
 
 {-| `repeated google.protobuf.Duration repeated_duration = 311;`

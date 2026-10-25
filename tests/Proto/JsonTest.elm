@@ -39,6 +39,7 @@ suite =
         , uint64AsIntTests
         , floatTests
         , float32Tests
+        , nullValueTests
         , bytesTests
         , wellKnownTests
         ]
@@ -406,6 +407,7 @@ type EventKind
     | EventKindTitleChanged String
     | EventKindCleared
     | EventKindPayload Json.Encode.Value
+    | EventKindNothing
 
 
 decodeEvent : Decoder Event
@@ -423,6 +425,7 @@ decodeEventKind =
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
         , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
         , Proto.Json.valueMember "payload" EventKindPayload
+        , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
         ]
 
 
@@ -488,6 +491,18 @@ oneofTests =
                 failsWith decodeEvent
                     """{"payload":null,"text":"t"}"""
                     "Expecting at most one member of oneof \"kind\", but got \"text\" and \"payload\""
+        , test "nullValueMember reads null, the name and the number as set" <|
+            \_ ->
+                [ """{"nothingAtAll":null}""", """{"nothing_at_all":"NULL_VALUE"}""", """{"nothingAtAll":0}""" ]
+                    |> List.map (Json.Decode.decodeString decodeEvent)
+                    |> Expect.equal (List.repeat 3 (Ok (Event "" EventKindNothing)))
+        , test "nullValueMember fails on another value" <|
+            \_ -> failsOnEach decodeEvent [ """{"nothingAtAll":"NOTHING"}""", """{"nothingAtAll":{}}""" ]
+        , test "a null nullValueMember counts against another member" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"nothingAtAll":null,"text":"t"}"""
+                    "Expecting at most one member of oneof \"kind\", but got \"text\" and \"nothingAtAll\""
         , test "a oneof that is not an object fails" <|
             \_ -> fails decodeEventKind "[]"
         ]
@@ -1152,6 +1167,27 @@ floatTests =
             \_ -> encodesTo (Proto.Json.encodeFloat (1 / 0)) "\"Infinity\""
         , test "encodes negative infinity as a string" <|
             \_ -> encodesTo (Proto.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
+        ]
+
+
+nullValueTests : Test
+nullValueTests =
+    describe "nullValue"
+        [ test "reads null, the name and the number" <|
+            \_ ->
+                [ "null", "\"NULL_VALUE\"", "0" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.nullValue)
+                    |> Expect.equal [ Ok (), Ok (), Ok () ]
+        , test "fails on another name, a string or an object" <|
+            \_ -> failsOnEach Proto.Json.nullValue [ "\"NULL\"", "\"\"", "{}", "false" ]
+        , test "encodes as null" <|
+            \_ -> encodesTo (Proto.Json.encodeNullValue ()) "null"
+        , test "a list and a map of it hold nulls" <|
+            \_ ->
+                ( Json.Decode.decodeString (Json.Decode.list Proto.Json.nullValue) "[null,\"NULL_VALUE\"]"
+                , Json.Decode.decodeString (Json.Decode.dict Proto.Json.nullValue) "{\"a\":null}"
+                )
+                    |> Expect.equal ( Ok [ (), () ], Ok (Dict.fromList [ ( "a", () ) ]) )
         ]
 
 

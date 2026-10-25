@@ -645,9 +645,23 @@ import "google/protobuf/struct.proto";
 message M { google.protobuf.Api api = 1; google.protobuf.NullValue null = 2; }
 "#;
     let diagnostics = problems(&[("test.proto", source)], &["test.proto"]);
+    assert_eq!(codes(&diagnostics), [Code::UnsupportedWellKnown]);
+}
+
+#[test]
+fn null_value_is_a_well_known_type() {
+    let package = package(
+        r#"
+syntax = "proto3";
+package t;
+import "google/protobuf/struct.proto";
+message M { google.protobuf.NullValue null = 1; }
+"#,
+    );
+    let m = message(&package, "M");
     assert_eq!(
-        codes(&diagnostics),
-        [Code::UnsupportedWellKnown, Code::UnsupportedWellKnown]
+        field(m, "null").ty,
+        TypeRef::WellKnown(WellKnown::NullValue)
     );
 }
 

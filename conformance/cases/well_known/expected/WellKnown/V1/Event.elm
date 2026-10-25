@@ -7,9 +7,11 @@ module WellKnown.V1.Event exposing (..)
 {-| The descriptor of `well_known.v1.Event` and its fields.
 -}
 
+import Proto.Enum
 import Proto.Field
 import Proto.Message
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -54,11 +56,16 @@ descriptor =
         , columns
         , lastValue
         , settings
+        , nothing
+        , maybeNothing
+        , nulls
+        , nullMap
         , at
         , after
         , whenever
         , schedule
         , dates
+        , never
         ]
 
 
@@ -272,6 +279,38 @@ settings =
     Proto.Field.descriptor "settings" "settings" 32 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
 
 
+{-| NullValue's one value carries nothing: (), never written, `optional`
+or not. Lists and maps hold it as null.
+
+`google.protobuf.NullValue nothing = 33;`
+
+-}
+nothing : Proto.Field.Descriptor
+nothing =
+    Proto.Field.descriptor "nothing" "nothing" 33 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
+{-| `optional google.protobuf.NullValue maybe_nothing = 34;`
+-}
+maybeNothing : Proto.Field.Descriptor
+maybeNothing =
+    Proto.Field.descriptor "maybe_nothing" "maybeNothing" 34 Proto.Field.CardinalityOptional (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
+{-| `repeated google.protobuf.NullValue nulls = 35;`
+-}
+nulls : Proto.Field.Descriptor
+nulls =
+    Proto.Field.descriptor "nulls" "nulls" 35 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
+{-| `map<string, google.protobuf.NullValue> null_map = 36;`
+-}
+nullMap : Proto.Field.Descriptor
+nullMap =
+    Proto.Field.descriptor "null_map" "nullMap" 36 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
 {-| `google.protobuf.Timestamp at = 21;`, in oneof `when`
 -}
 at : Proto.Field.Descriptor
@@ -309,4 +348,15 @@ schedule =
 dates : Proto.Field.Descriptor
 dates =
     Proto.Field.descriptor "dates" "dates" 30 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
+        |> Proto.Field.inOneof "when"
+
+
+{-| Set by null, its only JSON: a constructor without arguments.
+
+`google.protobuf.NullValue never = 37;`, in oneof `when`
+
+-}
+never : Proto.Field.Descriptor
+never =
+    Proto.Field.descriptor "never" "never" 37 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
         |> Proto.Field.inOneof "when"

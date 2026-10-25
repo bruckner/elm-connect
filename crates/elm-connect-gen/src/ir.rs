@@ -600,8 +600,9 @@ pub enum MapKey {
     Bool,
 }
 
-/// The `google.protobuf` types elm-connect maps (design §3.5). Every other
-/// `google.protobuf` type is a diagnostic instead.
+/// The `google.protobuf` types elm-connect maps (design §3.5): messages,
+/// and the enum `NullValue`. Every other `google.protobuf` type is a
+/// diagnostic instead.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum WellKnown {
     /// `google.protobuf.Timestamp`
@@ -638,6 +639,8 @@ pub enum WellKnown {
     StringValue,
     /// `google.protobuf.BytesValue`
     BytesValue,
+    /// `google.protobuf.NullValue`, an enum
+    NullValue,
 }
 
 impl WellKnown {
@@ -662,7 +665,14 @@ impl WellKnown {
             WellKnown::BoolValue => "google.protobuf.BoolValue",
             WellKnown::StringValue => "google.protobuf.StringValue",
             WellKnown::BytesValue => "google.protobuf.BytesValue",
+            WellKnown::NullValue => "google.protobuf.NullValue",
         }
+    }
+
+    /// Whether the type is an enum, which only `NullValue` is; the rest
+    /// are messages.
+    pub fn is_enum(self) -> bool {
+        self == WellKnown::NullValue
     }
 
     /// The well-known type with this unqualified name in
@@ -686,6 +696,7 @@ impl WellKnown {
             "BoolValue" => WellKnown::BoolValue,
             "StringValue" => WellKnown::StringValue,
             "BytesValue" => WellKnown::BytesValue,
+            "NullValue" => WellKnown::NullValue,
             _ => return None,
         })
     }

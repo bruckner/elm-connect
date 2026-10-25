@@ -783,7 +783,7 @@ fn well_known(message: &MessageDescriptor) -> Option<Option<WellKnown>> {
     message
         .full_name()
         .strip_prefix("google.protobuf.")
-        .map(WellKnown::from_name)
+        .map(|name| WellKnown::from_name(name).filter(|known| !known.is_enum()))
 }
 
 /// Whether a well-known type's JSON is one string or scalar, which a path
@@ -809,7 +809,8 @@ fn has_scalar_json(known: WellKnown) -> bool {
         | WellKnown::Any
         | WellKnown::Struct
         | WellKnown::Value
-        | WellKnown::ListValue => false,
+        | WellKnown::ListValue
+        | WellKnown::NullValue => false,
     }
 }
 

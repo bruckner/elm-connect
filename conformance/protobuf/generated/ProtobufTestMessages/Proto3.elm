@@ -216,6 +216,7 @@ this stays true in a unit test.
   - [`optionalStruct`](ProtobufTestMessages-Proto3-TestAllTypesProto3#optionalStruct)
   - [`optionalAny`](ProtobufTestMessages-Proto3-TestAllTypesProto3#optionalAny)
   - [`optionalValue`](ProtobufTestMessages-Proto3-TestAllTypesProto3#optionalValue)
+  - [`optionalNullValue`](ProtobufTestMessages-Proto3-TestAllTypesProto3#optionalNullValue)
   - [`repeatedDuration`](ProtobufTestMessages-Proto3-TestAllTypesProto3#repeatedDuration)
   - [`repeatedTimestamp`](ProtobufTestMessages-Proto3-TestAllTypesProto3#repeatedTimestamp)
   - [`repeatedFieldmask`](ProtobufTestMessages-Proto3-TestAllTypesProto3#repeatedFieldmask)
@@ -361,6 +362,7 @@ type alias TestAllTypesProto3 =
     , optionalStruct : Maybe (Dict String Json.Encode.Value)
     , optionalAny : Maybe Proto.Any.Any
     , optionalValue : Maybe Json.Encode.Value
+    , optionalNullValue : ()
     , repeatedDuration : List Duration
     , repeatedTimestamp : List Time.Posix
     , repeatedFieldmask : List (List String)
@@ -407,6 +409,7 @@ type TestAllTypesProto3_
   - [`TestAllTypesProto3OneofFieldOneofFloat`](ProtobufTestMessages-Proto3-TestAllTypesProto3#oneofFloat)
   - [`TestAllTypesProto3OneofFieldOneofDouble`](ProtobufTestMessages-Proto3-TestAllTypesProto3#oneofDouble)
   - [`TestAllTypesProto3OneofFieldOneofEnum`](ProtobufTestMessages-Proto3-TestAllTypesProto3#oneofEnum)
+  - [`TestAllTypesProto3OneofFieldOneofNullValue`](ProtobufTestMessages-Proto3-TestAllTypesProto3#oneofNullValue)
 
 -}
 type TestAllTypesProto3OneofField
@@ -420,6 +423,7 @@ type TestAllTypesProto3OneofField
     | TestAllTypesProto3OneofFieldOneofFloat Float
     | TestAllTypesProto3OneofFieldOneofDouble Float
     | TestAllTypesProto3OneofFieldOneofEnum TestAllTypesProto3NestedEnum
+    | TestAllTypesProto3OneofFieldOneofNullValue
 
 
 {-| [`message protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage`](ProtobufTestMessages-Proto3-TestAllTypesProto3NestedMessage#descriptor)
@@ -586,6 +590,7 @@ defaultTestAllTypesProto3 =
     , optionalStruct = Nothing
     , optionalAny = Nothing
     , optionalValue = Nothing
+    , optionalNullValue = ()
     , repeatedDuration = []
     , repeatedTimestamp = []
     , repeatedFieldmask = []
@@ -921,6 +926,7 @@ encodeTestAllTypesProto3 value =
          , ( "optionalStruct", Maybe.map Proto.Json.encodeStruct value.optionalStruct )
          , ( "optionalAny", Maybe.map Proto.Json.encodeAny value.optionalAny )
          , ( "optionalValue", value.optionalValue )
+         , ( "optionalNullValue", Proto.Json.implicitField () Proto.Json.encodeNullValue value.optionalNullValue )
          , ( "repeatedDuration", Proto.Json.repeatedField Proto.Json.encodeDuration value.repeatedDuration )
          , ( "repeatedTimestamp", Proto.Json.repeatedField Proto.Json.encodeTimestamp value.repeatedTimestamp )
          , ( "repeatedFieldmask", Proto.Json.repeatedField Proto.Json.encodeFieldMask value.repeatedFieldmask )
@@ -1000,6 +1006,10 @@ encodeTestAllTypesProto3OneofField value =
 
         TestAllTypesProto3OneofFieldOneofEnum member ->
             [ ( "oneofEnum", Just (encodeTestAllTypesProto3NestedEnum member) )
+            ]
+
+        TestAllTypesProto3OneofFieldOneofNullValue ->
+            [ ( "oneofNullValue", Just Json.Encode.null )
             ]
 
 
@@ -1219,6 +1229,7 @@ decodeTestAllTypesProto3 =
         |> Proto.Json.fieldEither "optionalStruct" "optional_struct" Nothing (Json.Decode.map Just Proto.Json.struct)
         |> Proto.Json.fieldEither "optionalAny" "optional_any" Nothing (Json.Decode.map Just Proto.Json.any)
         |> Proto.Json.valueFieldEither "optionalValue" "optional_value"
+        |> Proto.Json.fieldEither "optionalNullValue" "optional_null_value" () Proto.Json.nullValue
         |> Proto.Json.fieldEither "repeatedDuration" "repeated_duration" [] (Json.Decode.list Proto.Json.duration)
         |> Proto.Json.fieldEither "repeatedTimestamp" "repeated_timestamp" [] (Json.Decode.list Proto.Json.timestamp)
         |> Proto.Json.fieldEither "repeatedFieldmask" "repeated_fieldmask" [] (Json.Decode.list Proto.Json.fieldMask)
@@ -1268,6 +1279,7 @@ decodeTestAllTypesProto3OneofField =
         , Proto.Json.memberEither "oneofFloat" "oneof_float" (Json.Decode.map TestAllTypesProto3OneofFieldOneofFloat Proto.Json.float32)
         , Proto.Json.memberEither "oneofDouble" "oneof_double" (Json.Decode.map TestAllTypesProto3OneofFieldOneofDouble Proto.Json.float)
         , Proto.Json.memberEither "oneofEnum" "oneof_enum" (Json.Decode.map TestAllTypesProto3OneofFieldOneofEnum decodeTestAllTypesProto3NestedEnum)
+        , Proto.Json.nullValueMemberEither "oneofNullValue" "oneof_null_value" TestAllTypesProto3OneofFieldOneofNullValue
         ]
 
 

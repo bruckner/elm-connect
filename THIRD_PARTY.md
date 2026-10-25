@@ -48,9 +48,7 @@ The protos themselves are vendored, unmodified, in
 
 `conformance/protobuf/proto/google/protobuf/test_messages_proto3.proto`
 is [protobuf](https://github.com/protocolbuffers/protobuf)'s
-`src/google/protobuf/test_messages_proto3.proto` at v32.0, modified by
-`conformance/protobuf/strip-null-value.sh`, which removes its two
-`google.protobuf.NullValue` fields (`conformance/protobuf/README.md`). It
+`src/google/protobuf/test_messages_proto3.proto` at v32.0, unmodified. It
 is Copyright 2008 Google Inc. and licensed under the BSD 3-Clause License,
 as its header says; protobuf's `LICENSE` at v32.0 is beside it, in
 `conformance/protobuf/proto/LICENSE`. The Elm

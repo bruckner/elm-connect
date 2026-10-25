@@ -966,6 +966,7 @@ The runtime provides the Elm types.
 | `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; see below |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | the message's JSON plus `"@type"` on the wire |
+| `google.protobuf.NullValue` (an enum) | `()`, without presence | `null` on the wire; see below |
 
 The runtime package is required anyway (§5), so the RFC 3339 parser
 lives there and a `Timestamp` is a `Time.Posix`, not a `String`.
@@ -984,6 +985,23 @@ In detail:
   member's key holding an object; a member present as `null` reads as
   unset, as for any member (`Proto.Json.emptyMember`). Whether such a field was sent is lost
   (§3.8).
+- `NullValue`, the enum whose one value `NULL_VALUE` proto3 JSON writes
+  as `null`, is `()` as `Empty` is, and for the same reason: it carries
+  nothing. A singular field of it, `optional` too, has no presence and
+  is left out like any field at its default, so an `optional` one that
+  protojson would write as `null` is not written; it decodes as `()`
+  from `null`, `"NULL_VALUE"`, `0` or an absent key. Repeated it is
+  `List ()` written as `null`s, as a map value `Dict K ()`. A oneof
+  member of it is a constructor without an argument, written `null`,
+  and `null` sets it, as protojson reads it
+  (`Proto.Json.nullValueMember`, the one member besides a `Value`'s for
+  which `null` is not absent). The codecs are `Proto.Json.nullValue`
+  and `encodeNullValue`; a descriptor names it through
+  `Proto.WellKnown.nullValue : Proto.Enum.Enum ()`, whose `toName` is
+  `""` since its encoder writes no string. Why `()` and not a generated
+  `type NullValue = NullValue`: `google.protobuf` is never generated as
+  a package, so the type would be the runtime's, and a one-constructor type
+  says nothing `()` does not.
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
 - `Struct` is `Dict String Json.Encode.Value` and `ListValue` is
@@ -2977,8 +2995,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated from
-  the suite's `test_messages_proto3.proto` (its two `NullValue` fields
-  stripped, since the generator refuses that type), with an oracle
+  the suite's `test_messages_proto3.proto`, with an oracle
   independent of prost-reflect: protobuf's own parsers. Only proto3 JSON
   in and out runs, 289 cases; binary, JSPB, text, proto2 and editions
   are answered skipped. The cases it fails are
@@ -2986,7 +3003,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   the suite disagrees with (millisecond timestamps, §3.5; unquoted
   64-bit numbers past 2^53; unknown enum numbers read as the zero
   value) or a fix candidate (inputs the decoders accept and the
-  specification refuses; `NullValue`). `just protobuf-conformance` is
+  specification refuses). `just protobuf-conformance` is
   opt-in, outside `check` and `live`, and CI runs it only when
   dispatched.
 

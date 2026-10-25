@@ -1,7 +1,8 @@
 // Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
 // runtime's Duration, FieldMask as its paths, Empty as () without
 // presence, Struct and ListValue as a Dict and a List of JSON values,
-// Value as a Maybe of JSON, and the wrappers as a Maybe of their scalar.
+// Value as a Maybe of JSON, the wrappers as a Maybe of their scalar, and
+// the enum NullValue as () without presence.
 syntax = "proto3";
 
 package well_known.v1;
@@ -50,11 +51,19 @@ message Event {
   // decodes with valueFieldEither. A map of Value holds it bare.
   optional google.protobuf.Value last_value = 31;
   map<string, google.protobuf.Value> settings = 32;
+  // NullValue's one value carries nothing: (), never written, `optional`
+  // or not. Lists and maps hold it as null.
+  google.protobuf.NullValue nothing = 33;
+  optional google.protobuf.NullValue maybe_nothing = 34;
+  repeated google.protobuf.NullValue nulls = 35;
+  map<string, google.protobuf.NullValue> null_map = 36;
   oneof when {
     google.protobuf.Timestamp at = 21;
     google.protobuf.Duration after = 22;
     google.protobuf.Value whenever = 23;
     google.protobuf.Struct schedule = 29;
     google.protobuf.ListValue dates = 30;
+    // Set by null, its only JSON: a constructor without arguments.
+    google.protobuf.NullValue never = 37;
   }
 }

@@ -45,6 +45,7 @@ otherwise.
 | `google.protobuf.ListValue` | `Maybe (List Json.Encode.Value)` |
 | the wrappers (`StringValue`, `Int32Value`, …) | `Maybe` of the wrapped type's form: `Maybe String`, `Maybe Int`; `Int64Value` and `UInt64Value` follow `int64`, `BytesValue` follows `bytes` |
 | `google.protobuf.Any` | `Maybe Proto.Any.Any` ([descriptors.md](descriptors.md#any)) |
+| `google.protobuf.NullValue` | `()`, written `null`: a singular field, `optional` too, is never written, since its one value is the default; a list or map holds `null`s; a oneof member has no argument and `null` sets it |
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |

@@ -4,6 +4,7 @@ module Proto.Json exposing
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
+    , nullValueMember, nullValueMemberEither
     , enum, enumOrZero
     , int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
     , int32, uint32
@@ -16,6 +17,7 @@ module Proto.Json exposing
     , duration, encodeDuration
     , fieldMask, encodeFieldMask
     , empty, encodeEmpty
+    , nullValue, encodeNullValue
     , struct, encodeStruct
     , listValue, encodeListValue
     , any, encodeAny
@@ -59,6 +61,7 @@ reads a missing field as its default, so nothing is lost.
 
 @docs oneof, members, Member, member, memberEither
 @docs emptyMember, emptyMemberEither, valueMember, valueMemberEither
+@docs nullValueMember, nullValueMemberEither
 
 
 # Enums
@@ -114,6 +117,7 @@ their scalar's helpers.
 @docs duration, encodeDuration
 @docs fieldMask, encodeFieldMask
 @docs empty, encodeEmpty
+@docs nullValue, encodeNullValue
 @docs struct, encodeStruct
 @docs listValue, encodeListValue
 @docs any, encodeAny
@@ -781,6 +785,37 @@ valueMemberEither jsonName protoName constructor =
         { names = spellings jsonName protoName
         , nullIsSet = True
         , decoder = Json.Decode.map constructor Json.Decode.value
+        }
+
+
+{-| A member of the enum `google.protobuf.NullValue`, whose constructor carries
+nothing: present when its key holds `null`, which proto3 JSON writes for it, or
+the value's name or number, as [`nullValue`](#nullValue) reads them. Unlike
+every member but a [`valueMember`](#valueMember), one present as `null` is set.
+
+    type ActionKind
+        = ActionKindUnset
+        | ActionKindNothing
+
+    decodeActionKind : Decoder ActionKind
+    decodeActionKind =
+        members "kind" ActionKindUnset [ nullValueMember "nothing" ActionKindNothing ]
+
+-}
+nullValueMember : String -> a -> Member a
+nullValueMember name =
+    nullValueMemberEither name name
+
+
+{-| [`nullValueMember`](#nullValueMember) for a member whose JSON name differs
+from its proto name: the JSON name first, then the proto name.
+-}
+nullValueMemberEither : String -> String -> a -> Member a
+nullValueMemberEither jsonName protoName value =
+    Member
+        { names = spellings jsonName protoName
+        , nullIsSet = True
+        , decoder = Json.Decode.map (\() -> value) nullValue
         }
 
 
@@ -1924,6 +1959,24 @@ empty =
 encodeEmpty : () -> Value
 encodeEmpty () =
     Json.Encode.object []
+
+
+{-| Decode the enum `google.protobuf.NullValue`, held as `()`: its one value,
+`NULL_VALUE`, is written `null`, and a parser also accepts its name and number,
+as it does for any enum ([`enum`](#enum)).
+-}
+nullValue : Decoder ()
+nullValue =
+    Json.Decode.nullable (enum "NullValue" () [ ( "NULL_VALUE", 0, () ) ])
+        |> Json.Decode.map (\_ -> ())
+
+
+{-| Encode the enum `google.protobuf.NullValue` as proto3 JSON writes it,
+`null`.
+-}
+encodeNullValue : () -> Value
+encodeNullValue () =
+    Json.Encode.null
 
 
 {-| Decode a `google.protobuf.Struct`, a JSON object, into its members. Any

@@ -105,6 +105,7 @@ message Choice {
     google.protobuf.Timestamp at = 11;
     google.protobuf.Int32Value wrapped = 12;
     string two_words = 13;
+    google.protobuf.NullValue none = 15;
   }
   int32 after = 14;
 }
@@ -170,6 +171,9 @@ message WellKnown {
   repeated google.protobuf.Duration durations = 13;
   repeated google.protobuf.Empty empties = 14;
   map<int32, google.protobuf.Struct> structs = 15;
+  google.protobuf.NullValue null_value = 16;
+  repeated google.protobuf.NullValue null_values = 17;
+  map<string, google.protobuf.NullValue> null_map = 18;
 }
 
 // Every wrapper, singular, and two repeated or as a map value.

@@ -16,3 +16,11 @@
 - A `FieldMask` whose JSON holds an `_` (`"display_name"`) fails to
   decode: proto3 JSON writes its paths in lowerCamelCase
   (`"displayName"`). It was read as the path `display_name` before.
+- The generator maps the enum `google.protobuf.NullValue`, which it
+  refused with `types::unsupported_well_known` before: a field of it is
+  `()`, decoded from `null`, `"NULL_VALUE"` or `0` and written `null`
+  (a singular field, `optional` too, has no presence and is left out),
+  and a oneof member of it has no argument and is set by `null`. The
+  runtime adds `Proto.Json.nullValue`, `encodeNullValue`,
+  `nullValueMember`, `nullValueMemberEither` and
+  `Proto.WellKnown.nullValue`.
