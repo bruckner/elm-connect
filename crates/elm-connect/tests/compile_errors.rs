@@ -44,9 +44,9 @@ fn inputs(name: &str, files: &[(&str, &str)]) -> PathBuf {
 }
 
 #[test]
-fn an_editions_file_is_refused_in_elm_connects_words() {
+fn an_edition_2023_file_generates() {
     let dir = inputs(
-        "cli-editions",
+        "cli-edition-2023",
         &[
             (
                 "edition.proto",
@@ -58,17 +58,58 @@ fn an_editions_file_is_refused_in_elm_connects_words() {
             ),
         ],
     );
+    let generated = elm_connect::generate(
+        &[PathBuf::from("importer.proto")],
+        std::slice::from_ref(&dir),
+        true,
+        &elm_connect_gen::Options::default(),
+    )
+    .unwrap_or_else(|report| panic!("{}", render(&report)));
+    let module = generated
+        .files
+        .iter()
+        .find(|file| file.path == "E/V1.elm")
+        .expect("the editions package is generated");
+    // Edition 2023's presence is explicit by default.
+    assert!(
+        module.content.contains("{ a : Maybe String\n"),
+        "{}",
+        module.content
+    );
+    // The file's leading comment documents its package, as a proto3 file's does.
+    assert!(
+        module.content.contains("{-| An editions file.\n-}"),
+        "{}",
+        module.content
+    );
+}
+
+#[test]
+fn a_later_edition_is_refused_in_elm_connects_words() {
+    let dir = inputs(
+        "cli-editions",
+        &[
+            (
+                "edition.proto",
+                "// A later edition.\nedition = \"2024\";\npackage e.v1;\nmessage M { string a = 1; }\n",
+            ),
+            (
+                "importer.proto",
+                "syntax = \"proto3\";\npackage i.v1;\nimport \"edition.proto\";\nmessage A { e.v1.M m = 1; }\n",
+            ),
+        ],
+    );
     for file in ["edition.proto", "importer.proto"] {
         let report = elm_connect::compile(&[PathBuf::from(file)], std::slice::from_ref(&dir))
-            .expect_err("editions are not supported");
+            .expect_err("edition 2024 is not supported");
         let rendered = render(&report);
         assert!(rendered.contains("input::editions"), "{rendered}");
         assert!(
-            rendered.contains("The file `edition.proto` declares `edition = \"2023\"`"),
+            rendered.contains("The file `edition.proto` declares `edition = \"2024\"`"),
             "{rendered}"
         );
         assert!(rendered.contains("╭─[edition.proto:2:1]"), "{rendered}");
-        assert!(rendered.contains("syntax = \"proto3\";"), "{rendered}");
+        assert!(rendered.contains("`edition = \"2023\";`"), "{rendered}");
     }
 
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_elm-connect"))
@@ -80,6 +121,22 @@ fn an_editions_file_is_refused_in_elm_connects_words() {
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("input::editions"), "{stderr}");
     assert!(!stderr.contains("panicked"), "{stderr}");
+}
+
+#[test]
+fn an_edition_2023_file_that_does_not_parse_keeps_the_parsers_errors() {
+    let dir = inputs(
+        "cli-edition-2023-error",
+        &[(
+            "broken.proto",
+            "edition = \"2023\";\npackage b.v1;\nmessage M { optional string a = 1; }\n",
+        )],
+    );
+    let report = elm_connect::compile(&[PathBuf::from("broken.proto")], &[dir])
+        .expect_err("`optional` is not an editions label");
+    let rendered = render(&report);
+    assert!(!rendered.contains("input::editions"), "{rendered}");
+    assert!(rendered.contains("optional"), "{rendered}");
 }
 
 #[test]

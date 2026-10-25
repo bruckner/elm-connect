@@ -50,3 +50,23 @@ traps met. The commit messages under `vendor/` carry the rest.
   depth; format the literal alone and indent it in.
 - prost-reflect's `Debug` of a `FieldDescriptor` prints its default value, which for a
   recursive message type recurses forever.
+
+# Notes: editions spike, run 2
+
+## Decisions
+
+- **`check` records nothing about the edition.** `check` regenerates from
+  the protos it is given and compares modules; the `-- Options:` header
+  records only what is not in the protos (the options). The edition is in
+  the protos, so a change of edition that changes output is drift `check`
+  reports as the modules that differ, and one that does not (a file moved
+  to its proto3-equivalent edition 2023 twin) is no drift, which is right:
+  nothing a user maintains against moved. Recording it would make that
+  harmless move a header-only diff in every module. The CLI test
+  `the_proto3_twin_of_a_tree_is_current` pins it.
+- **The CLI generates edition 2023.** Run 1's post-compile refusal is gone;
+  `input::editions` is now only the CLI's report, in place of protox's
+  parse error, for a file declaring an edition protox does not parse
+  (2024), through `elm_connect_gen::diagnostics::unsupported_edition`,
+  which the corpus harness uses too. A 2023 file that fails to parse
+  keeps the parser's errors.

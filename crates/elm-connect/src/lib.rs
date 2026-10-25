@@ -7,11 +7,11 @@ use std::path::{Path, PathBuf};
 
 use elm_connect_gen::diagnostics::{
     Columns, Diagnostics, LineColSpan, Problem, Site, field_name_conflict_names,
-    field_name_conflicts,
+    field_name_conflicts, first_statement, unsupported_edition,
 };
 use elm_connect_gen::{Generated, GeneratedFile, Options, Spelling};
 use miette::{Diagnostic, IntoDiagnostic, Report, WrapErr};
-use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor, Syntax};
+use protox::prost_reflect::{DescriptorPool, FileDescriptor, Kind, MessageDescriptor};
 
 /// What compiling the inputs gives the generator.
 #[derive(Debug)]
@@ -125,15 +125,6 @@ pub fn compile(files: &[PathBuf], includes: &[PathBuf]) -> Result<Compiled, Repo
             return Err(not_found(&error, &includes));
         }
         return Err(error.into());
-    }
-    // protox compiles edition 2023 files, which this release does not generate from.
-    if let Some(file) = compiler
-        .descriptor_pool()
-        .files()
-        .find(|file| file.syntax() == Syntax::Editions)
-        && let Some(report) = editions_report(file.name(), &includes)
-    {
-        return Err(report);
     }
     let mut inputs = Vec::new();
     let mut sources = HashMap::new();
@@ -300,33 +291,19 @@ fn field_name_conflict(
 }
 
 /// The `input::editions` problem for a parse `error` in a file that
-/// declares an edition protox cannot parse: the file is found again on
-/// `includes` and its first statement read. `None` for any other error.
+/// declares an edition other than 2023, which protox cannot parse: the
+/// file is found again on `includes` and its first statement read. `None`
+/// for any other error, an edition 2023 file's among them.
 fn editions_problem(error: &protox::Error, includes: &[PathBuf]) -> Option<Report> {
     if !error.is_parse() {
         return None;
     }
-    editions_report(error.file()?, includes)
-}
-
-/// The `input::editions` problem for the file `name`, found on `includes`,
-/// sited at its `edition` statement. `None` when it has none.
-fn editions_report(name: &str, includes: &[PathBuf]) -> Option<Report> {
+    let name = error.file()?;
     let source = includes
         .iter()
         .find_map(|include| fs::read_to_string(include.join(name)).ok())?;
-    let (edition, span) = first_statement(&source, "edition")?;
-    let site = Site {
-        file: name.to_owned(),
-        span: Some(span),
-        label: "the edition".into(),
-        within: Vec::new(),
-    };
-    Some(report(
-        Problem::editions(name, Some(&edition), site),
-        name,
-        source,
-    ))
+    let problem = unsupported_edition(name, &source)?;
+    Some(report(problem, name, source))
 }
 
 /// The `input::not_proto3` problem for a parse `error` in one of `files`
@@ -386,60 +363,6 @@ fn report(problem: Problem, name: &str, source: String) -> Report {
     let sources = HashMap::from([(name.to_owned(), source)]);
     diagnostics.attach_sources(&sources, Columns::Bytes);
     Report::new(diagnostics)
-}
-
-/// The value `source`'s first statement gives `keyword`, `2023` of
-/// `edition = "2023";` for `edition`, and the span of that statement, when
-/// its first statement is one.
-fn first_statement(source: &str, keyword: &str) -> Option<(String, LineColSpan)> {
-    let bytes = source.as_bytes();
-    // Past whitespace and comments from `at`.
-    let skip = |mut at: usize| loop {
-        let rest = &source[at..];
-        let trimmed = rest.trim_start();
-        at += rest.len() - trimmed.len();
-        if trimmed.starts_with("//") {
-            at += trimmed.find('\n').unwrap_or(trimmed.len());
-        } else if let Some(comment) = trimmed.strip_prefix("/*") {
-            at += 2 + comment.find("*/").map_or(comment.len(), |end| end + 2);
-        } else {
-            return at;
-        }
-    };
-    let start = skip(0);
-    let after = start + keyword.len();
-    let declares = source.get(start..after)? == keyword
-        && !bytes
-            .get(after)
-            .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_');
-    if !declares {
-        return None;
-    }
-    let at = skip(after);
-    let at = skip(at + source[at..].strip_prefix('=').map(|_| 1)?);
-    let quote = *bytes.get(at).filter(|b| matches!(b, b'"' | b'\''))?;
-    let len = source[at + 1..].find(char::from(quote))?;
-    let value = source[at + 1..at + 1 + len].to_owned();
-    let mut end = at + len + 2;
-    let semicolon = skip(end);
-    if source[semicolon..].starts_with(';') {
-        end = semicolon + 1;
-    }
-    let position = |offset: usize| {
-        let before = &source[..offset];
-        let line = before.matches('\n').count();
-        let col = offset - before.rfind('\n').map_or(0, |newline| newline + 1);
-        (u32::try_from(line).ok(), u32::try_from(col).ok())
-    };
-    let (start_line, start_col) = position(start);
-    let (end_line, end_col) = position(end);
-    let span = LineColSpan {
-        start_line: start_line?,
-        start_col: start_col?,
-        end_line: end_line?,
-        end_col: end_col?,
-    };
-    Some((value, span))
 }
 
 /// Compiles `files` against `includes` and generates Elm from them as

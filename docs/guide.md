@@ -38,6 +38,17 @@ missing, differs (with a diff) or is stale, and 2 when it cannot tell
 With protoc or buf, which have no `check`, regenerate and run `git diff
 --exit-code` over the output directory.
 
+## Proto3 and edition 2023
+
+A proto3 file and an `edition = "2023";` file both generate. An
+edition 2023 file whose features only restate proto3 (implicit
+presence on the file, explicit on the fields proto3 marks `optional`)
+generates the same modules as the proto3 file, so moving a file to the
+edition shows no drift in `check`; any other feature shows up as the
+change it makes. A feature with no Elm form, or a later edition, is a
+diagnostic (`input::unsupported_feature`, `input::extensions`,
+`input::editions`).
+
 ## Reading a diagnostic
 
 A problem fails the run and prints a code, such as
