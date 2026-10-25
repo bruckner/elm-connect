@@ -499,3 +499,137 @@ message Message {
 "#
     )]));
 }
+
+const OPTIONS_SOURCE: &str = r#"edition = "2024";
+
+package options;
+
+import "google/protobuf/descriptor.proto";
+
+message Tag {}
+
+extend google.protobuf.FieldOptions {
+    string label = 50001;
+}
+"#;
+
+/// Compiles the last of `files`, which may import the well-known types.
+fn check_with_google(files: &'static [(&'static str, &'static str)]) -> Result<Compiler, Error> {
+    let mut resolver = ChainFileResolver::new();
+    resolver.add(TestFileResolver { files });
+    resolver.add(GoogleFileResolver::new());
+    let mut compiler = Compiler::with_file_resolver(resolver);
+    compiler.open_file(files[files.len() - 1].0)?;
+    Ok(compiler)
+}
+
+#[test]
+fn edition_2024_file() {
+    let compiler = check_with_google(&[
+        ("options.proto", OPTIONS_SOURCE),
+        (
+            "test.proto",
+            r#"edition = "2024";
+
+package test;
+
+import option "options.proto";
+
+export message Message {
+    local message Nested {}
+    string text = 1 [(options.label) = "hi"];
+    Nested nested = 2;
+}
+"#,
+        ),
+    ])
+    .unwrap();
+
+    let pool = compiler.descriptor_pool();
+    let file = pool.get_file_by_name("test.proto").unwrap();
+    assert_eq!(file.edition(), prost_reflect::Edition::Edition2024);
+    assert_eq!(file.option_dependencies().count(), 1);
+    // The option-imported file is loaded, and the option resolves through it.
+    let text = pool
+        .get_message_by_name("test.Message")
+        .unwrap()
+        .get_field_by_name("text")
+        .unwrap();
+    let label = pool.get_extension_by_name("options.label").unwrap();
+    assert_eq!(text.options().get_extension(&label).as_str(), Some("hi"));
+    let nested = pool.get_message_by_name("test.Message.Nested").unwrap();
+    assert_eq!(
+        nested.visibility_keyword(),
+        Some(prost_reflect::SymbolVisibility::Local)
+    );
+
+    let set = FileDescriptorSet::decode(compiler.encode_file_descriptor_set().as_slice()).unwrap();
+    let test = set.file.iter().find(|f| f.name() == "test.proto").unwrap();
+    assert_eq!(test.option_dependency, ["options.proto"]);
+    assert_eq!(test.dependency, Vec::<String>::new());
+    assert_eq!(
+        test.message_type[0].visibility(),
+        prost_types::SymbolVisibility::VisibilityExport
+    );
+}
+
+#[test]
+fn edition_2024_option_import_not_found() {
+    assert_yaml_snapshot!(check_err(&[(
+        "test.proto",
+        r#"edition = "2024";
+
+import option "missing.proto";
+"#
+    )]));
+}
+
+#[test]
+fn edition_2024_type_through_option_import() {
+    assert_yaml_snapshot!(error_to_json(
+        &check_with_google(&[
+            ("options.proto", OPTIONS_SOURCE),
+            (
+                "test.proto",
+                r#"edition = "2024";
+
+package test;
+
+import option "options.proto";
+
+message Message {
+    options.Tag tag = 1;
+}
+"#,
+            ),
+        ])
+        .unwrap_err()
+    ));
+}
+
+#[test]
+fn edition_2024_naming_style() {
+    assert_yaml_snapshot!(check_err(&[(
+        "test.proto",
+        r#"edition = "2024";
+
+package test;
+
+message bad_name {
+    int32 BadField = 1;
+}
+"#
+    )]));
+    check(&[(
+        "test.proto",
+        r#"edition = "2024";
+
+package test;
+
+option features.enforce_naming_style = STYLE_LEGACY;
+
+message bad_name {}
+"#,
+    )])
+    .unwrap();
+}

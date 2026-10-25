@@ -1,0 +1,24 @@
+---
+source: protox/tests/compiler.rs
+expression: "check_err(&[(\"test.proto\",\nr#\"edition = \"2024\";\n\npackage test;\n\nmessage bad_name {\n    int32 BadField = 1;\n}\n\"#)])"
+---
+causes: []
+filename: test.proto
+labels:
+  - label: found here
+    span:
+      length: 8
+      offset: 42
+message: Message name bad_name should be TitleCase (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+related:
+  - causes: []
+    filename: test.proto
+    labels:
+      - label: found here
+        span:
+          length: 8
+          offset: 63
+    message: Field name BadField should be lower_snake_case (features.enforce_naming_style = STYLE_LEGACY can be used to opt out of this check)
+    related: []
+    severity: error
+severity: error

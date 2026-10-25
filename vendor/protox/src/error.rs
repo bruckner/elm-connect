@@ -173,11 +173,19 @@ impl Error {
     }
 }
 
+/// Finds the span of an import, numbered across the file's dependencies and then its option
+/// dependencies.
 fn find_import_span(file: &File, import_idx: usize) -> Option<SourceSpan> {
+    let dependencies = file.descriptor.dependency.len();
+    let path = if import_idx < dependencies {
+        [3, import_idx as i32]
+    } else {
+        [15, (import_idx - dependencies) as i32]
+    };
     if let Some(sci) = &file.descriptor.source_code_info {
         if let Some(source) = file.source() {
             for location in &sci.location {
-                if location.path == [3, import_idx as i32] {
+                if location.path == path {
                     if location.span.len() != 3 {
                         continue;
                     }

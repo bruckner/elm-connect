@@ -1,0 +1,14 @@
+---
+source: protox/tests/compiler.rs
+expression: "check_err(&[(\"test.proto\",\nr#\"edition = \"2024\";\n\nimport option \"missing.proto\";\n\"#)])"
+---
+causes: []
+filename: test.proto
+labels:
+  - label: imported here
+    span:
+      length: 30
+      offset: 19
+message: "import 'missing.proto' not found"
+related: []
+severity: error

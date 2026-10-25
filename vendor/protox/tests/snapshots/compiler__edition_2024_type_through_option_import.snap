@@ -1,0 +1,15 @@
+---
+source: protox/tests/compiler.rs
+expression: "error_to_json(&check_with_google(&[(\"options.proto\", OPTIONS_SOURCE),\n(\"test.proto\",\nr#\"edition = \"2024\";\n\npackage test;\n\nimport option \"options.proto\";\n\nmessage Message {\n    options.Tag tag = 1;\n}\n\"#,),]).unwrap_err())"
+---
+causes: []
+filename: test.proto
+help: "'options.Tag' is defined in 'options.proto', which 'test.proto' imports only for use in options"
+labels:
+  - label: found here
+    span:
+      length: 11
+      offset: 88
+message: "name 'options.Tag' is not defined"
+related: []
+severity: error

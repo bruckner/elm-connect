@@ -81,8 +81,11 @@ impl Compiler {
     where
         R: FileResolver + 'static,
     {
+        // Source files are checked against their naming style, as protoc checks them.
+        let mut pool = DescriptorPool::new();
+        pool.enforce_naming_style(true);
         Compiler {
-            pool: DescriptorPool::new(),
+            pool,
             resolver: Box::new(resolver),
             files: HashMap::new(),
             include_imports: false,
@@ -149,7 +152,7 @@ impl Compiler {
 
         let mut import_stack = vec![name.clone()];
         let mut already_imported = HashSet::new();
-        for (i, import) in file.descriptor.dependency.iter().enumerate() {
+        for (i, import) in imports(&file).enumerate() {
             if !already_imported.insert(import) {
                 return Err(Error::duplicated_import(import.to_owned(), &file, i));
             }
@@ -274,7 +277,7 @@ impl Compiler {
 
         import_stack.push(file_name.to_owned());
         let mut already_imported = HashSet::new();
-        for (i, import) in file.descriptor.dependency.iter().enumerate() {
+        for (i, import) in imports(&file).enumerate() {
             if !already_imported.insert(import) {
                 return Err(Error::duplicated_import(import.to_owned(), &file, i));
             }
@@ -318,6 +321,15 @@ impl Compiler {
 
         Ok(path)
     }
+}
+
+/// The files `file` imports: its dependencies, then its option dependencies (edition 2024's
+/// `import option`), which must be loaded too, since their extensions resolve options.
+fn imports(file: &File) -> impl Iterator<Item = &String> {
+    file.descriptor
+        .dependency
+        .iter()
+        .chain(&file.descriptor.option_dependency)
 }
 
 impl fmt::Debug for Compiler {
