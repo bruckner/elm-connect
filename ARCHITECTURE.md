@@ -85,6 +85,7 @@ point of `elm-format`: the corpus's formatted check and
 
 - `Proto.*` is the data: the proto3 JSON codecs (`Proto.Json`,
   `Proto.Int64`, `Proto.Bytes`, `Proto.Timestamp`, `Proto.Duration`),
+  the protobuf binary wire format (`Proto.Binary`),
   the typed values and descriptor trees (`Proto.Message`, `Proto.Enum`,
   `Proto.Method`, `Proto.Field`, `Proto.EnumValue`), the HTTP bindings
   (`Proto.Http`), `Proto.Registry`, `Proto.Any`, `Proto.WellKnown`, and

@@ -103,6 +103,21 @@ conversions =
             \_ -> Expect.equal (Duration.fromMilliseconds 1500) (Duration.fromSeconds 1.5)
         , test "years of seconds" <|
             \_ -> Expect.equal "315576000000s" (Duration.toString (Duration.fromSeconds 315576000000))
+        , test "fromParts carries the nanoseconds and gives both parts one sign" <|
+            \_ ->
+                [ Duration.fromParts 1 500000000, Duration.fromParts 2 -500000000, Duration.fromParts 0 -1500000000, Duration.fromParts -1 2000000000 ]
+                    |> List.map Duration.toParts
+                    |> Expect.equal
+                        [ { seconds = 1, nanos = 500000000 }
+                        , { seconds = 1, nanos = 500000000 }
+                        , { seconds = -1, nanos = -500000000 }
+                        , { seconds = 1, nanos = 0 }
+                        ]
+        , test "fromParts past protobuf's limit gives the limit" <|
+            \_ ->
+                [ Duration.fromParts 315576000001 0, Duration.fromParts 315576000000 5, Duration.fromParts -400000000000 -1 ]
+                    |> List.map Duration.toString
+                    |> Expect.equal [ "315576000000s", "315576000000s", "-315576000000s" ]
         , test "milliseconds past 32 bits" <|
             \_ -> Expect.equal 5000000000000 (Duration.toMilliseconds (Duration.fromMilliseconds 5000000000000))
         ]
