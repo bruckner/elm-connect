@@ -16,7 +16,10 @@ import Test exposing (Test, describe, test)
 
 {-| A sampled message: the full name of its type, its canonical proto3 JSON,
 what the generated encoder writes after decoding that when it is not the
-same, and the other forms prost-reflect wrote it in.
+same, and the other forms prost-reflect wrote it in; then its protobuf
+binary as hex (`Codec.BinaryRoundTrip`), and what the JSON encoder writes
+after the binary decoder reads it when that is not what it writes after
+decoding the canonical JSON.
 -}
 type alias Sample =
     { name : String
@@ -24,6 +27,8 @@ type alias Sample =
     , canonical : String
     , expected : Maybe String
     , forms : List Form
+    , binary : String
+    , binaryJson : Maybe String
     }
 
 
