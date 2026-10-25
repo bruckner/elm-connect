@@ -1826,20 +1826,26 @@ expects them:
     Json.Decode.decodeString fieldMask "\"displayName,author.emailAddress\""
     -- Ok [ "display_name", "author.email_address" ]
 
-The empty string is the empty mask.
+The empty string is the empty mask. A path with an `_` fails: lowerCamelCase
+has none, so it can only be a proto field name, which proto3 JSON does not
+write here.
 
 -}
 fieldMask : Decoder (List String)
 fieldMask =
     Json.Decode.string
-        |> Json.Decode.map
+        |> Json.Decode.andThen
             (\text ->
                 if String.isEmpty text then
-                    []
+                    Json.Decode.succeed []
+
+                else if String.contains "_" text then
+                    Json.Decode.fail ("Expecting a FieldMask of lowerCamelCase paths, but got " ++ quote text)
 
                 else
                     String.split "," text
                         |> List.map (mapSegments snakeCase)
+                        |> Json.Decode.succeed
             )
 
 

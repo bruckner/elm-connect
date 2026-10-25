@@ -13,3 +13,6 @@
   with nothing after the last `/`) fails to decode; it was read as an
   `Any` of that text before. A well-formed URL of a type the client does
   not know still decodes.
+- A `FieldMask` whose JSON holds an `_` (`"display_name"`) fails to
+  decode: proto3 JSON writes its paths in lowerCamelCase
+  (`"displayName"`). It was read as the path `display_name` before.

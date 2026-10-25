@@ -1312,6 +1312,8 @@ wellKnownTests =
                     [ "display_name", "author.email_address", "id" ]
         , test "the empty field mask" <|
             \_ -> decodes Proto.Json.fieldMask "\"\"" []
+        , test "a field mask path with an underscore fails" <|
+            \_ -> failsOnEach Proto.Json.fieldMask [ "\"foo,bar_bar\"", "\"display_name\"", "\"author.email_address\"", "\"_\"" ]
         , test "encodes a field mask in lowerCamelCase" <|
             \_ ->
                 encodesTo (Proto.Json.encodeFieldMask [ "display_name", "author.email_address" ])

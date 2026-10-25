@@ -1038,6 +1038,8 @@ In detail:
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
+  A mask whose wire form holds an `_` fails to decode: lowerCamelCase
+  has none, and protobuf's parsers refuse it.
 - `Any` is in the runtime as `Proto.Any`: an opaque `Any`
   holding the type URL and the packed message, either as its JSON or, when only
   its protobuf binary arrived, as that binary (base64) alone. `pack`
