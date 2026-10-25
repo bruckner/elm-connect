@@ -29,6 +29,13 @@
 //! `tests/Codec/RoundTripTest.elm` decodes every form with the generated
 //! decoder, re-encodes it with the generated encoder and compares the
 //! JSON with the expected, structurally and numbers by value.
+//!
+//! The binary oracle: each sample's protobuf binary too, written
+//! deterministically ([`encode_sorted`] of [`canonical_message`]), which
+//! prost-reflect must read back as the sample, under the binary sets
+//! (`codec=both`, also with `int64=int` and `bytes=bytes`, and
+//! `codec=binary`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
+//! the generated binary decoder and must re-encode the same bytes.
 
 use std::fs;
 
@@ -37,6 +44,7 @@ use elm_connect_gen::elm::build::{
     apply, list, qualified, record, string, tuple2, ty, ty_qualified, var,
 };
 use elm_connect_gen::{Options, generate};
+use prost::Message as _;
 use prost_reflect::{
     DescriptorPool, DeserializeOptions, DynamicMessage, FieldDescriptor, Kind, MapKey,
     MessageDescriptor, ReflectMessage, SerializeOptions, Value,
@@ -94,28 +102,67 @@ struct OptionSet {
     prefix: &'static str,
     parameter: &'static str,
     table: &'static str,
+    /// Whether the set's messages get proto3 JSON codecs, and binary ones.
+    json: bool,
+    binary: bool,
 }
 
-const SETS: [OptionSet; 4] = [
+const SETS: [OptionSet; 8] = [
     OptionSet {
         prefix: "Default",
         parameter: "",
         table: "default",
+        json: true,
+        binary: false,
     },
     OptionSet {
         prefix: "Int64Int",
         parameter: "int64=int",
         table: "int64Int",
+        json: true,
+        binary: false,
     },
     OptionSet {
         prefix: "EnumZero",
         parameter: "enum_unknown=zero",
         table: "enumZero",
+        json: true,
+        binary: false,
     },
     OptionSet {
         prefix: "BytesBytes",
         parameter: "bytes=bytes",
         table: "bytesBytes",
+        json: true,
+        binary: false,
+    },
+    OptionSet {
+        prefix: "Both",
+        parameter: "codec=both",
+        table: "both",
+        json: true,
+        binary: true,
+    },
+    OptionSet {
+        prefix: "BothInt64Int",
+        parameter: "codec=both,int64=int",
+        table: "bothInt64Int",
+        json: true,
+        binary: true,
+    },
+    OptionSet {
+        prefix: "BothBytesBytes",
+        parameter: "codec=both,bytes=bytes",
+        table: "bothBytesBytes",
+        json: true,
+        binary: true,
+    },
+    OptionSet {
+        prefix: "Binary",
+        parameter: "codec=binary",
+        table: "binary",
+        json: false,
+        binary: true,
     },
 ];
 
@@ -355,6 +402,15 @@ struct Sample {
     expected: Option<Json>,
     /// The other forms.
     forms: Vec<Form>,
+    /// The protobuf binary of [`canonical_message`] of the sample, written
+    /// deterministically ([`encode_sorted`]): what a generated binary
+    /// encoder must write after its decoder reads it.
+    binary: Vec<u8>,
+    /// What the generated JSON encoder writes after the binary decoder
+    /// reads [`Sample::binary`], when that is not what it writes after the
+    /// JSON decoder reads the canonical form: an `Any` read from binary
+    /// holds the packed message's binary ([`binary_view`]).
+    binary_json: Option<Json>,
 }
 
 struct Form {
@@ -376,6 +432,10 @@ impl Sample {
 
 fn sample(name: String, message: DynamicMessage) -> Sample {
     let descriptor = message.descriptor();
+    let binary_message = canonical_message(&message);
+    let binary = encode_sorted(&binary_message);
+    let mut viewed = serialize(&binary_message, true, false);
+    binary_view(&binary_message, &mut viewed);
     let canonical = serialize(&message, true, false);
     let mut expected = canonical.clone();
     allowed_differences(&message, &mut expected, &canonical);
@@ -397,13 +457,263 @@ fn sample(name: String, message: DynamicMessage) -> Sample {
         }
     })
     .collect();
+    let binary_json = (viewed != expected).then_some(viewed);
     Sample {
         name,
         message,
         expected: (expected != canonical).then_some(expected),
         canonical,
         forms,
+        binary,
+        binary_json,
     }
+}
+
+// The binary oracle.
+
+/// `message` as the generated binary codecs hold it, so that the bytes
+/// [`encode_sorted`] writes for it are what they write back: every
+/// singular `google.protobuf.Empty` field outside a oneof set, since Elm
+/// holds it as `()` without presence and the encoder writes it (as the
+/// JSON encoder writes `{}`); every `Any`'s packed message re-encoded with
+/// [`encode_sorted`], since the runtime keeps an `Any`'s bytes as they
+/// arrive; and every `google.protobuf.Value` that sets no kind given
+/// `null_value`, which prost-reflect leaves unset when it reads JSON's
+/// `null`, and which is the null the runtime reads it as and writes. At
+/// every level, inside an `Any`'s message too.
+fn canonical_message(message: &DynamicMessage) -> DynamicMessage {
+    let descriptor = message.descriptor();
+    let mut out = message.clone();
+    if descriptor.full_name() == "google.protobuf.Value"
+        && !descriptor.fields().any(|field| out.has_field(&field))
+    {
+        out.set_field_by_name("null_value", Value::EnumNumber(0));
+    }
+    if descriptor.full_name() == "google.protobuf.Any" {
+        let url = message
+            .get_field_by_name("type_url")
+            .and_then(|v| v.as_str().map(str::to_owned))
+            .unwrap_or_default();
+        if let Some(name) = url.rsplit('/').next().filter(|n| !n.is_empty()) {
+            let inner_descriptor = descriptor
+                .parent_pool()
+                .get_message_by_name(name)
+                .unwrap_or_else(|| panic!("an Any of {name}, which the pool lacks"));
+            let bytes = message
+                .get_field_by_name("value")
+                .and_then(|v| v.as_bytes().cloned())
+                .unwrap_or_default();
+            let inner = DynamicMessage::decode(inner_descriptor, bytes).expect("an Any's message");
+            let canonical = encode_sorted(&canonical_message(&inner));
+            out.set_field_by_name("value", Value::Bytes(canonical.into()));
+        }
+        return out;
+    }
+    for field in descriptor.fields() {
+        let kind = field.kind();
+        let singular = !field.is_list() && !field.is_map();
+        if let Kind::Message(empty) = &kind
+            && singular
+            && field.containing_oneof().is_none()
+            && is_well_known(&kind, "Empty")
+            && !out.has_field(&field)
+        {
+            out.set_field(&field, Value::Message(DynamicMessage::new(empty.clone())));
+        }
+        if !out.has_field(&field) || !matches!(kind, Kind::Message(_)) {
+            continue;
+        }
+        let updated = match out.get_field(&field).as_ref() {
+            Value::Message(inner) => Value::Message(canonical_message(inner)),
+            Value::List(items) => Value::List(
+                items
+                    .iter()
+                    .map(|item| match item {
+                        Value::Message(inner) => Value::Message(canonical_message(inner)),
+                        other => other.clone(),
+                    })
+                    .collect(),
+            ),
+            Value::Map(entries) => Value::Map(
+                entries
+                    .iter()
+                    .map(|(key, item)| {
+                        let item = match item {
+                            Value::Message(inner) => Value::Message(canonical_message(inner)),
+                            other => other.clone(),
+                        };
+                        (key.clone(), item)
+                    })
+                    .collect(),
+            ),
+            other => other.clone(),
+        };
+        out.set_field(&field, updated);
+    }
+    out
+}
+
+/// The protobuf binary of `message`, deterministic where prost-reflect's
+/// is not: fields in number order, as prost-reflect writes them, but a
+/// map's entries in the order of the Elm container that holds them
+/// ([`elm_key_order`]) rather than a `HashMap`'s. Each scalar or packed
+/// field and each map entry's scalar key or value is written by
+/// prost-reflect itself, from a message holding it alone.
+fn encode_sorted(message: &DynamicMessage) -> Vec<u8> {
+    let descriptor = message.descriptor();
+    let mut fields: Vec<(FieldDescriptor, Value)> = message
+        .fields()
+        .map(|(field, value)| (field, value.clone()))
+        .collect();
+    fields.sort_by_key(|(field, _)| field.number());
+    let mut out = Vec::new();
+    for (field, value) in fields {
+        match (&value, field.kind()) {
+            (Value::Map(entries), Kind::Message(entry)) => {
+                let mut entries: Vec<(&MapKey, &Value)> = entries.iter().collect();
+                entries.sort_by(|(a, _), (b, _)| elm_key_order(a, b));
+                let key_field = entry.map_entry_key_field();
+                let value_field = entry.map_entry_value_field();
+                for (key, item) in entries {
+                    let mut body = alone(&entry, &key_field, key.clone().into());
+                    match item {
+                        Value::Message(inner) => delimited(&mut body, 2, &encode_sorted(inner)),
+                        item => body.extend(alone(&entry, &value_field, item.clone())),
+                    }
+                    delimited(&mut out, field.number(), &body);
+                }
+            }
+            (Value::Message(inner), _) => {
+                delimited(&mut out, field.number(), &encode_sorted(inner));
+            }
+            (Value::List(items), Kind::Message(_)) => {
+                for item in items {
+                    if let Value::Message(inner) = item {
+                        delimited(&mut out, field.number(), &encode_sorted(inner));
+                    }
+                }
+            }
+            (value, _) => out.extend(alone(&descriptor, &field, value.clone())),
+        }
+    }
+    out
+}
+
+/// What prost-reflect writes for `field` of a `descriptor` message
+/// holding `value` and nothing else: the field's key and value, or nothing
+/// for a default without presence.
+fn alone(descriptor: &MessageDescriptor, field: &FieldDescriptor, value: Value) -> Vec<u8> {
+    let mut message = DynamicMessage::new(descriptor.clone());
+    message.set_field(field, value);
+    message.encode_to_vec()
+}
+
+/// Field `number`, length-delimited, holding `body`.
+fn delimited(out: &mut Vec<u8>, number: u32, body: &[u8]) {
+    prost::encoding::encode_key(number, prost::encoding::WireType::LengthDelimited, out);
+    prost::encoding::encode_varint(body.len() as u64, out);
+    out.extend_from_slice(body);
+}
+
+/// The order of a map's keys in the Elm container the generated code
+/// holds them in: a `Dict` sorts strings by UTF-16 code unit, 32-bit
+/// integers by value and 64-bit integers, held as decimal text, by their
+/// text; a `bool` map writes `False` first.
+fn elm_key_order(a: &MapKey, b: &MapKey) -> std::cmp::Ordering {
+    fn text(key: &MapKey) -> Vec<u16> {
+        key_text(key).encode_utf16().collect()
+    }
+    match (a, b) {
+        (MapKey::I32(x), MapKey::I32(y)) => x.cmp(y),
+        (MapKey::U32(x), MapKey::U32(y)) => x.cmp(y),
+        (MapKey::Bool(x), MapKey::Bool(y)) => x.cmp(y),
+        _ => text(a).cmp(&text(b)),
+    }
+}
+
+/// `json`, `message`'s canonical JSON, with each `Any` (but inside an
+/// `Any`) as the generated JSON encoder writes one read from binary:
+/// Connect's error-detail form, `{"type": name, "value": base64}`, or
+/// `{}` for the empty `Any`.
+fn binary_view(message: &DynamicMessage, json: &mut Json) {
+    for (field, value) in message.fields() {
+        let Some(target) = json.get_mut(field.json_name()) else {
+            continue;
+        };
+        let each = |value: &Value, target: &mut Json| {
+            if let Value::Message(inner) = value {
+                if is_well_known(&kind_of_value(&field), "Any") {
+                    *target = any_view(inner);
+                } else if walked(&kind_of_value(&field)).is_some() {
+                    binary_view(inner, target);
+                }
+            }
+        };
+        match value {
+            Value::List(items) => {
+                if let Json::Array(targets) = target {
+                    for (item, target) in items.iter().zip(targets) {
+                        each(item, target);
+                    }
+                }
+            }
+            Value::Map(entries) => {
+                for (key, item) in entries {
+                    if let Some(target) = target.get_mut(key_text(key)) {
+                        each(item, target);
+                    }
+                }
+            }
+            value => each(value, target),
+        }
+    }
+}
+
+/// The kind of `field`'s values: a map's value kind, else its own.
+fn kind_of_value(field: &FieldDescriptor) -> Kind {
+    match field.kind() {
+        Kind::Message(entry) if field.is_map() => entry.map_entry_value_field().kind(),
+        kind => kind,
+    }
+}
+
+fn any_view(any: &DynamicMessage) -> Json {
+    let url = any
+        .get_field_by_name("type_url")
+        .and_then(|v| v.as_str().map(str::to_owned))
+        .unwrap_or_default();
+    let bytes = any
+        .get_field_by_name("value")
+        .and_then(|v| v.as_bytes().cloned())
+        .unwrap_or_default();
+    if url.is_empty() && bytes.is_empty() {
+        return serde_json::json!({});
+    }
+    serde_json::json!({
+        "type": url.rsplit('/').next().unwrap_or(&url),
+        "value": base64(&bytes),
+    })
+}
+
+/// Standard base64 with padding, as `Proto.Bytes.toBase64` writes it.
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::new();
+    for chunk in bytes.chunks(3) {
+        let n = chunk.iter().fold(0u32, |n, b| (n << 8) | u32::from(*b)) << (8 * (3 - chunk.len()));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 /// The messages given [`EDGES`] samples as well as random ones.
@@ -583,6 +893,45 @@ fn every_form_reads_back_as_its_sample() {
     assert!(failures.is_empty(), "\n{}", failures.join("\n"));
 }
 
+/// Each sample's binary is protobuf that prost-reflect reads back as the
+/// sample as the binary codecs hold it ([`canonical_message`]). The
+/// generated encoders must write these bytes exactly
+/// (`tests/Codec/BinaryRoundTripTest.elm`), so prost-reflect reads what
+/// they write. Prints how many samples prost-reflect's own encoding writes
+/// byte for byte the same: all but those whose maps hold two or more
+/// entries, which it writes in `HashMap` order, and those the canonical
+/// form changes.
+#[test]
+fn every_binary_reads_back_as_its_sample() {
+    let pool = pool();
+    let mut failures = Vec::new();
+    let (mut total, mut same) = (0, 0);
+    for profile in [WIDE, NARROW] {
+        for sample in samples(&pool, &profile) {
+            total += 1;
+            let want = canonical_message(&sample.message);
+            if sample.message.encode_to_vec() == sample.binary {
+                same += 1;
+            }
+            match DynamicMessage::decode(sample.message.descriptor(), sample.binary.as_slice()) {
+                Ok(read) if serialize(&read, false, false) == serialize(&want, false, false) => {}
+                Ok(read) => failures.push(format!(
+                    "{}: reads back as {}, not {}",
+                    sample.name,
+                    serialize(&read, false, false),
+                    serialize(&want, false, false)
+                )),
+                Err(e) => failures.push(format!("{}: {e}", sample.name)),
+            }
+            if encode_sorted(&want) != sample.binary {
+                failures.push(format!("{}: not deterministic", sample.name));
+            }
+        }
+    }
+    eprintln!("binary oracle: {total} samples, {same} byte for byte prost-reflect's own encoding");
+    assert!(failures.is_empty(), "\n{}", failures.join("\n"));
+}
+
 /// The constructs the layer is for each appear in the pinned samples, so
 /// a change of seed, count or sampler cannot quietly drop one.
 #[test]
@@ -687,6 +1036,8 @@ fn data_module(name: &str, profile: &str, samples: &[Sample]) -> Module {
             ("canonical", string(sample.canonical.to_string())),
             ("expected", maybe_json(&sample.expected)),
             ("forms", list(forms)),
+            ("binary", string(hex(&sample.binary))),
+            ("binaryJson", maybe_json(&sample.binary_json)),
         ])
     });
     Module {
@@ -710,41 +1061,63 @@ fn data_module(name: &str, profile: &str, samples: &[Sample]) -> Module {
     }
 }
 
-/// Each option set's codecs of every sampled message, by full name.
+/// Each option set's codecs of every sampled message, by full name: the
+/// JSON codecs of the sets that have them (`default`, ...), and the binary
+/// codecs of those that have them (`bothBinary`, ...), beside the JSON
+/// codecs where the set has both.
 fn codecs_module(pool: &DescriptorPool) -> Module {
-    let mut imports = vec![import("Codec.RoundTrip")];
-    let decls = SETS
-        .iter()
-        .map(|set| {
-            let module = format!("Generated.Codec.{}.Codec.V1", set.prefix);
-            imports.push(import(&module));
+    let mut imports = vec![import("Codec.RoundTrip"), import("Codec.BinaryRoundTrip")];
+    let mut decls = Vec::new();
+    for set in &SETS {
+        let module = format!("Generated.Codec.{}.Codec.V1", set.prefix);
+        imports.push(import(&module));
+        let value = |name: String| qualified(module.as_str(), name);
+        if set.json {
             let rows = messages(pool).into_iter().map(|descriptor| {
                 tuple2(
                     string(descriptor.full_name().to_owned()),
                     apply(
                         qualified("Codec.RoundTrip", "codec"),
                         [
-                            qualified(module.as_str(), format!("decode{}", descriptor.name())),
-                            qualified(module.as_str(), format!("encode{}", descriptor.name())),
+                            value(format!("decode{}", descriptor.name())),
+                            value(format!("encode{}", descriptor.name())),
                         ],
                     ),
                 )
             });
-            Decl::Value {
-                doc: None,
-                name: set.table.into(),
-                annotation: ty(
-                    "List",
-                    [Type::Tuple(vec![
-                        ty("String", []),
-                        ty_qualified("Codec.RoundTrip", "Codec", []),
-                    ])],
-                ),
-                params: Vec::new(),
-                body: list(rows),
-            }
-        })
-        .collect();
+            decls.push(table(set.table.to_owned(), "Codec.RoundTrip", list(rows)));
+        }
+        if set.binary {
+            let rows = messages(pool).into_iter().map(|descriptor| {
+                let name = descriptor.name();
+                let row = if set.json {
+                    apply(
+                        qualified("Codec.BinaryRoundTrip", "both"),
+                        [
+                            value(format!("decode{name}Bytes")),
+                            value(format!("encode{name}Bytes")),
+                            value(format!("decode{name}")),
+                            value(format!("encode{name}")),
+                        ],
+                    )
+                } else {
+                    apply(
+                        qualified("Codec.BinaryRoundTrip", "binaryOnly"),
+                        [
+                            value(format!("decode{name}Bytes")),
+                            value(format!("encode{name}Bytes")),
+                        ],
+                    )
+                };
+                tuple2(string(descriptor.full_name().to_owned()), row)
+            });
+            decls.push(table(
+                format!("{}Binary", set.table),
+                "Codec.BinaryRoundTrip",
+                list(rows),
+            ));
+        }
+    }
     Module {
         header: Some(
             "Generated by the codec test (crates/elm-connect-gen/tests/codec.rs): the codecs of \
@@ -757,6 +1130,23 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         exposing: Exposing::All,
         imports,
         decls,
+    }
+}
+
+/// `name : List ( String, <module>.Codec )` holding `rows`.
+fn table(name: String, module: &str, rows: Expr) -> Decl {
+    Decl::Value {
+        doc: None,
+        name,
+        annotation: ty(
+            "List",
+            [Type::Tuple(vec![
+                ty("String", []),
+                ty_qualified(module, "Codec", []),
+            ])],
+        ),
+        params: Vec::new(),
+        body: rows,
     }
 }
 

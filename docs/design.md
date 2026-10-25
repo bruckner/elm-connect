@@ -1773,8 +1773,9 @@ registry =
   never builds a value with binary codecs carries none of their code.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them.
-- **Checked** by the corpus cases `codec_both` (the codec protos under
-  `codec=both`) and `codec_binary`.
+- **Checked** by the binary round trips (§7) and the corpus cases
+  `codec_both` (the codec protos under `codec=both`) and
+  `codec_binary`.
 
 ## 4. Calls
 
@@ -3106,6 +3107,23 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   and a value prost-reflect cannot write is not sampled (a `DoubleValue`
   or `FloatValue` holding NaN or an infinity, which it writes as
   `null`; an `Any` without a type URL).
+- Binary round trips, over the same samples: the test also writes each
+  sample's protobuf binary, deterministic where prost-reflect's is not
+  (a map's entries in the order of the Elm `Dict` holding them, a
+  `bool`-keyed map's `False` first; every singular `Empty` set, each
+  `Any`'s packed message re-encoded the same way and a kind-less `Value`
+  given `null_value`), and checks that prost-reflect reads each back as
+  the sample. The protos are generated under `codec=both` (also with
+  `int64=int` and with `bytes=bytes`) and `codec=binary`, and
+  `tests/Codec/BinaryRoundTripTest.elm` decodes every sample's binary
+  with the generated decoder and re-encodes it to the same bytes, with
+  unknown fields of every wire type appended and without; where the set
+  has JSON codecs, the value read from binary writes the JSON the value
+  read from JSON writes, and the value read from JSON encodes to the
+  same bytes, but where it holds an `Any`, whose JSON the binary
+  encoder writes with its type URL alone (§5.5). Byte identity with
+  bytes prost-reflect reads is the oracle that prost-reflect reads what
+  the encoders write.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated from
