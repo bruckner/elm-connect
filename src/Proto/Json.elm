@@ -1964,6 +1964,9 @@ encodeAny (InternalAny.Any url payload) =
             ( "@type", Json.Encode.string url )
     in
     case payload of
+        InBoth json _ ->
+            encodeAny (InternalAny.Any url (InJson json))
+
         InJson json ->
             if hasJsonForm url then
                 Json.Encode.object [ typed, ( "value", json ) ]

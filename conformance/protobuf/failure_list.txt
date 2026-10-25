@@ -1,0 +1,91 @@
+# Cases of the protobuf conformance suite (protocolbuffers/protobuf
+# conformance/, runner v32.0-rc2 from bufbuild/protobuf-conformance) the
+# testee fails, for conformance_test_runner --failure_list. Proto3 only:
+# proto2 and editions messages, JSPB and text format are answered skipped.
+# Each group is classified: ours (the runtime or generator could do it),
+# spec choice (a documented elm-connect choice the suite disagrees with),
+# unsupported (a feature elm-connect does not have).
+
+# --- Binary ---
+
+# spec choice: unknown fields are skipped, not kept and written back.
+Required.Proto3.ProtobufInput.UnknownOrdering.ProtobufOutput
+Required.Proto3.ProtobufInput.UnknownVarint.ProtobufOutput
+
+# ours: an Any holding a message's proto3 JSON (not a well-known type's) is
+# written to binary with its type URL alone; converting it needs the packed
+# type's codecs by type URL (a codec registry).
+Required.Proto3.JsonInput.Any.ProtobufOutput
+Required.Proto3.JsonInput.AnyNested.ProtobufOutput
+Required.Proto3.JsonInput.AnyUnorderedTypeTag.ProtobufOutput
+
+# --- JSON (the proto3 JSON codecs; none of these involves the binary ones
+# but as the output format) ---
+
+# spec choice: a Timestamp is a Time.Posix, milliseconds.
+Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.ProtobufOutput
+Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.ProtobufOutput
+Required.Proto3.JsonInput.TimestampMaxValue.JsonOutput
+Required.Proto3.JsonInput.TimestampMaxValue.ProtobufOutput
+Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.ProtobufOutput
+Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.ProtobufOutput
+Required.Proto3.JsonInput.TimestampRepeatedValue.JsonOutput
+Required.Proto3.JsonInput.TimestampRepeatedValue.ProtobufOutput
+Recommended.Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
+Recommended.Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
+
+# spec choice: an encoder cannot fail, so a value out of the JSON form's
+# range (a Timestamp or Duration past its bounds, a Value of NaN or
+# infinity, a FieldMask path with no JSON form) is written, not refused.
+Required.Proto3.DurationProtoInputTooLarge.JsonOutput
+Required.Proto3.DurationProtoInputTooSmall.JsonOutput
+Required.Proto3.TimestampProtoInputTooLarge.JsonOutput
+Required.Proto3.TimestampProtoInputTooSmall.JsonOutput
+Recommended.Proto3.ValueRejectInfNumberValue.JsonOutput
+Recommended.Proto3.ValueRejectNanNumberValue.JsonOutput
+Recommended.Proto3.FieldMaskNumbersDontRoundTrip.JsonOutput
+Recommended.Proto3.FieldMaskPathsDontRoundTrip.JsonOutput
+Recommended.Proto3.FieldMaskTooManyUnderscore.JsonOutput
+
+# ours: a 64-bit integer written as a JSON number past 2^53 is read through
+# a Float (elm/json), so it loses precision or fails.
+Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.ProtobufOutput
+Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.ProtobufOutput
+Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.ProtobufOutput
+
+# ours: inputs the JSON decoders accept and the spec refuses.
+Required.Proto3.JsonInput.AnyWktRepresentationWithBadType
+Required.Proto3.JsonInput.AnyWktRepresentationWithEmptyTypeAndValue
+Required.Proto3.JsonInput.DoubleFieldTooLarge
+Required.Proto3.JsonInput.DoubleFieldTooSmall
+Required.Proto3.JsonInput.FloatFieldTooLarge
+Required.Proto3.JsonInput.FloatFieldTooSmall
+Required.Proto3.JsonInput.TimestampJsonInputLowercaseT
+Required.Proto3.JsonInput.TimestampJsonInputLowercaseZ
+Recommended.Proto3.JsonInput.FieldMaskInvalidCharacter
+Recommended.Proto3.JsonInput.FieldNameDuplicate
+Recommended.Proto3.JsonInput.StringFieldSurrogateInWrongOrder
+Recommended.Proto3.JsonInput.StringFieldUnpairedHighSurrogate
+Recommended.Proto3.JsonInput.StringFieldUnpairedLowSurrogate
+
+# spec choice: an unknown enum name fails to decode (enum_unknown applies to
+# numbers), whether or not unknown fields are ignored.
+Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapPart.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapValue.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInOptionalField.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedField.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedPart.ProtobufOutput
+
+# unsupported: google.protobuf.NullValue has no Elm mapping
+# (types::unsupported_well_known), so the testee's proto drops the fields
+# that hold one (strip-null-value.sh).
+Recommended.Proto3.JsonInput.NullValueInOtherOneofNewFormat.Validator
+Recommended.Proto3.JsonInput.NullValueInOtherOneofOldFormat.Validator

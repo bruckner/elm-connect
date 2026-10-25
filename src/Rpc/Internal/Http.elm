@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, bytesText, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -8,6 +8,8 @@ the percent-encoding the transports share. Not exposed. It is kept out of `Rpc` 
 -}
 
 import Bitwise
+import Bytes exposing (Bytes)
+import Bytes.Decode
 import Dict exposing (Dict)
 import Http
 import Json.Encode
@@ -368,12 +370,12 @@ quote text =
     Json.Encode.encode 0 (Json.Encode.string text)
 
 
-{-| The request as a task, its response read by `read`. A body is sent as
-`application/json`; `withCredentials` sends cookies cross-origin
-(`Http.riskyTask`).
+{-| The request as a task, its response read by `resolver`. A text body is
+sent as `application/json`, a bytes body as `application/proto`;
+`withCredentials` sends cookies cross-origin (`Http.riskyTask`).
 -}
-task : (Http.Response String -> Result e a) -> Request -> Task e a
-task read request =
+task : Http.Resolver e a -> Request -> Task e a
+task resolver request =
     let
         perform =
             if request.withCredentials then
@@ -387,16 +389,16 @@ task read request =
         , headers = List.map (\( name, value ) -> Http.header name value) request.headers
         , url = request.url
         , body = body request
-        , resolver = Http.stringResolver read
+        , resolver = resolver
         , timeout = request.timeout
         }
 
 
-{-| The request as a command, its response read by `read`, cancellable through
-`tracker` (`Http.cancel`).
+{-| The request as a command, its response read by `expect`, cancellable
+through `tracker` (`Http.cancel`).
 -}
-send : (Http.Response String -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request -> Cmd msg
-send read toMsg tracker request =
+send : Http.Expect msg -> Maybe String -> Request -> Cmd msg
+send expect tracker request =
     let
         perform =
             if request.withCredentials then
@@ -410,7 +412,7 @@ send read toMsg tracker request =
         , headers = List.map (\( name, value ) -> Http.header name value) request.headers
         , url = request.url
         , body = body request
-        , expect = Http.expectStringResponse toMsg read
+        , expect = expect
         , timeout = request.timeout
         , tracker = tracker
         }
@@ -423,7 +425,21 @@ body request =
             Http.stringBody "application/json" json
 
         Nothing ->
-            Http.emptyBody
+            case Rpc.Body.toBytes request.body of
+                Just binary ->
+                    Http.bytesBody "application/proto" binary
+
+                Nothing ->
+                    Http.emptyBody
+
+
+{-| Bytes read as UTF-8 text, as a browser decodes a text body; `""` when
+they are not UTF-8.
+-}
+bytesText : Bytes -> String
+bytesText raw =
+    Bytes.Decode.decode (Bytes.Decode.string (Bytes.width raw)) raw
+        |> Maybe.withDefault ""
 
 
 {-| An answer's status and headers, or `Nothing` when there was no answer.
@@ -541,8 +557,8 @@ utf8Width code =
         3
 
 
-{-| Why a call whose request message is `json` must not be sent over a
-transport: its UTF-8 length is over the transport's write limit.
+{-| Why a call whose request message's JSON is `json` must not be sent over a
+transport: its length in bytes is over the transport's write limit.
 -}
 requestTooLarge : Transport -> String -> Maybe Error.Reason
 requestTooLarge transport json =

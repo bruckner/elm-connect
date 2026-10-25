@@ -23,8 +23,9 @@ without `expect` and `tracker`.
   - `method`: the HTTP method, such as `"POST"`.
   - `url`: the whole URL, query included.
   - `headers`: name and value pairs, in the order they are sent.
-  - `body`: an [`Rpc.Body`](Rpc-Body), the request's JSON text or none,
-    sent as `application/json`.
+  - `body`: an [`Rpc.Body`](Rpc-Body), the request's JSON text, sent as
+    `application/json`, its protobuf binary, sent as `application/proto`, or
+    none.
   - `timeout`: milliseconds, or `Nothing` for none.
   - `withCredentials`: `True` sends cookies and other credentials
     cross-origin (`Http.riskyRequest`).

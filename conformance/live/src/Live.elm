@@ -280,8 +280,8 @@ config t =
         (optional "retry" (Decode.nullable retryPolicy) Nothing)
 
 
-{-| The size limits `readMaxBytes` and `writeMaxBytes` set, applied to a
-transport.
+{-| The size limits `readMaxBytes` and `writeMaxBytes` set and the codec
+`codec` names (`"json"`, the default, or `"proto"`), applied to a transport.
 -}
 limits : Decoder (Rpc.Transport.Transport -> Rpc.Transport.Transport)
 limits =
@@ -290,9 +290,12 @@ limits =
             optional name (Decode.nullable Decode.int) Nothing
                 |> Decode.map (Maybe.map knob >> Maybe.withDefault identity)
     in
-    Decode.map2 (>>)
+    Decode.map3 (\a b c -> a >> b >> c)
         (limit "readMaxBytes" Rpc.Transport.withReadMaxBytes)
         (limit "writeMaxBytes" Rpc.Transport.withWriteMaxBytes)
+        (optional "codec" (oneOfNames "codec" [ ( "json", Rpc.Transport.Json ), ( "proto", Rpc.Transport.Proto ) ]) Rpc.Transport.Json
+            |> Decode.map Rpc.Transport.withCodec
+        )
 
 
 pair : Decoder ( String, String )

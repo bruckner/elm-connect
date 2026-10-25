@@ -1,4 +1,4 @@
-module Rpc.Internal.Wire exposing (Settings, invalidPathValue, request, withBudget)
+module Rpc.Internal.Wire exposing (Settings, invalidPathValue, missingCodec, request, requestTooLarge, withBudget)
 
 {-| The request each transport sends for a call: Connect's POST, or its GET of
 a method without side effects, and transcoding's request over a binding,
@@ -10,14 +10,16 @@ since `Rpc`, which defines `Config`, imports it.
 
 import Json.Encode
 import Proto.Internal.Binding exposing (Rule)
+import Proto.Internal.Method exposing (ConnectMessage)
 import Proto.Method as Method exposing (Idempotency(..))
 import Rpc.Body as Body
 import Rpc.Call
+import Rpc.Error as Error
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Route as Route exposing (Route(..), route)
-import Rpc.Internal.Transport exposing (Transport(..))
+import Rpc.Internal.Transport as Transport exposing (Transport(..))
 import Rpc.Request exposing (Request)
 
 
@@ -39,7 +41,7 @@ request : Settings c -> Call req res -> Request
 request cfg c =
     case cfg.transport of
         Connect options ->
-            connectRequest options cfg c
+            connectRequest options (connectMessage cfg c) cfg c
 
         Transcode _ ->
             case route cfg.transport c of
@@ -47,17 +49,40 @@ request cfg c =
                     transcodeRequest rule cfg c
 
                 Implicit ->
-                    connectRequest { get = False, maxGetUrl = Nothing } cfg c
+                    connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
 
 
-connectRequest : { o | get : Bool, maxGetUrl : Maybe Int } -> Settings c -> Call req res -> Request
-connectRequest options cfg ((Call fields) as c) =
+jsonMessage : Call req res -> ConnectMessage
+jsonMessage c =
+    let
+        json =
+            Json.Encode.encode 0 (Rpc.Call.requestJson c)
+    in
+    { body = Body.text json
+    , encoding = "encoding=json"
+    , query = \_ -> Internal.percentEncode Internal.unreserved json
+    }
+
+
+{-| The message as the transport's codec writes it: protobuf binary under the
+proto codec when the method has binary codecs, else JSON (a method without
+them is refused before it is sent).
+-}
+connectMessage : Settings c -> Call req res -> ConnectMessage
+connectMessage cfg ((Call fields) as c) =
+    case Proto.Internal.Method.binaryUnder (Transport.proto cfg.transport) fields.method of
+        Just binary ->
+            binary.message fields.message
+
+        Nothing ->
+            jsonMessage c
+
+
+connectRequest : { o | get : Bool, maxGetUrl : Maybe Int } -> ConnectMessage -> Settings c -> Call req res -> Request
+connectRequest options message cfg ((Call fields) as c) =
     let
         url =
             Route.connectUrl cfg.baseUrl c
-
-        json =
-            Json.Encode.encode 0 (Rpc.Call.requestJson c)
 
         timeout =
             callTimeout cfg c
@@ -70,36 +95,48 @@ connectRequest options cfg ((Call fields) as c) =
                 Nothing ->
                     []
 
-        getUrl =
-            url
-                ++ "?connect=v1&encoding=json&message="
-                ++ Internal.percentEncode Internal.unreserved json
-
-        fits =
-            case options.maxGetUrl of
-                Just limit ->
-                    String.length getUrl <= limit
-
-                Nothing ->
-                    True
+        post =
+            { method = "POST"
+            , url = url
+            , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
+            , body = message.body
+            , timeout = timeout
+            , withCredentials = cfg.withCredentials
+            }
     in
-    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects && fits then
-        { method = "GET"
-        , url = getUrl
-        , headers = cfg.headers ++ fields.headers ++ timeoutHeader
-        , body = Body.none
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
+    if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects then
+        let
+            -- The query parameters in the order the protocol recommends, so a
+            -- cache keys one request one way.
+            getUrl =
+                url
+                    ++ "?connect=v1&"
+                    ++ message.encoding
+                    ++ "&message="
+                    ++ message.query ()
+
+            fits =
+                case options.maxGetUrl of
+                    Just limit ->
+                        String.length getUrl <= limit
+
+                    Nothing ->
+                        True
+        in
+        if fits then
+            { method = "GET"
+            , url = getUrl
+            , headers = cfg.headers ++ fields.headers ++ timeoutHeader
+            , body = Body.none
+            , timeout = timeout
+            , withCredentials = cfg.withCredentials
+            }
+
+        else
+            post
 
     else
-        { method = "POST"
-        , url = url
-        , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-        , body = Body.text json
-        , timeout = timeout
-        , withCredentials = cfg.withCredentials
-        }
+        post
 
 
 {-| The request over one binding of a method's rule.
@@ -220,3 +257,46 @@ protocol requires.
 timeoutMs : Float -> String
 timeoutMs ms =
     String.fromInt (clamp 1 9999999999 (ceiling ms))
+
+
+{-| Why a call cannot be written in the transport's codec: its method has no
+binary codecs and the transport sends protobuf binary, or binary codecs alone
+and the transport sends JSON.
+-}
+missingCodec : Settings c -> Call req res -> Maybe Error.Reason
+missingCodec cfg ((Call fields) as c) =
+    let
+        (Proto.Internal.Method.Method m) =
+            fields.method
+
+        missing codecName =
+            Just (Error.MissingCodec { method = Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c, codec = codecName })
+    in
+    if Transport.proto cfg.transport then
+        case m.binary of
+            Just _ ->
+                Nothing
+
+            Nothing ->
+                missing "proto"
+
+    else if m.json then
+        Nothing
+
+    else
+        missing "json"
+
+
+{-| Why a call's request message is too long to send over the transport: its
+JSON, or its protobuf binary under the proto codec, is over the write limit.
+The binary is encoded only when there is a limit to measure it against.
+-}
+requestTooLarge : Settings c -> Call req res -> Maybe Error.Reason
+requestTooLarge cfg ((Call fields) as c) =
+    case Proto.Internal.Method.binaryUnder (Transport.proto cfg.transport) fields.method of
+        Just binary ->
+            Transport.writeMaxBytes cfg.transport
+                |> Maybe.andThen (\limit -> binary.tooLarge limit fields.message)
+
+        Nothing ->
+            Internal.requestTooLarge cfg.transport (Json.Encode.encode 0 (Rpc.Call.requestJson c))

@@ -5,7 +5,8 @@ use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
-    Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
+    Bytes, Codec, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming,
+    UnboundMethods,
 };
 use miette::Report;
 
@@ -125,6 +126,13 @@ struct GenArgs {
     /// its own `--out`.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
+    /// Which codecs messages get: `json`, `binary` or `both`.
+    ///
+    /// `json`: proto3 JSON, for Connect's JSON codec and transcoding.
+    /// `binary`: protobuf binary alone, for Connect's proto codec. `both`:
+    /// the binary codecs beside the JSON ones.
+    #[arg(long, value_name = "json|binary|both", default_value = "json")]
+    codec: Codec,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
     ///
     /// The value is `<proto full name>:<Elm name>`, and the Elm name
@@ -161,6 +169,7 @@ impl GenArgs {
         options.unbound_methods = self.unbound_methods;
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
+        options.codec = self.codec;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;
         let mut problems = Diagnostics::new();
