@@ -181,6 +181,8 @@ live: live-gen live-build example-notes-build && live-envoy live-conformance
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/stream.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway conformance/live/cases/stream-gateway.json
 
 # Envoy, the live suite's third transcoder: the release func-e runs (one
 # line in conformance/live/envoy/envoy-version, which CI's cache is keyed
@@ -190,6 +192,8 @@ envoy_version := trim(read("conformance/live/envoy/envoy-version"))
 envoy_origin_port := "18080"
 envoy_port := "18081"
 envoy_headers_port := "18082"
+envoy_ndjson_port := "18083"
+envoy_sse_port := "18084"
 envoy_admin_port := "18090"
 
 # The live suite under Envoy's gRPC-JSON transcoder (docs/envoy.md): build
@@ -206,6 +210,8 @@ live-envoy: live-build envoy-install
     sed -e 's/port_value: 18080/port_value: {{envoy_origin_port}}/' \
         -e 's/port_value: 18081/port_value: {{envoy_port}}/' \
         -e 's/port_value: 18082/port_value: {{envoy_headers_port}}/' \
+        -e 's/port_value: 18083/port_value: {{envoy_ndjson_port}}/' \
+        -e 's/port_value: 18084/port_value: {{envoy_sse_port}}/' \
         -e 's/port_value: 18090/port_value: {{envoy_admin_port}}/' \
         -e "s|proto_descriptor: target/live/notes.binpb|proto_descriptor: $live/notes.binpb|" \
         conformance/live/envoy/envoy.yaml > "$live/envoy.yaml"
@@ -222,7 +228,7 @@ live-envoy: live-build envoy-install
     trap stop EXIT
     # /healthz passes through Envoy to the server, so an answer on each
     # listener means both are up.
-    for port in {{envoy_port}} {{envoy_headers_port}}; do
+    for port in {{envoy_port}} {{envoy_headers_port}} {{envoy_ndjson_port}} {{envoy_sse_port}}; do
         for attempt in $(seq 150); do
             curl -fs --max-time 2 -o /dev/null "http://127.0.0.1:$port/healthz" && break
             kill -0 "$server" 2> /dev/null || { echo "the example server exited"; exit 1; }
@@ -234,6 +240,10 @@ live-envoy: live-build envoy-install
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --server http://127.0.0.1:{{envoy_port}} --known conformance/live/known-divergent-envoy.json
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_headers_port}} conformance/live/cases/envoy.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} conformance/live/cases/stream-envoy-array.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_headers_port}} conformance/live/cases/stream-envoy-headers.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_ndjson_port}} conformance/live/cases/stream-envoy-ndjson.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_sse_port}} conformance/live/cases/stream-envoy-sse.json
 
 # Install the pinned Envoy with func-e unless it is installed. func-e checks
 # the archive against the SHA-256 that Tetrate's index lists, but hashes

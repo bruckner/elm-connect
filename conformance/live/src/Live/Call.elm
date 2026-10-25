@@ -1,4 +1,4 @@
-module Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), entry)
+module Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), encodeResult, entry)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.

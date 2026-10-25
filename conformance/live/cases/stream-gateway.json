@@ -1,0 +1,93 @@
+[
+  {
+    "name": "stream gateway WatchNotes: result lines, then a clean end",
+    "note": "grpc-gateway on the implicit route (no HTTP rule): a plain JSON POST, a {\"result\": message} per line, and EOF for the end, read as Ended.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": { "count": 3, "intervalMs": 10 },
+      "stream": { "framing": "gatewayNdjson" }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          { "kind": "opened", "status": 200 },
+          { "kind": "message", "message": { "index": "1" } },
+          { "kind": "message", "message": { "index": "2" } },
+          { "kind": "message", "message": { "index": "3" } },
+          { "kind": "ended", "trailers": {} }
+        ]
+      },
+      "wire": [
+        {
+          "url": { "$match": "/gateway/notes\\.v1\\.NotesService/WatchNotes$" },
+          "requestHeaders": [["Content-Type", "application/json"]],
+          "status": 200,
+          "bodyEnd": "eof"
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream gateway WatchNotes: an error before the first message keeps its wrapper",
+    "note": "Before any message the gateway sets the HTTP status from the code and writes {\"error\": Status}, not the bare Status of its unary errors; the companion unwraps it.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": { "count": -1 },
+      "stream": { "framing": "gatewayNdjson" }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          { "kind": "opened", "status": 400 },
+          {
+            "kind": "failed",
+            "code": "invalid_argument",
+            "result": {
+              "error": {
+                "message": "must not be negative",
+                "source": "StatusBody",
+                "details": [{ "@type": "type.googleapis.com/google.rpc.BadRequest" }]
+              }
+            }
+          }
+        ]
+      },
+      "wire": [{ "status": 400, "responseBody": { "$json": { "error": { "code": 3 } } } }]
+    }
+  },
+  {
+    "name": "stream gateway WatchNotes: an error after messages is an {\"error\"} line",
+    "note": "After the first message the status stays 200 and the error is the last line; its details arrive as Any JSON.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": { "count": 2, "intervalMs": 10, "fail": true },
+      "stream": { "framing": "gatewayNdjson" }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          { "kind": "opened", "status": 200 },
+          { "kind": "message", "message": { "index": "1" } },
+          { "kind": "message", "message": { "index": "2" } },
+          {
+            "kind": "failed",
+            "code": "failed_precondition",
+            "result": {
+              "error": {
+                "source": "StatusBody",
+                "details": [{ "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "WATCH_ENDED" }]
+              }
+            }
+          }
+        ]
+      },
+      "wire": [{ "status": 200, "responseBody": { "$match": "\\{\"error\":\\{\"code\":9" } }]
+    }
+  }
+]

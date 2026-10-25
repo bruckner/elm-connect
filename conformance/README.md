@@ -252,7 +252,9 @@ live/
                       `requests` port, results out on `results`
   src/Live/Call.elm   the envelope, and `entry`, which makes a dispatch
                       table's entry from a generated call function and codecs
-  src/Live/Notes.elm  the dispatch table of notes.v1.NotesService
+  src/Live/Notes.elm  the dispatch table of notes.v1.NotesService, and its
+                      streaming methods
+  src/Live/Stream.elm `entry` for a server-streaming method (Rpc.Stream)
   src/Live/Conformance.elm
                       the dispatch table of the Connect conformance suite's
                       ConformanceService (its unary methods)
@@ -288,6 +290,8 @@ live/
                       server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
+  cases/stream*.json  WatchNotes, a server stream, over Connect, grpc-gateway
+                      and Envoy's three framings
   build/              the compiled program (gitignored)
 ```
 
@@ -442,9 +446,45 @@ matches a string the expression finds, `{"$json": …}` a string whose
 JSON parse matches, `{"$contains": […]}` an array with a match for each
 element, and `{"$absent": true}` a key that is missing or `null`.
 
+A **streaming case** is a case whose `call` has a `stream` object:
+
+```json
+"stream": {
+  "framing": "envoyArray",
+  "headers": [["Connect-Timeout-Ms", "120"]],
+  "timeoutMs": 120,
+  "cancelAfterMessages": 2,
+  "settleMs": 300
+}
+```
+
+all optional: the `Rpc.Transport` framing over `transcode`
+(`gatewayNdjson`, `envoyArray`, `envoyNdjson`, `envoySse`,
+`connectEnvelope`), the call's own headers, `Rpc.Stream.withTimeout`,
+and the message count after which to cancel it with
+`Rpc.Stream.cancel`, then wait `settleMs` for stray events. `Live.elm`
+opens it with `Rpc.Stream.open` over its `streamOut` port, `run.mjs`
+streams it with the companion (`runtime/stream.js`) over Node's `fetch`
+and sends each event back over `streamIn`, and the result is
+`{"events": […]}`, each `{"kind": "opened", "status"}`,
+`{"kind": "message", "message"}`, `{"kind": "ended", "trailers"}` or
+`{"kind": "failed", "code", "result"}` (`result` as a unary call's
+error), or `{"openError": …}` when `open` refused it. Its `wire` is what
+`fetch` gave the companion: `status`, `responseHeaders`, the body as
+text in `responseBody`, and `bodyEnd`, `eof` or the error that ended
+the read (`error: AbortError` once the companion stops reading).
+`cases/stream.json` runs over Connect, `cases/stream-gateway.json`
+under `/gateway`, and `cases/stream-envoy-*.json` against an Envoy
+listener each: the array framing with and without
+`convert_grpc_status`, newline-delimited, and server-sent events.
+Vanguard has no streaming leg: it transcodes a server stream only when
+the response is `google.api.HttpBody`.
+
 To add a service, add its proto to the example (or a new one beside
 it), a dispatch table `src/Live/<Service>.elm` listing `entry` per
-method, and the table to `tables` in `Live.elm`.
+method, and the table to `tables` in `Live.elm`; a server-streaming
+method goes in a `streams` list of `Live.Stream.entry`, added to
+`streamTables`.
 
 ## The Connect conformance suite
 

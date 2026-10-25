@@ -5,6 +5,10 @@
 #           (convert_grpc_status: true)
 #   :18082  errors left as Envoy forwards them by default: HTTP status and
 #           grpc-status / grpc-message headers, no body
+#   :18083  as :18081, server streams newline-delimited
+#           (print_options.stream_newline_delimited)
+#   :18084  as :18081, server streams as server-sent events
+#           (print_options.stream_sse_style_delimited)
 #   :18080  the example server (`notes-server -addr 127.0.0.1:18080`), which
 #           Envoy calls over gRPC on HTTP/2 without TLS
 #
@@ -147,6 +151,68 @@ static_resources:
                       # its code and grpc-status / grpc-message headers,
                       # with no body.
                       convert_grpc_status: false
+                      request_validation_options:
+                        reject_unknown_method: true
+                        reject_unknown_query_parameters: true
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+    - name: stream_ndjson
+      address:
+        socket_address: { address: 127.0.0.1, port_value: 18083 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: stream_ndjson
+                route_config: *routes
+                http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                  - name: envoy.filters.http.grpc_json_transcoder
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+                      proto_descriptor: target/live/notes.binpb
+                      services: [notes.v1.NotesService, routes.v1.Routes]
+                      auto_mapping: true
+                      url_unescape_spec: ALL_CHARACTERS_EXCEPT_SLASH
+                      convert_grpc_status: true
+                      print_options:
+                        stream_newline_delimited: true
+                      request_validation_options:
+                        reject_unknown_method: true
+                        reject_unknown_query_parameters: true
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+    - name: stream_sse
+      address:
+        socket_address: { address: 127.0.0.1, port_value: 18084 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: stream_sse
+                route_config: *routes
+                http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                  - name: envoy.filters.http.grpc_json_transcoder
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
+                      proto_descriptor: target/live/notes.binpb
+                      services: [notes.v1.NotesService, routes.v1.Routes]
+                      auto_mapping: true
+                      url_unescape_spec: ALL_CHARACTERS_EXCEPT_SLASH
+                      convert_grpc_status: true
+                      print_options:
+                        stream_sse_style_delimited: true
                       request_validation_options:
                         reject_unknown_method: true
                         reject_unknown_query_parameters: true

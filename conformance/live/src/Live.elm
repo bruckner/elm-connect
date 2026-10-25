@@ -3,7 +3,10 @@ port module Live exposing (main)
 {-| The live runner: a headless program that sends the calls `run.mjs` gives
 it over the `requests` port with the runtime, and answers each over `results`
 with the outcome and the trace. The envelope and result formats are in
-`conformance/README.md`.
+`conformance/README.md`. A streaming case is opened with `Rpc.Stream` over
+`streamOut`, and its events, which `run.mjs` streams with the companion
+(`runtime/stream.js`), come back over `streamIn`; its result is the list of
+events.
 -}
 
 import Dict exposing (Dict)
@@ -14,10 +17,12 @@ import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
 import Live.Conformance
 import Live.Notes
 import Live.Routes
+import Live.Stream
 import Process
 import Rpc
 import Rpc.Code
 import Rpc.Retry
+import Rpc.Stream
 import Rpc.Transport
 import Set exposing (Set)
 import Task
@@ -27,6 +32,19 @@ port requests : (Value -> msg) -> Sub msg
 
 
 port results : Value -> Cmd msg
+
+
+port streamOut : Value -> Cmd msg
+
+
+port streamIn : (Value -> msg) -> Sub msg
+
+
+{-| Every server-streaming method the runner can open.
+-}
+streamTables : Dict ( String, String ) Live.Stream.Entry
+streamTables =
+    Dict.fromList Live.Notes.streams
 
 
 {-| Every method the runner can call, from every dispatch table.
@@ -39,7 +57,7 @@ tables =
 main : Program () Model Msg
 main =
     Platform.worker
-        { init = \() -> ( { inFlight = Set.empty, progress = Dict.empty }, Cmd.none )
+        { init = \() -> ( { inFlight = Set.empty, progress = Dict.empty, streams = Dict.empty }, Cmd.none )
         , update = update
         , subscriptions = subscriptions
         }
@@ -54,7 +72,26 @@ before the cancellation runs, and the later is dropped.
 
 -}
 type alias Model =
-    { inFlight : Set String, progress : Dict String Progress }
+    { inFlight : Set String, progress : Dict String Progress, streams : Dict String Streaming }
+
+
+{-| A streaming case in flight: how to report its events, those seen so far
+(newest first), how many were messages, the message count after which to
+cancel it, and how long to wait for stray events after cancelling.
+-}
+type alias Streaming =
+    { report : Value -> Value, events : List Value, messages : Int, cancelAfter : Maybe Int, settle : Float }
+
+
+{-| A streaming case's `stream` object: the framing over transcoding, the
+call's own headers and timeout, and cancelling.
+-}
+type alias StreamCase =
+    { framing : Maybe Rpc.Transport.StreamFraming
+    , options : Live.Stream.Options
+    , cancelAfterMessages : Maybe Int
+    , settleMs : Float
+    }
 
 
 type alias Progress =
@@ -66,6 +103,8 @@ type Msg
     | Finished Outcome
     | Tracked String Http.Progress
     | CancelDue String (Cmd Msg)
+    | StreamEvent Value
+    | Settled String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,35 +120,44 @@ update msg model =
                     )
 
                 Ok e ->
-                    case Dict.get ( e.service, e.method ) tables of
-                        Nothing ->
-                            ( model, refuse e.id ("no method " ++ e.service ++ "/" ++ e.method) )
+                    case Decode.decodeValue (Decode.maybe (Decode.field "stream" streamCase)) json of
+                        Err problem ->
+                            ( model, refuse e.id ("the stream does not decode: " ++ Decode.errorToString problem) )
 
-                        Just send ->
-                            case send e Finished of
-                                Ok sent ->
-                                    ( { inFlight = Set.insert e.id model.inFlight
-                                      , progress =
-                                            case e.tracker of
-                                                Just name ->
-                                                    Dict.insert e.id { tracker = name, sending = 0, receiving = 0 } model.progress
+                        Ok (Just streaming) ->
+                            openStream e streaming model
 
-                                                Nothing ->
-                                                    model.progress
-                                      }
-                                    , case ( sent.cancel, e.cancelAfter ) of
-                                        ( Just cancel, Just ms ) ->
-                                            Cmd.batch
-                                                [ sent.send
-                                                , Process.sleep (toFloat ms) |> Task.perform (\() -> CancelDue e.id cancel)
-                                                ]
+                        Ok Nothing ->
+                            case Dict.get ( e.service, e.method ) tables of
+                                Nothing ->
+                                    ( model, refuse e.id ("no method " ++ e.service ++ "/" ++ e.method) )
 
-                                        _ ->
-                                            sent.send
-                                    )
+                                Just send ->
+                                    case send e Finished of
+                                        Ok sent ->
+                                            ( { model
+                                                | inFlight = Set.insert e.id model.inFlight
+                                                , progress =
+                                                    case e.tracker of
+                                                        Just name ->
+                                                            Dict.insert e.id { tracker = name, sending = 0, receiving = 0 } model.progress
 
-                                Err problem ->
-                                    ( model, refuse e.id problem )
+                                                        Nothing ->
+                                                            model.progress
+                                              }
+                                            , case ( sent.cancel, e.cancelAfter ) of
+                                                ( Just cancel, Just ms ) ->
+                                                    Cmd.batch
+                                                        [ sent.send
+                                                        , Process.sleep (toFloat ms) |> Task.perform (\() -> CancelDue e.id cancel)
+                                                        ]
+
+                                                _ ->
+                                                    sent.send
+                                            )
+
+                                        Err problem ->
+                                            ( model, refuse e.id problem )
 
         Finished outcome ->
             if Set.member outcome.id model.inFlight then
@@ -117,6 +165,17 @@ update msg model =
 
             else
                 ( model, Cmd.none )
+
+        StreamEvent value ->
+            streamEvent value model
+
+        Settled id ->
+            case Dict.get id model.streams of
+                Just running ->
+                    finishStream id running model
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         CancelDue id cancel ->
             ( model
@@ -147,9 +206,110 @@ update msg model =
             )
 
 
+openStream : Envelope -> StreamCase -> Model -> ( Model, Cmd Msg )
+openStream e streaming model =
+    case Dict.get ( e.service, e.method ) streamTables of
+        Nothing ->
+            ( model, refuse e.id ("no streaming method " ++ e.service ++ "/" ++ e.method) )
+
+        Just open ->
+            let
+                given =
+                    e.config
+
+                framed =
+                    case streaming.framing of
+                        Just framing ->
+                            { given | transport = Rpc.Transport.withStreamFraming framing given.transport }
+
+                        Nothing ->
+                            given
+            in
+            case open framed e.id e.request streaming.options of
+                Err problem ->
+                    ( model, refuse e.id problem )
+
+                Ok (Err error) ->
+                    ( model
+                    , results
+                        (Encode.object
+                            [ ( "id", Encode.string e.id )
+                            , ( "result", Encode.object [ ( "openError", Live.Call.encodeResult (\_ -> Encode.null) (Err error) ) ] )
+                            , ( "trace", Encode.null )
+                            ]
+                        )
+                    )
+
+                Ok (Ok opening) ->
+                    ( { model
+                        | streams =
+                            Dict.insert e.id
+                                { report = opening.report, events = [], messages = 0, cancelAfter = streaming.cancelAfterMessages, settle = streaming.settleMs }
+                                model.streams
+                      }
+                    , streamOut opening.command
+                    )
+
+
+{-| An event from the companion: recorded, and the case reported at its end,
+or cancelled once it has had its messages and reported after the settling
+wait, with any event that still came.
+-}
+streamEvent : Value -> Model -> ( Model, Cmd Msg )
+streamEvent value model =
+    case Decode.decodeValue Rpc.Stream.eventId value |> Result.toMaybe |> Maybe.andThen (\id -> Dict.get id model.streams |> Maybe.map (Tuple.pair id)) of
+        Nothing ->
+            ( model, Cmd.none )
+
+        Just ( id, running ) ->
+            let
+                reported =
+                    running.report value
+
+                kind =
+                    Decode.decodeValue (Decode.field "kind" Decode.string) reported |> Result.withDefault ""
+
+                messages =
+                    if kind == "message" then
+                        running.messages + 1
+
+                    else
+                        running.messages
+
+                next =
+                    { running | events = reported :: running.events, messages = messages }
+            in
+            if kind == "ended" || kind == "failed" then
+                finishStream id next model
+
+            else if kind == "message" && running.cancelAfter == Just messages then
+                ( { model | streams = Dict.insert id { next | cancelAfter = Nothing } model.streams }
+                , Cmd.batch
+                    [ streamOut (Rpc.Stream.cancel id)
+                    , Process.sleep next.settle |> Task.perform (\() -> Settled id)
+                    ]
+                )
+
+            else
+                ( { model | streams = Dict.insert id next model.streams }, Cmd.none )
+
+
+finishStream : String -> Streaming -> Model -> ( Model, Cmd Msg )
+finishStream id running model =
+    ( { model | streams = Dict.remove id model.streams }
+    , results
+        (Encode.object
+            [ ( "id", Encode.string id )
+            , ( "result", Encode.object [ ( "events", Encode.list identity (List.reverse running.events) ) ] )
+            , ( "trace", Encode.null )
+            ]
+        )
+    )
+
+
 report : Outcome -> Model -> ( Model, Cmd Msg )
 report outcome model =
-    ( { inFlight = Set.remove outcome.id model.inFlight, progress = Dict.remove outcome.id model.progress }
+    ( { model | inFlight = Set.remove outcome.id model.inFlight, progress = Dict.remove outcome.id model.progress }
     , results
         (Encode.object
             ([ ( "id", Encode.string outcome.id )
@@ -179,6 +339,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         (requests Received
+            :: streamIn StreamEvent
             :: List.map (\( id, seen ) -> Http.track seen.tracker (Tracked id)) (Dict.toList model.progress)
         )
 
@@ -385,3 +546,26 @@ optional key decoder default =
                     Just _ ->
                         Decode.field key decoder
             )
+
+
+streamCase : Decoder StreamCase
+streamCase =
+    Decode.map4 StreamCase
+        (optional "framing" (Decode.map Just framingName) Nothing)
+        (Decode.map2 Live.Stream.Options
+            (optional "headers" (Decode.list pair) [])
+            (optional "timeoutMs" (Decode.nullable Decode.float) Nothing)
+        )
+        (optional "cancelAfterMessages" (Decode.nullable Decode.int) Nothing)
+        (optional "settleMs" Decode.float 300)
+
+
+framingName : Decoder Rpc.Transport.StreamFraming
+framingName =
+    oneOfNames "framing"
+        [ ( "gatewayNdjson", Rpc.Transport.gatewayNdjson )
+        , ( "envoyArray", Rpc.Transport.envoyArray )
+        , ( "envoyNdjson", Rpc.Transport.envoyNdjson )
+        , ( "envoySse", Rpc.Transport.envoySse )
+        , ( "connectEnvelope", Rpc.Transport.connectEnvelope )
+        ]

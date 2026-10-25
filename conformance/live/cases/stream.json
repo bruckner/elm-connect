@@ -1,0 +1,342 @@
+[
+  {
+    "name": "stream connect WatchNotes: messages, then a clean end",
+    "note": "Connect's streaming content type, every message decoded, and the EndStreamResponse {} read as Ended with no trailers.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 3,
+        "intervalMs": 10,
+        "after": "4"
+      },
+      "stream": {}
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "5",
+              "note": {
+                "name": "notes/watch-5"
+              }
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "6"
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "7"
+            }
+          },
+          {
+            "kind": "ended",
+            "trailers": {}
+          }
+        ]
+      },
+      "wire": [
+        {
+          "method": "POST",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/WatchNotes$"
+          },
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/connect+json"
+              ]
+            ]
+          },
+          "status": 200,
+          "responseHeaders": {
+            "content-type": "application/connect+json"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream connect WatchNotes: an end-stream error with its detail",
+    "note": "The error after the messages is the EndStreamResponse's, inside the 200: an RpcStatus from ConnectEndStream whose ErrorInfo is read from the detail's debug JSON.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 2,
+        "intervalMs": 10,
+        "fail": true
+      },
+      "stream": {}
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "1"
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "2"
+            }
+          },
+          {
+            "kind": "failed",
+            "code": "failed_precondition",
+            "result": {
+              "error": {
+                "code": "failed_precondition",
+                "message": "the watch ended as asked",
+                "source": "ConnectEndStream",
+                "details": [
+                  {
+                    "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                    "reason": "WATCH_ENDED",
+                    "metadata": {
+                      "index": "2"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream connect WatchNotes: an error before any message is still a 200",
+    "note": "Connect sends even a refusal before the first message as an EndStreamResponse inside a 200.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": -1
+      },
+      "stream": {}
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "failed",
+            "code": "invalid_argument",
+            "result": {
+              "error": {
+                "source": "ConnectEndStream",
+                "details": [
+                  {
+                    "@type": "type.googleapis.com/google.rpc.BadRequest",
+                    "fieldViolations": [
+                      {
+                        "field": "count"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream connect WatchNotes: cancelled after two messages, nothing more arrives",
+    "note": "Rpc.Stream.cancel aborts the fetch; the runner waits settleMs for stray events and reports none, not even an end.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 10,
+        "intervalMs": 50
+      },
+      "stream": {
+        "cancelAfterMessages": 2,
+        "settleMs": 300
+      }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "1"
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "2"
+            }
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200,
+          "bodyEnd": "error: AbortError"
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream connect WatchNotes: the server's deadline from Connect-Timeout-Ms",
+    "note": "The header alone, without the companion's timer: the server ends the stream with deadline_exceeded in an EndStreamResponse.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 10,
+        "intervalMs": 50
+      },
+      "stream": {
+        "headers": [
+          [
+            "Connect-Timeout-Ms",
+            "120"
+          ]
+        ]
+      }
+    },
+    "expect": {
+      "result": {
+        "events": {
+          "$contains": [
+            {
+              "kind": "failed",
+              "code": "deadline_exceeded",
+              "result": {
+                "error": {
+                  "source": "ConnectEndStream"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "stream connect WatchNotes: withTimeout bounds the whole stream",
+    "note": "Rpc.Stream.withTimeout sends Connect-Timeout-Ms and arms the companion's timer with the same bound; whichever ends it first, the code is deadline_exceeded (the server's EndStreamResponse or NoAnswer Timeout).",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 10,
+        "intervalMs": 50
+      },
+      "stream": {
+        "timeoutMs": 120
+      }
+    },
+    "expect": {
+      "result": {
+        "events": {
+          "$contains": [
+            {
+              "kind": "failed",
+              "code": "deadline_exceeded"
+            }
+          ]
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Connect-Timeout-Ms",
+                "120"
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream connect: an unknown method is a non-200 from what holds the path",
+    "note": "A path no Connect handler holds: Vanguard, mounted at /, answers it as an unknown REST route, 404 with a google.rpc.Status body, which the companion passes up and Elm reads as StatusBody, not ConnectEndStream.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "connect",
+      "request": {
+        "count": 1
+      },
+      "config": {
+        "baseUrl": "{server}/nowhere"
+      },
+      "stream": {}
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 404
+          },
+          {
+            "kind": "failed",
+            "code": "not_found",
+            "result": {
+              "error": {
+                "source": "StatusBody",
+                "response": {
+                  "statusCode": 404
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+]

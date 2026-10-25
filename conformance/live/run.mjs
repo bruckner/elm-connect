@@ -21,6 +21,11 @@
 // sent over that transport. --origin names the example server when --server
 // is a proxy in front of it (Envoy), for the cases' canned answers.
 //
+// A case whose call has a `stream` object is opened with Rpc.Stream and
+// streamed by the companion, runtime/stream.js, over Node's fetch; its result
+// is the events Elm decoded, and its wire what fetch handed the companion:
+// the status, the headers and the body as text, and how the body ended.
+//
 // Formats: conformance/README.md, "Live verification".
 
 import { spawn } from "node:child_process";
@@ -29,6 +34,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { makeXMLHttpRequest } from "./xhr.mjs";
+import { createStreams } from "../../runtime/stream.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +51,48 @@ export async function createRunner({ elm = path.join(here, "build", "elm.js") } 
   new Function(source).call(scope);
   const app = scope.Elm.Live.init();
 
+  // fetch for the companion, recording each exchange as a page's reader sees
+  // it. The body is teed: the companion reads one branch, this the other.
+  let reads = [];
+  async function recordingFetch(url, init) {
+    const exchange = { method: init.method, url, requestHeaders: init.headers, status: null, responseHeaders: {}, responseBody: "", bodyEnd: null };
+    exchanges?.push(exchange);
+    const response = await fetch(url, init);
+    exchange.status = response.status;
+    response.headers.forEach((value, name) => {
+      exchange.responseHeaders[name] = value;
+    });
+    if (!response.body) {
+      exchange.bodyEnd = "none";
+      return response;
+    }
+    const [mine, theirs] = response.body.tee();
+    reads.push(
+      (async () => {
+        const reader = mine.getReader();
+        const text = new TextDecoder();
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            exchange.responseBody += text.decode(value, { stream: true });
+          }
+          exchange.bodyEnd = "eof";
+        } catch (e) {
+          exchange.bodyEnd = `error: ${e.name}`;
+        }
+      })(),
+    );
+    return new Response(theirs, { status: response.status, statusText: response.statusText, headers: response.headers });
+  }
+  const streams = createStreams((event) => app.ports.streamIn.send(event), recordingFetch);
+  app.ports.streamOut.subscribe((command) => streams.run(command));
+  async function settled() {
+    const waiting = reads;
+    reads = [];
+    await Promise.race([Promise.allSettled(waiting), new Promise((done) => setTimeout(done, 1000))]);
+  }
+
   const pending = new Map();
   app.ports.results.subscribe((result) => {
     const resolve = pending.get(result.id);
@@ -60,7 +108,8 @@ export async function createRunner({ elm = path.join(here, "build", "elm.js") } 
       () =>
         new Promise((resolve) => {
           exchanges = [];
-          pending.set(envelope.id, (result) => {
+          pending.set(envelope.id, async (result) => {
+            await settled();
             const wire = exchanges;
             exchanges = null;
             resolve({ ...result, wire });

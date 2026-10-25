@@ -383,9 +383,15 @@ func (s *store) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 // WatchNotes sends count events interval_ms apart, numbered from after + 1,
 // each carrying a note named for its index, then ends, or with fail ends with
 // FAILED_PRECONDITION and an ErrorInfo detail naming the last index sent. A
-// client that goes away or whose deadline passes stops it between events.
+// negative count is refused with INVALID_ARGUMENT and a BadRequest detail
+// before any event, the error a transcoder sees before the stream's first
+// message. A client that goes away or whose deadline passes stops it
+// between events.
 func (s *store) WatchNotes(ctx context.Context, req *notesv1.WatchNotesRequest, stream notesv1connect.NotesServiceWatchNotesServerStream) error {
 	count := req.GetCount()
+	if count < 0 {
+		return badRequest("count", "must not be negative")
+	}
 	if count == 0 {
 		count = 3
 	}

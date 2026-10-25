@@ -1,0 +1,152 @@
+[
+  {
+    "name": "stream envoy ndjson WatchNotes: messages, then a clean end",
+    "note": "Envoy's auto_mapping implicit route, a plain JSON POST; the ndjson framing.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": {
+        "count": 2,
+        "intervalMs": 10
+      },
+      "stream": {
+        "framing": "envoyNdjson"
+      }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "1"
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "2"
+            }
+          },
+          {
+            "kind": "ended",
+            "trailers": {}
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200,
+          "bodyEnd": "eof",
+          "responseBody": {
+            "$match": "^\\{\"index\":\"1\".*\\n\\{\"index\":\"2\""
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream envoy ndjson WatchNotes: an error before the first message",
+    "note": "connect-go sends response headers before an error's trailers, so Envoy has already answered 200 when the error comes; with convert_grpc_status it writes the google.rpc.Status as the whole body, outside the framing (a line that parses as JSON; read as a message it would be an empty one). The companion recognises a bare Status in place of the first frame and ends with it.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": {
+        "count": -1
+      },
+      "stream": {
+        "framing": "envoyNdjson"
+      }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "failed",
+            "code": "invalid_argument",
+            "result": {
+              "error": {
+                "message": "must not be negative",
+                "source": "StatusBody",
+                "details": [
+                  {
+                    "@type": "type.googleapis.com/google.rpc.BadRequest"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200,
+          "responseBody": {
+            "$json": {
+              "code": 3
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "stream envoy ndjson WatchNotes: an error after the first message is invisible",
+    "note": "Known divergence, recorded as it is: the server ends the stream with FAILED_PRECONDITION after two messages. Envoy has sent the 200 and its body, so it closes the body normally and puts grpc-status in HTTP/2 trailers (none at all over HTTP/1.1), which fetch cannot read; convert_grpc_status changes nothing here. What the page sees is a clean end.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "WatchNotes",
+      "transport": "transcode",
+      "request": {
+        "count": 2,
+        "intervalMs": 10,
+        "fail": true
+      },
+      "stream": {
+        "framing": "envoyNdjson"
+      }
+    },
+    "expect": {
+      "result": {
+        "events": [
+          {
+            "kind": "opened",
+            "status": 200
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "1"
+            }
+          },
+          {
+            "kind": "message",
+            "message": {
+              "index": "2"
+            }
+          },
+          {
+            "kind": "ended",
+            "trailers": {}
+          }
+        ]
+      },
+      "wire": [
+        {
+          "status": 200,
+          "bodyEnd": "eof"
+        }
+      ]
+    }
+  }
+]
