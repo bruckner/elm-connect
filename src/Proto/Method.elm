@@ -1,6 +1,6 @@
 module Proto.Method exposing
-    ( Method, method
-    , encodeRequest, responseDecoder, toDescriptor
+    ( Method, method, withBinary, methodBinary
+    , encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder, hasJson
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
     , Idempotency(..)
@@ -16,12 +16,12 @@ The descriptor's idempotency is a union whose constructors carry its name as a
 prefix (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside
 any other union.
 
-@docs Method, method
+@docs Method, method, withBinary, methodBinary
 
 
 # Reading a typed value
 
-@docs encodeRequest, responseDecoder, toDescriptor
+@docs encodeRequest, responseDecoder, toDescriptor, encodeRequestBytes, responseBytesDecoder, hasJson
 
 
 # Descriptors
@@ -40,8 +40,10 @@ any other union.
 
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Http exposing (Binding)
 import Proto.Internal.Method as Internal
 
@@ -86,7 +88,66 @@ method encode decoder methodDescriptor =
         { encodeRequest = encode
         , responseDecoder = decoder
         , descriptor = methodDescriptor
+        , binary = Nothing
+        , json = True
         }
+
+
+{-| The method with protobuf binary codecs too, as generated code under
+`codec=both` writes it:
+
+    getNote =
+        Rpc.call
+            (Proto.Method.method Notes.V1.encodeGetNoteRequest
+                Notes.V1.decodeNote
+                descriptorGetNote
+                |> Proto.Method.withBinary
+                    Notes.V1.encodeGetNoteRequestBytes
+                    Notes.V1.decodeNoteBytes
+            )
+
+-}
+withBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method req res -> Method req res
+withBinary encodeBinary binaryDecoder (Internal.Method m) =
+    Internal.Method { m | binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder } }
+
+
+{-| A method with protobuf binary codecs alone, as generated code under
+`codec=binary` writes it. Its JSON encoder writes `null` and its JSON decoder
+fails, so its calls are for Connect's protobuf binary codec, not for
+transcoding.
+-}
+methodBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Descriptor -> Method req res
+methodBinary encodeBinary binaryDecoder methodDescriptor =
+    Internal.Method
+        { encodeRequest = \_ -> Json.Encode.null
+        , responseDecoder = Json.Decode.fail (name methodDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
+        , descriptor = methodDescriptor
+        , binary = Just { encodeRequest = encodeBinary, responseDecoder = binaryDecoder }
+        , json = False
+        }
+
+
+{-| The request's protobuf binary encoder, when the method has one.
+-}
+encodeRequestBytes : Method req res -> Maybe (req -> Bytes.Encode.Encoder)
+encodeRequestBytes (Internal.Method m) =
+    Maybe.map .encodeRequest m.binary
+
+
+{-| The response's protobuf binary decoder, when the method has one.
+-}
+responseBytesDecoder : Method req res -> Maybe (Proto.Binary.Decoder res)
+responseBytesDecoder (Internal.Method m) =
+    Maybe.map .responseDecoder m.binary
+
+
+{-| Whether the method has proto3 JSON codecs: `False` for one built with
+[`methodBinary`](#methodBinary).
+-}
+hasJson : Method req res -> Bool
+hasJson (Internal.Method m) =
+    m.json
 
 
 {-| A request as proto3 JSON.
