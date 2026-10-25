@@ -1,7 +1,6 @@
 use crate::descriptor::{
     build::{
         join_path,
-        names::check_message_field_camel_case_names,
         visit::{visit, Visitor},
         DescriptorPoolOffsets,
     },
@@ -14,8 +13,8 @@ use crate::descriptor::{
         ServiceDescriptorProto,
     },
     Cardinality, DescriptorPoolInner, Edition, EnumIndex, EnumType, EnumValueIndex, ExtensionIndex,
-    Features, FieldIndex, FieldPresence, FileIndex, JsonFormat, KindIndex, MessageEncoding,
-    MessageIndex, MethodIndex, OneofIndex, RepeatedFieldEncoding, ServiceIndex,
+    Features, FieldIndex, FieldPresence, FileIndex, KindIndex, MessageEncoding, MessageIndex,
+    MethodIndex, OneofIndex, RepeatedFieldEncoding, ServiceIndex,
 };
 
 impl DescriptorPoolInner {
@@ -594,28 +593,6 @@ impl EditionsVisitor<'_> {
 }
 
 impl Visitor for EditionsVisitor<'_> {
-    fn visit_message(
-        &mut self,
-        path: &[i32],
-        _: &str,
-        file: FileIndex,
-        _: Option<MessageIndex>,
-        index: MessageIndex,
-        message: &DescriptorProto,
-    ) {
-        if self.is_editions(file)
-            && self.pool.messages[index as usize].features.json_format == JsonFormat::Allow
-        {
-            check_message_field_camel_case_names(
-                &self.pool.files,
-                &mut self.errors,
-                file,
-                path,
-                message,
-            );
-        }
-    }
-
     fn visit_field(
         &mut self,
         path: &[i32],

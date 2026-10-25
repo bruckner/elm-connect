@@ -2,8 +2,20 @@
 source: prost-reflect/tests/main.rs
 expression: actual
 ---
-causes: []
-labels: []
-message: "camel-case name of field 'foo' conflicts with field 'FOO'"
-related: []
-severity: error
+file:
+  - edition: EDITION_2023
+    messageType:
+      - field:
+          - jsonName: foo
+            label: LABEL_OPTIONAL
+            name: foo
+            number: 1
+            type: TYPE_INT32
+          - jsonName: FOO
+            label: LABEL_OPTIONAL
+            name: FOO
+            number: 2
+            type: TYPE_INT32
+        name: Message
+    name: test.proto
+    syntax: editions

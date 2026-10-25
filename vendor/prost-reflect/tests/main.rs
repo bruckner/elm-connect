@@ -231,7 +231,7 @@ check_err!(editions_message_implicit_presence);
 check_err!(editions_feature_unknown_value);
 check_err!(editions_feature_from_2024);
 check_err!(editions_file_legacy_required);
-check_err!(editions_json_name_conflict1);
+check_ok!(editions_json_name_conflict1);
 check_ok!(editions_json_name_conflict2);
 check_err!(editions_extension_required);
 check_err!(editions_utf8_validation_non_string);

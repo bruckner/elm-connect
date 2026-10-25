@@ -165,15 +165,8 @@ impl Visitor for NameVisitor<'_> {
             features: self.pool.files[file as usize].features,
         });
 
-        // Editions files check JSON names once their features are resolved.
         if self.pool.files[file as usize].syntax == Syntax::Proto3 {
-            check_message_field_camel_case_names(
-                &self.pool.files,
-                &mut self.errors,
-                file,
-                path,
-                message,
-            );
+            self.check_message_field_camel_case_names(file, path, message);
         }
     }
 
@@ -403,44 +396,43 @@ impl NameVisitor<'_> {
             }
         }
     }
-}
+    fn check_message_field_camel_case_names(
+        &mut self,
+        file: FileIndex,
+        path: &[i32],
+        message: &DescriptorProto,
+    ) {
+        let mut names: HashMap<String, (&str, i32)> = HashMap::new();
+        for (index, field) in message.field.iter().enumerate() {
+            let name = field.name();
+            let index = index as i32;
 
-pub(super) fn check_message_field_camel_case_names(
-    files: &[FileDescriptorInner],
-    errors: &mut Vec<DescriptorErrorKind>,
-    file: FileIndex,
-    path: &[i32],
-    message: &DescriptorProto,
-) {
-    let mut names: HashMap<String, (&str, i32)> = HashMap::new();
-    for (index, field) in message.field.iter().enumerate() {
-        let name = field.name();
-        let index = index as i32;
-
-        match names.entry(to_lower_without_underscores(name)) {
-            hash_map::Entry::Occupied(entry) => {
-                errors.push(DescriptorErrorKind::DuplicateFieldCamelCaseName {
-                    first_name: entry.get().0.to_owned(),
-                    first: Label::new(
-                        files,
-                        "first defined here",
-                        file,
-                        join_path(
-                            path,
-                            &[tag::message::FIELD, entry.get().1, tag::field::NAME],
-                        ),
-                    ),
-                    second_name: name.to_owned(),
-                    second: Label::new(
-                        files,
-                        "defined again here",
-                        file,
-                        join_path(path, &[tag::message::FIELD, index, tag::field::NAME]),
-                    ),
-                })
-            }
-            hash_map::Entry::Vacant(entry) => {
-                entry.insert((name, index));
+            match names.entry(to_lower_without_underscores(name)) {
+                hash_map::Entry::Occupied(entry) => {
+                    self.errors
+                        .push(DescriptorErrorKind::DuplicateFieldCamelCaseName {
+                            first_name: entry.get().0.to_owned(),
+                            first: Label::new(
+                                &self.pool.files,
+                                "first defined here",
+                                file,
+                                join_path(
+                                    path,
+                                    &[tag::message::FIELD, entry.get().1, tag::field::NAME],
+                                ),
+                            ),
+                            second_name: name.to_owned(),
+                            second: Label::new(
+                                &self.pool.files,
+                                "defined again here",
+                                file,
+                                join_path(path, &[tag::message::FIELD, index, tag::field::NAME]),
+                            ),
+                        })
+                }
+                hash_map::Entry::Vacant(entry) => {
+                    entry.insert((name, index));
+                }
             }
         }
     }
