@@ -2120,6 +2120,21 @@ breaking it (roadmap).
   never altered to fit: a changed credential would fail later and less
   clearly. The pure `Rpc.request` still builds the request, which has
   no error to give.
+- A transcoded call whose path value its variable's template cannot
+  match is never handed to elm/http either: every way of sending checks
+  the call's path values, and one that cannot match fails with
+  `NoAnswer (InvalidPathValue { field, template })`, the field by its
+  JSON names joined with `.`, nothing sent and never retried. A value
+  matches as `google.api.http` defines it: it is non-empty; a variable
+  of one segment (`{name}`, `{name=*}`, or a literal alone, which only
+  that literal matches) takes any value, its `/` escaped as `%2F`; any
+  other is split at each `/`, every segment non-empty, a literal
+  matching itself, `*` one segment and `**` any number. Such a request
+  can never reach the method: `GET /v1/` or `/v1/notes/a/b` for
+  `{name=notes/*}` meets no route, or another method's, and the 404
+  reads as `Unimplemented`. The value is never altered to fit, as a
+  header is not, and the pure `Rpc.request` still builds the URL.
+  Connect, and the implicit route, have no path variables.
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
   code (§5.4) is one of `codes`, up to 3 attempts in all, and only to
@@ -2491,7 +2506,8 @@ default, and is `Nothing` for a number the method has no binding of
   `response_body` the answer is that field of the response.
 - Path variables are percent-encoded (every byte but RFC 3986's
   unreserved characters); a variable matching one segment (`{name}`,
-  `{name=*}`) escapes `/` as `%2F`, any other keeps it. A wildcard
+  `{name=*}`) escapes `/` as `%2F`, any other keeps it. A value its
+  template cannot match is not sent (§5.1). A wildcard
   outside a variable never reaches the runtime (`route::template`).
 - A binding's literal segments and custom verb are written as RFC 3986
   `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they
@@ -2568,6 +2584,7 @@ type Error
 
 type Reason                             -- frozen (§8.3)
     = Timeout | NetworkError | BadUrl String | InvalidHeader String
+    | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
 
@@ -2664,12 +2681,14 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `InvalidHeader` `Internal`, `RequestTooLarge` and `ResponseTooLarge`
-  `ResourceExhausted`. So a client timeout reads as
+  `InvalidHeader` `Internal`, `InvalidPathValue` `InvalidArgument` (a
+  server checking the value would say so), `RequestTooLarge` and
+  `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
   `DeadlineExceeded` through `code`, while the constructor
   still says no answer came. `message` gives a description for those
   (`timeout`, `network error`, `bad URL: <url>`, `invalid header
-  "<name>"`, connect-es's `message size <size> is larger than
+  "<name>"`, `path field "<field>" does not match <template>`, the
+  value left out, connect-es's `message size <size> is larger than
   configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
   `bad response body: <problem>`), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
@@ -2683,8 +2702,8 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   request can have before an answer is read is one of the reasons, and
   a later kind of failure found in an answer that was read (a malformed
   stream envelope, a failed decompression) is a `BadResponse`, whose
-  problem says what. A bad URL, an invalid header and a request over
-  the write limit are never retried,
+  problem says what. A bad URL, an invalid header, an invalid path
+  value and a request over the write limit are never retried,
   whatever the policy's codes: nothing was sent, and nothing would
   change. `InvalidHeader` has its home here rather than in a
   constructor of its own beside `NoAnswer`, since it is one more reason
@@ -3364,7 +3383,8 @@ Within a major version:
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
-  `NetworkError`, `BadUrl`, `InvalidHeader`, `RequestTooLarge`,
+  `NetworkError`, `BadUrl`, `InvalidHeader`, `InvalidPathValue`,
+  `RequestTooLarge`,
   `ResponseTooLarge`) and `Source` (with `GrpcTrailers` and
   `ConnectEndStream` reserved for server streaming, which reads a
   status from those two places, so that it can ship as a minor; a

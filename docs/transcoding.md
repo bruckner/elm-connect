@@ -28,6 +28,12 @@ decimal, timestamps in RFC 3339. The query holds only the fields that
 are set: a field with presence when it is present, any other field when
 it differs from its default.
 
+A path value must match its variable's template as `google/api/http.proto`
+defines it, and one that cannot, an empty one or `notes/a/b` for
+`{name=notes/*}`, is not sent: the call fails with
+`NoAnswer (InvalidPathValue { field, template })` naming the field, while
+`Rpc.request` still builds the URL it would have used.
+
 The two kinds of body leave the path's fields in or out. `body: "*"`
 sends the request without the fields the path holds, since
 `google/api/http.proto` maps to it every field the path does not:

@@ -834,6 +834,28 @@ frozen, `InvalidHeader` became a reason, `Canceled` went with the
 synthetic cancel outcome, and the module became `Rpc.Error`, whose
 `toString` was `Rpc.errorToString`. Where: design §5.4.
 
+### A path value that cannot match is not sent
+
+*2026-10-24.*
+
+A transcoded call whose path value its variable's template cannot
+match, an empty value or `notes/a/b` for `{name=notes/*}`, fails with
+`NoAnswer (InvalidPathValue { field, template })` and is not sent.
+Until then it went out as `GET /v1/` or `/v1/notes/a/b`. Such a request
+can never succeed: it meets no route, or another method's, and the
+server's bare 404 reads as `Unimplemented`, which points at the server
+and hides the application's bug. A local failure names the field and
+the template instead. Considered: `BadUrl` with the URL that would have
+been sent, which needs no new constructor but names neither the field
+nor the template, and whose message would print a URL that looks
+well-formed. A constructor of its own was added while `Reason` can
+still grow (the package is before 1.0), and its code is
+`InvalidArgument`, the code a server checking the value gives, so code
+that handles the server's refusal handles this one too. The check lives
+where sending checks headers: `Rpc.request` stays pure and builds the
+URL, and `Rpc.checkConfig` is unchanged, since the value is the call's,
+not the config's. Where: design §5.1.
+
 ## Input and versioning
 
 ### Editions and proto2 refused in 1.0

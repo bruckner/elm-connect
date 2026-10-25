@@ -454,7 +454,9 @@ type Error
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
   how a browser's CORS refusal arrives), a `BadUrl` or an
-  `InvalidHeader` (both `Internal`, and never sent), or a request or
+  `InvalidHeader` (both `Internal`, and never sent), an
+  `InvalidPathValue`, a transcoded call's path value its template
+  cannot match (`InvalidArgument`, never sent), or a request or
   answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
   both `ResourceExhausted`).
 
