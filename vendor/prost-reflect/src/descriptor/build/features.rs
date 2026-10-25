@@ -105,6 +105,17 @@ impl FeatureResolver<'_> {
             );
         }
 
+        if let Some((feature, entity)) = unsupported_target(&set, features_tag) {
+            self.error(
+                file,
+                &options_path,
+                format!(
+                    "option google.protobuf.FeatureSet.{feature} cannot be set on an entity of \
+                     type `{entity}`"
+                ),
+            );
+        }
+
         match parent.merge(&set) {
             Ok(features) => features,
             Err((name, value)) => {
@@ -330,6 +341,49 @@ impl Visitor for FeatureResolver<'_> {
         );
         self.pool.services[service as usize].methods[index as usize].features = features;
     }
+}
+
+/// The first feature in `set` whose `targets` (in descriptor.proto) exclude the entity whose
+/// options hold `features` as field `features_tag`, and that entity's name.
+fn unsupported_target(
+    set: &FeatureSetProto,
+    features_tag: u32,
+) -> Option<(&'static str, &'static str)> {
+    let entity = match features_tag {
+        tag::features::FILE => return None,
+        tag::features::MESSAGE => "message",
+        tag::features::FIELD => "field",
+        tag::features::ONEOF => "oneof",
+        tag::features::ENUM => "enum",
+        tag::features::ENUM_VALUE => "enum entry",
+        tag::features::SERVICE => "service",
+        tag::features::METHOD => "method",
+        _ => return None,
+    };
+    let targets: [(&'static str, bool, &[&str]); 6] = [
+        ("field_presence", set.field_presence.is_some(), &["field"]),
+        ("enum_type", set.enum_type.is_some(), &["enum"]),
+        (
+            "repeated_field_encoding",
+            set.repeated_field_encoding.is_some(),
+            &["field"],
+        ),
+        ("utf8_validation", set.utf8_validation.is_some(), &["field"]),
+        (
+            "message_encoding",
+            set.message_encoding.is_some(),
+            &["field"],
+        ),
+        (
+            "json_format",
+            set.json_format.is_some(),
+            &["message", "enum"],
+        ),
+    ];
+    targets
+        .into_iter()
+        .find(|(_, is_set, allowed)| *is_set && !allowed.contains(&entity))
+        .map(|(feature, _, _)| (feature, entity))
 }
 
 /// The features a proto2 or proto3 field's declaration implies, as protoc infers them: `required`

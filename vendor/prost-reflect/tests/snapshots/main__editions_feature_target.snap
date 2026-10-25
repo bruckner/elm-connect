@@ -1,0 +1,9 @@
+---
+source: prost-reflect/tests/main.rs
+expression: actual
+---
+causes: []
+labels: []
+message: "option google.protobuf.FeatureSet.field_presence cannot be set on an entity of type `message`"
+related: []
+severity: error

@@ -7,11 +7,12 @@ file:
     features:
       enumType: CLOSED
       utf8Validation: NONE
+      fieldPresence: IMPLICIT
   messageType:
   - name: Message
     options:
       features:
-        fieldPresence: IMPLICIT
+        jsonFormat: LEGACY_BEST_EFFORT
     field:
     - name: implicit
       number: 1
@@ -93,9 +94,6 @@ file:
       jsonName: text
     oneofDecl:
     - name: choice
-      options:
-        features:
-          fieldPresence: EXPLICIT
     nestedType:
     - name: Child
       field:
@@ -121,14 +119,8 @@ file:
       number: 0
     - name: OPEN_ONE
       number: 1
-      options:
-        features:
-          enumType: CLOSED
   service:
   - name: Service
-    options:
-      features:
-        utf8Validation: VERIFY
     method:
     - name: Method
       inputType: .test.Message

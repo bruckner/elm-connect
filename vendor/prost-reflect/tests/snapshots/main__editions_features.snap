@@ -18,9 +18,6 @@ file:
             number: 0
           - name: OPEN_ONE
             number: 1
-            options:
-              features:
-                enumType: CLOSED
     extension:
       - extendee: ".test.Message"
         jsonName: ext
@@ -125,16 +122,14 @@ file:
             name: Child
         oneofDecl:
           - name: choice
-            options:
-              features:
-                fieldPresence: EXPLICIT
         options:
           features:
-            fieldPresence: IMPLICIT
+            jsonFormat: LEGACY_BEST_EFFORT
     name: test.proto
     options:
       features:
         enumType: CLOSED
+        fieldPresence: IMPLICIT
         utf8Validation: NONE
     package: test
     service:
@@ -143,7 +138,4 @@ file:
             name: Method
             outputType: ".test.Message"
         name: Service
-        options:
-          features:
-            utf8Validation: VERIFY
     syntax: editions

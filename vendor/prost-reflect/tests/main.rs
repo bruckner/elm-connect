@@ -236,6 +236,7 @@ check_ok!(editions_json_name_conflict2);
 check_err!(editions_extension_required);
 check_err!(editions_utf8_validation_non_string);
 check_err!(editions_message_encoding_non_message);
+check_err!(editions_feature_target);
 
 // Regression test for https://github.com/andrewhickman/prost-reflect/issues/195
 //
@@ -338,7 +339,7 @@ fn editions_features_resolve() {
     // Set on the file; the rest are edition 2023's defaults.
     assert_eq!(file.features().enum_type(), EnumType::Closed);
     assert_eq!(file.features().utf8_validation(), Utf8Validation::None);
-    assert_eq!(file.features().field_presence(), FieldPresence::Explicit);
+    assert_eq!(file.features().field_presence(), FieldPresence::Implicit);
     assert_eq!(
         file.features().repeated_field_encoding(),
         RepeatedFieldEncoding::Packed
@@ -351,14 +352,21 @@ fn editions_features_resolve() {
 
     let message = pool.get_message_by_name("test.Message").unwrap();
     assert_eq!(message.features().field_presence(), FieldPresence::Implicit);
-    assert_eq!(message.features().utf8_validation(), Utf8Validation::None);
+    assert_eq!(
+        message.features().json_format(),
+        JsonFormat::LegacyBestEffort
+    );
     let field = |name: &str| message.get_field_by_name(name).unwrap();
 
-    // Inherited from the message.
+    // Inherited from the file through the message.
     let implicit = field("implicit");
     assert_eq!(
         implicit.features().field_presence(),
         FieldPresence::Implicit
+    );
+    assert_eq!(
+        implicit.features().json_format(),
+        JsonFormat::LegacyBestEffort
     );
     assert!(!implicit.supports_presence());
     assert_eq!(implicit.cardinality(), Cardinality::Optional);
@@ -385,13 +393,14 @@ fn editions_features_resolve() {
     // Message fields have presence whatever their presence feature.
     assert!(field("child").supports_presence());
 
-    // A oneof's features pass to its fields; oneof fields always have presence.
+    // A oneof's features pass to its fields; oneof fields always have presence. No 2023
+    // feature targets a oneof, so its features are its message's.
     let choice = message.oneofs().next().unwrap();
-    assert_eq!(choice.features().field_presence(), FieldPresence::Explicit);
+    assert_eq!(choice.features(), message.features());
     let in_oneof = field("in_oneof");
     assert_eq!(
         in_oneof.features().field_presence(),
-        FieldPresence::Explicit
+        FieldPresence::Implicit
     );
     assert!(in_oneof.supports_presence());
 
@@ -402,7 +411,7 @@ fn editions_features_resolve() {
     );
 
     let child = pool.get_message_by_name("test.Message.Child").unwrap();
-    assert_eq!(child.features().field_presence(), FieldPresence::Implicit);
+    assert_eq!(child.features(), message.features());
     assert!(!child
         .get_field_by_name("value")
         .unwrap()
@@ -413,22 +422,19 @@ fn editions_features_resolve() {
     let open = pool.get_enum_by_name("test.Open").unwrap();
     assert!(!open.is_closed());
     assert_eq!(
-        open.get_value(0).unwrap().features().enum_type(),
+        open.get_value(1).unwrap().features().enum_type(),
         EnumType::Open
     );
-    assert_eq!(
-        open.get_value(1).unwrap().features().enum_type(),
-        EnumType::Closed
-    );
 
+    // No 2023 feature targets services or methods; they inherit the file's.
     let service = pool.get_service_by_name("test.Service").unwrap();
-    assert_eq!(service.features().utf8_validation(), Utf8Validation::Verify);
+    assert_eq!(service.features(), file.features());
     let method = service.methods().next().unwrap();
-    assert_eq!(method.features().utf8_validation(), Utf8Validation::Verify);
+    assert_eq!(method.features(), file.features());
 
     // An extension inherits from the scope it is declared in, not from the message it extends.
     let ext = pool.get_extension_by_name("test.ext").unwrap();
-    assert_eq!(ext.features().field_presence(), FieldPresence::Explicit);
+    assert_eq!(ext.features().json_format(), JsonFormat::Allow);
     assert!(ext.is_packed());
 
     // The edition survives encoding the pool.
