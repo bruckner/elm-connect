@@ -286,3 +286,7 @@ $author$project$Rpc$Route$ total 5349
 $author$project$Proto$Method$ total 1094
 $author$project$Rpc$Internal$Wire$ total 3435
 ```
+
+Re-measured after the last generator commit (a printing fix): routes
+194141 / 49171 / 14957, live 354112 / 90197 / 26898, notes unchanged;
+the benchmark 55.4 ms old against 28.9 ms new.
