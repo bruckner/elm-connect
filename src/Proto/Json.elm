@@ -1956,7 +1956,10 @@ encodeListValue =
 
 {-| Decode a `google.protobuf.Any`: an object with `"@type"`, holding the
 message's fields or, for a well-known type with a JSON form of its own,
-`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`.
+`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`,
+and so does one whose `"@type"` is not a type URL: it must hold a `/` with a
+type name after the last one. A well-formed URL of a type the client does not
+know is kept, to unpack later or not at all.
 Unpack it with [`Proto.Any.unpack`](Proto-Any#unpack).
 -}
 any : Decoder Any
@@ -1980,7 +1983,10 @@ anyFromPairs pairs =
                     Json.Decode.fail "Expecting an Any whose \"@type\" is a string"
 
                 Ok url ->
-                    if hasJsonForm url then
+                    if not (isTypeUrl url) then
+                        Json.Decode.fail ("Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\", but got " ++ quote url)
+
+                    else if hasJsonForm url then
                         case pairValue "value" pairs of
                             Just json ->
                                 Json.Decode.succeed (InternalAny.Any url (InJson json))
@@ -1995,6 +2001,14 @@ anyFromPairs pairs =
                             |> InJson
                             |> InternalAny.Any url
                             |> Json.Decode.succeed
+
+
+{-| A type URL, as proto3 JSON requires `"@type"` to hold one: a `/` with a
+type name after the last one.
+-}
+isTypeUrl : String -> Bool
+isTypeUrl url =
+    String.contains "/" url && not (String.endsWith "/" url)
 
 
 {-| The value under `key` among a JSON object's pairs.

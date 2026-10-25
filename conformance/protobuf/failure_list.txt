@@ -31,11 +31,6 @@ Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
 
-# Fix candidate, lenient parsing: an Any whose `@type` is empty or not a
-# type URL.
-Required.Proto3.JsonInput.AnyWktRepresentationWithBadType
-Required.Proto3.JsonInput.AnyWktRepresentationWithEmptyTypeAndValue
-
 # Fix candidate, lenient parsing: a FieldMask path with an underscore.
 Recommended.Proto3.JsonInput.FieldMaskInvalidCharacter
 

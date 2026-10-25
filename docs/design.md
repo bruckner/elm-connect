@@ -1058,7 +1058,10 @@ In detail:
   `Proto.Json.encodeAny`, beside every other well-known type's, and that
   list lives with them. `Proto.Json.any` fails
   on an object without `"@type"`, except `{}`, which is the empty `Any`
-  (no type URL; the typed value's default), as protojson reads it. A
+  (no type URL; the typed value's default), as protojson reads it, and
+  on a `"@type"` that is not a type URL: empty, without a `/`, or with
+  nothing after the last one. A well-formed URL of a type the client
+  does not know is kept, and unpacks as it always did. A
   binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
   `Proto.Json.any` does not read back. They are in `Proto.Json` so that

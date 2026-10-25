@@ -171,6 +171,25 @@ suite =
                         , Just ( "google.protobuf.Timestamp", [ "seconds", "nanos" ] )
                         , Nothing
                         ]
+        , test "an @type that is not a type URL fails" <|
+            \_ ->
+                [ """{"@type":"","value":""}"""
+                , """{"@type":"1","value":"2"}"""
+                , """{"@type":"notes.v1.Note","title":"groceries"}"""
+                , """{"@type":"type.googleapis.com/","title":"groceries"}"""
+                ]
+                    |> List.filter (\json -> Result.toMaybe (read json) /= Nothing)
+                    |> Expect.equal []
+        , test "a well-formed type URL of an unknown type is kept" <|
+            \_ ->
+                [ """{"@type":"example.com/other.v1.Thing","name":"x"}"""
+                , """{"@type":"/other.v1.Thing","name":"x"}"""
+                ]
+                    |> List.map (read >> Result.map (\any -> ( Any.typeUrl any, Any.typeName any )))
+                    |> Expect.equal
+                        [ Ok ( "example.com/other.v1.Thing", "other.v1.Thing" )
+                        , Ok ( "/other.v1.Thing", "other.v1.Thing" )
+                        ]
         , test "an object without @type fails, but for the empty Any" <|
             \_ ->
                 ( ( read """{"title":"groceries"}""" |> Result.map written

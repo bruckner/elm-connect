@@ -9,3 +9,7 @@
 - `Proto.Timestamp.fromString`, and so every `Timestamp` field, refuses
   a lowercase `t` or `z` (`1970-01-01t00:00:00z`): RFC 3339 allows
   them, proto3 JSON does not. They were accepted before.
+- An `Any` whose `"@type"` is not a type URL (empty, without a `/`, or
+  with nothing after the last `/`) fails to decode; it was read as an
+  `Any` of that text before. A well-formed URL of a type the client does
+  not know still decodes.
