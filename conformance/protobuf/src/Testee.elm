@@ -3,19 +3,22 @@ port module Testee exposing (main)
 {-| The protobuf conformance suite's testee, for `conformance_test_runner`
 (protocolbuffers/protobuf `conformance/`), driven by `testee.mjs`: each
 request on `requests` is a `protobuf_test_messages.proto3.TestAllTypesProto3`
-in proto3 JSON, read with the generated decoder and written back with the
-generated encoder, answered on `responses`.
+in protobuf binary (base64) or proto3 JSON, read with the generated decoders
+and written back in the format asked for with the generated encoders,
+answered on `responses`. The test messages are generated under `codec=both`,
+so their encoders write an `Any` holding JSON alone to binary through the
+generated `binaryRegistry`.
 
-The runtime has proto3 JSON codecs only, so a request whose input or output
-is protobuf binary is answered `skipped` without being read, as are the
-other formats (JSPB, text) and the other message types (proto2, editions).
-The answer dispatches on the output format and `read` on the input format,
-so that binary branches can sit beside the JSON ones.
+The other formats (JSPB, text) and the other message types (proto2,
+editions) are answered `skipped`. The answer dispatches on the output format
+and `read` on the input format.
 
 -}
 
 import Json.Decode
 import Json.Encode
+import Proto.Binary
+import Proto.Bytes
 import ProtobufTestMessages.Proto3 as Proto3
 
 
@@ -66,6 +69,14 @@ answer request =
                     Ok message ->
                         reply "json" (Json.Encode.encode 0 (Proto3.encodeTestAllTypesProto3 message))
 
+            "protobuf" ->
+                case read request of
+                    Err ( kind, problem ) ->
+                        reply kind problem
+
+                    Ok message ->
+                        reply "protobuf" (Proto.Bytes.toBase64 (Proto.Binary.encode Proto3.encodeTestAllTypesProto3Bytes message))
+
             other ->
                 reply "skipped" ("output format " ++ other)
 
@@ -73,6 +84,11 @@ answer request =
 read : Request -> Result ( String, String ) Proto3.TestAllTypesProto3
 read request =
     case request.inputFormat of
+        "protobuf" ->
+            Proto.Bytes.fromBase64 request.payload
+                |> Maybe.andThen (Proto.Binary.decode Proto3.decodeTestAllTypesProto3Bytes)
+                |> Result.fromMaybe ( "parseError", "not a TestAllTypesProto3 in protobuf binary" )
+
         "json" ->
             Json.Decode.decodeString Proto3.decodeTestAllTypesProto3 request.payload
                 |> Result.mapError (\problem -> ( "parseError", Json.Decode.errorToString problem ))

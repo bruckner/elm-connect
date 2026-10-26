@@ -1,8 +1,8 @@
 name: Protobuf conformance
 
-# The protobuf conformance suite against the runtime's proto3 JSON codecs
-# (`just protobuf-conformance`, conformance/README.md). It runs only when
-# dispatched by hand: it is not part of the gate. The runner is fetched and
+# The protobuf conformance suite against the runtime's protobuf binary and
+# proto3 JSON codecs (`just protobuf-conformance`, conformance/README.md).
+# It runs only when dispatched by hand: it is not part of the gate. The runner is fetched and
 # checked against its pinned SHA-256 (fetch-runner.sh) on every run, not
 # restored from a cache.
 on:
