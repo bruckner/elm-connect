@@ -153,11 +153,11 @@ encodeNoteOwner value =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string
         |> Proto.Json.field "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
         |> Proto.Json.fieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
         |> Proto.Json.field "readers" [] (Json.Decode.list Users.V1.decodeUser)
-        |> Proto.Json.field "roles" Dict.empty (Json.Decode.dict Users.V1.decodeRole)
+        |> Proto.Json.field "roles" Dict.empty (Proto.Json.stringDict Users.V1.decodeRole)
         |> Proto.Json.oneof decodeNoteOwner
 
 
@@ -168,5 +168,5 @@ decodeNoteOwner =
     Proto.Json.members "owner"
         NoteOwnerUnset
         [ Proto.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
-        , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Json.Decode.string)
+        , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Proto.Json.string)
         ]

@@ -26,7 +26,8 @@ accept one:
 
 The time must lie between years 1 and 9999, as protobuf requires. A leap
 second (`23:59:60`) is accepted and read as `23:59:59` with the same fraction,
-since `Time.Posix` has no leap seconds. Lowercase `t` and `z` are accepted.
+since `Time.Posix` has no leap seconds. The `T` and the `Z` must be uppercase:
+RFC 3339 allows `t` and `z`, proto3 JSON does not.
 
     fromString "1970-01-01T00:00:01.5Z" == Just (Time.millisToPosix 1500)
 
@@ -43,7 +44,7 @@ fromString text =
     if
         separator 4 "-"
             && separator 7 "-"
-            && List.member (String.slice 10 11 text) [ "T", "t" ]
+            && separator 10 "T"
             && separator 13 ":"
             && separator 16 ":"
     then
@@ -106,7 +107,7 @@ fractionAndZone rest =
 
 zone : String -> Maybe Int
 zone text =
-    if text == "Z" || text == "z" then
+    if text == "Z" then
         Just 0
 
     else if String.length text == 6 && String.slice 3 4 text == ":" then

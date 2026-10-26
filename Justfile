@@ -336,8 +336,8 @@ live-conformance-gen:
 # test_messages_proto3.proto, over the suite's proto3 JSON cases; binary,
 # JSPB and text cases are answered skipped. Before the run, the generated Elm
 # must be current (`elm-connect check`) and the committed proto must be the
-# runner's copy with its NullValue fields stripped. The run must pass but for
-# failure_list.txt, and a listed case that passes fails it too. Not part of
+# runner's copy. The run must pass but for failure_list.txt, and a listed
+# case that passes fails it too. Not part of
 # `check` or `live`: it needs the network for the runner, and CI runs it only
 # when asked (protobuf-conformance.yml).
 protobuf-conformance:
@@ -347,8 +347,7 @@ protobuf-conformance:
     cd conformance/protobuf
     {{target}}/debug/elm-connect check -I proto google/protobuf/test_messages_proto3.proto --out generated
     runner="$(./fetch-runner.sh)"
-    ./strip-null-value.sh "$runner/include/google/protobuf/test_messages_proto3.proto" build/test_messages_proto3.proto
-    diff build/test_messages_proto3.proto proto/google/protobuf/test_messages_proto3.proto
+    diff "$runner/include/google/protobuf/test_messages_proto3.proto" proto/google/protobuf/test_messages_proto3.proto
     elm make > /dev/null 2>&1 || true
     elm make src/Testee.elm --optimize --output=build/testee.js
     mkdir -p build/run

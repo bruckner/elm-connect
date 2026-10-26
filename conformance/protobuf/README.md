@@ -10,13 +10,12 @@ just protobuf-conformance
 ```
 
 ```
-proto/google/protobuf/test_messages_proto3.proto   the suite's proto3 test messages, NullValue fields stripped
+proto/google/protobuf/test_messages_proto3.proto   the suite's proto3 test messages
 proto/LICENSE                                      protobuf's license (BSD 3-Clause), which covers it
 generated/                                         the Elm elm-connect generates from it, committed
 src/Testee.elm                                     the Elm worker that reads and writes each message
 testee.mjs, testee.sh                              the Node driver conformance_test_runner starts
 fetch-runner.sh                                    fetches the runner, checked against its SHA-256
-strip-null-value.sh                                writes the proto from protobuf's
 failure_list.txt                                   the cases the testee fails, classified
 build/                                             the runner, the compiled worker and run output (gitignored)
 ```
@@ -67,23 +66,11 @@ move the pin, change the version and both digests together.
 ## The test proto
 
 `proto/google/protobuf/test_messages_proto3.proto` is protobuf v32.0's
-`src/google/protobuf/test_messages_proto3.proto` (the same file as
-v32.0-rc2's, which the runner's archive carries in `include/`) with two
-lines removed: the fields `oneof_null_value = 120` and
-`optional_null_value = 307`, of type `google.protobuf.NullValue`, which the
-generator refuses (`types::unsupported_well_known`). `strip-null-value.sh`
-writes it from protobuf's file and fails unless exactly those two lines
-went:
+`src/google/protobuf/test_messages_proto3.proto`, unmodified: the same file
+as v32.0-rc2's, which the runner's archive carries in `include/`.
 
-```sh
-conformance/protobuf/strip-null-value.sh \
-  conformance/protobuf/build/conformance_test_runner-v32.0-rc2/include/google/protobuf/test_messages_proto3.proto \
-  conformance/protobuf/proto/google/protobuf/test_messages_proto3.proto
-```
-
-`just protobuf-conformance` writes it again from the runner's copy and
-fails if it differs from the committed one, and fails if `generated/` is
-not what `elm-connect check` expects. `just protobuf-conformance-gen`
+`just protobuf-conformance` fails if it differs from the runner's copy,
+and if `generated/` is not what `elm-connect check` expects. `just protobuf-conformance-gen`
 regenerates `generated/` with the CLI built from the checkout, under the
 default options:
 

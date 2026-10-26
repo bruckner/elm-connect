@@ -205,6 +205,10 @@ const PROTO_ENUM_VALUE: &str = "Proto.EnumValue";
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
+/// The runtime package's typed values of the well-known types, home of
+/// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
+/// names.
+const PROTO_WELL_KNOWN: &str = "Proto.WellKnown";
 /// The runtime package's release names, which `elmConnectVersion_` uses.
 const PROTO_VERSION: &str = "Proto.Version";
 

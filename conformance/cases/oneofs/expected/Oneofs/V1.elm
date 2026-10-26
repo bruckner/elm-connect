@@ -350,7 +350,7 @@ decodeColor =
 decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
     Json.Decode.succeed Created
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string
 
 
 {-| Decodes a [`NoteEvent`](#NoteEvent) from proto3 JSON.
@@ -358,10 +358,10 @@ decodeCreated =
 decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
     Json.Decode.succeed NoteEvent
-        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.field "id" "" Proto.Json.string
         |> Proto.Json.oneof decodeNoteEventKind
         |> Proto.Json.oneof decodeNoteEventSource
-        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
 
 
 {-| Decodes a [`NoteEventKind`](#NoteEventKind) from the members of its message's JSON object.
@@ -371,7 +371,7 @@ decodeNoteEventKind =
     Proto.Json.members "kind"
         NoteEventKindUnset
         [ Proto.Json.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
-        , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Json.Decode.string)
+        , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Proto.Json.string)
         , Proto.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
         , Proto.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Proto.Json.int64)
         , Proto.Json.emptyMember "archived" NoteEventKindArchived
@@ -385,7 +385,7 @@ decodeNoteEventSource : Json.Decode.Decoder NoteEventSource
 decodeNoteEventSource =
     Proto.Json.members "source"
         NoteEventSourceUnset
-        [ Proto.Json.member "user" (Json.Decode.map NoteEventSourceUser Json.Decode.string)
+        [ Proto.Json.member "user" (Json.Decode.map NoteEventSourceUser Proto.Json.string)
         , Proto.Json.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
         ]
 
@@ -405,5 +405,5 @@ decodeChoiceValue =
     Proto.Json.members "value"
         ChoiceValueUnset
         [ Proto.Json.member "number" (Json.Decode.map ChoiceValueNumber Proto.Json.float)
-        , Proto.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Json.Decode.string)
+        , Proto.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Proto.Json.string)
         ]

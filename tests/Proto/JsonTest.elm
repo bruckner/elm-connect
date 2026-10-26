@@ -2,6 +2,7 @@ module Proto.JsonTest exposing (suite)
 
 import Dict
 import Expect
+import Fuzz
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
@@ -37,6 +38,9 @@ suite =
         , uint64Tests
         , uint64AsIntTests
         , floatTests
+        , float32Tests
+        , nullValueTests
+        , stringTests
         , bytesTests
         , wellKnownTests
         ]
@@ -404,6 +408,7 @@ type EventKind
     | EventKindTitleChanged String
     | EventKindCleared
     | EventKindPayload Json.Encode.Value
+    | EventKindNothing
 
 
 decodeEvent : Decoder Event
@@ -421,6 +426,7 @@ decodeEventKind =
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
         , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
         , Proto.Json.valueMember "payload" EventKindPayload
+        , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
         ]
 
 
@@ -486,6 +492,18 @@ oneofTests =
                 failsWith decodeEvent
                     """{"payload":null,"text":"t"}"""
                     "Expecting at most one member of oneof \"kind\", but got \"text\" and \"payload\""
+        , test "nullValueMember reads null, the name and the number as set" <|
+            \_ ->
+                [ """{"nothingAtAll":null}""", """{"nothing_at_all":"NULL_VALUE"}""", """{"nothingAtAll":0}""" ]
+                    |> List.map (Json.Decode.decodeString decodeEvent)
+                    |> Expect.equal (List.repeat 3 (Ok (Event "" EventKindNothing)))
+        , test "nullValueMember fails on another value" <|
+            \_ -> failsOnEach decodeEvent [ """{"nothingAtAll":"NOTHING"}""", """{"nothingAtAll":{}}""" ]
+        , test "a null nullValueMember counts against another member" <|
+            \_ ->
+                failsWith decodeEvent
+                    """{"nothingAtAll":null,"text":"t"}"""
+                    "Expecting at most one member of oneof \"kind\", but got \"text\" and \"nothingAtAll\""
         , test "a oneof that is not an object fails" <|
             \_ -> fails decodeEventKind "[]"
         ]
@@ -1138,6 +1156,10 @@ floatTests =
             \_ -> fails Proto.Json.float "\"infinity\""
         , test "a boolean fails" <|
             \_ -> fails Proto.Json.float "false"
+        , test "a number past a double's range fails" <|
+            \_ -> failsOnEach Proto.Json.float [ "1.89769e+308", "-1.89769e+308", "1e999", "\"1e999\"" ]
+        , test "the largest double decodes" <|
+            \_ -> decodes Proto.Json.float "1.7976931348623157e308" 1.7976931348623157e308
         , test "encodes a finite value as a number" <|
             \_ -> encodesTo (Proto.Json.encodeFloat 1.5) "1.5"
         , test "encodes NaN as a string" <|
@@ -1147,6 +1169,116 @@ floatTests =
         , test "encodes negative infinity as a string" <|
             \_ -> encodesTo (Proto.Json.encodeFloat -(1 / 0)) "\"-Infinity\""
         ]
+
+
+stringTests : Test
+stringTests =
+    describe "string"
+        [ test "text, a surrogate pair included" <|
+            \_ ->
+                [ "\"\"", "\"note\"", "\"\\ud83d\\ude00\"", "\"a😀b\"", "\"\\ud800\\udc00\"", "\"\\udbff\\udfff\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.string)
+                    |> Expect.equal [ Ok "", Ok "note", Ok "😀", Ok "a😀b", Ok "𐀀", Ok "\u{10FFFF}" ]
+        , test "a surrogate without its pair fails, wherever it is" <|
+            \_ ->
+                failsOnEach Proto.Json.string
+                    [ "\"\\udc00\""
+                    , "\"\\ud800\""
+                    , "\"\\ude01\\ud83d\""
+                    , "\"a\\udc00\""
+                    , "\"\\udc00a\""
+                    , "\"a\\ud800b\""
+                    , "\"\\udc00\\udc00\""
+                    , "\"😀\\udc00\""
+                    , "\"\\ud800😀\""
+                    ]
+        , Test.fuzz Fuzz.string "every string of Unicode text decodes as it is" <|
+            \text ->
+                Json.Decode.decodeString Proto.Json.string (Json.Encode.encode 0 (Json.Encode.string text))
+                    |> Expect.equal (Ok text)
+        , test "a map key with a surrogate without its pair fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ ->
+                        Json.Decode.decodeString (Proto.Json.stringDict Json.Decode.int) "{\"a\":1,\"😀\":2}"
+                            |> Expect.equal (Ok (Dict.fromList [ ( "a", 1 ), ( "😀", 2 ) ]))
+                    , \_ -> failsOnEach (Proto.Json.stringDict Json.Decode.int) [ "{\"\\udc00\":1}", "{\"a\":1,\"b\\ud800\":2}" ]
+                    ]
+                    ()
+        ]
+
+
+nullValueTests : Test
+nullValueTests =
+    describe "nullValue"
+        [ test "reads null, the name and the number" <|
+            \_ ->
+                [ "null", "\"NULL_VALUE\"", "0" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.nullValue)
+                    |> Expect.equal [ Ok (), Ok (), Ok () ]
+        , test "fails on another name, a string or an object" <|
+            \_ -> failsOnEach Proto.Json.nullValue [ "\"NULL\"", "\"\"", "{}", "false" ]
+        , test "encodes as null" <|
+            \_ -> encodesTo (Proto.Json.encodeNullValue ()) "null"
+        , test "a list and a map of it hold nulls" <|
+            \_ ->
+                ( Json.Decode.decodeString (Json.Decode.list Proto.Json.nullValue) "[null,\"NULL_VALUE\"]"
+                , Json.Decode.decodeString (Json.Decode.dict Proto.Json.nullValue) "{\"a\":null}"
+                )
+                    |> Expect.equal ( Ok [ (), () ], Ok (Dict.fromList [ ( "a", () ) ]) )
+        ]
+
+
+float32Tests : Test
+float32Tests =
+    describe "float32"
+        [ test "a number" <|
+            \_ -> decodes Proto.Json.float32 "1.5" 1.5
+        , test "the names of the values a number cannot write" <|
+            \_ ->
+                [ "\"NaN\"", "\"Infinity\"", "\"-Infinity\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.float32 >> Result.map (\n -> isNaN n || isInfinite n))
+                    |> Expect.equal [ Ok True, Ok True, Ok True ]
+        , test "the largest float, as a number and as a string" <|
+            \_ ->
+                [ "3.4028234663852886e38", "-3.4028234663852886e38", "\"3.4028234663852886e38\"" ]
+                    |> List.map (Json.Decode.decodeString Proto.Json.float32)
+                    |> Expect.equal [ Ok 3.4028234663852886e38, Ok -3.4028234663852886e38, Ok 3.4028234663852886e38 ]
+        , test "a number past a float's range fails" <|
+            \_ -> failsOnEach Proto.Json.float32 [ "3.502823e+38", "-3.502823e+38", "\"3.502823e+38\"", "1e999" ]
+        , test "a finite value within range is kept, not rounded to a float" <|
+            \_ -> decodes Proto.Json.float32 "0.1" 0.1
+        , Test.fuzz float32Value "every finite float decodes, as written" <|
+            \value ->
+                Json.Decode.decodeString Proto.Json.float32 (Json.Encode.encode 0 (Json.Encode.float value))
+                    |> Expect.equal (Ok value)
+        ]
+
+
+{-| A finite `float`, built from its sign, exponent and fraction bits, so every
+one is exactly a float32: subnormals, the smallest and the largest included.
+-}
+float32Value : Fuzz.Fuzzer Float
+float32Value =
+    Fuzz.map3
+        (\negative exponent fraction ->
+            let
+                magnitude =
+                    if exponent == 0 then
+                        toFloat fraction * 2 ^ -149
+
+                    else
+                        (1 + toFloat fraction / 2 ^ 23) * 2 ^ toFloat (exponent - 127)
+            in
+            if negative then
+                -magnitude
+
+            else
+                magnitude
+        )
+        Fuzz.bool
+        (Fuzz.oneOf [ Fuzz.intRange 0 254, Fuzz.constant 254, Fuzz.constant 0 ])
+        (Fuzz.oneOf [ Fuzz.intRange 0 (2 ^ 23 - 1), Fuzz.constant (2 ^ 23 - 1), Fuzz.constant 1 ])
 
 
 bytesTests : Test
@@ -1254,6 +1386,8 @@ wellKnownTests =
                     [ "display_name", "author.email_address", "id" ]
         , test "the empty field mask" <|
             \_ -> decodes Proto.Json.fieldMask "\"\"" []
+        , test "a field mask path with an underscore fails" <|
+            \_ -> failsOnEach Proto.Json.fieldMask [ "\"foo,bar_bar\"", "\"display_name\"", "\"author.email_address\"", "\"_\"" ]
         , test "encodes a field mask in lowerCamelCase" <|
             \_ ->
                 encodesTo (Proto.Json.encodeFieldMask [ "display_name", "author.email_address" ])

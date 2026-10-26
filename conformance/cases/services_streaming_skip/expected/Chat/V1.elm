@@ -101,4 +101,4 @@ encodeLine value =
 decodeLine : Json.Decode.Decoder Line
 decodeLine =
     Json.Decode.succeed Line
-        |> Proto.Json.field "text" "" Json.Decode.string
+        |> Proto.Json.field "text" "" Proto.Json.string

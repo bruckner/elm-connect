@@ -61,8 +61,12 @@ parsing =
             \_ -> parses "1969-12-31T19:30:00-04:30" 0
         , test "an offset can cross a day" <|
             \_ -> parses "1970-01-02T00:30:00+01:00" (23 * 3600000 + 30 * 60000)
-        , test "lowercase t and z" <|
-            \_ -> parses "1970-01-01t00:00:00z" 0
+        , test "a lowercase t is rejected" <|
+            \_ -> rejects "1970-01-01t00:00:00Z"
+        , test "a lowercase z is rejected" <|
+            \_ -> rejects "1970-01-01T00:00:00z"
+        , test "a lowercase z after a fraction is rejected" <|
+            \_ -> rejects "1970-01-01T00:00:00.5z"
         , test "a leap second is clamped to the second before it" <|
             \_ -> parses "1972-06-30T23:59:60Z" 78796799000
         , test "a leap second keeps its fraction" <|

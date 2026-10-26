@@ -4,18 +4,21 @@ module Proto.Json exposing
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
+    , nullValueMember, nullValueMemberEither
     , enum, enumOrZero
-    , int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+    , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+    , string
     , int32, uint32
     , int64, uint64, encodeInt64
     , int64AsInt, uint64AsInt, encodeInt64AsInt
-    , float, encodeFloat
+    , float, float32, encodeFloat
     , bytes, encodeBytes
     , bytesAsBytes, encodeBytesAsBytes
     , timestamp, encodeTimestamp
     , duration, encodeDuration
     , fieldMask, encodeFieldMask
     , empty, encodeEmpty
+    , nullValue, encodeNullValue
     , struct, encodeStruct
     , listValue, encodeListValue
     , any, encodeAny
@@ -59,6 +62,7 @@ reads a missing field as its default, so nothing is lost.
 
 @docs oneof, members, Member, member, memberEither
 @docs emptyMember, emptyMemberEither, valueMember, valueMemberEither
+@docs nullValueMember, nullValueMemberEither
 
 
 # Enums
@@ -68,7 +72,14 @@ reads a missing field as its default, so nothing is lost.
 
 # Maps
 
-@docs int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+@docs stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+
+
+# Strings
+
+Encode them with `Json.Encode.string`.
+
+@docs string
 
 
 # 32-bit integers
@@ -90,7 +101,7 @@ the `int64=int` option, and fields marked `[jstype = JS_NUMBER]`, hold it as an
 
 # Floating point
 
-@docs float, encodeFloat
+@docs float, float32, encodeFloat
 
 
 # Bytes
@@ -114,6 +125,7 @@ their scalar's helpers.
 @docs duration, encodeDuration
 @docs fieldMask, encodeFieldMask
 @docs empty, encodeEmpty
+@docs nullValue, encodeNullValue
 @docs struct, encodeStruct
 @docs listValue, encodeListValue
 @docs any, encodeAny
@@ -143,7 +155,7 @@ must satisfy the decoder.
     decodeNote : Decoder Note
     decodeNote =
         Json.Decode.succeed Note
-            |> field "title" "" Json.Decode.string
+            |> field "title" "" string
             |> field "stars" 0 int32
 
 The value being decoded must be a JSON object.
@@ -154,7 +166,7 @@ field with presence (a message-typed or proto3 `optional` field) defaults to
 and decodes with `Json.Decode.list`.
 
     |> field "author" Nothing (Json.Decode.map Just decodeAuthor)
-    |> field "tags" [] (Json.Decode.list Json.Decode.string)
+    |> field "tags" [] (Json.Decode.list string)
 
 -}
 field : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
@@ -167,7 +179,7 @@ the JSON name first, then the proto name. proto3 JSON parsers accept either
 key, but not both: an object holding both fails, even when one of them is
 `null`, as protobuf's own parsers reject a duplicate field.
 
-    |> fieldEither "displayName" "display_name" "" Json.Decode.string
+    |> fieldEither "displayName" "display_name" "" string
 
 -}
 fieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
@@ -186,7 +198,7 @@ so a field holding it is set, as protobuf's own parsers read it.
     decodeSetting : Decoder Setting
     decodeSetting =
         Json.Decode.succeed Setting
-            |> field "name" "" Json.Decode.string
+            |> field "name" "" string
             |> valueField "value"
 
 To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
@@ -592,7 +604,7 @@ key of the message. The decoder is usually [`members`](#members).
     decodeNote : Decoder Note
     decodeNote =
         Json.Decode.succeed Note
-            |> field "title" "" Json.Decode.string
+            |> field "title" "" string
             |> oneof decodeNoteKind
 
 -}
@@ -608,7 +620,7 @@ error messages), its unset value and its members:
     decodeNoteKind =
         members "kind"
             NoteKindUnset
-            [ member "text" (Json.Decode.map NoteKindText Json.Decode.string)
+            [ member "text" (Json.Decode.map NoteKindText string)
             , memberEither "pageCount" "page_count" (Json.Decode.map NoteKindPageCount int32)
             ]
 
@@ -717,7 +729,7 @@ type Member a
 {-| A member of a oneof: its key and the decoder of its value. A `null` value
 reads as absent.
 
-    member "text" (Json.Decode.map NoteKindText Json.Decode.string)
+    member "text" (Json.Decode.map NoteKindText string)
 
 -}
 member : String -> Decoder a -> Member a
@@ -781,6 +793,37 @@ valueMemberEither jsonName protoName constructor =
         { names = spellings jsonName protoName
         , nullIsSet = True
         , decoder = Json.Decode.map constructor Json.Decode.value
+        }
+
+
+{-| A member of the enum `google.protobuf.NullValue`, whose constructor carries
+nothing: present when its key holds `null`, which proto3 JSON writes for it, or
+the value's name or number, as [`nullValue`](#nullValue) reads them. Unlike
+every member but a [`valueMember`](#valueMember), one present as `null` is set.
+
+    type ActionKind
+        = ActionKindUnset
+        | ActionKindNothing
+
+    decodeActionKind : Decoder ActionKind
+    decodeActionKind =
+        members "kind" ActionKindUnset [ nullValueMember "nothing" ActionKindNothing ]
+
+-}
+nullValueMember : String -> a -> Member a
+nullValueMember name =
+    nullValueMemberEither name name
+
+
+{-| [`nullValueMember`](#nullValueMember) for a member whose JSON name differs
+from its proto name: the JSON name first, then the proto name.
+-}
+nullValueMemberEither : String -> String -> a -> Member a
+nullValueMemberEither jsonName protoName value =
+    Member
+        { names = spellings jsonName protoName
+        , nullIsSet = True
+        , decoder = Json.Decode.map (\() -> value) nullValue
         }
 
 
@@ -872,6 +915,69 @@ enumWith unknownName zero values =
             )
 
 
+{-| Decode a map with `string` keys, each key as [`string`](#string) reads a
+value: one holding a UTF-16 surrogate without its pair fails.
+-}
+stringDict : Decoder a -> Decoder (Dict.Dict String a)
+stringDict decoder =
+    Json.Decode.dict decoder
+        |> Json.Decode.andThen
+            (\dict ->
+                if Dict.foldl (\key _ ok -> ok && isScalarText key) True dict then
+                    Json.Decode.succeed dict
+
+                else
+                    Json.Decode.fail "Expecting a map key of Unicode text, but got one with a UTF-16 surrogate without its pair"
+            )
+
+
+{-| Decode a `string`. JavaScript's JSON parser reads an escaped UTF-16
+surrogate without its pair, such as `"\udc00"`, into the string as it is,
+though such a string is not Unicode text and has no UTF-8 form; this fails on
+one, as protobuf's parsers do.
+-}
+string : Decoder String
+string =
+    Json.Decode.string
+        |> Json.Decode.andThen
+            (\text ->
+                if isScalarText text then
+                    Json.Decode.succeed text
+
+                else
+                    Json.Decode.fail "Expecting Unicode text, but got a string with a UTF-16 surrogate without its pair"
+            )
+
+
+{-| Whether `text` holds no UTF-16 surrogate without its pair. `String.all`
+reads from the end and takes a low surrogate together with the code unit
+before it for one character, whose code is that unit's unless the unit is its
+high half; a pair's code is past U+FFFF, so a character of two units with a
+lower code is a lone low surrogate. A lone high surrogate's code is NaN, which
+every comparison fails. One low surrogate at the start is taken with what lies
+before the string, a character longer than two units: refusing it stops
+`String.all` there, where reading further would never return.
+-}
+isScalarText : String -> Bool
+isScalarText =
+    String.all
+        (\char ->
+            let
+                code =
+                    Char.toCode char
+            in
+            case String.length (String.fromChar char) of
+                1 ->
+                    code < 0xD800 || code > 0xDFFF
+
+                2 ->
+                    code > 0xFFFF
+
+                _ ->
+                    False
+        )
+
+
 {-| Decode a map with signed 32-bit integer keys (`int32`, `sint32`,
 `sfixed32`). JSON object keys are strings, so proto3 JSON writes each key as
 its decimal string. A key is an integer written as an `int64` string may be,
@@ -880,7 +986,7 @@ in decimal or exponent notation, within -2147483648 to 2147483647: `"7"`,
 too. Any other key fails, such as `"abc"`, `"1.5"`, `"+5"` or `"2147483648"`,
 and so do two keys that name one integer, such as `"7"` and `"07"`.
 
-    Json.Decode.decodeString (int32Dict Json.Decode.string) """{"1":"a","-2":"b"}"""
+    Json.Decode.decodeString (int32Dict string) """{"1":"a","-2":"b"}"""
     -- Ok (Dict.fromList [ ( -2, "b" ), ( 1, "a" ) ])
 
 Encode one with `Json.Encode.dict String.fromInt`.
@@ -907,7 +1013,7 @@ whatever the `int64` option. A key is read as `int64` reads a string, within
 as `"abc"`, `"1.5"` or `"9223372036854775808"`, and so do two keys that name
 one integer, such as `"7"` and `"007"`.
 
-    Json.Decode.decodeString (int64Dict Json.Decode.string) """{"007":"a","-2":"b"}"""
+    Json.Decode.decodeString (int64Dict string) """{"007":"a","-2":"b"}"""
     -- Ok (Dict.fromList [ ( "-2", "b" ), ( "7", "a" ) ])
 
 Encode one with `Json.Encode.dict identity`.
@@ -979,7 +1085,7 @@ is not `comparable` and so cannot key a `Dict`. proto3 JSON writes each key as
 `"true"` or `"false"`; any other key fails. The pairs come in the object's key
 order, and a map has at most two.
 
-    Json.Decode.decodeString (boolMap Json.Decode.string) """{"true":"on","false":"off"}"""
+    Json.Decode.decodeString (boolMap string) """{"true":"on","false":"off"}"""
     -- Ok [ ( True, "on" ), ( False, "off" ) ]
 
 -}
@@ -1557,34 +1663,76 @@ encodeInt64AsInt int =
     Json.Encode.string (Proto.Int64.fromInt int)
 
 
-{-| Decode a `double` or `float`. proto3 JSON writes a finite value as a
-number and the others as the strings `"NaN"`, `"Infinity"` and `"-Infinity"`;
-a parser must also accept a finite value written as a string, such as `"1.5"`.
+{-| Decode a `double`. proto3 JSON writes a finite value as a number and the
+others as the strings `"NaN"`, `"Infinity"` and `"-Infinity"`; a parser must
+also accept a finite value written as a string, such as `"1.5"`.
+
+A number past a double's range, such as `1e999`, fails: JavaScript's JSON
+parser reads it as an infinity, which proto3 JSON writes only as a string.
+
 -}
 float : Decoder Float
 float =
     Json.Decode.oneOf
-        [ Json.Decode.float
-        , Json.Decode.string |> Json.Decode.andThen floatString
+        [ Json.Decode.map Ok Json.Decode.float
+        , Json.Decode.map Err Json.Decode.string
         ]
+        |> Json.Decode.andThen (floatIn "a double" (\_ -> True))
 
 
-floatString : String -> Decoder Float
-floatString text =
-    case text of
-        "NaN" ->
+{-| Decode a `float`, as [`float`](#float) decodes a `double`, and fail on a
+finite value whose magnitude is past the largest `float`,
+3.4028234663852886e38. A value within it is kept as it arrived, not rounded to
+the nearest `float`.
+-}
+float32 : Decoder Float
+float32 =
+    Json.Decode.oneOf
+        [ Json.Decode.map Ok Json.Decode.float
+        , Json.Decode.map Err Json.Decode.string
+        ]
+        |> Json.Decode.andThen (floatIn "a float" (\number -> abs number <= maxFloat32))
+
+
+maxFloat32 : Float
+maxFloat32 =
+    3.4028234663852886e38
+
+
+{-| A number, or the string it was written as, if it is finite and `fits`, or
+the string is one of the names of the values a number cannot write.
+-}
+floatIn : String -> (Float -> Bool) -> Result String Float -> Decoder Float
+floatIn kind fits written =
+    let
+        checked number =
+            if isInfinite number || not (fits number) then
+                Json.Decode.fail ("Expecting " ++ kind ++ ", but got a number past its range")
+
+            else
+                Json.Decode.succeed number
+    in
+    case written of
+        Ok number ->
+            checked number
+
+        Err "NaN" ->
             Json.Decode.succeed (0 / 0)
 
-        "Infinity" ->
+        Err "Infinity" ->
             Json.Decode.succeed (1 / 0)
 
-        "-Infinity" ->
+        Err "-Infinity" ->
             Json.Decode.succeed -(1 / 0)
 
-        _ ->
+        Err text ->
             case String.toFloat text of
                 Just number ->
-                    Json.Decode.succeed number
+                    if isNaN number then
+                        Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")
+
+                    else
+                        checked number
 
                 Nothing ->
                     Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")
@@ -1784,20 +1932,26 @@ expects them:
     Json.Decode.decodeString fieldMask "\"displayName,author.emailAddress\""
     -- Ok [ "display_name", "author.email_address" ]
 
-The empty string is the empty mask.
+The empty string is the empty mask. A path with an `_` fails: lowerCamelCase
+has none, so it can only be a proto field name, which proto3 JSON does not
+write here.
 
 -}
 fieldMask : Decoder (List String)
 fieldMask =
     Json.Decode.string
-        |> Json.Decode.map
+        |> Json.Decode.andThen
             (\text ->
                 if String.isEmpty text then
-                    []
+                    Json.Decode.succeed []
+
+                else if String.contains "_" text then
+                    Json.Decode.fail ("Expecting a FieldMask of lowerCamelCase paths, but got " ++ quote text)
 
                 else
                     String.split "," text
                         |> List.map (mapSegments snakeCase)
+                        |> Json.Decode.succeed
             )
 
 
@@ -1878,6 +2032,24 @@ encodeEmpty () =
     Json.Encode.object []
 
 
+{-| Decode the enum `google.protobuf.NullValue`, held as `()`: its one value,
+`NULL_VALUE`, is written `null`, and a parser also accepts its name and number,
+as it does for any enum ([`enum`](#enum)).
+-}
+nullValue : Decoder ()
+nullValue =
+    Json.Decode.nullable (enum "NullValue" () [ ( "NULL_VALUE", 0, () ) ])
+        |> Json.Decode.map (\_ -> ())
+
+
+{-| Encode the enum `google.protobuf.NullValue` as proto3 JSON writes it,
+`null`.
+-}
+encodeNullValue : () -> Value
+encodeNullValue () =
+    Json.Encode.null
+
+
 {-| Decode a `google.protobuf.Struct`, a JSON object, into its members. Any
 other JSON, such as an array, fails.
 
@@ -1914,7 +2086,10 @@ encodeListValue =
 
 {-| Decode a `google.protobuf.Any`: an object with `"@type"`, holding the
 message's fields or, for a well-known type with a JSON form of its own,
-`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`.
+`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`,
+and so does one whose `"@type"` is not a type URL: it must hold a `/` with a
+type name after the last one. A well-formed URL of a type the client does not
+know is kept, to unpack later or not at all.
 Unpack it with [`Proto.Any.unpack`](Proto-Any#unpack).
 -}
 any : Decoder Any
@@ -1938,7 +2113,10 @@ anyFromPairs pairs =
                     Json.Decode.fail "Expecting an Any whose \"@type\" is a string"
 
                 Ok url ->
-                    if hasJsonForm url then
+                    if not (isTypeUrl url) then
+                        Json.Decode.fail ("Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\", but got " ++ quote url)
+
+                    else if hasJsonForm url then
                         case pairValue "value" pairs of
                             Just json ->
                                 Json.Decode.succeed (InternalAny.Any url (InJson json))
@@ -1953,6 +2131,14 @@ anyFromPairs pairs =
                             |> InJson
                             |> InternalAny.Any url
                             |> Json.Decode.succeed
+
+
+{-| A type URL, as proto3 JSON requires `"@type"` to hold one: a `/` with a
+type name after the last one.
+-}
+isTypeUrl : String -> Bool
+isTypeUrl url =
+    String.contains "/" url && not (String.endsWith "/" url)
 
 
 {-| The value under `key` among a JSON object's pairs.

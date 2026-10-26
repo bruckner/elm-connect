@@ -11,7 +11,8 @@ use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
 impl Emitter {
     /// `type FooKind = FooKindUnset | FooKindBar Bar | ...`: the unset case
     /// first, then a constructor per member carrying its value, or nothing
-    /// for a member of `google.protobuf.Empty`. `message` holds it, and
+    /// for a member of `google.protobuf.Empty` or `google.protobuf.NullValue`.
+    /// `message` holds it, and
     /// `package` is its package's module.
     pub(super) fn oneof_type(
         &mut self,
@@ -50,19 +51,23 @@ impl Emitter {
     /// the set member under its JSON name, or nothing when unset, for the
     /// message's encoder to add to its `Proto.Json.objectOfFields`. The set member
     /// is always `Just`, even at its type's default: being set is what a
-    /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`.
+    /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`, one
+    /// of `google.protobuf.NullValue` as `null`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
             .iter()
             .map(|&(variant, value)| {
-                let (pattern, encoded) = if is_empty(value) {
+                let (pattern, encoded) = if matches!(value, ValueShape::Zeroed(Zeroed::Empty)) {
                     let object = self.reference((JSON_ENCODE, "object"));
                     (
                         pctor(variant.elm_ctor.clone(), []),
                         apply(object, [list([])]),
                     )
+                } else if matches!(value, ValueShape::Zeroed(Zeroed::Null)) {
+                    let null = self.reference((JSON_ENCODE, "null"));
+                    (pctor(variant.elm_ctor.clone(), []), null)
                 } else {
                     (
                         pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
@@ -111,7 +116,8 @@ impl Emitter {
     /// `emptyMember` step given its constructor, read as set when its key
     /// holds an object. A member of `google.protobuf.Value` is a
     /// `valueMember` step given its constructor, for which `null` is set,
-    /// as protobuf's parsers read it.
+    /// as protobuf's parsers read it, and a member of
+    /// `google.protobuf.NullValue` a `nullValueMember` step likewise.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
         let steps: Vec<Expr> = shape
             .variants
@@ -121,6 +127,7 @@ impl Emitter {
                 let (helper, arg) = match value {
                     ValueShape::Zeroed(Zeroed::Empty) => ("emptyMember", ctor),
                     ValueShape::Zeroed(Zeroed::Json) => ("valueMember", ctor),
+                    ValueShape::Zeroed(Zeroed::Null) => ("nullValueMember", ctor),
                     _ => {
                         let mut decode = self.value_decoder(value);
                         if variant.cyclic {
@@ -173,8 +180,9 @@ impl Emitter {
     }
 }
 
-/// Whether a member is of `google.protobuf.Empty`, which carries nothing,
-/// so its constructor takes no argument.
+/// Whether a member is of `google.protobuf.Empty` or
+/// `google.protobuf.NullValue`, which carry nothing, so its constructor
+/// takes no argument.
 fn is_empty(value: ValueShape) -> bool {
-    matches!(value, ValueShape::Zeroed(Zeroed::Empty))
+    matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null))
 }

@@ -166,11 +166,11 @@ decodeBlob =
         |> Proto.Json.field "data" Proto.Bytes.empty Proto.Json.bytesAsBytes
         |> Proto.Json.fieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
         |> Proto.Json.field "chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
-        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Json.Decode.dict Proto.Json.bytesAsBytes)
+        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict Proto.Json.bytesAsBytes)
         |> Proto.Json.field "wrapped" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
         |> Proto.Json.fieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
         |> Proto.Json.oneof decodeBlobSource
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes a [`BlobSource`](#BlobSource) from the members of its message's JSON object.
@@ -180,5 +180,5 @@ decodeBlobSource =
     Proto.Json.members "source"
         BlobSourceUnset
         [ Proto.Json.member "inline" (Json.Decode.map BlobSourceInline Proto.Json.bytesAsBytes)
-        , Proto.Json.member "url" (Json.Decode.map BlobSourceUrl Json.Decode.string)
+        , Proto.Json.member "url" (Json.Decode.map BlobSourceUrl Proto.Json.string)
         ]

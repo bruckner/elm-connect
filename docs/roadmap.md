@@ -85,14 +85,11 @@ was received. It is an option and never the default: as the default it
 would add a branch to every `case` on every enum in every application.
 A minor (a new option value); per enum through the proto options above.
 
-## Well-known `Google.*` modules and `NullValue`
+## Well-known `Google.*` modules
 
 Today an application generates the `google.rpc` error details and any
-other googleapis types it uses itself, from googleapis files, and a
-field of the enum `google.protobuf.NullValue` is
-`types::unsupported_well_known`. Prebuilt modules for the common
-googleapis packages, and a mapping for `NullValue`, are additions: a
-minor.
+other googleapis types it uses itself, from googleapis files. Prebuilt
+modules for the common googleapis packages are an addition: a minor.
 
 ## Leaving comments out
 

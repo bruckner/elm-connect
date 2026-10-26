@@ -293,13 +293,13 @@ decodeMarks =
 decodeDelimiters : Json.Decode.Decoder Delimiters
 decodeDelimiters =
     Json.Decode.succeed Delimiters
-        |> Proto.Json.field "lists" "" Json.Decode.string
-        |> Proto.Json.field "blocks" "" Json.Decode.string
-        |> Proto.Json.field "code" "" Json.Decode.string
-        |> Proto.Json.field "inline" "" Json.Decode.string
-        |> Proto.Json.field "text" "" Json.Decode.string
-        |> Proto.Json.fieldEither "whitespaceOnly" "whitespace_only" "" Json.Decode.string
-        |> Proto.Json.field "unclosed" "" Json.Decode.string
+        |> Proto.Json.field "lists" "" Proto.Json.string
+        |> Proto.Json.field "blocks" "" Proto.Json.string
+        |> Proto.Json.field "code" "" Proto.Json.string
+        |> Proto.Json.field "inline" "" Proto.Json.string
+        |> Proto.Json.field "text" "" Proto.Json.string
+        |> Proto.Json.fieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.string
+        |> Proto.Json.field "unclosed" "" Proto.Json.string
 
 
 {-| Decodes a [`Docs`](#Docs) from proto3 JSON.
@@ -307,4 +307,4 @@ decodeDelimiters =
 decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
     Json.Decode.succeed Docs
-        |> Proto.Json.field "field" "" Json.Decode.string
+        |> Proto.Json.field "field" "" Proto.Json.string

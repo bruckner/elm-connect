@@ -800,8 +800,22 @@ just the form encoders write.
   A string is read as `Proto.Json.int64` reads one, then range-checked,
   so `"007"` is 7 and `"+5"`, `"1.e3"` and `"0x10"` fail, as they do
   for a 64-bit value and for every integer map key.
+- Strings through `Proto.Json.string`, and `string` map keys through
+  `Proto.Json.stringDict`, which fail on one holding a UTF-16
+  surrogate without its pair (`"\udc00"`): JavaScript's JSON parser
+  reads the escape into the string as it is, and such a string is not
+  Unicode text and has no UTF-8 form. The check reads each string once
+  (`String.all`); in the performance spike's benchmark, decoding a note
+  took about 5 % longer and a page of 1,000 notes about 1 %, and a map
+  of 1,000 string keys and values 17 %.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
-  `"-Infinity"`; 64-bit integers as strings or numbers, in exponent
+  `"-Infinity"`, through `Proto.Json.float` (`double`) and
+  `Proto.Json.float32` (`float`). A number past a double's range fails
+  (JavaScript's JSON parser reads `1e999` as an infinity, which proto3
+  JSON writes only as a string), and for a `float` so does a finite
+  value whose magnitude is past 3.4028234663852886e38, the largest
+  `float`; a value within it is kept, not rounded to a `float`.
+- 64-bit integers as strings or numbers, in exponent
   notation too (`"1e3"`, `"1.5e3"`, `1E2`, `"-2e0"`). The
   `String` form (`Proto.Json.int64`) is always the canonical decimal
   string (`"1000"`, `"1500"`, `"100"`, `"-2"`; `"007"` reads as `"7"`),
@@ -826,8 +840,8 @@ just the form encoders write.
   when they differ, JSON name first:
 
   ```elm
-  |> Proto.Json.field "title" "" Json.Decode.string
-  |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+  |> Proto.Json.field "title" "" Proto.Json.string
+  |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
@@ -839,10 +853,20 @@ just the form encoders write.
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
+- A key written twice in one object (`{"title":"a","title":"b"}`) is
+  not refused, as protobuf's parsers refuse it: it reads as its last
+  value. JavaScript's JSON parser keeps only the last, so the decoders
+  never see the first, and only the response text does. Finding one
+  takes a pass over every body that tells strings from structure and
+  keeps each object's keys; that pass alone, without the keys, costs
+  more than the decode (in the performance spike's benchmark, 2.3 µs
+  against 5.6 µs for a note, 565 µs against 2,989 µs for a page of
+  1,000 notes, and four times `JSON.parse`'s own time), for a body no
+  protobuf writer produces.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
   `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `field "tags" [] (Json.Decode.list Json.Decode.string)`,
+  repeated one `field "tags" [] (Json.Decode.list Proto.Json.string)`,
   and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields
@@ -960,6 +984,7 @@ The runtime provides the Elm types.
 | `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; see below |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | the message's JSON plus `"@type"` on the wire |
+| `google.protobuf.NullValue` (an enum) | `()`, without presence | `null` on the wire; see below |
 
 The runtime package is required anyway (§5), so the RFC 3339 parser
 lives there and a `Timestamp` is a `Time.Posix`, not a `String`.
@@ -978,6 +1003,23 @@ In detail:
   member's key holding an object; a member present as `null` reads as
   unset, as for any member (`Proto.Json.emptyMember`). Whether such a field was sent is lost
   (§3.8).
+- `NullValue`, the enum whose one value `NULL_VALUE` proto3 JSON writes
+  as `null`, is `()` as `Empty` is, and for the same reason: it carries
+  nothing. A singular field of it, `optional` too, has no presence and
+  is left out like any field at its default, so an `optional` one that
+  protojson would write as `null` is not written; it decodes as `()`
+  from `null`, `"NULL_VALUE"`, `0` or an absent key. Repeated it is
+  `List ()` written as `null`s, as a map value `Dict K ()`. A oneof
+  member of it is a constructor without an argument, written `null`,
+  and `null` sets it, as protojson reads it
+  (`Proto.Json.nullValueMember`, the one member besides a `Value`'s for
+  which `null` is not absent). The codecs are `Proto.Json.nullValue`
+  and `encodeNullValue`; a descriptor names it through
+  `Proto.WellKnown.nullValue : Proto.Enum.Enum ()`, whose `toName` is
+  `""` since its encoder writes no string. Why `()` and not a generated
+  `type NullValue = NullValue`: `google.protobuf` is never generated as
+  a package, so the type would be the runtime's, and a one-constructor type
+  says nothing `()` does not.
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
 - `Struct` is `Dict String Json.Encode.Value` and `ListValue` is
@@ -1011,7 +1053,8 @@ In detail:
   truncated (toward the past, never rounded up; §3.8) and a timestamp prints with no fraction or three
   digits; protobuf's six and nine never arise. A leap second
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
-  `23:59:59` with its fraction.
+  `23:59:59` with its fraction. The `T` and the `Z` are uppercase only:
+  RFC 3339 allows `t` and `z`, proto3 JSON does not.
 - `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
   nanoseconds like protobuf, rather than as a `Float` of seconds. The
   `Float` views (`fromSeconds`, `toSeconds`) are exact to the nanosecond
@@ -1031,6 +1074,8 @@ In detail:
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
+  A mask whose wire form holds an `_` fails to decode: lowerCamelCase
+  has none, and protobuf's parsers refuse it.
 - `Any` is in the runtime as `Proto.Any`: an opaque `Any`
   holding the type URL and the packed message, either as its JSON or, when only
   its protobuf binary arrived, as that binary (base64) alone. `pack`
@@ -1051,7 +1096,10 @@ In detail:
   `Proto.Json.encodeAny`, beside every other well-known type's, and that
   list lives with them. `Proto.Json.any` fails
   on an object without `"@type"`, except `{}`, which is the empty `Any`
-  (no type URL; the typed value's default), as protojson reads it. A
+  (no type URL; the typed value's default), as protojson reads it, and
+  on a `"@type"` that is not a type URL: empty, without a `/`, or with
+  nothing after the last one. A well-formed URL of a type the client
+  does not know is kept, and unpacks as it always did. A
   binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
   a Connect error detail, `{"type": <name>, "value": <base64>}`, which
   `Proto.Json.any` does not read back. They are in `Proto.Json` so that
@@ -2965,8 +3013,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated from
-  the suite's `test_messages_proto3.proto` (its two `NullValue` fields
-  stripped, since the generator refuses that type), with an oracle
+  the suite's `test_messages_proto3.proto`, with an oracle
   independent of prost-reflect: protobuf's own parsers. Only proto3 JSON
   in and out runs, 289 cases; binary, JSPB, text, proto2 and editions
   are answered skipped. The cases it fails are
@@ -2974,7 +3021,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   the suite disagrees with (millisecond timestamps, §3.5; unquoted
   64-bit numbers past 2^53; unknown enum numbers read as the zero
   value) or a fix candidate (inputs the decoders accept and the
-  specification refuses; `NullValue`). `just protobuf-conformance` is
+  specification refuses). `just protobuf-conformance` is
   opt-in, outside `check` and `live`, and CI runs it only when
   dispatched.
 

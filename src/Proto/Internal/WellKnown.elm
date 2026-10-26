@@ -12,6 +12,7 @@ module Proto.Internal.WellKnown exposing
     , int64Value
     , listValue
     , messages
+    , nullValue
     , stringValue
     , struct
     , timestamp

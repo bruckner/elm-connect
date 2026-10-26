@@ -150,10 +150,10 @@ encodeEnvelopeBody value =
 decodeEnvelope : Json.Decode.Decoder Envelope
 decodeEnvelope =
     Json.Decode.succeed Envelope
-        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.field "id" "" Proto.Json.string
         |> Proto.Json.field "payload" Nothing (Json.Decode.map Just Proto.Json.any)
         |> Proto.Json.field "attachments" [] (Json.Decode.list Proto.Json.any)
-        |> Proto.Json.field "headers" Dict.empty (Json.Decode.dict Proto.Json.any)
+        |> Proto.Json.field "headers" Dict.empty (Proto.Json.stringDict Proto.Json.any)
         |> Proto.Json.oneof decodeEnvelopeBody
 
 
@@ -164,5 +164,5 @@ decodeEnvelopeBody =
     Proto.Json.members "body"
         EnvelopeBodyUnset
         [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked Proto.Json.any)
-        , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Json.Decode.string)
+        , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.string)
         ]

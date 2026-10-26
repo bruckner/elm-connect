@@ -109,6 +109,6 @@ encodeDraft value =
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Json.Decode.succeed Draft
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "body" "" Json.Decode.string
-        |> Proto.Json.field "owner" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "body" "" Proto.Json.string
+        |> Proto.Json.field "owner" "" Proto.Json.string

@@ -49,7 +49,8 @@ pub(super) enum FieldShape<'p> {
 /// name one integer fail (design §3.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum KeyShape {
-    /// `String`: `string` keys, taken as they are.
+    /// `String`: `string` keys, refused when one holds a surrogate
+    /// without its pair, as a `string` value is.
     String,
     /// `Int`: signed 32-bit integer keys.
     Int32,
@@ -110,6 +111,11 @@ pub(super) enum Zeroed<'p> {
     /// as `()` (design §3.5). A oneof member of it is a constructor without
     /// arguments.
     Empty,
+    /// `google.protobuf.NullValue`: `()`, as for [`Zeroed::Empty`], since
+    /// its one value carries nothing; a singular field of it, `optional`
+    /// too, has no presence, and its zero value is never written. It is
+    /// written `null`, which also sets a oneof member of it (design §3.5).
+    Null,
 }
 
 /// A message type, which a singular field holds with presence (design
@@ -163,6 +169,7 @@ fn well_known(well_known: WellKnown, holding: Holding) -> ValueShape<'static> {
         WellKnown::BoolValue => wrapper(ScalarKind::Bool),
         WellKnown::StringValue => wrapper(ScalarKind::String),
         WellKnown::BytesValue => wrapper(ScalarKind::Bytes),
+        WellKnown::NullValue => return ValueShape::Zeroed(Zeroed::Null),
     };
     ValueShape::Present(present)
 }
@@ -214,7 +221,7 @@ impl Emitter {
                 let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
             }
-            FieldShape::Plain(Zeroed::Scalar(Repr::Float)) => {
+            FieldShape::Plain(Zeroed::Scalar(Repr::Float | Repr::Float32)) => {
                 return apply(self.reference((PROTO_JSON, "implicitFloatField")), [value]);
             }
             // Not `implicitField`, which compares with `==`: Elm finds any two
@@ -278,7 +285,7 @@ impl Emitter {
             FieldShape::Dict(key, value) => {
                 let value = self.value_decoder(value);
                 let dict = match key {
-                    KeyShape::String => self.reference((JSON_DECODE, "dict")),
+                    KeyShape::String => self.reference((PROTO_JSON, "stringDict")),
                     KeyShape::Int32 => self.reference((PROTO_JSON, "int32Dict")),
                     KeyShape::UInt32 => self.reference((PROTO_JSON, "uint32Dict")),
                     KeyShape::Int64 => self.reference((PROTO_JSON, "int64Dict")),
@@ -305,7 +312,7 @@ impl Emitter {
             FieldShape::Plain(Zeroed::Json) => {
                 unreachable!("a singular field of google.protobuf.Value is FieldShape::Json")
             }
-            FieldShape::Plain(Zeroed::Empty) => Expr::Unit,
+            FieldShape::Plain(Zeroed::Empty | Zeroed::Null) => Expr::Unit,
             FieldShape::Maybe(_) | FieldShape::Json => var(self.core("Nothing")),
             FieldShape::List(_) | FieldShape::BoolMap(_) => list([]),
             FieldShape::Dict(..) => self.reference((CORE_DICT, "empty")),
@@ -337,7 +344,7 @@ impl Emitter {
                 ty(self.core("List"), [value])
             }
             ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
-            ValueShape::Zeroed(Zeroed::Empty) => Type::Unit,
+            ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null) => Type::Unit,
             ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
         }
     }
@@ -376,6 +383,7 @@ impl Emitter {
             }
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAny")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
+            ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "encodeNullValue")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
         }
     }
@@ -397,6 +405,7 @@ impl Emitter {
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
+            ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "nullValue")),
             ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
         }
     }
@@ -428,6 +437,11 @@ pub(super) fn field_shape<'m>(
         // none to add.
         (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Empty)) => {
             FieldShape::Plain(Zeroed::Empty)
+        }
+        // `NullValue` has one value, so `optional` has nothing to tell
+        // apart.
+        (Cardinality::Singular | Cardinality::Optional, ValueShape::Zeroed(Zeroed::Null)) => {
+            FieldShape::Plain(Zeroed::Null)
         }
         // `null` sets a `Value`, so a singular one has presence whether or
         // not it is `optional`.

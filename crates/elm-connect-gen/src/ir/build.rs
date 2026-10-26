@@ -2100,7 +2100,9 @@ impl Builder {
             let name = full_name
                 .strip_prefix("google.protobuf.")
                 .unwrap_or(&full_name);
-            if let Some(well_known) = WellKnown::from_name(name).filter(|_| is_message) {
+            if let Some(well_known) =
+                WellKnown::from_name(name).filter(|known| known.is_enum() != is_message)
+            {
                 return Some(TypeRef::WellKnown(well_known));
             }
             let site = self.site(file, type_path, format!("`{full_name}` here"));

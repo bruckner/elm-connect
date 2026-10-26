@@ -264,7 +264,7 @@ decodeAudience =
 decodeMemo : Json.Decode.Decoder Memo
 decodeMemo =
     Json.Decode.succeed Memo
-        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.field "title" "" Proto.Json.string
         |> Proto.Json.field "visibility" AudienceUnspecified decodeAudience
         |> Proto.Json.field "revisions" [] (Json.Decode.list decodeEdit)
         |> Proto.Json.oneof decodeMemoBody
@@ -276,8 +276,8 @@ decodeMemoBody : Json.Decode.Decoder MemoBody
 decodeMemoBody =
     Proto.Json.members "kind"
         MemoBodyUnset
-        [ Proto.Json.member "text" (Json.Decode.map MemoBodyText Json.Decode.string)
-        , Proto.Json.member "link" (Json.Decode.map BodyUrl Json.Decode.string)
+        [ Proto.Json.member "text" (Json.Decode.map MemoBodyText Proto.Json.string)
+        , Proto.Json.member "link" (Json.Decode.map BodyUrl Proto.Json.string)
         ]
 
 
@@ -294,4 +294,4 @@ decodeEdit =
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string

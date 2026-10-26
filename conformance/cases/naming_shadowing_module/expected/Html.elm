@@ -102,4 +102,4 @@ encodeAttributes value =
 decodeAttributes : Json.Decode.Decoder Attributes
 decodeAttributes =
     Json.Decode.succeed Attributes
-        |> Proto.Json.field "class" "" Json.Decode.string
+        |> Proto.Json.field "class" "" Proto.Json.string

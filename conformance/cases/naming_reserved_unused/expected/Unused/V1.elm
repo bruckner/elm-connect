@@ -304,7 +304,7 @@ decodeChar =
 decodeDict : Json.Decode.Decoder Dict
 decodeDict =
     Json.Decode.succeed Dict
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes a [`Result`](#Result) from proto3 JSON.

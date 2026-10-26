@@ -214,8 +214,8 @@ encodeGetEntryRequest value =
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
     Json.Decode.succeed Entry
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "descriptor" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "descriptor" "" Proto.Json.string
 
 
 {-| Decodes a [`Part`](#Part) from proto3 JSON.
@@ -232,7 +232,7 @@ decodePartKind : Json.Decode.Decoder PartKind
 decodePartKind =
     Proto.Json.members "kind"
         PartKindUnset
-        [ Proto.Json.member "descriptor" (Json.Decode.map PartKindDescriptor Json.Decode.string)
+        [ Proto.Json.member "descriptor" (Json.Decode.map PartKindDescriptor Proto.Json.string)
         , Proto.Json.member "count" (Json.Decode.map PartKindCount Proto.Json.int32)
         ]
 
@@ -242,6 +242,6 @@ decodePartKind =
 decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
     Json.Decode.succeed GetEntryRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "descriptor" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
+        |> Proto.Json.field "descriptor" "" Proto.Json.string
         |> Proto.Json.field "part" Nothing (Json.Decode.map Just decodePart)

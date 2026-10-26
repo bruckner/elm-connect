@@ -235,7 +235,7 @@ encodeListEventsResponse value =
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Json.Decode.succeed Event
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.oneof decodeEventKind
 
 
@@ -245,7 +245,7 @@ decodeEventKind : Json.Decode.Decoder EventKind
 decodeEventKind =
     Proto.Json.members "kind"
         EventKindUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Json.Decode.string)
+        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.string)
         , Proto.Json.member "count" (Json.Decode.map EventKindCount Proto.Json.int32)
         ]
 
@@ -255,7 +255,7 @@ decodeEventKind =
 decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
     Json.Decode.succeed ListEventsRequest
-        |> Proto.Json.field "parent" "" Json.Decode.string
+        |> Proto.Json.field "parent" "" Proto.Json.string
         |> Proto.Json.oneof decodeListEventsRequestFilter
 
 
@@ -265,7 +265,7 @@ decodeListEventsRequestFilter : Json.Decode.Decoder ListEventsRequestFilter
 decodeListEventsRequestFilter =
     Proto.Json.members "filter"
         ListEventsRequestFilterUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Json.Decode.string)
+        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Proto.Json.string)
         ]
 
 

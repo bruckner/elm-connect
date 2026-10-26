@@ -29,9 +29,10 @@ impl Holding {
 /// How Elm holds a scalar.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Repr {
-    /// `Float`, from `double` and `float`; non-finite values travel as
-    /// strings.
+    /// `Float`, from `double`; non-finite values travel as strings.
     Float,
+    /// As `Float`, from `float`: decoded only within a `float`'s range.
+    Float32,
     /// `Int`, from the signed 32-bit integers, range-checked when decoded.
     Int32,
     /// `Int`, from the unsigned 32-bit integers, range-checked when
@@ -52,7 +53,8 @@ pub(super) enum Repr {
     UInt64AsInt,
     /// `Bool`.
     Bool,
-    /// `String`.
+    /// `String`: decoded only when it holds no UTF-16 surrogate without
+    /// its pair.
     String,
     /// `String` holding base64, as on the wire.
     Bytes,
@@ -65,7 +67,8 @@ pub(super) enum Repr {
 pub(super) fn repr(kind: ScalarKind, holding: Holding) -> Repr {
     let int64 = holding.int64;
     match kind {
-        ScalarKind::Double | ScalarKind::Float => Repr::Float,
+        ScalarKind::Double => Repr::Float,
+        ScalarKind::Float => Repr::Float32,
         ScalarKind::Int32 | ScalarKind::SInt32 | ScalarKind::SFixed32 => Repr::Int32,
         ScalarKind::UInt32 | ScalarKind::Fixed32 => Repr::UInt32,
         ScalarKind::Int64 | ScalarKind::SInt64 | ScalarKind::SFixed64 => match int64 {
@@ -90,7 +93,7 @@ impl Emitter {
     pub(super) fn scalar_type(&mut self, repr: Repr) -> Type {
         let name = match repr {
             Repr::BytesAsBytes => return self.library_type(ELM_BYTES, "Bytes", []),
-            Repr::Float => "Float",
+            Repr::Float | Repr::Float32 => "Float",
             Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => "Int",
             Repr::Bool => "Bool",
             Repr::Int64 | Repr::UInt64 | Repr::String | Repr::Bytes => "String",
@@ -102,7 +105,7 @@ impl Emitter {
     /// reads as.
     pub(super) fn scalar_zero(&mut self, repr: Repr) -> Expr {
         match repr {
-            Repr::Float => Expr::Float(0.0),
+            Repr::Float | Repr::Float32 => Expr::Float(0.0),
             Repr::Int32 | Repr::UInt32 | Repr::Int64AsInt | Repr::UInt64AsInt => int(0),
             Repr::Bool => var(self.core("False")),
             // The decimal string of 0: an empty string would re-encode as an
@@ -118,7 +121,7 @@ impl Emitter {
 /// The library function that encodes a scalar: its module and name.
 pub(super) fn encoder(repr: Repr) -> (&'static str, &'static str) {
     match repr {
-        Repr::Float => (PROTO_JSON, "encodeFloat"),
+        Repr::Float | Repr::Float32 => (PROTO_JSON, "encodeFloat"),
         Repr::Int32 | Repr::UInt32 => (JSON_ENCODE, "int"),
         Repr::Int64 | Repr::UInt64 => (PROTO_JSON, "encodeInt64"),
         Repr::Int64AsInt | Repr::UInt64AsInt => (PROTO_JSON, "encodeInt64AsInt"),
@@ -133,6 +136,7 @@ pub(super) fn encoder(repr: Repr) -> (&'static str, &'static str) {
 pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
     match repr {
         Repr::Float => (PROTO_JSON, "float"),
+        Repr::Float32 => (PROTO_JSON, "float32"),
         Repr::Int32 => (PROTO_JSON, "int32"),
         Repr::UInt32 => (PROTO_JSON, "uint32"),
         Repr::Int64 => (PROTO_JSON, "int64"),
@@ -140,7 +144,7 @@ pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
         Repr::UInt64 => (PROTO_JSON, "uint64"),
         Repr::UInt64AsInt => (PROTO_JSON, "uint64AsInt"),
         Repr::Bool => (JSON_DECODE, "bool"),
-        Repr::String => (JSON_DECODE, "string"),
+        Repr::String => (PROTO_JSON, "string"),
         Repr::Bytes => (PROTO_JSON, "bytes"),
         Repr::BytesAsBytes => (PROTO_JSON, "bytesAsBytes"),
     }

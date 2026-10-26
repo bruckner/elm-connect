@@ -569,9 +569,9 @@ decodeOuterInnerDeepest =
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
     Json.Decode.succeed Node
-        |> Proto.Json.field "label" "" Json.Decode.string
+        |> Proto.Json.field "label" "" Proto.Json.string
         |> Proto.Json.field "children" [] (Json.Decode.list decodeNode_)
-        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Json.Decode.dict decodeNode_)
+        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict decodeNode_)
 
 
 {-| Decodes a [`Node_`](#Node_) from proto3 JSON.
@@ -586,7 +586,7 @@ decodeNode_ =
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
     Json.Decode.succeed Person
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "employer" Nothing (Json.Decode.map Just decodeCompany_)
 
 
@@ -602,7 +602,7 @@ decodePerson_ =
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
     Json.Decode.succeed Company
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "staff" [] (Json.Decode.list decodePerson_)
 
 

@@ -290,7 +290,7 @@ encodeIntroduceResponse value =
 decodeSayRequest : Json.Decode.Decoder SayRequest
 decodeSayRequest =
     Json.Decode.succeed SayRequest
-        |> Proto.Json.field "sentence" "" Json.Decode.string
+        |> Proto.Json.field "sentence" "" Proto.Json.string
 
 
 {-| Decodes a [`SayResponse`](#SayResponse) from proto3 JSON.
@@ -298,7 +298,7 @@ decodeSayRequest =
 decodeSayResponse : Json.Decode.Decoder SayResponse
 decodeSayResponse =
     Json.Decode.succeed SayResponse
-        |> Proto.Json.field "sentence" "" Json.Decode.string
+        |> Proto.Json.field "sentence" "" Proto.Json.string
 
 
 {-| Decodes a [`ConverseRequest`](#ConverseRequest) from proto3 JSON.
@@ -306,7 +306,7 @@ decodeSayResponse =
 decodeConverseRequest : Json.Decode.Decoder ConverseRequest
 decodeConverseRequest =
     Json.Decode.succeed ConverseRequest
-        |> Proto.Json.field "sentence" "" Json.Decode.string
+        |> Proto.Json.field "sentence" "" Proto.Json.string
 
 
 {-| Decodes a [`ConverseResponse`](#ConverseResponse) from proto3 JSON.
@@ -314,7 +314,7 @@ decodeConverseRequest =
 decodeConverseResponse : Json.Decode.Decoder ConverseResponse
 decodeConverseResponse =
     Json.Decode.succeed ConverseResponse
-        |> Proto.Json.field "sentence" "" Json.Decode.string
+        |> Proto.Json.field "sentence" "" Proto.Json.string
 
 
 {-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from proto3 JSON.
@@ -322,7 +322,7 @@ decodeConverseResponse =
 decodeIntroduceRequest : Json.Decode.Decoder IntroduceRequest
 decodeIntroduceRequest =
     Json.Decode.succeed IntroduceRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
 
 
 {-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from proto3 JSON.
@@ -330,4 +330,4 @@ decodeIntroduceRequest =
 decodeIntroduceResponse : Json.Decode.Decoder IntroduceResponse
 decodeIntroduceResponse =
     Json.Decode.succeed IntroduceResponse
-        |> Proto.Json.field "sentence" "" Json.Decode.string
+        |> Proto.Json.field "sentence" "" Proto.Json.string

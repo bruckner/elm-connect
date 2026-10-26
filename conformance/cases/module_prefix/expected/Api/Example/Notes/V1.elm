@@ -147,7 +147,7 @@ encodeGetNoteRequest value =
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
         |> Proto.Json.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
 
@@ -157,4 +157,4 @@ decodeNote =
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Json.Decode.string
+        |> Proto.Json.field "name" "" Proto.Json.string

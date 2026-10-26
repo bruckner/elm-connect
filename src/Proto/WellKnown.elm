@@ -1,6 +1,6 @@
 module Proto.WellKnown exposing
     ( empty, timestamp, duration, fieldMask, any
-    , struct, value, listValue
+    , struct, value, listValue, nullValue
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue
     )
@@ -15,7 +15,7 @@ is a well-known type.
 
 # JSON
 
-@docs struct, value, listValue
+@docs struct, value, listValue, nullValue
 
 
 # Wrappers
@@ -33,6 +33,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Duration as Duration exposing (Duration)
+import Proto.Enum exposing (Enum, enum)
 import Proto.Internal.Any
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
@@ -99,6 +100,17 @@ listValue =
     message Proto.Json.encodeListValue Proto.Json.listValue [] Descriptors.listValue
 
 
+{-| The enum `google.protobuf.NullValue`: `()`, its one value `NULL_VALUE`,
+written `null`. Since its encoder writes no string,
+[`Proto.Enum.toName`](Proto-Enum#toName) gives `""` for it; `fromName` and
+`fromNumber` read `"NULL_VALUE"` and `0`. Generated descriptors of a field of it
+name its descriptor through this value.
+-}
+nullValue : Enum ()
+nullValue =
+    enum Proto.Json.encodeNullValue Proto.Json.nullValue () Descriptors.nullValue
+
+
 {-| `google.protobuf.DoubleValue`.
 -}
 doubleValue : Message Float
@@ -110,7 +122,7 @@ doubleValue =
 -}
 floatValue : Message Float
 floatValue =
-    message Proto.Json.encodeFloat Proto.Json.float 0 Descriptors.floatValue
+    message Proto.Json.encodeFloat Proto.Json.float32 0 Descriptors.floatValue
 
 
 {-| `google.protobuf.Int64Value`, its decimal string.
@@ -166,7 +178,7 @@ boolValue =
 -}
 stringValue : Message String
 stringValue =
-    message Json.Encode.string Json.Decode.string "" Descriptors.stringValue
+    message Json.Encode.string Proto.Json.string "" Descriptors.stringValue
 
 
 {-| `google.protobuf.BytesValue`, its base64 text.

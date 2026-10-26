@@ -15,13 +15,13 @@ use std::collections::BTreeSet;
 
 use super::{
     Emitter, MessageShape, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD, PROTO_MESSAGE,
-    PROTO_REGISTRY, RecordField, docs,
+    PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
 };
 use crate::elm::ast::{Decl, Expr};
 use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
-    TypeRef,
+    TypeRef, WellKnown,
 };
 use crate::naming::{DESCRIPTOR_VALUE, REGISTRY};
 
@@ -318,6 +318,11 @@ impl Emitter {
                 self.generated_value(&name.descriptor_module(), DESCRIPTOR_VALUE.to_owned()),
             ),
             TypeRef::Message(name) => ("KindMessage", string(name.proto_full_name.clone())),
+            TypeRef::WellKnown(WellKnown::NullValue) => {
+                let value = self.reference((PROTO_WELL_KNOWN, "nullValue"));
+                let descriptor = self.reference((PROTO_ENUM, "toDescriptor"));
+                ("KindEnum", apply(descriptor, [value]))
+            }
             TypeRef::WellKnown(known) => ("KindMessage", string(known.proto_full_name())),
         };
         apply(self.reference((PROTO_FIELD, constructor)), [argument])
