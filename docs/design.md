@@ -3220,17 +3220,20 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   the encoders write.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
-  `conformance/protobuf/`, an Elm worker over the Elm generated from
-  the suite's `test_messages_proto3.proto` (its two `NullValue` fields
-  stripped, since the generator refuses that type), with an oracle
-  independent of prost-reflect: protobuf's own parsers. Only proto3 JSON
-  in and out runs, 289 cases; binary, JSPB, text, proto2 and editions
-  are answered skipped. The cases it fails are
+  `conformance/protobuf/`, an Elm worker over the Elm generated under
+  `codec=both` from the suite's `test_messages_proto3.proto` (its two
+  `NullValue` fields stripped, since the generator refuses that type),
+  with an oracle independent of prost-reflect: protobuf's own parsers.
+  Protobuf binary and proto3 JSON run in and out, every way between
+  them, 1,468 cases; JSPB, text, proto2 and editions are answered
+  skipped. The cases it fails are
   `conformance/protobuf/failure_list.txt`, each group a design choice
-  the suite disagrees with (millisecond timestamps, §3.5; unquoted
-  64-bit numbers past 2^53; unknown enum numbers read as the zero
-  value) or a fix candidate (inputs the decoders accept and the
-  specification refuses; `NullValue`). `just protobuf-conformance` is
+  the suite disagrees with (unknown fields not kept, §5.5; encoders
+  that cannot refuse a value with no JSON form; millisecond timestamps,
+  §3.5; unquoted 64-bit numbers past 2^53; unknown enum numbers read as
+  the zero value and unknown names failing) or a fix candidate (inputs
+  the JSON decoders accept and the specification refuses;
+  `NullValue`). `just protobuf-conformance` is
   opt-in, outside `check` and `live`, and CI runs it only when
   dispatched.
 

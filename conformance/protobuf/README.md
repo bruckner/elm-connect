@@ -1,8 +1,9 @@
 # The protobuf conformance suite's testee
 
 [protobuf's conformance suite](https://github.com/protocolbuffers/protobuf/tree/main/conformance)
-runs the runtime's proto3 JSON codecs, through the Elm generated for its
-test messages, against protobuf's own reference implementation. From the
+runs the runtime's protobuf binary and proto3 JSON codecs, through the Elm
+generated for its test messages, against protobuf's own reference
+implementation. From the
 repository root:
 
 ```sh
@@ -12,7 +13,7 @@ just protobuf-conformance
 ```
 proto/google/protobuf/test_messages_proto3.proto   the suite's proto3 test messages, NullValue fields stripped
 proto/LICENSE                                      protobuf's license (BSD 3-Clause), which covers it
-generated/                                         the Elm elm-connect generates from it, committed
+generated/                                         the Elm elm-connect generates from it (codec=both), committed
 src/Testee.elm                                     the Elm worker that reads and writes each message
 testee.mjs, testee.sh                              the Node driver conformance_test_runner starts
 fetch-runner.sh                                    fetches the runner, checked against its SHA-256
@@ -26,17 +27,27 @@ build/                                             the runner, the compiled work
 `conformance_test_runner` starts `testee.sh` and writes it one
 `ConformanceRequest` after another on stdin, each a message to parse in
 one format and to write back in another. `testee.mjs` reads the few
-fields it needs by hand and hands each request to `Testee.elm` over a
-port, which reads a `protobuf_test_messages.proto3.TestAllTypesProto3`
-from proto3 JSON with the generated decoder and writes it back with the
-generated encoder, or answers that the input failed to parse.
+fields it needs by hand, a protobuf payload as base64, and hands each
+request to `Testee.elm` over a port, which reads a
+`protobuf_test_messages.proto3.TestAllTypesProto3` from protobuf binary
+or proto3 JSON with the generated decoder and writes it back in the
+format asked for with the generated encoder, or answers that the input
+failed to parse. The messages are generated under `codec=both`, so an
+`Any` read from JSON is written to binary through the generated
+`binaryRegistry`.
 
-The runtime has proto3 JSON codecs only, so only JSON in and JSON out
-runs: 289 cases (207 Required, 82 Recommended), counting those that must
-fail to parse. Answered `skipped`:
+1,468 cases run (1,135 Required, 333 Recommended), counting those that
+must fail to parse or to serialize, by the formats of their request:
 
-- a request whose input or output is protobuf binary (a JSON input asked
-  for binary output is not read),
+| input → output | Required | Recommended |
+|---|---:|---:|
+| binary → binary | 482 | 216 |
+| binary → JSON | 298 | 15 |
+| JSON → binary | 148 | 20 |
+| JSON → JSON | 207 | 82 |
+
+Answered `skipped`:
+
 - JSPB and text format,
 - every message but `TestAllTypesProto3`: proto2 and editions
   (`--maximum_edition PROTO3`).
@@ -83,12 +94,13 @@ conformance/protobuf/strip-null-value.sh \
 
 `just protobuf-conformance` writes it again from the runner's copy and
 fails if it differs from the committed one, and fails if `generated/` is
-not what `elm-connect check` expects. `just protobuf-conformance-gen`
-regenerates `generated/` with the CLI built from the checkout, under the
-default options:
+not what `elm-connect check --codec both` expects. `just
+protobuf-conformance-gen` regenerates `generated/` with the CLI built
+from the checkout, with the binary codecs beside the JSON ones and the
+other options at their defaults:
 
 ```sh
-elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --out generated
+elm-connect gen --codec both -I proto google/protobuf/test_messages_proto3.proto --out generated
 ```
 
 The proto is Copyright Google Inc. and licensed under the BSD 3-Clause
@@ -101,18 +113,24 @@ groups. A group's comment says why its cases fail and classifies them:
 
 - **Design choice**: elm-connect does something on purpose that the
   suite disagrees with, and the documentation says so (a `Timestamp` is
-  a millisecond `Time.Posix`, for one).
+  a millisecond `Time.Posix`, for one; unknown fields are not kept).
 - **Fix candidate**: the runtime or the generator could do what the
   suite asks (most are inputs the JSON decoders accept and the
   specification refuses).
+
+The groups of cases whose input is binary come first, then those whose
+input is JSON; a group of the second kind lists the cases written back
+as binary beside those written back as JSON, since one cause fails both.
 
 The runner fails the run on a case that fails and is not listed, and on
 a listed case that passes, so a fix removes its lines in the same change.
 After a run, `build/run/failing_tests.txt` lists the failures with the
 runner's reason for each, and the run's output has the request and the
 testee's response. Running with `TESTEE_FAIL_ALL=1` fails every case
-the testee runs (and skips what it skips), which makes its
-`failing_tests.txt` the list of every case that runs:
+the testee runs (and skips what it skips), answering in the format asked
+for with a payload that is no message, which makes its
+`failing_tests.txt` the list of every case that runs, and its output
+each case's request:
 
 ```sh
 cd conformance/protobuf
