@@ -49,7 +49,7 @@ edit('src/Rpc/Internal/Protocol.elm', [
     ('    , routed : Bool\n', '    , routed : Bool\n    , route : Dict String (List Binding) -> String -> Int -> Value -> Maybe Route\n'),
 ])
 edit('src/Rpc/Internal/Wire.elm', [
-    ('    , usableTimeout\n    )', '    , usableTimeout, tableRoute, noRoute\n    )'),
+    ('    , usableTimeout\n', '    , usableTimeout, tableRoute, noRoute\n'),
     ('import Json.Encode exposing (Value)\n', 'import Dict exposing (Dict)\nimport Json.Encode exposing (Value)\nimport Proto.Http exposing (Binding)\nimport Proto.Internal.Binding\nimport Proto.Internal.Interpret\n'),
 ])
 p = f'{root}/src/Rpc/Internal/Wire.elm'

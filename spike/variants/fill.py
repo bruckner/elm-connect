@@ -73,7 +73,7 @@ edit('src/Rpc/Call.elm', [
 edit('src/Rpc/Internal/Protocol.elm', [
     ('import Bytes exposing (Bytes)\n', 'import Bytes exposing (Bytes)\nimport Bytes.Encode\n'),
     ('    { build : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes -> Request\n', '    { build : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes.Encode.Encoder -> Request\n'),
-    ('    , tooLarge : Options -> Bytes -> Maybe Reason\n', '    , tooLarge : Options -> Bytes.Encode.Encoder -> Maybe Reason\n'),
+    ('    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes) -> Maybe Reason\n', '    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason\n'),
 ])
 edit('src/Rpc/Internal/Wire.elm', [
     ('import Bytes exposing (Bytes)\n', 'import Bytes exposing (Bytes)\nimport Bytes.Encode\n'),
@@ -84,9 +84,8 @@ edit('src/Rpc/Internal/Wire.elm', [
     ('grpcWeb : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes -> Request\ngrpcWeb _ _ settings endpoint binary =\n',
      'grpcWeb : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes.Encode.Encoder -> Request\ngrpcWeb _ _ settings endpoint encoder =\n'),
     ('GrpcWeb.frame binary)', 'GrpcWeb.frame (Bytes.Encode.encode encoder))'),
-    ('bytesTooLarge : Options -> Bytes -> Maybe Reason\nbytesTooLarge options binary =', 'bytesTooLarge : Options -> Bytes.Encode.Encoder -> Maybe Reason\nbytesTooLarge options encoder ='),
-    ('                        Bytes.width binary\n', '                        Bytes.width (Bytes.Encode.encode encoder)\n'),
-    ('bytesUnlimited : Options -> Bytes -> Maybe Reason', 'bytesUnlimited : Options -> a -> Maybe Reason'),
+    ('bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes) -> Maybe Reason', 'bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason'),
+    ('                        width_ (binary ())\n', '                        width_ (Bytes.Encode.encode (binary ()))\n'),
 ])
 p = f'{root}/src/Rpc/Internal/Send.elm'
 s = open(p).read()
