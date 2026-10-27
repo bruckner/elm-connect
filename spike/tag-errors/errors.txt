@@ -1,0 +1,66 @@
+===== BadProtoOverConnect
+-- TYPE MISMATCH ----------------------------------- src/BadProtoOverConnect.elm
+
+This function cannot handle the argument sent through the (|>) pipe:
+
+18|     Good.sayProto { sentence = "hi" }
+19|         |> Rpc.send (Rpc.client Rpc.Protocol.connect "https://demo.connectrpc.com") GotReply
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The argument is:
+
+    Rpc.Call Rpc.Proto Connectrpc.Eliza.V1.SayRequest SayResponse
+
+But (|>) is piping it to a function that expects:
+
+    Rpc.Call Rpc.Protocol.Json Connectrpc.Eliza.V1.SayRequest SayResponse
+
+Detected problems in 1 module.
+===== BadJsonOverGrpcWeb
+-- TYPE MISMATCH ------------------------------------ src/BadJsonOverGrpcWeb.elm
+
+This function cannot handle the argument sent through the (|>) pipe:
+
+24|     ElizaService.say { sentence = "hi" }
+25|         |> Rpc.send client GotReply
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+The argument is:
+
+    Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest SayResponse
+
+But (|>) is piping it to a function that expects:
+
+    Rpc.Call Rpc.Proto Connectrpc.Eliza.V1.SayRequest SayResponse
+
+Detected problems in 1 module.
+===== BadJsonClientAnnotation
+-- TYPE MISMATCH ------------------------------- src/BadJsonClientAnnotation.elm
+
+Something is off with the body of the `client` definition:
+
+12|     Rpc.client Rpc.Protocol.grpcWeb "https://demo.connectrpc.com"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This `client` call produces:
+
+    Rpc.Client Rpc.Protocol.Proto
+
+But the type annotation on `client` says it should be:
+
+    Rpc.Client Rpc.Json
+
+Detected problems in 1 module.
+===== BadTextForBinary
+-- TYPE MISMATCH -------------------------------------- src/BadTextForBinary.elm
+
+The 1st argument to `response` is not what I expect:
+
+14|     Rpc.response Good.binaryClient (Good.sayBoth { sentence = "hi" })
+                     ^^^^^^^^^^^^^^^^^
+This `binaryClient` value is a:
+
+    Rpc.Client Rpc.Proto
+
+But `response` needs the 1st argument to be:
+
+    Rpc.Client Rpc.Json
+
+Detected problems in 1 module.

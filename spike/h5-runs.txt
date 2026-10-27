@@ -1,0 +1,47 @@
+rep1 package module 264091 bytes, 8446 lines; descriptor modules 246519 bytes
+rep1 json n=100: status 0, 0.63 s, peak RSS 1384 MB, js 233075 bytes
+rep1 package module 550269 bytes, 18655 lines; descriptor modules 246959 bytes
+rep1 binary n=100: status 0, 0.74 s, peak RSS 1436 MB, js 504436 bytes
+rep1 package module 704761 bytes, 21962 lines; descriptor modules 246739 bytes
+rep1 both n=100: status 0, 0.79 s, peak RSS 1443 MB, js 671565 bytes
+rep1 package module 776288 bytes, 24246 lines; descriptor modules 723517 bytes
+rep1 json n=300: status 0, 4.05 s, peak RSS 3128 MB, js 513874 bytes
+rep1 package module 1627262 bytes, 54255 lines; descriptor modules 724757 bytes
+rep1 binary n=300: status 0, 4.32 s, peak RSS 3485 MB, js 1317826 bytes
+rep1 package module 2093752 bytes, 64162 lines; descriptor modules 724137 bytes
+rep1 both n=300: status 0, 9.32 s, peak RSS 3736 MB, js 1765754 bytes
+rep1 package module 1544588 bytes, 47946 lines; descriptor modules 1439017 bytes
+rep1 json n=600: status 0, 25.07 s, peak RSS 4416 MB, js 935074 bytes
+rep1 package module 3242762 bytes, 107655 lines; descriptor modules 1441457 bytes
+rep1 binary n=600: status 0, 38.80 s, peak RSS 8058 MB, js 2537926 bytes
+rep1 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep2 disk floor: 7190096 KiB free, stopping
+rep3 disk floor: 7190096 KiB free, stopping
+rep3 disk floor: 7190096 KiB free, stopping
+rep3 disk floor: 7190096 KiB free, stopping
+rep3 disk floor: 7190092 KiB free, stopping
+rep3 disk floor: 7190092 KiB free, stopping
+rep3 disk floor: 7190092 KiB free, stopping
+rep3 disk floor: 7190088 KiB free, stopping
+rep3 disk floor: 7190088 KiB free, stopping
+rep3 disk floor: 7190088 KiB free, stopping
+rep2 json n=100: status 0, 0.63 s, peak RSS 1384 MB, js 233075 bytes
+rep2 binary n=100: status 0, 0.76 s, peak RSS 1436 MB, js 504436 bytes
+rep2 both n=100: status 0, 0.79 s, peak RSS 1443 MB, js 671565 bytes
+rep2 json n=300: status 0, 3.03 s, peak RSS 4223 MB, js 513874 bytes
+rep2 binary n=300: status 0, 4.56 s, peak RSS 4242 MB, js 1317826 bytes
+rep2 both n=300: status 0, 6.93 s, peak RSS 5986 MB, js 1765754 bytes
+rep3 json n=100: status 0, 0.64 s, peak RSS 1384 MB, js 233075 bytes
+rep3 binary n=100: status 0, 0.75 s, peak RSS 1436 MB, js 504436 bytes
+rep3 both n=100: status 0, 0.92 s, peak RSS 1443 MB, js 671565 bytes
+rep3 json n=300: status 0, 3.07 s, peak RSS 4224 MB, js 513874 bytes
+rep3 binary n=300: status 0, 3.93 s, peak RSS 4154 MB, js 1317826 bytes
+rep3 both n=300: status 0, 6.85 s, peak RSS 5985 MB, js 1765754 bytes
