@@ -15,6 +15,7 @@ module Rpc.Internal.Wire exposing
     , transcode
     , transcodeTimeout
     , usableTimeout
+    , width
     )
 
 {-| The requests the protocols send: Connect's POST, and its GET of a method
@@ -157,6 +158,13 @@ base64 =
     Proto.Bytes.toBase64
 
 
+{-| The size of bytes, the binary protocols' measure for their limits.
+-}
+width : Bytes -> Int
+width =
+    Bytes.width
+
+
 {-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
 binary.
 -}
@@ -273,14 +281,14 @@ jsonTooLarge options json =
 
 {-| Whether a request's protobuf binary is over the write limit.
 -}
-bytesTooLarge : Options -> (() -> Bytes) -> Maybe Reason
-bytesTooLarge options binary =
+bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes) -> Maybe Reason
+bytesTooLarge width_ options binary =
     options.writeMaxBytes
         |> Maybe.andThen
             (\limit ->
                 let
                     size =
-                        Bytes.width (binary ())
+                        width_ (binary ())
                 in
                 if size > max 0 limit then
                     Just (Error.RequestTooLarge { limit = limit, size = size })
@@ -301,8 +309,8 @@ textUnlimited _ _ =
 {-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
 each protocol's field has its own type.
 -}
-bytesUnlimited : Options -> a -> Maybe Reason
-bytesUnlimited _ _ =
+bytesUnlimited : a -> Options -> b -> Maybe Reason
+bytesUnlimited _ _ _ =
     Nothing
 
 

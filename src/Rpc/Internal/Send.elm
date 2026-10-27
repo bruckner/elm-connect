@@ -140,13 +140,13 @@ plan (Client cl) (Call c) =
                     in
                     { request = \() -> wire.build wire.base64 p.options settings m.endpoint (binary ())
                     , invalid = Nothing
-                    , tooLarge = \() -> wire.tooLarge p.options binary
+                    , tooLarge = \() -> wire.tooLarge wire.width p.options binary
                     , reader =
                         BytesReader
                             (\answer ->
                                 let
                                     ( metadata, read ) =
-                                        wire.message wire.overRead p.options m.endpoint answer
+                                        wire.message (wire.overRead wire.width) p.options m.endpoint answer
                                 in
                                 ( metadata
                                 , Result.andThen

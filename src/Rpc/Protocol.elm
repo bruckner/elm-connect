@@ -103,6 +103,7 @@ connectProto =
                 , overRead = Wire.bytesUnlimited
                 , timeoutHeader = Wire.connectTimeout Nothing
                 , base64 = Wire.base64
+                , width = Wire.width
                 }
         }
 
@@ -148,6 +149,7 @@ grpcWeb =
                 , overRead = Wire.bytesUnlimited
                 , timeoutHeader = Wire.grpcWebTimeout
                 , base64 = Wire.base64
+                , width = Wire.width
                 }
         }
 

@@ -254,14 +254,14 @@ textOverRead options raw =
 
 {-| Whether a successful binary answer's message is over the read limit.
 -}
-bytesOverRead : Options -> Bytes -> Maybe Reason
-bytesOverRead options message =
+bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+bytesOverRead width options message =
     options.readMaxBytes
         |> Maybe.andThen
             (\limit ->
                 let
                     size =
-                        Bytes.width message
+                        width message
                 in
                 if size > max 0 limit then
                     Just (Error.ResponseTooLarge { limit = limit, size = size })

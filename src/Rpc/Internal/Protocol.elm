@@ -124,13 +124,16 @@ type alias GoodText =
 {-| A protocol speaking protobuf binary, as `TextWire` but over bytes; `build`
 takes the protocol's own base64 writer, for a GET's query, `message` gives
 the answer's metadata beside its result, and `base64` writes a request's
-binary for a trace.
+binary for a trace. The limits take the protocol's `width` to measure
+bytes with, so that a JSON program naming a limit modifier, which installs
+the binary check too, reaches no elm/bytes code: its kernel comes whole.
 -}
 type alias BinaryWire =
     { build : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes -> Request
     , message : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-    , tooLarge : Options -> (() -> Bytes) -> Maybe Reason
-    , overRead : Options -> Bytes -> Maybe Reason
+    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes) -> Maybe Reason
+    , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+    , width : Bytes -> Int
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String
     }
