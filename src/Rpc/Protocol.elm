@@ -77,7 +77,7 @@ connect =
             Text
                 { build = Wire.connectPost
                 , routed = False
-                , read = Answer.connectRead
+                , message = Answer.connectMessage
                 , tooLarge = Wire.textUnlimited
                 , overRead = Wire.textUnlimited
                 , timeoutHeader = Wire.connectTimeout
@@ -98,7 +98,7 @@ connectProto =
         , wire =
             Binary
                 { build = Wire.connectPostBinary
-                , read = Answer.connectProtoRead
+                , message = Answer.connectProtoMessage
                 , tooLarge = Wire.bytesUnlimited
                 , overRead = Wire.bytesUnlimited
                 , timeoutHeader = Wire.connectTimeout Nothing
@@ -122,7 +122,7 @@ transcode =
             Text
                 { build = Wire.transcode
                 , routed = True
-                , read = Answer.transcodeRead
+                , message = Answer.transcodeMessage
                 , tooLarge = Wire.textUnlimited
                 , overRead = Wire.textUnlimited
                 , timeoutHeader = Wire.transcodeTimeout
@@ -143,7 +143,7 @@ grpcWeb =
         , wire =
             Binary
                 { build = Wire.grpcWeb
-                , read = Answer.grpcWebRead
+                , message = Answer.grpcWebMessage
                 , tooLarge = Wire.bytesUnlimited
                 , overRead = Wire.bytesUnlimited
                 , timeoutHeader = Wire.grpcWebTimeout

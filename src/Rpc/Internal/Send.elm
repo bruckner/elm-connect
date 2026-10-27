@@ -1,60 +1,71 @@
-module Rpc.Internal.Send exposing (Plan, binding, expect, plan, refused, request, requestBase64, resolver, response, responseBytes, withBudget)
+module Rpc.Internal.Send exposing (Plan, Reader(..), plan, refused, withBudget)
 
 {-| How a call goes over a client's protocol: the one place a call's method
 meets the protocol's functions. Not exposed; `Rpc` sends through it.
 
 A call's [`plan`](#plan) is what the protocol's kind of wire, text or bytes,
 makes of the method's codecs: monomorphic from there on, so the rest of
-sending is ordinary functions over it. The only branch every program
-carries is that two-way choice.
+sending is ordinary functions over it. The only branches every program
+carries are that two-way choice here and the choice of elm/http's reader of
+text or of bytes where the answer is read.
 
 The codec phantom keeps a protocol from meeting a method without the codec
-it speaks, so a plan is always a `TextPlan` or a `BytesPlan`. `Unplannable`
-is what the representation still allows: a method value whose half is
-`Nothing`. No program can build that pairing, so it is an internal error
-naming the invariant, never a public reason.
+it speaks, so the half a wire reads is always there. The representation
+still allows a method value whose half is `Nothing`; no program can build
+that pairing, so its plan fails with an internal error naming the
+invariant, never a public reason.
 
 -}
 
 import Bytes exposing (Bytes)
 import Http
-import Json.Decode exposing (Decoder)
+import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Internal.Method exposing (Method(..))
-import Proto.Method exposing (Endpoint)
-import Proto.Route exposing (Route)
+import Proto.Route exposing (PathError)
 import Rpc.Body
-import Rpc.Error as Error exposing (Error)
+import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BinaryWire, Options, Protocol(..), Settings, TextWire, Wire(..))
+import Rpc.Internal.Protocol exposing (Protocol(..), Wire(..))
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Wire as Wire
 import Rpc.Request exposing (Request)
 
 
-type Plan res
-    = TextPlan
-        { wire : TextWire
-        , options : Options
-        , settings : Settings
-        , endpoint : Endpoint
-        , route : Maybe Route
-        , binding : Maybe Int
-        , json : () -> Value
-        , decoder : Decoder res
-        }
-    | BytesPlan
-        { wire : BinaryWire
-        , options : Options
-        , settings : Settings
-        , endpoint : Endpoint
-        , binary : () -> Bytes
-        , decode : Bytes -> Maybe res
-        }
-    | Unplannable String
+{-| A call over a protocol:
+
+  - `request`: the request it sends, built when asked for.
+  - `invalid`: the first path value its route's template cannot match.
+  - `tooLarge`: whether its message is over the protocol's write limit,
+    measured when asked for.
+  - `reader`: how its answer is read, as text or as bytes.
+  - `binding`: the binding it takes, when the protocol took one of its
+    method's routes, for a trace.
+  - `timeoutHeader`: the header the protocol carries its timeout in.
+  - `base64`: the protocol's base64 writer, for a binary body in a trace.
+  - `problem`: the internal error of a pairing the types rule out.
+
+-}
+type alias Plan res =
+    { request : () -> Request
+    , invalid : Maybe PathError
+    , tooLarge : () -> Maybe Reason
+    , reader : Reader res
+    , binding : Maybe Int
+    , timeoutHeader : Maybe ( String, Float -> String )
+    , base64 : Maybe (Bytes -> String)
+    , problem : Maybe Error
+    }
+
+
+{-| An answer's reading: of text, or of bytes with its metadata.
+-}
+type Reader res
+    = TextReader (Http.Response String -> Result Error res)
+    | BytesReader (Http.Response Bytes -> ( Maybe Http.Metadata, Result Error res ))
 
 
 {-| A call's plan over a client. The route is built only over a protocol
@@ -94,50 +105,87 @@ plan (Client cl) (Call c) =
 
                             else
                                 Nothing
+
+                        json () =
+                            half.encode c.message
                     in
-                    TextPlan
-                        { wire = wire
-                        , options = p.options
-                        , settings = settings
-                        , endpoint = m.endpoint
-                        , route = route
-                        , binding = Maybe.map (\_ -> c.binding) route
-                        , json = \() -> half.encode c.message
-                        , decoder = half.decoder
-                        }
+                    { request = \() -> wire.build p.options settings m.endpoint route (json ())
+                    , invalid = Maybe.andThen .invalid route
+                    , tooLarge = \() -> wire.tooLarge p.options (json ())
+                    , reader =
+                        TextReader
+                            (\answer ->
+                                wire.message wire.overRead p.options route answer
+                                    |> Result.andThen
+                                        (\read ->
+                                            Json.Decode.decodeString (Answer.fieldDecoder read.field half.decoder) read.text
+                                                |> Result.mapError (Json.Decode.errorToString >> read.bad)
+                                        )
+                            )
+                    , binding = Maybe.map (\_ -> c.binding) route
+                    , timeoutHeader = wire.timeoutHeader route
+                    , base64 = Nothing
+                    , problem = Nothing
+                    }
 
                 Nothing ->
-                    Unplannable "a protocol speaking JSON met a method without JSON codecs"
+                    unplannable "a protocol speaking JSON met a method without JSON codecs"
 
         Binary wire ->
             case m.binary of
                 Just half ->
-                    BytesPlan
-                        { wire = wire
-                        , options = p.options
-                        , settings = settings
-                        , endpoint = m.endpoint
-                        , binary = \() -> half.encode c.message
-                        , decode = half.decode
-                        }
+                    let
+                        binary () =
+                            half.encode c.message
+                    in
+                    { request = \() -> wire.build wire.base64 p.options settings m.endpoint (binary ())
+                    , invalid = Nothing
+                    , tooLarge = \() -> wire.tooLarge p.options (binary ())
+                    , reader =
+                        BytesReader
+                            (\answer ->
+                                let
+                                    ( metadata, read ) =
+                                        wire.message wire.overRead p.options m.endpoint answer
+                                in
+                                ( metadata
+                                , Result.andThen
+                                    (\message ->
+                                        case half.decode message.bytes of
+                                            Just value ->
+                                                Ok value
+
+                                            Nothing ->
+                                                Err (message.bad ())
+                                    )
+                                    read
+                                )
+                            )
+                    , binding = Nothing
+                    , timeoutHeader = wire.timeoutHeader
+                    , base64 = Just wire.base64
+                    , problem = Nothing
+                    }
 
                 Nothing ->
-                    Unplannable "a protocol speaking protobuf binary met a method without binary codecs"
+                    unplannable "a protocol speaking protobuf binary met a method without binary codecs"
 
 
-{-| The request a plan sends.
--}
-request : Plan res -> Request
-request p =
-    case p of
-        TextPlan t ->
-            t.wire.build t.options t.settings t.endpoint t.route (t.json ())
-
-        BytesPlan b ->
-            b.wire.build b.wire.base64 b.options b.settings b.endpoint (b.binary ())
-
-        Unplannable _ ->
-            { method = "POST", url = "", headers = [], body = Rpc.Body.none, timeout = Nothing, withCredentials = False }
+unplannable : String -> Plan res
+unplannable invariant =
+    let
+        error =
+            Answer.unreachable invariant
+    in
+    { request = \() -> { method = "POST", url = "", headers = [], body = Rpc.Body.none, timeout = Nothing, withCredentials = False }
+    , invalid = Nothing
+    , tooLarge = \() -> Nothing
+    , reader = TextReader (\_ -> Err error)
+    , binding = Nothing
+    , timeoutHeader = Nothing
+    , base64 = Nothing
+    , problem = Just error
+    }
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not
@@ -154,82 +202,18 @@ refused baseUrl p sent =
         Just (Error.NoAnswer (Error.BadUrl sent.url))
 
     else
-        case p of
-            TextPlan t ->
-                case ( Maybe.andThen .invalid t.route, Internal.invalidHeader sent.headers ) of
-                    ( Just path, _ ) ->
-                        Just (Error.NoAnswer (Error.InvalidPathValue path))
+        case ( p.problem, p.invalid, Internal.invalidHeader sent.headers ) of
+            ( Just problem, _, _ ) ->
+                Just problem
 
-                    ( Nothing, Just name ) ->
-                        Just (Error.NoAnswer (Error.InvalidHeader name))
+            ( Nothing, Just path, _ ) ->
+                Just (Error.NoAnswer (Error.InvalidPathValue path))
 
-                    ( Nothing, Nothing ) ->
-                        t.wire.tooLarge t.options (t.json ()) |> Maybe.map Error.NoAnswer
+            ( Nothing, Nothing, Just name ) ->
+                Just (Error.NoAnswer (Error.InvalidHeader name))
 
-            BytesPlan b ->
-                case Internal.invalidHeader sent.headers of
-                    Just name ->
-                        Just (Error.NoAnswer (Error.InvalidHeader name))
-
-                    Nothing ->
-                        b.wire.tooLarge b.options (b.binary ()) |> Maybe.map Error.NoAnswer
-
-            Unplannable invariant ->
-                Just (Answer.unreachable invariant)
-
-
-{-| How elm/http reads a plan's answer, for a command.
--}
-expect : (Result Error res -> msg) -> Plan res -> Http.Expect msg
-expect toMsg p =
-    case p of
-        TextPlan t ->
-            Http.expectStringResponse toMsg (Answer.textResult t.wire t.options t.route t.decoder)
-
-        BytesPlan b ->
-            Http.expectBytesResponse toMsg (Answer.bytesResult b.wire b.options b.endpoint b.decode >> Tuple.second)
-
-        Unplannable invariant ->
-            Http.expectStringResponse toMsg (\_ -> Err (Answer.unreachable invariant))
-
-
-{-| How elm/http reads a plan's answer, for a task, with its metadata.
--}
-resolver : Plan res -> Http.Resolver Never ( Maybe Http.Metadata, Result Error res )
-resolver p =
-    case p of
-        TextPlan t ->
-            Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, Answer.textResult t.wire t.options t.route t.decoder answer ))
-
-        BytesPlan b ->
-            Http.bytesResolver (\answer -> Ok (Answer.bytesResult b.wire b.options b.endpoint b.decode answer))
-
-        Unplannable invariant ->
-            Http.stringResolver (\_ -> Ok ( Nothing, Err (Answer.unreachable invariant) ))
-
-
-{-| A text answer read for a client speaking JSON.
--}
-response : Plan res -> Http.Response String -> Result Error res
-response p answer =
-    case p of
-        TextPlan t ->
-            Answer.textResult t.wire t.options t.route t.decoder answer
-
-        _ ->
-            Err (Answer.unreachable "a text answer read for a protocol that is not speaking JSON")
-
-
-{-| A bytes answer read for a client speaking protobuf binary.
--}
-responseBytes : Plan res -> Http.Response Bytes -> Result Error res
-responseBytes p answer =
-    case p of
-        BytesPlan b ->
-            Tuple.second (Answer.bytesResult b.wire b.options b.endpoint b.decode answer)
-
-        _ ->
-            Err (Answer.unreachable "a bytes answer read for a protocol that is not speaking protobuf binary")
+            ( Nothing, Nothing, Nothing ) ->
+                p.tooLarge () |> Maybe.map Error.NoAnswer
 
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline
@@ -252,7 +236,7 @@ withBudget p left sent =
                 { sent
                     | timeout = Just ms
                     , headers =
-                        case timeoutHeader p of
+                        case p.timeoutHeader of
                             Just ( name, format ) ->
                                 List.filter (\( key, _ ) -> String.toLower key /= String.toLower name) sent.headers
                                     ++ [ ( name, format ms ) ]
@@ -263,42 +247,3 @@ withBudget p left sent =
 
         Nothing ->
             sent
-
-
-timeoutHeader : Plan res -> Maybe ( String, Float -> String )
-timeoutHeader p =
-    case p of
-        TextPlan t ->
-            t.wire.timeoutHeader t.route
-
-        BytesPlan b ->
-            b.wire.timeoutHeader
-
-        Unplannable _ ->
-            Nothing
-
-
-{-| The binding a call went over, for a trace: its number when the protocol
-took one of its method's routes.
--}
-binding : Plan res -> Maybe Int
-binding p =
-    case p of
-        TextPlan t ->
-            t.binding
-
-        _ ->
-            Nothing
-
-
-{-| A request's binary body as base64, for a trace, written by the protocol's
-own encoder so that a program speaking JSON carries none.
--}
-requestBase64 : Plan res -> Request -> Maybe String
-requestBase64 p sent =
-    case p of
-        BytesPlan b ->
-            Maybe.map b.wire.base64 (Rpc.Body.toBytes sent.body)
-
-        _ ->
-            Nothing

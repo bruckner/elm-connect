@@ -1,4 +1,4 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, GoodBytes, GoodText, Options, Protocol(..), Settings, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, TextMessage, TextWire, Wire(..))
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
@@ -75,8 +75,9 @@ type Wire
     endpoint, the call's route (when `routed`) and the request's JSON.
   - `routed`: whether the protocol reads a method's routes, so that a call
     builds its route only where it is read.
-  - `read`: a successful answer's body to decode, or the error the answer
-    stands for.
+  - `message`: what a successful answer holds to decode, or the error the
+    answer stands for; given `overRead`, so that the read limit is checked
+    by whatever function a modifier installed.
   - `tooLarge`: whether the request's JSON is over the write limit;
     installed by `withWriteMaxBytes`, else a function that says no.
   - `overRead`: whether a successful answer's body is over the read limit;
@@ -88,10 +89,21 @@ type Wire
 type alias TextWire =
     { build : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
     , routed : Bool
-    , read : Maybe Route -> Http.Response String -> Result Error GoodText
+    , message : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
     , tooLarge : Options -> Value -> Maybe Reason
     , overRead : Options -> String -> Maybe Reason
     , timeoutHeader : Maybe Route -> Maybe ( String, Float -> String )
+    }
+
+
+{-| A successful text answer's text to decode, the field of the response it
+holds when a binding's `response_body` names one, and the error a decoding
+problem stands for.
+-}
+type alias TextMessage =
+    { text : String
+    , field : Maybe String
+    , bad : String -> Error
     }
 
 
@@ -108,16 +120,26 @@ type alias GoodText =
 
 
 {-| A protocol speaking protobuf binary, as `TextWire` but over bytes; `build`
-takes the protocol's own base64 writer, for a GET's query, and `base64`
-writes a request's binary for a trace.
+takes the protocol's own base64 writer, for a GET's query, `message` gives
+the answer's metadata beside its result, and `base64` writes a request's
+binary for a trace.
 -}
 type alias BinaryWire =
     { build : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes -> Request
-    , read : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
+    , message : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
     , tooLarge : Options -> Bytes -> Maybe Reason
     , overRead : Options -> Bytes -> Maybe Reason
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String
+    }
+
+
+{-| A successful binary answer's message, and the error it stands for when
+the method's decoder does not read it.
+-}
+type alias BytesMessage =
+    { bytes : Bytes
+    , bad : () -> Error
     }
 
 

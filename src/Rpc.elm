@@ -100,11 +100,12 @@ import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code)
 import Rpc.Error
+import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
-import Rpc.Internal.Send as Send exposing (Plan)
+import Rpc.Internal.Send as Send exposing (Plan, Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol exposing (Protocol)
 import Rpc.Request
@@ -213,7 +214,7 @@ task cl c =
         plan =
             Send.plan cl c
     in
-    fromPlan cl c plan (Send.request plan)
+    fromPlan cl c plan (plan.request ())
 
 
 {-| Send a call, giving the result to `toMsg`.
@@ -233,10 +234,19 @@ send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c
             Send.plan client_ c
 
         sent =
-            Send.request plan
+            plan.request ()
     in
     if Rpc.Internal.Call.retryIn cl.retry c == Nothing && Send.refused cl.baseUrl plan sent == Nothing then
-        Internal.send (Send.expect toMsg plan) fields.tracker sent
+        Internal.send
+            (case plan.reader of
+                TextReader read ->
+                    Http.expectStringResponse toMsg read
+
+                BytesReader read ->
+                    Http.expectBytesResponse toMsg (read >> Tuple.second)
+            )
+            fields.tracker
+            sent
 
     else
         Task.attempt toMsg (fromPlan client_ c plan sent)
@@ -297,7 +307,7 @@ taskTraced ((Client.Client cl) as client_) c =
             Send.plan client_ c
 
         sent =
-            Send.request plan
+            plan.request ()
     in
     Time.now
         |> Task.andThen
@@ -360,15 +370,20 @@ refuses those.
 -}
 request : Client codec -> Call codec req res -> Request
 request cl c =
-    Send.request (Send.plan cl c)
+    (Send.plan cl c).request ()
 
 
 {-| What an answer read as text means, for a client speaking JSON: the decoded
 response, or the error.
 -}
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
-response cl c =
-    Send.response (Send.plan cl c)
+response cl c answer =
+    case (Send.plan cl c).reader of
+        TextReader read ->
+            read answer
+
+        BytesReader _ ->
+            Err (Rpc.Internal.Answer.unreachable "a text answer read for a protocol that is not speaking JSON")
 
 
 {-| What an answer read as bytes means, for a client speaking protobuf binary.
@@ -381,8 +396,13 @@ response cl c =
 
 -}
 responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
-responseBytes cl c =
-    Send.responseBytes (Send.plan cl c)
+responseBytes cl c answer =
+    case (Send.plan cl c).reader of
+        BytesReader read ->
+            Tuple.second (read answer)
+
+        TextReader _ ->
+            Err (Rpc.Internal.Answer.unreachable "a bytes answer read for a protocol that is not speaking protobuf binary")
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -454,7 +474,17 @@ attempt (Client.Client cl) c plan sent =
             Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cl.retry c)
                 (Rpc.Call.idempotency c)
                 retryCode
-                (\left -> Internal.task (Send.resolver plan) (Send.withBudget plan left sent))
+                (\left ->
+                    Internal.task
+                        (case plan.reader of
+                            TextReader read ->
+                                Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
+
+                            BytesReader read ->
+                                Http.bytesResolver (read >> Ok)
+                        )
+                        (Send.withBudget plan left sent)
+                )
 
 
 {-| The request the first attempt sends: `sent`, its timeout bounded by the

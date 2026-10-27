@@ -1,12 +1,11 @@
 module Rpc.Internal.Answer exposing
     ( bytesOverRead
-    , bytesResult
-    , connectProtoRead
-    , connectRead
-    , grpcWebRead
+    , connectMessage
+    , connectProtoMessage
+    , fieldDecoder
+    , grpcWebMessage
     , textOverRead
-    , textResult
-    , transcodeRead
+    , transcodeMessage
     , unreachable
     )
 
@@ -38,7 +37,7 @@ import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BinaryWire, GoodBytes, GoodText, Options, TextWire)
+import Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, TextMessage, TextWire)
 import Rpc.Response exposing (Response)
 
 
@@ -46,50 +45,35 @@ import Rpc.Response exposing (Response)
 -- THE TWO READERS
 
 
-{-| What a text answer means over a protocol speaking JSON: the protocol's
-reading, then the read limit, then the response's decoder, on the field the
-route's `response_body` names when it names one.
+{-| A successful text answer's message, unless it is over the read limit.
 -}
-textResult : TextWire -> Options -> Maybe Route -> Decoder res -> Http.Response String -> Result Error res
-textResult wire options route decoder answer =
-    wire.read route answer
-        |> Result.andThen
-            (\good ->
-                case wire.overRead options good.raw of
-                    Just reason ->
-                        Err (Error.NoAnswer reason)
+textMessage : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error TextMessage
+textMessage overRead options good =
+    case overRead options good.raw of
+        Just reason ->
+            Err (Error.NoAnswer reason)
 
-                    Nothing ->
-                        Json.Decode.decodeString (responseDecoder good.field decoder) good.text
-                            |> Result.mapError (\problem -> Error.BadResponse (Json.Decode.errorToString problem) (answerOf good.metadata good.raw))
-            )
+        Nothing ->
+            Ok { text = good.text, field = good.field, bad = \problem -> Error.BadResponse problem (answerOf good.metadata good.raw) }
 
 
-{-| What a bytes answer means over a protocol speaking protobuf binary, with
-its metadata: the protocol's reading, then the read limit, then the
-method's binary decoder, `decode`.
+{-| A successful binary answer's message, unless it is over the read limit.
 -}
-bytesResult : BinaryWire -> Options -> Endpoint -> (Bytes -> Maybe res) -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error res )
-bytesResult wire options endpoint decode answer =
-    let
-        ( metadata, read ) =
-            wire.read answer
-    in
+bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage overRead options endpoint ( metadata, read ) =
     ( metadata
     , read
         |> Result.andThen
             (\good ->
-                case wire.overRead options good.message of
+                case overRead options good.message of
                     Just reason ->
                         Err (Error.NoAnswer reason)
 
                     Nothing ->
-                        case decode good.message of
-                            Just value ->
-                                Ok value
-
-                            Nothing ->
-                                Err (Error.BadResponse ("the body is not the response of " ++ Method.service endpoint ++ "/" ++ Method.name endpoint ++ " in protobuf binary") (bytesAnswer good.metadata good.raw))
+                        Ok
+                            { bytes = good.message
+                            , bad = \() -> Error.BadResponse ("the body is not the response of " ++ Method.service endpoint ++ "/" ++ Method.name endpoint ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
+                            }
             )
     )
 
@@ -111,6 +95,34 @@ unreachable invariant =
 
 
 -- PROTOCOLS
+
+
+{-| Connect's message of a JSON answer.
+-}
+connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
+connectMessage overRead options route answer =
+    connectRead route answer |> Result.andThen (textMessage overRead options)
+
+
+{-| Transcoding's message.
+-}
+transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
+transcodeMessage overRead options route answer =
+    transcodeRead route answer |> Result.andThen (textMessage overRead options)
+
+
+{-| Connect's message of a protobuf binary answer.
+-}
+connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+connectProtoMessage overRead options endpoint answer =
+    bytesMessage overRead options endpoint (connectProtoRead answer)
+
+
+{-| gRPC-Web's message.
+-}
+grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+grpcWebMessage overRead options endpoint answer =
+    bytesMessage overRead options endpoint (GrpcWeb.read otherFailure answer)
 
 
 {-| Connect's reading of a JSON answer: success is status 200.
@@ -183,13 +195,6 @@ connectProtoRead answer =
         Http.NetworkError_ ->
             Err (Error.NoAnswer Error.NetworkError)
     )
-
-
-{-| gRPC-Web's reading: its framing and trailers.
--}
-grpcWebRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
-grpcWebRead =
-    GrpcWeb.read otherFailure
 
 
 {-| The error of an answer that is not a protocol's success.
@@ -290,8 +295,8 @@ orEmptyObject raw =
 {-| The response decoder reading the answer as the field `responseBody` names,
 when it names one.
 -}
-responseDecoder : Maybe String -> Decoder res -> Decoder res
-responseDecoder responseBody decoder =
+fieldDecoder : Maybe String -> Decoder res -> Decoder res
+fieldDecoder responseBody decoder =
     case responseBody of
         Nothing ->
             decoder

@@ -7,6 +7,7 @@ without breaking code that reads one.
 -}
 
 import Dict exposing (Dict)
+import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
@@ -14,7 +15,7 @@ import Rpc.Internal.Call exposing (Call)
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (Protocol(..))
 import Rpc.Internal.Retry exposing (Outcome)
-import Rpc.Internal.Send as Send exposing (Plan)
+import Rpc.Internal.Send exposing (Plan)
 import Rpc.Request exposing (Request)
 
 
@@ -54,9 +55,9 @@ init (Protocol p) c plan sent outcome duration =
         , methodName = Rpc.Call.methodName c
         , protocol = p.name
         , codec = p.codec
-        , binding = Send.binding plan
+        , binding = plan.binding
         , request = sent
-        , requestBase64 = Send.requestBase64 plan sent
+        , requestBase64 = Maybe.map2 (\base64 bytes -> base64 bytes) plan.base64 (Rpc.Body.toBytes sent.body)
         , httpStatus = Maybe.map .statusCode outcome.metadata
         , headers = metadata.headers
         , trailers = metadata.trailers
