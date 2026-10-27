@@ -1,6 +1,7 @@
 module Rpc exposing
-    ( Call, call
-    , Config, config, checkConfig
+    ( Json, Proto
+    , Call, call
+    , Client, client
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
@@ -8,33 +9,43 @@ module Rpc exposing
     )
 
 {-| Call RPCs: unary, over the
-[Connect protocol](https://connectrpc.com/docs/protocol/) as connect-go,
-connect-es, connect-python and Envoy's Connect-gRPC bridge serve it, or over
-HTTP transcoding, the REST mapping `google.api.http` rules describe, as
-grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it. Messages
-travel as proto3 JSON, or over Connect as protobuf binary
-([`Rpc.Transport.withCodec`](Rpc-Transport#withCodec)).
+[Connect protocol](https://connectrpc.com/docs/protocol/), over HTTP
+transcoding (the REST mapping `google.api.http` rules describe), or over
+gRPC-Web, with messages as proto3 JSON or protobuf binary.
 
-    Notes.V1.NotesService.getNote { name = "notes/42" }
-        |> Rpc.send (Rpc.config "https://api.example.com") GotNote
+    client : Rpc.Client Rpc.Json
+    client =
+        Rpc.client Rpc.Protocol.connect "https://api.example.com"
+
+    fetch : Cmd Msg
+    fetch =
+        Notes.V1.NotesService.getNote { name = "notes/42" }
+            |> Rpc.send client GotNote
 
 A generated service module has one function per method, which applied to a
-request gives a [`Call`](#Call): data saying what to call with what. A
-[`Config`](#Config), also data, says where and how; the functions here take
-both and send the call as a `Task` or a `Cmd`, or give the HTTP request it
-stands for and read the answer, without sending anything.
+request gives a [`Call`](#Call). A [`Client`](#Client) says where and how;
+the functions here take both and send the call as a `Task` or a `Cmd`, or
+give the HTTP request it stands for and read the answer, without sending
+anything.
 
-A call holds its method's encoder and decoder, which are functions, so `==`
-on two calls fails at run time, and the debugger cannot import or export a
-history whose messages hold one. Compare calls by
-[`Rpc.Call.toJson`](Rpc-Call#toJson) instead.
+A call and a client carry their codec in their type, [`Json`](#Json) or
+[`Proto`](#Proto): a client sends only calls whose generated code has its
+codec, and the compiler says so where one does not. An application usually
+wraps the sending once:
 
-An application usually wraps the sending once, deriving the config from its
-own state:
+    rpc : Rpc.Client codec -> Rpc.Call codec req res -> Task Rpc.Error res
+    rpc cl c =
+        Rpc.task cl c
 
-    rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
-    rpc shared call =
-        Rpc.task (configFor shared) call
+A call holds its method's codecs, which are functions, so `==` on two calls
+fails at run time, and the debugger cannot import or export a history whose
+messages hold one. Compare calls by [`Rpc.Call.toJson`](Rpc-Call#toJson)
+instead.
+
+
+# Codecs
+
+@docs Json, Proto
 
 
 # Calls
@@ -44,9 +55,12 @@ own state:
 [`Rpc.Call`](Rpc-Call) adjusts a call and reads it back.
 
 
-# Config
+# Clients
 
-@docs Config, config, checkConfig
+@docs Client, client
+
+[`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials and
+retry policy, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
 
 
 # Sending
@@ -83,21 +97,43 @@ import Dict exposing (Dict)
 import Http
 import Proto.Method exposing (Method)
 import Rpc.Call
+import Rpc.Client
 import Rpc.Code exposing (Code)
 import Rpc.Error
-import Rpc.Internal.Answer
 import Rpc.Internal.Call
+import Rpc.Internal.Client as Client
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry
+import Rpc.Internal.Send as Send exposing (Plan)
 import Rpc.Internal.Trace
-import Rpc.Internal.Wire
+import Rpc.Protocol exposing (Protocol)
 import Rpc.Request
 import Rpc.Response
-import Rpc.Retry exposing (Retry)
 import Rpc.Trace exposing (Trace)
-import Rpc.Transport exposing (Transport)
 import Task exposing (Task)
 import Time
+
+
+
+-- CODECS
+
+
+{-| The codec tag of proto3 JSON: [`Rpc.Protocol.Json`](Rpc-Protocol#Json).
+A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
+[`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
+code generated with `codec=json` (the default) or `codec=both`.
+-}
+type alias Json =
+    Rpc.Protocol.Json
+
+
+{-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
+A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
+[`grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of
+code generated with `codec=proto` or `codec=both`.
+-}
+type alias Proto =
+    Rpc.Protocol.Proto
 
 
 
@@ -106,30 +142,21 @@ import Time
 
 {-| A method applied to its request, as generated code builds one per method:
 
-    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
+    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
 
-It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
-(`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
-`viaBinding`) and read
-(`serviceName`, `methodName`, `descriptor`, `toJson`, …).
+It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted and read.
+Code generated with `codec=both` gives calls free in the codec
+(`Rpc.Call codec GetNoteRequest Note`), which any client sends.
 
 -}
-type alias Call req res =
-    Rpc.Call.Call req res
+type alias Call codec req res =
+    Rpc.Call.Call codec req res
 
 
 {-| A call of a method with a request, without any adjustment. Generated code
-applies it to each method's [`Method`](Proto-Method#Method):
-
-    getNote =
-        Rpc.call
-            (Method.method Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
-                descriptorGetNote
-            )
-
+applies it to each method's [`Method`](Proto-Method#Method).
 -}
-call : Method req res -> req -> Call req res
+call : Method codec req res -> req -> Call codec req res
 call m req =
     Rpc.Internal.Call.Call
         { method = m
@@ -143,88 +170,23 @@ call m req =
 
 
 
--- CONFIG
+-- CLIENTS
 
 
-{-| Where and how to send calls. It is plain data, with no functions in it, so
-it can be stored in a model, compared, and built per call from an
-application's state with record syntax:
+{-| Where and how to send calls: [`Rpc.Client.Client`](Rpc-Client#Client).
+-}
+type alias Client codec =
+    Rpc.Client.Client codec
 
-    { config | transport = Rpc.Transport.transcode, timeout = Just 5000 }
 
-  - `transport`: the protocol, with its own options
-    ([`Rpc.Transport`](Rpc-Transport)).
-  - `baseUrl`: the server, with any routing prefix (`https://api.example.com`,
-    `/api`). A trailing `/` is dropped. A call's path is appended to it, so it
-    can hold no query or fragment: a call sent with a `baseUrl` holding `?` or
-    `#` is not sent, and fails with `NoAnswer (BadUrl url)`.
-    [`checkConfig`](#checkConfig) finds that where the config is built.
-  - `headers`: sent with every call, such as `( "Authorization", "Bearer …" )`.
-    A name must be an HTTP token (letters, digits and `` !#$%&'*+-.^_`|~ ``),
-    and a value, but for spaces and tabs at either end, can hold no NUL, CR
-    or LF and no character above U+00FF, which a browser refuses. A call
-    with such a header is not sent, and fails with
-    `NoAnswer (InvalidHeader name)`; the header is never altered to fit.
-  - `timeout`: milliseconds. Connect also tells the server, in
-    `Connect-Timeout-Ms`. A timeout that is not a positive number (`0`, a
-    negative number, NaN or infinity) means no timeout, as `Nothing` does.
-  - `withCredentials`: send cookies and other credentials cross-origin
-    (`Http.riskyRequest`).
-  - `retry`: whether and when to try a failed call again
-    ([`Rpc.Retry`](Rpc-Retry)). A call can take another policy
-    ([`Rpc.Call.withRetry`](Rpc-Call#withRetry)) or none
-    ([`Rpc.Call.withoutRetry`](Rpc-Call#withoutRetry)) in its place.
+{-| A client of a server over a protocol: [`Rpc.Client.client`](Rpc-Client#client).
+
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 -}
-type alias Config =
-    { transport : Transport
-    , baseUrl : String
-    , headers : List ( String, String )
-    , timeout : Maybe Float
-    , withCredentials : Bool
-    , retry : Maybe Retry
-    }
-
-
-{-| The config for a server: Connect, every call POSTed, no extra headers, no
-timeout, no credentials cross-origin and no retries.
--}
-config : String -> Config
-config baseUrl =
-    { transport = Rpc.Transport.connect
-    , baseUrl = baseUrl
-    , headers = []
-    , timeout = Nothing
-    , withCredentials = False
-    , retry = Nothing
-    }
-
-
-{-| What is wrong with a config, one sentence each, or `[]` when nothing is:
-the problems sending would otherwise find one call at a time. Run it where the
-application builds its config, at start-up or when its settings change, and
-report what it finds there:
-
-    case Rpc.checkConfig cfg of
-        [] ->
-            Ok cfg
-
-        problems ->
-            Err (String.join "; " problems)
-
-Today it finds a `baseUrl` holding a query or a fragment, headers a request
-cannot carry, each by its name (a value is left out, since it may be a
-credential), and a [`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) or
-[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes) limit below 1. A call
-sent with such a config still fails with
-`NoAnswer (BadUrl url)` or `NoAnswer (InvalidHeader name)`; this finds it
-before any call is made. Later releases may find more, so the result is read
-as a list rather than matched.
-
--}
-checkConfig : Config -> List String
-checkConfig cfg =
-    Internal.configProblems cfg.transport cfg.baseUrl cfg.headers
+client : Protocol codec -> String -> Client codec
+client =
+    Rpc.Client.client
 
 
 
@@ -233,63 +195,51 @@ checkConfig cfg =
 
 {-| Send a call as a `Task`.
 
-    Notes.getNote { name = "notes/42" }
-        |> Rpc.task config
-
-With a retry policy in effect, the config's `retry` ([`Rpc.Retry`](Rpc-Retry))
+With a retry policy in effect, the client's ([`Rpc.Client.withRetry`](Rpc-Client#withRetry))
 or the call's own ([`Rpc.Call.withRetry`](Rpc-Call#withRetry)), a failed
 attempt is sent again as the policy says, and the task ends with the last
-attempt's result. A task ignores the call's tracker
-([`Rpc.Call.withTracker`](Rpc-Call#withTracker)), so [`cancel`](#cancel)
+attempt's result. A task ignores the call's tracker, so [`cancel`](#cancel)
 cannot stop it.
 
-A call whose URL or headers cannot be sent (see [`Config`](#Config)), whose
-path value cannot match its variable's template (see [`request`](#request)),
-whose method has no codecs for the messages the transport sends
-([`withCodec`](Rpc-Transport#withCodec)), or whose request is over the
-transport's [`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes), is not:
-it fails with `NoAnswer`, and nothing reaches elm/http.
+A call whose URL or headers cannot be sent, whose path value cannot match its
+variable's template, or whose request is over the protocol's
+[`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes), is not: it fails with
+`NoAnswer`, and nothing reaches elm/http.
 
 -}
-task : Config -> Call req res -> Task Error res
-task cfg c =
-    taskFromRequest cfg c (request cfg c)
+task : Client codec -> Call codec req res -> Task Error res
+task cl c =
+    let
+        plan =
+            Send.plan cl c
+    in
+    fromPlan cl c plan (Send.request plan)
 
 
-{-| Send a call, giving the result to `toMsg`. The message comes before the
-call, as in `Task.attempt` and `Http.expectJson`, so a call pipes into it as
-into [`task`](#task):
+{-| Send a call, giving the result to `toMsg`.
 
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send config GotNote
+        |> Rpc.send client GotNote
 
 The retry policy in effect applies as it does to [`task`](#task). The call's
 tracker is put on its request, so [`cancel`](#cancel) can stop it, only when
-no policy is in effect: the config has no `retry`, or the call is sent
-[`withoutRetry`](Rpc-Call#withoutRetry). With one, the call runs until the
-policy stops it.
+no policy is in effect.
 
 -}
-send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
-send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
+send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd msg
+send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
     let
-        sent =
-            request cfg c
-    in
-    if Rpc.Internal.Call.retryIn cfg.retry c == Nothing && unsendable cfg c sent == Nothing then
-        Internal.send
-            (case Rpc.Internal.Answer.binaryReader cfg.transport c of
-                Just read ->
-                    Http.expectBytesResponse toMsg read
+        plan =
+            Send.plan client_ c
 
-                Nothing ->
-                    Http.expectStringResponse toMsg (response cfg c)
-            )
-            fields.tracker
-            sent
+        sent =
+            Send.request plan
+    in
+    if Rpc.Internal.Call.retryIn cl.retry c == Nothing && Send.refused cl.baseUrl plan sent == Nothing then
+        Internal.send (Send.expect toMsg plan) fields.tracker sent
 
     else
-        Task.attempt toMsg (taskFromRequest cfg c sent)
+        Task.attempt toMsg (fromPlan client_ c plan sent)
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
@@ -336,35 +286,29 @@ cancel =
 
 
 {-| Send a call as a `Task` that never fails, giving a
-[`Trace`](Rpc-Trace#Trace) of what happened beside the result.
-
-    Notes.getNote { name = "notes/42" }
-        |> Rpc.taskTraced config
-        |> Task.perform GotNote
-
-The retry policy in effect applies as it does to [`task`](#task), and the
-trace counts every attempt ([`Rpc.Trace.attempts`](Rpc-Trace#attempts)) and
-the milliseconds from before the first to after the last, waits included
-([`Rpc.Trace.duration`](Rpc-Trace#duration)). The call's tracker is ignored,
-so [`cancel`](#cancel) cannot stop it.
-
+[`Trace`](Rpc-Trace#Trace) of what happened beside the result. The retry
+policy in effect applies, and the trace counts every attempt and the
+milliseconds from before the first to after the last, waits included.
 -}
-taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
-taskTraced cfg c =
+taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Error res )
+taskTraced ((Client.Client cl) as client_) c =
     let
+        plan =
+            Send.plan client_ c
+
         sent =
-            request cfg c
+            Send.request plan
     in
     Time.now
         |> Task.andThen
             (\start ->
-                attempt cfg c sent
+                attempt client_ c plan sent
                     |> Task.andThen
                         (\outcome ->
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        ( Rpc.Internal.Trace.init cfg.transport c (firstAttempt cfg c sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
+                                        ( Rpc.Internal.Trace.init cl.protocol c plan (firstAttempt client_ c plan sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
@@ -373,19 +317,11 @@ taskTraced cfg c =
 
 
 {-| Send a call, giving its [`Trace`](Rpc-Trace#Trace) and the result to
-`toMsg`.
-
-    Notes.getNote { name = "notes/42" }
-        |> Rpc.sendTraced config GotNote
-
-It is [`taskTraced`](#taskTraced) as a command: the retry policy in effect
-applies, and the call's tracker is ignored, so [`cancel`](#cancel) cannot
-stop it.
-
+`toMsg`: [`taskTraced`](#taskTraced) as a command.
 -}
-sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
-sendTraced cfg toMsg c =
-    Task.perform (\( trace, result ) -> toMsg trace result) (taskTraced cfg c)
+sendTraced : Client codec -> (Trace -> Result Error res -> msg) -> Call codec req res -> Cmd msg
+sendTraced cl toMsg c =
+    Task.perform (\( trace, result ) -> toMsg trace result) (taskTraced cl c)
 
 
 
@@ -417,91 +353,36 @@ type alias Request =
     Rpc.Request.Request
 
 
-{-| The request a call sends. It is built whatever the config and the call hold,
-a `baseUrl` with a query, a header a request cannot carry or a path value its
-template cannot match included; sending it is what refuses those.
-
-Over Connect, a POST goes to `baseUrl/service/method` with the request's JSON
-as its body and `Connect-Protocol-Version: 1`. With
-[`connectGet`](Rpc-Transport#connectGet), a call of an
-`IdempotencyNoSideEffects` method is a GET of the same URL with the query
-`connect=v1&encoding=json&message=…`, the JSON percent-encoded, unless the URL
-would be longer than [`withMaxGetUrl`](Rpc-Transport#withMaxGetUrl) allows.
-Under [`withCodec Proto`](Rpc-Transport#withCodec) the body is the request's
-protobuf binary, sent as `application/proto`, and the GET's query is
-`connect=v1&base64=1&encoding=proto&message=…`, the binary as unpadded
-URL-safe base64.
-A timeout is sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond.
-The config's headers come first, then the call's.
-
-Over transcoding, the request is the binding's method, the path filled from the
-request, the query from the fields outside the path and the body, and the body
-as the binding says, with the config's headers, then the call's. Values are
-written as proto3 JSON writes them, unquoted: enums by name, 64-bit integers in
-decimal, timestamps in RFC 3339. Query names and values are percent-encoded, as
-are path values: every byte but RFC 3986's unreserved characters, and in a
-variable matching several segments, but `/` too. A binding's literal segments
-and custom verb are written as they are, but for a character a path segment
-cannot hold, which is percent-encoded (a `%` followed by two hex digits is
-kept as an escape); generated bindings hold none. A call without bindings is
-the request Connect would POST.
-
-A path value must match its variable's template, as `google.api.http` defines
-it. A variable of one segment (`{name}`, `{name=*}`) takes any value but `""`,
-its `/` escaped. Any other value is split at each `/`, and its segments must
-be non-empty and match the template's: a literal itself, `*` one segment, `**`
-any number. `getNote { name = "" }` and
-`getNote { name = "notes/a/b" }` under `get: "/v1/{name=notes/*}"` match
-nothing. Sending such a call fails with
-`NoAnswer (InvalidPathValue { field = "name", template = "notes/*" })`, nothing
-sent; `request` still builds its URL.
-
+{-| The request a call sends over a client. It is built whatever the client
+and the call hold, a base URL with a query, a header a request cannot carry
+or a path value its template cannot match included; sending it is what
+refuses those.
 -}
-request : Config -> Call req res -> Request
-request =
-    Rpc.Internal.Wire.request
+request : Client codec -> Call codec req res -> Request
+request cl c =
+    Send.request (Send.plan cl c)
 
 
-{-| What an answer to a call means: the decoded response, or the error.
-
-Over Connect, success is status 200. Over transcoding, it is any 2xx, an empty
-body reading as `{}`, and the response decoded from the field the binding's
-`responseBody` names when it names one. Any other answer is an error, read as
-[`Source`](Rpc-Error#Source) describes, whatever the transport. A successful
-answer longer than the transport's
-[`withReadMaxBytes`](Rpc-Transport#withReadMaxBytes) is not decoded: it is
-`NoAnswer (ResponseTooLarge { limit, size })`.
-
-Under [`withCodec Proto`](Rpc-Transport#withCodec) a successful answer is
-protobuf binary, which text cannot hold faithfully: read such an answer as
-bytes, with [`responseBytes`](#responseBytes). Read as text, it is a
-`BadResponse`.
-
+{-| What an answer read as text means, for a client speaking JSON: the decoded
+response, or the error.
 -}
-response : Config -> Call req res -> Http.Response String -> Result Error res
-response cfg =
-    Rpc.Internal.Answer.toResult cfg.transport
+response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
+response cl c =
+    Send.response (Send.plan cl c)
 
 
-{-| What an answer read as bytes means, as [`response`](#response) reads one
-read as text. A call under [`withCodec Proto`](Rpc-Transport#withCodec) is
-read so: its successful answer is the response's protobuf binary, which must
-come as `application/proto` or with no content type, or it is a
-`BadResponse` keeping the bytes; its error answer is JSON, read as
-[`response`](#response) reads it. Under the JSON codec the bytes are read as
-the answer's UTF-8 text.
+{-| What an answer read as bytes means, for a client speaking protobuf binary.
 
     Http.request
         { …
-        , body = …
-        , expect = Http.expectBytesResponse GotNote (Rpc.responseBytes config call)
+        , expect = Http.expectBytesResponse GotNote (Rpc.responseBytes client call)
         , …
         }
 
 -}
-responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
-responseBytes cfg =
-    Rpc.Internal.Answer.toResultBytes cfg.transport
+responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+responseBytes cl c =
+    Send.responseBytes (Send.plan cl c)
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its
@@ -537,15 +418,18 @@ splitTrailers =
     Internal.splitTrailers
 
 
-{-| Send a request in place of the one a call would send, and read the answer as
-the call's. The retry policy in effect applies, and the call's tracker is
-ignored, as with [`task`](#task). A request whose URL or headers cannot be
-sent is not, nor is one for a call whose path value cannot match its template:
-the call's values are checked, whatever URL the request carries.
+{-| Send a request in place of the one a call would send, and read the answer
+as the call's. The retry policy in effect applies, and the call's tracker is
+ignored, as with [`task`](#task).
 -}
-taskFromRequest : Config -> Call req res -> Request -> Task Error res
-taskFromRequest cfg c sent =
-    attempt cfg c sent
+taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
+taskFromRequest cl c sent =
+    fromPlan cl c (Send.plan cl c) sent
+
+
+fromPlan : Client codec -> Call codec req res -> Plan res -> Request -> Task Error res
+fromPlan cl c plan sent =
+    attempt cl c plan sent
         |> Task.mapError never
         |> Task.andThen
             (\outcome ->
@@ -560,72 +444,27 @@ taskFromRequest cfg c sent =
 
 {-| Send `sent` until it succeeds or the retry policy says to stop.
 -}
-attempt : Config -> Call req res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
-attempt cfg c sent =
-    case unsendable cfg c sent of
+attempt : Client codec -> Call codec req res -> Plan res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
+attempt (Client.Client cl) c plan sent =
+    case Send.refused cl.baseUrl plan sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
         Nothing ->
-            Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cfg.retry c)
+            Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cl.retry c)
                 (Rpc.Call.idempotency c)
                 retryCode
-                (\left ->
-                    Internal.task
-                        (case Rpc.Internal.Answer.binaryReader cfg.transport c of
-                            Just read ->
-                                Http.bytesResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
-
-                            Nothing ->
-                                Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))
-                        )
-                        (Rpc.Internal.Wire.withBudget cfg c left sent)
-                )
+                (\left -> Internal.task (Send.resolver plan) (Send.withBudget plan left sent))
 
 
 {-| The request the first attempt sends: `sent`, its timeout bounded by the
 retry policy's deadline when there is one.
 -}
-firstAttempt : Config -> Call req res -> Request -> Request
-firstAttempt cfg c sent =
-    Rpc.Internal.Wire.withBudget cfg
-        c
-        (Rpc.Internal.Call.retryIn cfg.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.budget policy 0))
+firstAttempt : Client codec -> Call codec req res -> Plan res -> Request -> Request
+firstAttempt (Client.Client cl) c plan sent =
+    Send.withBudget plan
+        (Rpc.Internal.Call.retryIn cl.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.startBudget policy 0))
         sent
-
-
-{-| Why a request must not reach elm/http: a `baseUrl` holding a query or a
-fragment; a path value its variable's template cannot match, which no server
-can route to the method; a header a browser refuses, on which XHR's
-`setRequestHeader` throws outside elm/http's handler and stops the program for
-good; a method without codecs for the messages the transport sends; or a
-request message over the transport's write limit. The path values and the
-message are the call's, whatever a rewritten request carries. A missing codec
-is found before the retry policy runs, since no attempt could succeed.
--}
-unsendable : Config -> Call req res -> Request -> Maybe Error
-unsendable cfg c sent =
-    if Internal.badBaseUrl cfg.baseUrl then
-        Just (Rpc.Error.NoAnswer (Rpc.Error.BadUrl sent.url))
-
-    else
-        case Rpc.Internal.Wire.missingCodec cfg c of
-            Just reason ->
-                -- First: a method without the codec has no message to read
-                -- path values from or measure.
-                Just (Rpc.Error.NoAnswer reason)
-
-            Nothing ->
-                case ( Rpc.Internal.Wire.invalidPathValue cfg c, Internal.invalidHeader sent.headers ) of
-                    ( Just path, _ ) ->
-                        Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidPathValue path))
-
-                    ( Nothing, Just name ) ->
-                        Just (Rpc.Error.NoAnswer (Rpc.Error.InvalidHeader name))
-
-                    ( Nothing, Nothing ) ->
-                        Rpc.Internal.Wire.requestTooLarge cfg c
-                            |> Maybe.map Rpc.Error.NoAnswer
 
 
 {-| The code a failed attempt is retried by, or `Nothing` when trying again

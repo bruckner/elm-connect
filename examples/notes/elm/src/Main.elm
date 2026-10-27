@@ -21,7 +21,7 @@ import Rpc
 import Rpc.Body
 import Rpc.Code
 import Rpc.Error
-import Rpc.Transport
+import Rpc.Protocol
 import Task
 
 
@@ -72,7 +72,7 @@ init origin =
     list
         { origin = origin
         , wire = ViaConnect
-        , shared = { apiUrl = origin, token = "example-token", transport = Rpc.Transport.connect }
+        , shared = { apiUrl = origin, token = "example-token", protocol = Rpc.Protocol.connect }
         , notes = []
         , newTitle = ""
         , editing = Nothing
@@ -107,21 +107,21 @@ update msg model =
                 shared =
                     model.shared
 
-                ( transport, path ) =
+                ( protocol, path ) =
                     case wire of
                         ViaConnect ->
-                            ( Rpc.Transport.connect, "" )
+                            ( Rpc.Protocol.connect, "" )
 
                         ViaVanguard ->
-                            ( Rpc.Transport.transcode, "" )
+                            ( Rpc.Protocol.transcode, "" )
 
                         ViaGateway ->
-                            ( Rpc.Transport.transcode, "/gateway" )
+                            ( Rpc.Protocol.transcode, "/gateway" )
             in
             list
                 { model
                     | wire = wire
-                    , shared = { shared | transport = transport, apiUrl = model.origin ++ path }
+                    , shared = { shared | protocol = protocol, apiUrl = model.origin ++ path }
                 }
 
         -- endregion toggle
@@ -209,7 +209,7 @@ list model =
 {-| Sends a call whose answer the page does not show, and lists the notes
 again when it succeeds.
 -}
-change : Model -> Rpc.Call req res -> ( Model, Cmd Msg )
+change : Model -> Rpc.Call Rpc.Json req res -> ( Model, Cmd Msg )
 change model call =
     ( record call model
     , Api.rpc model.shared call
@@ -218,12 +218,12 @@ change model call =
     )
 
 
-{-| Keeps the HTTP request a call becomes under the current config, to show it.
+{-| Keeps the HTTP request a call becomes under the current client, to show it.
 `Rpc.request` builds it without sending anything; `Api.rpc` sends the same.
 -}
-record : Rpc.Call req res -> Model -> Model
+record : Rpc.Call Rpc.Json req res -> Model -> Model
 record call model =
-    { model | sent = List.take 5 (Rpc.request (Api.config model.shared) call :: model.sent) }
+    { model | sent = List.take 5 (Rpc.request (Api.client model.shared) call :: model.sent) }
 
 
 

@@ -25,7 +25,7 @@ import Rpc
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 
@@ -38,20 +38,29 @@ elmConnectVersion_ =
 Connect: `POST /connectrpc.eliza.v1.ElizaService/Say`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSay`](#descriptorSay).
+Codecs: JSON. Described by [`descriptorSay`](#descriptorSay).
 
 -}
-say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
+say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 say =
     Rpc.call
-        (Proto.Method.method Connectrpc.Eliza.V1.encodeSayRequest
+        (Proto.Method.json Connectrpc.Eliza.V1.encodeSayRequest
             Connectrpc.Eliza.V1.decodeSayResponse
-            descriptorSay
+            endpointSay
         )
 
 
 
--- DESCRIPTORS
+-- ENDPOINTS AND DESCRIPTORS
+
+
+{-| The endpoint of [`say`](#say).
+-}
+endpointSay : Proto.Method.Endpoint
+endpointSay =
+    Proto.Method.endpoint "connectrpc.eliza.v1.ElizaService"
+        "Say"
+        Proto.Method.IdempotencyNoSideEffects
 
 
 {-| Say is a unary RPC. Eliza responds to the prompt with a single sentence.
@@ -61,9 +70,7 @@ say =
 -}
 descriptorSay : Proto.Method.Descriptor
 descriptorSay =
-    Proto.Method.descriptor "connectrpc.eliza.v1.ElizaService"
-        "Say"
-        Proto.Method.IdempotencyNoSideEffects
+    Proto.Method.descriptor endpointSay
         "connectrpc.eliza.v1.SayRequest"
         "connectrpc.eliza.v1.SayResponse"
         []

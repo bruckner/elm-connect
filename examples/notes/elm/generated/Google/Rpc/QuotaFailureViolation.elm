@@ -16,7 +16,7 @@ import Proto.Version
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 {-| A message type used to describe a single quota violation. For example, a

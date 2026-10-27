@@ -87,14 +87,15 @@ on codes =
         , idempotentOnly = True
         , deadline = Nothing
         }
+        Internal.math
 
 
 {-| How many attempts in all, the first included: `1` never retries, and
 neither does a number below it.
 -}
 withAttempts : Int -> Retry -> Retry
-withAttempts attempts (Internal.Retry policy) =
-    Internal.Retry { policy | attempts = attempts }
+withAttempts attempts (Internal.Retry policy m) =
+    Internal.Retry { policy | attempts = attempts } m
 
 
 {-| The bound in milliseconds on the wait before the second attempt, which
@@ -102,8 +103,8 @@ doubles before each one after. A value that is not a positive number waits
 not at all.
 -}
 withBackoff : Float -> Retry -> Retry
-withBackoff ms (Internal.Retry policy) =
-    Internal.Retry { policy | backoff = ms }
+withBackoff ms (Internal.Retry policy m) =
+    Internal.Retry { policy | backoff = ms } m
 
 
 {-| The longest wait in milliseconds, however many attempts came before. A
@@ -111,8 +112,8 @@ wait is never longer than 2^31 − 1 ms (about 24.8 days) whatever this says,
 and a value that is not a positive number waits not at all.
 -}
 withMaxBackoff : Float -> Retry -> Retry
-withMaxBackoff ms (Internal.Retry policy) =
-    Internal.Retry { policy | maxBackoff = ms }
+withMaxBackoff ms (Internal.Retry policy m) =
+    Internal.Retry { policy | maxBackoff = ms } m
 
 
 {-| A bound in milliseconds on all of a call's attempts and the waits between
@@ -133,16 +134,16 @@ a positive number (`0`, a negative number, NaN or infinity) means none.
 
 -}
 withDeadline : Float -> Retry -> Retry
-withDeadline ms (Internal.Retry policy) =
-    Internal.Retry { policy | deadline = Just ms }
+withDeadline ms (Internal.Retry policy m) =
+    Internal.Retry { policy | deadline = Just ms } m
 
 
 {-| Wait each bound in full, without jitter: for tests, and for a single
 client whose retries no other client shares.
 -}
 withoutJitter : Retry -> Retry
-withoutJitter (Internal.Retry policy) =
-    Internal.Retry { policy | jitter = False }
+withoutJitter (Internal.Retry policy m) =
+    Internal.Retry { policy | jitter = False } m
 
 
 {-| Retry calls of every method, not only those declared
@@ -151,8 +152,8 @@ server did nothing, such as `Unavailable` from a proxy that never reached it. A
 call with side effects that failed after the server acted is then made again.
 -}
 allowNonIdempotent : Retry -> Retry
-allowNonIdempotent (Internal.Retry policy) =
-    Internal.Retry { policy | idempotentOnly = False }
+allowNonIdempotent (Internal.Retry policy m) =
+    Internal.Retry { policy | idempotentOnly = False } m
 
 
 {-| The wait in milliseconds before the next attempt, or `Nothing` to stop:

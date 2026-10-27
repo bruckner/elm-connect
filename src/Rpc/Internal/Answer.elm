@@ -1,10 +1,26 @@
-module Rpc.Internal.Answer exposing (binaryReader, toResult, toResultBytes)
+module Rpc.Internal.Answer exposing
+    ( bytesOverRead
+    , bytesResult
+    , connectProtoRead
+    , connectRead
+    , grpcWebRead
+    , textOverRead
+    , textResult
+    , transcodeRead
+    , unreachable
+    )
 
 {-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
 stands for, from a Connect error body, a `google.rpc.Status` body or gRPC
-status headers, whatever the transport. Not exposed; it is what
-`Rpc.response` stands for, kept out of `Rpc` so that the public module reads
-as API.
+status headers or trailers, whatever the protocol. Not exposed; it is what
+`Rpc.response` and `Rpc.responseBytes` stand for, kept out of `Rpc` so that
+the public module reads as API.
+
+There are two readers, one of text and one of bytes, each over its kind of
+protocol. A protocol's own reading (which statuses succeed, where the status
+of a failure is, how a body is framed) is a top-level function here that its
+constructor puts in it; reading a failure's JSON is shared.
+
 -}
 
 import Bytes exposing (Bytes)
@@ -14,49 +30,149 @@ import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
-import Proto.Internal.Method exposing (Read(..))
 import Proto.Json
-import Proto.Method as Method
+import Proto.Method as Method exposing (Endpoint)
+import Proto.Route exposing (Route)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
-import Rpc.Error as Error exposing (Error)
-import Rpc.Internal.Call exposing (Call(..))
+import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Route exposing (Route(..), route)
-import Rpc.Internal.Transport as Transport exposing (Transport(..))
+import Rpc.Internal.Protocol exposing (BinaryWire, GoodBytes, GoodText, Options, TextWire)
 import Rpc.Response exposing (Response)
 
 
-{-| What an answer to a call over a transport means: the decoded response, or
-the error.
--}
-toResult : Transport -> Call req res -> Http.Response String -> Result Error res
-toResult transport ((Call fields) as c) answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            case ( transport, route transport c ) of
-                ( Connect _, _ ) ->
-                    if metadata.statusCode /= 200 then
-                        Err (failure metadata raw)
 
-                    else
-                        case Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method of
-                            Just _ ->
-                                -- Text cannot hold protobuf binary faithfully:
-                                -- the browser has replaced what is not UTF-8.
-                                Err (Error.BadResponse "a protobuf binary answer is read as bytes (Rpc.responseBytes)" (answerOf metadata raw))
+-- THE TWO READERS
+
+
+{-| What a text answer means over a protocol speaking JSON: the protocol's
+reading, then the read limit, then the response's decoder, on the field the
+route's `response_body` names when it names one.
+-}
+textResult : TextWire -> Options -> Maybe Route -> Decoder res -> Http.Response String -> Result Error res
+textResult wire options route decoder answer =
+    wire.read route answer
+        |> Result.andThen
+            (\good ->
+                case wire.overRead options good.raw of
+                    Just reason ->
+                        Err (Error.NoAnswer reason)
+
+                    Nothing ->
+                        Json.Decode.decodeString (responseDecoder good.field decoder) good.text
+                            |> Result.mapError (\problem -> Error.BadResponse (Json.Decode.errorToString problem) (answerOf good.metadata good.raw))
+            )
+
+
+{-| What a bytes answer means over a protocol speaking protobuf binary, with
+its metadata: the protocol's reading, then the read limit, then the
+method's binary decoder, `decode`.
+-}
+bytesResult : BinaryWire -> Options -> Endpoint -> (Bytes -> Maybe res) -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error res )
+bytesResult wire options endpoint decode answer =
+    let
+        ( metadata, read ) =
+            wire.read answer
+    in
+    ( metadata
+    , read
+        |> Result.andThen
+            (\good ->
+                case wire.overRead options good.message of
+                    Just reason ->
+                        Err (Error.NoAnswer reason)
+
+                    Nothing ->
+                        case decode good.message of
+                            Just value ->
+                                Ok value
 
                             Nothing ->
-                                within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
+                                Err (Error.BadResponse ("the body is not the response of " ++ Method.service endpoint ++ "/" ++ Method.name endpoint ++ " in protobuf binary") (bytesAnswer good.metadata good.raw))
+            )
+    )
 
-                ( Transcode _, Bound _ rule ) ->
-                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
 
-                ( Transcode _, Implicit ) ->
-                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
+{-| The failure of a call whose protocol and method do not share a codec, which
+their types rule out: an internal error naming the broken invariant, never
+a public reason.
+-}
+unreachable : String -> Error
+unreachable invariant =
+    Error.BadResponse ("elm-connect: " ++ invariant)
+        { url = ""
+        , statusCode = 0
+        , statusText = ""
+        , headers = Dict.empty
+        , body = Rpc.Body.none
+        }
+
+
+
+-- PROTOCOLS
+
+
+{-| Connect's reading of a JSON answer: success is status 200.
+-}
+connectRead : Maybe Route -> Http.Response String -> Result Error GoodText
+connectRead _ answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            if metadata.statusCode /= 200 then
+                Err (failure metadata raw)
+
+            else
+                Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
+
+        _ ->
+            Err (otherFailure answer)
+
+
+{-| Transcoding's: success is any 2xx, an empty body reading as `{}`, and the
+response is read from the field the route's `response_body` names.
+-}
+transcodeRead : Maybe Route -> Http.Response String -> Result Error GoodText
+transcodeRead route answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            Ok
+                { metadata = metadata
+                , raw = raw
+                , text = orEmptyObject raw
+                , field = Maybe.andThen .responseBody route
+                }
+
+        _ ->
+            Err (otherFailure answer)
+
+
+{-| Connect's reading of a protobuf binary answer: a 200 must come as
+`application/proto` or with no content type, and is the response's
+binary; every other answer is JSON, read as under the JSON codec.
+-}
+connectProtoRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
+connectProtoRead answer =
+    ( Internal.metadataOf answer
+    , case answer of
+        Http.GoodStatus_ metadata raw ->
+            if metadata.statusCode /= 200 then
+                Err (failure metadata (Internal.bytesText raw))
+
+            else
+                case contentType metadata of
+                    Just other ->
+                        if other == "application/proto" then
+                            Ok { metadata = metadata, raw = raw, message = raw }
+
+                        else
+                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (bytesAnswer metadata raw))
+
+                    Nothing ->
+                        Ok { metadata = metadata, raw = raw, message = raw }
 
         Http.BadStatus_ metadata raw ->
-            Err (failure metadata raw)
+            Err (failure metadata (Internal.bytesText raw))
 
         Http.BadUrl_ url ->
             Err (Error.NoAnswer (Error.BadUrl url))
@@ -66,45 +182,87 @@ toResult transport ((Call fields) as c) answer =
 
         Http.NetworkError_ ->
             Err (Error.NoAnswer Error.NetworkError)
+    )
 
 
-{-| What an answer read as bytes means. Over Connect's proto codec a
-successful answer is the response's protobuf binary, and every other answer
-is JSON, read as `toResult` reads it; under any other codec the bytes are the
-answer's text.
+{-| gRPC-Web's reading: its framing and trailers.
 -}
-toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error res
-toResultBytes transport c answer =
-    case binaryReader transport c of
-        Just read ->
-            read answer
-
-        Nothing ->
-            toResult transport c (asText answer)
+grpcWebRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
+grpcWebRead =
+    GrpcWeb.read otherFailure
 
 
-{-| How a call's answer is read as bytes, when it is sent so: over Connect's
-proto codec, by a method with binary codecs. The reader is the method's own
-(`Proto.Method.withBinary` built it), so only a program with binary codecs
-carries it.
+{-| The error of an answer that is not a protocol's success.
 -}
-binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> Result Error res)
-binaryReader transport ((Call fields) as c) =
-    Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method
+otherFailure : Http.Response String -> Error
+otherFailure answer =
+    case answer of
+        Http.GoodStatus_ metadata raw ->
+            failure metadata raw
+
+        Http.BadStatus_ metadata raw ->
+            failure metadata raw
+
+        Http.BadUrl_ url ->
+            Error.NoAnswer (Error.BadUrl url)
+
+        Http.Timeout_ ->
+            Error.NoAnswer Error.Timeout
+
+        Http.NetworkError_ ->
+            Error.NoAnswer Error.NetworkError
+
+
+{-| The answer's content type without its parameters, lowercased, whatever
+the header name's case.
+-}
+contentType : Http.Metadata -> Maybe String
+contentType metadata =
+    header "content-type" metadata
         |> Maybe.map
-            (\binary answer ->
-                case binary.read (Transport.readMaxBytes transport) answer of
-                    Read value ->
-                        Ok value
+            (\value ->
+                String.split ";" value
+                    |> List.head
+                    |> Maybe.withDefault ""
+                    |> String.trim
+                    |> String.toLower
+            )
 
-                    TooLong over ->
-                        Err (Error.NoAnswer (Error.ResponseTooLarge over))
 
-                    NotBinary problem metadata raw ->
-                        Err (Error.BadResponse problem (bytesAnswer metadata raw))
 
-                    AsText text ->
-                        toResult transport c text
+-- LIMITS
+
+
+{-| Whether a successful text answer is over the read limit: its body as
+the browser decoded it, written back as UTF-8. Installed by
+`withReadMaxBytes`.
+-}
+textOverRead : Options -> String -> Maybe Reason
+textOverRead options raw =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                Internal.overLimit limit raw
+                    |> Maybe.map (\size -> Error.ResponseTooLarge { limit = limit, size = size })
+            )
+
+
+{-| Whether a successful binary answer's message is over the read limit.
+-}
+bytesOverRead : Options -> Bytes -> Maybe Reason
+bytesOverRead options message =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                let
+                    size =
+                        Bytes.width message
+                in
+                if size > max 0 limit then
+                    Just (Error.ResponseTooLarge { limit = limit, size = size })
+
+                else
+                    Nothing
             )
 
 
@@ -118,46 +276,6 @@ bytesAnswer metadata raw =
     , headers = metadata.headers
     , body = Rpc.Body.bytes raw
     }
-
-
-{-| An answer of bytes as UTF-8 text.
--}
-asText : Http.Response Bytes -> Http.Response String
-asText answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            Http.GoodStatus_ metadata (Internal.bytesText raw)
-
-        Http.BadStatus_ metadata raw ->
-            Http.BadStatus_ metadata (Internal.bytesText raw)
-
-        Http.BadUrl_ url ->
-            Http.BadUrl_ url
-
-        Http.Timeout_ ->
-            Http.Timeout_
-
-        Http.NetworkError_ ->
-            Http.NetworkError_
-
-
-{-| A successful answer's body read by `decode`, unless it is longer than the
-transport reads: then it is dropped unread, and the call fails with
-`ResponseTooLarge`.
--}
-within : Transport -> String -> (() -> Result Error res) -> Result Error res
-within transport raw decode =
-    case Transport.readMaxBytes transport of
-        Just limit ->
-            case Internal.overLimit limit raw of
-                Just size ->
-                    Err (Error.NoAnswer (Error.ResponseTooLarge { limit = limit, size = size }))
-
-                Nothing ->
-                    decode ()
-
-        Nothing ->
-            decode ()
 
 
 orEmptyObject : String -> String
@@ -189,15 +307,6 @@ responseDecoder responseBody decoder =
                             Err error ->
                                 Json.Decode.fail (Json.Decode.errorToString error)
                     )
-
-
-{-| The response `read` from a successful answer's body, or a `BadResponse`
-keeping the answer as it came, `raw`.
--}
-decodeBody : Decoder res -> Http.Metadata -> String -> String -> Result Error res
-decodeBody decoder metadata raw read =
-    Json.Decode.decodeString decoder read
-        |> Result.mapError (\problem -> Error.BadResponse (Json.Decode.errorToString problem) (answerOf metadata raw))
 
 
 {-| An answer as an error keeps it.

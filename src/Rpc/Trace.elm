@@ -1,6 +1,6 @@
 module Rpc.Trace exposing
     ( Trace
-    , serviceName, methodName, transport, binding, request
+    , serviceName, methodName, protocol, codec, binding, request
     , httpStatus, headers, trailers, code, duration, attempts
     , toJson, toString
     )
@@ -17,7 +17,7 @@ beside the result.
 
 # The call
 
-@docs serviceName, methodName, transport, binding, request
+@docs serviceName, methodName, protocol, codec, binding, request
 
 
 # The outcome
@@ -64,13 +64,21 @@ methodName (Internal.Trace t) =
     t.methodName
 
 
-{-| The name of the transport the call went over, as
-[`Rpc.Transport.name`](Rpc-Transport#name) gives it: `"connect"` or
-`"transcode"`.
+{-| The name of the protocol the call went over, as
+[`Rpc.Protocol.name`](Rpc-Protocol#name) gives it: `"connect"`,
+`"transcode"` or `"grpc-web"`.
 -}
-transport : Trace -> String
-transport (Internal.Trace t) =
-    t.transport
+protocol : Trace -> String
+protocol (Internal.Trace t) =
+    t.protocol
+
+
+{-| The codec its messages travelled in, as
+[`Rpc.Protocol.codec`](Rpc-Protocol#codec) gives it: `"json"` or `"proto"`.
+-}
+codec : Trace -> String
+codec (Internal.Trace t) =
+    t.codec
 
 
 {-| The HTTP binding the call went over (as
@@ -114,7 +122,7 @@ headers (Internal.Trace t) =
 
 {-| The last answer's trailers: the headers named `trailer-<name>`, as a
 Connect unary answer carries them, by [`Rpc.splitTrailers`](Rpc#splitTrailers).
-The rule applies whatever the transport. Empty when there was no answer.
+The rule applies whatever the protocol. Empty when there was no answer.
 -}
 trailers : Trace -> Dict String String
 trailers (Internal.Trace t) =
@@ -139,8 +147,8 @@ duration (Internal.Trace t) =
 
 {-| How many times the call was sent, retries included: `0` when it was not
 sent at all, for a bad `baseUrl`, a header a request cannot carry or a
-request over the transport's
-[`withWriteMaxBytes`](Rpc-Transport#withWriteMaxBytes).
+request over the protocol's
+[`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes).
 -}
 attempts : Trace -> Int
 attempts (Internal.Trace t) =
@@ -152,7 +160,8 @@ attempts (Internal.Trace t) =
     {
         "service": "notes.v1.NotesService",
         "method": "GetNote",
-        "transport": "connect",
+        "protocol": "connect",
+        "codec": "json",
         "binding": null,
         "request": {
             "method": "POST",
@@ -176,10 +185,10 @@ answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
 are in milliseconds; `binding`, `httpStatus`, the body and the timeout are
 `null` when absent. A request body of protobuf binary
-([`withCodec Proto`](Rpc-Transport#withCodec)) is `null` as `body` and is
+(a client speaking [`Rpc.Proto`](Rpc#Proto)) is `null` as `body` and is
 given as base64 under one more key, `bodyBase64`.
 
-The request holds what was sent, the config's headers included, so a bearer
+The request holds what was sent, the client's headers included, so a bearer
 token in them is in the JSON too; [`toString`](#toString) leaves the request
 out.
 
@@ -189,7 +198,8 @@ toJson (Internal.Trace t) =
     Encode.object
         [ ( "service", Encode.string t.serviceName )
         , ( "method", Encode.string t.methodName )
-        , ( "transport", Encode.string t.transport )
+        , ( "protocol", Encode.string t.protocol )
+        , ( "codec", Encode.string t.codec )
         , ( "binding", maybe Encode.int t.binding )
         , ( "request"
           , Encode.object
@@ -223,7 +233,7 @@ maybe encode value =
     Maybe.map encode value |> Maybe.withDefault Encode.null
 
 
-{-| One line for a log: the method, the transport, how the call ended, the
+{-| One line for a log: the method, the protocol, how the call ended, the
 last answer's HTTP status, the attempts and the duration in whole
 milliseconds.
 
@@ -240,7 +250,7 @@ toString (Internal.Trace t) =
         ++ "/"
         ++ t.methodName
         ++ " over "
-        ++ t.transport
+        ++ t.protocol
         ++ (case t.binding of
                 Just index ->
                     " (binding " ++ String.fromInt index ++ ")"

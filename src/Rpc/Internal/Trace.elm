@@ -7,18 +7,15 @@ without breaking code that reads one.
 -}
 
 import Dict exposing (Dict)
-import Proto.Internal.Method
-import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
-import Rpc.Internal.Call exposing (Call(..))
+import Rpc.Internal.Call exposing (Call)
 import Rpc.Internal.Http as Internal
+import Rpc.Internal.Protocol exposing (Protocol(..))
 import Rpc.Internal.Retry exposing (Outcome)
-import Rpc.Internal.Route as Route
-import Rpc.Internal.Transport as Transport exposing (Transport)
+import Rpc.Internal.Send as Send exposing (Plan)
 import Rpc.Request exposing (Request)
-import Rpc.Transport
 
 
 {-| A trace; `Rpc.Trace`'s accessors say what each field holds.
@@ -27,7 +24,8 @@ type Trace
     = Trace
         { serviceName : String
         , methodName : String
-        , transport : String
+        , protocol : String
+        , codec : String
         , binding : Maybe Int
         , request : Request
         , requestBase64 : Maybe String
@@ -40,11 +38,11 @@ type Trace
         }
 
 
-{-| The trace of a call sent over `transport` as `sent`, from what sending
-came to and how long it took, in milliseconds.
+{-| The trace of a call sent over `protocol` by `plan` as `sent`, from what
+sending came to and how long it took, in milliseconds.
 -}
-init : Transport -> Call req res -> Request -> Outcome Error res -> Float -> Trace
-init transport ((Call fields) as c) sent outcome duration =
+init : Protocol codec -> Call codec req res -> Plan res -> Request -> Outcome Error res -> Float -> Trace
+init (Protocol p) c plan sent outcome duration =
     let
         metadata =
             outcome.metadata
@@ -54,21 +52,11 @@ init transport ((Call fields) as c) sent outcome duration =
     Trace
         { serviceName = Rpc.Call.serviceName c
         , methodName = Rpc.Call.methodName c
-        , transport = Rpc.Transport.name transport
-        , binding =
-            case Route.route transport c of
-                Route.Bound index _ ->
-                    Just index
-
-                _ ->
-                    Nothing
+        , protocol = p.name
+        , codec = p.codec
+        , binding = Send.binding plan
         , request = sent
-        , requestBase64 =
-            -- Written by the method's bytes path, so that a program without
-            -- binary codecs carries no base64 encoder.
-            Maybe.map2 (\binary bytes -> binary.base64 bytes)
-                (Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method)
-                (Rpc.Body.toBytes sent.body)
+        , requestBase64 = Send.requestBase64 plan sent
         , httpStatus = Maybe.map .statusCode outcome.metadata
         , headers = metadata.headers
         , trailers = metadata.trailers

@@ -27,7 +27,9 @@ import Proto.Duration exposing (Duration)
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Query
 import Proto.Registry
+import Proto.Route
 import Proto.Version
 import Time
 
@@ -36,7 +38,7 @@ import Time
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 
@@ -600,3 +602,26 @@ decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
     Json.Decode.succeed ArchiveNoteRequest
         |> Proto.Json.field "name" "" Json.Decode.string
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`ListNotesRequest`](#ListNotesRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfListNotesRequest : ListNotesRequest -> List ( String, String )
+queryOfListNotesRequest request_ =
+    List.concat
+        [ Proto.Query.int "page_size" request_.pageSize
+        , Proto.Query.string "page_token" request_.pageToken
+        , Proto.Query.string "filter" request_.filter
+        , Proto.Query.enum "visibility" VisibilityUnspecified encodeVisibility request_.visibility
+        ]
+
+
+{-| The query parameters of a [`UpdateNoteRequest`](#UpdateNoteRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
+queryOfUpdateNoteRequest request_ =
+    Proto.Query.optional "update_mask" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)

@@ -18,6 +18,7 @@ Behaviours the live suite relies on:
 
 -}
 
+import Json.Encode
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -29,6 +30,7 @@ import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Route
 import Proto.Version
 import Rpc
 
@@ -37,7 +39,7 @@ import Rpc
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 
@@ -52,15 +54,16 @@ detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
+        (Proto.Method.json Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            descriptorGetNote
+            endpointGetNote
+            |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 
 
@@ -70,15 +73,16 @@ getNote =
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/notes`.
 
-Described by [`descriptorListNotes`](#descriptorListNotes).
+Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
+        (Proto.Method.json Notes.V1.encodeListNotesRequest
             Notes.V1.decodeListNotesResponse
-            descriptorListNotes
+            endpointListNotes
+            |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
 
 
@@ -90,15 +94,16 @@ A name already taken is ALREADY\_EXISTS.
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
 
-Described by [`descriptorCreateNote`](#descriptorCreateNote).
+Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
+        (Proto.Method.json Notes.V1.encodeCreateNoteRequest
             Notes.V1.decodeNote
-            descriptorCreateNote
+            endpointCreateNote
+            |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
 
@@ -108,15 +113,16 @@ createNote =
 Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
 
-Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
+Codecs: JSON. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 
 -}
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
+        (Proto.Method.json Notes.V1.encodeUpdateNoteRequest
             Notes.V1.decodeNote
-            descriptorUpdateNote
+            endpointUpdateNote
+            |> Proto.Method.withRoutes [ routeUpdateNote0 ]
         )
 
 
@@ -126,15 +132,16 @@ updateNote =
 Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
 
-Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
+Codecs: JSON. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 
 -}
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Rpc.Json Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
+        (Proto.Method.json Notes.V1.encodeDeleteNoteRequest
             Proto.Json.empty
-            descriptorDeleteNote
+            endpointDeleteNote
+            |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
 
@@ -144,15 +151,16 @@ deleteNote =
 Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
 
-Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
+Codecs: JSON. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 
 -}
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Rpc.Json Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
+        (Proto.Method.json Notes.V1.encodeArchiveNoteRequest
             Notes.V1.decodeNote
-            descriptorArchiveNote
+            endpointArchiveNote
+            |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
 
@@ -163,20 +171,118 @@ the implicit route, `POST /notes.v1.NotesService/Ping`.
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call () ()
+ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
+        (Proto.Method.json Proto.Json.encodeEmpty
             Proto.Json.empty
-            descriptorPing
+            endpointPing
         )
 
 
 
--- DESCRIPTORS
+-- ROUTES
+
+
+{-| Binding 0 of [`getNote`](#getNote): `GET /v1/notes/*`.
+-}
+routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
+routeGetNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
+
+
+{-| Binding 0 of [`listNotes`](#listNotes): `GET /v1/notes`.
+-}
+routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
+routeListNotes0 request_ =
+    { method = "GET"
+    , path = "v1/notes"
+    , query = Notes.V1.queryOfListNotesRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
+
+
+{-| Binding 0 of [`createNote`](#createNote): `POST /v1/notes`.
+-}
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
+routeCreateNote0 request_ =
+    { method = "POST"
+    , path = "v1/notes"
+    , query = []
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
+
+
+{-| Binding 0 of [`updateNote`](#updateNote): `PATCH /v1/notes/*`.
+-}
+routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Proto.Route.Route
+routeUpdateNote0 request_ =
+    let
+        value0_ =
+            Maybe.withDefault "" (Maybe.map .name request_.note)
+    in
+    { method = "PATCH"
+    , path = "v1/" ++ Proto.Route.segments value0_
+    , query = Notes.V1.queryOfUpdateNoteRequest request_
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] value0_
+    }
+
+
+{-| Binding 0 of [`deleteNote`](#deleteNote): `DELETE /v1/notes/*`.
+-}
+routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> Proto.Route.Route
+routeDeleteNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    { method = "DELETE"
+    , path = "v1/" ++ Proto.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
+
+
+{-| Binding 0 of [`archiveNote`](#archiveNote): `POST /v1/notes/*:archive`.
+-}
+routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> Proto.Route.Route
+routeArchiveNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    { method = "POST"
+    , path = "v1/" ++ Proto.Route.segments value0_ ++ ":archive"
+    , query = []
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
+
+
+
+-- ENDPOINTS AND DESCRIPTORS
 
 
 {-| A note by name. A missing note is NOT\_FOUND with a `google.rpc.ErrorInfo`
@@ -186,11 +292,18 @@ detail (reason `NOTE_NOT_FOUND`, domain `notes.example.com`, metadata
 `rpc GetNote(GetNoteRequest) returns (Note)`
 
 -}
-descriptorGetNote : Proto.Method.Descriptor
-descriptorGetNote =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointGetNote : Proto.Method.Endpoint
+endpointGetNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "GetNote"
         Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The descriptor of [`getNote`](#getNote): its types and HTTP bindings, as data.
+-}
+descriptorGetNote : Proto.Method.Descriptor
+descriptorGetNote =
+    Proto.Method.descriptor endpointGetNote
         "notes.v1.GetNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -215,11 +328,18 @@ descriptorGetNote =
 `rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`
 
 -}
-descriptorListNotes : Proto.Method.Descriptor
-descriptorListNotes =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointListNotes : Proto.Method.Endpoint
+endpointListNotes =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "ListNotes"
         Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The descriptor of [`listNotes`](#listNotes): its types and HTTP bindings, as data.
+-}
+descriptorListNotes : Proto.Method.Descriptor
+descriptorListNotes =
+    Proto.Method.descriptor endpointListNotes
         "notes.v1.ListNotesRequest"
         "notes.v1.ListNotesResponse"
         [ Proto.Http.binding
@@ -248,11 +368,18 @@ A name already taken is ALREADY\_EXISTS.
 `rpc CreateNote(CreateNoteRequest) returns (Note)`
 
 -}
-descriptorCreateNote : Proto.Method.Descriptor
-descriptorCreateNote =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointCreateNote : Proto.Method.Endpoint
+endpointCreateNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "CreateNote"
         Proto.Method.IdempotencyUnknown
+
+
+{-| The descriptor of [`createNote`](#createNote): its types and HTTP bindings, as data.
+-}
+descriptorCreateNote : Proto.Method.Descriptor
+descriptorCreateNote =
+    Proto.Method.descriptor endpointCreateNote
         "notes.v1.CreateNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -274,11 +401,18 @@ descriptorCreateNote =
 `rpc UpdateNote(UpdateNoteRequest) returns (Note)`
 
 -}
-descriptorUpdateNote : Proto.Method.Descriptor
-descriptorUpdateNote =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointUpdateNote : Proto.Method.Endpoint
+endpointUpdateNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "UpdateNote"
         Proto.Method.IdempotencyUnknown
+
+
+{-| The descriptor of [`updateNote`](#updateNote): its types and HTTP bindings, as data.
+-}
+descriptorUpdateNote : Proto.Method.Descriptor
+descriptorUpdateNote =
+    Proto.Method.descriptor endpointUpdateNote
         "notes.v1.UpdateNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -305,11 +439,18 @@ descriptorUpdateNote =
 `rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty)`
 
 -}
-descriptorDeleteNote : Proto.Method.Descriptor
-descriptorDeleteNote =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointDeleteNote : Proto.Method.Endpoint
+endpointDeleteNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "DeleteNote"
         Proto.Method.IdempotencyUnknown
+
+
+{-| The descriptor of [`deleteNote`](#deleteNote): its types and HTTP bindings, as data.
+-}
+descriptorDeleteNote : Proto.Method.Descriptor
+descriptorDeleteNote =
+    Proto.Method.descriptor endpointDeleteNote
         "notes.v1.DeleteNoteRequest"
         "google.protobuf.Empty"
         [ Proto.Http.binding
@@ -334,11 +475,18 @@ descriptorDeleteNote =
 `rpc ArchiveNote(ArchiveNoteRequest) returns (Note)`
 
 -}
-descriptorArchiveNote : Proto.Method.Descriptor
-descriptorArchiveNote =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointArchiveNote : Proto.Method.Endpoint
+endpointArchiveNote =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "ArchiveNote"
         Proto.Method.IdempotencyUnknown
+
+
+{-| The descriptor of [`archiveNote`](#archiveNote): its types and HTTP bindings, as data.
+-}
+descriptorArchiveNote : Proto.Method.Descriptor
+descriptorArchiveNote =
+    Proto.Method.descriptor endpointArchiveNote
         "notes.v1.ArchiveNoteRequest"
         "notes.v1.Note"
         [ Proto.Http.binding
@@ -364,11 +512,18 @@ the implicit route, `POST /notes.v1.NotesService/Ping`.
 `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`
 
 -}
-descriptorPing : Proto.Method.Descriptor
-descriptorPing =
-    Proto.Method.descriptor "notes.v1.NotesService"
+endpointPing : Proto.Method.Endpoint
+endpointPing =
+    Proto.Method.endpoint "notes.v1.NotesService"
         "Ping"
         Proto.Method.IdempotencyNoSideEffects
+
+
+{-| The descriptor of [`ping`](#ping): its types and HTTP bindings, as data.
+-}
+descriptorPing : Proto.Method.Descriptor
+descriptorPing =
+    Proto.Method.descriptor endpointPing
         "google.protobuf.Empty"
         "google.protobuf.Empty"
         []

@@ -11,6 +11,7 @@ import Html.Attributes as Attributes
 import Html.Events as Events
 import Rpc
 import Rpc.Error
+import Rpc.Protocol
 
 
 type alias Model =
@@ -44,7 +45,7 @@ update msg model =
         Asked ->
             ( model
             , ElizaService.say { sentence = model.sentence }
-                |> Rpc.send (Rpc.config "https://demo.connectrpc.com") GotReply
+                |> Rpc.send (Rpc.client Rpc.Protocol.connect "https://demo.connectrpc.com") GotReply
             )
 
         GotReply (Ok response) ->

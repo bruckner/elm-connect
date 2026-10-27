@@ -1,0 +1,226 @@
+module Proto.Route exposing
+    ( Route, PathError
+    , segment, segments, checkSegment, checkSegments, firstInvalid
+    , boolText, viaJson, jsonText, without
+    )
+
+{-| Where a call goes over one binding of its `google.api.http` rule, as
+generated route functions build it from a typed request:
+`routeGetNote0 : GetNoteRequest -> Route`: the route, built whatever the
+request holds, with the first path value its variable's template cannot
+match. The helpers below are what such functions call; application code
+reads a `Route` and does not build one.
+
+@docs Route, PathError
+
+
+# Path variables
+
+@docs segment, segments, checkSegment, checkSegments, firstInvalid
+
+
+# Values and bodies
+
+@docs boolText, viaJson, jsonText, without
+
+-}
+
+import Json.Decode
+import Json.Encode exposing (Value)
+import Rpc.Internal.Http as Internal
+
+
+{-| A binding's request: its HTTP method, its path percent-encoded and
+without a leading slash (`v1/notes/42:archive`), its query as name and
+value pairs not yet encoded, in order, its body as JSON (`Nothing` for
+none), the JSON name of the response field its answer is read from
+(`Nothing` for the whole response), and the first path value its
+variable's template cannot match, which sending refuses.
+-}
+type alias Route =
+    { method : String
+    , path : String
+    , query : List ( String, String )
+    , body : Maybe Value
+    , responseBody : Maybe String
+    , invalid : Maybe PathError
+    }
+
+
+{-| A path value its variable's template cannot match: the variable's field,
+as its dotted JSON field path, and its template as `google.api.http` writes
+it. Sending the call fails with
+[`InvalidPathValue`](Rpc-Error#Reason), which carries this record.
+-}
+type alias PathError =
+    { field : String, template : String }
+
+
+{-| A variable of one segment's value, percent-encoded with `/` escaped.
+-}
+segment : String -> String
+segment =
+    Internal.percentEncode Internal.unreserved
+
+
+{-| A variable of several segments' value, percent-encoded with each `/`
+kept.
+-}
+segments : String -> String
+segments =
+    Internal.percentEncode (\char -> Internal.unreserved char || char == '/')
+
+
+{-| Whether a variable of one segment matches its value: `checkSegment "name"
+"*" value` for `{name}` or `{name=*}`, which takes any value but `""`, and
+`checkSegment "v" "v1" value` for `{v=v1}`, which takes only the literal.
+-}
+checkSegment : String -> String -> String -> Maybe PathError
+checkSegment field template value =
+    let
+        ok =
+            Internal.wellFormed value
+                && (if template == "*" then
+                        value /= ""
+
+                    else
+                        value == template
+                   )
+    in
+    if ok then
+        Nothing
+
+    else
+        Just { field = field, template = template }
+
+
+{-| Whether a variable of several segments matches its value, by its
+template's segments (`[ "notes", "*" ]` for `{name=notes/*}`, `"**"` for any
+number): the value split at each `/` must have non-empty segments that
+match.
+-}
+checkSegments : String -> List String -> String -> Maybe PathError
+checkSegments field template value =
+    let
+        parts =
+            String.split "/" value
+    in
+    if Internal.wellFormed value && List.all ((/=) "") parts && matchParts template parts then
+        Nothing
+
+    else
+        Just { field = field, template = String.join "/" template }
+
+
+{-| The first problem of a route's path variables, in path order.
+-}
+firstInvalid : List (Maybe PathError) -> Maybe PathError
+firstInvalid checks =
+    case checks of
+        [] ->
+            Nothing
+
+        (Just problem) :: _ ->
+            Just problem
+
+        Nothing :: rest ->
+            firstInvalid rest
+
+
+matchParts : List String -> List String -> Bool
+matchParts template parts =
+    case ( template, parts ) of
+        ( [], [] ) ->
+            True
+
+        ( "**" :: rest, _ ) ->
+            List.range 0 (List.length parts)
+                |> List.any (\taken -> matchParts rest (List.drop taken parts))
+
+        ( "*" :: rest, _ :: others ) ->
+            matchParts rest others
+
+        ( written :: rest, part :: others ) ->
+            written == part && matchParts rest others
+
+        _ ->
+            False
+
+
+{-| A boolean as path text.
+-}
+boolText : Bool -> String
+boolText b =
+    if b then
+        "true"
+
+    else
+        "false"
+
+
+{-| A value's path or query text, by its proto3 JSON encoder: for the types
+whose text is their JSON's (enums, floating-point numbers, bytes, field
+masks).
+-}
+viaJson : (a -> Value) -> a -> String
+viaJson encode value =
+    jsonText (encode value)
+
+
+{-| A scalar's proto3 JSON as path or query text: a string as it is, a
+number or a boolean as JSON writes it.
+-}
+jsonText : Value -> String
+jsonText value =
+    Json.Decode.decodeValue
+        (Json.Decode.oneOf
+            [ Json.Decode.string
+            , Json.Decode.map
+                (\b ->
+                    if b then
+                        "true"
+
+                    else
+                        "false"
+                )
+                Json.Decode.bool
+            , Json.Decode.map (\_ -> Json.Encode.encode 0 value) Json.Decode.float
+            ]
+        )
+        value
+        |> Result.withDefault ""
+
+
+{-| The JSON without the values at each JSON field path: the body of
+`body: "*"` without the fields the path holds.
+-}
+without : List (List String) -> Value -> Value
+without paths json =
+    List.foldl remove json paths
+
+
+remove : List String -> Value -> Value
+remove fieldPath json =
+    case fieldPath of
+        [] ->
+            json
+
+        key :: rest ->
+            case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
+                Ok pairs ->
+                    pairs
+                        |> List.filterMap
+                            (\( k, v ) ->
+                                if k /= key then
+                                    Just ( k, v )
+
+                                else if List.isEmpty rest then
+                                    Nothing
+
+                                else
+                                    Just ( k, remove rest v )
+                            )
+                        |> Json.Encode.object
+
+                Err _ ->
+                    json

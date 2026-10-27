@@ -16,7 +16,7 @@ import Proto.Version
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 {-| Describes violations in a client request. This error type focuses on the

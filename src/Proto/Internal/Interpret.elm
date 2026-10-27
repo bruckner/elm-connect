@@ -1,80 +1,60 @@
-module Rpc.Internal.Route exposing (Route(..), bindingBody, connectUrl, invalidPathValue, route, transcodeUrl)
+module Proto.Internal.Interpret exposing (route)
 
-{-| Where a call goes over HTTP: the binding of its `google.api.http` rule it
-takes, the URL that binding's path and query make of the request, and the
-body it sends, or the implicit route of a method without a rule. Not
-exposed; it is the mapping `Rpc.request` and `Rpc.response` share, kept out
-of `Rpc` so that the public module reads as API.
+{-| The interpreter of a binding: the route a binding's data makes of a
+request's proto3 JSON, for bindings written as data
+(`Proto.Method.withBindings`). Generated route functions build the same route
+from the typed request.
 -}
 
 import Json.Decode
 import Json.Encode exposing (Value)
-import Proto.Internal.Binding exposing (Binding(..), Body(..), Param(..), Rule, Segment(..))
-import Proto.Method as Method
-import Rpc.Body as Body exposing (Body)
-import Rpc.Call
-import Rpc.Internal.Call exposing (Call(..))
+import Proto.Internal.Binding exposing (Body(..), Param(..), Rule, Segment(..))
+import Proto.Route exposing (PathError, Route)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Transport exposing (Transport(..))
 
 
-{-| How a call is sent: over a binding of its rule (by number), or over the
-implicit route of a method without a rule.
+{-| The route of a request over a binding, built whatever its path values,
+and the first path value its template cannot match, if any.
 -}
-type Route
-    = Bound Int Rule
-    | Implicit
-
-
-{-| The route a call takes over a transport: Connect always takes the implicit
-one.
--}
-route : Transport -> Call req res -> Route
-route transport (Call fields) =
-    case transport of
-        Connect _ ->
-            Implicit
-
-        Transcode _ ->
-            -- A call's binding number is one its descriptor has (`viaBinding`
-            -- checks), or 0 for a method without bindings.
-            case List.head (List.drop fields.binding (Method.bindings (Method.toDescriptor fields.method))) of
-                Just (Binding rule) ->
-                    Bound fields.binding rule
-
-                Nothing ->
-                    Implicit
-
-
-{-| The URL Connect sends a call to: `baseUrl/service/method`.
--}
-connectUrl : String -> Call req res -> String
-connectUrl baseUrl c =
-    trimSlash baseUrl ++ "/" ++ Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c
-
-
-{-| The URL of a call over one binding of its rule: the path filled from the
-request's JSON, the custom verb, and the query from the fields the rule puts
-there.
--}
-transcodeUrl : String -> Rule -> Value -> String
-transcodeUrl baseUrl rule json =
+route : Rule -> Value -> Route
+route rule json =
     let
-        path =
-            List.map (pathSegment json) rule.path
-
         verb =
             Maybe.map ((++) ":" << Internal.encodeRouteText) rule.customVerb |> Maybe.withDefault ""
-
-        query =
-            case List.concatMap (queryPairs json) rule.query of
-                [] ->
-                    ""
-
-                pairs ->
-                    "?" ++ String.join "&" pairs
     in
-    trimSlash baseUrl ++ "/" ++ String.join "/" path ++ verb ++ query
+    { method = rule.method
+    , path = String.join "/" (List.map (pathSegment json) rule.path) ++ verb
+    , query = List.concatMap (queryPairs json) rule.query
+    , body = body rule json
+    , responseBody = rule.responseBody
+    , invalid = invalidPathValue rule json
+    }
+
+
+body : Rule -> Value -> Maybe Value
+body rule json =
+    case rule.body of
+        NoBody ->
+            Nothing
+
+        WholeBody ->
+            Just (Proto.Route.without (variables rule.path) json)
+
+        BodyField key ->
+            Just (lookup [ key ] json |> Maybe.withDefault (Json.Encode.object []))
+
+
+variables : List Segment -> List (List String)
+variables =
+    List.filterMap
+        (\segment ->
+            case segment of
+                Variable fieldPath _ _ ->
+                    Just fieldPath
+
+                _ ->
+                    Nothing
+        )
 
 
 pathSegment : Value -> Segment -> String
@@ -120,7 +100,7 @@ never reach the method: no server route matches it, or a different one does.
 A value holding a surrogate without its pair matches none: it has no UTF-8
 form, so no URL holds it as it is.
 -}
-invalidPathValue : Rule -> Value -> Maybe { field : String, template : String }
+invalidPathValue : Rule -> Value -> Maybe PathError
 invalidPathValue rule json =
     case rule.path of
         [] ->
@@ -227,7 +207,7 @@ single template =
             False
 
 
-queryPairs : Value -> Param -> List String
+queryPairs : Value -> Param -> List ( String, String )
 queryPairs json (Param p) =
     let
         values =
@@ -254,67 +234,7 @@ queryPairs json (Param p) =
                                 Nothing ->
                                     []
     in
-    List.map
-        (\v -> Internal.percentEncode Internal.unreserved p.name ++ "=" ++ Internal.percentEncode Internal.unreserved v)
-        values
-
-
-bindingBody : Rule -> Value -> Body
-bindingBody rule json =
-    case rule.body of
-        NoBody ->
-            Body.none
-
-        WholeBody ->
-            Body.text (Json.Encode.encode 0 (List.foldl remove json (variables rule.path)))
-
-        BodyField key ->
-            lookup [ key ] json
-                |> Maybe.withDefault (Json.Encode.object [])
-                |> Json.Encode.encode 0
-                |> Body.text
-
-
-variables : List Segment -> List (List String)
-variables =
-    List.filterMap
-        (\segment ->
-            case segment of
-                Variable fieldPath _ _ ->
-                    Just fieldPath
-
-                _ ->
-                    Nothing
-        )
-
-
-{-| The JSON without the value at `fieldPath`; unchanged when there is none.
--}
-remove : List String -> Value -> Value
-remove fieldPath json =
-    case fieldPath of
-        [] ->
-            json
-
-        key :: rest ->
-            case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
-                Ok pairs ->
-                    pairs
-                        |> List.filterMap
-                            (\( k, v ) ->
-                                if k /= key then
-                                    Just ( k, v )
-
-                                else if List.isEmpty rest then
-                                    Nothing
-
-                                else
-                                    Just ( k, remove rest v )
-                            )
-                        |> Json.Encode.object
-
-                Err _ ->
-                    json
+    List.map (\v -> ( p.name, v )) values
 
 
 {-| The value at a JSON path, unless absent or `null`.
@@ -349,12 +269,3 @@ scalarText value =
         )
         value
         |> Result.withDefault Nothing
-
-
-trimSlash : String -> String
-trimSlash url =
-    if String.endsWith "/" url then
-        String.dropRight 1 url
-
-    else
-        url

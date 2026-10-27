@@ -17,7 +17,7 @@ import Routes.V1.Kind
 -}
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
-    Proto.Version.v0_1
+    Proto.Version.v0_2
 
 
 {-| A field of every kind a query parameter or path variable can hold.
