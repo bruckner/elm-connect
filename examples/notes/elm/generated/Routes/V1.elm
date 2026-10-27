@@ -18,7 +18,10 @@ import Proto.Duration exposing (Duration)
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Query
 import Proto.Registry
+import Proto.Route
+import Proto.Timestamp
 import Proto.Version
 import Routes.V1.Deep
 import Routes.V1.Everything
@@ -766,3 +769,75 @@ decodeUpdateResourceRequest =
     Json.Decode.succeed UpdateResourceRequest
         |> Proto.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+
+
+
+-- QUERY ENCODERS
+
+
+{-| The query parameters of a [`GetMessageRequest`](#GetMessageRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfGetMessageRequest : GetMessageRequest -> List ( String, String )
+queryOfGetMessageRequest request_ =
+    List.concat
+        [ Proto.Query.string "message_id" request_.messageId
+        , Proto.Query.int64 "revision" request_.revision
+        , Proto.Query.string "sub.subfield" (Maybe.withDefault "" (Maybe.map .subfield request_.sub))
+        , Proto.Query.string "user_id" request_.userId
+        , Proto.Query.string "name" request_.name
+        ]
+
+
+{-| The query parameters of a [`Everything`](#Everything) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfEverything : Everything -> List ( String, String )
+queryOfEverything request_ =
+    List.concat
+        [ Proto.Query.string "name" request_.name
+        , Proto.Query.int "count" request_.count
+        , Proto.Query.int64 "big" request_.big
+        , Proto.Query.int64 "ubig" request_.ubig
+        , Proto.Query.bool "flag" request_.flag
+        , Proto.Query.float "ratio" request_.ratio
+        , Proto.Query.float "scale" request_.scale
+        , Proto.Query.string "data" request_.data
+        , Proto.Query.enum "kind" KindUnspecified encodeKind request_.kind
+        , Proto.Query.repeated "tags" request_.tags
+        , Proto.Query.repeated "kinds" (List.map (Proto.Route.viaJson encodeKind) request_.kinds)
+        , Proto.Query.repeated "numbers" (List.map String.fromInt request_.numbers)
+        , Proto.Query.optional "maybe_count" (Maybe.map String.fromInt request_.maybeCount)
+        , Proto.Query.optional "maybe_name" request_.maybeName
+        , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        , Proto.Query.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)
+        , Proto.Query.optional "mask" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
+        , Proto.Query.optional "limit" (Maybe.map String.fromInt request_.limit)
+        , Proto.Query.optional "label" request_.label
+        , Proto.Query.string "inner.a" (Maybe.withDefault "" (Maybe.map .a request_.inner))
+        , Proto.Query.int "inner.deep.b" (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
+        , Proto.Query.repeated "inner.deep.c" (Maybe.withDefault [] (Maybe.map .c (Maybe.andThen .deep request_.inner)))
+        , Proto.Query.optional "text"
+            (case request_.choice of
+                EverythingChoiceText member_ ->
+                    Just member_
+
+                _ ->
+                    Nothing
+            )
+        , Proto.Query.optional "number"
+            (Maybe.map String.fromInt
+                (case request_.choice of
+                    EverythingChoiceNumber member_ ->
+                        Just member_
+
+                    _ ->
+                        Nothing
+                )
+            )
+        ]
+
+
+{-| The query parameters of a [`UpdateResourceRequest`](#UpdateResourceRequest) whose bindings put fields in the query: every such field that holds a value.
+-}
+queryOfUpdateResourceRequest : UpdateResourceRequest -> List ( String, String )
+queryOfUpdateResourceRequest request_ =
+    Proto.Query.optional "update_mask" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)

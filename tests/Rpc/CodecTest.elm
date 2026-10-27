@@ -10,15 +10,17 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Bytes
+import Proto.Internal.Method
 import Proto.Method exposing (Idempotency(..))
 import Rpc
 import Rpc.Body
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Internal.Send
 import Rpc.Internal.Trace
-import Rpc.Internal.Wire
+import Rpc.Protocol
 import Rpc.Trace
-import Rpc.Transport exposing (Codec(..))
+import Shim
 import Test exposing (Test, describe, test)
 
 
@@ -56,49 +58,59 @@ decodeTitleBytes =
         ""
 
 
-descriptor : String -> Idempotency -> Proto.Method.Descriptor
-descriptor name idempotency =
-    Proto.Method.descriptor "notes.v1.Notes" name idempotency "notes.v1.GetNoteRequest" "notes.v1.Note" []
+endpoint : Proto.Method.Endpoint
+endpoint =
+    Proto.Method.endpoint "notes.v1.Notes" "GetNote" IdempotencyNoSideEffects
 
 
 {-| A method with both codecs, with JSON alone, and with binary alone.
 -}
-both : GetNote -> Rpc.Call GetNote String
+both : GetNote -> Rpc.Call codec GetNote String
 both =
-    Rpc.call
-        (Proto.Method.method encodeGetNote decodeTitle (descriptor "GetNote" IdempotencyNoSideEffects)
-            |> Proto.Method.withBinary encodeGetNoteBytes decodeTitleBytes
-        )
+    Rpc.call (Proto.Method.both encodeGetNote decodeTitle encodeGetNoteBytes decodeTitleBytes endpoint)
 
 
-jsonOnly : GetNote -> Rpc.Call GetNote String
+jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
 jsonOnly =
-    Rpc.call (Proto.Method.method encodeGetNote decodeTitle (descriptor "GetNote" IdempotencyNoSideEffects))
+    Rpc.call (Proto.Method.json encodeGetNote decodeTitle endpoint)
 
 
-binaryOnly : GetNote -> Rpc.Call GetNote String
+binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String
 binaryOnly =
-    Rpc.call (Proto.Method.methodBinary encodeGetNoteBytes decodeTitleBytes (descriptor "GetNote" IdempotencyNoSideEffects))
+    Rpc.call (Proto.Method.proto encodeGetNoteBytes decodeTitleBytes endpoint)
 
 
-base : Rpc.Config
+{-| What no generated code can build: a method typed as speaking a codec it
+has no half for, to reach the branch the phantom makes unreachable.
+-}
+lying : GetNote -> Rpc.Call Rpc.Proto GetNote String
+lying =
+    Rpc.call (Proto.Internal.Method.Method { endpoint = endpoint, json = Nothing, binary = Nothing, routes = [] })
+
+
+base : Shim.Config Rpc.Json
 base =
-    Rpc.config "https://api.example.com"
+    Shim.config "https://api.example.com"
 
 
-over : Rpc.Transport.Transport -> Rpc.Config
+over : Rpc.Protocol.Protocol Rpc.Json -> Shim.Config Rpc.Json
 over transport =
     { base | transport = transport }
 
 
-proto : Rpc.Config
+overProto : Rpc.Protocol.Protocol Rpc.Proto -> Shim.Config Rpc.Proto
+overProto transport =
+    { transport = transport, baseUrl = base.baseUrl, headers = [], timeout = Nothing, withCredentials = False, retry = Nothing }
+
+
+proto : Shim.Config Rpc.Proto
 proto =
-    over (Rpc.Transport.withCodec Proto Rpc.Transport.connect)
+    overProto Rpc.Protocol.connectProto
 
 
-protoGet : Rpc.Config
+protoGet : Shim.Config Rpc.Proto
 protoGet =
-    over (Rpc.Transport.withCodec Proto Rpc.Transport.connectGet)
+    overProto (Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto)
 
 
 bytesOf : List Int -> Bytes
@@ -134,7 +146,7 @@ codeAndMessage =
 
 suite : Test
 suite =
-    describe "Rpc.Transport.withCodec"
+    describe "Rpc.Protocol.connectProto"
         [ requests
         , refusals
         , answers
@@ -149,7 +161,7 @@ requests =
     describe "requests"
         [ test "Proto POSTs the request's binary, no text" <|
             \_ ->
-                Rpc.request proto (both { name = "x" })
+                Shim.request proto (both { name = "x" })
                     |> (\r -> ( ( r.method, r.url, r.headers ), Rpc.Body.toText r.body, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body) ))
                     |> Expect.equal
                         ( ( "POST", "https://api.example.com/notes.v1.Notes/GetNote", [ ( "Connect-Protocol-Version", "1" ) ] )
@@ -163,27 +175,26 @@ requests =
         , test "Proto's GET carries the binary as unpadded URL-safe base64" <|
             \_ ->
                 [ "x", "?>" ]
-                    |> List.map (\name -> Rpc.request protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
+                    |> List.map (\name -> Shim.request protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
                     |> Expect.equal
                         [ ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4", True )
                         , ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgI_Pg", True )
                         ]
-        , test "Json is the default and undoes Proto" <|
+        , test "each protocol names its codec" <|
             \_ ->
-                ( List.map Rpc.Transport.codec [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                , Rpc.Transport.withCodec Json (Rpc.Transport.withCodec Proto Rpc.Transport.connect) == Rpc.Transport.connect
-                , Rpc.Transport.codec proto.transport
+                ( List.map Rpc.Protocol.codec [ Rpc.Protocol.connect, Rpc.Protocol.withConnectGet Rpc.Protocol.connect, Rpc.Protocol.transcode ]
+                , List.map Rpc.Protocol.codec [ Rpc.Protocol.connectProto, Rpc.Protocol.grpcWeb ]
+                , List.map Rpc.Protocol.name [ Rpc.Protocol.connectProto, Rpc.Protocol.grpcWeb ]
                 )
-                    |> Expect.equal ( [ Json, Json, Json ], True, Proto )
-        , test "transcoding ignores the codec and stays JSON" <|
+                    |> Expect.equal ( [ "json", "json", "json" ], [ "proto", "proto" ], [ "connect", "grpc-web" ] )
+        , test "a method with binary codecs alone goes over Connect proto" <|
             \_ ->
-                ( Rpc.Transport.withCodec Proto Rpc.Transport.transcode == Rpc.Transport.transcode
-                , Rpc.request (over (Rpc.Transport.withCodec Proto Rpc.Transport.transcode)) (both { name = "x" }) |> .body |> Rpc.Body.toText
-                )
-                    |> Expect.equal ( True, Just "{\"name\":\"x\"}" )
+                Shim.request proto (binaryOnly { name = "x" })
+                    |> (\r -> Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body))
+                    |> Expect.equal (Just "CgF4")
         , test "a JSON call under a JSON transport is unchanged by the binary codecs" <|
             \_ ->
-                Rpc.request base (both { name = "x" })
+                Shim.request base (both { name = "x" })
                     |> .body
                     |> Rpc.Body.toText
                     |> Expect.equal (Just "{\"name\":\"x\"}")
@@ -192,35 +203,16 @@ requests =
 
 refusals : Test
 refusals =
-    let
-        missing cfg call =
-            Rpc.Internal.Wire.missingCodec cfg (call { name = "x" })
-    in
-    describe "a method without the codec is refused unsent"
-        [ test "a JSON-only method under Proto" <|
+    describe "a protocol and a method without a shared codec"
+        [ test "a method with both codecs goes either way" <|
             \_ ->
-                ( missing proto jsonOnly, missing protoGet jsonOnly )
-                    |> Expect.equal
-                        ( Just (MissingCodec { method = "notes.v1.Notes/GetNote", codec = "proto" })
-                        , Just (MissingCodec { method = "notes.v1.Notes/GetNote", codec = "proto" })
-                        )
-        , test "a binary-only method under JSON, over Connect or transcoding" <|
+                [ Shim.refused base (both { name = "x" }), Shim.refused proto (both { name = "x" }), Shim.refused (over Rpc.Protocol.transcode) (both { name = "x" }), Shim.refused base (jsonOnly { name = "x" }), Shim.refused proto (binaryOnly { name = "x" }) ]
+                    |> Expect.equal [ Nothing, Nothing, Nothing, Nothing, Nothing ]
+        , test "a method lying about its codec is an internal error, unsent" <|
             \_ ->
-                [ missing base binaryOnly, missing (over Rpc.Transport.transcode) binaryOnly, missing proto binaryOnly ]
-                    |> Expect.equal
-                        [ Just (MissingCodec { method = "notes.v1.Notes/GetNote", codec = "json" })
-                        , Just (MissingCodec { method = "notes.v1.Notes/GetNote", codec = "json" })
-                        , Nothing
-                        ]
-        , test "a method with both codecs goes either way" <|
-            \_ ->
-                [ missing base both, missing proto both, missing (over Rpc.Transport.transcode) both ]
-                    |> Expect.equal [ Nothing, Nothing, Nothing ]
-        , test "the error is Internal and names the method and codec" <|
-            \_ ->
-                Err (NoAnswer (MissingCodec { method = "notes.v1.Notes/GetNote", codec = "proto" }))
-                    |> codeAndMessage
-                    |> Expect.equal (Err ( Internal, "notes.v1.Notes/GetNote has no proto codec" ))
+                Shim.refused proto (lying { name = "x" })
+                    |> Maybe.map (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal (Just ( Internal, "bad response body: elm-connect: a protocol speaking protobuf binary met a method without binary codecs" ))
         ]
 
 
@@ -228,7 +220,7 @@ answers : Test
 answers =
     let
         readBytes cfg answer =
-            Rpc.responseBytes cfg (both { name = "x" }) answer
+            Shim.responseBytes cfg (both { name = "x" }) answer
     in
     describe "answers"
         [ test "a 200 of application/proto, or of no content type, decodes as binary" <|
@@ -255,7 +247,7 @@ answers =
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
                     |> codeAndMessage
-                    |> Expect.equal (Err ( Internal, "bad response body: the body is not a notes.v1.Note in protobuf binary" ))
+                    |> Expect.equal (Err ( Internal, "bad response body: the body is not the response of notes.v1.Notes/GetNote in protobuf binary" ))
         , test "an error answer is JSON whatever the codec, its body kept as text" <|
             \_ ->
                 readBytes proto (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))
@@ -269,19 +261,6 @@ answers =
                                     ( ( Unknown, "other", ConnectBody ), Nothing )
                         )
                     |> Expect.equal (Err ( ( NotFound, "no note", ConnectBody ), Just "{\"code\":\"not_found\",\"message\":\"no note\"}" ))
-        , test "under JSON, bytes are read as the answer's text" <|
-            \_ ->
-                readBytes base (Http.GoodStatus_ (metadata 200 []) (utf8 "{\"title\":\"é\"}"))
-                    |> Expect.equal (Ok "é")
-        , test "a binary answer read as text is a BadResponse; an error still reads" <|
-            \_ ->
-                [ Rpc.response proto (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) "\nhi") |> codeAndMessage
-                , Rpc.response proto (both { name = "x" }) (Http.BadStatus_ (metadata 404 []) "{\"code\":\"not_found\"}") |> codeAndMessage
-                ]
-                    |> Expect.equal
-                        [ Err ( Internal, "bad response body: a protobuf binary answer is read as bytes (Rpc.responseBytes)" )
-                        , Err ( NotFound, "" )
-                        ]
         ]
 
 
@@ -293,14 +272,14 @@ limits =
                 [ 4, 3 ]
                     |> List.map
                         (\limit ->
-                            Rpc.responseBytes (over (Rpc.Transport.withReadMaxBytes limit proto.transport)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
+                            Shim.responseBytes (overProto (Rpc.Protocol.withReadMaxBytes limit proto.transport)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
                         )
                     |> Expect.equal [ Ok "hi", Err (NoAnswer (ResponseTooLarge { limit = 3, size = 4 })) ]
         , test "write: the binary is measured, not the JSON" <|
             \_ ->
                 [ 3, 2 ]
-                    |> List.map (\limit -> Rpc.Internal.Wire.requestTooLarge (over (Rpc.Transport.withWriteMaxBytes limit proto.transport)) (both { name = "x" }))
-                    |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 2, size = 3 }) ]
+                    |> List.map (\limit -> Shim.refused (overProto (Rpc.Protocol.withWriteMaxBytes limit proto.transport)) (both { name = "x" }))
+                    |> Expect.equal [ Nothing, Just (NoAnswer (RequestTooLarge { limit = 2, size = 3 })) ]
         ]
 
 
@@ -319,13 +298,13 @@ bodies =
                     |> Expect.equal ( Nothing, Just "CgJoaQ==" )
         , test "a Proto request's body is application/proto, a JSON one's application/json" <|
             \_ ->
-                [ Rpc.request proto (both { name = "x" }), Rpc.request base (both { name = "x" }) ]
+                [ Shim.request proto (both { name = "x" }), Shim.request base (both { name = "x" }) ]
                     |> List.map (.body >> Rpc.Body.contentType)
                     |> Expect.equal [ Just "application/proto", Just "application/json" ]
-        , test "transports built alike compare equal under either codec" <|
+        , test "binary protocols built alike compare equal, and differ by their options" <|
             \_ ->
-                ( Rpc.Transport.withCodec Proto Rpc.Transport.connectGet == Rpc.Transport.withCodec Proto Rpc.Transport.connectGet
-                , Rpc.Transport.withCodec Proto Rpc.Transport.connect == Rpc.Transport.connect
+                ( Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto == Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto
+                , Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto == Rpc.Protocol.connectProto
                 )
                     |> Expect.equal ( True, False )
         ]
@@ -334,12 +313,16 @@ bodies =
 traces : Test
 traces =
     let
+        traced : Shim.Config codec -> Result Json.Decode.Error ( Maybe String, Maybe String )
         traced cfg =
             let
+                plan =
+                    Rpc.Internal.Send.plan (Shim.client cfg) (both { name = "x" })
+
                 sent =
-                    Rpc.request cfg (both { name = "x" })
+                    plan.request ()
             in
-            Rpc.Internal.Trace.init cfg.transport (both { name = "x" }) sent { attempts = 1, metadata = Nothing, result = Ok "hi" } 1
+            Rpc.Internal.Trace.init cfg.transport (both { name = "x" }) plan sent { attempts = 1, metadata = Nothing, result = Ok "hi" } 1
                 |> Rpc.Trace.toJson
                 |> Json.Decode.decodeValue
                     (Json.Decode.field "request"

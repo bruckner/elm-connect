@@ -16,8 +16,8 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
-import Rpc.Internal.Wire
-import Rpc.Transport
+import Rpc.Protocol
+import Shim
 import Test exposing (Test, describe, test)
 
 
@@ -82,27 +82,27 @@ var fieldPath =
 {-| A method whose request is its JSON, and whose response is its `title`,
 bound by `bindings`.
 -}
-raw : List Rule -> Method Value String
+raw : List Rule -> Method Rpc.Json Value String
 raw bindings =
-    Proto.Method.method identity
+    Shim.method identity
         (Json.Decode.field "title" Json.Decode.string)
-        (Proto.Method.descriptor "t.v1.T" "M" IdempotencyUnknown "t.v1.Request" "t.v1.Response" (List.map Proto.Http.binding bindings))
+        (Shim.descriptor "t.v1.T" "M" IdempotencyUnknown "t.v1.Request" "t.v1.Response" (List.map Proto.Http.binding bindings))
 
 
 {-| A call of the method bound by `r` alone.
 -}
-bound : Rule -> String -> Rpc.Call Value String
+bound : Rule -> String -> Rpc.Call Rpc.Json Value String
 bound r request =
     Rpc.call (raw [ r ]) (json request)
 
 
-config : Rpc.Config
+config : Shim.Config Rpc.Json
 config =
     let
         base =
-            Rpc.config "https://api.example.com"
+            Shim.config "https://api.example.com"
     in
-    { base | transport = Rpc.Transport.transcode }
+    { base | transport = Rpc.Protocol.transcode }
 
 
 json : String -> Value
@@ -113,12 +113,12 @@ json text =
 
 url : Rule -> String -> String
 url r request =
-    (Rpc.request config (bound r request)).url
+    (Shim.request config (bound r request)).url
 
 
 body : Rule -> String -> Maybe String
 body r request =
-    Rpc.Body.toText (Rpc.request config (bound r request)).body
+    Rpc.Body.toText (Shim.request config (bound r request)).body
 
 
 suite : Test
@@ -192,7 +192,7 @@ paths =
                     |> Expect.equal "https://api.example.com/v1/x/42/1.5/true:cancel"
         , test "an absent string is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
-                (Rpc.request { config | baseUrl = "/api/" }
+                (Shim.request { config | baseUrl = "/api/" }
                     (bound { rule | path = [ Proto.Http.literal "v1", var [ sub "sub" "sub", string "subfield" "subfield" ] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
@@ -239,7 +239,19 @@ template of the first path value that cannot match, or `Nothing`.
 -}
 refused : Rule -> String -> Maybe { field : String, template : String }
 refused r request =
-    Rpc.Internal.Wire.invalidPathValue config (bound r request)
+    invalidPath config (bound r request)
+
+
+{-| The path value sending refuses in a call, as `InvalidPathValue` carries it.
+-}
+invalidPath : Shim.Config Rpc.Json -> Rpc.Call Rpc.Json Value String -> Maybe { field : String, template : String }
+invalidPath cfg c =
+    case Shim.refused cfg c of
+        Just (NoAnswer (InvalidPathValue path)) ->
+            Just path
+
+        _ ->
+            Nothing
 
 
 notes : List Proto.Http.Segment
@@ -337,8 +349,8 @@ pathValues =
                     |> Expect.equal "https://api.example.com/v1/notes/a/b"
         , test "Connect, and a method without a rule, have no path to refuse" <|
             \_ ->
-                [ Rpc.Internal.Wire.invalidPathValue { config | transport = Rpc.Transport.connect } (bound (named notes) """{"name":""}""")
-                , Rpc.Internal.Wire.invalidPathValue config (Rpc.call (raw []) (json """{"name":""}"""))
+                [ invalidPath { config | transport = Rpc.Protocol.connect } (bound (named notes) """{"name":""}""")
+                , invalidPath config (Rpc.call (raw []) (json """{"name":""}"""))
                 ]
                     |> Expect.equal [ Nothing, Nothing ]
         , test "the error is InvalidArgument, naming the field and the template without the value" <|
@@ -446,7 +458,7 @@ bodies =
                 bound { rule | method = "PATCH" } "{}"
                     |> Rpc.Call.withHeaders [ ( "X-Call", "1" ) ]
                     |> Rpc.Call.withTimeout 10
-                    |> Rpc.request { config | headers = [ ( "Authorization", "Bearer t" ) ], timeout = Just 30, withCredentials = True }
+                    |> Shim.request { config | headers = [ ( "Authorization", "Bearer t" ) ], timeout = Just 30, withCredentials = True }
                     |> (\r -> ( ( r.method, r.headers ), ( r.timeout, r.withCredentials ) ))
                     |> Expect.equal ( ( "PATCH", [ ( "Authorization", "Bearer t" ), ( "X-Call", "1" ) ] ), ( Just 10, True ) )
         ]
@@ -470,34 +482,34 @@ routes =
     describe "routes"
         [ test "the rule's own binding by default" <|
             \_ ->
-                (Rpc.request config twice).url
+                (Shim.request config twice).url
                     |> Expect.equal "https://api.example.com/v1/first"
         , test "viaBinding picks an additional binding" <|
             \_ ->
                 Rpc.Call.viaBinding 1 twice
-                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
+                    |> Maybe.map (Shim.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
                 Rpc.Call.viaBinding 0 twice
-                    |> Maybe.map (Rpc.request config >> .url)
+                    |> Maybe.map (Shim.request config >> .url)
                     |> Expect.equal (Just "https://api.example.com/v1/first")
         , test "a method without a rule is the Connect POST, verbatim" <|
             \_ ->
-                Rpc.request { config | timeout = Just 20 } unbound
+                Shim.request { config | timeout = Just 20 } unbound
                     |> Expect.equal
-                        (Rpc.request
-                            { config | transport = Rpc.Transport.connect, timeout = Just 20 }
+                        (Shim.request
+                            { config | transport = Rpc.Protocol.connect, timeout = Just 20 }
                             unbound
                         )
         , test "the implicit route is a POST to the service and method" <|
             \_ ->
-                Rpc.request config unbound
+                Shim.request config unbound
                     |> (\r -> ( r.method, r.url, r.headers ))
                     |> Expect.equal ( "POST", "https://api.example.com/t.v1.T/M", [ ( "Connect-Protocol-Version", "1" ) ] )
         , test "the implicit route reads any 2xx, an empty body as {}" <|
             \_ ->
-                Rpc.response config unbound (Http.GoodStatus_ (metadata 201 "Created" []) """{"title":"hi"}""")
+                Shim.response config unbound (Http.GoodStatus_ (metadata 201 "Created" []) """{"title":"hi"}""")
                     |> Expect.equal (Ok "hi")
         , test "there is no binding past the end, and none for a method without a rule" <|
             \_ ->
@@ -518,7 +530,7 @@ metadata status text headers =
 
 respond : Rule -> Http.Response String -> Result Error String
 respond r =
-    Rpc.response config (bound r "{}")
+    Shim.response config (bound r "{}")
 
 
 responses : Test
@@ -530,11 +542,11 @@ responses =
                     |> Expect.equal (Ok "hi")
         , test "an empty body reads as {}" <|
             \_ ->
-                Rpc.response config
+                Shim.response config
                     (Rpc.call
-                        (Proto.Method.method identity
+                        (Shim.method identity
                             (Json.Decode.succeed ())
-                            (Proto.Method.descriptor "t" "m" IdempotencyUnknown "t.Request" "t.Response" [ Proto.Http.binding rule ])
+                            (Shim.descriptor "t" "m" IdempotencyUnknown "t.Request" "t.Response" [ Proto.Http.binding rule ])
                         )
                         Json.Encode.null
                     )
@@ -658,7 +670,7 @@ errors =
                 [ """{"code":5}""", "" ]
                     |> List.map
                         (\answer ->
-                            Rpc.response (Rpc.config "https://api.example.com")
+                            Shim.response (Shim.config "https://api.example.com")
                                 (Rpc.call (raw []) Json.Encode.null)
                                 (Http.BadStatus_ (metadata 503 "" [ ( "grpc-status", "14" ) ]) answer)
                                 |> withoutResponse

@@ -19,7 +19,9 @@ if header:
 s = s.replace('import Rpc.Route\n', '')
 s = s.replace('import Proto.Method\n', 'import Proto.Method\nimport Proto.Route\n') if 'Rpc.Route.Route' in src else s
 s = s.replace('Proto.Version.v0_1', 'Proto.Version.v0_2')
-s = s.replace('Rpc.Route.', 'Proto.Route.')
+s = s.replace('Rpc.Route.except', 'Proto.Query.except').replace('Rpc.Route.', 'Proto.Route.')
+if 'Proto.Query.' in s:
+    s = s.replace('import Proto.Method\n', 'import Proto.Method\nimport Proto.Query\n')
 # Calls typed by codec.
 s = re.sub(r'-> Rpc\.Call (?!Rpc\.)', '-> Rpc.Call Rpc.Json ', s)
 # methodWith ENC DEC descriptorX [ routes ] -> json ENC DEC endpointX |> withRoutes [ routes ]
