@@ -1,4 +1,4 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, TextMessage, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, TextWire, Wire(..))
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
@@ -72,7 +72,9 @@ type Wire
 {-| A protocol speaking JSON:
 
   - `build`: the request, from the options, the settings, the method's
-    endpoint, the call's route (when `routed`) and the request's JSON.
+    endpoint, the call's route (when `routed`) and the request's JSON,
+    encoded only by a builder that sends it whole (over a route, the
+    route holds the body).
   - `routed`: whether the protocol reads a method's routes, so that a call
     builds its route only where it is read.
   - `message`: what a successful answer holds to decode, or the error the
@@ -89,23 +91,12 @@ type Wire
 
 -}
 type alias TextWire =
-    { build : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
+    { build : Options -> Settings -> Endpoint -> Maybe Route -> (() -> Value) -> Request
     , routed : Bool
-    , message : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
+    , message : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error GoodText
     , tooLarge : Options -> (() -> Value) -> Maybe Reason
     , overRead : Options -> String -> Maybe Reason
     , timeoutHeader : Maybe Route -> Maybe ( String, Float -> String )
-    }
-
-
-{-| A successful text answer's text to decode, the field of the response it
-holds when a binding's `response_body` names one, and the error a decoding
-problem stands for.
--}
-type alias TextMessage =
-    { text : String
-    , field : Maybe String
-    , bad : String -> Error
     }
 
 

@@ -80,7 +80,8 @@ plan (Client cl) (Call c) =
         (Method m) =
             c.method
 
-        settings =
+        -- Built only for a request: reading an answer needs none of it.
+        settings () =
             { baseUrl = cl.baseUrl
             , headers = cl.headers ++ c.headers
             , timeout =
@@ -109,7 +110,7 @@ plan (Client cl) (Call c) =
                         json () =
                             half.encode c.message
                     in
-                    { request = \() -> wire.build p.options settings m.endpoint route (json ())
+                    { request = \() -> wire.build p.options (settings ()) m.endpoint route json
                     , invalid = Maybe.andThen .invalid route
                     , tooLarge = \() -> wire.tooLarge p.options json
                     , reader =
@@ -117,9 +118,9 @@ plan (Client cl) (Call c) =
                             (\answer ->
                                 wire.message wire.overRead p.options route answer
                                     |> Result.andThen
-                                        (\read ->
-                                            Json.Decode.decodeString (Answer.fieldDecoder read.field half.decoder) read.text
-                                                |> Result.mapError (Json.Decode.errorToString >> read.bad)
+                                        (\good ->
+                                            Json.Decode.decodeString (Answer.fieldDecoder good.field half.decoder) good.text
+                                                |> Result.mapError (Answer.badText good)
                                         )
                             )
                     , binding = Maybe.map (\_ -> c.binding) route
@@ -138,7 +139,7 @@ plan (Client cl) (Call c) =
                         binary () =
                             half.encode c.message
                     in
-                    { request = \() -> wire.build wire.base64 p.options settings m.endpoint (binary ())
+                    { request = \() -> wire.build wire.base64 p.options (settings ()) m.endpoint (binary ())
                     , invalid = Nothing
                     , tooLarge = \() -> wire.tooLarge wire.width p.options binary
                     , reader =

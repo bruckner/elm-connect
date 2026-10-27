@@ -1,5 +1,6 @@
 module Rpc.Internal.Answer exposing
-    ( bytesOverRead
+    ( badText
+    , bytesOverRead
     , connectMessage
     , connectProtoMessage
     , fieldDecoder
@@ -37,7 +38,7 @@ import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, TextMessage, TextWire)
+import Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, TextWire)
 import Rpc.Response exposing (Response)
 
 
@@ -45,16 +46,24 @@ import Rpc.Response exposing (Response)
 -- THE TWO READERS
 
 
-{-| A successful text answer's message, unless it is over the read limit.
+{-| A successful text answer, unless it is over the read limit.
 -}
-textMessage : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error TextMessage
-textMessage overRead options good =
+withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
+withinText overRead options good =
     case overRead options good.raw of
         Just reason ->
             Err (Error.NoAnswer reason)
 
         Nothing ->
-            Ok { text = good.text, field = good.field, bad = \problem -> Error.BadResponse problem (answerOf good.metadata good.raw) }
+            Ok good
+
+
+{-| The error a successful text answer stands for when the response's
+decoder does not read it, keeping the answer.
+-}
+badText : GoodText -> Json.Decode.Error -> Error
+badText good problem =
+    Error.BadResponse (Json.Decode.errorToString problem) (answerOf good.metadata good.raw)
 
 
 {-| A successful binary answer's message, unless it is over the read limit.
@@ -99,16 +108,16 @@ unreachable invariant =
 
 {-| Connect's message of a JSON answer.
 -}
-connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
+connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error GoodText
 connectMessage overRead options route answer =
-    connectRead route answer |> Result.andThen (textMessage overRead options)
+    connectRead route answer |> Result.andThen (withinText overRead options)
 
 
 {-| Transcoding's message.
 -}
-transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
+transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error GoodText
 transcodeMessage overRead options route answer =
-    transcodeRead route answer |> Result.andThen (textMessage overRead options)
+    transcodeRead route answer |> Result.andThen (withinText overRead options)
 
 
 {-| Connect's message of a protobuf binary answer.

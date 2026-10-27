@@ -46,20 +46,20 @@ import Rpc.Request exposing (Request)
 
 {-| Connect's POST of a request's JSON, every call POSTed.
 -}
-connectPost : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
+connectPost : Options -> Settings -> Endpoint -> Maybe Route -> (() -> Value) -> Request
 connectPost _ settings endpoint _ json =
-    connectRequest settings endpoint (Body.text (Json.Encode.encode 0 json))
+    connectRequest settings endpoint (Body.text (Json.Encode.encode 0 (json ())))
 
 
 {-| Connect's GET of a call of a method without side effects, the JSON
 percent-encoded in the query, unless the URL would be longer than
 `maxGetUrl`; any other call is POSTed. `withConnectGet` installs it.
 -}
-connectGet : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
+connectGet : Options -> Settings -> Endpoint -> Maybe Route -> (() -> Value) -> Request
 connectGet options settings endpoint _ json =
     let
         text =
-            Json.Encode.encode 0 json
+            Json.Encode.encode 0 (json ())
     in
     getOr options settings endpoint (Body.text text) (\() -> "encoding=json&message=" ++ Internal.percentEncode Internal.unreserved text)
 
@@ -196,7 +196,7 @@ base64Url =
 path and query, its body; or, for a method without routes, the request
 Connect would POST (the implicit route).
 -}
-transcode : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
+transcode : Options -> Settings -> Endpoint -> Maybe Route -> (() -> Value) -> Request
 transcode options settings endpoint route json =
     case route of
         Just r ->
