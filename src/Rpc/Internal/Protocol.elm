@@ -79,7 +79,9 @@ type Wire
     answer stands for; given `overRead`, so that the read limit is checked
     by whatever function a modifier installed.
   - `tooLarge`: whether the request's JSON is over the write limit;
-    installed by `withWriteMaxBytes`, else a function that says no.
+    installed by `withWriteMaxBytes`, else a function that says no. It is
+    given the JSON to encode, so that the message is encoded to be measured
+    only when there is a limit.
   - `overRead`: whether a successful answer's body is over the read limit;
     installed by `withReadMaxBytes`.
   - `timeoutHeader`: the header the protocol carries a timeout in over a
@@ -90,7 +92,7 @@ type alias TextWire =
     { build : Options -> Settings -> Endpoint -> Maybe Route -> Value -> Request
     , routed : Bool
     , message : (Options -> String -> Maybe Reason) -> Options -> Maybe Route -> Http.Response String -> Result Error TextMessage
-    , tooLarge : Options -> Value -> Maybe Reason
+    , tooLarge : Options -> (() -> Value) -> Maybe Reason
     , overRead : Options -> String -> Maybe Reason
     , timeoutHeader : Maybe Route -> Maybe ( String, Float -> String )
     }
@@ -127,7 +129,7 @@ binary for a trace.
 type alias BinaryWire =
     { build : (Bytes -> String) -> Options -> Settings -> Endpoint -> Bytes -> Request
     , message : (Options -> Bytes -> Maybe Reason) -> Options -> Endpoint -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-    , tooLarge : Options -> Bytes -> Maybe Reason
+    , tooLarge : Options -> (() -> Bytes) -> Maybe Reason
     , overRead : Options -> Bytes -> Maybe Reason
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String

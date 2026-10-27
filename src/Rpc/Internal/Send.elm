@@ -111,7 +111,7 @@ plan (Client cl) (Call c) =
                     in
                     { request = \() -> wire.build p.options settings m.endpoint route (json ())
                     , invalid = Maybe.andThen .invalid route
-                    , tooLarge = \() -> wire.tooLarge p.options (json ())
+                    , tooLarge = \() -> wire.tooLarge p.options json
                     , reader =
                         TextReader
                             (\answer ->
@@ -140,7 +140,7 @@ plan (Client cl) (Call c) =
                     in
                     { request = \() -> wire.build wire.base64 p.options settings m.endpoint (binary ())
                     , invalid = Nothing
-                    , tooLarge = \() -> wire.tooLarge p.options (binary ())
+                    , tooLarge = \() -> wire.tooLarge p.options binary
                     , reader =
                         BytesReader
                             (\answer ->

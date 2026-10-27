@@ -261,26 +261,26 @@ grpcWeb _ _ settings endpoint binary =
 {-| Whether a request's JSON, as UTF-8, is over the write limit. Installed by
 `withWriteMaxBytes`; the JSON is encoded again only then.
 -}
-jsonTooLarge : Options -> Value -> Maybe Reason
+jsonTooLarge : Options -> (() -> Value) -> Maybe Reason
 jsonTooLarge options json =
     options.writeMaxBytes
         |> Maybe.andThen
             (\limit ->
-                Internal.overLimit limit (Json.Encode.encode 0 json)
+                Internal.overLimit limit (Json.Encode.encode 0 (json ()))
                     |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
             )
 
 
 {-| Whether a request's protobuf binary is over the write limit.
 -}
-bytesTooLarge : Options -> Bytes -> Maybe Reason
+bytesTooLarge : Options -> (() -> Bytes) -> Maybe Reason
 bytesTooLarge options binary =
     options.writeMaxBytes
         |> Maybe.andThen
             (\limit ->
                 let
                     size =
-                        Bytes.width binary
+                        Bytes.width (binary ())
                 in
                 if size > max 0 limit then
                     Just (Error.RequestTooLarge { limit = limit, size = size })
@@ -301,7 +301,7 @@ textUnlimited _ _ =
 {-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
 each protocol's field has its own type.
 -}
-bytesUnlimited : Options -> Bytes -> Maybe Reason
+bytesUnlimited : Options -> a -> Maybe Reason
 bytesUnlimited _ _ =
     Nothing
 
