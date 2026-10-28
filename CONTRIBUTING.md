@@ -150,8 +150,8 @@ on bookkeeping after the fact.
 
 Release notes are collected as one file per change under
 `changelog.d/`, so two pull requests never conflict over them;
-`just changelog-fold` turns the files into the next release's section
-of `CHANGELOG.md` when it is cut.
+`just changelog-fold`, run by `just release-cut`, turns the files into
+the next release's section of `CHANGELOG.md` when it is cut.
 
 ## Code comments
 
@@ -182,10 +182,16 @@ design) rather than issue or PR numbers alone.
 ## Releasing
 
 The maintainer cuts releases; [`docs/design.md` §8.7](docs/design.md#87-releasing)
-has the steps and what the release workflow does with a tag. A
-contributor's part is the fragment under `changelog.d/` that a pull
-request carries: the fragments are the raw notes the maintainer edits
-into the next release's section of `CHANGELOG.md`.
+has the steps and what the release workflow does with a tag. A release
+cycle opens with a commit named `Open <version>`, which sets the
+version, and ends with one named `Cut <version>`, which folds the
+release notes; no other commit changes a version line. A contributor's
+part is the fragment under `changelog.d/` that a pull request carries:
+the fragments are the raw notes the maintainer edits into the next
+release's section of `CHANGELOG.md`. Leave the versions in
+`Cargo.toml`, `elm.json` and `src/Proto/Version.elm` as `main` has
+them; CI's release-discipline check fails a pull request whose commits
+change one, and names the commit.
 
 ## License
 

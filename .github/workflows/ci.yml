@@ -36,6 +36,14 @@ jobs:
         with:
           path: ~/.elm
           key: check-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
+      # Design section 8.7: only an `Open` or `Reopen as` commit changes the
+      # version lines, and a `Cut` commit changes the changelog alone.
+      - name: Release discipline
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: scripts/release-check.sh "$BASE..$HEAD"
       - run: just check
       # zizmor again, with the token its online audits need (the gate's
       # run is offline); only this step sees it, and it has only

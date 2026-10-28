@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check snippets changelog-check zizmor gitleaks deny license package
+check: fmt-check clippy test elm-check snippets changelog-check release-check zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -73,6 +73,38 @@ changelog-fold version:
     mv CHANGELOG.md.new CHANGELOG.md
     git rm -q -f $fragments
     echo "CHANGELOG.md: folded $(echo $fragments | wc -w | tr -d ' ') fragment(s) into {{version}}"
+
+# Open a release cycle (design section 8.7): set the version in the Cargo
+# workspace, Cargo.lock and elm.json to the next release's, and for a minor
+# or major add its Proto.Version value (design section 8.2). Commits
+# nothing: it prints the regeneration steps, after which the maintainer
+# commits everything as `Open <version>` (`Reopen as <version>` when the
+# cycle's version was set already and has not been released).
+release-open version:
+    scripts/release-open.sh '{{version}}'
+
+# Cut a release (design section 8.7): fold the fragments into the
+# version's section of CHANGELOG.md. Commits nothing: the maintainer edits
+# the section into the release's notes and commits it as `Cut <version>`.
+release-cut version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(sed -n '/^\[workspace\.package\]/,/^\[/s/^version = "\(.*\)"$/\1/p' Cargo.toml)
+    if [ "$current" != '{{version}}' ]; then
+        echo "release-cut: the workspace's version is $current; the Open commit sets the version a Cut releases" >&2
+        exit 1
+    fi
+    just changelog-fold '{{version}}'
+    echo "Edit CHANGELOG.md's '## {{version}}' section into the release's notes, for a reader"
+    echo "deciding whether to upgrade (design section 8.7), then commit CHANGELOG.md and"
+    echo "changelog.d/ alone as: Cut {{version}}"
+
+# Hold a range of commits to the release discipline (scripts/release-check.sh):
+# only Open and Reopen commits change the version lines, and a Cut commit
+# changes the changelog alone. `just release-check main..HEAD` checks a
+# branch; with no range, HEAD alone, as the gate does.
+release-check range="":
+    scripts/release-check.sh {{range}}
 
 # Lint every crate and target; warnings are errors.
 clippy:

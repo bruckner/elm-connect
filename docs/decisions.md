@@ -87,6 +87,32 @@ change but make the titles the notes, and the notes are read by people
 deciding whether to upgrade. Where: `changelog.d/README.md`, the
 `changelog-fold` recipe, CONTRIBUTING.
 
+### Releases open and cut by commit
+
+*2026-10-27.*
+
+A release cycle has two named commits, and the version lines change in
+no other. `Open <version>`, the first commit after a release, sets the
+Cargo workspace's and `elm.json`'s version to the next release's and,
+for a minor or major, adds its `Proto.Version` value and regenerates
+what names it; `Reopen as <version>` does the same when a cycle opened
+as a patch needs a minor. `Cut <version>` folds the changelog and holds
+the edited notes, changes nothing else, and its merge is what the tag
+names. So `main`'s version is always the next release's: Elm versions
+cannot carry a pre-release suffix, and the sentinel must differ from
+the last release's as soon as a change to the shape of generated code
+lands mid-cycle, which before 1.0 a minor may make (§8.2 names the
+current minor alone until 1.0, and every minor of the major from 1.0
+on). Deriving the version from the tag at build time was the
+alternative, and was rejected: `elm.json` needs a literal, and the
+generator needs the number when it generates. A CI check on every pull
+request's commits enforces the two names, so a contributor never
+touches a version line, and the release workflow refuses a tag with no
+`Cut` commit since the previous one. The 0.2 cycle's Open predates the
+rule: it is the commit "Move to 0.2 and name its sentinel alone".
+Where: design §8.7, `scripts/release-check.sh`, the `release-open`,
+`release-cut` and `release-check` recipes, CONTRIBUTING.
+
 ## Generated types
 
 ### 64-bit integers and bytes as `String`
