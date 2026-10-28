@@ -52,7 +52,7 @@ jobs:
       - name: Read the workspace's rust-version
         id: rust
         run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
-      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master, 2026-10-09
         with:
           toolchain: ${{ steps.rust.outputs.version }}
       - name: Read the version
@@ -173,7 +173,7 @@ jobs:
       - name: Read the workspace's rust-version
         id: rust
         run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
-      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master, 2026-10-09
         with:
           toolchain: ${{ steps.rust.outputs.version }}
           targets: ${{ matrix.target }}
@@ -291,13 +291,13 @@ jobs:
       - name: Read the workspace's rust-version
         id: rust
         run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
-      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master, 2026-10-09
         with:
           toolchain: ${{ steps.rust.outputs.version }}
       # Trusted Publishing: a token for this job alone, revoked when it
       # ends. crates.io accepts it only from this workflow file in the
       # `release` environment, as each crate's settings there name them.
-      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
         id: auth
       # The generator first: the other two depend on its version. A crate
       # already in the index is skipped, so a rerun after a partial
@@ -347,7 +347,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
         with:
           # The mise release that wrote mise.lock; move the two together.
           version: 2026.9.4
