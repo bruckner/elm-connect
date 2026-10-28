@@ -38,8 +38,9 @@ calling:
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
 | `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
 | `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
-| `Proto.Method` | a method's typed value (request encoder, response decoder and descriptor) and its descriptor as data, with its idempotency |
-| `Proto.Http` | a method's `google.api.http` rule as data |
+| `Proto.Method` | a method's typed value (request encoder, response decoder, service and method name, idempotency and routes) and its descriptor as data |
+| `Proto.Route`, `Proto.Query` | the route a binding sends a call over, and the helpers generated route functions and query encoders call ([transcoding.md](transcoding.md)) |
+| `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor or for a method written by hand |
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Registry` | descriptors by full name |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
@@ -421,8 +422,10 @@ withdraw =
 ```
 
 `Rpc.Call` also reads a call back: `serviceName`, `methodName`,
-`descriptor`, `idempotency`, `requestMessage`, `requestJson` and
-`toJson`.
+`procedure` (the Connect path, `/notes.v1.NotesService/GetNote`),
+`idempotency`, `requestMessage`, `requestJson` and `toJson`. The
+method's descriptor, with its type names and HTTP rule as data, is not
+on the call: name it, `Notes.V1.NotesService.descriptorGetNote`.
 
 ## Sending
 
@@ -601,7 +604,7 @@ log trace =
 ```
 
 `Rpc.Trace.toJson` writes every field under keys that stay: `service`,
-`method`, `transport`, `binding`, `request` (`method`, `url`, `headers`,
+`method`, `procedure`, `transport`, `binding`, `request` (`method`, `url`, `headers`,
 `body`, `timeout`, `withCredentials`), `httpStatus`, `headers`,
 `trailers`, `code` (`"ok"` on success), `duration` and `attempts`. The
 request holds what was sent, the config's headers included, so a bearer

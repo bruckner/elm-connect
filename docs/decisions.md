@@ -445,11 +445,12 @@ renamed value (before, `foo_` and `get_` were accepted, and a rename to
 
 ### Calls are data, with pure halves
 
-*2026-10-13.*
+*2026-10-13; 2026-10-27.*
 
 A generated method, applied to a request, gives an `Rpc.Call`: the
-method's codecs, its descriptor and every HTTP binding, as data; a
-config, also data, says where and how; `Rpc` sends one with the other.
+method's codecs, its identity and a route for every HTTP binding (as
+data until 2026-10-27, as generated functions since: Routes are
+generated functions, below); a config, also data, says where and how; `Rpc` sends one with the other.
 `Rpc.request` and `Rpc.response` are the pure halves, building the
 HTTP request a call stands for and reading an answer without sending
 anything. The first shape was a `Connect.Method` per method and a
@@ -486,10 +487,11 @@ descriptor. Where: design §4, §6.
 
 ### Methods carry codecs only
 
-*2026-10-13; 2026-10-15; 2026-10-16.*
+*2026-10-13; 2026-10-15; 2026-10-16; 2026-10-27.*
 
 A `Proto.Method.Method` holds its request's encoder and its response's
-decoder, and its descriptor. The first shape, on 2026-10-13, put the
+decoder, its service's and its own name, its idempotency and its
+routes. The first shape, on 2026-10-13, put the
 codecs themselves in a descriptor record of `Rpc`'s; the second gave
 the method its types' typed records. Those hold each type's default
 and descriptor tree, and Elm keeps a top-level value whole, so a call
@@ -497,7 +499,9 @@ through records cost about 16 KB gzipped, in an application's bundle,
 over a client referencing only the codecs; from 2026-10-15 a method
 carries the codecs alone. On 2026-10-16 the method's descriptor became
 a top-level value of its own, `descriptorGetNote`, which the call
-refers to, rather than being written inline. Where: design §4, §3.9.
+referred to, rather than being written inline; on 2026-10-27 the call
+stopped referring to it (Routes are generated functions, below).
+Where: design §4, §3.9.
 
 ### Idempotency, whole
 
@@ -878,6 +882,55 @@ that handles the server's refusal handles this one too. The check lives
 where sending checks headers: `Rpc.request` stays pure and builds the
 URL, and `Rpc.checkConfig` is unchanged, since the value is the call's,
 not the config's. Where: design §5.1.
+
+### Routes are generated functions
+
+*2026-10-24; 2026-10-25; 2026-10-27.*
+
+A method's HTTP bindings are generated as functions of the typed
+request, one per binding (`routeGetNote0 : GetNoteRequest ->
+Proto.Route.Route`), which the method holds (`Proto.Method.withRoutes`);
+the query fields come from one encoder per request message in its
+package's module (`queryOfListNotesRequest`), shared by every binding
+taking it. The binding data and its interpreter, which until then built
+every transcoded request by encoding the whole message to JSON and
+reading each field back by key, stay for methods written by hand
+(`Proto.Method.withBindings`) and for a binding the generator cannot
+type, and a program that names neither carries neither. With the
+routes on the method, the method no longer holds its descriptor: it
+holds its service's and method's names and its idempotency
+(`withIdempotency`, written only when the proto declares one), and the
+descriptor, with the type names and the bindings as data, is a value a
+program keeps only if it names it; `Rpc.Call.procedure` gives the
+Connect path, and `Rpc.Call.descriptor` is gone.
+
+Measured in two spikes against 0.1 (`elm make --optimize`, terser,
+gzip -9): the first cut made transcoded requests 48 % faster (5.6 to
+2.9 us each over `Rpc.request`) and bundles 3.2 to 4.8 % smaller
+gzipped, the saving all in the fixed cost (the interpreter,
+`Proto.Http`, the field descriptors only the bindings reached), while
+each method with a wide query grew by about 1.1 KB unminified. The
+second shared one query encoder per message and dropped the type
+names from what the call holds: every method then cost less than or
+about what its data form had, and the bundles came to 3.4 % smaller
+gzipped for the notes example (870 B), 4.1 % for the live runner and
+5.2 % for the route fixtures, with a request at 3.0 us. Holding the
+full descriptor on the method instead cost a Connect-only notes
+program 769 B gzipped, 110 B a method, for type names and bindings
+nothing in the runtime reads.
+
+Considered and rejected: a route table beside the client, the bindings
+as data keyed by method, which leaves the method a pure Connect
+identity. Measured on the interface redesign's spike, it saves a
+Connect-only program 905 B, but costs a transcoding one 1,112 B more,
+makes each transcoded request 43 to 217 % slower through the
+interpreter, loses `viaBinding`'s check that the method has the
+binding, and makes an application list its services. Left as a
+follow-up: a table of generated JSON-level functions, smaller and
+faster than the interpreter, if an application full of rules that
+never transcodes appears. The price accepted: a route bug is fixed by
+regenerating, not by upgrading the runtime, and the generated service
+modules carry a function per binding. Where: design §4, §5.3.
 
 ## Input and versioning
 

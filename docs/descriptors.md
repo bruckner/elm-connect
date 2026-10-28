@@ -28,7 +28,9 @@ package's, so the values a program sends and receives stay in
 `Notes.V1`: `Notes.V1.Note.descriptor`, with one value per field
 (`Notes.V1.Note.title`), and `Notes.V1.Visibility.descriptor`. A
 service's module holds a descriptor per method, `descriptorGetNote`,
-with its idempotency and its `google.api.http` bindings. All are opaque,
+with its idempotency, its types' names and its `google.api.http`
+bindings, apart from the call, which does not hold it: a program keeps
+it only if it names it. All are opaque,
 read through the module of their concept (`Proto.Message`, with
 `Proto.Field` for a field; `Proto.Enum` with `Proto.EnumValue`;
 `Proto.Method`).

@@ -71,6 +71,43 @@ with binary codecs alone (`codec=binary`) has no JSON to send, so its
 call over transcoding fails with `NoAnswer (MissingCodec { method,
 codec = "json" })`, unsent ([calling.md](calling.md#choosing-the-codec)).
 
+## How the request is built
+
+The generator writes each binding of a method's rule as a function of
+the typed request, which the method holds
+(`Proto.Method.withRoutes`), so building a request reads the request's
+fields directly; nothing is encoded to JSON and looked up again:
+
+```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
+routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
+routeListNotes0 request_ =
+    { method = "GET"
+    , path = "v1/notes"
+    , query = Notes.V1.queryOfListNotesRequest request_
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
+```
+
+A `Proto.Route.Route` is the binding's verb, its path percent-encoded
+without a leading slash, its query pairs, its body, the response field
+the answer is read from, and the first path value its template cannot
+match (`invalid`), which sending refuses. The query comes from the
+request message's query encoder in its package's module, shared by every
+binding that takes the message, less the fields the binding's path and
+body hold. A route is fixed in generated code: a fix to how one is built
+reaches an application when it regenerates.
+
+A method written by hand takes its bindings as data instead,
+[`Proto.Http`](../src/Proto/Http.elm) values given to
+`Proto.Method.withBindings`, and the runtime reads each from the
+request's proto3 JSON. The generator does the same for a method with a
+binding it cannot write as a function: a path or query field of a
+message it does not generate, a recursive message on the way, or a
+`bytes` field held as `Bytes` (`bytes=bytes`). The request is the same
+either way.
+
 ## Methods without an HTTP rule
 
 A method without a `google.api.http` rule is generated like the rest.
