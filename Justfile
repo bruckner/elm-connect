@@ -171,12 +171,12 @@ bless:
 # route fixtures against its routes.v1 echo service under Vanguard; then the
 # transcoding cases and the route fixtures again under grpc-gateway, which
 # the server mounts at /gateway; then under Envoy (live-envoy); then the
-# Connect conformance suite; then the proto codec's legs (live-proto). Not
-# part of `check`: it needs Go, and the
+# Connect conformance suite; then the proto codec's legs (live-proto); then
+# gRPC-Web's (live-grpcweb). Not part of `check`: it needs Go, and the
 # network for Go's modules, npm's packages, Envoy and connectconformance
 # (buf generates from vendored protos); CI runs it as its own job. It builds
 # the browser example too, so the README's excerpts of it compile.
-live: live-gen live-build example-notes-build && live-envoy live-conformance live-proto
+live: live-gen live-build example-notes-build && live-envoy live-conformance live-proto live-grpcweb
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
@@ -191,15 +191,18 @@ envoy_version := trim(read("conformance/live/envoy/envoy-version"))
 envoy_origin_port := "18080"
 envoy_port := "18081"
 envoy_headers_port := "18082"
+envoy_grpcweb_port := "18083"
 envoy_admin_port := "18090"
 
 # The live suite under Envoy's gRPC-JSON transcoder (docs/envoy.md): build
 # the example's descriptor set with buf, start the example server and Envoy
 # (conformance/live/envoy/envoy.yaml, with the ports above), and run the
 # transcoding cases and the route fixtures against the listener that turns
-# errors into a google.rpc.Status body, and cases/envoy.json against the one
-# that leaves them in grpc-status headers. Both stop however the runs end.
-live-envoy: live-build envoy-install
+# errors into a google.rpc.Status body, cases/envoy.json against the one
+# that leaves them in grpc-status headers, and cases/grpcweb.json, on the
+# runner built against codec=both (live-both), against the one that serves
+# gRPC-Web with Envoy's gRPC-Web filter. Both stop however the runs end.
+live-envoy: live-build live-both envoy-install
     #!/usr/bin/env bash
     set -euo pipefail
     live="{{target}}/live"
@@ -207,6 +210,7 @@ live-envoy: live-build envoy-install
     sed -e 's/port_value: 18080/port_value: {{envoy_origin_port}}/' \
         -e 's/port_value: 18081/port_value: {{envoy_port}}/' \
         -e 's/port_value: 18082/port_value: {{envoy_headers_port}}/' \
+        -e 's/port_value: 18083/port_value: {{envoy_grpcweb_port}}/' \
         -e 's/port_value: 18090/port_value: {{envoy_admin_port}}/' \
         -e "s|proto_descriptor: target/live/notes.binpb|proto_descriptor: $live/notes.binpb|" \
         conformance/live/envoy/envoy.yaml > "$live/envoy.yaml"
@@ -223,7 +227,7 @@ live-envoy: live-build envoy-install
     trap stop EXIT
     # /healthz passes through Envoy to the server, so an answer on each
     # listener means both are up.
-    for port in {{envoy_port}} {{envoy_headers_port}}; do
+    for port in {{envoy_port}} {{envoy_headers_port}} {{envoy_grpcweb_port}}; do
         for attempt in $(seq 150); do
             curl -fs --max-time 2 -o /dev/null "http://127.0.0.1:$port/healthz" && break
             kill -0 "$server" 2> /dev/null || { echo "the example server exited"; exit 1; }
@@ -235,6 +239,7 @@ live-envoy: live-build envoy-install
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --server http://127.0.0.1:{{envoy_port}} --known conformance/live/known-divergent-envoy.json
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_headers_port}} conformance/live/cases/envoy.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_grpcweb_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
 
 # Install the pinned Envoy with func-e unless it is installed. func-e checks
 # the archive against the SHA-256 that Tetrate's index lists, but hashes
@@ -317,16 +322,50 @@ live-conformance: live-conformance-gen live-build
     cat known-failing.txt known-failing-send.txt > build/known-failing-send.txt
     "$runner" --mode client --conf conformance.yaml --known-failing @build/known-failing-send.txt -- node conformance.mjs --send sendTraced
 
-# The proto codec over Connect (conformance/README.md): the example's Elm
-# and the Connect suite's, generated with codec=both into
-# conformance/live/build/both (not committed: the codec=json bindings are,
-# and the corpus covers the generator), and the runner built against them
-# from conformance/live/both; then the example server called over
-# application/proto (cases/proto.json), the JSON cases again on that build,
-# and the Connect conformance suite with the proto codec
-# (conformance-proto.yaml), through the pure halves and with Rpc.sendTraced.
-# Transcoding speaks JSON alone, so its legs above cover it.
-live-proto: live-gen live-conformance-gen live-build
+# The proto codec over Connect (conformance/README.md): the example server
+# called over application/proto (cases/proto.json), the JSON cases again on
+# the runner built against codec=both (live-both), and the Connect
+# conformance suite with the proto codec (conformance-proto.yaml), through
+# the pure halves and with Rpc.sendTraced. Transcoding speaks JSON alone, so
+# its legs above cover it.
+live-proto: live-both
+    #!/usr/bin/env bash
+    set -euo pipefail
+    server="{{target}}/live/bin/notes-server"
+    both=conformance/live/build/elm-both.js
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/proto.json
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/notes.json
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/transcode.json
+    cd conformance/live
+    runner="$(./fetch-conformance.sh)"
+    "$runner" --mode client --conf conformance-proto.yaml --known-failing @known-failing-proto.txt -- node conformance.mjs --send halves --elm build/elm-both.js
+    cat known-failing-proto.txt known-failing-send.txt > build/known-failing-proto-send.txt
+    "$runner" --mode client --conf conformance-proto.yaml --known-failing @build/known-failing-proto-send.txt -- node conformance.mjs --send sendTraced --elm build/elm-both.js
+
+# gRPC-Web (conformance/README.md): the example server, which connect-go
+# serves gRPC-Web from, called over Rpc.Protocol.grpcWeb (cases/grpcweb.json)
+# on the runner built against codec=both (live-both); then the Connect
+# conformance suite's gRPC-Web client cases (conformance-grpcweb.yaml),
+# through the pure halves and with Rpc.sendTraced. live-envoy runs the same
+# cases under Envoy's gRPC-Web filter.
+live-grpcweb: live-both
+    #!/usr/bin/env bash
+    set -euo pipefail
+    node conformance/live/run.mjs --serve "{{target}}/live/bin/notes-server" --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
+    cd conformance/live
+    runner="$(./fetch-conformance.sh)"
+    cat known-failing-grpcweb.txt known-failing-grpcweb-halves.txt > build/known-failing-grpcweb-halves.txt
+    "$runner" --mode client --conf conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-halves.txt -- node conformance.mjs --send halves --elm build/elm-both.js
+    cat known-failing-grpcweb.txt known-failing-send.txt > build/known-failing-grpcweb-send.txt
+    "$runner" --mode client --conf conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-send.txt -- node conformance.mjs --send sendTraced --elm build/elm-both.js
+
+# The runner built against codec=both: the example's Elm and the Connect
+# suite's, generated with codec=both into conformance/live/build/both (not
+# committed: the codec=json bindings are, and the corpus covers the
+# generator), and the runner built against them from conformance/live/both
+# into conformance/live/build/elm-both.js.
+[private]
+live-both: live-gen live-conformance-gen live-build
     #!/usr/bin/env bash
     set -euo pipefail
     bin="{{target}}/live/bin"
@@ -337,16 +376,6 @@ live-proto: live-gen live-conformance-gen live-build
     (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"codec=both"}]}')
     (cd conformance/live/suite && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"."}],"plugins":[{"local":"protoc-gen-elm-connect","out":"suite","opt":"streaming=skip,codec=both"}]}')
     (cd conformance/live/both && (elm make > /dev/null 2>&1 || true) && elm make ../src/Live.elm --output=../build/elm-both.js)
-    server="$bin/notes-server"
-    both=conformance/live/build/elm-both.js
-    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/proto.json
-    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/notes.json
-    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/transcode.json
-    cd conformance/live
-    runner="$(./fetch-conformance.sh)"
-    "$runner" --mode client --conf conformance-proto.yaml --known-failing @known-failing-proto.txt -- node conformance.mjs --send halves --elm build/elm-both.js
-    cat known-failing-proto.txt known-failing-send.txt > build/known-failing-proto-send.txt
-    "$runner" --mode client --conf conformance-proto.yaml --known-failing @build/known-failing-proto-send.txt -- node conformance.mjs --send sendTraced --elm build/elm-both.js
 
 # Install the live runner's npm packages as package-lock.json pins them, and
 # regenerate the conformance suite's Elm and JavaScript with buf from its

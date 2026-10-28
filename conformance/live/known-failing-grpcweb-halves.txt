@@ -1,0 +1,11 @@
+# Further test cases of the gRPC-Web run (known-failing-grpcweb.txt) that fail
+# through the pure halves (Rpc.request, elm/http, Rpc.responseBytes) only. A
+# gRPC-Web answer's trailers are in its body, so an application reading the
+# elm/http response itself has only its headers; Rpc.sendTraced finds the
+# body's trailers and gives them in the Rpc.Trace, and passes these. The
+# runtime has no public reader of a body's trailers for the halves.
+Basic/**/unary/success
+Duplicate Metadata/**/unary/*
+Errors/**/unary/error-with-metadata
+gRPC-Web Empty Responses/**/unary/empty-response
+gRPC-Web Trailers/**/unary/trailers-in-body/*

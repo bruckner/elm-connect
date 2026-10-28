@@ -1,0 +1,25 @@
+# What elm-connect's runtime supports over gRPC-Web, for the Connect
+# conformance suite's runner (connectconformance --mode client; schema: the
+# Features message of connectrpc/conformance/v1/config.proto): unary calls
+# over Rpc.Protocol.grpcWeb, protobuf binary only, HTTP/1.1 without TLS
+# (elm/http cannot choose a protocol, and the browser does the TLS), no
+# compression. `just live-grpcweb` runs it against the runner built on
+# bindings generated with codec=both (conformance/live/both); Connect is
+# conformance.yaml's and conformance-proto.yaml's.
+features:
+  versions: [HTTP_VERSION_1]
+  protocols: [PROTOCOL_GRPC_WEB]
+  codecs: [CODEC_PROTO]
+  compressions: [COMPRESSION_IDENTITY]
+  streamTypes: [STREAM_TYPE_UNARY]
+  supportsH2c: false
+  supportsTls: false
+  supportsTlsClientCerts: false
+  # An XMLHttpRequest cannot read HTTP trailers; gRPC-Web carries them in
+  # the body.
+  supportsTrailers: false
+  supportsHalfDuplexBidiOverHttp1: false
+  supportsConnectGet: false
+  # Rpc.Protocol.withReadMaxBytes, applied when a request sets
+  # message_receive_limit.
+  supportsMessageReceiveLimit: true

@@ -1,0 +1,926 @@
+[
+  {
+    "name": "grpc-web GetNote",
+    "note": "Over Connect: The answer is read from protobuf binary; an Any read from binary holds its bytes and writes the Connect detail form.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome",
+          "title": "Welcome",
+          "tags": [
+            "intro",
+            "example"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "createTime": "2026-01-01T00:00:00Z",
+          "ttl": "90s",
+          "metadata": {
+            "lang": "en"
+          },
+          "extra": {
+            "owner": "ada",
+            "pinned": true,
+            "stars": 3
+          },
+          "link": "https://example.com/welcome",
+          "attachment": {
+            "type": "google.protobuf.Timestamp",
+            "value": "CKXr3MoG"
+          },
+          "revision": "9007199254740993"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok",
+        "request": {
+          "method": "POST",
+          "headers": [
+            [
+              "X-Grpc-Web",
+              "1"
+            ]
+          ],
+          "body": null,
+          "bodyBase64": "AAAAAA8KDW5vdGVzL3dlbGNvbWU="
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web ListNotes",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ListNotes",
+      "transport": "grpcweb",
+      "request": {
+        "pageSize": 10,
+        "filter": "Welcome",
+        "visibility": "VISIBILITY_PUBLIC"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "notes": [
+            {
+              "name": "notes/welcome",
+              "attachment": {
+                "type": "google.protobuf.Timestamp",
+                "value": "CKXr3MoG"
+              }
+            }
+          ]
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web CreateNote",
+    "note": "Over Connect: The request Any holds a Timestamp read from JSON; the binary encoder converts it, so the server stores its value.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "grpcweb",
+      "request": {
+        "note": {
+          "name": "notes/from-proto",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.5s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
+          }
+        }
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-proto",
+          "title": "Created",
+          "body": "First draft",
+          "tags": [
+            "a",
+            "b"
+          ],
+          "visibility": "VISIBILITY_PUBLIC",
+          "ttl": "3.500s",
+          "metadata": {
+            "k": "v"
+          },
+          "extra": {
+            "n": 1,
+            "list": [
+              true,
+              null,
+              "x"
+            ]
+          },
+          "text": "hello",
+          "attachment": {
+            "type": "google.protobuf.Timestamp",
+            "value": "CKXr3MoG"
+          }
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web CreateNote with a message of the package in its Any",
+    "note": "Over Connect: The request Any holds a notes.v1.GetNoteRequest read from JSON; the package's registry, which the binary encoder writes the Any with, has its binary codecs.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "grpcweb",
+      "request": {
+        "note": {
+          "name": "notes/from-proto-any",
+          "title": "Packed",
+          "attachment": {
+            "@type": "type.googleapis.com/notes.v1.GetNoteRequest",
+            "name": "notes/welcome"
+          }
+        }
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-proto-any",
+          "title": "Packed",
+          "attachment": {
+            "type": "notes.v1.GetNoteRequest",
+            "value": "Cg1ub3Rlcy93ZWxjb21l"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web UpdateNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "UpdateNote",
+      "transport": "grpcweb",
+      "request": {
+        "note": {
+          "name": "notes/from-proto",
+          "body": "Second draft"
+        },
+        "updateMask": "body"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-proto",
+          "title": "Created",
+          "body": "Second draft",
+          "revision": "1"
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web ArchiveNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "ArchiveNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/from-proto"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/from-proto",
+          "visibility": "VISIBILITY_PRIVATE",
+          "tags": [
+            "a",
+            "b",
+            "archived"
+          ],
+          "revision": "2"
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web DeleteNote",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "DeleteNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/from-proto"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok"
+      }
+    }
+  },
+  {
+    "name": "grpc-web NOT_FOUND with ErrorInfo",
+    "note": "Over Connect: An error answer stays JSON under the proto codec, and reads as the same Rpc.Error.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/from-proto"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/from-proto does not exist",
+          "source": {
+            "$match": "^Grpc(Headers|Trailers)$"
+          },
+          "detailsBinary": [
+            "Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRXJyb3JJbmZvEj0KDk5PVEVfTk9UX0ZPVU5EEhFub3Rlcy5leGFtcGxlLmNvbRoYCgRuYW1lEhBub3Rlcy9mcm9tLXByb3Rv"
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "not_found"
+      }
+    }
+  },
+  {
+    "name": "grpc-web INVALID_ARGUMENT with BadRequest",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "transport": "grpcweb",
+      "request": {
+        "note": {
+          "body": "untitled"
+        }
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": {
+            "$match": "^Grpc(Headers|Trailers)$"
+          },
+          "detailsBinary": [
+            "Cil0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdBIfCh0KBXRpdGxlEhRhIG5vdGUgbmVlZHMgYSB0aXRsZQ=="
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web Ping",
+    "note": "Over Connect: google.protobuf.Empty both ways: an empty body.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "grpcweb",
+      "request": {},
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {}
+      },
+      "trace": {
+        "request": {
+          "method": "POST",
+          "body": null,
+          "bodyBase64": "AAAAAAA="
+        }
+      },
+      "wire": [
+        {
+          "status": 200,
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web readMaxBytes counts the binary",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "readMaxBytes": 100
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "ResponseTooLarge 257 100"
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "resource_exhausted"
+      }
+    }
+  },
+  {
+    "name": "grpc-web writeMaxBytes counts the binary",
+    "note": "Over Connect: The request is 15 bytes of binary where its JSON is 24.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "writeMaxBytes": 14
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "RequestTooLarge 15 14"
+      },
+      "trace": {
+        "attempts": 0
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "grpc-web writeMaxBytes at the binary size sends",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "writeMaxBytes": 15
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web halves",
+    "note": "Over Connect: Rpc.request, elm/http with expectBytesResponse, Rpc.responseBytes.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "halves"
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome",
+          "attachment": {
+            "type": "google.protobuf.Timestamp",
+            "value": "CKXr3MoG"
+          }
+        }
+      },
+      "response": {
+        "status": 200
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web halves error",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/missing"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "halves"
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "source": {
+            "$match": "^Grpc(Headers|Trailers)$"
+          }
+        }
+      },
+      "response": {
+        "status": 200
+      }
+    }
+  },
+  {
+    "name": "grpc-web Rpc.send",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web Rpc.task",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/missing"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "task"
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/missing does not exist",
+          "source": {
+            "$match": "^Grpc(Headers|Trailers)$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web Rpc.taskFromRequest sends the request rewritten",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "headers": [
+          [
+            "Authorization",
+            "Bearer stale"
+          ]
+        ]
+      },
+      "send": "taskFromRequest",
+      "rewrite": [
+        [
+          "authorization",
+          "Bearer fresh"
+        ]
+      ]
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": [
+            [
+              "Authorization",
+              "Bearer fresh"
+            ],
+            [
+              "X-Grpc-Web",
+              "1"
+            ],
+            [
+              "Content-Type",
+              "application/grpc-web+proto"
+            ]
+          ],
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web retry",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/flaky"
+      },
+      "config": {
+        "codec": "proto",
+        "retry": {
+          "attempts": 2,
+          "backoff": 10,
+          "codes": [
+            "unavailable"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/flaky"
+        }
+      },
+      "trace": {
+        "attempts": 2
+      },
+      "wire": [
+        {
+          "status": 200
+        },
+        {
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web answer without an error body",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "grpcweb",
+      "request": {},
+      "config": {
+        "codec": "proto",
+        "baseUrl": "{server}/status/404"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "unimplemented",
+          "source": "HttpStatus"
+        }
+      },
+      "trace": {
+        "httpStatus": 404
+      }
+    }
+  },
+  {
+    "name": "grpc-web grpc-status headers",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "Ping",
+      "transport": "grpcweb",
+      "request": {},
+      "config": {
+        "codec": "proto",
+        "baseUrl": "{server}/grpc-status/8"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "resource_exhausted",
+          "message": "no backend; code 8",
+          "source": "GrpcHeaders"
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web headers and grpc-timeout",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "timeout": 5000
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok",
+        "protocol": "grpc-web",
+        "codec": "proto",
+        "request": {
+          "method": "POST",
+          "headers": [
+            [
+              "X-Grpc-Web",
+              "1"
+            ],
+            [
+              "grpc-timeout",
+              "5000m"
+            ]
+          ],
+          "body": null
+        }
+      },
+      "wire": [
+        {
+          "requestHeaders": {
+            "$contains": [
+              [
+                "Content-Type",
+                "application/grpc-web+proto"
+              ],
+              [
+                "X-Grpc-Web",
+                "1"
+              ],
+              [
+                "grpc-timeout",
+                "5000m"
+              ]
+            ]
+          },
+          "responseHeaders": {
+            "content-type": "application/grpc-web+proto"
+          },
+          "status": 200
+        }
+      ]
+    }
+  },
+  {
+    "name": "grpc-web body trailers reach the trace",
+    "note": "A successful answer ends with a trailers frame in its body; the trace gives its entries as trailers, apart from the headers.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome"
+        }
+      },
+      "trace": {
+        "code": "ok",
+        "trailers": {
+          "grpc-status": "0"
+        },
+        "headers": {
+          "content-type": "application/grpc-web+proto",
+          "grpc-status": {
+            "$absent": true
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "grpc-web timeout",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "transport": "grpcweb",
+      "request": {
+        "name": "notes/slow"
+      },
+      "config": {
+        "codec": "proto",
+        "timeout": 500
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "Timeout"
+      },
+      "trace": {
+        "code": "deadline_exceeded",
+        "request": {
+          "timeout": 500,
+          "headers": [
+            [
+              "X-Grpc-Web",
+              "1"
+            ],
+            [
+              "grpc-timeout",
+              "500m"
+            ]
+          ]
+        }
+      },
+      "wire": [
+        {
+          "timeout": 500,
+          "outcome": "timeout"
+        }
+      ]
+    }
+  }
+]
