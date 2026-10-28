@@ -52,6 +52,10 @@ and macOS. In order:
   documented), its Elm tests, and the notes example's Elm tests.
 - `snippets`: every tagged code block in the README, the guides and the
   example's walkthrough is an excerpt of the file it names.
+- `release-check`: `HEAD` held to the release discipline: only an
+  `Open` or `Reopen as` commit changes a version line, and a `Cut`
+  commit changes the changelog alone (design §8.7). CI runs it over a
+  pull request's every commit.
 - `zizmor`: an audit of the workflows and the Dependabot config.
 - `gitleaks`: a scan of the history for secrets.
 - `deny`: `cargo deny` over the Rust dependencies.
