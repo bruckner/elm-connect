@@ -1,35 +1,78 @@
 # The cases of the protobuf conformance suite (protocolbuffers/protobuf
 # conformance/, runner v32.0-rc2 from bufbuild/protobuf-conformance) the
 # testee fails, for conformance_test_runner --failure_list. The testee runs
-# proto3 JSON in and JSON out only; everything else is answered skipped
-# (README.md). The runner fails a run when a listed case passes, so the list
-# cannot go stale.
+# protobuf binary and proto3 JSON, in and out; JSPB, text, proto2 and
+# editions are answered skipped (README.md). The runner fails a run when a
+# listed case passes, so the list cannot go stale.
 #
 # Each group says why, and is either a design choice (documented behaviour
 # the suite disagrees with) or a fix candidate (behaviour the runtime or the
-# generator could change).
+# generator could change). The groups of cases whose input is binary come
+# first, then those whose input is JSON, each listing the cases written
+# back as binary beside those written back as JSON.
+
+# Design choice: unknown fields are skipped when read, not kept, so a
+# message read from binary and written again loses them (design.md §5.5).
+Required.Proto3.ProtobufInput.UnknownOrdering.ProtobufOutput
+Required.Proto3.ProtobufInput.UnknownVarint.ProtobufOutput
+
+# Design choice: an encoder is a function to a JSON value, with no way to
+# refuse its input, so a value read from binary that has no proto3 JSON form is written
+# rather than refused: a Timestamp or Duration past its range, a Value
+# holding NaN or an infinity, a FieldMask path that does not survive the
+# camelCase round trip.
+Required.Proto3.DurationProtoInputTooLarge.JsonOutput
+Required.Proto3.DurationProtoInputTooSmall.JsonOutput
+Required.Proto3.TimestampProtoInputTooLarge.JsonOutput
+Required.Proto3.TimestampProtoInputTooSmall.JsonOutput
+Recommended.Proto3.ValueRejectInfNumberValue.JsonOutput
+Recommended.Proto3.ValueRejectNanNumberValue.JsonOutput
+Recommended.Proto3.FieldMaskNumbersDontRoundTrip.JsonOutput
+Recommended.Proto3.FieldMaskPathsDontRoundTrip.JsonOutput
+Recommended.Proto3.FieldMaskTooManyUnderscore.JsonOutput
 
 # Design choice: a Timestamp is a Time.Posix, which holds milliseconds, so
-# digits past the third are dropped.
+# digits past the third are dropped, in either output.
 Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.ProtobufOutput
 Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.ProtobufOutput
 Required.Proto3.JsonInput.TimestampMaxValue.JsonOutput
+Required.Proto3.JsonInput.TimestampMaxValue.ProtobufOutput
 Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.ProtobufOutput
 Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.JsonOutput
+Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.ProtobufOutput
 Required.Proto3.JsonInput.TimestampRepeatedValue.JsonOutput
+Required.Proto3.JsonInput.TimestampRepeatedValue.ProtobufOutput
 Recommended.Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
 Recommended.Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
 
 # Design choice: a 64-bit integer written as a JSON number past 2^53 is
 # rounded by JavaScript's JSON parser before the decoder sees it, so it is
-# read with the wrong digits or out of range (Proto.Json.int64).
+# read with the wrong digits or out of range (Proto.Json.int64), in either
+# output.
 Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.ProtobufOutput
 Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.ProtobufOutput
 Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
+Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.ProtobufOutput
 
 # Design choice: an enum number the client does not know reads as the zero
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator
+
+# Design choice: an enum value name the client does not know fails the
+# decode under the default enum_unknown=fail, as protobuf's parsers do by
+# default; enum_unknown=zero reads it as the zero value. Neither drops it,
+# which these cases ask of a parser told to ignore unknown values. They
+# run only with binary output.
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapPart.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInMapValue.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInOptionalField.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedField.ProtobufOutput
+Recommended.Proto3.JsonInput.IgnoreUnknownEnumStringValueInRepeatedPart.ProtobufOutput
 
 # Design choice: a key written twice in one object reads as its last value.
 # JavaScript's JSON parser keeps only the last, so only the response text

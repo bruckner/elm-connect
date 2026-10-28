@@ -671,9 +671,9 @@ caches `~/.local/share/func-e`, keyed on `envoy-version`.
 its `conformance_test_runner` sends the testee messages of
 `test_messages_proto3.proto` in one format and checks what it writes back,
 against protobuf's own parsers. The testee reads and writes them with the
-runtime and the Elm generated from that proto, so the suite tests the
-proto3 JSON codecs with an oracle independent of prost-reflect, which the
-codec round trips use.
+runtime and the Elm generated from that proto under `codec=both`, so the
+suite tests the protobuf binary and proto3 JSON codecs with an oracle
+independent of prost-reflect, which the codec round trips use.
 
 ```sh
 just protobuf-conformance
@@ -684,8 +684,8 @@ checked against its SHA-256), checks that `protobuf/generated/` and the
 committed proto are current, compiles the testee and runs the suite with
 `--enforce_recommended`. It must fail exactly the cases in
 `protobuf/failure_list.txt`: an unlisted failure fails the run, and so
-does a listed case that passes. Only JSON in and JSON out runs (289
-cases); protobuf binary, JSPB, text, proto2 and editions are answered
+does a listed case that passes. Protobuf binary and proto3 JSON run, in
+and out (1,468 cases); JSPB, text, proto2 and editions are answered
 `skipped`. It is in neither `just check` nor `just live`, and CI runs it
 only when dispatched by hand (`protobuf-conformance.yml`).
 `protobuf/README.md` says what runs, how the proto was made from

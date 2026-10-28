@@ -171,9 +171,10 @@ Each layer proves one thing and has a known gap. A path that starts with
   none about the codec.
 - **The protobuf conformance suite** (`conformance/protobuf/`, `just
   protobuf-conformance`, opt-in): protobuf's `conformance_test_runner`
-  against the proto3 JSON codecs, through the Elm generated for its
-  test messages. Gap: JSON in and out only; the cases it fails are
-  classified in `failure_list.txt`.
+  against the protobuf binary and proto3 JSON codecs, through the Elm
+  generated for its test messages under `codec=both`, every way between
+  the two formats. Gap: proto3 only; the cases it fails are classified
+  in `failure_list.txt`.
 - **Lockstep** (`crates/elm-connect-gen/tests/lockstep.rs`): the
   workspace's version, `elm.json`'s, the `Proto.Version` sentinel and
   the corpus's header placeholder agree, and `rust-version` is the

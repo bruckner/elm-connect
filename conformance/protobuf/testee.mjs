@@ -31,7 +31,7 @@ function readVarint(buf, at) {
 }
 
 // The fields of a ConformanceRequest the testee needs. A protobuf payload is
-// passed on as base64, which the Elm worker answers `skipped`.
+// passed on as base64, as the Elm worker writes a protobuf answer.
 function parseRequest(buf) {
   const request = { inputFormat: "none", payload: "", outputFormat: "unspecified", messageType: "" };
   let at = 0;
@@ -109,9 +109,10 @@ async function respond(buf) {
   if (process.env.TESTEE_FAIL_ALL === "1") {
     const r = await ask(request);
     if (r.kind === "skipped") return encodeResponse("skipped", r.payload);
-    // JSON that is no message at all: wrong for a case that expects a
-    // message and for one that expects a parse error.
-    return encodeResponse("json", "!");
+    // A payload in the format asked for that is no message at all (JSON
+    // `!`, or the byte 0xff, a truncated varint key): wrong for a case that
+    // expects a message and for one that expects a parse error.
+    return request.outputFormat === "json" ? encodeResponse("json", "!") : encodeResponse("protobuf", "/w==");
   }
   try {
     const r = await ask(request);
