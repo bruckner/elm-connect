@@ -34,12 +34,15 @@ streaming over Connect, not before.
 ## Binary protobuf
 
 `application/proto` bodies instead of JSON. The wire format is in the
-runtime, `Proto.Binary` ([design §5.5](design.md#55-the-binary-wire-format)).
-What remains is binary codecs generated beside the JSON ones only when
-an option asks for them, so the default output is unchanged; a way to
-attach them to the opaque `Proto.Message.Message` and
-`Proto.Method.Method` values; a bytes kind of `Rpc.Body`; and a codec
-setting on `Rpc.Transport`. A minor. The codecs would not reuse
+runtime, `Proto.Binary` ([design §5.5](design.md#55-the-binary-wire-format)),
+and the generator writes binary codecs beside the JSON ones under
+`codec=both`, or alone under `codec=binary`, attached to the
+`Proto.Message.Message` and `Proto.Method.Method` values by `withBinary`
+([design §3.10](design.md#310-binary-codecs)); the default output is
+unchanged. What remains is the transport: a bytes kind of `Rpc.Body`, a
+codec setting on `Rpc.Transport` that sends Connect's proto codec, an
+answer read as bytes, and the binary payload of an `Any` holding a
+message that is not well known. A minor. The codecs do not reuse
 elm-protocol-buffers' types, so that another package's major never
 forces one here.
 

@@ -2,6 +2,7 @@
 //! problems reported instead, and how those render.
 
 mod build;
+mod codec;
 mod common;
 mod docs;
 mod module_prefix;

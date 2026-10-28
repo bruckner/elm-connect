@@ -225,6 +225,26 @@ presence received as `-0` is written as `0`, and a singular `Empty` field
 is always written as `{}`. An `Any`'s packed message is written back as it
 arrived.
 
+The binary codecs run against the same samples. The test also writes each
+sample's protobuf binary (hex, `binary` in the data modules), deterministic
+where prost-reflect's is not: fields in number order, a map's entries in
+the order of the Elm `Dict` holding them, every singular `Empty` set, every
+`Any`'s packed message re-encoded the same way and a kind-less `Value` given
+`null_value`; another test checks that prost-reflect reads each back as
+the sample. It generates the protos under `codec=both` (with `int64=int`
+and with `bytes=bytes`) and `codec=binary` too, and
+`tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
+generated decoder and re-encodes it to the same bytes, with unknown fields
+of every wire type appended and without; where the set has JSON codecs, it
+checks that the value read from binary writes the JSON the value read from
+JSON writes (an `Any` read from binary holds its message's binary, so it
+is written in Connect's error-detail form, `binaryJson` in the data), and
+that the value read from JSON encodes to the same bytes, but where it
+holds an `Any`, which the binary encoder writes with its type URL alone.
+Since the encoders write prost-reflect's bytes exactly, prost-reflect reads
+what they write. The corpus case `codec_both` is these protos under
+`codec=both`, blessed like any other.
+
 For a deeper run, set the number of samples per message (8 by default)
 when generating, then run the Elm tests; the next plain run writes the
 default samples back:

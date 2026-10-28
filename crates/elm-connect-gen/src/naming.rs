@@ -392,12 +392,20 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 /// `defaultNote`).
 ///
 /// The top-level values of a generated module share one namespace, and
-/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`)
-/// followed by a type name. Type names are unique within a module and
-/// start with an uppercase letter, and no prefix is another's, so two such
-/// names never collide: neither within one prefix nor across two. (A
-/// suffix would not do: `encodeFooMessage` would be both the encoder of
-/// `FooMessage` and the record of `EncodeFoo`.)
+/// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
+/// and `merge` for a binary merge) followed by a type name. Type names are
+/// unique within a module and start with an uppercase letter, and no
+/// prefix is another's, so two such names never collide: neither within
+/// one prefix nor across two. (A suffix would not do: `encodeFooMessage`
+/// would be both the encoder of `FooMessage` and the record of
+/// `EncodeFoo`.)
+///
+/// The binary codecs break that rule once, on purpose: they are named for
+/// the JSON codecs with `Bytes` at the end (`encodeFooBytes`,
+/// `decodeFooBytes`, `mergeFooBytes`), so the JSON codecs of a type
+/// `FooBytes` would take the names of `Foo`'s binary codecs. The IR
+/// builder reports that (`naming::codec_collision`) under the options that
+/// generate both. `merge` begins no JSON codec, so a merge never meets one.
 pub fn default_name(type_elm_name: &str) -> String {
     format!("{DEFAULT_PREFIX}{type_elm_name}")
 }

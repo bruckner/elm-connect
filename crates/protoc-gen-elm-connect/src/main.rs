@@ -250,8 +250,8 @@ A protoc plugin: protoc or buf runs it and sends it the protos on stdin.
       --elm-connect_opt=int64=int notes/v1/notes.proto
 
 Options go in the plugin parameter, comma-separated `key=value` pairs:
-int64, bytes, unbound_methods, streaming, enum_unknown, rename (repeatable)
-and module_prefix. To generate without protoc, use the `elm-connect` CLI.
+int64, bytes, unbound_methods, streaming, enum_unknown, codec, rename
+(repeatable) and module_prefix. To generate without protoc, use the `elm-connect` CLI.
 To work with the generated code, run `elm-connect guide` or read
 {REPOSITORY_FILES}docs/guide.md.
 

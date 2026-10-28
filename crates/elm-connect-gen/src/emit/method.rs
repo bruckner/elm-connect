@@ -10,9 +10,10 @@ use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{Decl, Expr, Type};
 use crate::elm::build::{
-    apply, inline_list, list, qualified, record, stacked_apply, string, ty_fn, var,
+    apply, inline_list, list, pipe, qualified, record, stacked_apply, string, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
+use crate::options::Codec;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
@@ -71,16 +72,36 @@ impl Emitter {
     pub(super) fn method(&mut self, service: &str, method: &Method) -> Decl {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
-        let encode_request = self.request_encoder(&method.input);
-        let response_decoder = self.response_decoder(&method.output);
-        let built = stacked_apply(
-            self.reference((PROTO_METHOD, "method")),
-            [
-                encode_request,
-                response_decoder,
-                var(method.descriptor_name()),
-            ],
-        );
+        let built = match self.codec {
+            Codec::Json | Codec::Both => {
+                let encode_request = self.request_encoder(&method.input);
+                let response_decoder = self.response_decoder(&method.output);
+                let built = stacked_apply(
+                    self.reference((PROTO_METHOD, "method")),
+                    [
+                        encode_request,
+                        response_decoder,
+                        var(method.descriptor_name()),
+                    ],
+                );
+                if self.codec == Codec::Both {
+                    let encode = self.request_encoder_bytes(&method.input);
+                    let decode = self.response_decoder_bytes(&method.output);
+                    let with = self.reference((PROTO_METHOD, "withBinary"));
+                    pipe(built, stacked_apply(with, [encode, decode]))
+                } else {
+                    built
+                }
+            }
+            Codec::Binary => {
+                let encode = self.request_encoder_bytes(&method.input);
+                let decode = self.response_decoder_bytes(&method.output);
+                stacked_apply(
+                    self.reference((PROTO_METHOD, "methodBinary")),
+                    [encode, decode, var(method.descriptor_name())],
+                )
+            }
+        };
         let body = apply(self.reference((RPC, "call")), [built]);
         let call = self.library_type(RPC, "Call", [request.clone(), response]);
         Decl::Value {

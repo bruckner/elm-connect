@@ -117,9 +117,14 @@ conversions =
                         ]
         , test "fromParts past protobuf's limit gives the limit" <|
             \_ ->
-                [ Duration.fromParts 315576000001 0, Duration.fromParts 315576000000 5, Duration.fromParts -400000000000 -1 ]
+                [ Duration.fromParts 315576000001 0, Duration.fromParts 315576000000 1500000000, Duration.fromParts -400000000000 -1 ]
                     |> List.map Duration.toString
                     |> Expect.equal [ "315576000000s", "315576000000s", "-315576000000s" ]
+        , test "fromParts at protobuf's limit keeps the nanoseconds, as fromString does" <|
+            \_ ->
+                [ Duration.fromParts 315576000000 5, Duration.fromParts -315576000000 -578239000 ]
+                    |> Expect.equal
+                        (List.filterMap Duration.fromString [ "315576000000.000000005s", "-315576000000.578239s" ])
         , test "milliseconds past 32 bits" <|
             \_ -> Expect.equal 5000000000000 (Duration.toMilliseconds (Duration.fromMilliseconds 5000000000000))
         ]

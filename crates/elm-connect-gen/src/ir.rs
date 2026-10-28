@@ -413,6 +413,10 @@ pub struct Field {
     /// The field's `jstype` option; [`JsType::Normal`] unless the field is
     /// a 64-bit integer that sets it.
     pub jstype: JsType,
+    /// Whether the field is a repeated scalar or enum declared
+    /// `[packed = false]`, whose elements protobuf binary writes one per
+    /// field key rather than as one packed run.
+    pub unpacked: bool,
     /// What the field's options say about it beyond its type.
     pub annotations: Annotations,
     /// What the proto says about the field.

@@ -18,7 +18,7 @@ use super::{
 use super::{declaration, rename};
 use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
-use crate::options::{Options, Spelling, Streaming};
+use crate::options::{Codec, Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
 /// What a rename's help names in place of the proto element's full name.
@@ -90,6 +90,7 @@ pub fn build_with_imports(
     let mut builder = Builder {
         streaming: options.streaming,
         spelling: options.spelling,
+        codec: options.codec,
         ..Builder::default()
     };
 
@@ -562,6 +563,8 @@ struct Builder {
     references: Vec<Reference>,
     /// What a streaming method gets.
     streaming: Streaming,
+    /// Which codecs the package modules define, whose names they claim.
+    codec: Codec,
     /// The rename map's entries that name a generated element and suit it:
     /// Elm names by proto full name (an enum value's under its enum's).
     renames: HashMap<String, String>,
@@ -947,6 +950,10 @@ impl Builder {
                     messages.push(built);
                 }
             }
+        }
+
+        if self.codec.binary() {
+            self.check_codec_names(proto_name, &types, &messages, &enums);
         }
 
         let mut services = Vec::new();
@@ -1517,6 +1524,85 @@ impl Builder {
         true
     }
 
+    /// Reports each type of `package` named for another with `Bytes` at
+    /// the end (`NoteBytes` beside `Note`) whose JSON codecs take the
+    /// names of the other's binary codecs (`encodeNoteBytes`,
+    /// `decodeNoteBytes`). A type's binary codecs are its JSON codecs'
+    /// names with `Bytes` at the end, and only a message's merge starts
+    /// with `merge`, which no JSON codec does, so these are the only
+    /// generated values the binary codecs can meet. Enums keep their JSON
+    /// codecs under `codec=binary`; messages and oneofs have them only
+    /// under `codec=both`.
+    fn check_codec_names(
+        &mut self,
+        package: &str,
+        types: &Namespace,
+        messages: &[Message],
+        enums: &[Enum],
+    ) {
+        let mut names: Vec<&String> = types.claimed.keys().collect();
+        names.sort();
+        for name in names {
+            let Some(stem) = name.strip_suffix("Bytes") else {
+                continue;
+            };
+            let Some(first) = types.claimed.get(stem) else {
+                continue;
+            };
+            let second = &types.claimed[name.as_str()];
+            let is_enum = |elm: &str| enums.iter().any(|e| e.elm_name == elm);
+            if !(self.codec.json() || is_enum(name)) {
+                continue;
+            }
+            // A oneof's binary codec is an encoder alone.
+            let decodes = is_enum(stem) || messages.iter().any(|m| m.elm_name == stem);
+            let mut values = vec![naming::encoder_name(name)];
+            if decodes {
+                values.push(naming::decoder_name(name));
+            }
+            let listed = values
+                .iter()
+                .map(|value| format!("`{value}`"))
+                .collect::<Vec<_>>()
+                .join(" and ");
+            let (codecs, verb, does) = if values.len() == 1 {
+                ("codec", "becomes", "does")
+            } else {
+                ("codecs", "become", "do")
+            };
+            let first_site = Site {
+                label: format!("the binary {codecs} of {} {verb} {listed}", first.what),
+                ..first.site.clone()
+            };
+            let second_site = Site {
+                label: format!("and so {does} the JSON {codecs} of {}", second.what),
+                ..second.site.clone()
+            };
+            let renamed = [second, first]
+                .into_iter()
+                .find(|claim| {
+                    claim
+                        .given
+                        .as_ref()
+                        .is_some_and(|(given, _)| given == name || given == stem)
+                })
+                .and_then(|claim| Some((claim.proto.clone()?, claim.given.clone()?.0)));
+            let values = if values.len() == 1 {
+                format!("value {listed}")
+            } else {
+                format!("values {listed}")
+            };
+            self.diagnostics.push(Problem::codec_collision(
+                package,
+                &values,
+                first_site,
+                second_site,
+                &self.rename_of(second.proto.as_deref().or(first.proto.as_deref())),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
+        }
+    }
+
     /// Claims the descriptor module of the type `full_name`, named `name`
     /// in its package's module, for `origin`. A type whose name another
     /// type of the package has was reported already, and claims nothing.
@@ -1940,6 +2026,7 @@ impl Builder {
                     ty,
                     cyclic: false,
                     jstype: jstype(&field),
+                    unpacked: unpacked(&field),
                     annotations,
                     doc,
                 });
@@ -2468,6 +2555,21 @@ fn read_rule(rule: &DynamicMessage) -> HttpRule {
         response_body: string("response_body"),
         additional_bindings,
     }
+}
+
+/// Whether `field` is a repeated scalar or enum that is not packed: one
+/// declared `[packed = false]`, as proto3's scalars are packed by default.
+/// The option is read from the field's own options: the descriptor pool's
+/// `is_packed` reports such a field packed.
+fn unpacked(field: &FieldDescriptor) -> bool {
+    field.is_list()
+        && field
+            .field_descriptor_proto()
+            .options
+            .as_ref()
+            .and_then(|options| options.packed)
+            == Some(false)
+        && !matches!(field.kind(), Kind::Message(_) | Kind::String | Kind::Bytes)
 }
 
 /// The `jstype` option of `field` when its values are 64-bit integers;

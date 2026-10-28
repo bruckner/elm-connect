@@ -1,0 +1,36 @@
+// Under codec=both the binary codecs of `Book` are `encodeBookBytes` and
+// `decodeBookBytes`, which are also the JSON codecs of the message
+// `BookBytes`. An enum keeps its JSON codecs, so the enum `ShelfBytes`
+// meets the binary codecs of the message `Shelf` the same way. The oneof
+// `pick` of `Choice` is the type `ChoicePick`, whose binary codec is an
+// encoder alone, so the message `ChoicePickBytes` meets only that.
+syntax = "proto3";
+
+package shelf.v1;
+
+message Book {
+  string title = 1;
+}
+
+message BookBytes {
+  bytes content = 1;
+}
+
+message Shelf {
+  repeated Book books = 1;
+}
+
+enum ShelfBytes {
+  SHELF_BYTES_UNSPECIFIED = 0;
+}
+
+message Choice {
+  oneof pick {
+    string name = 1;
+    int32 number = 2;
+  }
+}
+
+message ChoicePickBytes {
+  bytes raw = 1;
+}

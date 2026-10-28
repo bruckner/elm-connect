@@ -1,0 +1,33 @@
+// Under codec=binary messages and oneofs get protobuf binary codecs alone,
+// built by Proto.Message.messageBinary, and methods are built by
+// Proto.Method.methodBinary. The enum keeps its JSON codecs beside its
+// number conversions, since its typed value holds them.
+syntax = "proto3";
+
+package ledger.v1;
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  KIND_CREDIT = 1;
+  KIND_DEBIT = -1;
+}
+
+message Entry {
+  string memo = 1;
+  sint64 amount = 2;
+  Kind kind = 3;
+  map<string, int32> tags = 4;
+  oneof source {
+    string account = 5;
+    Entry reversal = 6;
+  }
+  repeated int32 marks = 7 [packed = false];
+}
+
+message GetEntryRequest {
+  string memo = 1;
+}
+
+service LedgerService {
+  rpc GetEntry(GetEntryRequest) returns (Entry);
+}

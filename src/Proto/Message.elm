@@ -1,6 +1,6 @@
 module Proto.Message exposing
-    ( Message, message
-    , encode, decoder, default, toDescriptor
+    ( Message, message, withBinary, messageBinary
+    , encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
     , Descriptor, descriptor
     , typeName, typeUrl, fields, oneofs
     )
@@ -13,12 +13,12 @@ descriptor in a module of the message's own, beside one value per field
 (`Notes.V1.Note.descriptor : Descriptor`, `Notes.V1.Note.title`); and
 [`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type.
 
-@docs Message, message
+@docs Message, message, withBinary, messageBinary
 
 
 # Reading a typed value
 
-@docs encode, decoder, default, toDescriptor
+@docs encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
 
 
 # Descriptors
@@ -32,9 +32,11 @@ descriptor in a module of the message's own, beside one value per field
 
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Field as Field
+import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
 
 
@@ -63,7 +65,58 @@ message encodeJson jsonDecoder defaultValue messageDescriptor =
         , decoder = jsonDecoder
         , default = defaultValue
         , descriptor = messageDescriptor
+        , binary = Nothing
         }
+
+
+{-| The message type with protobuf binary codecs too, as generated code under
+`codec=both` writes it:
+
+    messageNote =
+        Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+            |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes
+
+The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
+the package site may show as `Proto.Internal.Binary.Decoder`.
+
+-}
+withBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a -> Message a
+withBinary encodeBinary binaryDecoder (Internal.Message m) =
+    Internal.Message { m | binary = Just { encode = encodeBinary, decoder = binaryDecoder } }
+
+
+{-| A message type with protobuf binary codecs alone, as generated code under
+`codec=binary` writes it:
+
+    messageNote =
+        Proto.Message.messageBinary encodeNoteBytes decodeNoteBytes defaultNote Notes.V1.Note.descriptor
+
+Its JSON encoder writes `null` and its JSON decoder fails.
+
+-}
+messageBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> a -> Descriptor -> Message a
+messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
+    Internal.Message
+        { encode = \_ -> Json.Encode.null
+        , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
+        , default = defaultValue
+        , descriptor = messageDescriptor
+        , binary = Just { encode = encodeBinary, decoder = binaryDecoder }
+        }
+
+
+{-| The protobuf binary encoder, when the message type has one.
+-}
+encodeBytes : Message a -> Maybe (a -> Bytes.Encode.Encoder)
+encodeBytes (Internal.Message m) =
+    Maybe.map .encode m.binary
+
+
+{-| The protobuf binary decoder, when the message type has one.
+-}
+bytesDecoder : Message a -> Maybe (Proto.Internal.Binary.Decoder a)
+bytesDecoder (Internal.Message m) =
+    Maybe.map .decoder m.binary
 
 
 {-| A value as proto3 JSON.
