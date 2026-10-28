@@ -8,9 +8,11 @@ module Codec.V1.Choice exposing (..)
 -}
 
 import Codec.V1.Kind
+import Proto.Enum
 import Proto.Field
 import Proto.Message
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -43,6 +45,7 @@ descriptor =
         , at
         , wrapped
         , twoWords
+        , none
         , after
         ]
 
@@ -147,6 +150,14 @@ wrapped =
 twoWords : Proto.Field.Descriptor
 twoWords =
     Proto.Field.descriptor "two_words" "twoWords" 13 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "pick"
+
+
+{-| `google.protobuf.NullValue none = 15;`, in oneof `pick`
+-}
+none : Proto.Field.Descriptor
+none =
+    Proto.Field.descriptor "none" "none" 15 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
         |> Proto.Field.inOneof "pick"
 
 

@@ -506,6 +506,11 @@ pub fn method_descriptor_name(method_elm_name: &str) -> String {
 /// uppercase, so an all-lowercase name cannot be one of them.
 pub const REGISTRY: &str = "registry";
 
+/// The value holding the binary codecs of a package's messages, under
+/// `codec=both` (`Proto.Registry.Registry` too). It starts with no prefix
+/// [`default_name`] lists, so it is not a prefix and a type name either.
+pub const BINARY_REGISTRY: &str = "binaryRegistry";
+
 /// The value every generated module defines, naming the `Proto.Version`
 /// value of the release that generated it (design §8). Its trailing
 /// underscore marks it as the generator's own, as with a recursive
@@ -518,7 +523,8 @@ pub const VERSION_VALUE: &str = "elmConnectVersion_";
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
 /// today starts with one of the prefixes [`default_name`] lists, or is
-/// [`REGISTRY`] or [`VERSION_VALUE`], or is a method's.
+/// [`REGISTRY`], [`BINARY_REGISTRY`] or [`VERSION_VALUE`], or is a
+/// method's.
 pub const ENCODER_ARGUMENT: &str = "value";
 
 /// The variable a oneof's encoder binds the value of the set member to, in
@@ -778,6 +784,12 @@ mod tests {
             assert_eq!(name, name.to_ascii_lowercase());
         }
         assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY));
+        assert!(
+            prefixes
+                .iter()
+                .all(|prefix| !BINARY_REGISTRY.starts_with(prefix))
+        );
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&BINARY_REGISTRY));
         assert!(
             prefixes
                 .iter()

@@ -4,7 +4,8 @@
         "../../src",
         "../../examples/notes/elm/generated",
         "suite/elm",
-        "src"
+        "src",
+        "json"
     ],
     "elm-version": "0.19.2",
     "dependencies": {

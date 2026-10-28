@@ -308,6 +308,18 @@ live/
                       server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
+  json/Live/OneCodec.elm
+                      an empty dispatch table, for this build (below)
+  both/               the runner against bindings generated with codec=both
+                      (build/both/, gitignored): elm.json, and
+                      src/Live/OneCodec.elm, GetNote with one codec of the two
+  cases/proto.json    every method over Connect's proto codec
+  cases/proto-missing.json
+                      a method with one codec refused under the other
+  conformance-proto.yaml
+                      the suite's features with the proto codec
+  known-failing-proto.txt
+                      the suite's test cases the runtime fails under it
   build/              the compiled program (gitignored)
 ```
 
@@ -351,6 +363,7 @@ An **envelope**, what the runner sends:
     "maxGetUrl": null,
     "readMaxBytes": null,
     "writeMaxBytes": null,
+    "codec": "json",
     "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
   },
   "binding": null,
@@ -370,7 +383,8 @@ default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`
 `cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
 (`Rpc.Transport.connectGet`, `withMaxGetUrl`); `readMaxBytes` and
 `writeMaxBytes` apply `Rpc.Transport.withReadMaxBytes` and
-`withWriteMaxBytes` to either transport. `retry` builds an
+`withWriteMaxBytes` to either transport, and `codec` (`json`, the
+default, or `proto`) `Rpc.Transport.withCodec`. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
 `jitter` (default false, so a case's waits are the bounds it states).
@@ -414,17 +428,20 @@ A **result**, what comes back:
 }
 ```
 
-`result` is one of `{"ok": <response as proto3 JSON>}`, `{"error":
+`result` is one of `{"ok": <response as proto3 JSON>}` (with `okBinary`, the response's
+protobuf binary in base64, when its message has binary codecs), `{"error":
 {"code", "message", "details", "source", "response"}}` (the code as
 Connect names it, each detail as `Proto.Json.encodeAny` writes it, the
 source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
 for a code inferred from the status, and `response` the answer the
-error was read from: `statusCode`, `statusText` and `body`),
+error was read from: `statusCode`, `statusText` and `body`, and
+`bodyBase64` for an answer read as bytes; `detailsBinary` holds each
+detail's binary as an `Any`, in base64),
 `{"badResponse": {"problem", "response"}}` for a successful answer whose
 body did not decode (elm/json's problem, and the answer as above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `InvalidHeader <name>`, `RequestTooLarge <size> <limit>`,
-`ResponseTooLarge <size> <limit>`) for an
+`ResponseTooLarge <size> <limit>`, `MissingCodec <method> <codec>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
@@ -510,7 +527,7 @@ answer's headers itself; with `sendTraced` it reports the `Trace`'s
 way a repeated header is one value, joined with `", "` as elm/http gives
 it, which the suite accepts. A call with no answer is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-`RequestTooLarge` and `ResponseTooLarge` as `resource_exhausted`, anything else, and a bad response, as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
+`RequestTooLarge` and `ResponseTooLarge` as `resource_exhausted`, a bad response as `internal`, as `Rpc.Error.code` reads it, anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure
@@ -530,6 +547,28 @@ case to fail, so the lists cannot go stale. One test case pattern per line
 (`*` one name component, `**` any number), `#` starting a comment.
 `connectconformance` reads only the first `--known-failing` flag it is
 given, so the `sendTraced` run joins the two files in `build/`.
+
+### The proto codec, live
+
+`just live-proto` (part of `just live`) runs the proto codec's legs. It
+generates the example's Elm and the suite's with `codec=both` into
+`build/both/` with buf (not committed: the `codec=json` bindings are, and
+the corpus pins the generator's output), builds the runner against them
+from `both/`, whose `Live.OneCodec` adds `GetNoteJsonOnly` and
+`GetNoteBinaryOnly`, `GetNote` built with one codec of the two (the JSON
+build's `json/Live/OneCodec.elm` has none), and runs: `cases/proto.json`
+and `cases/proto-missing.json` against the example server; `notes.json`
+and `transcode.json` again on that build, which must answer as the JSON
+build does; and the Connect conformance suite with
+`conformance-proto.yaml`, through the halves and with `sendTraced`, the
+envelope's `codec: "proto"` set from the suite's request and the result
+read back from `okBinary` and `detailsBinary`. The suite runs its
+error-body cases only when the proto codec is listed, so the proto run
+has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
+the four it fails, none about the codec (a Connect error body without a
+code, or with an unknown one, and a 200 of another content type), and
+the `sendTraced` run adds `known-failing-send.txt`. Transcoding is JSON
+whatever the codec, so the transcoding legs above cover it.
 
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's
 protos exported from `buf.build/connectrpc/conformance` at the commit its

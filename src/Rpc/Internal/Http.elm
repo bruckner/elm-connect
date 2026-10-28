@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue, wellFormed)
+module Rpc.Internal.Http exposing (badBaseUrl, bytesText, configProblems, encodeRouteText, invalidHeader, metadataOf, overLimit, percentDecode, percentEncode, requestTooLarge, send, splitTrailers, task, unreserved, utf8Length, validHeaderName, validHeaderValue, wellFormed)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -8,6 +8,8 @@ the percent-encoding the transports share. Not exposed. It is kept out of `Rpc` 
 -}
 
 import Bitwise
+import Bytes exposing (Bytes)
+import Bytes.Decode
 import Dict exposing (Dict)
 import Http
 import Json.Encode
@@ -459,12 +461,12 @@ quote text =
     Json.Encode.encode 0 (Json.Encode.string text)
 
 
-{-| The request as a task, its response read by `read`. A body is sent as
-`application/json`; `withCredentials` sends cookies cross-origin
-(`Http.riskyTask`).
+{-| The request as a task, its response read by `resolver`. A body is sent
+as its content type (`Rpc.Body.contentType`); `withCredentials` sends cookies
+cross-origin (`Http.riskyTask`).
 -}
-task : (Http.Response String -> Result e a) -> Request -> Task e a
-task read request =
+task : Http.Resolver e a -> Request -> Task e a
+task resolver request =
     let
         perform =
             if request.withCredentials then
@@ -478,16 +480,16 @@ task read request =
         , headers = List.map (\( name, value ) -> Http.header name value) request.headers
         , url = request.url
         , body = body request
-        , resolver = Http.stringResolver read
+        , resolver = resolver
         , timeout = request.timeout
         }
 
 
-{-| The request as a command, its response read by `read`, cancellable through
-`tracker` (`Http.cancel`).
+{-| The request as a command, its response read by `expect`, cancellable
+through `tracker` (`Http.cancel`).
 -}
-send : (Http.Response String -> Result e a) -> (Result e a -> msg) -> Maybe String -> Request -> Cmd msg
-send read toMsg tracker request =
+send : Http.Expect msg -> Maybe String -> Request -> Cmd msg
+send expect tracker request =
     let
         perform =
             if request.withCredentials then
@@ -501,7 +503,7 @@ send read toMsg tracker request =
         , headers = List.map (\( name, value ) -> Http.header name value) request.headers
         , url = request.url
         , body = body request
-        , expect = Http.expectStringResponse toMsg read
+        , expect = expect
         , timeout = request.timeout
         , tracker = tracker
         }
@@ -509,12 +511,25 @@ send read toMsg tracker request =
 
 body : Request -> Http.Body
 body request =
-    case Rpc.Body.toText request.body of
-        Just json ->
+    case ( Rpc.Body.toText request.body, Rpc.Body.toBytes request.body, Rpc.Body.contentType request.body ) of
+        ( Just json, _, _ ) ->
             Http.stringBody "application/json" json
 
-        Nothing ->
+        ( Nothing, Just binary, Just type_ ) ->
+            Http.bytesBody type_ binary
+
+        _ ->
             Http.emptyBody
+
+
+{-| Bytes read as UTF-8 text; `""` when they are not UTF-8, where a browser
+would write U+FFFD for what it cannot read. Only the bytes path reaches it, so a program that reads
+no answer as bytes carries no elm/bytes.
+-}
+bytesText : Bytes -> String
+bytesText raw =
+    Bytes.Decode.decode (Bytes.Decode.string (Bytes.width raw)) raw
+        |> Maybe.withDefault ""
 
 
 {-| An answer's status and headers, or `Nothing` when there was no answer.

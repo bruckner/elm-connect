@@ -1,0 +1,124 @@
+[
+  {
+    "name": "proto refuses a method without binary codecs, unsent and not retried",
+    "note": "GetNoteJsonOnly is GetNote with its JSON codecs alone, as codec=json generates it (conformance/live/both/src/Live/OneCodec.elm).",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNoteJsonOnly",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto",
+        "retry": {
+          "attempts": 3,
+          "codes": [
+            "internal"
+          ],
+          "idempotentOnly": false
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "MissingCodec notes.v1.NotesService/GetNote proto"
+      },
+      "trace": {
+        "attempts": 0,
+        "code": "internal"
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "proto Rpc.send refuses it too",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNoteJsonOnly",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "MissingCodec notes.v1.NotesService/GetNote proto"
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "json refuses a method with binary codecs alone, unsent",
+    "note": "GetNoteBinaryOnly is GetNote with its binary codecs alone, as codec=binary generates it.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNoteBinaryOnly",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      }
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "MissingCodec notes.v1.NotesService/GetNote json"
+      },
+      "trace": {
+        "attempts": 0,
+        "code": "internal"
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "transcoding refuses it whatever the codec, since it is JSON",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNoteBinaryOnly",
+      "transport": "transcode",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      },
+      "send": "send"
+    },
+    "expect": {
+      "result": {
+        "noAnswer": "MissingCodec notes.v1.NotesService/GetNote json"
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "proto sends a method with binary codecs alone",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNoteBinaryOnly",
+      "transport": "connect",
+      "request": {
+        "name": "notes/welcome"
+      },
+      "config": {
+        "codec": "proto"
+      }
+    },
+    "expect": {
+      "result": {
+        "ok": {
+          "name": "notes/welcome",
+          "title": "Welcome"
+        }
+      },
+      "trace": {
+        "httpStatus": 200,
+        "code": "ok"
+      }
+    }
+  }
+]

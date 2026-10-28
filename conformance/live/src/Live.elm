@@ -13,6 +13,7 @@ import Json.Encode as Encode exposing (Value)
 import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
 import Live.Conformance
 import Live.Notes
+import Live.OneCodec
 import Live.Routes
 import Process
 import Rpc
@@ -33,7 +34,7 @@ port results : Value -> Cmd msg
 -}
 tables : Dict ( String, String ) (Entry Msg)
 tables =
-    Dict.fromList (Live.Notes.table ++ Live.Conformance.table ++ Live.Routes.table)
+    Dict.fromList (Live.Notes.table ++ Live.Conformance.table ++ Live.Routes.table ++ Live.OneCodec.table)
 
 
 main : Program () Model Msg
@@ -280,8 +281,8 @@ config t =
         (optional "retry" (Decode.nullable retryPolicy) Nothing)
 
 
-{-| The size limits `readMaxBytes` and `writeMaxBytes` set, applied to a
-transport.
+{-| The size limits `readMaxBytes` and `writeMaxBytes` set and the codec
+`codec` names (`"json"`, the default, or `"proto"`), applied to a transport.
 -}
 limits : Decoder (Rpc.Transport.Transport -> Rpc.Transport.Transport)
 limits =
@@ -290,9 +291,12 @@ limits =
             optional name (Decode.nullable Decode.int) Nothing
                 |> Decode.map (Maybe.map knob >> Maybe.withDefault identity)
     in
-    Decode.map2 (>>)
+    Decode.map3 (\a b c -> a >> b >> c)
         (limit "readMaxBytes" Rpc.Transport.withReadMaxBytes)
         (limit "writeMaxBytes" Rpc.Transport.withWriteMaxBytes)
+        (optional "codec" (oneOfNames "codec" [ ( "json", Rpc.Transport.Json ), ( "proto", Rpc.Transport.Proto ) ]) Rpc.Transport.Json
+            |> Decode.map Rpc.Transport.withCodec
+        )
 
 
 pair : Decoder ( String, String )

@@ -13,10 +13,11 @@ module Proto.Any exposing
     Proto.Any.unpack Notes.V1.messageNote detail
     --> Just (Ok note)
 
-An `Any` read from proto3 JSON holds the message's JSON. One read from a Connect
-error detail without its `debug` JSON holds only the message's protobuf
-binary, which this package does not decode: such an `Any` still says its type,
-but [`unpack`](#unpack) gives [`BinaryOnly`](#Problem). The proto3 JSON
+An `Any` read from proto3 JSON holds the message's JSON. One read from
+protobuf binary, or from a Connect error detail without its `debug` JSON,
+holds only the message's binary: [`unpack`](#unpack) reads it with a message
+generated with binary codecs (`codec=both`), and gives
+[`BinaryOnly`](#Problem) for one without. The proto3 JSON
 codecs of an `Any` are [`Proto.Json.any`](Proto-Json#any) and
 [`Proto.Json.encodeAny`](Proto-Json#encodeAny).
 
@@ -36,6 +37,7 @@ codecs of an `Any` are [`Proto.Json.any`](Proto-Json#any) and
 
 import Json.Decode
 import Proto.Internal.Any as Internal exposing (Payload(..))
+import Proto.Internal.Message
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 
@@ -78,11 +80,13 @@ is message any =
 
 
 {-| A message as an `Any`, its type URL prefixed `type.googleapis.com/`, as
-protobuf's own libraries write it.
+protobuf's own libraries write it. It holds the message's JSON, and its
+protobuf binary too when the message has binary codecs (`codec=both`), so
+it can be written in either form.
 -}
 pack : Message a -> a -> Any
 pack message value =
-    Internal.Any (Message.typeUrl (Message.toDescriptor message)) (InJson (Message.encode message value))
+    Internal.Any (Message.typeUrl (Message.toDescriptor message)) (payloadOf message value)
 
 
 {-| A message as an `Any` whose type URL has another prefix:
@@ -99,21 +103,44 @@ packWith prefix message value =
             else
                 prefix ++ "/"
     in
-    Internal.Any (slashed ++ Message.typeName (Message.toDescriptor message)) (InJson (Message.encode message value))
+    Internal.Any (slashed ++ Message.typeName (Message.toDescriptor message)) (payloadOf message value)
+
+
+{-| A value's JSON, and its binary too when its message has binary codecs, so
+the `Any` can be written in either form.
+-}
+payloadOf : Message a -> a -> Payload
+payloadOf ((Proto.Internal.Message.Message m) as message) value =
+    case m.binary of
+        Just binary ->
+            InBoth (Message.encode message value) (binary.toBase64 value)
+
+        Nothing ->
+            InJson (Message.encode message value)
 
 
 {-| The packed message, if it is of this type: `Nothing` for another type,
 `Just (Err problem)` for this type when it cannot be read.
 -}
 unpack : Message a -> Any -> Maybe (Result Problem a)
-unpack message ((Internal.Any _ payload) as any) =
+unpack ((Proto.Internal.Message.Message m) as message) ((Internal.Any _ payload) as any) =
     if is message any then
         case payload of
-            InJson json ->
-                Just (Json.Decode.decodeValue (Message.decoder message) json |> Result.mapError Json)
+            InBinary base64 ->
+                case m.binary of
+                    Just binary ->
+                        case binary.fromBase64 base64 of
+                            Just value ->
+                                Just (Ok value)
 
-            InBinary _ ->
-                Just (Err BinaryOnly)
+                            Nothing ->
+                                Just (Err Binary)
+
+                    Nothing ->
+                        Just (Err BinaryOnly)
+
+            _ ->
+                Just (Json.Decode.decodeValue (Message.decoder message) (Internal.jsonOf payload) |> Result.mapError Json)
 
     else
         Nothing
@@ -122,13 +149,17 @@ unpack message ((Internal.Any _ payload) as any) =
 {-| Why a message of the right type could not be unpacked.
 
   - `Json`: its JSON does not decode as the message.
-  - `BinaryOnly`: only its protobuf binary arrived (a Connect error detail
-    without `debug`), and this package reads JSON alone.
+  - `BinaryOnly`: only its protobuf binary arrived (read from binary, or a
+    Connect error detail without `debug`), and the message has no binary
+    codecs to read it with.
+  - `Binary`: only its protobuf binary arrived, and it does not decode as
+    the message.
 
 -}
 type Problem
     = Json Json.Decode.Error
     | BinaryOnly
+    | Binary
 
 
 

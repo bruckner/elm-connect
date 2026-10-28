@@ -98,7 +98,7 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
-| `codec` | `--codec` | `json` (default), `binary`, `both` | Which codecs messages get. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak. `both`: protobuf binary codecs beside the JSON ones. `binary`: the binary codecs alone; enums keep their JSON codecs. See [Binary codecs](#binary-codecs): no transport sends binary yet. |
+| `codec` | `--codec` | `json` (default), `binary`, `both` | Which codecs messages get. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak. `both`: protobuf binary codecs beside the JSON ones. `binary`: the binary codecs alone; enums keep their JSON codecs. See [Binary codecs](#binary-codecs); Connect's proto codec sends them ([calling.md](calling.md#choosing-the-codec)). |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -202,9 +202,23 @@ would have JSON codecs of the same names, so under `codec=both`, or
 under `codec=binary` for an enum, that is `naming::codec_collision`;
 `rename` one of the two. Under `codec=json` nothing is reserved.
 
-No transport sends protobuf binary yet: calls go as JSON, and a call of
-a method generated under `codec=binary` sends `null`. Connect's proto
-codec is next ([roadmap](roadmap.md#binary-protobuf)).
+Under `codec=both` the package module also holds `binaryRegistry`, a
+`Proto.Registry.Registry` of the conversions from proto3 JSON to binary
+of the package's messages and of the well-known types they hold, after
+those of the packages whose messages they hold. The binary encoders
+write an `Any` field with it (`Proto.Binary.anyWith binaryRegistry`),
+so that an `Any` read from proto3 JSON is written as its message's
+binary; one of a type it lacks is written with its type URL alone.
+`registry` stays descriptors only, so a program that reads descriptors
+keeps no codecs, and one that writes binary keeps no descriptors.
+Under `codec=binary`, which has no JSON decoders, there is no
+`binaryRegistry`.
+
+Calls go as protobuf binary over Connect under
+`Rpc.Transport.withCodec Rpc.Transport.Proto`
+([calling.md](calling.md#choosing-the-codec)); a call of a method
+generated under `codec=binary` under JSON or over transcoding fails with
+`NoAnswer (MissingCodec …)`, unsent.
 
 ## Imported packages
 

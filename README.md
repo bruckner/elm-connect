@@ -49,21 +49,28 @@ users of protoc-gen-elm.
 
 Pre-release, version 0.1.0. The generator and the runtime work: unary
 methods over Connect and over `google.api.http` transcoding, proto3
-JSON, Elm 0.19.0 to 0.19.2. The runtime passes the unary JSON test cases
-of the official [Connect conformance suite](https://github.com/connectrpc/conformance)
+JSON and, over Connect, protobuf binary, Elm 0.19.0 to 0.19.2. The
+runtime passes the unary JSON test cases of the official
+[Connect conformance suite](https://github.com/connectrpc/conformance)
 (v1.0.6), with the features declared in
 [`conformance/live/conformance.yaml`](conformance/live/conformance.yaml):
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
-calls and Connect GET. A live suite runs every method over Connect
+calls and Connect GET; with the proto codec
+([`conformance-proto.yaml`](conformance/live/conformance-proto.yaml))
+it passes all but four error-body cases that do not depend on the
+codec. A live suite runs every method over Connect
 against connect-go v2.0.1 and over transcoding against Vanguard v0.5.0
 and grpc-gateway v2.32.0, with the route fixtures under both
 transcoders.
 
 Releases before 1.0 carry prebuilt binaries and put the crates on
 crates.io; the Elm package reaches the package index at 1.0.
-Streaming, binary protobuf and gRPC-Web are out of scope for
-1.x; [docs/roadmap.md](docs/roadmap.md) says what may come, and whether
-it would be a minor or a major release.
+Messages travel as proto3 JSON, or over Connect as protobuf binary
+with the generator's `codec=both` or `codec=binary`
+([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming and
+gRPC-Web are out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
+says what may come, and whether it would be a minor or a major
+release.
 
 ## Install
 
@@ -156,9 +163,10 @@ result, trying calls in `elm repl`, and testing without a server.
 
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
-- Calls in proto3 JSON only. The generator can write protobuf binary
-  codecs (`codec=both`, [docs/generator.md](docs/generator.md#binary-codecs)),
-  but no transport sends them yet.
+- Calls in proto3 JSON, or over Connect in protobuf binary, with the
+  codecs the generator writes under `codec=both` or `codec=binary`
+  ([docs/generator.md](docs/generator.md#binary-codecs)). Transcoding is
+  JSON.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
   a file that declares an edition is `input::editions`.
 - No streaming, no gRPC-Web.

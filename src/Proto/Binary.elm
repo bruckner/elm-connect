@@ -9,7 +9,7 @@ module Proto.Binary exposing
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
     , embedded, messageEncoder, messageDecoder
-    , timestamp, duration, fieldMask, empty, struct, listValue, value, any
+    , timestamp, duration, fieldMask, empty, struct, listValue, value, any, anyWith
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
     )
@@ -72,7 +72,7 @@ outside ±(2^53 − 1).
 
 # Well-known types
 
-@docs timestamp, duration, fieldMask, empty, struct, listValue, value, any
+@docs timestamp, duration, fieldMask, empty, struct, listValue, value, any, anyWith
 @docs doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
 @docs int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
 
@@ -89,7 +89,7 @@ import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Internal.Any as InternalAny exposing (Any, Payload(..))
 import Proto.Internal.Binary as Internal
-import Proto.Json as ProtoJson
+import Proto.Registry exposing (Registry)
 import Time
 
 
@@ -1416,15 +1416,29 @@ writeValue json =
 
 {-| `google.protobuf.Any`: read, it holds the packed message's binary, which
 [`Proto.Any.unpack`](Proto-Any#unpack) decodes with a message that has binary
-codecs. Written, one holding a well-known type's JSON (read from proto3 JSON)
-is converted to binary; one holding another message's JSON is written with
-its type URL alone, since that message's binary encoder is not at hand. One
-that arrives twice is merged field by field: the type URL or the value the
-later one carries replaces the earlier one's.
+codecs. Written, an `Any` packed from such a message writes that binary; one
+holding a message's JSON alone, as one read from proto3 JSON does, is written
+with its type URL alone, since no binary encoder is at hand: generated code
+under `codec=both` writes with [`anyWith`](#anyWith) its package's
+`binaryRegistry`, which converts the JSON. One that arrives twice is merged field by field: the
+type URL or the value the later one carries replaces the earlier one's.
 -}
 any : Codec Any
 any =
-    embedded writeAny anyInto (InternalAny.Any "" (InBinary ""))
+    anyWith Proto.Registry.empty
+
+
+{-| [`any`](#any), writing an `Any` that holds a message's JSON alone as the
+message's binary when the registry has the message's codecs
+([`Proto.Registry.withBinary`](Proto-Registry#withBinary)), and with its type
+URL alone when it does not.
+
+    Proto.Binary.optional (Proto.Binary.anyWith Notes.V1.binaryRegistry) 13 value.attachment
+
+-}
+anyWith : Registry -> Codec Any
+anyWith registry =
+    embedded (writeAny registry) anyInto (InternalAny.Any "" (InBinary ""))
 
 
 anyInto : Any -> Decoder Any
@@ -1447,87 +1461,22 @@ anyInto (InternalAny.Any start payload) =
         )
 
 
-writeAny : Any -> Encoder
-writeAny (InternalAny.Any url payload) =
+writeAny : Registry -> Any -> Encoder
+writeAny registry (InternalAny.Any url payload) =
     case payload of
         InBinary base64 ->
             E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
 
+        InBoth _ base64 ->
+            E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
+
         InJson json ->
-            case wellKnownJson (InternalAny.nameOf url) json of
+            case Proto.Registry.toBinary (InternalAny.nameOf url) json registry of
                 Just body ->
-                    E.sequence [ implicit string 1 url, implicit bytesAsBytes 2 (E.encode body) ]
+                    E.sequence [ implicit string 1 url, implicit bytesAsBytes 2 body ]
 
                 Nothing ->
                     implicit string 1 url
-
-
-{-| A well-known type's proto3 JSON as its binary body, by the type's full
-name; `Nothing` for another type or JSON that is not the type's.
--}
-wellKnownJson : String -> Json.Encode.Value -> Maybe Encoder
-wellKnownJson name json =
-    let
-        convert : Json.Decode.Decoder a -> Codec a -> Maybe Encoder
-        convert decoder codec =
-            Json.Decode.decodeValue decoder json
-                |> Result.toMaybe
-                |> Maybe.map (messageEncoder codec)
-    in
-    case name of
-        "google.protobuf.Timestamp" ->
-            convert ProtoJson.timestamp timestamp
-
-        "google.protobuf.Duration" ->
-            convert ProtoJson.duration duration
-
-        "google.protobuf.FieldMask" ->
-            convert ProtoJson.fieldMask fieldMask
-
-        "google.protobuf.Empty" ->
-            convert ProtoJson.empty empty
-
-        "google.protobuf.Struct" ->
-            convert ProtoJson.struct struct
-
-        "google.protobuf.ListValue" ->
-            convert ProtoJson.listValue listValue
-
-        "google.protobuf.Value" ->
-            convert Json.Decode.value value
-
-        "google.protobuf.Any" ->
-            convert ProtoJson.any any
-
-        "google.protobuf.DoubleValue" ->
-            convert ProtoJson.float doubleValue
-
-        "google.protobuf.FloatValue" ->
-            convert ProtoJson.float floatValue
-
-        "google.protobuf.Int64Value" ->
-            convert ProtoJson.int64 int64Value
-
-        "google.protobuf.UInt64Value" ->
-            convert ProtoJson.uint64 uint64Value
-
-        "google.protobuf.Int32Value" ->
-            convert ProtoJson.int32 int32Value
-
-        "google.protobuf.UInt32Value" ->
-            convert ProtoJson.uint32 uint32Value
-
-        "google.protobuf.BoolValue" ->
-            convert Json.Decode.bool boolValue
-
-        "google.protobuf.StringValue" ->
-            convert Json.Decode.string stringValue
-
-        "google.protobuf.BytesValue" ->
-            convert ProtoJson.bytes bytesValue
-
-        _ ->
-            Nothing
 
 
 wrapper : Codec v -> Codec v

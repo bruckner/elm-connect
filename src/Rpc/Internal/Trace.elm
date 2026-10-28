@@ -7,14 +7,16 @@ without breaking code that reads one.
 -}
 
 import Dict exposing (Dict)
+import Proto.Internal.Method
+import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
-import Rpc.Internal.Call exposing (Call)
+import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry exposing (Outcome)
 import Rpc.Internal.Route as Route
-import Rpc.Internal.Transport exposing (Transport)
+import Rpc.Internal.Transport as Transport exposing (Transport)
 import Rpc.Request exposing (Request)
 import Rpc.Transport
 
@@ -28,6 +30,7 @@ type Trace
         , transport : String
         , binding : Maybe Int
         , request : Request
+        , requestBase64 : Maybe String
         , httpStatus : Maybe Int
         , headers : Dict String String
         , trailers : Dict String String
@@ -41,7 +44,7 @@ type Trace
 came to and how long it took, in milliseconds.
 -}
 init : Transport -> Call req res -> Request -> Outcome Error res -> Float -> Trace
-init transport c sent outcome duration =
+init transport ((Call fields) as c) sent outcome duration =
     let
         metadata =
             outcome.metadata
@@ -60,6 +63,12 @@ init transport c sent outcome duration =
                 _ ->
                     Nothing
         , request = sent
+        , requestBase64 =
+            -- Written by the method's bytes path, so that a program without
+            -- binary codecs carries no base64 encoder.
+            Maybe.map2 (\binary bytes -> binary.base64 bytes)
+                (Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method)
+                (Rpc.Body.toBytes sent.body)
         , httpStatus = Maybe.map .statusCode outcome.metadata
         , headers = metadata.headers
         , trailers = metadata.trailers

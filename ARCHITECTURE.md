@@ -97,8 +97,10 @@ point of `elm-format`: the corpus's formatted check and
   `Rpc.Response`, `Rpc.Error`, `Rpc.Code`).
 
 Imports point one way: no `Proto` module imports an `Rpc` one, and `Rpc`
-reads only two internal modules of the `Proto` side,
-`Proto.Internal.Binding` and `Proto.Internal.Any` (§3.1, rule 7).
+reads only three internal modules of the `Proto` side,
+`Proto.Internal.Binding`, `Proto.Internal.Any` and
+`Proto.Internal.Method`, whose bytes path `Proto.Method.withBinary`
+builds into a method (§3.1, rule 7; §5.3).
 
 The `Internal` modules (`src/Rpc/Internal/`, `src/Proto/Internal/`) are
 not exposed. They exist for two reasons (§3.1, rule 4): an opaque type
@@ -160,9 +162,13 @@ Each layer proves one thing and has a known gap. A path that starts with
 - **The Connect conformance suite** (`conformance/live/conformance.mjs`,
   `conformance/live/src/Live/Conformance.elm`): connectconformance's
   unary JSON cases over HTTP/1.1, through the pure halves and through
-  `Rpc.sendTraced`. Gap: what the runtime does not support (streaming,
-  the binary codec, HTTP/2) is declared out, and
-  `known-failing-send.txt` lists the one case `sendTraced` fails.
+  `Rpc.sendTraced`, and its unary proto-codec cases
+  (`conformance-proto.yaml`, `just live-proto`) against the runner built
+  on bindings generated with `codec=both`. Gap: what the runtime does not
+  support (streaming, HTTP/2) is declared out,
+  `known-failing-send.txt` lists the one case `sendTraced` fails, and
+  `known-failing-proto.txt` the four error-body cases the proto run adds,
+  none about the codec.
 - **The protobuf conformance suite** (`conformance/protobuf/`, `just
   protobuf-conformance`, opt-in): protobuf's `conformance_test_runner`
   against the proto3 JSON codecs, through the Elm generated for its

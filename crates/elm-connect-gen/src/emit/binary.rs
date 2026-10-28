@@ -9,15 +9,19 @@
 //!
 //! An encoder is `Bytes.Encode.sequence` of one `Proto.Binary` field
 //! helper per field in field-number order, each oneof's encoder where its
-//! first member's number falls. A merge is `Proto.Binary.merge` of a step
+//! first member's number falls; a oneof whose members' numbers have
+//! another field's between them is written instead as one `case` per run
+//! of members with no other field between them, each where its run falls,
+//! so the set member is in field-number order too. A merge is `Proto.Binary.merge` of a step
 //! that `case`s on the field number into a record update (an unknown
 //! number skipped by its wire type) and a finishing function that reverses
 //! the lists the step built front-first. A singular message field, and a
 //! oneof's message member, is read into the message read before it
 //! (`Proto.Binary.fieldInto`). Every value's codec is a
 //! `Proto.Binary.Codec`: the runtime's for a scalar or well-known type,
-//! `Proto.Binary.enum` of an enum's conversions, `Proto.Binary.embedded`
-//! of a message's encoder, merge and default.
+//! `Proto.Binary.enum` of an enum's conversions (for
+//! `google.protobuf.NullValue`, conversions to and from `()`),
+//! `Proto.Binary.embedded` of a message's encoder, merge and default.
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
@@ -27,9 +31,10 @@ use crate::elm::build::{
     access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, ty, var,
 };
 use crate::ir::{
-    Cardinality, Enum, Field, MapKey, Message, ScalarKind, TypeRef, WellKnown, Wrapper,
+    Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
+    Wrapper,
 };
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
+use crate::naming::{BINARY_REGISTRY, ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -93,8 +98,8 @@ fn scalar_codec(kind: ScalarKind, holding: Holding) -> &'static str {
     }
 }
 
-/// The runtime codec of a well-known type.
-fn well_known_codec(known: WellKnown, holding: Holding) -> &'static str {
+/// The runtime codec of a well-known message type.
+pub(super) fn well_known_codec(known: WellKnown, holding: Holding) -> &'static str {
     let int = holding.int64 == Int64::Int;
     match known {
         WellKnown::Value => "value",
@@ -119,6 +124,7 @@ fn well_known_codec(known: WellKnown, holding: Holding) -> &'static str {
             crate::options::Bytes::String => "bytesValue",
             crate::options::Bytes::Bytes => "bytesValueAsBytes",
         },
+        WellKnown::NullValue => unreachable!("NullValue is an enum, with no runtime codec"),
     }
 }
 
@@ -170,8 +176,15 @@ impl Emitter {
     }
 
     /// The `Proto.Binary.Codec` of one value of type `ty`, held as
-    /// `holding` says; in `wrapped`, when the field closes a cycle.
-    fn binary_codec(&mut self, ty: &TypeRef, holding: Holding, wrapped: Option<&Wrapper>) -> Expr {
+    /// `holding` says; in `wrapped`, when the field closes a cycle;
+    /// `writing` in an encoder, reading in a merge.
+    fn binary_codec(
+        &mut self,
+        ty: &TypeRef,
+        holding: Holding,
+        wrapped: Option<&Wrapper>,
+        writing: bool,
+    ) -> Expr {
         match (ty, wrapped) {
             (TypeRef::Message(name), Some(wrapper)) => {
                 let default = self.generated_value(&name.module, default_name(&name.name));
@@ -199,13 +212,27 @@ impl Emitter {
                 let embedded = self.binary("embedded");
                 apply(embedded, [encode, decode, default])
             }
+            (TypeRef::WellKnown(WellKnown::NullValue), _) => {
+                // Its one value, `NULL_VALUE`, is the number 0.
+                let codec = self.binary("enum");
+                let to_number = lambda([Pattern::Wildcard], int(0));
+                let from_number = lambda([Pattern::Wildcard], Expr::Unit);
+                apply(codec, [to_number, from_number])
+            }
+            // Under `codec=both` an `Any` is written with the package's
+            // binary registry, whose codecs write one holding a message's
+            // JSON as its binary. It is read without, so that a program
+            // that only reads binary keeps none of those codecs.
+            (TypeRef::WellKnown(WellKnown::Any), _) if writing && self.codec.json() => {
+                apply(self.binary("anyWith"), [var(BINARY_REGISTRY)])
+            }
             (TypeRef::WellKnown(known), _) => self.binary(well_known_codec(*known, holding)),
         }
     }
 
-    fn field_codec(&mut self, field: &Field, shape: FieldShape) -> Expr {
+    fn field_codec(&mut self, field: &Field, shape: FieldShape, writing: bool) -> Expr {
         let holding = field_holding(field.jstype, self.holding);
-        self.binary_codec(&field.ty, holding, wrapper_of(shape))
+        self.binary_codec(&field.ty, holding, wrapper_of(shape), writing)
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
@@ -228,7 +255,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
             let number = int(field.number.into());
-            let codec = self.field_codec(field, field_shape);
+            let codec = self.field_codec(field, field_shape, true);
             let encoded = match field_shape {
                 // `()` has no presence to leave it out by; it is written,
                 // as the JSON encoder writes `{}`.
@@ -254,18 +281,57 @@ impl Emitter {
             };
             items.push((field.number, encoded));
         }
-        for oneof in &shape.oneofs {
-            let first = oneof
-                .variants
+        for (index, oneof) in shape.oneofs.iter().enumerate() {
+            let value = || access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
+            // The numbers of every other field and oneof member.
+            let others: Vec<u32> = shape
+                .fields
                 .iter()
-                .map(|(variant, _)| variant.number)
-                .min()
-                .unwrap_or(0);
-            let value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
-            items.push((
-                first,
-                apply(var(bytes_name(oneof.oneof.encoder_name())), [value]),
-            ));
+                .map(|(field, _)| field.number)
+                .chain(
+                    shape
+                        .oneofs
+                        .iter()
+                        .enumerate()
+                        .filter(|&(other, _)| other != index)
+                        .flat_map(|(_, other)| other.variants.iter().map(|(v, _)| v.number)),
+                )
+                .collect();
+            let mut members = oneof.variants.clone();
+            members.sort_by_key(|(variant, _)| variant.number);
+            let mut runs: Vec<Vec<(&OneofVariant, ValueShape)>> = Vec::new();
+            for member in members {
+                let split = runs.last().and_then(|run| run.last()).is_some_and(|last| {
+                    others
+                        .iter()
+                        .any(|&n| last.0.number < n && n < member.0.number)
+                });
+                match runs.last_mut() {
+                    Some(run) if !split => run.push(member),
+                    _ => runs.push(vec![member]),
+                }
+            }
+            if runs.len() <= 1 {
+                let first = runs
+                    .first()
+                    .and_then(|run| run.first())
+                    .map_or(0, |(variant, _)| variant.number);
+                items.push((
+                    first,
+                    apply(var(bytes_name(oneof.oneof.encoder_name())), [value()]),
+                ));
+                continue;
+            }
+            for run in runs {
+                let first = run[0].0.number;
+                let nothing = apply(self.reference((BYTES_ENCODE, "sequence")), [list([])]);
+                let arms: Vec<(Pattern, Expr)> = run
+                    .into_iter()
+                    .map(|(variant, member)| self.oneof_member_bytes(variant, member))
+                    .chain(std::iter::once((Pattern::Wildcard, nothing)))
+                    .collect();
+                items.push((first, case(value(), arms)));
+            }
         }
         items.sort_by_key(|(number, _)| *number);
         let param = if items.is_empty() {
@@ -324,7 +390,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
             let current = access(var(ENCODER_ARGUMENT), name);
-            let codec = self.field_codec(field, field_shape);
+            let codec = self.field_codec(field, field_shape, false);
             let step = match field_shape {
                 FieldShape::Plain(_) => {
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
@@ -376,8 +442,8 @@ impl Emitter {
             let name = oneof.oneof.elm_field_name.as_str();
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
-                let codec = self.binary_codec(&variant.ty, holding, None);
-                let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty)) {
+                let codec = self.binary_codec(&variant.ty, holding, None, false);
+                let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(
                         [Pattern::Wildcard],
                         update(name, var(variant.elm_ctor.clone())),
@@ -457,6 +523,26 @@ impl Emitter {
         }
     }
 
+    /// The `case` arm that writes a oneof's member: its field, written
+    /// whatever its value.
+    fn oneof_member_bytes(&mut self, variant: &OneofVariant, value: ValueShape) -> (Pattern, Expr) {
+        let holding = field_holding(variant.jstype, self.holding);
+        let codec = self.binary_codec(&variant.ty, holding, None, true);
+        let number = int(variant.number.into());
+        let present = self.binary("present");
+        if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
+            (
+                pctor(variant.elm_ctor.clone(), []),
+                apply(present, [codec, number, Expr::Unit]),
+            )
+        } else {
+            (
+                pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
+                apply(present, [codec, number, var(ONEOF_MEMBER)]),
+            )
+        }
+    }
+
     /// `encodeFooKindBytes : FooKind -> Bytes.Encode.Encoder`: the set
     /// member, written whatever its value, or nothing when unset.
     pub(super) fn oneof_encoder_bytes(&mut self, shape: &OneofShape) -> Decl {
@@ -468,23 +554,7 @@ impl Emitter {
         let members: Vec<(Pattern, Expr)> = shape
             .variants
             .iter()
-            .map(|&(variant, value)| {
-                let holding = field_holding(variant.jstype, self.holding);
-                let codec = self.binary_codec(&variant.ty, holding, None);
-                let number = int(variant.number.into());
-                let present = self.binary("present");
-                if matches!(value, ValueShape::Zeroed(Zeroed::Empty)) {
-                    (
-                        pctor(variant.elm_ctor.clone(), []),
-                        apply(present, [codec, number, Expr::Unit]),
-                    )
-                } else {
-                    (
-                        pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
-                        apply(present, [codec, number, var(ONEOF_MEMBER)]),
-                    )
-                }
-            })
+            .map(|&(variant, value)| self.oneof_member_bytes(variant, value))
             .collect();
         let encoder = self.bytes_encoder_type();
         Decl::Value {

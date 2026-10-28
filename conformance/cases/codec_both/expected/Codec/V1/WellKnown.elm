@@ -7,9 +7,11 @@ module Codec.V1.WellKnown exposing (..)
 {-| The descriptor of `codec.v1.WellKnown` and its fields.
 -}
 
+import Proto.Enum
 import Proto.Field
 import Proto.Message
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -44,6 +46,9 @@ descriptor =
         , durations
         , empties
         , structs
+        , nullValue
+        , nullValues
+        , nullMap
         ]
 
 
@@ -150,3 +155,24 @@ empties =
 structs : Proto.Field.Descriptor
 structs =
     Proto.Field.descriptor "structs" "structs" 15 (Proto.Field.CardinalityMap Proto.Field.ScalarInt32) (Proto.Field.KindMessage "google.protobuf.Struct")
+
+
+{-| `google.protobuf.NullValue null_value = 16;`
+-}
+nullValue : Proto.Field.Descriptor
+nullValue =
+    Proto.Field.descriptor "null_value" "nullValue" 16 Proto.Field.CardinalitySingular (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
+{-| `repeated google.protobuf.NullValue null_values = 17;`
+-}
+nullValues : Proto.Field.Descriptor
+nullValues =
+    Proto.Field.descriptor "null_values" "nullValues" 17 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))
+
+
+{-| `map<string, google.protobuf.NullValue> null_map = 18;`
+-}
+nullMap : Proto.Field.Descriptor
+nullMap =
+    Proto.Field.descriptor "null_map" "nullMap" 18 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum (Proto.Enum.toDescriptor Proto.WellKnown.nullValue))

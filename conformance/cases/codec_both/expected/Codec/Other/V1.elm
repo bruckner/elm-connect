@@ -110,6 +110,14 @@ registry =
         Proto.Registry.wellKnown
 
 
+{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.1.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+-}
+binaryRegistry : Proto.Registry.Registry
+binaryRegistry =
+    Proto.Registry.empty
+        |> Proto.Registry.withBinary "codec.other.v1.Remote" decodeRemote encodeRemoteBytes
+
+
 
 -- ENCODERS
 
@@ -161,7 +169,7 @@ decodeShade =
 decodeRemote : Json.Decode.Decoder Remote
 decodeRemote =
     Json.Decode.succeed Remote
-        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.field "id" "" Proto.Json.string
         |> Proto.Json.field "shade" ShadeUnspecified decodeShade
         |> Proto.Json.field "version" "0" Proto.Json.int64
 
