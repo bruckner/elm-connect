@@ -11,7 +11,7 @@ and writes these into the method's [descriptor](Proto-Method#Descriptor),
 for a program that reads them; a generated method transcodes over route
 functions built from the same rule. A method written by hand takes its
 bindings with [`Proto.Method.withBindings`](Proto-Method#withBindings), and
-`Rpc` builds the request from them under the Transcode transport.
+`Rpc` builds the request from them over the transcode protocol.
 
 @docs Binding, binding
 @docs Segment, literal, variable, wildcard, doubleWildcard

@@ -12,9 +12,9 @@ import Rpc.Internal.Retry exposing (Retry)
 
 {-| A call; `Rpc.Call`'s readers say what each field holds.
 -}
-type Call req res
+type Call codec req res
     = Call
-        { method : Method req res
+        { method : Method codec req res
         , message : req
         , binding : Int
         , headers : List ( String, String )
@@ -24,9 +24,9 @@ type Call req res
         }
 
 
-{-| What a call says of retrying: nothing, so the config's policy applies
-(`InheritRetry`); never, whatever the config says (`NoRetry`); or by a policy
-of its own in place of the config's (`OwnRetry`).
+{-| What a call says of retrying: nothing, so the client's policy applies
+(`InheritRetry`); never, whatever the client says (`NoRetry`); or by a policy
+of its own in place of the client's (`OwnRetry`).
 -}
 type RetryOverride
     = InheritRetry
@@ -34,10 +34,10 @@ type RetryOverride
     | OwnRetry Retry
 
 
-{-| The policy in effect for a call sent with a config whose policy is
-`configured`: the call's own when it has one, else the config's.
+{-| The policy in effect for a call sent with a client whose policy is
+`configured`: the call's own when it has one, else the client's.
 -}
-retryIn : Maybe Retry -> Call req res -> Maybe Retry
+retryIn : Maybe Retry -> Call codec req res -> Maybe Retry
 retryIn configured (Call fields) =
     case fields.retry of
         InheritRetry ->

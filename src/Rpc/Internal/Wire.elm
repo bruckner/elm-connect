@@ -1,133 +1,99 @@
-module Rpc.Internal.Wire exposing (Settings, invalidPathValue, missingCodec, request, requestTooLarge, withBudget)
+module Rpc.Internal.Wire exposing
+    ( base64
+    , bytesTooLarge
+    , bytesUnlimited
+    , connectGet
+    , connectGetBinary
+    , connectPost
+    , connectPostBinary
+    , connectTimeout
+    , connectTimeoutHeader
+    , jsonTooLarge
+    , textUnlimited
+    , transcode
+    , transcodeTimeout
+    , usableTimeout
+    , width
+    )
 
-{-| The request each transport sends for a call: Connect's POST, or its GET of
-a method without side effects, and transcoding's request over a binding,
-with the headers, timeout and credentials the config and the call give.
-Not exposed; it is what `Rpc.request` stands for, kept out of `Rpc` so that
-the public module reads as API. It takes the config as the fields it reads,
-since `Rpc`, which defines `Config`, imports it.
+{-| The requests the protocols send: Connect's POST, and its GET of a method
+without side effects, as JSON or protobuf binary; transcoding's request over
+a route. Not exposed; each is a top-level function a protocol constructor or
+modifier puts in a protocol (`Rpc.Internal.Protocol`), so a program carries
+only the builders of the protocols and options it names: a POST-only program
+no percent-encoding, a Connect program no route code, a JSON program no
+elm/bytes.
 -}
 
-import Json.Encode
-import Proto.Internal.Method
+import Bytes exposing (Bytes)
+import Bytes.Encode
+import Json.Encode exposing (Value)
+import Proto.Bytes
 import Proto.Internal.Percent as Percent
 import Proto.Method exposing (Idempotency(..))
-import Proto.Route
-import Rpc.Body as Body
-import Rpc.Call
-import Rpc.Error as Error
-import Rpc.Internal.Call exposing (Call(..))
+import Proto.Route exposing (Route)
+import Rpc.Body as Body exposing (Body)
+import Rpc.Error as Error exposing (Reason)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Retry as Retry
-import Rpc.Internal.Route as Route exposing (Route(..), route)
-import Rpc.Internal.Transport as Transport exposing (Transport(..))
+import Rpc.Internal.Protocol exposing (Options, Settings)
 import Rpc.Request exposing (Request)
 
 
-{-| The fields of an `Rpc.Config` a request is built from.
+
+-- CONNECT
+
+
+{-| Connect's POST of a request's JSON, every call POSTed.
 -}
-type alias Settings c =
-    { c
-        | transport : Transport
-        , baseUrl : String
-        , headers : List ( String, String )
-        , timeout : Maybe Float
-        , withCredentials : Bool
-    }
+connectPost : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
+connectPost _ settings _ json =
+    connectRequest settings (Body.text (Json.Encode.encode 0 (json ())))
 
 
-{-| The request a call sends over the settings' transport.
+{-| Connect's GET of a call of a method without side effects, the JSON
+percent-encoded in the query, unless the URL would be longer than
+`maxGetUrl`; any other call is POSTed. `withConnectGet` installs it.
 -}
-request : Settings c -> Call req res -> Request
-request cfg c =
-    case cfg.transport of
-        Connect options ->
-            connectRequest options (connectMessage cfg c) cfg c
-
-        Transcode _ ->
-            case route cfg.transport c of
-                Bound _ bound ->
-                    transcodeRequest (bound (Rpc.Call.requestMessage c)) cfg c
-
-                Implicit ->
-                    connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
-
-
-{-| A request message as Connect sends it: its body as a POST, and as a GET
-the query parameters before `message` (`encoding`, and `base64` for binary)
-and `message`'s value, written only for a GET.
--}
-type alias ConnectMessage =
-    { body : Body.Body, encoding : String, query : () -> String }
-
-
-{-| The message as JSON, its GET query percent-encoded only for a GET:
-percent-encoding the message takes several times as long as encoding it.
--}
-jsonMessage : Call req res -> ConnectMessage
-jsonMessage c =
+connectGet : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
+connectGet options settings _ json =
     let
-        json =
-            Json.Encode.encode 0 (Rpc.Call.requestJson c)
+        text =
+            Json.Encode.encode 0 (json ())
     in
-    { body = Body.text json
-    , encoding = "encoding=json"
-    , query = \_ -> Percent.percentEncode Percent.unreserved json
-    }
+    getOr options settings (Body.text text) (\() -> "encoding=json&message=" ++ Percent.percentEncode Percent.unreserved text)
 
 
-{-| The message as the transport's codec writes it: protobuf binary under the
-proto codec when the method has binary codecs, else JSON (a method without
-them is refused before it is sent). The binary is written by the method's
-own code, which `Proto.Method.withBinary` built, so a program without binary
-codecs carries none of it.
+{-| Connect's POST of a request's protobuf binary, as `application/proto`.
 -}
-connectMessage : Settings c -> Call req res -> ConnectMessage
-connectMessage cfg ((Call fields) as c) =
-    case Proto.Internal.Method.binaryUnder (Transport.proto cfg.transport) fields.method of
-        Just binary ->
-            let
-                written =
-                    binary.message fields.message
-            in
-            { body = Body.bytes written.bytes
-            , encoding = "base64=1&encoding=proto"
-            , query = written.base64Url
-            }
-
-        Nothing ->
-            jsonMessage c
+connectPostBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+connectPostBinary _ _ settings encoder =
+    connectRequest settings (Body.bytes (Bytes.Encode.encode encoder))
 
 
-connectRequest : { o | get : Bool, maxGetUrl : Maybe Int } -> ConnectMessage -> Settings c -> Call req res -> Request
-connectRequest options message cfg ((Call fields) as c) =
+{-| Connect's GET under the proto codec: the binary as unpadded URL-safe
+base64 in the query.
+-}
+connectGetBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+connectGetBinary toBase64 options settings encoder =
     let
-        url =
-            Route.connectUrl cfg.baseUrl c
+        binary =
+            Bytes.Encode.encode encoder
+    in
+    getOr options settings (Body.bytes binary) (\() -> "base64=1&encoding=proto&message=" ++ base64Url (toBase64 binary))
 
-        timeout =
-            callTimeout cfg c
 
-        timeoutHeader =
-            case timeout of
-                Just ms ->
-                    [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
-
-                Nothing ->
-                    []
-
-        -- Built only for a call that may go as a GET. The query parameters
-        -- are in the order the protocol recommends, so a cache keys one
-        -- request one way.
-        getUrl =
-            if options.get && Rpc.Call.idempotency c == IdempotencyNoSideEffects then
+{-| A GET when the method has no side effects and the URL is within the
+limit, built only then; else the POST of `body`. The query parameters are
+in the order the protocol recommends, so a cache keys one request one way.
+-}
+getOr : Options -> Settings -> Body -> (() -> String) -> Request
+getOr options settings body getQuery =
+    let
+        get =
+            if settings.idempotency == IdempotencyNoSideEffects then
                 let
                     whole =
-                        url
-                            ++ "?connect=v1&"
-                            ++ message.encoding
-                            ++ "&message="
-                            ++ message.query ()
+                        connectUrl settings ++ "?connect=v1&" ++ getQuery ()
                 in
                 case options.maxGetUrl of
                     Just limit ->
@@ -143,113 +109,218 @@ connectRequest options message cfg ((Call fields) as c) =
             else
                 Nothing
     in
-    case getUrl of
-        Just get ->
+    case get of
+        Just url ->
             { method = "GET"
-            , url = get
-            , headers = cfg.headers ++ fields.headers ++ timeoutHeader
+            , url = url
+            , headers = settings.headers ++ connectTimeoutHeader settings.timeout
             , body = Body.none
-            , timeout = timeout
-            , withCredentials = cfg.withCredentials
+            , timeout = settings.timeout
+            , withCredentials = settings.withCredentials
             }
 
         Nothing ->
-            { method = "POST"
-            , url = url
-            , headers = cfg.headers ++ fields.headers ++ ( "Connect-Protocol-Version", "1" ) :: timeoutHeader
-            , body = message.body
-            , timeout = timeout
-            , withCredentials = cfg.withCredentials
-            }
+            connectRequest settings body
 
 
-{-| The request over one binding's route.
--}
-transcodeRequest : Proto.Route.Route -> Settings c -> Call req res -> Request
-transcodeRequest r cfg ((Call fields) as c) =
-    { method = r.method
-    , url = Route.transcodeUrl cfg.baseUrl r
-    , headers = cfg.headers ++ fields.headers
-    , body = Route.transcodeBody r
-    , timeout = callTimeout cfg c
-    , withCredentials = cfg.withCredentials
+connectRequest : Settings -> Body -> Request
+connectRequest settings body =
+    { method = "POST"
+    , url = connectUrl settings
+    , headers = settings.headers ++ ( "Connect-Protocol-Version", "1" ) :: connectTimeoutHeader settings.timeout
+    , body = body
+    , timeout = settings.timeout
+    , withCredentials = settings.withCredentials
     }
 
 
-{-| The first path variable of the call's binding whose value its template
-cannot match, read from the call's request; `Nothing` over Connect and the
-implicit route, which have no path variables.
+{-| `Connect-Timeout-Ms`, when there is a timeout.
 -}
-invalidPathValue : Settings c -> Call req res -> Maybe { field : String, template : String }
-invalidPathValue cfg c =
-    case route cfg.transport c of
-        Bound _ bound ->
-            (bound (Rpc.Call.requestMessage c)).invalid
+connectTimeoutHeader : Maybe Float -> List ( String, String )
+connectTimeoutHeader timeout =
+    case timeout of
+        Just ms ->
+            [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
 
-        Implicit ->
+        Nothing ->
+            []
+
+
+{-| The URL Connect sends a call to: the base URL and the call's procedure
+path, `/service/method`.
+-}
+connectUrl : Settings -> String
+connectUrl settings =
+    trimSlash settings.baseUrl ++ settings.procedure
+
+
+{-| Bytes as standard base64, the binary protocols' writer for a GET's
+query and a trace.
+-}
+base64 : Bytes -> String
+base64 =
+    Proto.Bytes.toBase64
+
+
+{-| The size of bytes, the binary protocols' measure for their limits.
+-}
+width : Bytes -> Int
+width =
+    Bytes.width
+
+
+{-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
+binary.
+-}
+base64Url : String -> String
+base64Url =
+    String.foldr
+        (\char done ->
+            case char of
+                '+' ->
+                    String.cons '-' done
+
+                '/' ->
+                    String.cons '_' done
+
+                '=' ->
+                    done
+
+                _ ->
+                    String.cons char done
+        )
+        ""
+
+
+
+-- TRANSCODING
+
+
+{-| Transcoding's request over the call's route: the route's method, its
+path and query, its body; or, for a method without routes, the request
+Connect would POST (the implicit route).
+-}
+transcode : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
+transcode options settings route json =
+    case route of
+        Just r ->
+            { method = r.method
+            , url = trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
+            , headers = settings.headers
+            , body =
+                case r.body of
+                    Just body ->
+                        Body.text (Json.Encode.encode 0 body)
+
+                    Nothing ->
+                        Body.none
+            , timeout = settings.timeout
+            , withCredentials = settings.withCredentials
+            }
+
+        Nothing ->
+            connectPost options settings route json
+
+
+query : List ( String, String ) -> String
+query pairs =
+    case pairs of
+        [] ->
+            ""
+
+        _ ->
+            "?"
+                ++ String.join "&"
+                    (List.map
+                        (\( name, value ) ->
+                            Percent.percentEncode Percent.unreserved name ++ "=" ++ Percent.percentEncode Percent.unreserved value
+                        )
+                        pairs
+                    )
+
+
+
+-- LIMITS
+
+
+{-| Whether a request's JSON, as UTF-8, is over the write limit. Installed by
+`withWriteMaxBytes`; the JSON is encoded again only then.
+-}
+jsonTooLarge : Options -> (() -> Value) -> Maybe Reason
+jsonTooLarge options json =
+    options.writeMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                Internal.overLimit limit (Json.Encode.encode 0 (json ()))
+                    |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
+            )
+
+
+{-| Whether a request's protobuf binary is over the write limit.
+-}
+bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
+bytesTooLarge width_ options binary =
+    options.writeMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                let
+                    size =
+                        width_ (Bytes.Encode.encode (binary ()))
+                in
+                if size > max 0 limit then
+                    Just (Error.RequestTooLarge { limit = limit, size = size })
+
+                else
+                    Nothing
+            )
+
+
+{-| No limit: what a protocol's `tooLarge` and `overRead` are until a
+modifier installs a limit.
+-}
+textUnlimited : Options -> a -> Maybe Reason
+textUnlimited _ _ =
+    Nothing
+
+
+{-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
+each protocol's field has its own type.
+-}
+bytesUnlimited : a -> Options -> b -> Maybe Reason
+bytesUnlimited _ _ _ =
+    Nothing
+
+
+
+-- TIMEOUTS
+
+
+{-| Connect carries a timeout in `Connect-Timeout-Ms`.
+-}
+connectTimeout : Maybe Route -> Maybe ( String, Float -> String )
+connectTimeout _ =
+    Just ( "Connect-Timeout-Ms", timeoutMs )
+
+
+{-| Transcoding carries none over a route, and Connect's over the implicit
+route.
+-}
+transcodeTimeout : Maybe Route -> Maybe ( String, Float -> String )
+transcodeTimeout route =
+    case route of
+        Just _ ->
             Nothing
 
-
-{-| The request an attempt sends with `left` milliseconds of a retry deadline
-to go (`Rpc.Internal.Retry.budget`): `sent` with
-its timeout bounded by them, and over Connect a `Connect-Timeout-Ms` that
-says so in place of any it had. A request whose timeout is already within
-the budget, or sent without a deadline, is `sent` as it is.
--}
-withBudget : Settings c -> Call req res -> Maybe Float -> Request -> Request
-withBudget cfg c left sent =
-    let
-        timeout =
-            usableTimeout sent.timeout
-    in
-    case Retry.attemptTimeout left timeout of
-        Just ms ->
-            if timeout == Just ms then
-                sent
-
-            else
-                { sent
-                    | timeout = Just ms
-                    , headers =
-                        if speaksConnect cfg c then
-                            List.filter (\( name, _ ) -> String.toLower name /= "connect-timeout-ms") sent.headers
-                                ++ [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
-
-                        else
-                            sent.headers
-                }
-
         Nothing ->
-            sent
+            Just ( "Connect-Timeout-Ms", timeoutMs )
 
 
-{-| Whether the call goes over the Connect protocol, which carries its
-timeout in a header: over Connect, and over transcoding by the implicit
-route of a method without a rule.
+{-| A positive whole number of milliseconds, at most ten digits, as the
+protocol requires.
 -}
-speaksConnect : Settings c -> Call req res -> Bool
-speaksConnect cfg c =
-    case cfg.transport of
-        Connect _ ->
-            True
-
-        Transcode _ ->
-            case route cfg.transport c of
-                Bound _ _ ->
-                    False
-
-                Implicit ->
-                    True
-
-
-callTimeout : Settings c -> Call req res -> Maybe Float
-callTimeout cfg (Call fields) =
-    case usableTimeout fields.timeout of
-        Just ms ->
-            Just ms
-
-        Nothing ->
-            usableTimeout cfg.timeout
+timeoutMs : Float -> String
+timeoutMs ms =
+    String.fromInt (clamp 1 9999999999 (ceiling ms))
 
 
 {-| A timeout only when it is a positive number of milliseconds. elm/http hands
@@ -271,52 +342,10 @@ usableTimeout timeout =
             Nothing
 
 
-{-| A positive whole number of milliseconds, at most ten digits, as the
-protocol requires.
--}
-timeoutMs : Float -> String
-timeoutMs ms =
-    String.fromInt (clamp 1 9999999999 (ceiling ms))
-
-
-{-| Why a call cannot be written in the transport's codec: its method has no
-binary codecs and the transport sends protobuf binary, or binary codecs alone
-and the transport sends JSON.
--}
-missingCodec : Settings c -> Call req res -> Maybe Error.Reason
-missingCodec cfg ((Call fields) as c) =
-    let
-        (Proto.Internal.Method.Method m) =
-            fields.method
-
-        missing codecName =
-            Just (Error.MissingCodec { method = Rpc.Call.serviceName c ++ "/" ++ Rpc.Call.methodName c, codec = codecName })
-    in
-    if Transport.proto cfg.transport then
-        case m.binary of
-            Just _ ->
-                Nothing
-
-            Nothing ->
-                missing "proto"
-
-    else if m.json then
-        Nothing
+trimSlash : String -> String
+trimSlash url =
+    if String.endsWith "/" url then
+        String.dropRight 1 url
 
     else
-        missing "json"
-
-
-{-| Why a call's request message is too long to send over the transport: its
-JSON, or its protobuf binary under the proto codec, is over the write limit.
-Either is encoded only when there is a limit to measure it against.
--}
-requestTooLarge : Settings c -> Call req res -> Maybe Error.Reason
-requestTooLarge cfg ((Call fields) as c) =
-    case Proto.Internal.Method.binaryUnder (Transport.proto cfg.transport) fields.method of
-        Just binary ->
-            binary.tooLarge (Transport.writeMaxBytes cfg.transport) fields.message
-                |> Maybe.map Error.RequestTooLarge
-
-        Nothing ->
-            Internal.requestTooLarge cfg.transport (\() -> Json.Encode.encode 0 (Rpc.Call.requestJson c))
+        url

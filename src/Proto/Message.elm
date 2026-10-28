@@ -67,6 +67,7 @@ message encodeJson jsonDecoder defaultValue messageDescriptor =
         , default = defaultValue
         , descriptor = messageDescriptor
         , binary = Nothing
+        , json = True
         }
 
 
@@ -87,7 +88,7 @@ withBinary encodeBinary binaryDecoder (Internal.Message m) =
 
 
 {-| A message type with protobuf binary codecs alone, as generated code under
-`codec=binary` writes it:
+`codec=proto` writes it:
 
     messageNote =
         Proto.Message.messageBinary encodeNoteBytes decodeNoteBytes defaultNote Notes.V1.Note.descriptor
@@ -99,10 +100,11 @@ messageBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -
 messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
     Internal.Message
         { encode = \_ -> Json.Encode.null
-        , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=binary)")
+        , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=proto)")
         , default = defaultValue
         , descriptor = messageDescriptor
         , binary = Just (binary encodeBinary binaryDecoder)
+        , json = False
         }
 
 

@@ -2,8 +2,8 @@ module Rpc.Body exposing (Body, none, text, bytes, bytesAs, toText, toBytes, con
 
 {-| The body of an [`Rpc.Request`](Rpc#Request) or an
 [`Rpc.Response`](Rpc#Response): none, text or bytes. A request's JSON is text,
-sent as `application/json`; its protobuf binary, under
-[`Rpc.Transport.withCodec Proto`](Rpc-Transport#withCodec), is bytes, sent as
+sent as `application/json`; its protobuf binary, over
+[`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto), is bytes, sent as
 `application/proto`. An answer's body is as it arrived: text, or bytes when
 the answer was read as bytes. A request's body is sent as the type
 [`contentType`](#contentType) gives.

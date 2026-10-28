@@ -5,7 +5,7 @@ module Rpc.Code exposing
     , toHttpStatus, fromHttpStatus
     )
 
-{-| The codes an RPC fails with, shared by both transports. Connect writes them
+{-| The codes an RPC fails with, shared by both protocols. Connect writes them
 as strings (`"not_found"`), `google.rpc.Status` as gRPC's numbers (`5`). Every
 [`Rpc.Error`](Rpc-Error#Error) has one ([`Rpc.Error.code`](Rpc-Error#code)). Success has no code:
 the `Result` a call ends with already says whether it succeeded.

@@ -1,6 +1,6 @@
 module Proto.Internal.Percent exposing (encodeRouteText, percentDecode, percentEncode, unreserved, wellFormed)
 
-{-| Percent-encoding and decoding as URLs need them: the transports' query
+{-| Percent-encoding and decoding as URLs need them: the protocols' query
 strings, a route's path values and literals, and the reading of an error
 message from a header. Not exposed. It lives under `Proto` so that the route
 helpers generated code calls (`Proto.Route`) reach no `Rpc` module.

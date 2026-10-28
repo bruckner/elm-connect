@@ -6,9 +6,9 @@ sends or change it; [`Rpc.taskFromRequest`](Rpc#taskFromRequest) sends one
 and reads the answer as the call's.
 [`Rpc.Trace.request`](Rpc-Trace#request) gives the request a traced send sent.
 
-    Rpc.request config call
+    Rpc.request client call
         |> (\req -> { req | headers = ( "x-debug", "1" ) :: req.headers })
-        |> Rpc.taskFromRequest config call
+        |> Rpc.taskFromRequest client call
 
 @docs Request
 

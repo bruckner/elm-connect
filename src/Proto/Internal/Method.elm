@@ -1,88 +1,99 @@
-module Proto.Internal.Method exposing (Binary, Method(..), Read(..), binaryUnder)
+module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
-here so that other modules of the package can reach what a method holds while
-users cannot, so that `Rpc` can read a method's routes, which
-`Proto.Method` exposes only to set, and so that `Rpc` can reach the bytes path
-`Proto.Method.withBinary` builds: writing a request as protobuf binary and
-reading a binary answer. Only a method with binary codecs carries that code,
-so a program without any carries none of it, nor `Proto.Binary`,
-`Proto.Bytes` or elm/bytes. The idempotency is a parameter because its
-type stays in `Proto.Method`, which exposes its constructors. Its types are
-elm/core's, elm/bytes', elm/http's and `Proto.Route`'s, so that no `Proto`
-module imports an `Rpc` one.
+here so that `Rpc` can read what a method holds while users cannot. The
+idempotency is a parameter because its type stays in `Proto.Method`, which
+exposes its constructors. Its types are elm/core's, elm/json's, elm/bytes'
+and `Proto.Route`'s, so that no `Proto` module imports an `Rpc` one.
 
-A method holds its identity (service, name, idempotency) and one route
-function per HTTP binding, not its descriptor: the descriptor's type names
-and bindings as data are a separate value a program keeps only if it names
-it.
+A method holds its identity (service, name, idempotency), its two codec
+halves and one route function per HTTP binding, not its descriptor: the
+descriptor's type names and bindings as data are a separate value a program
+keeps only if it names it.
+
+The `codec` parameter is a phantom: `Proto.Method.json` gives a method in
+`Json`, `Proto.Method.proto` one in `Proto`, and `Proto.Method.both`, free in
+the codec, one with both. A protocol in a codec only meets a method in the
+same codec, so the half it reads is always one the generated code gave.
+
+Both halves are always present, so sending has no branch for a missing one:
+the half a builder is not given is a filler ([`noJson`](#noJson),
+[`noBinary`](#noBinary)). Which halves are real is data (`codecs`), read by
+what reports on a method (`Proto.Method.hasJson`, `Rpc.Call.viaBinding`,
+`Rpc.Call.toJson`), never by the send path.
 
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
-import Http
 import Json.Decode
 import Json.Encode
-import Proto.Internal.Binary
 import Proto.Route exposing (Route)
 
 
-type Method idempotency req res
+type Method idempotency codec req res
     = Method
         { service : String
         , name : String
         , idempotency : idempotency
-        , encodeRequest : req -> Json.Encode.Value
-        , responseDecoder : Json.Decode.Decoder res
-        , binary : Maybe (Binary req res)
-        , json : Bool
+        , codecs : Codecs
+        , json : JsonHalf req res
+        , binary : BinaryHalf req res
         , routes : List (req -> Route)
         }
 
 
-{-| The protobuf binary codecs, which `Proto.Method.withBinary` and
-`Proto.Method.methodBinary` give, and the bytes path built from them:
-
-  - `message`: the request's binary, and a GET's base64 of it, written only
-    when asked for.
-  - `tooLarge`: the request's size in bytes and the limit, when there is a
-    limit and the request is over it.
-  - `read`: an answer read as bytes, given the transport's read limit: a
-    200 read as the response, and any other answer as UTF-8 text, for the
-    JSON error reading.
-  - `base64`: bytes as base64, for a trace.
-
+{-| Which halves the method was built with.
 -}
-type alias Binary req res =
-    { encodeRequest : req -> Bytes.Encode.Encoder
-    , responseDecoder : Proto.Internal.Binary.Decoder res
-    , message : req -> { bytes : Bytes, base64Url : () -> String }
-    , tooLarge : Maybe Int -> req -> Maybe { limit : Int, size : Int }
-    , read : Maybe Int -> Http.Response Bytes -> Read res
-    , base64 : Bytes -> String
+type alias Codecs =
+    { json : Bool
+    , binary : Bool
     }
 
 
-{-| An answer read as bytes: a 200's response; a 200's size and the limit,
-when it is over the read limit; a 200 that is not the response, of another
-content type than `application/proto` or not decoding, with the problem and
-the answer; or any other answer as text, which the JSON error reading takes.
+{-| A request's proto3 JSON and the response's decoder.
 -}
-type Read res
-    = Read res
-    | TooLong { limit : Int, size : Int }
-    | NotBinary String Http.Metadata Bytes
-    | AsText (Http.Response String)
+type alias JsonHalf req res =
+    { encode : req -> Json.Encode.Value
+    , decoder : Json.Decode.Decoder res
+    }
 
 
-{-| The bytes path, when the transport sends protobuf binary (`proto`) and
-the method has binary codecs.
+{-| A request's protobuf binary encoder, which only the binary protocols'
+functions run, and the response read from bytes, `Nothing` when they are not
+one. It holds the encoder rather than the bytes so that a JSON program, whose
+methods hold the filler, never calls elm/bytes.
 -}
-binaryUnder : Bool -> Method idempotency req res -> Maybe (Binary req res)
-binaryUnder proto (Method m) =
-    if proto then
-        m.binary
+type alias BinaryHalf req res =
+    { encode : req -> Bytes.Encode.Encoder
+    , decode : Bytes -> Maybe res
+    }
 
-    else
-        Nothing
+
+{-| The JSON half of a method built with binary codecs alone. No protocol
+speaking JSON meets such a method, since the phantom rules the pairing out;
+if one ever did, its answer would fail to decode as an ordinary bad
+response.
+-}
+noJson : JsonHalf req res
+noJson =
+    { encode = \_ -> Json.Encode.null
+    , decoder = Json.Decode.fail "a method without proto3 JSON codecs"
+    }
+
+
+{-| The binary half of a method built with JSON codecs alone. As with
+[`noJson`](#noJson), an impossible pairing (unreachable through the
+builders) would surface as the ordinary decode failure "the body is not the
+response of svc/Method in protobuf binary".
+
+The encoder must be a constructor: `Bytes.Encode.sequence []` measures
+widths, which reaches elm/bytes' whole kernel (590 B gzipped on a minimal
+program) from every JSON program.
+
+-}
+noBinary : BinaryHalf req res
+noBinary =
+    { encode = \_ -> Bytes.Encode.unsignedInt8 0
+    , decode = \_ -> Nothing
+    }
