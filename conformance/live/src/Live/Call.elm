@@ -1,13 +1,19 @@
-module Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), entry)
+module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), entryWith)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.
 
 A dispatch table (`Live.Notes.table`) lists one entry per method, each built by
-[`entry`](#entry) from the generated call function and the codecs the runner
+`Live.Codec.entry` from the generated call function and the codecs the runner
 needs beyond it: the request's decoder, since the envelope holds the request as
 proto3 JSON, and the response's message, whose encoder the result reports it
 with (as JSON, and as protobuf binary too when the message has binary codecs).
+
+A call carries its codec in its type, so an entry holds the call function once
+per codec the build's bindings have ([`Calls`](#Calls)): the build against
+bindings generated with `codec=json` has the JSON one alone, the build against
+`codec=both` both, and `Live.Codec`, which differs between the two builds,
+says which.
 
 -}
 
@@ -22,15 +28,15 @@ import Proto.Message
 import Rpc
 import Rpc.Body
 import Rpc.Call
+import Rpc.Client
 import Rpc.Code
 import Rpc.Error
 import Rpc.Trace
-import Rpc.Transport
 import Task
 
 
 {-| One call to make: the method, its request as proto3 JSON, the transport,
-the config, the binding, if one is chosen, the call's own headers, the
+the client, the binding, if one is chosen, the call's own headers, the
 headers `FromRequest` rewrites, and the milliseconds after which to cancel
 it, if it is to be.
 -}
@@ -40,7 +46,7 @@ type alias Envelope =
     , method : String
     , request : Value
     , transport : Transport
-    , config : Rpc.Config
+    , client : Client
     , binding : Maybe Int
     , headers : List ( String, String )
     , rewrite : List ( String, String )
@@ -72,6 +78,21 @@ type Transport
     | Transcode
 
 
+{-| The client an envelope's `config` describes, by the codec it names.
+-}
+type Client
+    = JsonClient (Rpc.Client Rpc.Json)
+    | ProtoClient (Rpc.Client Rpc.Proto)
+
+
+{-| A method's generated call function, once per codec the build has it in.
+-}
+type alias Calls req res =
+    { json : Maybe (req -> Rpc.Call Rpc.Json req res)
+    , proto : Maybe (req -> Rpc.Call Rpc.Proto req res)
+    }
+
+
 {-| How a dispatch table sends an envelope's call: `Err` with a reason when
 the request does not decode, the binding does not exist or the call cannot be
 cancelled as asked, or the commands that send it and cancel it.
@@ -98,39 +119,84 @@ type alias Outcome =
     { id : String, result : Value, trace : Value, response : Value }
 
 
-{-| The entry for a method, from its generated call function, its request's
-decoder and its response's message.
+{-| The entry for a method, from its generated call functions, its request's
+decoder and its response's message. An envelope whose codec the build has no
+call function in is refused.
 -}
-entry : (req -> Rpc.Call req res) -> Decoder req -> Proto.Message.Message res -> Entry msg
-entry toCall requestDecoder responseMessage envelope toMsg =
+entryWith : Calls req res -> Decoder req -> Proto.Message.Message res -> Entry msg
+entryWith calls requestDecoder responseMessage envelope toMsg =
     case Decode.decodeValue requestDecoder envelope.request of
         Err problem ->
             Err ("the request does not decode: " ++ Decode.errorToString problem)
 
         Ok request ->
             let
-                plain =
-                    toCall request
-                        |> Rpc.Call.withHeaders envelope.headers
-
-                bound =
-                    case envelope.binding of
-                        Nothing ->
-                            Ok plain
-
-                        Just index ->
-                            Rpc.Call.viaBinding index plain
-                                |> Result.fromMaybe
-                                    ("binding "
-                                        ++ String.fromInt index
-                                        ++ " is not one "
-                                        ++ envelope.service
-                                        ++ "/"
-                                        ++ envelope.method
-                                        ++ " has"
-                                    )
+                missing codec =
+                    Err ("this build has no " ++ codec ++ " codecs for " ++ envelope.service ++ "/" ++ envelope.method)
             in
-            bound |> Result.andThen (sendWith envelope responseMessage toMsg)
+            case envelope.client of
+                JsonClient client ->
+                    case calls.json of
+                        Just toCall ->
+                            prepare envelope (toCall request)
+                                |> Result.andThen
+                                    (sendWith client
+                                        (\c deliver -> Http.expectStringResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.response client c answer )))
+                                        envelope
+                                        responseMessage
+                                        toMsg
+                                    )
+
+                        Nothing ->
+                            missing "proto3 JSON"
+
+                ProtoClient client ->
+                    case calls.proto of
+                        Just toCall ->
+                            prepare envelope (toCall request)
+                                |> Result.andThen
+                                    (sendWith client
+                                        (\c deliver -> Http.expectBytesResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.responseBytes client c answer )))
+                                        envelope
+                                        responseMessage
+                                        toMsg
+                                    )
+
+                        Nothing ->
+                            missing "protobuf binary"
+
+
+{-| A call with the envelope's headers, over its binding when it names one.
+-}
+prepare : Envelope -> Rpc.Call codec req res -> Result String (Rpc.Call codec req res)
+prepare envelope call =
+    let
+        plain =
+            Rpc.Call.withHeaders envelope.headers call
+    in
+    case envelope.binding of
+        Nothing ->
+            Ok plain
+
+        Just index ->
+            Rpc.Call.viaBinding index plain
+                |> Result.fromMaybe
+                    ("binding "
+                        ++ String.fromInt index
+                        ++ " is not one "
+                        ++ envelope.service
+                        ++ "/"
+                        ++ envelope.method
+                        ++ " has"
+                    )
+
+
+{-| How the pure halves read an answer for a client: as text through
+`Rpc.response`, or as bytes through `Rpc.responseBytes`, keeping the answer's
+status and headers.
+-}
+type alias Reading codec req res msg =
+    Rpc.Call codec req res -> (Result Never ( Value, Result Rpc.Error res ) -> msg) -> Http.Expect msg
 
 
 {-| The commands for a call. Only a call elm/http sends under a tracker can be
@@ -140,8 +206,8 @@ and `send` with a retry policy ignore the tracker, so a call sent so with `cance
 refused rather than reported cancelled while it runs on. A call to be
 cancelled without a tracker of its own gets its id as one.
 -}
-sendWith : Envelope -> Proto.Message.Message res -> (Outcome -> msg) -> Rpc.Call req res -> Result String (Sent msg)
-sendWith envelope responseMessage toMsg c =
+sendWith : Rpc.Client codec -> Reading codec req res msg -> Envelope -> Proto.Message.Message res -> (Outcome -> msg) -> Rpc.Call codec req res -> Result String (Sent msg)
+sendWith client reading envelope responseMessage toMsg c =
     let
         tracker =
             case ( envelope.tracker, envelope.cancelAfter ) of
@@ -203,24 +269,24 @@ sendWith envelope responseMessage toMsg c =
     case envelope.sending of
         Traced ->
             uncancellable "sendTraced"
-                |> Result.map (Sent (Rpc.sendTraced envelope.config (\trace -> report (Rpc.Trace.toJson trace)) tracked))
+                |> Result.map (Sent (Rpc.sendTraced client (\trace -> report (Rpc.Trace.toJson trace)) tracked))
 
         Plain ->
-            case envelope.config.retry of
+            case Rpc.Client.retry client of
                 Just _ ->
                     uncancellable "send and a retry policy"
-                        |> Result.map (Sent (Rpc.send envelope.config (report Encode.null) tracked))
+                        |> Result.map (Sent (Rpc.send client (report Encode.null) tracked))
 
                 Nothing ->
-                    Ok (Sent (Rpc.send envelope.config (report Encode.null) tracked) cancelling)
+                    Ok (Sent (Rpc.send client (report Encode.null) tracked) cancelling)
 
         AsTask ->
             uncancellable "task"
-                |> Result.map (Sent (Rpc.task envelope.config tracked |> Task.attempt (report Encode.null)))
+                |> Result.map (Sent (Rpc.task client tracked |> Task.attempt (report Encode.null)))
 
         Halves ->
             Ok
-                (Sent (sendHalves envelope.config tracked tracker (\( answer, result ) -> reportWith Encode.null answer result))
+                (Sent (sendHalves client reading tracked tracker (\( answer, result ) -> reportWith Encode.null answer result))
                     cancelling
                 )
 
@@ -228,9 +294,9 @@ sendWith envelope responseMessage toMsg c =
             uncancellable "taskFromRequest"
                 |> Result.map
                     (Sent
-                        (Rpc.request envelope.config tracked
+                        (Rpc.request client tracked
                             |> rewriteHeaders envelope.rewrite
-                            |> Rpc.taskFromRequest envelope.config tracked
+                            |> Rpc.taskFromRequest client tracked
                             |> Task.attempt (report Encode.null)
                         )
                     )
@@ -261,13 +327,14 @@ rewriteHeaders rewrites sent =
 
 
 {-| Send a call as `Rpc.request` describes it, with elm/http directly, and read
-the answer with `Rpc.response`, keeping the answer's status and headers.
+the answer with `Rpc.response` or `Rpc.responseBytes`, keeping the answer's
+status and headers.
 -}
-sendHalves : Rpc.Config -> Rpc.Call req res -> Maybe String -> (( Value, Result Rpc.Error res ) -> msg) -> Cmd msg
-sendHalves config c tracker toMsg =
+sendHalves : Rpc.Client codec -> Reading codec req res msg -> Rpc.Call codec req res -> Maybe String -> (( Value, Result Rpc.Error res ) -> msg) -> Cmd msg
+sendHalves client reading c tracker toMsg =
     let
         sent =
-            Rpc.request config c
+            Rpc.request client c
 
         perform =
             if sent.withCredentials then
@@ -298,13 +365,7 @@ sendHalves config c tracker toMsg =
 
                 _ ->
                     Http.emptyBody
-        , expect =
-            case Rpc.Transport.codec config.transport of
-                Rpc.Transport.Proto ->
-                    Http.expectBytesResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.responseBytes config c answer ))
-
-                Rpc.Transport.Json ->
-                    Http.expectStringResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.response config c answer ))
+        , expect = reading c deliver
         , timeout = sent.timeout
         , tracker = tracker
         }
@@ -453,6 +514,3 @@ reasonToString reason =
 
         Rpc.Error.ResponseTooLarge { limit, size } ->
             "ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
-
-        Rpc.Error.MissingCodec missing ->
-            "MissingCodec " ++ missing.method ++ " " ++ missing.codec

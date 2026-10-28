@@ -14,7 +14,7 @@ import Task exposing (Task)
 -- region refresh
 
 
-withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call req res -> Task Rpc.Error res
+withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 withRefresh refresh shared call =
     rpc shared call
         |> Task.onError

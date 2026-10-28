@@ -13,14 +13,14 @@ import Task exposing (Task)
 -- region signed
 
 
-signed : Rpc.Config -> Rpc.Call req res -> Task Rpc.Error res
-signed cfg call =
+signed : Rpc.Client codec -> Rpc.Call codec req res -> Task Rpc.Error res
+signed client call =
     let
         request =
-            Rpc.request cfg call
+            Rpc.request client call
     in
     { request | headers = ( "X-Signature", sign request ) :: request.headers }
-        |> Rpc.taskFromRequest cfg call
+        |> Rpc.taskFromRequest client call
 
 
 
