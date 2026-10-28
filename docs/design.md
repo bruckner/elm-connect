@@ -301,7 +301,9 @@ rpc shared call =
   `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`;
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
-  `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3), or
+  `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
+  `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
+  `Proto.Message` will run, §5.5), or
   implementation kept out of the public modules so that they read as API
   (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
   `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2). A type one
@@ -1063,7 +1065,9 @@ In detail:
   only below 2^53 ns (about 104 days); `fromMilliseconds` and
   `toMilliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
   digits, the fewest that keep every nanosecond, as protobuf does;
-  `-0s` reads as zero and prints `0s`. The range is protobuf's,
+  `-0s` reads as zero and prints `0s`. `fromParts` and `toParts` take
+  and give the two parts as protobuf's binary form carries them, both
+  with the duration's sign. The range is protobuf's,
   ±315,576,000,000 s. `fromString` refuses a duration past it;
   `fromSeconds` and `fromMilliseconds` give the limit for one past it
   (nanoseconds zero), and `fromSeconds` gives zero for NaN and the
@@ -2262,7 +2266,8 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
 whether a request can be sent. The data modules, which generated code
 calls whatever the transport, are the codecs (`Proto.Json`,
-`Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes`), the typed values
+`Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`,
+`Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings (`Proto.Http`), the well-known types' values
@@ -2805,6 +2810,75 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `RpcStatus` error has any. A binary-only detail never decodes: details meant for
   this client need their JSON on the wire, as `debug` in a Connect body
   or, as always, in a `google.rpc.Status` body.
+
+### 5.5 The binary wire format
+
+`Proto.Binary` reads and writes protobuf's binary encoding over
+elm/bytes: one `Codec a` per scalar and well-known type, holding both
+directions, its default and whether a repeated field of it packs, and
+a handful of field helpers that binary codecs are written with
+(`merge`, `field`, `fieldInto`, `repeated`, `mapEntry`, `skip` to
+read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
+`dict`, `boolMap` to write). Generated code calls it; an application
+meets `decode`, `encode` and `Decoder`. Nothing generates binary codecs
+yet, and no transport sends them: the module comes first because the
+generator's binary output and the proto codec are written against it.
+
+- **A decoder knows its length.** elm/bytes has no end-of-input test,
+  no position and no backtracking, so a decoder cannot find where a
+  message ends: every read reports its width and the message loop
+  counts down the message's length, which `decode` takes from
+  `Bytes.width` and a nested message from its length prefix, read in
+  place from the same input. `Proto.Binary.Decoder a` is opaque over
+  that `Int -> Bytes.Decode.Decoder a`, so the length stays plumbing and
+  the representation can change without touching user code; Elm
+  0.19.2's `--optimize` compiles the one-constructor wrapper to
+  `identity`. It is defined in `Proto.Internal.Binary`, since
+  `Proto.Message` will run one and `Proto.Binary` imports
+  `Proto.Message` through `Proto.Json`, and the package site shows the
+  internal name.
+- **Encoding is deterministic.** Fields go in field-number order; a
+  field without presence is left out at its default (a float at `0` or
+  `-0`; NaN is written), and so is a map entry's default key or value;
+  a repeated scalar is packed unless declared `[packed = false]`
+  (`listUnpacked`); a map's entries go in its `Dict`'s order, a
+  `bool`-keyed map's `False` first. elm/bytes cannot tell an encoder's
+  width without running it, so a nested message, a packed run or a map
+  entry is encoded first and copied in after its length.
+- **64-bit integers** travel as two unsigned 32-bit halves, held as the
+  JSON codecs hold them: exact decimal text, or an `Int` (the `AsInt`
+  codecs) that fails to decode outside ±(2^53 − 1).
+- **Merge.** Fields are read in any order and the last of a singular
+  field wins. A message field that arrives twice, or a oneof's message
+  member set twice, is merged into the one read before it, as protobuf
+  merges: `mergeFooBytes : Foo -> Decoder Foo` is `merge step finish`,
+  which starts from `finish existing`, since a finish that only reverses
+  lists gives back the state the step conses onto, and
+  `decodeFooBytes = mergeFooBytes defaultFoo`. Repeated fields inside
+  it are joined, a later map entry replaces the earlier one for its key
+  (`insertBool` for a `bool`-keyed map). The well-known types held as
+  Elm values merge as protobuf-go merges their messages: a `Timestamp`
+  or a `Duration` field by field, its seconds or nanoseconds replacing
+  the earlier one's (a `Duration` then given one sign, as
+  `Proto.Duration.fromParts` does); a wrapper's value replaces the
+  earlier one when present; a `Struct`'s members joined, a member of
+  the same name replacing; a `ListValue`'s elements and a `FieldMask`'s
+  paths appended; a `Value` replaced unless both hold an object or both
+  a list, which are merged as a `Struct` or a `ListValue`; an `Any`'s
+  type URL and value each replaced when present.
+- **Unknown fields are skipped**, by their wire type, and so is a field
+  of a wire type its declaration does not take, as protobuf-go files
+  it under unknown fields rather than failing; they are not kept, so a
+  message read and written again loses them (roadmap: unknown fields).
+  A group, field number 0, a length past the end of its message and a
+  varint longer than ten bytes fail the decode.
+- **`Any`**, read, holds the packed message's binary. Written, an `Any`
+  holding binary writes it back; one holding a well-known type's JSON
+  form (read from proto3 JSON) is converted to binary; one holding
+  another message's JSON is written with its type URL alone, since that
+  message's binary encoder is not at hand.
+- A `Timestamp` drops nanoseconds past the millisecond when read, as the
+  JSON codec does.
 
 ## 6. Generator
 

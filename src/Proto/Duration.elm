@@ -3,6 +3,7 @@ module Proto.Duration exposing
     , fromSeconds, toSeconds
     , fromMilliseconds, toMilliseconds
     , fromString, toString
+    , fromParts, toParts
     )
 
 {-| `google.protobuf.Duration`: a signed span of time, exact to the
@@ -24,6 +25,11 @@ nanosecond, between about -10,000 and 10,000 years.
 # proto3 JSON
 
 @docs fromString, toString
+
+
+# Seconds and nanoseconds
+
+@docs fromParts, toParts
 
 -}
 
@@ -180,6 +186,43 @@ toString (Duration parts) =
                 "." ++ String.padLeft 9 '0' (String.fromInt nanos)
     in
     sign ++ String.fromInt (abs parts.seconds) ++ fraction ++ "s"
+
+
+{-| The duration of so many whole seconds and nanoseconds, as protobuf's
+binary form carries them: the nanoseconds carried into the seconds and both
+given the duration's sign. A duration past ±315,576,000,000 seconds,
+protobuf's limit, gives that limit.
+
+    fromParts 1 500000000 == fromSeconds 1.5
+
+    fromParts 2 -500000000 == fromSeconds 1.5
+
+-}
+fromParts : Int -> Int -> Duration
+fromParts wholeSeconds nanos =
+    let
+        (Duration parts) =
+            normalize wholeSeconds nanos
+    in
+    if parts.seconds >= maxSeconds then
+        Duration { seconds = maxSeconds, nanos = 0 }
+
+    else if parts.seconds <= -maxSeconds then
+        Duration { seconds = -maxSeconds, nanos = 0 }
+
+    else
+        Duration parts
+
+
+{-| The duration's whole seconds and nanoseconds, both with its sign, as
+protobuf's binary form carries them.
+
+    toParts (fromSeconds -1.5) == { seconds = -1, nanos = -500000000 }
+
+-}
+toParts : Duration -> { seconds : Int, nanos : Int }
+toParts (Duration parts) =
+    parts
 
 
 

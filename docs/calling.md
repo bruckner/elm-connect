@@ -34,6 +34,7 @@ calling:
 | `Rpc.Error` | why a call failed: its kind, code, message and details |
 | `Rpc.Code` | the codes an RPC fails with |
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
+| `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
 | `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
 | `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |

@@ -33,14 +33,28 @@ streaming over Connect, not before.
 
 ## Binary protobuf
 
-`application/proto` bodies instead of JSON. It needs binary codecs
-written over elm/bytes, generated beside the JSON ones only when an
-option asks for them, so the default output is unchanged; a way to
+`application/proto` bodies instead of JSON. The wire format is in the
+runtime, `Proto.Binary` ([design §5.5](design.md#55-the-binary-wire-format)).
+What remains is binary codecs generated beside the JSON ones only when
+an option asks for them, so the default output is unchanged; a way to
 attach them to the opaque `Proto.Message.Message` and
 `Proto.Method.Method` values; a bytes kind of `Rpc.Body`; and a codec
 setting on `Rpc.Transport`. A minor. The codecs would not reuse
 elm-protocol-buffers' types, so that another package's major never
 forces one here.
+
+## Unknown fields
+
+A field a decoder does not know is skipped, in proto3 JSON and in
+binary alike, so a message read and written back loses it, where
+protobuf's own runtimes keep such fields and write them again. Keeping
+them needs somewhere to hold them, and a generated message is a plain
+Elm record that an application builds with record syntax and compares
+with `==`: a hidden field would show up in every record literal, and
+Elm has no private record field. It would need an extra field the
+generator adds to every message (or an opaque message type), which
+changes every generated record, so a major, or an option that adds the
+field, a minor. Two protobuf conformance cases need it.
 
 ## gRPC-Web, unary
 

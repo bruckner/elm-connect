@@ -25,6 +25,7 @@
         "Proto.WellKnown",
         "Proto.Any",
         "Proto.Json",
+        "Proto.Binary",
         "Proto.Int64",
         "Proto.Bytes",
         "Proto.Duration",
