@@ -37,7 +37,7 @@ that closes a cycle. What differs:
 | 64-bit integers are `Protobuf.Types.Int64`, opaque | `String`, the exact decimal; under `int64=int`, `Int` |
 | `bytes` is `Bytes.Bytes` | the base64 `String`; under `bytes=bytes`, `Bytes.Bytes` |
 | the well-known types come from elm-protoc-types (`Proto.Google.Protobuf.*`) | the runtime maps them: `Time.Posix`, `Proto.Duration.Duration`, `Maybe` for the wrappers, `Proto.Any.Any` ([generator.md](generator.md#what-a-proto-becomes)) |
-| `Grpc.new rpc req \|> Grpc.addHeader … \|> Grpc.toCmd` | `Rpc.send config toMsg call`, with headers, timeout and retry in the config or on the call ([calling.md](calling.md)) |
+| `Grpc.new rpc req \|> Grpc.addHeader … \|> Grpc.toCmd` | `Rpc.send client toMsg call`, with headers, timeout and retry on the client or on the call ([calling.md](calling.md)) |
 | modules under `Proto.` (`Proto.Notes.V1`) | the package's own name (`Notes.V1`); `module_prefix=Proto` gives `Proto.Notes.V1`, except where a package would take one of the runtime's own `Proto.*` modules, which is the diagnostic `naming::reserved_module` |
 
 protoc-gen-elm's `grpcDevTools` option feeds a browser extension;
@@ -65,7 +65,7 @@ protos said:
 ## What elm-connect has that its peers do not
 
 1. One generated client that switches between Connect and
-   `google.api.http` transcoding in its config. No Elm tool speaks
+   `google.api.http` transcoding by the protocol it is sent over. No Elm tool speaks
    either; outside Elm, Google's GAPIC generators switch between gRPC
    and REST the same way.
 2. Generated codecs that follow proto3's canonical JSON mapping, which

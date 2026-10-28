@@ -54,7 +54,7 @@ static_resources:
                           allow_methods: GET, POST, PUT, PATCH, DELETE
                           # What the runtime sends: content-type with a JSON
                           # body, and the headers an application adds (the
-                          # config's `headers`, Rpc.Call.withHeaders), here an
+                          # client's headers, Rpc.Call.withHeaders), here an
                           # example pair. "*" would allow any, but a browser
                           # does not take "*" for authorization, nor at all
                           # for a call with credentials, and a list keeps to

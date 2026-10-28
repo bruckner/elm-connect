@@ -3,7 +3,7 @@
 A gRPC service needs nothing of its own to serve an Elm client: put
 Envoy in front of it with its
 [gRPC-JSON transcoder](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter),
-and the client calls it over `Rpc.Transport.transcode`. Envoy reads the
+and the client calls it over `Rpc.Protocol.transcode`. Envoy reads the
 `google.api.http` rules from a descriptor set of the service's protos,
 turns each REST request into a gRPC call, and the answer back into
 proto3 JSON. The service needs no Connect handler, no grpc-gateway code
@@ -133,7 +133,7 @@ typed_per_filter_config:
     allow_methods: GET, POST, PUT, PATCH, DELETE
     # What the runtime sends: content-type with a JSON
     # body, and the headers an application adds (the
-    # config's `headers`, Rpc.Call.withHeaders), here an
+    # client's headers, Rpc.Call.withHeaders), here an
     # example pair. "*" would allow any, but a browser
     # does not take "*" for authorization, nor at all
     # for a call with credentials, and a list keeps to
@@ -289,7 +289,7 @@ A deployment can give Envoy's own answers (404 for a path no method
 matches, 400 for an unknown query parameter, 503 when the service is
 unreachable) the Connect error shape, `{"code": "not_found", "message":
 "…"}`, with a Lua filter. The runtime reads either shape, a Connect
-error body or a `google.rpc.Status` one, on every transport
+error body or a `google.rpc.Status` one, over every protocol
 (`src/Rpc/Internal/Answer.elm`), so such an answer arrives as an `RpcStatus`
 error with source `ConnectBody` and the text as its message. The cost:
 the filter replaces every error body that is neither gRPC's nor JSON,

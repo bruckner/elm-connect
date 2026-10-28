@@ -68,10 +68,12 @@ descriptors per message and enum, such as `Notes.V1.Note`. Each method's
 function gives a call:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-ping : () -> Rpc.Call () ()
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
+ping : () -> Rpc.Call Rpc.Json () ()
 ```
 
+`Rpc.Json` is the call's codec: its messages travel as proto3 JSON, the
+generator's default ([calling.md](calling.md#choosing-the-codec)).
 [generator.md](generator.md) lists what each proto construct becomes.
 
 ## 3. Add the runtime
@@ -82,38 +84,38 @@ Put `generated` and the runtime's `src` in the application's
 
 ## 4. Send a call
 
-A call is data: the method and its request. A config, also data, says
-where to send it and over which transport. `Rpc.send` sends a call with a
-config and gives the result to a message:
+A call is data: the method and its request. A client says where to
+send it and over which protocol. `Rpc.send` sends a call with a client
+and gives the result to a message:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
 import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
-import Rpc.Transport
+import Rpc.Protocol
 
 
 type Msg
     = GotNote (Result Rpc.Error Notes.V1.Note)
 
 
-config : Rpc.Config
-config =
-    Rpc.config "https://api.example.com"
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 
 viaConnect : Cmd Msg
 viaConnect =
     -- POST https://api.example.com/notes.v1.NotesService/GetNote
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send config GotNote
+        |> Rpc.send client GotNote
 
 
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
+        |> Rpc.send (Rpc.client Rpc.Protocol.transcode "https://api.example.com") GotNote
 ```
 
 A message is a record, so build one from its default by record update
@@ -144,7 +146,7 @@ ConnectRPC's public demo server.
 
 ## 5. Read the result
 
-An error is one type for both transports, `Rpc.Error`, of four kinds:
+An error is one type for both protocols, `Rpc.Error`, of four kinds:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#reading
 import Notes.V1
@@ -202,19 +204,19 @@ Most code needs less: every error has a code and a message,
 
 `Rpc.request` gives the HTTP request a call stands for, without sending
 it. From the application's directory, `elm repl` shows what each
-transport sends:
+protocol sends:
 
 ```text
 > import Notes.V1.NotesService as Notes
 > import Rpc
-> import Rpc.Transport
-> config = Rpc.config "https://api.example.com"
-{ baseUrl = "https://api.example.com", headers = [], retry = Nothing, timeout = Nothing, transport = Connect { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }, withCredentials = False }
-    : Rpc.Config
-> Rpc.request config (Notes.getNote { name = "notes/42" })
+> import Rpc.Protocol
+> client = Rpc.client Rpc.Protocol.connect "https://api.example.com"
+Client { baseUrl = "https://api.example.com", headers = [], protocol = Protocol { codec = "json", name = "connect", options = { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }, wire = Text { build = <function>, message = <function>, overRead = <function>, routed = False, timeoutHeader = <function>, tooLarge = <function> } }, retry = Nothing, timeout = Nothing, withCredentials = False }
+    : Rpc.Client Rpc.Protocol.Json
+> Rpc.request client (Notes.getNote { name = "notes/42" })
 { body = Text "{\"name\":\"notes/42\"}", headers = [("Connect-Protocol-Version","1")], method = "POST", timeout = Nothing, url = "https://api.example.com/notes.v1.NotesService/GetNote", withCredentials = False }
     : Rpc.Request
-> Rpc.request { config | transport = Rpc.Transport.transcode } (Notes.getNote { name = "notes/42" })
+> Rpc.request (Rpc.client Rpc.Protocol.transcode "https://api.example.com") (Notes.getNote { name = "notes/42" })
 { body = None, headers = [], method = "GET", timeout = Nothing, url = "https://api.example.com/v1/notes/42", withCredentials = False }
     : Rpc.Request
 ```
@@ -249,12 +251,13 @@ import Notes.V1.NotesService as Notes
 import Rpc
 import Rpc.Code
 import Rpc.Error
+import Rpc.Protocol
 import Test exposing (Test, describe, test)
 
 
-config : Rpc.Config
-config =
-    Rpc.config "https://api.example.com"
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 
 answer : Int -> String -> Http.Response String
@@ -275,18 +278,18 @@ suite =
     describe "GetNote"
         [ test "is a POST to its Connect path" <|
             \_ ->
-                (Rpc.request config (Notes.getNote { name = "notes/42" })).url
+                (Rpc.request client (Notes.getNote { name = "notes/42" })).url
                     |> Expect.equal "https://api.example.com/notes.v1.NotesService/GetNote"
         , test "reads a note" <|
             \_ ->
                 answer 200 """{"name": "notes/42", "title": "groceries"}"""
-                    |> Rpc.response config (Notes.getNote { name = "notes/42" })
+                    |> Rpc.response client (Notes.getNote { name = "notes/42" })
                     |> Result.map .title
                     |> Expect.equal (Ok "groceries")
         , test "reads a Connect error" <|
             \_ ->
                 answer 404 """{"code": "not_found", "message": "no such note"}"""
-                    |> Rpc.response config (Notes.getNote { name = "notes/42" })
+                    |> Rpc.response client (Notes.getNote { name = "notes/42" })
                     |> Result.mapError Rpc.Error.code
                     |> Expect.equal (Err Rpc.Code.NotFound)
         ]

@@ -142,7 +142,7 @@ so a server-side implementation can check itself against the same file.
   the service's `tests/Routes/V1/Routes.elm`) and the fixtures as Elm
   data (`tests/RouteFixtures.elm`) are pinned in the runtime's tests,
   where `tests/RouteFixturesTest.elm` replays each through `Rpc.request`
-  with the Transcode transport, applying the generated function of the
+  with a client of `Rpc.Protocol.transcode`, applying the generated function of the
   fixture's method and choosing its binding with `Rpc.Call.viaBinding`; a
   fixture naming a binding the method lacks fails. `just bless` rewrites
   all three, and the route properties below.
@@ -179,7 +179,7 @@ are not run against the live server.
 The runtime's own laws, independent of the reference, are Elm fuzz
 tests: `tests/Proto/JsonFuzzTest.elm` (the proto3 JSON codecs, and the
 generated codecs of `routes.proto` leaving out defaults) and
-`tests/RpcFuzzTest.elm` (`Rpc.request` over Transcode), with their
+`tests/RpcFuzzTest.elm` (`Rpc.request` over `transcode`), with their
 fuzzers in `tests/Fuzzers.elm`; `just check` runs them with the other
 Elm tests.
 
@@ -232,7 +232,7 @@ the order of the Elm `Dict` holding them, every singular `Empty` set, every
 `Any`'s packed message re-encoded the same way and a kind-less `Value` given
 `null_value`; another test checks that prost-reflect reads each back as
 the sample. It generates the protos under `codec=both` (with `int64=int`
-and with `bytes=bytes`) and `codec=binary` too, and
+and with `bytes=bytes`) and `codec=proto` too, and
 `tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
 generated decoder and re-encodes it to the same bytes, with unknown fields
 of every wire type appended and without; where the set has JSON codecs, it
@@ -270,8 +270,9 @@ live/
                       generated Elm (examples/notes/elm/generated), src/
   src/Live.elm        a headless Platform.worker: envelopes in on the
                       `requests` port, results out on `results`
-  src/Live/Call.elm   the envelope, and `entry`, which makes a dispatch
-                      table's entry from a generated call function and codecs
+  src/Live/Call.elm   the envelope, its client, and `entryWith`, which makes
+                      a dispatch table's entry from a build's call functions
+                      and codecs
   src/Live/Notes.elm  the dispatch table of notes.v1.NotesService
   src/Live/Conformance.elm
                       the dispatch table of the Connect conformance suite's
@@ -308,14 +309,12 @@ live/
                       server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
-  json/Live/OneCodec.elm
-                      an empty dispatch table, for this build (below)
+  json/Live/Codec.elm `entry` for this build: the JSON call function alone
   both/               the runner against bindings generated with codec=both
                       (build/both/, gitignored): elm.json, and
-                      src/Live/OneCodec.elm, GetNote with one codec of the two
+                      src/Live/Codec.elm, `entry` with the call function at
+                      each codec
   cases/proto.json    every method over Connect's proto codec
-  cases/proto-missing.json
-                      a method with one codec refused under the other
   conformance-proto.yaml
                       the suite's features with the proto codec
   known-failing-proto.txt
@@ -378,13 +377,16 @@ An **envelope**, what the runner sends:
 `request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
 `transcode`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
-own, `Rpc.Call.withHeaders`, sent after the config's), `send` (`sendTraced`, the
+own, `Rpc.Call.withHeaders`, sent after the client's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
-`cancelAfterMs`. `useGet` and `maxGetUrl` build the Connect transport
-(`Rpc.Transport.connectGet`, `withMaxGetUrl`); `readMaxBytes` and
-`writeMaxBytes` apply `Rpc.Transport.withReadMaxBytes` and
-`withWriteMaxBytes` to either transport, and `codec` (`json`, the
-default, or `proto`) `Rpc.Transport.withCodec`. `retry` builds an
+`cancelAfterMs`. `config` builds the client: `transport` and `codec`
+(`json`, the default, or `proto`) pick its protocol,
+`Rpc.Protocol.connect`, `connectProto` or `transcode` (`transcode`
+with `proto` is refused, since transcoding is JSON); `useGet` and
+`maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
+Connect; `readMaxBytes` and `writeMaxBytes` apply
+`Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to either
+protocol; and the rest are the `Rpc.Client` settings. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
 `jitter` (default false, so a case's waits are the bounds it states).
@@ -393,7 +395,7 @@ that needs the answer's headers does: `Rpc.request`, `Http.request` with the
 answer kept whole, and `Rpc.response`. `taskFromRequest` builds the request
 with `Rpc.request`, puts each `[name, value]` of `rewrite` in place of the
 header of that name (in any case), or after the headers when there is none,
-and sends it with `Rpc.taskFromRequest`, the config's retry policy applying,
+and sends it with `Rpc.taskFromRequest`, the client's retry policy applying,
 as an application that refreshes a token does; its `trace` is `null`, and
 `wire` shows the rewritten request on every attempt.
 
@@ -415,7 +417,7 @@ A **result**, what comes back:
   "id": "a name for the call",
   "result": { "ok": { "name": "notes/welcome" } },
   "trace": {
-    "service": "notes.v1.NotesService", "method": "GetNote", "transport": "connect", "binding": null,
+    "service": "notes.v1.NotesService", "method": "GetNote", "protocol": "connect", "codec": "json", "binding": null,
     "httpStatus": 200, "headers": { "content-type": "application/json" }, "trailers": {},
     "code": "ok", "attempts": 1, "duration": 4,
     "request": { "method": "POST", "url": "…", "headers": [["Connect-Protocol-Version", "1"]],
@@ -441,11 +443,12 @@ detail's binary as an `Any`, in base64),
 body did not decode (elm/json's problem, and the answer as above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `InvalidHeader <name>`, `RequestTooLarge <size> <limit>`,
-`ResponseTooLarge <size> <limit>`, `MissingCodec <method> <codec>`) for an
+`ResponseTooLarge <size> <limit>`, `InvalidPathValue <field> <template>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
-method or a binding the method lacks. `trace` is the `Rpc.Trace` as `Rpc.Trace.toJson` writes it
+method, a binding the method lacks, or a codec the build has no calls
+of (`proto` in the JSON build). `trace` is the `Rpc.Trace` as `Rpc.Trace.toJson` writes it
 (`error` the code as Connect names it, `null` on success), and `null`
 unless sent with `sendTraced`; `response` is the answer's
 `{"status", "headers": [[name, value], …]}` as elm/http gives it, and
@@ -554,10 +557,10 @@ given, so the `sendTraced` run joins the two files in `build/`.
 generates the example's Elm and the suite's with `codec=both` into
 `build/both/` with buf (not committed: the `codec=json` bindings are, and
 the corpus pins the generator's output), builds the runner against them
-from `both/`, whose `Live.OneCodec` adds `GetNoteJsonOnly` and
-`GetNoteBinaryOnly`, `GetNote` built with one codec of the two (the JSON
-build's `json/Live/OneCodec.elm` has none), and runs: `cases/proto.json`
-and `cases/proto-missing.json` against the example server; `notes.json`
+from `both/`, whose `Live.Codec` takes each generated call function at
+both codecs, so an envelope's `codec` picks a JSON or a proto client
+(the JSON build's `json/Live/Codec.elm` takes the JSON one alone), and
+runs: `cases/proto.json` against the example server; `notes.json`
 and `transcode.json` again on that build, which must answer as the JSON
 build does; and the Connect conformance suite with
 `conformance-proto.yaml`, through the halves and with `sendTraced`, the
@@ -568,7 +571,7 @@ has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
 the four it fails, none about the codec (a Connect error body without a
 code, or with an unknown one, and a 200 of another content type), and
 the `sendTraced` run adds `known-failing-send.txt`. Transcoding is JSON
-whatever the codec, so the transcoding legs above cover it.
+alone, so the transcoding legs above cover it.
 
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's
 protos exported from `buf.build/connectrpc/conformance` at the commit its
