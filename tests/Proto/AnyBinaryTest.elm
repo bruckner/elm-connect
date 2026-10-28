@@ -42,10 +42,23 @@ decodeTitleBytes =
         ""
 
 
+encodeTitleBytes : String -> Bytes.Encode.Encoder
+encodeTitleBytes t =
+    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
+
+
 withBinary : Message String
 withBinary =
     jsonOnly
-        |> Message.withBinary (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]) decodeTitleBytes
+        |> Message.withBinary encodeTitleBytes decodeTitleBytes
+
+
+{-| A message with binary codecs alone, as generated code under `codec=proto`
+writes it.
+-}
+binaryOnly : Message String
+binaryOnly =
+    Message.messageBinary encodeTitleBytes decodeTitleBytes "" descriptor
 
 
 {-| An `Any` written as binary and read back.
@@ -101,7 +114,8 @@ word =
 suite : Test
 suite =
     describe "Proto.Any with binary codecs"
-        [ test "a packed message with binary codecs survives a binary round trip" <|
+        [ packing
+        , test "a packed message with binary codecs survives a binary round trip" <|
             \_ ->
                 Any.pack withBinary "hi"
                     |> throughBinary
@@ -155,4 +169,40 @@ suite =
                         , Just "Ci90eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIECgJoaQ=="
                         , Just "Cid0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5BbnkSMwotdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEgIIAQ=="
                         ]
+        ]
+
+
+{-| What `pack` holds for each way a message is built: JSON alone, both, or
+binary alone.
+-}
+packing : Test
+packing =
+    let
+        json any =
+            Json.Encode.encode 0 (Proto.Json.encodeAny any)
+    in
+    describe "pack holds the forms the message has codecs for"
+        [ test "a message with binary codecs alone packs its binary, which unpack reads back" <|
+            \_ ->
+                ( Any.unpack binaryOnly (Any.pack binaryOnly "hi") |> word
+                , Any.pack binaryOnly "hi" |> throughBinary |> Maybe.andThen (Any.unpack binaryOnly) |> word
+                )
+                    |> Expect.equal ( Just (Ok "hi"), Just (Ok "hi") )
+        , test "its JSON form is the binary-only one, the base64 of its binary, not a null message" <|
+            \_ ->
+                ( json (Any.pack binaryOnly "hi"), base64 (Any.pack binaryOnly "hi") )
+                    |> Expect.equal ( """{"type":"notes.v1.Title","value":"CgJoaQ=="}""", base64 (Any.pack withBinary "hi") )
+        , test "a message with JSON codecs alone packs its JSON alone" <|
+            \_ ->
+                ( json (Any.pack jsonOnly "hi"), Any.pack jsonOnly "hi" |> throughBinary |> Maybe.andThen (Any.unpack withBinary) |> word )
+                    |> Expect.equal ( """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""", Just (Ok "") )
+        , test "a message with both packs both: its JSON, and its binary" <|
+            \_ ->
+                ( json (Any.pack withBinary "hi"), Any.pack withBinary "hi" |> throughBinary |> Maybe.andThen (Any.unpack binaryOnly) |> word )
+                    |> Expect.equal ( """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""", Just (Ok "hi") )
+        , test "a binary-only payload is BinaryOnly to a message with JSON codecs alone" <|
+            \_ ->
+                Any.unpack jsonOnly (Any.pack binaryOnly "hi")
+                    |> word
+                    |> Expect.equal (Just (Err "binary only"))
         ]
