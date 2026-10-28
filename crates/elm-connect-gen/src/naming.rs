@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 26] = [
+pub const RUNTIME_MODULES: [&str; 28] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -63,6 +63,8 @@ pub const RUNTIME_MODULES: [&str; 26] = [
     "Rpc.Request",
     "Rpc.Response",
     "Proto.Http",
+    "Proto.Route",
+    "Proto.Query",
     "Proto.Message",
     "Proto.Field",
     "Proto.Enum",
@@ -393,7 +395,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 ///
 /// The top-level values of a generated module share one namespace, and
 /// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
-/// and `merge` for a binary merge) followed by a type name. Type names are
+/// `queryOf` for a query encoder, and `merge` for a binary merge) followed
+/// by a type name. Type names are
 /// unique within a module and start with an uppercase letter, and no
 /// prefix is another's, so two such names never collide: neither within
 /// one prefix nor across two. (A suffix would not do: `encodeFooMessage`
@@ -486,9 +489,9 @@ const DESCRIPTOR_PREFIX: &str = "descriptor";
 /// with its first letter uppercased, as [`pascal_case`] does (`getNote`
 /// becomes `descriptorGetNote`). It follows the Elm name, so a renamed
 /// method's descriptor is renamed with it. A service's module holds only
-/// its methods' calls and descriptors, so it collides only with the call of
-/// a method named for it (`DescriptorGetNote`), which is
-/// `naming::value_collision`.
+/// its methods' calls, route functions ([`route_name`]) and descriptors,
+/// so it collides only with the call of a method named for it
+/// (`DescriptorGetNote`), which is `naming::value_collision`.
 pub fn method_descriptor_name(method_elm_name: &str) -> String {
     let mut chars = method_elm_name.chars();
     let upper: String = chars
@@ -498,6 +501,35 @@ pub fn method_descriptor_name(method_elm_name: &str) -> String {
         .chain(chars)
         .collect();
     format!("{DESCRIPTOR_PREFIX}{upper}")
+}
+
+/// The prefix the route functions of a method take.
+const ROUTE_PREFIX: &str = "route";
+
+/// The route function of a method's binding (`Proto.Route.Route`), in its
+/// service's module: `route`, the method's Elm name with its first letter
+/// uppercased as in [`method_descriptor_name`], and the binding's number in
+/// the method's rule (`getNote`'s first binding becomes `routeGetNote0`).
+/// It collides only with the call of a method named for it
+/// (`RouteGetNote0`), which is `naming::value_collision`.
+pub fn route_name(method_elm_name: &str, index: usize) -> String {
+    let mut chars = method_elm_name.chars();
+    let upper: String = chars
+        .next()
+        .map(|first| first.to_ascii_uppercase())
+        .into_iter()
+        .chain(chars)
+        .collect();
+    format!("{ROUTE_PREFIX}{upper}{index}")
+}
+
+/// A message's query encoder in its package's module, the query
+/// parameters its fields make for the bindings that take it: `queryOf`
+/// followed by the message's Elm name (`ListNotesRequest` becomes
+/// `queryOfListNotesRequest`). Like [`default_name`], a prefix and a type
+/// name.
+pub fn query_encoder_name(type_elm_name: &str) -> String {
+    format!("queryOf{type_elm_name}")
 }
 
 /// The value holding a package's descriptors and those of every package
@@ -761,6 +793,12 @@ mod tests {
         assert_eq!(method_descriptor_name("getNote"), "descriptorGetNote");
         assert_eq!(method_descriptor_name("type_"), "descriptorType_");
         assert_eq!(method_descriptor_name("httpGet"), "descriptorHttpGet");
+        assert_eq!(route_name("getNote", 0), "routeGetNote0");
+        assert_eq!(route_name("type_", 12), "routeType_12");
+        assert_eq!(
+            query_encoder_name("ListNotesRequest"),
+            "queryOfListNotesRequest"
+        );
         assert!(method_descriptor_name("getNote").starts_with(DESCRIPTOR_PREFIX));
         let prefixes = [
             "encode",

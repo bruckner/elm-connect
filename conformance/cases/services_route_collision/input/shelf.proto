@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package shelf.v1;
+
+import "google/api/annotations.proto";
+
+message Book {
+  string name = 1;
+}
+
+service ShelfService {
+  // `routeGetBook0` is the route function of `GetBook`'s first binding.
+  rpc GetBook(Book) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/{name=books/*}"
+    };
+  }
+  rpc RouteGetBook0(Book) returns (Book);
+  // `routeListBooks0` would be, but `ListBooks` has no HTTP rule.
+  rpc ListBooks(Book) returns (Book);
+  rpc RouteListBooks0(Book) returns (Book);
+}

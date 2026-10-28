@@ -30,26 +30,33 @@
 //!   receives. It imports the runtime and the descriptor modules of the
 //!   enums its fields hold, never a package's module, so the package's
 //!   module can import it.
-//! - A service's module, `Notes.V1.NotesService`, holds two sections:
-//!   descriptors, then calls. Each method's descriptor,
-//!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
-//!   `Proto.Method.descriptor` from its service, name, idempotency, type
-//!   names and bindings, the bindings its HTTP rule's own and then its
-//!   additional ones, as data (`Proto.Http.binding`), each path variable
-//!   and query parameter the path of field descriptors from the request
-//!   down to its field (`[ Notes.V1.GetNoteRequest.name ]`), from the
-//!   descriptor modules the service's module then imports. A method without a
-//!   rule has no bindings, and the runtime calls it over the implicit
-//!   route. Its call is a function from its request to an `Rpc.Call`,
+//! - A service's module, `Notes.V1.NotesService`, holds three sections:
+//!   calls, routes, then descriptors (routes only when a method has one).
+//!   Each method's call is a function from its request to an `Rpc.Call`,
 //!   written point-free as `Rpc.call` of the method's
 //!   `Proto.Method.Method`, built by `Proto.Method.method` from the
 //!   encoder of its request and the decoder of its response
 //!   (`Notes.V1.encodeGetNoteRequest`, or the runtime's for a well-known
-//!   type) and its descriptor value. Both applications put one argument
-//!   per line however short, so every method reads alike. Elm's dead-code
-//!   elimination keeps a top-level value whole and the call refers to the
-//!   descriptor, so a program that calls a method keeps what it would
-//!   with the descriptor inline, and one that does not keeps neither.
+//!   type), its service's full name and its own, then piped through
+//!   `Proto.Method.withIdempotency` when the proto declares one and
+//!   `Proto.Method.withRoutes` with its route functions. Each route
+//!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
+//!   builds one binding's path, query and body from the typed request
+//!   ([`route_fn`]); a method with a binding the emitter cannot type takes
+//!   its bindings as data instead (`Proto.Method.withBindings`). Each
+//!   method's descriptor, `descriptorGetNote : Proto.Method.Descriptor`,
+//!   is built by `Proto.Method.descriptor` from its service, name,
+//!   idempotency, type names and bindings, the bindings its HTTP rule's own
+//!   and then its additional ones, as data (`Proto.Http.binding`), each
+//!   path variable and query parameter the path of field descriptors from
+//!   the request down to its field (`[ Notes.V1.GetNoteRequest.name ]`),
+//!   from the descriptor modules the service's module then imports. The
+//!   call does not refer to the descriptor, so Elm's dead-code
+//!   elimination drops it, the binding data and the field descriptors from
+//!   a program that does not name it. A method without a rule has no
+//!   routes, and the runtime calls it over the implicit route. The
+//!   builders put one argument per line however short, so every method
+//!   reads alike.
 //!   Every library name the module refers to is qualified, so a method's
 //!   name cannot shadow or clash with one.
 //! - A message's descriptor, `descriptor : Proto.Message.Descriptor` in
@@ -147,7 +154,14 @@
 //!   Under `codec=binary` messages, oneofs and wrappers get no JSON codecs
 //!   (enums keep theirs, which their typed values hold), and the typed
 //!   values and methods are built by `Proto.Message.messageBinary` and
-//!   `Proto.Method.methodBinary`.
+//!   `Proto.Method.methodBinary`, and methods get no routes, which take
+//!   JSON.
+//! - A message that the request of a generated method's binding puts in the
+//!   query gets a query encoder in its package's module, in a last
+//!   section, `queryOfListNotesRequest : ListNotesRequest -> List ( String,
+//!   String )`: the parameters of every field any such binding puts there,
+//!   by the `Proto.Query` helper of its kind, which leaves out a field at
+//!   its default ([`route_fn`]).
 
 mod binary;
 mod descriptor;
@@ -158,6 +172,9 @@ mod message;
 mod method;
 mod oneof;
 mod recursion;
+mod route_fn;
+
+pub use self::route_fn::{Queries, queries};
 mod scalar;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -262,8 +279,38 @@ const VERSION_VALUE_DOC: &str = "The elm-connect release this module was generat
 /// constructor under a name its code also uses unqualified for a
 /// library's, every such name.
 pub fn emit(package: &Package, options: &Options) -> Result<Module, Vec<ReservedName>> {
+    emit_with_queries(package, options, &[], &Queries::new())
+}
+
+/// [`emit`], with a query encoder for each message `queries` holds
+/// parameters of, reading fields of the messages of `packages`.
+pub fn emit_with_queries(
+    package: &Package,
+    options: &Options,
+    packages: &[Package],
+    queries: &Queries,
+) -> Result<Module, Vec<ReservedName>> {
+    let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
-    let decls = emitter.package(package);
+    let mut decls = emitter.package(package);
+    let mut encoders = Vec::new();
+    // Route functions take JSON, which `codec=binary` does not generate,
+    // so it generates no routes, and no query encoders for them.
+    for message in package
+        .messages
+        .iter()
+        .filter(|_| options.codec != Codec::Binary)
+    {
+        if let Some(params) = queries.get(&message.proto_full_name)
+            && let Some(decl) = emitter.query_encoder(&messages, message, params)
+        {
+            encoders.push(decl);
+        }
+    }
+    if !encoders.is_empty() {
+        decls.push(Decl::Comment("QUERY ENCODERS".into()));
+        decls.extend(encoders);
+    }
     let reserved = emitter.reserved_names(package, options);
     if !reserved.is_empty() {
         return Err(reserved);
@@ -361,13 +408,29 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
 /// The Elm module of `service`, one of `package`'s: a call and a
 /// descriptor per method, in two sections, the calls a program uses
 /// first.
-pub fn emit_service(package: &Package, service: &Service, options: &Options) -> Module {
+pub fn emit_service(
+    package: &Package,
+    service: &Service,
+    options: &Options,
+    packages: &[Package],
+    queries: &Queries,
+) -> Module {
+    let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
-        decls.push(Decl::Comment("CALLS".into()));
+        let mut calls = Vec::new();
+        let mut routes = Vec::new();
         for method in &service.methods {
-            decls.push(emitter.method(&service.proto_full_name, method));
+            let (functions, taken) = emitter.method_routes(&messages, queries, method);
+            calls.push(emitter.method(&service.proto_full_name, method, &taken));
+            routes.extend(functions);
+        }
+        decls.push(Decl::Comment("CALLS".into()));
+        decls.extend(calls);
+        if !routes.is_empty() {
+            decls.push(Decl::Comment("ROUTES".into()));
+            decls.extend(routes);
         }
         decls.push(Decl::Comment("DESCRIPTORS".into()));
         for method in &service.methods {
@@ -377,6 +440,19 @@ pub fn emit_service(package: &Package, service: &Service, options: &Options) -> 
     let mut module = emitter.module(package, decls);
     module.doc = Some(docs::service(service));
     module
+}
+
+/// Every message of `packages` and `package` by full proto name.
+fn all_messages<'p>(package: &'p Package, packages: &'p [Package]) -> route_fn::Messages<'p> {
+    packages
+        .iter()
+        .chain(std::iter::once(package))
+        .flat_map(|p| {
+            p.messages
+                .iter()
+                .map(move |m| (m.proto_full_name.as_str(), (m, &p.module)))
+        })
+        .collect()
 }
 
 /// A message whose every field and oneof member has a shape.
@@ -452,6 +528,7 @@ fn message_shape<'m>(
 
 /// The state of emitting one module: the modules its code refers to so
 /// far.
+#[derive(Clone)]
 struct Emitter {
     module: IrModule,
     /// Each module imported, with the types its import exposes.
@@ -883,7 +960,13 @@ mod tests {
             methods: Vec::new(),
             doc: crate::ir::Doc::default(),
         };
-        let module = emit_service(&package(Vec::new()), &service, &Options::default());
+        let module = emit_service(
+            &package(Vec::new()),
+            &service,
+            &Options::default(),
+            &[],
+            &Queries::new(),
+        );
         assert!(matches!(
             module.decls.as_slice(),
             [Decl::Value { name, .. }] if name == VERSION_VALUE
@@ -1181,7 +1264,13 @@ mod tests {
             int64: Int64::Int,
             ..Options::default()
         };
-        let module = emit_service(&package(Vec::new()), &service, &options);
+        let module = emit_service(
+            &package(Vec::new()),
+            &service,
+            &options,
+            &[],
+            &Queries::new(),
+        );
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
@@ -1203,19 +1292,18 @@ mod tests {
                 _ => None,
             })
             .collect();
+        // No method has a rule, so the module has no route functions.
         assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            descriptorGet\n",
+            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            \
+             \"t.v1.S\"\n            \"Get\"\n        )\n",
             // Qualified, or `identity` would be the method itself.
-            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n            \
-             descriptorIdentity\n",
-            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            \
-             Proto.Json.any\n            descriptorTicks\n",
+            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n",
+            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            Proto.Json.any\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
-             Proto.Method.IdempotencyUnknown\n        \
-             \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
+             Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }

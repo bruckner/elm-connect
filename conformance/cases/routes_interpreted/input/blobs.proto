@@ -1,0 +1,31 @@
+// Generated with the `bytes=bytes` option (options.txt): a bytes field is
+// elm/bytes' Bytes, which a route function cannot write as path or query
+// text, so a method with such a field in a binding takes its bindings as
+// data (`Proto.Method.withBindings`), and the runtime reads them over the
+// request's JSON. Its other methods keep their route functions.
+syntax = "proto3";
+
+package blobs.v1;
+
+import "google/api/annotations.proto";
+
+message Blob {
+  bytes digest = 1;
+  string name = 2;
+  bytes salt = 3;
+}
+
+service BlobService {
+  rpc GetBlob(Blob) returns (Blob) {
+    option (google.api.http) = {
+      get: "/v1/blobs/{digest}"
+      additional_bindings { get: "/v1/{name=shelves/*/blobs/*}" }
+    };
+  }
+  rpc FindBlob(Blob) returns (Blob) {
+    option (google.api.http) = {
+      post: "/v1/{name=blobs/*}:find"
+      body: "*"
+    };
+  }
+}

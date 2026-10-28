@@ -527,6 +527,7 @@ impl Namespace {
 struct ServiceValues {
     names: Namespace,
     descriptors: HashSet<String>,
+    routes: HashSet<String>,
 }
 
 /// A reference from a field to a generated type, for the
@@ -1344,6 +1345,8 @@ impl Builder {
         {
             let problem = if values.descriptors.contains(&built.elm_name) {
                 Problem::descriptor_collision
+            } else if values.routes.contains(&built.elm_name) {
+                Problem::route_collision
             } else {
                 Problem::value_collision
             };
@@ -1378,6 +1381,28 @@ impl Builder {
                 ));
             }
             values.descriptors.insert(descriptor);
+            for index in 0..built.routes.len() {
+                let route = crate::naming::route_name(&built.elm_name, index);
+                let what = format!("route function {index} of method `{full_name}`");
+                let origin = self.origin(file, path, tag::METHOD_NAME, what, Some(full_name));
+                if let Some(Clash {
+                    first,
+                    second,
+                    rename,
+                    renamed,
+                }) = values.names.claim(&route, origin)
+                {
+                    self.diagnostics.push(Problem::route_collision(
+                        service.full_name(),
+                        &route,
+                        first,
+                        second,
+                        &self.rename_of(rename.as_deref()),
+                        self.renamed_by(renamed.as_ref()).as_deref(),
+                    ));
+                }
+                values.routes.insert(route);
+            }
         }
         Some(built)
     }
