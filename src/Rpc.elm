@@ -111,7 +111,7 @@ import Time
 It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 (`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
 `viaBinding`) and read
-(`serviceName`, `methodName`, `descriptor`, `toJson`, …).
+(`serviceName`, `methodName`, `procedure`, `toJson`, …).
 
 -}
 type alias Call req res =
@@ -125,7 +125,10 @@ applies it to each method's [`Method`](Proto-Method#Method):
         Rpc.call
             (Method.method Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
-                descriptorGetNote
+                "notes.v1.NotesService"
+                "GetNote"
+                |> Method.withIdempotency Method.IdempotencyNoSideEffects
+                |> Method.withRoutes [ routeGetNote0 ]
             )
 
 -}

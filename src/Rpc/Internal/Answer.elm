@@ -15,6 +15,7 @@ import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
 import Proto.Internal.Method exposing (Read(..))
+import Proto.Internal.Percent as Percent
 import Proto.Json
 import Proto.Method as Method
 import Rpc.Body
@@ -49,8 +50,8 @@ toResult transport ((Call fields) as c) answer =
                             Nothing ->
                                 within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
 
-                ( Transcode _, Bound _ rule ) ->
-                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
+                ( Transcode _, Bound _ bound ) ->
+                    within transport raw (\_ -> decodeBody (responseDecoder (bound fields.message).responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
 
                 ( Transcode _, Implicit ) ->
                     within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
@@ -234,7 +235,7 @@ failure metadata raw =
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
-                                |> Maybe.map (\text -> Internal.percentDecode text |> Maybe.withDefault text)
+                                |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
                                 |> Maybe.withDefault (Error.message (Error.HttpStatus answer))
                         , details = []
                         , source = Error.GrpcHeaders

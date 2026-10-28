@@ -7,9 +7,11 @@ module Proto.Http exposing
 
 {-| A method's `google.api.http` rule as data: its bindings, each a verb, a
 path template, a body and query parameters. The generator parses the rule
-and writes these into the method's [descriptor](Proto-Method#Descriptor);
-application code only passes them along, and `Rpc` builds the request from
-them under the Transcode transport.
+and writes these into the method's [descriptor](Proto-Method#Descriptor),
+for a program that reads them; a generated method transcodes over route
+functions built from the same rule. A method written by hand takes its
+bindings with [`Proto.Method.withBindings`](Proto-Method#withBindings), and
+`Rpc` builds the request from them under the Transcode transport.
 
 @docs Binding, binding
 @docs Segment, literal, variable, wildcard, doubleWildcard

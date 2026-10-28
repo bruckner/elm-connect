@@ -1,6 +1,6 @@
 module Rpc.Trace exposing
     ( Trace
-    , serviceName, methodName, transport, binding, request
+    , serviceName, methodName, procedure, transport, binding, request
     , httpStatus, headers, trailers, code, duration, attempts
     , toJson, toString
     )
@@ -17,7 +17,7 @@ beside the result.
 
 # The call
 
-@docs serviceName, methodName, transport, binding, request
+@docs serviceName, methodName, procedure, transport, binding, request
 
 
 # The outcome
@@ -62,6 +62,15 @@ serviceName (Internal.Trace t) =
 methodName : Trace -> String
 methodName (Internal.Trace t) =
     t.methodName
+
+
+{-| The call's Connect procedure path, such as
+`/notes.v1.NotesService/GetNote`, as
+[`Rpc.Call.procedure`](Rpc-Call#procedure) gives it.
+-}
+procedure : Trace -> String
+procedure (Internal.Trace t) =
+    "/" ++ t.serviceName ++ "/" ++ t.methodName
 
 
 {-| The name of the transport the call went over, as
@@ -152,6 +161,7 @@ attempts (Internal.Trace t) =
     {
         "service": "notes.v1.NotesService",
         "method": "GetNote",
+        "procedure": "/notes.v1.NotesService/GetNote",
         "transport": "connect",
         "binding": null,
         "request": {
@@ -170,8 +180,8 @@ attempts (Internal.Trace t) =
         "attempts": 1
     }
 
-`service` and `method` are the keys [`Rpc.Call.toJson`](Rpc-Call#toJson) gives
-a call. The request's headers are pairs, in order, since a name may repeat; the
+`service`, `method` and `procedure` are the keys
+[`Rpc.Call.toJson`](Rpc-Call#toJson) gives a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
 are in milliseconds; `binding`, `httpStatus`, the body and the timeout are
@@ -189,6 +199,7 @@ toJson (Internal.Trace t) =
     Encode.object
         [ ( "service", Encode.string t.serviceName )
         , ( "method", Encode.string t.methodName )
+        , ( "procedure", Encode.string (procedure (Internal.Trace t)) )
         , ( "transport", Encode.string t.transport )
         , ( "binding", maybe Encode.int t.binding )
         , ( "request"

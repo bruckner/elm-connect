@@ -16,6 +16,8 @@
         "Rpc.Request",
         "Rpc.Response",
         "Proto.Http",
+        "Proto.Route",
+        "Proto.Query",
         "Proto.Message",
         "Proto.Field",
         "Proto.Enum",
