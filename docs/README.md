@@ -27,7 +27,7 @@ The rest are reference pages, for when a question comes up.
 
 - [generator.md](generator.md): what a proto becomes in Elm, the
   options, `check`, and running the plugin.
-- [calling.md](calling.md): configs, transports, retries, errors,
+- [calling.md](calling.md): clients, protocols, retries, errors,
   tracing, cancelling, and the pure halves.
 - [descriptors.md](descriptors.md): descriptors, the registry, `Any`,
   error details and update masks.

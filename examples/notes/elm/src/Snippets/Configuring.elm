@@ -1,4 +1,4 @@
-module Snippets.Configuring exposing (NoteMsg(..), NoteState(..), Retrying, attemptNote, checked, connectGet, perCall, retrying, updateNote, withdraw)
+module Snippets.Configuring exposing (NoteMsg(..), NoteState(..), Retrying, attemptNote, checked, getClient, perCall, retrying, updateNote, withdraw)
 
 {-| docs/calling.md's clients: a protocol with its options, a retry policy,
 a retry loop the application drives, checking a client, and the adjustments
@@ -23,8 +23,8 @@ import Time
 -- region protocols
 
 
-connectGet : Rpc.Client Rpc.Json
-connectGet =
+getClient : Rpc.Client Rpc.Json
+getClient =
     -- GetNote, ListNotes and Ping, declared NO_SIDE_EFFECTS, become GETs;
     -- a GET whose URL would pass 2048 characters is POSTed instead.
     Rpc.client
