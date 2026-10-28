@@ -35,18 +35,16 @@ descriptor in a module of the message's own, beside one value per field
 import Json.Decode
 import Json.Encode
 import Proto.Field as Field
+import Proto.Internal.Message as Internal
 
 
 {-| A message type whose Elm values are `a`. It is opaque: built by
-[`message`](#message) and read by the functions below.
+[`message`](#message) and read by the functions below. The package site and
+compiler errors may show it as `Proto.Internal.Message.Message`, its name
+inside the package.
 -}
-type Message a
-    = Message
-        { encode : a -> Json.Encode.Value
-        , decoder : Json.Decode.Decoder a
-        , default : a
-        , descriptor : Descriptor
-        }
+type alias Message a =
+    Internal.Message Descriptor a
 
 
 {-| A message type from its proto3 JSON encoder and decoder, its default (the
@@ -60,7 +58,7 @@ decodes to) and its descriptor. Generated code writes:
 -}
 message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Message a
 message encodeJson jsonDecoder defaultValue messageDescriptor =
-    Message
+    Internal.Message
         { encode = encodeJson
         , decoder = jsonDecoder
         , default = defaultValue
@@ -71,28 +69,28 @@ message encodeJson jsonDecoder defaultValue messageDescriptor =
 {-| A value as proto3 JSON.
 -}
 encode : Message a -> a -> Json.Encode.Value
-encode (Message m) =
+encode (Internal.Message m) =
     m.encode
 
 
 {-| The proto3 JSON decoder.
 -}
 decoder : Message a -> Json.Decode.Decoder a
-decoder (Message m) =
+decoder (Internal.Message m) =
     m.decoder
 
 
 {-| The value with every field at its proto3 default.
 -}
 default : Message a -> a
-default (Message m) =
+default (Internal.Message m) =
     m.default
 
 
 {-| What the proto says about the message, read by the functions below.
 -}
 toDescriptor : Message a -> Descriptor
-toDescriptor (Message m) =
+toDescriptor (Internal.Message m) =
     m.descriptor
 
 
