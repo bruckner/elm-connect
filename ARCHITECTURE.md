@@ -117,7 +117,8 @@ implementation stays out of the public modules so that they read as API:
 binding's route included,
 `Proto.Internal.Interpret` reads a binding written as data, `Wire` builds the
 request each protocol sends, `Answer` reads an answer into a result or
-an error, `Retry` runs the attempts, `Http` adapts elm/http (§5.2). They
+an error, `GrpcWeb` frames gRPC-Web's request and reads its answer's
+frames and trailers, `Retry` runs the attempts, `Http` adapts elm/http (§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single
 module would form an import cycle.
 

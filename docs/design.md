@@ -10,17 +10,18 @@ discussion is the design record.
 ## 1. What this is
 
 A code generator and a runtime that let an Elm application call a
-protobuf-defined API over JSON. Two protocols are supported from the
-same generated code:
+protobuf-defined API over JSON. Three protocols are supported from the
+same generated code, the third over protobuf binary alone (§5.3):
 
 | Protocol | Wire | Server side |
 |---|---|---|
 | **Connect** | `POST /<pkg>.<Service>/<Method>`, JSON body, Connect error JSON | connect-go, connect-es, connect-python, Envoy's Connect-gRPC bridge in front of a gRPC server |
 | **Transcode** | REST paths from `google.api.http`, proto3 JSON, `google.rpc.Status` errors | grpc-gateway, Envoy's gRPC-JSON transcoder, Vanguard, any hand-written REST layer that honours the annotations |
+| **gRPC-Web** | `POST /<pkg>.<Service>/<Method>`, one framed protobuf binary message, the status in a trailers frame or headers | connect-go, Envoy's gRPC-Web filter, grpcwebproxy in front of a gRPC server |
 
 The generator is written in Rust. The runtime is an Elm package,
 `bruckner/elm-connect`. Both live in this repository.
-The specifications behind both protocols are listed in
+The specifications behind the protocols are listed in
 [specs.md](specs.md).
 
 The runtime is written for the browser and runs wherever elm/http
@@ -68,13 +69,15 @@ a second protocol and a public interface designed to be kept.
 
 ### 1.3 Non-goals (for 1.0)
 
-- Streaming of any kind, on either protocol. Connect streaming uses
+- Streaming of any kind, on any protocol. Connect streaming uses
   enveloped frames; grpc-gateway streams newline-delimited JSON, and
   Envoy a JSON array by default. A streaming method is a diagnostic, or
   with `streaming=skip` is left out (§3.8). Server streaming is planned
   as a minor release ([roadmap.md](roadmap.md)); client and
   bidirectional streaming cannot be done from a browser.
-- gRPC-web; unary gRPC-Web, over the binary codecs, is on the roadmap.
+- gRPC-Web's text mode (`application/grpc-web-text`, base64 over the
+  frames), which exists for clients that cannot send or read a binary
+  body; XHR can.
 - proto2 syntax, and editions. A proto2 file to generate is
   `input::not_proto3`, under the CLI also when it does not parse, as a
   proto3 file with its `syntax` line changed does not, in place of the
@@ -2294,16 +2297,17 @@ type alias Proto = Proto.Internal.Codec.Proto
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
 connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
+grpcWeb : Protocol Proto                  -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
 withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
 withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
-name : Protocol codec -> String           -- "connect" | "transcode"
+name : Protocol codec -> String           -- "connect" | "transcode" | "grpc-web"
 codec : Protocol codec -> String          -- "json" | "proto"
 toJson : Protocol codec -> Json.Encode.Value
 
 -- Rpc.Client: opaque
 client : Protocol codec -> String -> Client codec       -- also Rpc.client; a trailing "/" is dropped
 withHeaders : List ( String, String ) -> Client codec -> Client codec
-withTimeout : Float -> Client codec -> Client codec     -- ms, > 0; Connect also sends Connect-Timeout-Ms
+withTimeout : Float -> Client codec -> Client codec     -- ms, > 0; Connect sends Connect-Timeout-Ms, gRPC-Web grpc-timeout
 withCredentials : Client codec -> Client codec          -- Http.riskyRequest
 withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
 protocol, baseUrl, headers, timeout, credentials, retry -- readers
@@ -2322,7 +2326,8 @@ next : Retry -> { tried : Int, code : Rpc.Code.Code, idempotency : Proto.Method.
 A client says where and how a call is sent: a protocol, the server's
 base URL, and the headers, timeout, credentials and retry policy every
 call takes. A protocol says how: Connect over proto3 JSON or protobuf
-binary, or HTTP transcoding, with its options. Both carry a codec in
+binary, HTTP transcoding, or gRPC-Web over protobuf binary, with its
+options. Both carry a codec in
 their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
 annotations and compiler errors read `Rpc.Json`), and a client sends
 only calls of its codec: a `Client Json` takes the calls of code
@@ -2339,8 +2344,8 @@ functions that build a request and read an answer (`build`, `message`,
 the limit checks `tooLarge` and `overRead`, `timeoutHeader`, and for
 bytes `base64` and `width`). A constructor chooses them, so a program
 carries only the code of the protocols it names: a Connect program no
-route code, a JSON program no protobuf binary and none of elm/bytes'
-kernel. Each function takes the options as an argument rather than
+route code and no gRPC-Web framing, a JSON program no protobuf binary
+and none of elm/bytes' kernel. Each function takes the options as an argument rather than
 closing over them, so two protocols built alike hold the same functions
 and equal data.
 
@@ -2365,7 +2370,8 @@ them carries none of their code. Two rules keep this safe
   no elm/bytes.
 
 `withConnectGet` and `withMaxGetUrl` are no-ops off Connect, as
-documented: transcoding takes its verb from the rule. A client holds
+documented: transcoding takes its verb from the rule, and gRPC-Web
+POSTs every call. A client holds
 functions, so it belongs in code (a top-level value, one built in
 `init`, or one a wrapper builds per call from the application's state),
 never in a message; `Rpc.Client.toJson` and `Rpc.Protocol.toJson` give
@@ -2391,9 +2397,9 @@ again. The client is where hooks would attach if a need for them
 appears, each a field of the opaque record and a minor (roadmap).
 
 - `Client` and `Protocol` are opaque, so a new knob is a new modifier, a
-  minor: a protocol-level knob (a binary format, compression,
-  gRPC-Web, `Grpc-Timeout` for transcoding, a proxy's quirks, stream
-  framing) on `Protocol`; a retry knob on `Retry`; a per-call one on
+  minor: a protocol-level knob (compression, `Grpc-Timeout` for
+  transcoding, a proxy's quirks, stream framing) on `Protocol`, and a
+  protocol a new value of it; a retry knob on `Retry`; a per-call one on
   `Call`; a per-client one on `Client`; and JSON codec options are the
   generator's, decided when code is generated.
 - Headers are name–value pairs rather than `Http.Header`, which is
@@ -2408,7 +2414,8 @@ appears, each a field of the opaque record and a minor (roadmap).
   characters, for servers and proxies that cap URL length. `name` gives
   the protocol for traces and logs.
 - `withReadMaxBytes n` refuses a successful answer whose body is longer
-  than `n` bytes of UTF-8 (of protobuf binary over `connectProto`),
+  than `n` bytes of UTF-8 (of protobuf binary over `connectProto`; over
+  `grpcWeb`, its response message, not the frame around it),
   before decoding it, on every protocol:
   connect-go's `WithReadMaxBytes` (4 MiB by default, 0 for none) and
   connect-node's `readMaxBytes` (none by default); connect-web, the
@@ -2564,7 +2571,8 @@ method's route function, §4), the write-limit check and the answer's
 reader, monomorphic from there on;
 `Rpc.Internal.Wire` holds the request builders the protocols install,
 `Rpc.Internal.Answer` the answer readers, reading an answer into a
-result or an `Error`,
+result or an `Error`, `Rpc.Internal.GrpcWeb` gRPC-Web's framing and
+trailers, which only `grpcWeb`'s builder and reader reach,
 `Rpc.Internal.Retry` holds the policy math and the attempt loop, and
 `Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
 whether a request can be sent. The data modules, which generated code
@@ -3022,12 +3030,76 @@ What follows says how a binding reads its fields, for both.
 
 [proto limits]: https://protobuf.dev/programming-guides/proto-limits/
 
+#### gRPC-Web
+
+`Rpc.Protocol.grpcWeb` is unary
+[gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md),
+a `Protocol Proto`. Run by the live suite against connect-go and against
+Envoy's gRPC-Web filter in front of the same server (`cases/grpcweb.json`:
+every method, the five ways of sending, errors with details, both size
+limits, a timeout, the body's trailers in a trace), and by the Connect
+conformance suite's gRPC-Web client cases (§7).
+
+- **A protocol, not a Connect option.** It shares only the URL with
+  Connect: no GET, protobuf binary only, its own timeout header and its
+  own error channel. As an option of `connect` it would make
+  `withConnectGet` and a JSON codec meaningless combinations; as a
+  protocol, the GET modifiers leave it as it is, as they leave
+  `transcode`, and its type rules JSON out (decisions.md: gRPC-Web as a
+  protocol).
+- **Requests.** A POST to `baseUrl/<service>/<Method>` of the request's
+  binary in one uncompressed frame (flag `0`, a four-byte big-endian
+  length, the message), as `application/grpc-web+proto`
+  (`Rpc.Body.bytesAs`, since elm/http sets the content type from the
+  body and joins a header of that name with it), with `X-Grpc-Web: 1`.
+  A timeout is `grpc-timeout`: milliseconds rounded up, or seconds or
+  hours (`S`, `H`) when milliseconds take more than eight digits; a
+  retry deadline rewrites it as it rewrites `Connect-Timeout-Ms`.
+- **Answers.** A 200 with a body is read as frames: the trailers frame
+  (flag `0x80`, `name: value` lines, names lowercased) holds the status,
+  which wins over any `grpc-status` header. A 200 without a body is
+  trailers-only, its status in the headers. Status 0 with exactly one
+  message is the response; any other status is `RpcStatus`, with
+  `grpc-message` percent-decoded (kept as sent when it is not
+  well-formed) and `grpc-status-details-bin` (base64, padding optional)
+  read as a `google.rpc.Status` whose `details` are the error's, binary
+  `Any`s that `Proto.Any.unpack` reads with a message that has binary
+  codecs. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
+  headers. Any other HTTP status goes through the shared error reader
+  (§5.4). Status 0 with no message or two, a compressed frame, a frame
+  running past the end, or no status anywhere is a `BadResponse`.
+- **Limits.** `withReadMaxBytes` measures the response message, not its
+  frame, so a limit means the same as over `connectProto`;
+  `withWriteMaxBytes` the request's binary. An error is read whatever
+  its size.
+- **Trailers reach the trace.** The reader adds a body's trailers to the
+  answer's metadata as `trailer-<name>` headers, as a Connect unary
+  answer carries them, so `Rpc.Trace.trailers` gives them and
+  `Rpc.Trace.headers` the rest. An application reading the elm/http
+  response itself through the pure halves has only its headers: the
+  runtime has no public reader of a body's trailers.
+- **Its code is the protocol's.** Every gRPC-Web function, the builder
+  (`Rpc.Internal.Wire.grpcWeb`), the reader (`Answer.grpcWebMessage`)
+  and the timeout format, is a top-level function only the `grpcWeb`
+  value installs in its `Binary` wire, and `Send.plan` keeps its one
+  `case` on the wire kind, with no gRPC-Web arm. A program that never
+  names `grpcWeb` carries none of it: Eliza and the notes example over
+  Connect, as JSON or as protobuf binary, compile to the same bytes with
+  it as without. Naming it costs 689 B gzipped on a notes program over
+  protobuf binary, and 1,476 B on Eliza's, 894 B of which is the
+  `google.rpc.Status` details decoder (`Proto.Binary.any` and base64)
+  that the notes program already carries for its own messages.
+- **Not built.** The text mode, `application/grpc-web-text`, base64 over
+  the frames, which exists for clients that cannot send or read a binary
+  body (§1.3); and streaming, as on every protocol (§1.3).
+
 ### 5.4 Errors
 
 Every source is read from a live answer by the live suite (§7): a
 Connect body and a `google.rpc.Status` body, each with details read
-as JSON (`debug` in the Connect body), `grpc-status` headers and a bare
-HTTP status. The Connect conformance suite (§7) checks every code from a
+as JSON (`debug` in the Connect body), `grpc-status` headers, a bare
+HTTP status, and over gRPC-Web a trailers frame and trailers-only
+headers, with details read as binary. The Connect conformance suite (§7) checks every code from a
 Connect body, with its message (Unicode included) and details, and
 `fromHttpStatus` on answers with no error body. A detail without `debug`
 is not met: connect-go, the suite's reference server, always sends it.
@@ -3057,7 +3129,7 @@ type Source
     = ConnectBody                       -- {"code": "not_found", …}
     | StatusBody                        -- google.rpc.Status, {"code": 5, …}
     | GrpcHeaders                       -- grpc-status / grpc-message headers
-    | GrpcTrailers                      -- reserved: gRPC / gRPC-Web trailers
+    | GrpcTrailers                      -- the trailers frame of a gRPC-Web body
     | ConnectEndStream                  -- reserved: Connect end-of-stream message
 
 code : Error -> Rpc.Code.Code           -- see below
@@ -3110,7 +3182,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   transport may answer in either form. An answer none of them reads is
   an `HttpStatus` error: `code` infers its code from the HTTP status by the
   protocol's table, `message` is the status text (`HTTP <status>` when
-  empty), and it has no details.
+  empty), and it has no details. gRPC-Web's 200 carries its status in a
+  trailers frame or its headers, which gRPC-Web's own reader reads
+  first (§5.3); any other status of it comes to this reader.
 - Every error that had an answer keeps it, a
   `Response`: the URL it came from (after any redirect), the status and
   status text and the headers as elm/http's `Http.Metadata` gives
@@ -3543,9 +3617,9 @@ request builder), which unit tests cannot run. It has five parts:
 2. **Connect conformance suite** (`connectrpc/conformance`): a Node
    wrapper makes the runner a client under test, with
    a config declaring what is supported (unary, the JSON codec,
-   HTTP/1.1, no compression, GET for idempotent methods). Streaming, the
-   binary codec and gRPC-Web are declared unsupported rather than
-   known-failing.
+   HTTP/1.1, no compression, GET for idempotent methods). Streaming is
+   declared unsupported rather than known-failing; the binary codec and
+   gRPC-Web each run under a config of their own.
 3. **Transcoding live tests**: a table of calls against the server
    asserting path, query, body, response and the `google.rpc.Status`
    error body, reusing the route fixtures' expectations where they
@@ -3828,8 +3902,33 @@ which the runtime reads as `GrpcHeaders`, without details.
   a status it has no name for, which becomes an `HttpStatus` error's
   message; and the header-only form carries no details.
 
+gRPC-Web: `just live-grpcweb` (part of `just live`) runs
+`cases/grpcweb.json` against the example server, where connect-go
+serves gRPC-Web, on the runner built against `codec=both`, and
+`just live-envoy` runs the same cases against a third Envoy listener
+whose gRPC-Web filter turns each call into gRPC to the server. Both pass
+every case, with the same code, message and detail bytes as the
+Connect proto-codec cases for the same faults: connect-go answers a
+unary error trailers-only (`GrpcHeaders`), Envoy in a trailers frame
+(`GrpcTrailers`), and the cases accept either. Vanguard and
+grpc-gateway have no gRPC-Web leg: the example server answers a gRPC-Web
+call at its procedure path with connect-go before Vanguard's routes, and
+grpc-gateway serves REST alone. The Connect conformance suite's gRPC-Web
+client cases (`conformance-grpcweb.yaml`: unary, protobuf binary,
+HTTP/1.1, no compression) select 85; 69 pass through the halves and 79
+through `sendTraced`. `known-failing-grpcweb.txt` lists, whichever way:
+status 0 with no message or two, which the suite wants `unimplemented`
+and the runtime reads as a `BadResponse` (`internal`), as over Connect;
+and a 200 of another content type with no status, which it wants
+`unknown`. `known-failing-grpcweb-halves.txt` adds the twelve cases that
+assert trailers, which a gRPC-Web answer carries in its body, where the
+halves do not read them and `sendTraced` does (§5.3); `sendTraced`
+fails the two cancellation cases of `known-failing-send.txt`, as over
+Connect.
+
 What is verified live, against connect-go, Vanguard, grpc-gateway
-and Envoy: every method of the example API over both protocols, from
+and Envoy: every method of the example API over Connect and
+transcoding, and over gRPC-Web against connect-go and Envoy, from
 
 Node in CI (transcoding under all three transcoders) and by hand from
 the example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
@@ -3837,7 +3936,7 @@ retries, timeouts, `withCredentials`, trackers and Connect GET; an
 answer's headers and trailers reaching the application through the
 halves and the `Trace`; the error reader's four sources with details;
 the transcoding request builder on every route fixture, under all three
-transcoders; the error reader's header-only form against Envoy; the Connect conformance suite's unary JSON cases;
+transcoders; the error reader's header-only form against Envoy; the Connect conformance suite's unary JSON cases, and its gRPC-Web cases;
 `taskFromRequest` with a rewritten request; and cancellation, through
 the halves and through `send` (§5.2). Not live: `response_body`
 (§5.3). The notes example serves verification, which makes it too
@@ -3985,9 +4084,10 @@ Within a major version:
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `InvalidHeader`, `InvalidPathValue`,
   `RequestTooLarge`,
-  `ResponseTooLarge`) and `Source` (with `GrpcTrailers` and
-  `ConnectEndStream` reserved for server streaming, which reads a
-  status from those two places, so that it can ship as a minor; a
+  `ResponseTooLarge`) and `Source` (with `ConnectEndStream` reserved
+  for server streaming, which reads a status from there, so that it can
+  ship as a minor; `GrpcTrailers`, reserved as well until gRPC-Web read
+  a unary answer's trailers frame, is given now; a
   failure before an answer is read is one of the reasons, and a new kind
   found in an answer that was read is a `BadResponse`, §5.4).
 - **The `elm-connect-gen` crate.** Published so that `cargo install`

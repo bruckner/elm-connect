@@ -73,7 +73,7 @@ them:
 | protocol | `Rpc.client` | the protocol, with its own options (below) |
 | base URL | `Rpc.client` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `NoAnswer (BadUrl url)` |
 | headers | `Rpc.Client.withHeaders` | sent with every call, before the call's own; each list given goes after those given before |
-| timeout | `Rpc.Client.withTimeout` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond. A value that is not a positive number means no timeout |
+| timeout | `Rpc.Client.withTimeout` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond, and over gRPC-Web as `grpc-timeout`. A value that is not a positive number means no timeout |
 | credentials | `Rpc.Client.withCredentials` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
 | retry policy | `Rpc.Client.withRetry` | whether and when to try a failed call again ([Retries](#retries)) |
 
@@ -123,6 +123,7 @@ matching it.
 connect : Protocol Json
 connectProto : Protocol Proto
 transcode : Protocol Json
+grpcWeb : Protocol Proto
 withConnectGet : Protocol codec -> Protocol codec
 withMaxGetUrl : Int -> Protocol codec -> Protocol codec
 ```
@@ -137,6 +138,10 @@ withMaxGetUrl : Int -> Protocol codec -> Protocol codec
   request, the query from the fields outside the path and the body, and
   the body as the rule says. A method without a rule goes over the
   implicit route ([transcoding.md](transcoding.md)).
+- `Rpc.Protocol.grpcWeb`: gRPC-Web, for a server or proxy that serves it
+  and not Connect (connect-go, Envoy's gRPC-Web filter, grpcwebproxy):
+  every call a POST to the same URL as Connect's, in protobuf binary
+  ([Choosing the codec](#choosing-the-codec)).
 
 `Rpc.Protocol.withConnectGet` makes Connect send a call of a method
 declared `option idempotency_level = NO_SIDE_EFFECTS;` as a GET with the
@@ -146,7 +151,7 @@ caches can serve. Any other call is POSTed, whatever its
 browser history and in server and proxy logs.
 `Rpc.Protocol.withMaxGetUrl n` POSTs a call whose GET URL would be
 longer than `n` characters (2048 is a common safe value). Only Connect
-sends a GET, so both leave `transcode` as it is.
+sends a GET, so both leave `transcode` and `grpcWeb` as they are.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#protocols
 connectGet : Rpc.Client Rpc.Json
@@ -162,7 +167,7 @@ connectGet =
 ```
 
 Protocols built alike are `==`. `Rpc.Protocol.name` gives
-`"connect"` or `"transcode"`, and `Rpc.Protocol.codec` `"json"` or
+`"connect"`, `"transcode"` or `"grpc-web"`, and `Rpc.Protocol.codec` `"json"` or
 `"proto"`, for logs; `Rpc.Protocol.toJson` gives a protocol with its
 options.
 
@@ -174,13 +179,24 @@ type alias Proto =
 ```
 
 Messages travel as proto3 JSON over `connect` and `transcode`, and as
-protobuf binary over `connectProto`: a POST carries the request's
+protobuf binary over `connectProto` and `grpcWeb`. Over `connectProto`, a POST carries the request's
 binary as `application/proto`, a GET the query
 `connect=v1&base64=1&encoding=proto&message=…` with the binary in
 unpadded URL-safe base64, and a successful answer is read as binary,
 which must come as `application/proto` or with no content type. Error
 answers are JSON whatever the codec, as the protocol sends them, and are
 read as they are over `connect`.
+
+Over `grpcWeb`, a POST carries the request's binary in one gRPC-Web frame
+as `application/grpc-web+proto`, with `X-Grpc-Web: 1` and the timeout
+as `grpc-timeout`. A successful answer is the response's frame followed
+by a trailers frame holding `grpc-status: 0`; an error is the status in
+a trailers frame, or in the headers when the body is empty
+(trailers-only), with `grpc-message` percent-decoded and the details
+read from `grpc-status-details-bin`. A browser reads those headers on a
+cross-origin answer only when the server exposes them
+(`Access-Control-Expose-Headers`); trailers in a body need nothing. A
+traced call gives a body's trailers as the trace's trailers.
 
 The codec is in the types. A protocol is a `Protocol Rpc.Json` or a
 `Protocol Rpc.Proto`, the client built on it an `Rpc.Client Rpc.Json`
@@ -190,14 +206,14 @@ generator wrote for its method ([generator.md](generator.md)):
 | Generated with | A call's type | Sent by |
 |---|---|---|
 | `codec=json` (the default) | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
-| `codec=proto` | `Rpc.Call Rpc.Proto req res` | a `connectProto` client |
+| `codec=proto` | `Rpc.Call Rpc.Proto req res` | a `connectProto` or `grpcWeb` client |
 | `codec=both` | `Rpc.Call codec req res` | any client |
 
 A client sends only calls of its codec, and the compiler says where one
 does not, so a call never reaches the network without the codec its
 client sends, and never falls back to the other one. `transcode` is
-JSON by definition, so binary goes over Connect alone
-([transcoding.md](transcoding.md)).
+JSON by definition, so binary goes over Connect or gRPC-Web
+([transcoding.md](transcoding.md)), and gRPC-Web is binary alone.
 
 Pick binary for a server that serves only `application/proto`, for
 smaller messages (a 1,000-element repeated message takes 55 % fewer
@@ -209,8 +225,8 @@ shows.
 ### Size limits
 
 `Rpc.Protocol.withReadMaxBytes n` caps a successful answer's body at
-`n` bytes (of UTF-8, or of the binary under the proto codec), on any
-protocol, as connect-go's
+`n` bytes (of UTF-8, or of the binary under the proto codec; over
+gRPC-Web, of the response message, not its frame), on any protocol, as connect-go's
 `WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
 `NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
@@ -255,8 +271,8 @@ code is one of `codes`. Its defaults:
 The call's timeout already applies to each attempt, so without a
 deadline the worst case is the attempts times the timeout, plus the
 waits. A deadline bounds them all together: no wait begins that would
-end past it, and each attempt's timeout, `Connect-Timeout-Ms` included,
-is cut to what is left of it.
+end past it, and each attempt's timeout, `Connect-Timeout-Ms` or
+`grpc-timeout` included, is cut to what is left of it.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#retry
 retrying : Rpc.Client Rpc.Json
@@ -582,7 +598,10 @@ read; the runtime tries each in this order, whatever the protocol:
   grpc-gateway and Vanguard send.
 - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
   transcoder sends an error by default, when the browser exposes them
-  ([transcoding.md](transcoding.md#errors-in-headers)).
+  ([transcoding.md](transcoding.md#errors-in-headers)); and a gRPC-Web
+  answer without a body, with its details in `grpc-status-details-bin`.
+- `GrpcTrailers`: the `grpc-status`, `grpc-message` and
+  `grpc-status-details-bin` trailers that end a gRPC-Web answer's body.
 
 An answer with none of these is an `HttpStatus` error.
 
@@ -660,13 +679,16 @@ the type `Rpc.Body.contentType` gives.
 
 A request's `headers` are those the runtime and the client add, not all
 that go out: sending a request with a body adds its `Content-Type`
-(`application/json`, or `application/proto` under the proto codec), which
+(`application/json`, or `application/proto` under the proto codec, or
+`application/grpc-web+proto` over gRPC-Web), which
 elm/http sets from the body, and
 the browser adds its own, so a test of `Rpc.request` sees neither.
 
 `Rpc.splitTrailers` splits an answer's headers as a Connect unary answer
 carries its metadata, the `trailer-` ones apart, for an application that
-reads answers through the halves.
+reads answers through the halves. A gRPC-Web answer's trailers are in
+its body: `Rpc.responseBytes` reads the status from them, and only a
+traced send gives them as trailers.
 
 ## Wrapping the sending once
 
