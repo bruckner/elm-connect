@@ -13,6 +13,8 @@ The rest are reference pages, for when a question comes up.
 
 - [install.md](install.md): the binaries, the runtime in `elm.json`,
   googleapis, versions.
+- [migrating.md](migrating.md): upgrading an application from 0.1 to
+  0.2.
 - [quickstart.md](quickstart.md): from a proto to a call, in `elm repl`
   and in a test.
 - [trying.md](trying.md): a real call with no server of your own,
