@@ -1721,8 +1721,52 @@ encodeChoiceBytes : Choice -> Bytes.Encode.Encoder
 encodeChoiceBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.before
-        , encodeChoicePickBytes value.pick
+        , case value.pick of
+            ChoicePickText member ->
+                Proto.Binary.present Proto.Binary.string 2 member
+
+            ChoicePickBig member ->
+                Proto.Binary.present Proto.Binary.int64 3 member
+
+            ChoicePickRatio member ->
+                Proto.Binary.present Proto.Binary.double 4 member
+
+            ChoicePickFlag member ->
+                Proto.Binary.present Proto.Binary.bool 5 member
+
+            ChoicePickData member ->
+                Proto.Binary.present Proto.Binary.bytes 6 member
+
+            ChoicePickKind member ->
+                Proto.Binary.present (Proto.Binary.enum encodeKindBytes decodeKindBytes) 7 member
+
+            ChoicePickLeaf member ->
+                Proto.Binary.present (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) 8 member
+
+            ChoicePickNothing ->
+                Proto.Binary.present Proto.Binary.empty 9 ()
+
+            ChoicePickJson member ->
+                Proto.Binary.present Proto.Binary.value 10 member
+
+            ChoicePickAt member ->
+                Proto.Binary.present Proto.Binary.timestamp 11 member
+
+            ChoicePickWrapped member ->
+                Proto.Binary.present Proto.Binary.int32Value 12 member
+
+            ChoicePickTwoWords member ->
+                Proto.Binary.present Proto.Binary.string 13 member
+
+            _ ->
+                Bytes.Encode.sequence []
         , Proto.Binary.implicit Proto.Binary.int32 14 value.after
+        , case value.pick of
+            ChoicePickNone ->
+                Proto.Binary.present (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 15 ()
+
+            _ ->
+                Bytes.Encode.sequence []
         ]
 
 

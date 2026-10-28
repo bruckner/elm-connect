@@ -1796,9 +1796,12 @@ registry =
   `Proto.Binary.map`, so the merges of a cycle refer to each other
   through functions only. An encoder is `Bytes.Encode.sequence` of one
   field helper per field in field-number order, a oneof's encoder where
-  its first member's number falls; a merge is `Proto.Binary.merge` of a
-  step that `case`s on the field number into a record update and a
-  finish that reverses the lists the step built front first. A
+  its first member's number falls (a oneof with another field numbered
+  between its members is written as a `case` per run of members, each
+  where its run falls, so the set member keeps field-number order too); a
+  merge is `Proto.Binary.merge` of a step that `case`s on the field
+  number into a record update and a finish that reverses the lists the
+  step built front first. A
   repeated scalar declared `[packed = false]` is written with
   `listUnpacked`, the option read from the field's own options (the
   descriptor pool reports such a field packed). A well-known request or
