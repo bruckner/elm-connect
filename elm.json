@@ -3,7 +3,7 @@
     "name": "bruckner/elm-connect",
     "summary": "Call Connect RPC and google.api.http REST APIs from protobuf-generated Elm",
     "license": "MIT",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "exposed-modules": [
         "Rpc",
         "Rpc.Call",

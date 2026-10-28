@@ -17,7 +17,7 @@
 //! With `ELM_CONNECT_BLESS=1` the golden and diagnostics tests rewrite
 //! `expected/` to match the generator and pass; `just bless` does that.
 //!
-//! Expected modules carry `0.1.X` (the major and minor version, `X` for
+//! Expected modules carry `0.2.X` (the major and minor version, `X` for
 //! the patch) in place of the generator's version on their header line
 //! ([`placeholder_header`]), so a patch release does not rewrite the
 //! corpus.

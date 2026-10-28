@@ -35,7 +35,7 @@ fn scalars_case_generates_its_expected_output() {
             out.join("Scalars/V1/Scalars.elm"),
         ]
     );
-    // The corpus carries `0.1.X` for the version.
+    // The corpus carries `0.2.X` for the version.
     let expected = elm_connect_gen::real_version(
         &fs::read_to_string(case.join("expected/Scalars/V1.elm")).expect("blessed"),
     );

@@ -7,7 +7,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 # The minimum supported Rust version is the toolchain mise.toml pins: `just
 # check` builds and tests with exactly that one, locally and in CI, so it
@@ -19,7 +19,7 @@ homepage = "https://github.com/bruckner/elm-connect#readme"
 keywords = ["elm", "protobuf", "connect", "grpc", "codegen"]
 
 [workspace.dependencies]
-elm-connect-gen = { path = "crates/elm-connect-gen", version = "0.1.0" }
+elm-connect-gen = { path = "crates/elm-connect-gen", version = "0.2.0" }
 clap = { version = "4.6", features = ["derive"] }
 miette = "7.6"
 prost = "0.14"
