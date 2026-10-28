@@ -139,6 +139,7 @@ impl Options {
                 "enum_unknown" => {
                     value_of(key, value, EnumUnknown::VALUES).map(|v| options.enum_unknown = v)
                 }
+                "codec" if value == "binary" => Err(Problem::codec_binary()),
                 "codec" => value_of(key, value, Codec::VALUES).map(|v| options.codec = v),
                 "rename" => options.add_rename(value),
                 _ => parse_module_prefix(value).map(|v| options.module_prefix = Some(v)),
@@ -461,20 +462,20 @@ pub enum Codec {
     Json,
     /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
     /// Connect's proto codec; messages get no JSON codecs.
-    Binary,
+    Proto,
     /// Both, the binary codecs beside the JSON ones.
     Both,
 }
 
 impl Codec {
     /// The values the option takes, as written, the default first.
-    pub const VALUES: &'static [&'static str] = &["json", "binary", "both"];
+    pub const VALUES: &'static [&'static str] = &["json", "proto", "both"];
 
     /// The value as written.
     pub fn as_str(self) -> &'static str {
         match self {
             Codec::Json => "json",
-            Codec::Binary => "binary",
+            Codec::Proto => "proto",
             Codec::Both => "both",
         }
     }
@@ -486,7 +487,7 @@ impl Codec {
 
     /// Whether messages get protobuf binary codecs.
     pub fn binary(self) -> bool {
-        matches!(self, Codec::Binary | Codec::Both)
+        matches!(self, Codec::Proto | Codec::Both)
     }
 }
 
@@ -496,10 +497,15 @@ impl std::str::FromStr for Codec {
     fn from_str(value: &str) -> Result<Self, String> {
         match value {
             "json" => Ok(Codec::Json),
-            "binary" => Ok(Codec::Binary),
+            "proto" => Ok(Codec::Proto),
             "both" => Ok(Codec::Both),
+            "binary" => Err(
+                "`codec` is `json`, `proto` or `both`, not `binary`: the binary codecs alone are \
+                 `proto`"
+                    .to_owned(),
+            ),
             _ => Err(format!(
-                "`codec` is `json`, `binary` or `both`, not `{value}`"
+                "`codec` is `json`, `proto` or `both`, not `{value}`"
             )),
         }
     }
@@ -580,9 +586,12 @@ mod tests {
         assert!(error("enum_unknown=zero,enum_unknown=zero").contains("more than once"));
         let codec = |parameter| parse(parameter).map(|o| o.codec);
         assert_eq!(codec(""), Ok(Codec::Json));
-        assert_eq!(codec("codec=binary"), Ok(Codec::Binary));
+        assert_eq!(codec("codec=proto"), Ok(Codec::Proto));
         assert_eq!(codec("codec=both,int64=int"), Ok(Codec::Both));
-        assert!(error("codec=proto").contains("`json`, `binary` or `both`"));
+        assert!(error("codec=bytes").contains("`json`, `proto` or `both`"));
+        assert!(error("codec=binary").contains("`codec=proto`"));
+        assert_eq!(codes("codec=binary"), vec![Code::UnknownOption]);
+        assert!("binary".parse::<Codec>().unwrap_err().contains("`proto`"));
         assert!(error("codec=both,codec=json").contains("more than once"));
     }
 

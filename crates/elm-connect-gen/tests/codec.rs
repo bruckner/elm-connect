@@ -34,7 +34,7 @@
 //! deterministically ([`encode_sorted`] of [`canonical_message`]), which
 //! prost-reflect must read back as the sample, under the binary sets
 //! (`codec=both`, also with `int64=int` and `bytes=bytes`, and
-//! `codec=binary`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
+//! `codec=proto`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
 //! the generated binary decoder and must re-encode the same bytes.
 
 use std::fs;
@@ -159,7 +159,7 @@ const SETS: [OptionSet; 8] = [
     },
     OptionSet {
         prefix: "Binary",
-        parameter: "codec=binary",
+        parameter: "codec=proto",
         table: "binary",
         json: false,
         binary: true,

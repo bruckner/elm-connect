@@ -1556,7 +1556,7 @@ impl Builder {
     /// names with `Bytes` at the end, and only a message's merge starts
     /// with `merge`, which no JSON codec does, so these are the only
     /// generated values the binary codecs can meet. Enums keep their JSON
-    /// codecs under `codec=binary`; messages and oneofs have them only
+    /// codecs under `codec=proto`; messages and oneofs have them only
     /// under `codec=both`.
     fn check_codec_names(
         &mut self,

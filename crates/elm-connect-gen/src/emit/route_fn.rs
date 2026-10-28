@@ -159,9 +159,10 @@ impl Emitter {
             TypeRef::Message(name) => Some(messages.get(name.proto_full_name.as_str())?.0),
             _ => None,
         };
-        // The path: literals and one variable per `segmentN_`.
+        // The path: literals and one local per variable, named for its field.
         let mut checks = Vec::new();
         let mut values = Vec::new();
+        let mut bound_names: Vec<String> = Vec::new();
         let mut parts: Vec<Expr> = Vec::new();
         let mut text = String::new();
         for (index, segment) in route.segments.iter().enumerate() {
@@ -176,7 +177,8 @@ impl Emitter {
                     let read = self.read(messages, request?, &field.proto)?;
                     let value = self.path_text(read)?;
                     let name = string(field.json.join("."));
-                    let bound = format!("value{}_", checks.len());
+                    let bound = path_local(&field.json, &bound_names);
+                    bound_names.push(bound.clone());
                     let (encode, check) = if segment.is_single() {
                         let tmpl = match template.as_slice() {
                             [Segment::Literal(literal)] => literal.clone(),
@@ -693,4 +695,36 @@ impl Emitter {
             _ => None,
         }
     }
+}
+
+/// The local a route function binds a path variable's value to: the
+/// field's JSON path joined in lowerCamelCase, then `_`, as every local a
+/// route function binds ends (`name_`, `noteName_`), so that it is no Elm
+/// keyword and no value of the module. A valid template names each field
+/// once, so two variables never meet; a name that is taken anyway, by
+/// another variable or by a local the function binds itself (`request_`,
+/// and `member_` and `message_` inside reads, which Elm would refuse as
+/// shadowing), gains a number.
+fn path_local(json: &[String], taken: &[String]) -> String {
+    let mut joined = String::new();
+    for (index, segment) in json.iter().enumerate() {
+        let mut chars = segment.chars();
+        if index > 0
+            && let Some(first) = chars.next()
+        {
+            joined.extend(first.to_uppercase());
+        }
+        joined.push_str(chars.as_str());
+    }
+    let reserved = |name: &str| {
+        [REQUEST, "member_", "message_"].contains(&name) || taken.iter().any(|t| t == name)
+    };
+    let plain = format!("{joined}_");
+    if !reserved(&plain) {
+        return plain;
+    }
+    (1..)
+        .map(|n| format!("{joined}{n}_"))
+        .find(|name| !reserved(name))
+        .expect("an unused number")
 }

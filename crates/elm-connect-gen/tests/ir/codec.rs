@@ -55,9 +55,9 @@ fn both_codecs_meet_a_type_named_with_bytes() {
 
 #[test]
 fn binary_codecs_alone_meet_only_an_enum() {
-    // Under codec=binary the message `NoteBytes` has no JSON codecs, but
+    // Under codec=proto the message `NoteBytes` has no JSON codecs, but
     // the enum `StatusBytes` keeps its.
-    let diagnostics = build(BESIDE, Codec::Binary, &[]).expect_err("one collision");
+    let diagnostics = build(BESIDE, Codec::Proto, &[]).expect_err("one collision");
     let messages = collisions(&diagnostics);
     assert_eq!(messages.len(), 1, "{messages:?}");
     assert!(messages[0].contains("`encodeStatusBytes`"), "{messages:?}");
