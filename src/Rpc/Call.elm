@@ -1,7 +1,7 @@
 module Rpc.Call exposing
     ( Call
     , withHeaders, withTimeout, withRetry, withoutRetry, withTracker, viaBinding
-    , method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
+    , method, procedure, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
     )
 
 {-| A call: a method applied to its request, what a generated service
@@ -22,11 +22,12 @@ reads it back.
 
 # Reading a call
 
-@docs method, descriptor, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
+@docs method, procedure, serviceName, methodName, idempotency, requestMessage, requestJson, toJson
 
 -}
 
 import Json.Encode exposing (Value)
+import Proto.Internal.Method
 import Proto.Method as Method exposing (Idempotency, Method)
 import Rpc.Internal.Call as Internal
 import Rpc.Retry exposing (Retry)
@@ -145,11 +146,16 @@ implicit route. Connect has no use for bindings and ignores the choice.
 -}
 viaBinding : Int -> Call req res -> Maybe (Call req res)
 viaBinding index (Internal.Call c) =
-    if index >= 0 && index < List.length (Method.bindings (Method.toDescriptor c.method)) then
+    if index >= 0 && index < routeCount c.method then
         Just (Internal.Call { c | binding = index })
 
     else
         Nothing
+
+
+routeCount : Method req res -> Int
+routeCount (Proto.Internal.Method.Method m) =
+    List.length m.routes
 
 
 
@@ -163,26 +169,35 @@ method (Internal.Call c) =
     c.method
 
 
-{-| What the proto says about the method the call is of: its
-[`Proto.Method.Descriptor`](Proto-Method#Descriptor).
+{-| The call's Connect procedure path: its service's full name and its
+method's name, `/notes.v1.NotesService/GetNote`, which Connect sends the
+call to under the base URL.
 -}
-descriptor : Call req res -> Method.Descriptor
-descriptor (Internal.Call c) =
-    Method.toDescriptor c.method
+procedure : Call req res -> String
+procedure c =
+    "/" ++ serviceName c ++ "/" ++ methodName c
 
 
 {-| The fully-qualified service name, such as `notes.v1.NotesService`.
 -}
 serviceName : Call req res -> String
 serviceName (Internal.Call c) =
-    Method.service (Method.toDescriptor c.method)
+    let
+        (Proto.Internal.Method.Method m) =
+            c.method
+    in
+    m.service
 
 
 {-| The method name as declared, such as `GetNote`.
 -}
 methodName : Call req res -> String
 methodName (Internal.Call c) =
-    Method.name (Method.toDescriptor c.method)
+    let
+        (Proto.Internal.Method.Method m) =
+            c.method
+    in
+    m.name
 
 
 {-| What the proto says repeating the call does: nothing at all
@@ -193,7 +208,11 @@ otherwise.
 -}
 idempotency : Call req res -> Idempotency
 idempotency (Internal.Call c) =
-    Method.idempotency (Method.toDescriptor c.method)
+    let
+        (Proto.Internal.Method.Method m) =
+            c.method
+    in
+    m.idempotency
 
 
 {-| The request the call sends.
@@ -210,7 +229,8 @@ requestJson (Internal.Call c) =
     Method.encodeRequest c.method c.message
 
 
-{-| The call as JSON, `{"service": …, "method": …, "request": …}`, for logs,
+{-| The call as JSON, `{"service": …, "method": …, "procedure": …, "request": …}`,
+for logs,
 deduplication keys or a queue of calls to send later. Per-call adjustments are
 not included.
 
@@ -226,5 +246,6 @@ toJson c =
     Json.Encode.object
         [ ( "service", Json.Encode.string (serviceName c) )
         , ( "method", Json.Encode.string (methodName c) )
+        , ( "procedure", Json.Encode.string (procedure c) )
         , ( "request", requestJson c )
         ]

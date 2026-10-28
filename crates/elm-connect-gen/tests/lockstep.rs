@@ -130,7 +130,7 @@ fn the_msrv_is_the_pinned_toolchain() {
 }
 
 #[test]
-fn proto_version_exposes_the_sentinel_and_every_earlier_minor() {
+fn proto_version_exposes_the_sentinel_and_the_minors_it_keeps() {
     let path = repo_root().join("src/Proto/Version.elm");
     let source = read(&path);
     let header = source
@@ -147,8 +147,10 @@ fn proto_version_exposes_the_sentinel_and_every_earlier_minor() {
 
     let (major, minor) = major_minor(VERSION);
     assert_eq!(sentinel_version(SENTINEL), Some((major, minor)));
-    // A major's first release is its .0, but for 0, whose first is 0.1.
-    let first = if major == 0 { 1 } else { 0 };
+    // Within a major from 1 on, every minor's value is kept, from its .0.
+    // Before 1.0 a minor may change what generated code looks like, so
+    // `Proto.Version` names the current minor alone.
+    let first = if major == 0 { minor } else { 0 };
     let mut want: Vec<(u32, u32)> = (first..=minor).map(|m| (major, m)).collect();
     let mut have = values.clone();
     want.sort();
@@ -156,7 +158,8 @@ fn proto_version_exposes_the_sentinel_and_every_earlier_minor() {
     assert_eq!(
         have, want,
         "Proto.Version exposes {exposed:?}; generated code names {SENTINEL}, so it must expose \
-         that value and every earlier one of major {major}, and no other (design §8.2)"
+         that value, from 1.0 on every earlier one of major {major} too, and no other (design \
+         §8.2)"
     );
     for name in exposed.iter().filter(|name| **name != "Generated") {
         assert!(

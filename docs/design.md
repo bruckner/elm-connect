@@ -172,6 +172,7 @@ import Notes.V1
 import Notes.V1.GetNoteRequest
 import Proto.Http
 import Proto.Method
+import Proto.Route
 import Rpc
 
 
@@ -184,7 +185,10 @@ getNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            descriptorGetNote
+            "notes.v1.NotesService"
+            "GetNote"
+            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
+            |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 
 
@@ -193,8 +197,28 @@ summarize =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeSummarizeRequest
             Notes.V1.decodeSummary
-            descriptorSummarize
+            "notes.v1.NotesService"
+            "Summarize"
         )
+
+
+
+-- ROUTES
+
+
+routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
+routeGetNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
 
 
 
@@ -297,14 +321,18 @@ rpc shared call =
   read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, built by
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
   `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
-  `Proto.Http` and read by `Rpc`; `Proto.Internal.Any`;
+  `Proto.Http` and read by `Proto.Internal.Interpret`, the interpreter
+  `Proto.Method.withBindings` reaches; `Proto.Internal.Any`;
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
   `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
   `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
   `Proto.Message` holds, §5.5), or
   implementation kept out of the public modules so that they read as API
   (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
-  `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2). A type one
+  `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2;
+  `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
+  transports share, under `Proto` so that the route helpers reach no
+  `Rpc` module, rule 7). A type one
   module both builds and reads is an ordinary opaque type in that module
   (`Rpc.Body`). The internal modules are one per shared type rather than
   one `Rpc.Internal`, because a single module would cycle: `Trace` holds
@@ -1289,7 +1317,7 @@ As the `naming` and `naming_collision` cases show:
   `PriorityLow`) is not a collision.
 - A package module's top-level values are a prefix and a type name:
   `encodeFoo`, `decodeFoo`, `defaultFoo`, `messageFoo` and `enumFoo`
-  (§3.9). Type
+  (§3.9), and `queryOfFoo`, a request message's query encoder (§4). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
   `registry`, is all lowercase, so it is none of them. The typed values
@@ -1622,8 +1650,9 @@ registry =
   decoder default descriptor` (read by `encode`, `decoder`, `default`,
   `toDescriptor`), `Proto.Enum.enum encode decoder zero descriptor`
   (likewise, with `toName`, `fromName`, `toNumber`, `fromNumber`) and
-  `Proto.Method.method encodeRequest responseDecoder descriptor` (§4),
-  and given binary codecs by a modifier, `Proto.Message.withBinary` and
+  `Proto.Method.method encodeRequest responseDecoder service name` (§4,
+  given its idempotency and routes by `withIdempotency` and
+  `withRoutes`), and given binary codecs by a modifier, `Proto.Message.withBinary` and
   `Proto.Method.withBinary`, or built with them alone by
   `Proto.Message.messageBinary` and `Proto.Method.methodBinary`
   (§3.10). Why: an Elm record alias that generated code writes
@@ -1742,12 +1771,18 @@ registry =
   `messageFoo.descriptor` would keep every type's codecs and default in any
   program that uses it, which on a large API is most of the program.
 - Each method's descriptor is a value of its own in its service's
-  module, `descriptorGetNote`, which its call refers to (§4). Its name
-  is derived from the method's, so it can collide only with a method
-  named for it (`DescriptorGetNote` beside `GetNote`), which is
-  diagnosed. There is no service, file or package descriptor: nothing
-  consumes one, and a service module's namespace is its methods' calls
-  and descriptors, so any fixed value name could collide with a method.
+  module, `descriptorGetNote`, which its call does not refer to (§4):
+  the call holds its service's and its own name, its idempotency and
+  its route functions, which is all sending reads, so a program keeps
+  the descriptor, its type names, its bindings as `Proto.Http` data and
+  the field descriptors they name only if it names the descriptor. Its
+  name is derived from the method's, so it can collide only with a
+  method named for it (`DescriptorGetNote` beside `GetNote`), which is
+  diagnosed, as is one named for a route function (`RouteGetNote0`).
+  There is no service, file or package descriptor: nothing consumes
+  one, and a service module's namespace is its methods' calls, route
+  functions and descriptors, so any fixed value name could collide with
+  a method.
 - **The registry.** Each package module has a registry section,
   `registry : Proto.Registry.Registry`, transitive: the package's
   own descriptors, then the registries of the generated packages its
@@ -1817,7 +1852,9 @@ registry =
   `binary` messages, oneofs and wrappers get no JSON codecs (enums keep
   theirs, which `Proto.Enum.Enum` holds), and the values are built by
   `Proto.Message.messageBinary` and `Proto.Method.methodBinary`, whose
-  JSON encoder writes `null` and whose JSON decoder fails.
+  JSON encoder writes `null` and whose JSON decoder fails. Such a
+  method gets no route functions, nor its messages query encoders:
+  transcoding takes JSON (§5.3).
   `Proto.Message.encodeBytes`/`bytesDecoder`,
   `Proto.Method.encodeRequestBytes`/`responseBytesDecoder` (each a
   `Maybe`) and `Proto.Method.hasJson` read them back. A program that
@@ -1848,11 +1885,12 @@ registry =
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
 beside the package's `Notes.V1`, holding a calls section with one
-function per method from its request to an `Rpc.Call` (§5.2) and then
-a descriptors section with each method's `Proto.Method.Descriptor`:
-what a program uses comes first and its description after, as a
-message's descriptor sits in a module apart from its type (§3.1). The
-`services` conformance case pins the output:
+function per method from its request to an `Rpc.Call` (§5.2), a routes
+section with one function per HTTP binding of each method, and then a
+descriptors section with each method's `Proto.Method.Descriptor`: what
+a program uses comes first and its description after, as a message's
+descriptor sits in a module apart from its type (§3.1). The `services`
+conformance case pins the output:
 
 ```elm
 -- CALLS
@@ -1872,8 +1910,35 @@ getNote =
     Rpc.call
         (Proto.Method.method Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
-            descriptorGetNote
+            "notes.v1.NotesService"
+            "GetNote"
+            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
+            |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
+
+
+
+-- ROUTES
+
+
+{-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
+-}
+routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
+routeGetNote0 request_ =
+    let
+        value0_ =
+            request_.name
+    in
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments value0_
+    , query = []
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    }
+
+
+routeGetNote1 : …   -- the additional binding
 
 
 
@@ -1907,10 +1972,13 @@ descriptorGetNote =
         ]
 ```
 
-Both applications put one argument per line however short their
+Both builders put one argument per line however short their
 arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
-keeps.
+keeps. The modifiers follow one per line, each only when it says
+something: `withIdempotency` when the proto declares a level other
+than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
+`withBinary` under `codec=both`.
 
 - **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
@@ -1927,22 +1995,27 @@ keeps.
   annotation already names their Elm types. Why: the call is the
   value a program uses, and the descriptor shows the routes it may take
   only as `Proto.Http` data. The descriptor carries the
-  comment and the declaration line.
+  comment and the declaration line; each route function names its call
+  and its binding as the call's documentation writes it.
   A service has no declaration of its own, so its module's
   documentation carries its comment and `` `service
   notes.v1.NotesService` ``.
 - The service module imports `Rpc`, `Proto.Method` (for the method
-  and its descriptor), `Proto.Http` (for the bindings), the descriptor
+  and its descriptor), `Proto.Route` (for the route functions),
+  `Proto.Http` (for the bindings), the descriptor
   modules of the messages its bindings' fields belong to
   (`Notes.V1.GetNoteRequest`, §3.1), the package module and the modules of any other package
   its request and response types come from (`Proto.Json`, `Proto.Any`,
   `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
   refers to every one of them qualified. Each method is written
   point-free, `getNote = Rpc.call (…)`, binding no local name. So a
-  method's name can clash with nothing but another method's call or
-  descriptor in its service, whatever it is: `value`, `identity` or
-  `encodeNote` are all fine method names (the namespace rule is in the
-  IR bullets below).
+  method's name can clash with nothing but another method's call, route
+  function or descriptor in its service, whatever it is: `value`,
+  `identity` or `encodeNote` are all fine method names (the namespace
+  rule is in the IR bullets below). A route function binds `request_`
+  and `value0_`, `value1_` … for its path values (and `member_`,
+  `message_` reading a oneof member), names no method's value can take,
+  since a value name ends in `_` only as a reserved word's escape.
 - `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9),
   built by `Proto.Method.method` from its request type's encoder and its
   response type's decoder (`Notes.V1.encodeGetNoteRequest`,
@@ -1950,29 +2023,33 @@ keeps.
   field of that type uses, `Proto.Json.encodeEmpty` and
   `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
-  `Value` so that a method called `identity` cannot capture it), and
-  its descriptor value, `descriptorGetNote : Proto.Method.Descriptor`,
-  built by `Proto.Method.descriptor` from the fully-qualified service
-  name and the method's name as declared, together its Connect path,
-  its idempotency, the full names of its types and its bindings.
+  `Value` so that a method called `identity` cannot capture it), the
+  fully-qualified service name and the method's name as declared,
+  together its Connect path; then `withIdempotency` with its level and
+  `withRoutes` with its route functions (below).
   Under `codec=both` the method is given its binary codecs by
   `|> Proto.Method.withBinary`, the request type's `encode…Bytes` and
   the response type's `decode…Bytes`; under `codec=binary` it is built
-  by `Proto.Method.methodBinary` from those alone (§3.10). `withBinary`
-  builds the method's bytes path there, as closures in the method's
-  value (§5.3, the proto codec), so only a program whose methods have
-  binary codecs carries it.
-  The descriptor's name is `descriptor` followed by the method's Elm
-  name with its first letter uppercased, so a `rename` renames both. No
-  `Proto.Method.Method` value is generated; `Rpc.Call.method` and
-  `Rpc.Call.descriptor` read the method and its descriptor back from any
-  call of it. Elm keeps a top-level value whole, and the call refers to
-  the descriptor value, so a program that calls the method keeps the
-  descriptor, and one that does not keeps neither. A method carries
-  only what the wire needs, its types' codecs and not their typed
-  values (§3.9), which hold each type's default and descriptor tree and
-  would come whole into every program that calls it (decisions.md:
-  Methods carry codecs only).
+  by `Proto.Method.methodBinary` from those alone (§3.10), with no
+  routes. `withBinary` builds the method's bytes path there, as closures
+  in the method's value (§5.3, the proto codec), so only a program whose
+  methods have binary codecs carries it.
+  No `Proto.Method.Method` value is generated; `Rpc.Call.method` reads
+  the method back from any call of it, and `Rpc.Call.serviceName`,
+  `methodName`, `procedure` (`/notes.v1.NotesService/GetNote`, the path
+  the Connect URL is built from) and `idempotency` its identity. A
+  method carries only what the wire needs, its types' codecs and not
+  their typed values (§3.9), which hold each type's default and
+  descriptor tree and would come whole into every program that calls it
+  (decisions.md: Methods carry codecs only).
+- **The descriptor is cold.** `descriptorGetNote : Proto.Method.Descriptor`,
+  built by `Proto.Method.descriptor` from the service's full name, the
+  method's name, its idempotency, the full names of its types and its
+  bindings as data, is a value of its own that the call does not refer
+  to, so a program keeps it only if it names it (decisions.md: Routes
+  are generated functions, which measured what holding it cost). Its
+  name is `descriptor` followed by the method's Elm name with its first
+  letter uppercased, so a `rename` renames both.
 - `idempotency` is the proto's `idempotency_level`, whole:
   `Proto.Method.IdempotencyUnknown` when unset,
   `IdempotencyNoSideEffects` or `IdempotencyIdempotent`. Connect sends
@@ -1980,18 +2057,58 @@ keeps.
   (idempotent-only by default) retries either level, since an
   `IDEMPOTENT` method (a typical `Delete` or `Put`) is safe to repeat
   but not to cache. Transcoding takes its verb from the rule.
-  `Rpc.Call.idempotency` reads it from a call.
-- **Bindings are data.** `bindings` is the method's `google.api.http`
-  rule as the generator parsed it (§4 routes, below): the rule's own
-  binding first, then its `additional_bindings` in order, each a
-  `Proto.Http.binding` of the verb, the path as literals and variables, the
-  custom verb, the body, the response body and the query parameters.
-  The runtime walks them and never parses a template. A call picks an
-  additional binding with `Rpc.Call.viaBinding n`, `Nothing` for a number
-  the method has no binding of, so additional bindings need no names of
-  their own.
-- **The implicit route.** A method without a rule has `bindings = []`,
-  and nothing else is generated for it: under the Transcode transport
+  `Rpc.Call.idempotency` reads it from a call. The generated call sets
+  it with `withIdempotency` only when the proto declares a level;
+  `Proto.Method.method` starts from `IdempotencyUnknown`.
+- **Routes are generated functions.** Each binding of the method's
+  `google.api.http` rule (§4 routes, below), the rule's own first and
+  then its `additional_bindings` in order, becomes a function of the
+  typed request, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
+  and the call holds them (`withRoutes`). A route is the verb, the path
+  percent-encoded without a leading slash, the query pairs, the body as
+  JSON, the response field the answer is read from, and `invalid`, the
+  first path value its variable's template cannot match: the route is
+  built whatever the request holds, so `Rpc.request` can show any
+  request, and sending refuses an invalid one (`InvalidPathValue`,
+  §5.1). The path reads each variable's field (through `Maybe.map` for a
+  message on the way, a `case` for a oneof member, the field's default
+  when unset) and checks it with `Proto.Route.checkSegment` or
+  `checkSegments`; a value's text is its proto3 JSON text (a string as
+  it is, `String.fromInt`, `Proto.Route.boolText`, an enum or float by
+  its encoder through `Proto.Route.viaJson`, a timestamp or duration by
+  `Proto.Timestamp.toString` and `Proto.Duration.toString`). The body is
+  the request's encoder less the path's fields (`Proto.Route.without`)
+  for `*`, the field's encoder (`{}` when unset) for one field. The query
+  is the request message's query encoder in its package's module,
+  `queryOfListNotesRequest : ListNotesRequest -> List ( String, String
+  )`, one per message a binding queries, writing every field any
+  generated binding puts in its query, in declaration order, depth first,
+  each by its `Proto.Query` helper (`string`, `int`, `int64`, `bool`,
+  `float`, `enum`, `optional`, `repeated`, `unlessZero`), which leaves
+  a field without presence out at its default, one with presence when
+  unset; a binding takes it less the fields its path and body hold
+  (`Proto.Query.except`). A call picks an additional binding with
+  `Rpc.Call.viaBinding n`, `Nothing` for a number the method has no
+  route of, so additional bindings need no names of their own. Why:
+  reading the typed request skips encoding the whole message to JSON
+  and looking each field up again, which halves a transcoded request's
+  time, and drops the interpreter and the binding data from the bundle
+  (decisions.md: Routes are generated functions). The price: a route
+  fix reaches an application when it regenerates, not when it upgrades
+  the runtime.
+- **A binding that cannot be typed is data.** A binding the emitter
+  cannot write as a function (a path or query field of a message of a
+  package not generated with it, a recursive message on the way, `bytes`
+  held as `Bytes`) makes the method take its bindings as data instead,
+  `withBindings (Proto.Method.bindings descriptorGetNote)`, which the
+  runtime's interpreter (`Proto.Internal.Interpret`) reads over the
+  request's proto3 JSON into the same route (`routes_interpreted` case).
+  A method written by hand does the same with its own `Proto.Http`
+  bindings. Only a program naming `withBindings` carries the
+  interpreter.
+- **The implicit route.** A method without a rule has no routes and
+  `bindings = []` in its descriptor, and nothing else is generated for
+  it: under the Transcode transport
   the runtime sends it as `POST /<package>.<Service>/<Method>` with the
   request as its JSON body (§5.3), which grpc-gateway
   (`generate_unbound_methods`), Envoy's transcoder (`auto_mapping`) and
@@ -2032,11 +2149,14 @@ In the IR (`ir::Service`, `ir::Method`):
   `getNote`, `HTTPGet` → `httpGet`), a reserved word escaped (`Type` →
   `type_`), and its descriptor's is
   `descriptor` followed by that with its first letter uppercased
-  (`descriptorGetNote`). They share a namespace only with the other
-  methods' values in its service: two methods that coincide (`GetNote`
-  and `Get_Note`), or a method named for another's descriptor
-  (`DescriptorGetNote` beside `GetNote`), are `naming::value_collision`,
-  never a rename. A method `DefaultSettings` beside a message
+  (`descriptorGetNote`), and its route functions' `route`, the same,
+  and the binding's number (`routeGetNote0`). They share a namespace
+  only with the other methods' values in its service: two methods that
+  coincide (`GetNote` and `Get_Note`), or a method named for another's
+  descriptor (`DescriptorGetNote` beside `GetNote`) or route function
+  (`RouteGetNote0`, `services_route_collision` case), are
+  `naming::value_collision`, never a rename. A query encoder is a
+  prefix and a type name in the package's module (`queryOf`, §3.7). A method `DefaultSettings` beside a message
   `Settings`, or a `Get` in two services, is fine.
 - Module names are unique across the build: a service module that is
   also a package's module (`NotesService` in `notes.v1` beside the
@@ -2071,8 +2191,9 @@ a rule (the rule's own, then each additional binding) is parsed and
 checked against the request and response messages at generation time,
 and becomes a `route::Route`: the verb, the path as literals and
 variables, the custom verb, the body, the response body and the query
-parameters, every field by its proto path and its JSON path. The runtime
-gets exactly this as data and never parses a template.
+parameters, every field by its proto path and its JSON path. The
+emitter writes it as a route function (above), and as data in the
+descriptor; the runtime never parses a template.
 
 - The template grammar is `google/api/http.proto`'s. A literal may not
   hold `{`, `}`, `*`, `=` or `:`, nor be empty; a variable may not nest
@@ -2350,7 +2471,9 @@ cycle (§3.1, rule 5); `Rpc` aliases both, so annotations name them
 `Rpc.Request` and `Rpc.Response`. `Rpc` itself holds
 the public API and the running of a call (sending, retrying, timing a
 trace); the work it runs is internal, a module per responsibility:
-`Rpc.Internal.Route` maps a call onto a binding's URL and body,
+`Rpc.Internal.Route` maps a call onto its binding's route, the URL
+and the body (the route itself built by the method's route function,
+§4),
 `Rpc.Internal.Wire` builds the request each transport sends,
 `Rpc.Internal.Answer` reads an answer into a result or an `Error`,
 `Rpc.Internal.Retry` holds the policy math and the attempt loop, and
@@ -2361,7 +2484,9 @@ calls whatever the transport, are the codecs (`Proto.Json`,
 `Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
-HTTP bindings (`Proto.Http`), the well-known types' values
+HTTP bindings as data (`Proto.Http`), the route record and helpers
+generated route functions and query encoders call (`Proto.Route`,
+`Proto.Query`), the well-known types' values
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
 The names `Rpc` and `Proto.*` say what the modules are: proto data, and
 RPC calls over either transport, with no product prefix tying proto3
@@ -2658,13 +2783,18 @@ against the fixture's request, with three divergences recorded (§7).
 Not verified live: `response_body` (no rule of either API has one),
 and the fields refused a query form, which never reach a server.
 
-The bindings a generated call carries (`Proto.Http.binding`, with
-`literal`, `variable`, `wildcard`, `doubleWildcard`, `noBody`,
-`wholeBody`, `bodyField` and `param`) are the parsed `google.api.http`
-rule, the rule's own binding first and its
-`additional_bindings` after; `Rpc.Call.viaBinding n` picks one, `0` by
-default, and is `Nothing` for a number the method has no binding of
-(§5.2).
+A generated call carries one route function per binding of its
+parsed `google.api.http` rule, the rule's own first and its
+`additional_bindings` after (§4); `Rpc.Call.viaBinding n` picks one,
+`0` by default, and is `Nothing` for a number the method has no route
+of (§5.2). The request is the route the function builds: its verb, the
+base URL, its path and its query pairs percent-encoded, and its body.
+The bindings as data (`Proto.Http.binding`, with `literal`, `variable`,
+`wildcard`, `doubleWildcard`, `noBody`, `wholeBody`, `bodyField` and
+`param`) stay in the method's descriptor, for a program that reads
+them, and are what a method written by hand gives `withBindings`; the
+interpreter builds the same route from them over the request's JSON.
+What follows says how a binding reads its fields, for both.
 
 - **Variables and parameters are paths of field descriptors.**
   A variable is `Proto.Http.variable { fieldPath,
@@ -3146,7 +3276,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 
 - `conformance/cases/<case>/input/*.proto` and `expected/*.elm`. A test
   regenerates and diffs, the patch of the version on each module's
-  header line read as a placeholder, `0.1.X` (§8.4); a second test runs
+  header line read as a placeholder, `0.2.X` (§8.4); a second test runs
   `elm make` over all expected output against the runtime at the repo's
   version; a third runs `elm-format --validate`.
 - The plugin replays the corpus as protoc runs it
@@ -3623,7 +3753,7 @@ roadmap.
   number makes that pairing obvious to a user (make them match) and to
   the compiler (§8.2); independent numbers would need a compatibility
   table, and a CI matrix to keep it true.
-- Before 1.0.0, both carry the same `0.x` number (`0.1.0` now). Elm
+- Before 1.0.0, both carry the same `0.x` number (`0.2.0` now). Elm
   checks the number only at publish, which requires `1.0.0` for a
   package's first release, so the package and the crates move to
   `1.0.0` together at its first publish. Until then an application
@@ -3635,7 +3765,8 @@ roadmap.
 ### 8.2 The compatibility sentinel
 
 - The runtime's `Proto.Version` exposes an opaque type, `Generated`,
-  and one value of it per released minor: `v0_1` now. Every generated
+  and a value of it per released minor it compiles the code of: `v0_2`
+  now. Every generated
   module imports it and defines, after its imports,
 
   ```elm
@@ -3643,7 +3774,7 @@ roadmap.
   -}
   elmConnectVersion_ : Proto.Version.Generated
   elmConnectVersion_ =
-      Proto.Version.v0_1
+      Proto.Version.v0_2
   ```
 
   naming the value of the release that generated it,
@@ -3665,9 +3796,13 @@ roadmap.
   runtime fails with Elm's own error, "The `Proto.Version` module does
   not expose a `v0_2` variable", and the module's documentation says
   what that means: regenerate with the generator matching the package,
-  or install the package version the generated code names. Before 1.0,
-  the `v0_N` values accumulate through `0.x`, and 1.0.0 removes them
-  all and exposes `v1_0` alone.
+  or install the package version the generated code names. Before 1.0
+  a minor may change what generated code looks like, and the runtime
+  keeps only the values of minors whose code it compiles: 0.2 changed
+  how methods are built (§4), so it exposes `v0_2` alone, and code
+  generated by 0.1 fails on its `v0_1` rather than on a type mismatch
+  deeper in. 1.0.0 exposes `v1_0` alone, and from then on a major keeps
+  every minor's value.
 - The sentinel is strict: generated code names the release that
   generated it, not the oldest runtime it could run against, so the
   ordinary gate, the corpus compiled against the runtime of the same
@@ -3675,8 +3810,9 @@ roadmap.
   version, in lockstep, and a strict sentinel, which records the looser
   variant).
 - `crates/elm-connect-gen/tests/lockstep.rs` tests that `Proto.Version`
-  exposes the value `SENTINEL` names and every earlier value of its
-  major, and that every expected module of the corpus names it.
+  exposes the value `SENTINEL` names (from 1.0 on with every earlier
+  value of its major) and no other, and that every expected module of
+  the corpus names it.
 
 ### 8.3 The surfaces and their promises
 
@@ -3745,7 +3881,7 @@ Within a major version:
 ### 8.4 Provenance
 
 - The first line of a generated module names the exact version that
-  wrote it: `-- Generated by elm-connect 0.1.0 from notes.proto. Do not
+  wrote it: `-- Generated by elm-connect 0.2.0 from notes.proto. Do not
   edit; regenerate instead.` It is provenance for bug reports, as every
   peer generator writes, and nothing checks it; `elmConnectVersion_` is
   what the compiler checks. A file whose name holds a control character,
@@ -3767,9 +3903,9 @@ Within a major version:
 - The conformance corpus's expected modules and the route replay's
   modules in `tests/Routes` carry a placeholder on that line, the major
   and minor version with `X` for the patch: `-- Generated by
-  elm-connect 0.1.X from ...` (`elm_connect_gen::HEADER_VERSION_PLACEHOLDER`,
+  elm-connect 0.2.X from ...` (`elm_connect_gen::HEADER_VERSION_PLACEHOLDER`,
   derived beside the sentinel's name), and in their doc comments' links
-  into the repository at the release (`.../blob/0.1.X/src/Proto/Any.elm`,
+  into the repository at the release (`.../blob/0.2.X/src/Proto/Any.elm`,
   `elm_connect_gen::placeholder_version`). Their tests put it in place of
   the version before comparing, and `just bless` writes it, so a patch
   release leaves them alone. A minor or major release still re-blesses

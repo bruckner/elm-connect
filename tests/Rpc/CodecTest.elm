@@ -56,9 +56,10 @@ decodeTitleBytes =
         ""
 
 
-descriptor : String -> Idempotency -> Proto.Method.Descriptor
-descriptor name idempotency =
-    Proto.Method.descriptor "notes.v1.Notes" name idempotency "notes.v1.GetNoteRequest" "notes.v1.Note" []
+getNoteIn : (String -> String -> Proto.Method.Method GetNote String) -> Proto.Method.Method GetNote String
+getNoteIn build =
+    build "notes.v1.Notes" "GetNote"
+        |> Proto.Method.withIdempotency IdempotencyNoSideEffects
 
 
 {-| A method with both codecs, with JSON alone, and with binary alone.
@@ -66,19 +67,19 @@ descriptor name idempotency =
 both : GetNote -> Rpc.Call GetNote String
 both =
     Rpc.call
-        (Proto.Method.method encodeGetNote decodeTitle (descriptor "GetNote" IdempotencyNoSideEffects)
+        (getNoteIn (Proto.Method.method encodeGetNote decodeTitle)
             |> Proto.Method.withBinary encodeGetNoteBytes decodeTitleBytes
         )
 
 
 jsonOnly : GetNote -> Rpc.Call GetNote String
 jsonOnly =
-    Rpc.call (Proto.Method.method encodeGetNote decodeTitle (descriptor "GetNote" IdempotencyNoSideEffects))
+    Rpc.call (getNoteIn (Proto.Method.method encodeGetNote decodeTitle))
 
 
 binaryOnly : GetNote -> Rpc.Call GetNote String
 binaryOnly =
-    Rpc.call (Proto.Method.methodBinary encodeGetNoteBytes decodeTitleBytes (descriptor "GetNote" IdempotencyNoSideEffects))
+    Rpc.call (getNoteIn (Proto.Method.methodBinary encodeGetNoteBytes decodeTitleBytes))
 
 
 base : Rpc.Config
@@ -255,7 +256,7 @@ answers =
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
                     |> codeAndMessage
-                    |> Expect.equal (Err ( Internal, "bad response body: the body is not a notes.v1.Note in protobuf binary" ))
+                    |> Expect.equal (Err ( Internal, "bad response body: the body is not the response of notes.v1.Notes/GetNote in protobuf binary" ))
         , test "an error answer is JSON whatever the codec, its body kept as text" <|
             \_ ->
                 readBytes proto (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))

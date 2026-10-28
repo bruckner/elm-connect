@@ -654,6 +654,37 @@ impl Problem {
         )
     }
 
+    /// A method of `service` and another method's route function become
+    /// the same Elm value `elm_name`.
+    pub fn route_collision(
+        service: &str,
+        elm_name: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
+        Problem::new(
+            Code::ValueCollision,
+            format!(
+                "The service `{service}` has a method that becomes the Elm value \
+                 `{elm_name}`, which is another method's route function."
+            ),
+            format!(
+                "A service's module defines a route function per HTTP binding of a method: \
+                 `route` followed by the call's name with the first letter uppercased and the \
+                 binding's number. So a method named for another's route function \
+                 (`RouteGetNote0` beside `GetNote`) takes that function's name, and a module \
+                 cannot define two values with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of the methods in the proto, or rename one with {rename}.")
+                )
+            ),
+            vec![first, second],
+        )
+    }
+
     /// Two types of `package` give codecs the same Elm `values` (`value
     /// `encodeNoteBytes``): one's binary codecs and the JSON codecs of the
     /// other, named for it with `Bytes` at the end.

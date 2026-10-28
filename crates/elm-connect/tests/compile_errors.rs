@@ -226,7 +226,8 @@ fn a_missing_import_names_the_include_paths_searched() {
     );
     assert!(rendered.contains("╭─[library.proto:3:1]"), "{rendered}");
     assert!(rendered.contains("imported here"), "{rendered}");
-    let flat = rendered;
+    // The help wraps where the paths' length puts it, so read it flat.
+    let flat = rendered.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
         flat.contains(&format!(
             "The include paths searched were `{}`, `{}` (`-I`",

@@ -66,7 +66,8 @@ modules: the package module of types and codecs (`message.rs`,
 `enumeration.rs`, `oneof.rs`, `field.rs`, `scalar.rs`, `recursion.rs`),
 a descriptor module per message and enum with the registry
 (`descriptor.rs`, §3.9), and a module of calls per service (`method.rs`,
-§4). `docs.rs` writes the doc comments. The emitter decides which
+§4) with a route function per HTTP binding and the query encoders in the
+package module they read (`route_fn.rs`, §5.2). `docs.rs` writes the doc comments. The emitter decides which
 declarations exist and what they say; every name comes from the IR and
 every layout from the printer.
 
@@ -88,7 +89,8 @@ point of `elm-format`: the corpus's formatted check and
   the protobuf binary wire format (`Proto.Binary`),
   the typed values and descriptor trees (`Proto.Message`, `Proto.Enum`,
   `Proto.Method`, `Proto.Field`, `Proto.EnumValue`), the HTTP bindings
-  (`Proto.Http`), `Proto.Registry`, `Proto.Any`, `Proto.WellKnown`, and
+  as data (`Proto.Http`), the routes generated route functions build
+  (`Proto.Route`, `Proto.Query`), `Proto.Registry`, `Proto.Any`, `Proto.WellKnown`, and
   `Proto.Version`, the compatibility sentinel every generated module
   names (§8.2).
 - `Rpc.*` is the calling: `Rpc` builds requests, sends them and reads
@@ -98,16 +100,18 @@ point of `elm-format`: the corpus's formatted check and
 
 Imports point one way: no `Proto` module imports an `Rpc` one, and `Rpc`
 reads only three internal modules of the `Proto` side,
-`Proto.Internal.Binding`, `Proto.Internal.Any` and
-`Proto.Internal.Method`, whose bytes path `Proto.Method.withBinary`
-builds into a method (§3.1, rule 7; §5.3).
+`Proto.Internal.Any`, `Proto.Internal.Percent`, the percent-encoding
+both sides share, and `Proto.Internal.Method`, whose routes and bytes
+path the `Proto.Method` modifiers build into a method (§3.1, rule 7;
+§5.3).
 
 The `Internal` modules (`src/Rpc/Internal/`, `src/Proto/Internal/`) are
 not exposed. They exist for two reasons (§3.1, rule 4): an opaque type
 that two public modules must build or match keeps its constructor in one
 (`Rpc.Internal.Call`, built by `Rpc` and read by `Rpc.Call`), and
 implementation stays out of the public modules so that they read as API:
-`Rpc.Internal.Route` maps a call onto a binding, `Wire` builds the
+`Rpc.Internal.Route` maps a call onto its binding's route,
+`Proto.Internal.Interpret` reads a binding written as data, `Wire` builds the
 request each transport sends, `Answer` reads an answer into a result or
 an error, `Retry` runs the attempts, `Http` adapts elm/http (§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single

@@ -172,15 +172,18 @@ pub fn generate_with_imports(
     }
     let mut files = Vec::new();
     let mut diagnostics = Diagnostics::new();
+    let queries = emit::queries(pool, &packages);
     for package in &packages {
-        match emit::emit(package, options) {
+        match emit::emit_with_queries(package, options, &packages, &queries) {
             Ok(module) => {
                 files.push(file(&module));
                 for descriptors in emit::emit_descriptor_modules(package, options) {
                     files.push(file(&descriptors));
                 }
                 for service in package.services.iter().filter(|s| !s.methods.is_empty()) {
-                    files.push(file(&emit::emit_service(package, service, options)));
+                    files.push(file(&emit::emit_service(
+                        package, service, options, &packages, &queries,
+                    )));
                 }
             }
             Err(reserved) => {

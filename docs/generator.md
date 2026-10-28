@@ -49,7 +49,8 @@ otherwise.
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
-| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note`, and its method descriptor, `descriptorGetNote` |
+| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route`, which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
+| a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
 | comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path and its HTTP bindings, and a package's module carries the comment on its `package` statement |
 | `google.protobuf` itself | nothing: the well-known types map to the runtime |
@@ -173,7 +174,8 @@ getEntry =
     Rpc.call
         (Proto.Method.methodBinary Ledger.V1.encodeGetEntryRequestBytes
             Ledger.V1.decodeEntryBytes
-            descriptorGetEntry
+            "ledger.v1.LedgerService"
+            "GetEntry"
         )
 ```
 
@@ -188,7 +190,8 @@ theirs, since `Proto.Enum.Enum` holds them. The typed values are built
 by `Proto.Message.messageBinary` and the methods by
 `Proto.Method.methodBinary`, whose JSON encoder writes `null` and whose
 JSON decoder fails; `Proto.Method.hasJson` tells such a method apart.
-Such a method cannot be sent over transcoding, which speaks JSON only.
+Such a method cannot be sent over transcoding, which speaks JSON only,
+so it gets no route functions and its messages no query encoders.
 
 `int64` and `bytes` apply to the binary codecs as to the JSON ones: the
 same Elm types, so a value read from binary is the record JSON would

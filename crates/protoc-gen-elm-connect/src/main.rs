@@ -337,7 +337,7 @@ mod tests {
     }
 
     /// The expected module at `path` in the corpus, with the generator's
-    /// version where the corpus has the placeholder `0.1.X`.
+    /// version where the corpus has the placeholder `0.2.X`.
     fn blessed(path: &std::path::Path) -> String {
         elm_connect_gen::real_version(&std::fs::read_to_string(path).expect("the blessed output"))
     }

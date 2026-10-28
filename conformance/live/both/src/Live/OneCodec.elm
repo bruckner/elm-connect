@@ -20,13 +20,22 @@ table =
     List.map (\( name, e ) -> ( ( "notes.v1.NotesService", name ), e ))
         [ ( "GetNoteJsonOnly"
           , entry
-                (Rpc.call (Proto.Method.method Notes.V1.encodeGetNoteRequest Notes.V1.decodeNote Service.descriptorGetNote))
+                (Rpc.call
+                    (Proto.Method.method Notes.V1.encodeGetNoteRequest Notes.V1.decodeNote "notes.v1.NotesService" "GetNote"
+                        |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
+                        |> Proto.Method.withRoutes [ Service.routeGetNote0 ]
+                    )
+                )
                 Notes.V1.decodeGetNoteRequest
                 Notes.V1.messageNote
           )
         , ( "GetNoteBinaryOnly"
           , entry
-                (Rpc.call (Proto.Method.methodBinary Notes.V1.encodeGetNoteRequestBytes Notes.V1.decodeNoteBytes Service.descriptorGetNote))
+                (Rpc.call
+                    (Proto.Method.methodBinary Notes.V1.encodeGetNoteRequestBytes Notes.V1.decodeNoteBytes "notes.v1.NotesService" "GetNote"
+                        |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
+                    )
+                )
                 Notes.V1.decodeGetNoteRequest
                 Notes.V1.messageNote
           )

@@ -1,0 +1,25 @@
+naming::value_collision
+
+  × The service `shelf.v1.ShelfService` has a method that becomes the Elm
+  │ value `routeGetBook0`, which is another method's route function.
+    ╭─[shelf.proto:13:7]
+ 12 │   // `routeGetBook0` is the route function of `GetBook`'s first binding.
+ 13 │   rpc GetBook(Book) returns (Book) {
+    ·       ───┬───
+    ·          ╰── route function 0 of method `shelf.v1.ShelfService.GetBook` becomes `routeGetBook0`
+ 14 │     option (google.api.http) = {
+ 15 │       get: "/v1/{name=books/*}"
+ 16 │     };
+ 17 │   }
+ 18 │   rpc RouteGetBook0(Book) returns (Book);
+    ·       ──────┬──────
+    ·             ╰── and so does method `shelf.v1.ShelfService.RouteGetBook0`
+ 19 │   // `routeListBooks0` would be, but `ListBooks` has no HTTP rule.
+    ╰────
+  help: A service's module defines a route function per HTTP binding of a
+        method: `route` followed by the call's name with the first letter
+        uppercased and the binding's number. So a method named for another's
+        route function (`RouteGetNote0` beside `GetNote`) takes that
+        function's name, and a module cannot define two values with one name.
+        Rename one of the methods in the proto, or rename one with
+        `rename=shelf.v1.ShelfService.RouteGetBook0:<Elm name>`.

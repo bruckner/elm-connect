@@ -9,9 +9,10 @@ since `Rpc`, which defines `Config`, imports it.
 -}
 
 import Json.Encode
-import Proto.Internal.Binding exposing (Rule)
 import Proto.Internal.Method
-import Proto.Method as Method exposing (Idempotency(..))
+import Proto.Internal.Percent as Percent
+import Proto.Method exposing (Idempotency(..))
+import Proto.Route
 import Rpc.Body as Body
 import Rpc.Call
 import Rpc.Error as Error
@@ -45,8 +46,8 @@ request cfg c =
 
         Transcode _ ->
             case route cfg.transport c of
-                Bound _ rule ->
-                    transcodeRequest rule cfg c
+                Bound _ bound ->
+                    transcodeRequest (bound (Rpc.Call.requestMessage c)) cfg c
 
                 Implicit ->
                     connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
@@ -71,7 +72,7 @@ jsonMessage c =
     in
     { body = Body.text json
     , encoding = "encoding=json"
-    , query = \_ -> Internal.percentEncode Internal.unreserved json
+    , query = \_ -> Percent.percentEncode Percent.unreserved json
     }
 
 
@@ -119,7 +120,7 @@ connectRequest options message cfg ((Call fields) as c) =
         -- are in the order the protocol recommends, so a cache keys one
         -- request one way.
         getUrl =
-            if options.get && Method.idempotency (Method.toDescriptor fields.method) == IdempotencyNoSideEffects then
+            if options.get && Rpc.Call.idempotency c == IdempotencyNoSideEffects then
                 let
                     whole =
                         url
@@ -162,18 +163,14 @@ connectRequest options message cfg ((Call fields) as c) =
             }
 
 
-{-| The request over one binding of a method's rule.
+{-| The request over one binding's route.
 -}
-transcodeRequest : Rule -> Settings c -> Call req res -> Request
-transcodeRequest rule cfg ((Call fields) as c) =
-    let
-        json =
-            Rpc.Call.requestJson c
-    in
-    { method = rule.method
-    , url = Route.transcodeUrl cfg.baseUrl rule json
+transcodeRequest : Proto.Route.Route -> Settings c -> Call req res -> Request
+transcodeRequest r cfg ((Call fields) as c) =
+    { method = r.method
+    , url = Route.transcodeUrl cfg.baseUrl r
     , headers = cfg.headers ++ fields.headers
-    , body = Route.bindingBody rule json
+    , body = Route.transcodeBody r
     , timeout = callTimeout cfg c
     , withCredentials = cfg.withCredentials
     }
@@ -186,8 +183,8 @@ implicit route, which have no path variables.
 invalidPathValue : Settings c -> Call req res -> Maybe { field : String, template : String }
 invalidPathValue cfg c =
     case route cfg.transport c of
-        Bound _ rule ->
-            Route.invalidPathValue rule (Rpc.Call.requestJson c)
+        Bound _ bound ->
+            (bound (Rpc.Call.requestMessage c)).invalid
 
         Implicit ->
             Nothing

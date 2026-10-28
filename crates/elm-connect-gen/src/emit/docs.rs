@@ -479,6 +479,31 @@ pub(super) fn method(service: &str, method: &Method) -> String {
     )
 }
 
+/// The doc of a method's route function over binding `index` of its HTTP
+/// rule (the rule's own is 0, its additional bindings follow): the binding,
+/// as the call's doc gives it.
+pub(super) fn route(method: &Method, index: usize) -> String {
+    let rule = method.http.as_ref().and_then(|rule| {
+        std::iter::once(rule)
+            .chain(&rule.additional_bindings)
+            .nth(index)
+    });
+    let shown = rule.map(binding).unwrap_or_default();
+    format!(
+        "The route of {} over binding {index}: {shown}.",
+        local(&method.elm_name)
+    )
+}
+
+/// The doc of a message's query encoder.
+pub(super) fn query_encoder(message_elm_name: &str) -> String {
+    format!(
+        "The query parameters of {} for the HTTP bindings that put its fields in the query: \
+         those of its fields that hold a value, in declaration order.",
+        a_local(message_elm_name)
+    )
+}
+
 /// One binding of an HTTP rule: `` `GET /v1/{name=notes/*}` ``, then its
 /// `body` and `response_body` where it sets them.
 fn binding(rule: &HttpRule) -> String {

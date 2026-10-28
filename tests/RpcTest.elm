@@ -9,6 +9,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Duration
 import Proto.Http
+import Proto.Internal.Percent
 import Proto.Json
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
@@ -50,9 +51,9 @@ title =
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
 notes name idempotency bindings =
     Rpc.call
-        (Proto.Method.method encodeGetNote
-            (Proto.Message.decoder title)
-            (Proto.Method.descriptor "notes.v1.Notes" name idempotency "notes.v1.GetNoteRequest" "notes.v1.Note" bindings)
+        (Proto.Method.method encodeGetNote (Proto.Message.decoder title) "notes.v1.Notes" name
+            |> Proto.Method.withIdempotency idempotency
+            |> Proto.Method.withBindings bindings
         )
 
 
@@ -198,7 +199,7 @@ percentEncoding =
     let
         encode : String -> String
         encode =
-            Rpc.Internal.Http.percentEncode Rpc.Internal.Http.unreserved
+            Proto.Internal.Percent.percentEncode Proto.Internal.Percent.unreserved
     in
     describe "percentEncode"
         [ test "writes a character outside the BMP as four bytes" <|
@@ -212,23 +213,23 @@ percentEncoding =
                     |> Expect.equal [ "%EF%BF%BDa", "a%EF%BF%BDb", "a%EF%BF%BD", "%EF%BF%BD", "%EF%BF%BD%EF%BF%BD", "%EF%BF%BDa", "%EF%BF%BDx" ]
         , test "a route's literal text with a lone low surrogate is written with U+FFFD" <|
             \_ ->
-                List.map Rpc.Internal.Http.encodeRouteText [ "\u{DC00}x", "x\u{DC00}", "%41\u{DC00}" ]
+                List.map Proto.Internal.Percent.encodeRouteText [ "\u{DC00}x", "x\u{DC00}", "%41\u{DC00}" ]
                     |> Expect.equal [ "%EF%BF%BDx", "x%EF%BF%BD", "%41%EF%BF%BD" ]
         , test "decoding reads a lone low surrogate as U+FFFD" <|
             \_ ->
-                List.map Rpc.Internal.Http.percentDecode [ "\u{DC00}a", "a\u{DC00}%41", "\u{DC00}" ]
+                List.map Proto.Internal.Percent.percentDecode [ "\u{DC00}a", "a\u{DC00}%41", "\u{DC00}" ]
                     |> Expect.equal [ Just "�a", Just "a�A", Just "�" ]
         , test "decodes 100,000 characters without exhausting the stack" <|
             \_ ->
-                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x")
+                Proto.Internal.Percent.percentDecode (String.repeat 100000 "x")
                     |> Expect.equal (Just (String.repeat 100000 "x"))
         , test "decodes 100,000 escapes without exhausting the stack" <|
             \_ ->
-                Rpc.Internal.Http.percentDecode (String.repeat 25000 "%F0%9F%98%80")
+                Proto.Internal.Percent.percentDecode (String.repeat 25000 "%F0%9F%98%80")
                     |> Expect.equal (Just (String.repeat 25000 "😀"))
         , test "fails on a byte that is not UTF-8 at the end of a long text" <|
             \_ ->
-                Rpc.Internal.Http.percentDecode (String.repeat 100000 "x" ++ "%FF")
+                Proto.Internal.Percent.percentDecode (String.repeat 100000 "x" ++ "%FF")
                     |> Expect.equal Nothing
         , test "a base URL with a query or a fragment is a bad URL" <|
             \_ ->
@@ -261,10 +262,18 @@ calls =
             \_ ->
                 ( ( Rpc.Call.serviceName c, Rpc.Call.methodName c ), ( Rpc.Call.idempotency c, Rpc.Call.requestMessage c ) )
                     |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( Proto.Method.IdempotencyNoSideEffects, { name = "notes/42" } ) )
-        , test "the method and its descriptor are the ones the call was made from" <|
+        , test "a method's idempotency is unknown and it has no routes until told" <|
             \_ ->
-                ( ( Proto.Method.input (Proto.Method.toDescriptor (Rpc.Call.method c)), Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.Call.method c) { name = "x" }) ), Proto.Method.name (Rpc.Call.descriptor c), Proto.Method.output (Rpc.Call.descriptor c) )
-                    |> Expect.equal ( ( "notes.v1.GetNoteRequest", "{\"name\":\"x\"}" ), "GetNote", "notes.v1.Note" )
+                let
+                    bare =
+                        Rpc.call (Proto.Method.method encodeGetNote (Proto.Message.decoder title) "notes.v1.Notes" "GetNote") { name = "x" }
+                in
+                ( Rpc.Call.idempotency bare, Rpc.Call.viaBinding 0 bare |> Maybe.map Rpc.Call.procedure )
+                    |> Expect.equal ( IdempotencyUnknown, Nothing )
+        , test "the method and the procedure are the ones the call was made from" <|
+            \_ ->
+                ( Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.Call.method c) { name = "x" }), Rpc.Call.procedure c )
+                    |> Expect.equal ( "{\"name\":\"x\"}", "/notes.v1.Notes/GetNote" )
         , test "requestJson is the request's JSON" <|
             \_ ->
                 Json.Encode.encode 0 (Rpc.Call.requestJson c)
@@ -282,7 +291,7 @@ calls =
         , test "toJson names the method and holds the request" <|
             \_ ->
                 Json.Encode.encode 0 (Rpc.Call.toJson (Rpc.Call.withTimeout 5 c))
-                    |> Expect.equal "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"request\":{\"name\":\"notes/42\"}}"
+                    |> Expect.equal "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":{\"name\":\"notes/42\"}}"
         ]
 
 
@@ -1419,7 +1428,7 @@ traces =
             \_ ->
                 Json.Encode.encode 0 (Rpc.Trace.toJson succeeded)
                     |> Expect.equal
-                        ("""{"service":"notes.v1.Notes","method":"GetNote","transport":"connect","binding":null,"""
+                        ("""{"service":"notes.v1.Notes","method":"GetNote","procedure":"/notes.v1.Notes/GetNote","transport":"connect","binding":null,"""
                             ++ """"request":{"method":"POST","url":"https://api.example.com/notes.v1.Notes/GetNote","headers":[["Connect-Protocol-Version","1"]],"body":"{\\"name\\":\\"notes/42\\"}","timeout":null,"withCredentials":false},"""
                             ++ """"httpStatus":200,"headers":{"content-type":"application/json"},"trailers":{},"code":"ok","duration":12.4,"attempts":1}"""
                         )
@@ -1438,6 +1447,10 @@ traces =
                         [ "notes.v1.Notes/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms"
                         , "notes.v1.Notes/GetNote over connect: unavailable, no answer, 3 attempts, 12 ms"
                         ]
+        , test "the procedure is the call's" <|
+            \_ ->
+                Rpc.Trace.procedure succeeded
+                    |> Expect.equal "/notes.v1.Notes/GetNote"
         , test "the accessors" <|
             \_ ->
                 ( ( Rpc.Trace.serviceName succeeded, Rpc.Trace.methodName succeeded, Rpc.Trace.transport succeeded )

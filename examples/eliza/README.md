@@ -7,7 +7,7 @@ shows the answer. It needs no server of your own.
 
 ```
 proto/connectrpc/eliza/v1/eliza.proto   the API, as connectrpc/examples-go publishes it
-generated/                              the Elm elm-connect 0.1.0 generates from it
+generated/                              the Elm elm-connect 0.2.0 generates from it
 src/Main.elm                            the page
 elm.json                                the runtime read from this repository's src/
 ```

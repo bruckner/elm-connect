@@ -2,14 +2,21 @@ module Proto.Internal.Method exposing (Binary, Method(..), Read(..), binaryUnder
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that other modules of the package can reach what a method holds while
-users cannot, and so that `Rpc` can reach the bytes path
+users cannot, so that `Rpc` can read a method's routes, which
+`Proto.Method` exposes only to set, and so that `Rpc` can reach the bytes path
 `Proto.Method.withBinary` builds: writing a request as protobuf binary and
 reading a binary answer. Only a method with binary codecs carries that code,
 so a program without any carries none of it, nor `Proto.Binary`,
-`Proto.Bytes` or elm/bytes. The descriptor is a parameter because its type,
-with `Idempotency` and its readers, stays in `Proto.Method`. Its types are
-elm/core's, elm/bytes' and elm/http's, so that no `Proto` module imports an
-`Rpc` one.
+`Proto.Bytes` or elm/bytes. The idempotency is a parameter because its
+type stays in `Proto.Method`, which exposes its constructors. Its types are
+elm/core's, elm/bytes', elm/http's and `Proto.Route`'s, so that no `Proto`
+module imports an `Rpc` one.
+
+A method holds its identity (service, name, idempotency) and one route
+function per HTTP binding, not its descriptor: the descriptor's type names
+and bindings as data are a separate value a program keeps only if it names
+it.
+
 -}
 
 import Bytes exposing (Bytes)
@@ -18,15 +25,19 @@ import Http
 import Json.Decode
 import Json.Encode
 import Proto.Internal.Binary
+import Proto.Route exposing (Route)
 
 
-type Method descriptor req res
+type Method idempotency req res
     = Method
-        { encodeRequest : req -> Json.Encode.Value
+        { service : String
+        , name : String
+        , idempotency : idempotency
+        , encodeRequest : req -> Json.Encode.Value
         , responseDecoder : Json.Decode.Decoder res
-        , descriptor : descriptor
         , binary : Maybe (Binary req res)
         , json : Bool
+        , routes : List (req -> Route)
         }
 
 
@@ -68,7 +79,7 @@ type Read res
 {-| The bytes path, when the transport sends protobuf binary (`proto`) and
 the method has binary codecs.
 -}
-binaryUnder : Bool -> Method descriptor req res -> Maybe (Binary req res)
+binaryUnder : Bool -> Method idempotency req res -> Maybe (Binary req res)
 binaryUnder proto (Method m) =
     if proto then
         m.binary
