@@ -5,6 +5,7 @@ module Rpc.Internal.Answer exposing
     , connectMessage
     , connectProtoMessage
     , fieldDecoder
+    , grpcWebMessage
     , otherFailure
     , textOverRead
     , transcodeMessage
@@ -35,6 +36,7 @@ import Proto.Json
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, TextWire)
 import Rpc.Response exposing (Response)
@@ -108,6 +110,13 @@ transcodeMessage overRead options responseBody answer =
 connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
 connectProtoMessage overRead options procedure answer =
     bytesMessage overRead options procedure (connectProtoRead answer)
+
+
+{-| gRPC-Web's message: its framing and trailers (`Rpc.Internal.GrpcWeb`).
+-}
+grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+grpcWebMessage overRead options procedure answer =
+    bytesMessage overRead options procedure (GrpcWeb.read otherFailure answer)
 
 
 {-| Connect's reading of a JSON answer: success is status 200.

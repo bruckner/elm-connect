@@ -74,8 +74,8 @@ procedure (Internal.Trace t) =
 
 
 {-| The name of the protocol the call went over, as
-[`Rpc.Protocol.name`](Rpc-Protocol#name) gives it: `"connect"` or
-`"transcode"`.
+[`Rpc.Protocol.name`](Rpc-Protocol#name) gives it: `"connect"`,
+`"transcode"` or `"grpc-web"`.
 -}
 protocol : Trace -> String
 protocol (Internal.Trace t) =
