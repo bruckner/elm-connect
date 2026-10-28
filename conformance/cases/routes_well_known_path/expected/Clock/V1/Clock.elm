@@ -35,16 +35,16 @@ elmConnectVersion_ =
 Connect: `POST /clock.v1.Clock/GetMoment`.
 Transcode: `GET /v1/at/{at}`.
 
-Described by [`descriptorGetMoment`](#descriptorGetMoment).
+Codecs: JSON. Described by [`descriptorGetMoment`](#descriptorGetMoment).
 
 -}
-getMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+getMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 getMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "GetMoment"
+            Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
             |> Proto.Method.withRoutes [ routeGetMoment0 ]
         )
 
@@ -53,16 +53,16 @@ getMoment =
 Connect: `POST /clock.v1.Clock/MaskMoment`.
 Transcode: `GET /v1/at/{at}/mask/{mask}`.
 
-Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
+Codecs: JSON. Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
 
 -}
-maskMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+maskMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 maskMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "MaskMoment"
+            Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
             |> Proto.Method.withRoutes [ routeMaskMoment0 ]
         )
 
@@ -71,16 +71,16 @@ maskMoment =
 Connect: `POST /clock.v1.Clock/CountMoment`.
 Transcode: `GET /v1/count/{count}/seen/{seen}`.
 
-Described by [`descriptorCountMoment`](#descriptorCountMoment).
+Codecs: JSON. Described by [`descriptorCountMoment`](#descriptorCountMoment).
 
 -}
-countMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+countMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 countMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "CountMoment"
+            Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
             |> Proto.Method.withRoutes [ routeCountMoment0 ]
         )
 
@@ -89,16 +89,16 @@ countMoment =
 Connect: `POST /clock.v1.Clock/WaitMoment`.
 Transcode: `POST /v1/wait/{wait}` body `*`.
 
-Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
+Codecs: JSON. Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
 
 -}
-waitMoment : Clock.V1.Moment -> Rpc.Call Clock.V1.Moment Clock.V1.Moment
+waitMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 waitMoment =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "WaitMoment"
+            Clock.V1.encodeMoment
+            Clock.V1.decodeMoment
             |> Proto.Method.withRoutes [ routeWaitMoment0 ]
         )
 
@@ -112,15 +112,15 @@ waitMoment =
 routeGetMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeGetMoment0 request_ =
     let
-        value0_ =
+        at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
     in
     { method = "GET"
-    , path = "v1/at/" ++ Proto.Route.segment value0_
+    , path = "v1/at/" ++ Proto.Route.segment at_
     , query = Proto.Query.except [ "at" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "at" "*" value0_
+    , invalid = Proto.Route.checkSegment "at" "*" at_
     }
 
 
@@ -129,21 +129,21 @@ routeGetMoment0 request_ =
 routeMaskMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeMaskMoment0 request_ =
     let
-        value0_ =
+        at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
 
-        value1_ =
+        mask_ =
             Maybe.withDefault "" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
     in
     { method = "GET"
-    , path = "v1/at/" ++ Proto.Route.segment value0_ ++ "/mask/" ++ Proto.Route.segment value1_
+    , path = "v1/at/" ++ Proto.Route.segment at_ ++ "/mask/" ++ Proto.Route.segment mask_
     , query = Proto.Query.except [ "at", "mask" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "at" "*" value0_
-            , Proto.Route.checkSegment "mask" "*" value1_
+            [ Proto.Route.checkSegment "at" "*" at_
+            , Proto.Route.checkSegment "mask" "*" mask_
             ]
     }
 
@@ -153,21 +153,21 @@ routeMaskMoment0 request_ =
 routeCountMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeCountMoment0 request_ =
     let
-        value0_ =
+        count_ =
             Maybe.withDefault "" (Maybe.map String.fromInt request_.count)
 
-        value1_ =
+        seen_ =
             Maybe.withDefault "" (Maybe.map Proto.Route.boolText request_.seen)
     in
     { method = "GET"
-    , path = "v1/count/" ++ Proto.Route.segment value0_ ++ "/seen/" ++ Proto.Route.segment value1_
+    , path = "v1/count/" ++ Proto.Route.segment count_ ++ "/seen/" ++ Proto.Route.segment seen_
     , query = Proto.Query.except [ "count", "seen" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "count" "*" value0_
-            , Proto.Route.checkSegment "seen" "*" value1_
+            [ Proto.Route.checkSegment "count" "*" count_
+            , Proto.Route.checkSegment "seen" "*" seen_
             ]
     }
 
@@ -177,15 +177,15 @@ routeCountMoment0 request_ =
 routeWaitMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeWaitMoment0 request_ =
     let
-        value0_ =
+        wait_ =
             Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
     in
     { method = "POST"
-    , path = "v1/wait/" ++ Proto.Route.segment value0_
+    , path = "v1/wait/" ++ Proto.Route.segment wait_
     , query = []
     , body = Just (Proto.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "wait" "*" value0_
+    , invalid = Proto.Route.checkSegment "wait" "*" wait_
     }
 
 

@@ -31,16 +31,16 @@ elmConnectVersion_ =
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
+getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Api.Example.Notes.V1.encodeGetNoteRequest
-            Api.Example.Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "GetNote"
+            Api.Example.Notes.V1.encodeGetNoteRequest
+            Api.Example.Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 
@@ -54,15 +54,15 @@ getNote =
 routeGetNote0 : Api.Example.Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 

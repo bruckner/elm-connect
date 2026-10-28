@@ -35,16 +35,16 @@ elmConnectVersion_ =
 Connect: `POST /notes.v1.LegacyService/Clear`.
 Transcode: `PURGE /v1/notes`.
 
-Described by [`descriptorClear`](#descriptorClear).
+Codecs: JSON. Described by [`descriptorClear`](#descriptorClear).
 
 -}
-clear : () -> Rpc.Call () ()
+clear : () -> Rpc.Call Rpc.Json () ()
 clear =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            "notes.v1.LegacyService"
+        (Proto.Method.json "notes.v1.LegacyService"
             "Clear"
+            Proto.Json.encodeEmpty
+            Proto.Json.empty
             |> Proto.Method.withRoutes [ routeClear0 ]
         )
 

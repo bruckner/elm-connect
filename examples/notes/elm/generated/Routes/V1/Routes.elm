@@ -49,16 +49,16 @@ Transcode:
   - binding 2: `GET /v1/messages/{message_id}`;
   - binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 
-Described by [`descriptorGetMessage`](#descriptorGetMessage).
+Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 
 -}
-getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "GetMessage"
+            Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -69,16 +69,16 @@ getMessage =
 Connect: `POST /routes.v1.Routes/UpdateMessage`.
 Transcode: `PATCH /v1/messages/{message_id}` body `message`.
 
-Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
+Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 
 -}
-updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Routes.V1.UpdateMessageRequest Routes.V1.Message
+updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "UpdateMessage"
+            Routes.V1.encodeUpdateMessageRequest
+            Routes.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -87,16 +87,16 @@ updateMessage =
 Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
 Transcode: `PATCH /v1/messages/{message_id}` body `*`.
 
-Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
+Codecs: JSON. Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
 
 -}
-updateMessageWhole : Routes.V1.Message -> Rpc.Call Routes.V1.Message Routes.V1.Message
+updateMessageWhole : Routes.V1.Message -> Rpc.Call Rpc.Json Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "UpdateMessageWhole"
+            Routes.V1.encodeMessage
+            Routes.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -105,16 +105,16 @@ updateMessageWhole =
 Connect: `POST /routes.v1.Routes/PostSub`.
 Transcode: `POST /v1/subs/{sub.subfield}` body `*`.
 
-Described by [`descriptorPostSub`](#descriptorPostSub).
+Codecs: JSON. Described by [`descriptorPostSub`](#descriptorPostSub).
 
 -}
-postSub : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+postSub : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "PostSub"
+            Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -123,16 +123,16 @@ postSub =
 Connect: `POST /routes.v1.Routes/Query`.
 Transcode: `GET /v1/query`.
 
-Described by [`descriptorQuery`](#descriptorQuery).
+Codecs: JSON. Described by [`descriptorQuery`](#descriptorQuery).
 
 -}
-query : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+query : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Query"
+            Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             |> Proto.Method.withRoutes [ routeQuery0 ]
         )
 
@@ -141,16 +141,16 @@ query =
 Connect: `POST /routes.v1.Routes/Single`.
 Transcode: `GET /v1/single/{name}`.
 
-Described by [`descriptorSingle`](#descriptorSingle).
+Codecs: JSON. Described by [`descriptorSingle`](#descriptorSingle).
 
 -}
-single : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+single : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Single"
+            Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             |> Proto.Method.withRoutes [ routeSingle0 ]
         )
 
@@ -159,16 +159,16 @@ single =
 Connect: `POST /routes.v1.Routes/Multi`.
 Transcode: `GET /v1/{name=things/*}`.
 
-Described by [`descriptorMulti`](#descriptorMulti).
+Codecs: JSON. Described by [`descriptorMulti`](#descriptorMulti).
 
 -}
-multi : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+multi : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Multi"
+            Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             |> Proto.Method.withRoutes [ routeMulti0 ]
         )
 
@@ -177,16 +177,16 @@ multi =
 Connect: `POST /routes.v1.Routes/Typed`.
 Transcode: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 
-Described by [`descriptorTyped`](#descriptorTyped).
+Codecs: JSON. Described by [`descriptorTyped`](#descriptorTyped).
 
 -}
-typed : Routes.V1.Everything -> Rpc.Call Routes.V1.Everything Routes.V1.Everything
+typed : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Typed"
+            Routes.V1.encodeEverything
+            Routes.V1.decodeEverything
             |> Proto.Method.withRoutes [ routeTyped0 ]
         )
 
@@ -195,16 +195,16 @@ typed =
 Connect: `POST /routes.v1.Routes/Files`.
 Transcode: `GET /v1/{path=files/**}`.
 
-Described by [`descriptorFiles`](#descriptorFiles).
+Codecs: JSON. Described by [`descriptorFiles`](#descriptorFiles).
 
 -}
-files : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+files : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Files"
+            Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -213,16 +213,16 @@ files =
 Connect: `POST /routes.v1.Routes/Cancel`.
 Transcode: `POST /v1/{name=operations/*}:cancel` body `*`.
 
-Described by [`descriptorCancel`](#descriptorCancel).
+Codecs: JSON. Described by [`descriptorCancel`](#descriptorCancel).
 
 -}
-cancel : Routes.V1.Resource -> Rpc.Call Routes.V1.Resource Routes.V1.Resource
+cancel : Routes.V1.Resource -> Rpc.Call Rpc.Json Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeResource
-            Routes.V1.decodeResource
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Cancel"
+            Routes.V1.encodeResource
+            Routes.V1.decodeResource
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -231,16 +231,16 @@ cancel =
 Connect: `POST /routes.v1.Routes/UpdateResource`.
 Transcode: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 
-Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
+Codecs: JSON. Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
 
 -}
-updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Routes.V1.UpdateResourceRequest Routes.V1.Resource
+updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "UpdateResource"
+            Routes.V1.encodeUpdateResourceRequest
+            Routes.V1.decodeResource
             |> Proto.Method.withRoutes [ routeUpdateResource0 ]
         )
 
@@ -249,16 +249,16 @@ updateResource =
 Connect: `POST /routes.v1.Routes/Head`.
 Transcode: `HEAD /v1/{path=files/**}`.
 
-Described by [`descriptorHead`](#descriptorHead).
+Codecs: JSON. Described by [`descriptorHead`](#descriptorHead).
 
 -}
-head : Routes.V1.FileRequest -> Rpc.Call Routes.V1.FileRequest Routes.V1.FileRequest
+head : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Head"
+            Routes.V1.encodeFileRequest
+            Routes.V1.decodeFileRequest
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 
@@ -271,16 +271,16 @@ Envoy's transcoder (auto\_mapping) and a Connect handler serve it.
 Connect: `POST /routes.v1.Routes/Unbound`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorUnbound`](#descriptorUnbound).
+Codecs: JSON. Described by [`descriptorUnbound`](#descriptorUnbound).
 
 -}
-unbound : Routes.V1.GetMessageRequest -> Rpc.Call Routes.V1.GetMessageRequest Routes.V1.Message
+unbound : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        (Proto.Method.method Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
-            "routes.v1.Routes"
+        (Proto.Method.json "routes.v1.Routes"
             "Unbound"
+            Routes.V1.encodeGetMessageRequest
+            Routes.V1.decodeMessage
         )
 
 
@@ -293,15 +293,15 @@ unbound =
 routeGetMessage0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
 
@@ -310,21 +310,21 @@ routeGetMessage0 request_ =
 routeGetMessage1 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage1 request_ =
     let
-        value0_ =
+        messageId_ =
             request_.messageId
 
-        value1_ =
+        subSubfield_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
     { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_ ++ "/" ++ Proto.Route.segment value1_
+    , path = "v1/messages/" ++ Proto.Route.segment messageId_ ++ "/" ++ Proto.Route.segment subSubfield_
     , query = Proto.Query.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "messageId" "*" value0_
-            , Proto.Route.checkSegment "sub.subfield" "*" value1_
+            [ Proto.Route.checkSegment "messageId" "*" messageId_
+            , Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
             ]
     }
 
@@ -334,15 +334,15 @@ routeGetMessage1 request_ =
 routeGetMessage2 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage2 request_ =
     let
-        value0_ =
+        messageId_ =
             request_.messageId
     in
     { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_
+    , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = Proto.Query.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" value0_
+    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
 
@@ -351,21 +351,21 @@ routeGetMessage2 request_ =
 routeGetMessage3 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage3 request_ =
     let
-        value0_ =
+        userId_ =
             request_.userId
 
-        value1_ =
+        messageId_ =
             request_.messageId
     in
     { method = "GET"
-    , path = "v1/users/" ++ Proto.Route.segment value0_ ++ "/messages/" ++ Proto.Route.segment value1_
+    , path = "v1/users/" ++ Proto.Route.segment userId_ ++ "/messages/" ++ Proto.Route.segment messageId_
     , query = Proto.Query.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "userId" "*" value0_
-            , Proto.Route.checkSegment "messageId" "*" value1_
+            [ Proto.Route.checkSegment "userId" "*" userId_
+            , Proto.Route.checkSegment "messageId" "*" messageId_
             ]
     }
 
@@ -375,15 +375,15 @@ routeGetMessage3 request_ =
 routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> Proto.Route.Route
 routeUpdateMessage0 request_ =
     let
-        value0_ =
+        messageId_ =
             request_.messageId
     in
     { method = "PATCH"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_
+    , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" value0_
+    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
 
@@ -392,15 +392,15 @@ routeUpdateMessage0 request_ =
 routeUpdateMessageWhole0 : Routes.V1.Message -> Proto.Route.Route
 routeUpdateMessageWhole0 request_ =
     let
-        value0_ =
+        messageId_ =
             request_.messageId
     in
     { method = "PATCH"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_
+    , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
     , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" value0_
+    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
 
@@ -409,15 +409,15 @@ routeUpdateMessageWhole0 request_ =
 routePostSub0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routePostSub0 request_ =
     let
-        value0_ =
+        subSubfield_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
     { method = "POST"
-    , path = "v1/subs/" ++ Proto.Route.segment value0_
+    , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
     , query = []
     , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "sub.subfield" "*" value0_
+    , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
     }
 
 
@@ -439,15 +439,15 @@ routeQuery0 request_ =
 routeSingle0 : Routes.V1.Everything -> Proto.Route.Route
 routeSingle0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/single/" ++ Proto.Route.segment value0_
+    , path = "v1/single/" ++ Proto.Route.segment name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "name" "*" value0_
+    , invalid = Proto.Route.checkSegment "name" "*" name_
     }
 
 
@@ -456,15 +456,15 @@ routeSingle0 request_ =
 routeMulti0 : Routes.V1.Everything -> Proto.Route.Route
 routeMulti0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
     }
 
 
@@ -473,33 +473,33 @@ routeMulti0 request_ =
 routeTyped0 : Routes.V1.Everything -> Proto.Route.Route
 routeTyped0 request_ =
     let
-        value0_ =
+        count_ =
             String.fromInt request_.count
 
-        value1_ =
+        flag_ =
             Proto.Route.boolText request_.flag
 
-        value2_ =
+        kind_ =
             Proto.Route.viaJson Routes.V1.encodeKind request_.kind
 
-        value3_ =
+        big_ =
             request_.big
 
-        value4_ =
+        innerDeepB_ =
             String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
     in
     { method = "DELETE"
-    , path = "v1/typed/" ++ Proto.Route.segment value0_ ++ "/" ++ Proto.Route.segment value1_ ++ "/" ++ Proto.Route.segment value2_ ++ "/" ++ Proto.Route.segment value3_ ++ "/" ++ Proto.Route.segment value4_
+    , path = "v1/typed/" ++ Proto.Route.segment count_ ++ "/" ++ Proto.Route.segment flag_ ++ "/" ++ Proto.Route.segment kind_ ++ "/" ++ Proto.Route.segment big_ ++ "/" ++ Proto.Route.segment innerDeepB_
     , query = Proto.Query.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "count" "*" value0_
-            , Proto.Route.checkSegment "flag" "*" value1_
-            , Proto.Route.checkSegment "kind" "*" value2_
-            , Proto.Route.checkSegment "big" "*" value3_
-            , Proto.Route.checkSegment "inner.deep.b" "*" value4_
+            [ Proto.Route.checkSegment "count" "*" count_
+            , Proto.Route.checkSegment "flag" "*" flag_
+            , Proto.Route.checkSegment "kind" "*" kind_
+            , Proto.Route.checkSegment "big" "*" big_
+            , Proto.Route.checkSegment "inner.deep.b" "*" innerDeepB_
             ]
     }
 
@@ -509,15 +509,15 @@ routeTyped0 request_ =
 routeFiles0 : Routes.V1.FileRequest -> Proto.Route.Route
 routeFiles0 request_ =
     let
-        value0_ =
+        path_ =
             request_.path
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments path_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] value0_
+    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
     }
 
 
@@ -526,15 +526,15 @@ routeFiles0 request_ =
 routeCancel0 : Routes.V1.Resource -> Proto.Route.Route
 routeCancel0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ ":cancel"
+    , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
     }
 
 
@@ -543,15 +543,15 @@ routeCancel0 request_ =
 routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Proto.Route.Route
 routeUpdateResource0 request_ =
     let
-        value0_ =
+        resourceName_ =
             Maybe.withDefault "" (Maybe.map .name request_.resource)
     in
     { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments resourceName_
     , query = Routes.V1.queryOfUpdateResourceRequest request_
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
     }
 
 
@@ -560,15 +560,15 @@ routeUpdateResource0 request_ =
 routeHead0 : Routes.V1.FileRequest -> Proto.Route.Route
 routeHead0 request_ =
     let
-        value0_ =
+        path_ =
             request_.path
     in
     { method = "HEAD"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments path_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] value0_
+    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
     }
 
 

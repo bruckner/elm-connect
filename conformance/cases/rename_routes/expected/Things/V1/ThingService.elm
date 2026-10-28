@@ -32,16 +32,16 @@ elmConnectVersion_ =
 Connect: `POST /things.v1.ThingService/GetThing`.
 Transcode: `GET /v1/{name=things/*}`.
 
-Described by [`descriptorGetThing`](#descriptorGetThing).
+Codecs: JSON. Described by [`descriptorGetThing`](#descriptorGetThing).
 
 -}
-getThing : Things.V1.GetThingRequest -> Rpc.Call Things.V1.GetThingRequest Things.V1.Thing
+getThing : Things.V1.GetThingRequest -> Rpc.Call Rpc.Json Things.V1.GetThingRequest Things.V1.Thing
 getThing =
     Rpc.call
-        (Proto.Method.method Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
-            "things.v1.ThingService"
+        (Proto.Method.json "things.v1.ThingService"
             "GetThing"
+            Things.V1.encodeGetThingRequest
+            Things.V1.decodeThing
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 
@@ -55,15 +55,15 @@ getThing =
 routeGetThing0 : Things.V1.GetThingRequest -> Proto.Route.Route
 routeGetThing0 request_ =
     let
-        value0_ =
+        name_ =
             request_.resource
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Things.V1.queryOfGetThingRequest request_
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
     }
 
 

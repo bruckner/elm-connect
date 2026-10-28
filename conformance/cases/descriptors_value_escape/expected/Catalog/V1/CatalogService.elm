@@ -36,16 +36,16 @@ elmConnectVersion_ =
 Connect: `POST /catalog.v1.CatalogService/GetEntry`.
 Transcode: `GET /v1/{name=entries/*}`.
 
-Described by [`descriptorGetEntry`](#descriptorGetEntry).
+Codecs: JSON. Described by [`descriptorGetEntry`](#descriptorGetEntry).
 
 -}
-getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Catalog.V1.GetEntryRequest Catalog.V1.Entry
+getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Rpc.Json Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.method Catalog.V1.encodeGetEntryRequest
-            Catalog.V1.decodeEntry
-            "catalog.v1.CatalogService"
+        (Proto.Method.json "catalog.v1.CatalogService"
             "GetEntry"
+            Catalog.V1.encodeGetEntryRequest
+            Catalog.V1.decodeEntry
             |> Proto.Method.withRoutes [ routeGetEntry0 ]
         )
 
@@ -59,15 +59,15 @@ getEntry =
 routeGetEntry0 : Catalog.V1.GetEntryRequest -> Proto.Route.Route
 routeGetEntry0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Catalog.V1.queryOfGetEntryRequest request_
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "entries", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "entries", "*" ] name_
     }
 
 

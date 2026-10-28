@@ -28,16 +28,16 @@ elmConnectVersion_ =
 Connect: `POST /first.v1.Fetcher/GetNote`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+getNote : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 getNote =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            "first.v1.Fetcher"
+        (Proto.Method.json "first.v1.Fetcher"
             "GetNote"
+            First.V1.encodeURLPath
+            First.V1.decodeURLPath
         )
 
 
@@ -45,16 +45,16 @@ getNote =
 Connect: `POST /first.v1.Fetcher/HTTPGet`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorHttpGet`](#descriptorHttpGet).
+Codecs: JSON. Described by [`descriptorHttpGet`](#descriptorHttpGet).
 
 -}
-httpGet : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+httpGet : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 httpGet =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            "first.v1.Fetcher"
+        (Proto.Method.json "first.v1.Fetcher"
             "HTTPGet"
+            First.V1.encodeURLPath
+            First.V1.decodeURLPath
         )
 
 
@@ -62,16 +62,16 @@ httpGet =
 Connect: `POST /first.v1.Fetcher/_Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+ping : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 ping =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            "first.v1.Fetcher"
+        (Proto.Method.json "first.v1.Fetcher"
             "_Ping"
+            First.V1.encodeURLPath
+            First.V1.decodeURLPath
         )
 
 
@@ -79,16 +79,16 @@ ping =
 Connect: `POST /first.v1.Fetcher/Type`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorType_`](#descriptorType_).
+Codecs: JSON. Described by [`descriptorType_`](#descriptorType_).
 
 -}
-type_ : First.V1.URLPath -> Rpc.Call First.V1.URLPath First.V1.URLPath
+type_ : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 type_ =
     Rpc.call
-        (Proto.Method.method First.V1.encodeURLPath
-            First.V1.decodeURLPath
-            "first.v1.Fetcher"
+        (Proto.Method.json "first.v1.Fetcher"
             "Type"
+            First.V1.encodeURLPath
+            First.V1.decodeURLPath
         )
 
 

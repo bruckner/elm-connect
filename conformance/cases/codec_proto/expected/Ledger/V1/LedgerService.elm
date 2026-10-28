@@ -34,10 +34,10 @@ Codecs: protobuf binary. Described by [`descriptorGetEntry`](#descriptorGetEntry
 getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.proto Ledger.V1.encodeGetEntryRequestBytes
-            Ledger.V1.decodeEntryBytes
-            "ledger.v1.LedgerService"
+        (Proto.Method.proto "ledger.v1.LedgerService"
             "GetEntry"
+            Ledger.V1.encodeGetEntryRequestBytes
+            Ledger.V1.decodeEntryBytes
         )
 
 

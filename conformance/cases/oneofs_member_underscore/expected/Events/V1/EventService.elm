@@ -34,16 +34,16 @@ elmConnectVersion_ =
 Connect: `POST /events.v1.EventService/ListEvents`.
 Transcode: `GET /v1/{parent=feeds/*}/events`.
 
-Described by [`descriptorListEvents`](#descriptorListEvents).
+Codecs: JSON. Described by [`descriptorListEvents`](#descriptorListEvents).
 
 -}
-listEvents : Events.V1.ListEventsRequest -> Rpc.Call Events.V1.ListEventsRequest Events.V1.ListEventsResponse
+listEvents : Events.V1.ListEventsRequest -> Rpc.Call Rpc.Json Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call
-        (Proto.Method.method Events.V1.encodeListEventsRequest
-            Events.V1.decodeListEventsResponse
-            "events.v1.EventService"
+        (Proto.Method.json "events.v1.EventService"
             "ListEvents"
+            Events.V1.encodeListEventsRequest
+            Events.V1.decodeListEventsResponse
             |> Proto.Method.withRoutes [ routeListEvents0 ]
         )
 
@@ -57,15 +57,15 @@ listEvents =
 routeListEvents0 : Events.V1.ListEventsRequest -> Proto.Route.Route
 routeListEvents0 request_ =
     let
-        value0_ =
+        parent_ =
             request_.parent
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ "/events"
+    , path = "v1/" ++ Proto.Route.segments parent_ ++ "/events"
     , query = Events.V1.queryOfListEventsRequest request_
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "parent" [ "feeds", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "parent" [ "feeds", "*" ] parent_
     }
 
 

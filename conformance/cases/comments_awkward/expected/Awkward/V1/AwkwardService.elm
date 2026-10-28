@@ -45,16 +45,16 @@ An unclosed fence in a method's comment.
 Connect: `POST /awkward.v1.AwkwardService/Ping`.
 Transcode: `HEAD /v1/ping`.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call () ()
+ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            "awkward.v1.AwkwardService"
+        (Proto.Method.json "awkward.v1.AwkwardService"
             "Ping"
+            Proto.Json.encodeEmpty
+            Proto.Json.empty
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 

@@ -29,16 +29,16 @@ elmConnectVersion_ =
 Connect: `POST /ping.v1.Ping/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call () Time.Posix
+ping : () -> Rpc.Call Rpc.Json () Time.Posix
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.timestamp
-            "ping.v1.Ping"
+        (Proto.Method.json "ping.v1.Ping"
             "Ping"
+            Proto.Json.encodeEmpty
+            Proto.Json.timestamp
         )
 
 

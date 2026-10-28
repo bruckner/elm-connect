@@ -47,16 +47,16 @@ Transcode:
   - binding 0: `GET /v1/{name=notes/*}`;
   - binding 1: `GET /v1/{name=users/*/notes/*}`.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "GetNote"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
 
@@ -67,16 +67,16 @@ getNote =
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
 
-Described by [`descriptorListNotes`](#descriptorListNotes).
+Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ListNotes"
+            Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
 
@@ -87,16 +87,16 @@ listNotes =
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/notes` body `note`.
 
-Described by [`descriptorCreateNote`](#descriptorCreateNote).
+Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "CreateNote"
+            Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
@@ -109,16 +109,16 @@ Replaces a note: the body is the whole request.
 Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
 
-Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+Codecs: JSON. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 
 -}
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote : Notes.V1.Note -> Rpc.Call Rpc.Json Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ReplaceNote"
+            Notes.V1.encodeNote
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeReplaceNote0 ]
         )
 
@@ -129,16 +129,16 @@ replaceNote =
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call () ()
+ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "Ping"
+            Proto.Json.encodeEmpty
+            Proto.Json.empty
         )
 
 
@@ -151,15 +151,15 @@ ping =
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -168,15 +168,15 @@ routeGetNote0 request_ =
 routeGetNote1 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote1 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "users", "*", "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "users", "*", "notes", "*" ] name_
     }
 
 
@@ -185,15 +185,15 @@ routeGetNote1 request_ =
 routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
 routeListNotes0 request_ =
     let
-        value0_ =
+        parent_ =
             request_.parent
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ "/notes"
+    , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
     , body = Nothing
     , responseBody = Just "notes"
-    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
 
@@ -215,15 +215,15 @@ routeCreateNote0 request_ =
 routeReplaceNote0 : Notes.V1.Note -> Proto.Route.Route
 routeReplaceNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "PUT"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 

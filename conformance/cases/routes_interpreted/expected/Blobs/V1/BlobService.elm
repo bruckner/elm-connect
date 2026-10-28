@@ -34,16 +34,16 @@ Transcode:
   - binding 0: `GET /v1/blobs/{digest}`;
   - binding 1: `GET /v1/{name=shelves/*/blobs/*}`.
 
-Described by [`descriptorGetBlob`](#descriptorGetBlob).
+Codecs: JSON. Described by [`descriptorGetBlob`](#descriptorGetBlob).
 
 -}
-getBlob : Blobs.V1.Blob -> Rpc.Call Blobs.V1.Blob Blobs.V1.Blob
+getBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
 getBlob =
     Rpc.call
-        (Proto.Method.method Blobs.V1.encodeBlob
-            Blobs.V1.decodeBlob
-            "blobs.v1.BlobService"
+        (Proto.Method.json "blobs.v1.BlobService"
             "GetBlob"
+            Blobs.V1.encodeBlob
+            Blobs.V1.decodeBlob
             |> Proto.Method.withBindings (Proto.Method.bindings descriptorGetBlob)
         )
 
@@ -52,16 +52,16 @@ getBlob =
 Connect: `POST /blobs.v1.BlobService/FindBlob`.
 Transcode: `POST /v1/{name=blobs/*}:find` body `*`.
 
-Described by [`descriptorFindBlob`](#descriptorFindBlob).
+Codecs: JSON. Described by [`descriptorFindBlob`](#descriptorFindBlob).
 
 -}
-findBlob : Blobs.V1.Blob -> Rpc.Call Blobs.V1.Blob Blobs.V1.Blob
+findBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
 findBlob =
     Rpc.call
-        (Proto.Method.method Blobs.V1.encodeBlob
-            Blobs.V1.decodeBlob
-            "blobs.v1.BlobService"
+        (Proto.Method.json "blobs.v1.BlobService"
             "FindBlob"
+            Blobs.V1.encodeBlob
+            Blobs.V1.decodeBlob
             |> Proto.Method.withRoutes [ routeFindBlob0 ]
         )
 
@@ -75,15 +75,15 @@ findBlob =
 routeFindBlob0 : Blobs.V1.Blob -> Proto.Route.Route
 routeFindBlob0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ ":find"
+    , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.encodeBlob request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
 
