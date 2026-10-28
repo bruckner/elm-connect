@@ -161,7 +161,7 @@ decodeShade =
 decodeRemote : Json.Decode.Decoder Remote
 decodeRemote =
     Json.Decode.succeed Remote
-        |> Proto.Json.field "id" "" Json.Decode.string
+        |> Proto.Json.field "id" "" Proto.Json.string
         |> Proto.Json.field "shade" ShadeUnspecified decodeShade
         |> Proto.Json.field "version" "0" Proto.Json.int64
 

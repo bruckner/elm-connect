@@ -16,8 +16,9 @@
 //! oneof's message member, is read into the message read before it
 //! (`Proto.Binary.fieldInto`). Every value's codec is a
 //! `Proto.Binary.Codec`: the runtime's for a scalar or well-known type,
-//! `Proto.Binary.enum` of an enum's conversions, `Proto.Binary.embedded`
-//! of a message's encoder, merge and default.
+//! `Proto.Binary.enum` of an enum's conversions (for
+//! `google.protobuf.NullValue`, conversions to and from `()`),
+//! `Proto.Binary.embedded` of a message's encoder, merge and default.
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
@@ -93,7 +94,7 @@ fn scalar_codec(kind: ScalarKind, holding: Holding) -> &'static str {
     }
 }
 
-/// The runtime codec of a well-known type.
+/// The runtime codec of a well-known message type.
 fn well_known_codec(known: WellKnown, holding: Holding) -> &'static str {
     let int = holding.int64 == Int64::Int;
     match known {
@@ -119,6 +120,7 @@ fn well_known_codec(known: WellKnown, holding: Holding) -> &'static str {
             crate::options::Bytes::String => "bytesValue",
             crate::options::Bytes::Bytes => "bytesValueAsBytes",
         },
+        WellKnown::NullValue => unreachable!("NullValue is an enum, with no runtime codec"),
     }
 }
 
@@ -198,6 +200,13 @@ impl Emitter {
                 let default = self.generated_value(&name.module, default_name(&name.name));
                 let embedded = self.binary("embedded");
                 apply(embedded, [encode, decode, default])
+            }
+            (TypeRef::WellKnown(WellKnown::NullValue), _) => {
+                // Its one value, `NULL_VALUE`, is the number 0.
+                let codec = self.binary("enum");
+                let to_number = lambda([Pattern::Wildcard], int(0));
+                let from_number = lambda([Pattern::Wildcard], Expr::Unit);
+                apply(codec, [to_number, from_number])
             }
             (TypeRef::WellKnown(known), _) => self.binary(well_known_codec(*known, holding)),
         }
@@ -377,7 +386,7 @@ impl Emitter {
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
                 let codec = self.binary_codec(&variant.ty, holding, None);
-                let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty)) {
+                let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(
                         [Pattern::Wildcard],
                         update(name, var(variant.elm_ctor.clone())),
@@ -473,7 +482,7 @@ impl Emitter {
                 let codec = self.binary_codec(&variant.ty, holding, None);
                 let number = int(variant.number.into());
                 let present = self.binary("present");
-                if matches!(value, ValueShape::Zeroed(Zeroed::Empty)) {
+                if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     (
                         pctor(variant.elm_ctor.clone(), []),
                         apply(present, [codec, number, Expr::Unit]),
