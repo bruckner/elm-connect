@@ -1,27 +1,28 @@
 module Rpc.Internal.Answer exposing
-    ( badText
+    ( answerOf
+    , badText
+    , bytesAnswer
     , bytesFailure
+    , bytesMessage
     , bytesOverRead
-    , connectMessage
-    , connectProtoMessage
+    , contentType
+    , failure
     , fieldDecoder
-    , grpcWebMessage
     , otherFailure
     , textOverRead
-    , transcodeMessage
+    , withinText
     )
 
-{-| Reading an answer to a call: the decoded response, or the `Rpc.Error` it
-stands for, from a Connect error body, a `google.rpc.Status` body or gRPC
-status headers or trailers, whatever the protocol. Not exposed; it is what
-`Rpc.response` and `Rpc.responseBytes` stand for, kept out of `Rpc` so that
-the public module reads as API.
-
-There are two readers, one of text and one of bytes, each over its kind of
-protocol. A protocol's own reading (which statuses succeed, where the status
-of a failure is, how a body is framed) is a top-level function here that its
-constructor puts in it; reading a failure's JSON is shared.
-
+{-| What every protocol's reading of an answer shares: the `Rpc.Error` a
+failure stands for, from a Connect error body, a `google.rpc.Status` body or
+gRPC status headers or trailers, whatever the protocol; the read limits; and
+the end of a successful answer's reading, text or bytes, against them. Not
+exposed. A protocol's own reading (which statuses succeed, where the status of
+a failure is, how a body is framed) is a top-level function in its module
+(`Rpc.Internal.Connect`, `Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`)
+that its constructor installs, and ends in these. `Rpc.response` and
+`Rpc.responseBytes` reach `otherFailure` and `bytesFailure` for the answer a
+call's codec rules out.
 -}
 
 import Bytes exposing (Bytes)
@@ -36,14 +37,13 @@ import Proto.Json
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error, Reason)
-import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, TextWire)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Response exposing (Response)
 
 
 
--- THE TWO READERS
+-- SUCCESS
 
 
 {-| A successful text answer, unless it is over the read limit.
@@ -88,98 +88,7 @@ bytesMessage overRead options procedure ( metadata, read ) =
 
 
 
--- PROTOCOLS
-
-
-{-| Connect's message of a JSON answer.
--}
-connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
-connectMessage overRead options _ answer =
-    connectRead answer |> Result.andThen (withinText overRead options)
-
-
-{-| Transcoding's message.
--}
-transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
-transcodeMessage overRead options responseBody answer =
-    transcodeRead responseBody answer |> Result.andThen (withinText overRead options)
-
-
-{-| Connect's message of a protobuf binary answer.
--}
-connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-connectProtoMessage overRead options procedure answer =
-    bytesMessage overRead options procedure (connectProtoRead answer)
-
-
-{-| gRPC-Web's message: its framing and trailers (`Rpc.Internal.GrpcWeb`).
--}
-grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-grpcWebMessage overRead options procedure answer =
-    bytesMessage overRead options procedure (GrpcWeb.read otherFailure answer)
-
-
-{-| Connect's reading of a JSON answer: success is status 200.
--}
-connectRead : Http.Response String -> Result Error GoodText
-connectRead answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            if metadata.statusCode /= 200 then
-                Err (failure metadata raw)
-
-            else
-                Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
-
-        _ ->
-            Err (otherFailure answer)
-
-
-{-| Transcoding's: success is any 2xx, an empty body reading as `{}`, and the
-response is read from the field the route's `response_body` names.
--}
-transcodeRead : Maybe String -> Http.Response String -> Result Error GoodText
-transcodeRead responseBody answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            Ok
-                { metadata = metadata
-                , raw = raw
-                , text = orEmptyObject raw
-                , field = responseBody
-                }
-
-        _ ->
-            Err (otherFailure answer)
-
-
-{-| Connect's reading of a protobuf binary answer: a 200 must come as
-`application/proto` or with no content type, and is the response's
-binary; every other answer is JSON, read as under the JSON codec.
--}
-connectProtoRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
-connectProtoRead answer =
-    ( Internal.metadataOf answer
-    , case answer of
-        Http.GoodStatus_ metadata raw ->
-            if metadata.statusCode /= 200 then
-                Err (bytesFailure answer)
-
-            else
-                case contentType metadata of
-                    Just other ->
-                        if other == "application/proto" then
-                            Ok { metadata = metadata, raw = raw, message = raw }
-
-                        else
-                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (bytesAnswer metadata raw))
-
-                    Nothing ->
-                        Ok { metadata = metadata, raw = raw, message = raw }
-
-        _ ->
-            Err (bytesFailure answer)
-    )
+-- FAILURES
 
 
 {-| The error of a binary answer read as a failure: its body as UTF-8 text,
@@ -288,15 +197,6 @@ bytesAnswer metadata raw =
     , headers = metadata.headers
     , body = Rpc.Body.bytes raw
     }
-
-
-orEmptyObject : String -> String
-orEmptyObject raw =
-    if String.isEmpty (String.trim raw) then
-        "{}"
-
-    else
-        raw
 
 
 {-| The response decoder reading the answer as the field `responseBody` names,

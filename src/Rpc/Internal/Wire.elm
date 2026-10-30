@@ -2,159 +2,28 @@ module Rpc.Internal.Wire exposing
     ( base64
     , bytesTooLarge
     , bytesUnlimited
-    , connectGet
-    , connectGetBinary
-    , connectPost
-    , connectPostBinary
-    , connectTimeout
-    , connectTimeoutHeader
-    , grpcWeb
-    , grpcWebTimeout
     , jsonTooLarge
     , textUnlimited
-    , transcode
-    , transcodeTimeout
+    , timeoutMs
+    , trimSlash
     , usableTimeout
     , width
     )
 
-{-| The requests the protocols send: Connect's POST, and its GET of a method
-without side effects, as JSON or protobuf binary; transcoding's request over
-a route; gRPC-Web's framed POST. Not exposed; each is a top-level function a
-protocol constructor or modifier puts in a protocol (`Rpc.Internal.Protocol`),
-so a program carries only the builders of the protocols and options it
-names: a POST-only program no percent-encoding, a Connect program no route
-code or framing, a JSON program no elm/bytes.
+{-| What more than one protocol's requests share. Not exposed.
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Encode exposing (Value)
 import Proto.Bytes
-import Proto.Internal.Percent as Percent
-import Proto.Method exposing (Idempotency(..))
-import Proto.Route exposing (Route)
-import Rpc.Body as Body exposing (Body)
 import Rpc.Error as Error exposing (Reason)
-import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (Options, Settings)
-import Rpc.Request exposing (Request)
+import Rpc.Internal.Protocol exposing (Options)
 
 
 
--- CONNECT
-
-
-{-| Connect's POST of a request's JSON, every call POSTed.
--}
-connectPost : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
-connectPost _ settings _ json =
-    connectRequest settings (Body.text (Json.Encode.encode 0 (json ())))
-
-
-{-| Connect's GET of a call of a method without side effects, the JSON
-percent-encoded in the query, unless the URL would be longer than
-`maxGetUrl`; any other call is POSTed. `withConnectGet` installs it.
--}
-connectGet : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
-connectGet options settings _ json =
-    let
-        text =
-            Json.Encode.encode 0 (json ())
-    in
-    getOr options settings (Body.text text) (\() -> "encoding=json&message=" ++ Percent.percentEncode Percent.unreserved text)
-
-
-{-| Connect's POST of a request's protobuf binary, as `application/proto`.
--}
-connectPostBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-connectPostBinary _ _ settings encoder =
-    connectRequest settings (Body.bytes (Bytes.Encode.encode encoder))
-
-
-{-| Connect's GET under the proto codec: the binary as unpadded URL-safe
-base64 in the query.
--}
-connectGetBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-connectGetBinary toBase64 options settings encoder =
-    let
-        binary =
-            Bytes.Encode.encode encoder
-    in
-    getOr options settings (Body.bytes binary) (\() -> "base64=1&encoding=proto&message=" ++ base64Url (toBase64 binary))
-
-
-{-| A GET when the method has no side effects and the URL is within the
-limit, built only then; else the POST of `body`. The query parameters are
-in the order the protocol recommends, so a cache keys one request one way.
--}
-getOr : Options -> Settings -> Body -> (() -> String) -> Request
-getOr options settings body getQuery =
-    let
-        get =
-            if settings.idempotency == IdempotencyNoSideEffects then
-                let
-                    whole =
-                        connectUrl settings ++ "?connect=v1&" ++ getQuery ()
-                in
-                case options.maxGetUrl of
-                    Just limit ->
-                        if String.length whole <= limit then
-                            Just whole
-
-                        else
-                            Nothing
-
-                    Nothing ->
-                        Just whole
-
-            else
-                Nothing
-    in
-    case get of
-        Just url ->
-            { method = "GET"
-            , url = url
-            , headers = settings.headers ++ connectTimeoutHeader settings.timeout
-            , body = Body.none
-            , timeout = settings.timeout
-            , withCredentials = settings.withCredentials
-            }
-
-        Nothing ->
-            connectRequest settings body
-
-
-connectRequest : Settings -> Body -> Request
-connectRequest settings body =
-    { method = "POST"
-    , url = connectUrl settings
-    , headers = settings.headers ++ ( "Connect-Protocol-Version", "1" ) :: connectTimeoutHeader settings.timeout
-    , body = body
-    , timeout = settings.timeout
-    , withCredentials = settings.withCredentials
-    }
-
-
-{-| `Connect-Timeout-Ms`, when there is a timeout.
--}
-connectTimeoutHeader : Maybe Float -> List ( String, String )
-connectTimeoutHeader timeout =
-    case timeout of
-        Just ms ->
-            [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
-
-        Nothing ->
-            []
-
-
-{-| The URL Connect sends a call to: the base URL and the call's procedure
-path, `/service/method`.
--}
-connectUrl : Settings -> String
-connectUrl settings =
-    trimSlash settings.baseUrl ++ settings.procedure
+-- BYTES
 
 
 {-| Bytes as standard base64, the binary protocols' writer for a GET's
@@ -170,104 +39,6 @@ base64 =
 width : Bytes -> Int
 width =
     Bytes.width
-
-
-{-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
-binary.
--}
-base64Url : String -> String
-base64Url =
-    String.foldr
-        (\char done ->
-            case char of
-                '+' ->
-                    String.cons '-' done
-
-                '/' ->
-                    String.cons '_' done
-
-                '=' ->
-                    done
-
-                _ ->
-                    String.cons char done
-        )
-        ""
-
-
-
--- TRANSCODING
-
-
-{-| Transcoding's request over the call's route: the route's method, its
-path and query, its body; or, for a method without routes, the request
-Connect would POST (the implicit route).
--}
-transcode : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
-transcode options settings route json =
-    case route of
-        Just r ->
-            { method = r.method
-            , url = trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
-            , headers = settings.headers
-            , body =
-                case r.body of
-                    Just body ->
-                        Body.text (Json.Encode.encode 0 body)
-
-                    Nothing ->
-                        Body.none
-            , timeout = settings.timeout
-            , withCredentials = settings.withCredentials
-            }
-
-        Nothing ->
-            connectPost options settings route json
-
-
-query : List ( String, String ) -> String
-query pairs =
-    case pairs of
-        [] ->
-            ""
-
-        _ ->
-            "?"
-                ++ String.join "&"
-                    (List.map
-                        (\( name, value ) ->
-                            Percent.percentEncode Percent.unreserved name ++ "=" ++ Percent.percentEncode Percent.unreserved value
-                        )
-                        pairs
-                    )
-
-
-
--- GRPC-WEB
-
-
-{-| gRPC-Web's POST to the URL Connect uses: the request's binary in one
-framed message, sent as `application/grpc-web+proto` with `X-Grpc-Web`, and
-the timeout as `grpc-timeout`.
--}
-grpcWeb : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-grpcWeb _ _ settings encoder =
-    { method = "POST"
-    , url = connectUrl settings
-    , headers =
-        settings.headers
-            ++ ( "X-Grpc-Web", "1" )
-            :: (case settings.timeout of
-                    Just ms ->
-                        [ ( "grpc-timeout", GrpcWeb.timeout ms ) ]
-
-                    Nothing ->
-                        []
-               )
-    , body = Body.bytesAs "application/grpc-web+proto" (GrpcWeb.frame encoder)
-    , timeout = settings.timeout
-    , withCredentials = settings.withCredentials
-    }
 
 
 
@@ -324,33 +95,6 @@ bytesUnlimited _ _ _ =
 
 
 -- TIMEOUTS
-
-
-{-| Connect carries a timeout in `Connect-Timeout-Ms`.
--}
-connectTimeout : Maybe Route -> Maybe ( String, Float -> String )
-connectTimeout _ =
-    Just ( "Connect-Timeout-Ms", timeoutMs )
-
-
-{-| Transcoding carries none over a route, and Connect's over the implicit
-route.
--}
-transcodeTimeout : Maybe Route -> Maybe ( String, Float -> String )
-transcodeTimeout route =
-    case route of
-        Just _ ->
-            Nothing
-
-        Nothing ->
-            Just ( "Connect-Timeout-Ms", timeoutMs )
-
-
-{-| gRPC-Web carries a timeout in `grpc-timeout`.
--}
-grpcWebTimeout : Maybe ( String, Float -> String )
-grpcWebTimeout =
-    Just ( "grpc-timeout", GrpcWeb.timeout )
 
 
 {-| A positive whole number of milliseconds, at most ten digits, as the

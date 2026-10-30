@@ -35,7 +35,10 @@ Protocols built alike are `==`.
 import Json.Encode exposing (Value)
 import Proto.Internal.Codec
 import Rpc.Internal.Answer as Answer
+import Rpc.Internal.Connect as Connect
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Protocol as Internal exposing (Options, Wire(..))
+import Rpc.Internal.Transcode as Transcode
 import Rpc.Internal.Wire as Wire
 
 
@@ -92,12 +95,12 @@ connect =
         , options = noOptions
         , wire =
             Text
-                { build = Wire.connectPost
+                { build = Connect.connectPost
                 , routed = False
-                , message = Answer.connectMessage
+                , message = Connect.connectMessage
                 , tooLarge = Wire.textUnlimited
                 , overRead = Wire.textUnlimited
-                , timeoutHeader = Wire.connectTimeout
+                , timeoutHeader = Connect.connectTimeout
                 }
         }
 
@@ -114,11 +117,11 @@ connectProto =
         , options = noOptions
         , wire =
             Binary
-                { build = Wire.connectPostBinary
-                , message = Answer.connectProtoMessage
+                { build = Connect.connectPostBinary
+                , message = Connect.connectProtoMessage
                 , tooLarge = Wire.bytesUnlimited
                 , overRead = Wire.bytesUnlimited
-                , timeoutHeader = Wire.connectTimeout Nothing
+                , timeoutHeader = Connect.connectTimeout Nothing
                 , base64 = Wire.base64
                 , width = Wire.width
                 }
@@ -138,12 +141,12 @@ transcode =
         , options = noOptions
         , wire =
             Text
-                { build = Wire.transcode
+                { build = Transcode.transcode
                 , routed = True
-                , message = Answer.transcodeMessage
+                , message = Transcode.transcodeMessage
                 , tooLarge = Wire.textUnlimited
                 , overRead = Wire.textUnlimited
-                , timeoutHeader = Wire.transcodeTimeout
+                , timeoutHeader = Transcode.transcodeTimeout
                 }
         }
 
@@ -172,11 +175,11 @@ grpcWeb =
         , options = noOptions
         , wire =
             Binary
-                { build = Wire.grpcWeb
-                , message = Answer.grpcWebMessage
+                { build = GrpcWeb.grpcWeb
+                , message = GrpcWeb.grpcWebMessage
                 , tooLarge = Wire.bytesUnlimited
                 , overRead = Wire.bytesUnlimited
-                , timeoutHeader = Wire.grpcWebTimeout
+                , timeoutHeader = GrpcWeb.grpcWebTimeout
                 , base64 = Wire.base64
                 , width = Wire.width
                 }
@@ -205,10 +208,10 @@ withConnectGet (Internal.Protocol p) =
                 , wire =
                     case p.wire of
                         Text wire ->
-                            Text { wire | build = Wire.connectGet }
+                            Text { wire | build = Connect.connectGet }
 
                         Binary wire ->
-                            Binary { wire | build = Wire.connectGetBinary }
+                            Binary { wire | build = Connect.connectGetBinary }
             }
 
     else
