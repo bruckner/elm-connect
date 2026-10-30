@@ -17,6 +17,13 @@ rank-2 types, so a record field cannot hold a function polymorphic in
 them): they build from and read to JSON values or bytes, and the method's
 codecs, which the call holds, do the rest.
 
+This module holds the types only. A protocol's module
+(`Rpc.Internal.Connect`, `Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`)
+holds every function `Rpc.Protocol` installs for it; `Rpc.Internal.Answer`
+holds what every reader shares; `Rpc.Internal.Http` holds what every builder
+shares and what elm/http accepts; and `Rpc.Internal.Plan` is the one place a
+method's codecs meet the protocol's functions.
+
 -}
 
 import Bytes exposing (Bytes)

@@ -37,9 +37,9 @@ import Proto.Internal.Codec
 import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.GrpcWeb as GrpcWeb
+import Rpc.Internal.Http as Http
 import Rpc.Internal.Protocol as Internal exposing (Options, Wire(..))
 import Rpc.Internal.Transcode as Transcode
-import Rpc.Internal.Wire as Wire
 
 
 {-| A protocol speaking `codec`. It is opaque: pick one of the values below.
@@ -98,8 +98,8 @@ connect =
                 { build = Connect.connectPost
                 , routed = False
                 , message = Connect.connectMessage
-                , tooLarge = Wire.textUnlimited
-                , overRead = Wire.textUnlimited
+                , tooLarge = Http.textUnlimited
+                , overRead = Http.textUnlimited
                 , timeoutHeader = Connect.connectTimeout
                 }
         }
@@ -119,11 +119,11 @@ connectProto =
             Binary
                 { build = Connect.connectPostBinary
                 , message = Connect.connectProtoMessage
-                , tooLarge = Wire.bytesUnlimited
-                , overRead = Wire.bytesUnlimited
+                , tooLarge = Http.bytesUnlimited
+                , overRead = Http.bytesUnlimited
                 , timeoutHeader = Connect.connectTimeout Nothing
-                , base64 = Wire.base64
-                , width = Wire.width
+                , base64 = Http.base64
+                , width = Http.width
                 }
         }
 
@@ -144,8 +144,8 @@ transcode =
                 { build = Transcode.transcode
                 , routed = True
                 , message = Transcode.transcodeMessage
-                , tooLarge = Wire.textUnlimited
-                , overRead = Wire.textUnlimited
+                , tooLarge = Http.textUnlimited
+                , overRead = Http.textUnlimited
                 , timeoutHeader = Transcode.transcodeTimeout
                 }
         }
@@ -177,11 +177,11 @@ grpcWeb =
             Binary
                 { build = GrpcWeb.grpcWeb
                 , message = GrpcWeb.grpcWebMessage
-                , tooLarge = Wire.bytesUnlimited
-                , overRead = Wire.bytesUnlimited
+                , tooLarge = Http.bytesUnlimited
+                , overRead = Http.bytesUnlimited
                 , timeoutHeader = GrpcWeb.grpcWebTimeout
-                , base64 = Wire.base64
-                , width = Wire.width
+                , base64 = Http.base64
+                , width = Http.width
                 }
         }
 
@@ -277,10 +277,10 @@ withWriteMaxBytes limit (Internal.Protocol p) =
             , wire =
                 case p.wire of
                     Text wire ->
-                        Text { wire | tooLarge = Wire.jsonTooLarge }
+                        Text { wire | tooLarge = Http.jsonTooLarge }
 
                     Binary wire ->
-                        Binary { wire | tooLarge = Wire.bytesTooLarge }
+                        Binary { wire | tooLarge = Http.bytesTooLarge }
         }
 
 

@@ -15,8 +15,8 @@ import Rpc.Body as Body
 import Rpc.Error exposing (Error, Reason)
 import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Connect as Connect
+import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (GoodText, Options, Settings)
-import Rpc.Internal.Wire as Wire
 import Rpc.Request exposing (Request)
 
 
@@ -33,7 +33,7 @@ transcode options settings route json =
     case route of
         Just r ->
             { method = r.method
-            , url = Wire.trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
+            , url = Internal.trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
             , headers = settings.headers
             , body =
                 case r.body of
@@ -77,7 +77,7 @@ transcodeTimeout route =
             Nothing
 
         Nothing ->
-            Just ( "Connect-Timeout-Ms", Wire.timeoutMs )
+            Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
 
 
 

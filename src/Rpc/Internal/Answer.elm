@@ -1,13 +1,11 @@
 module Rpc.Internal.Answer exposing
     ( answerOf
-    , badText
     , bytesAnswer
     , bytesFailure
     , bytesMessage
     , bytesOverRead
     , contentType
     , failure
-    , fieldDecoder
     , otherFailure
     , textOverRead
     , withinText
@@ -29,7 +27,6 @@ import Bytes exposing (Bytes)
 import Dict
 import Http
 import Json.Decode exposing (Decoder)
-import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
@@ -56,14 +53,6 @@ withinText overRead options good =
 
         Nothing ->
             Ok good
-
-
-{-| The error a successful text answer stands for when the response's
-decoder does not read it, keeping the answer.
--}
-badText : GoodText -> Json.Decode.Error -> Error
-badText good problem =
-    Error.BadResponse (Json.Decode.errorToString problem) (answerOf good.metadata good.raw)
 
 
 {-| A successful binary answer's message, unless it is over the read limit.
@@ -197,28 +186,6 @@ bytesAnswer metadata raw =
     , headers = metadata.headers
     , body = Rpc.Body.bytes raw
     }
-
-
-{-| The response decoder reading the answer as the field `responseBody` names,
-when it names one.
--}
-fieldDecoder : Maybe String -> Decoder res -> Decoder res
-fieldDecoder responseBody decoder =
-    case responseBody of
-        Nothing ->
-            decoder
-
-        Just key ->
-            Json.Decode.value
-                |> Json.Decode.andThen
-                    (\value ->
-                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
-                            Ok decoded ->
-                                Json.Decode.succeed decoded
-
-                            Err error ->
-                                Json.Decode.fail (Json.Decode.errorToString error)
-                    )
 
 
 {-| An answer as an error keeps it.

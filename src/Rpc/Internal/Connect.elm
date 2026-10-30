@@ -30,7 +30,6 @@ import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings)
-import Rpc.Internal.Wire as Wire
 import Rpc.Request exposing (Request)
 
 
@@ -135,7 +134,7 @@ connectTimeoutHeader : Maybe Float -> List ( String, String )
 connectTimeoutHeader timeout =
     case timeout of
         Just ms ->
-            [ ( "Connect-Timeout-Ms", Wire.timeoutMs ms ) ]
+            [ ( "Connect-Timeout-Ms", Internal.timeoutMs ms ) ]
 
         Nothing ->
             []
@@ -146,7 +145,7 @@ path, `/service/method`.
 -}
 connectUrl : Settings -> String
 connectUrl settings =
-    Wire.trimSlash settings.baseUrl ++ settings.procedure
+    Internal.trimSlash settings.baseUrl ++ settings.procedure
 
 
 {-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
@@ -176,7 +175,7 @@ base64Url =
 -}
 connectTimeout : Maybe Route -> Maybe ( String, Float -> String )
 connectTimeout _ =
-    Just ( "Connect-Timeout-Ms", Wire.timeoutMs )
+    Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
 
 
 
