@@ -108,8 +108,8 @@ import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
 import Rpc.Internal.Http as Internal
+import Rpc.Internal.Plan as Plan exposing (Plan, Reader(..))
 import Rpc.Internal.Retry
-import Rpc.Internal.Send as Send exposing (Plan, Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol exposing (Protocol)
 import Rpc.Request
@@ -230,7 +230,7 @@ task : Client codec -> Call codec req res -> Task Error res
 task cl c =
     let
         plan =
-            Send.plan cl c
+            Plan.plan cl c
     in
     fromPlan cl c plan (plan.request ())
 
@@ -249,12 +249,12 @@ send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd ms
 send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
     let
         plan =
-            Send.plan client_ c
+            Plan.plan client_ c
 
         sent =
             plan.request ()
     in
-    if Rpc.Internal.Call.retryIn cl.retry c == Nothing && Send.refused cl.baseUrl plan sent == Nothing then
+    if Rpc.Internal.Call.retryIn cl.retry c == Nothing && Plan.refused cl.baseUrl plan sent == Nothing then
         Internal.send
             (case plan.reader of
                 TextReader read ->
@@ -322,7 +322,7 @@ taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Er
 taskTraced ((Client.Client cl) as client_) c =
     let
         plan =
-            Send.plan client_ c
+            Plan.plan client_ c
 
         sent =
             plan.request ()
@@ -388,7 +388,7 @@ refuses those.
 -}
 request : Client codec -> Call codec req res -> Request
 request cl c =
-    (Send.plan cl c).request ()
+    (Plan.plan cl c).request ()
 
 
 {-| What an answer read as text means, for a client speaking JSON: the decoded
@@ -396,7 +396,7 @@ response, or the error.
 -}
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
 response cl c answer =
-    case (Send.plan cl c).reader of
+    case (Plan.plan cl c).reader of
         TextReader read ->
             read answer
 
@@ -417,7 +417,7 @@ response cl c answer =
 -}
 responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
 responseBytes cl c answer =
-    case (Send.plan cl c).reader of
+    case (Plan.plan cl c).reader of
         BytesReader read ->
             Tuple.second (read answer)
 
@@ -466,7 +466,7 @@ ignored, as with [`task`](#task).
 -}
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 taskFromRequest cl c sent =
-    fromPlan cl c (Send.plan cl c) sent
+    fromPlan cl c (Plan.plan cl c) sent
 
 
 fromPlan : Client codec -> Call codec req res -> Plan res -> Request -> Task Error res
@@ -488,7 +488,7 @@ fromPlan cl c plan sent =
 -}
 attempt : Client codec -> Call codec req res -> Plan res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
 attempt (Client.Client cl) c plan sent =
-    case Send.refused cl.baseUrl plan sent of
+    case Plan.refused cl.baseUrl plan sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
@@ -505,7 +505,7 @@ attempt (Client.Client cl) c plan sent =
                             BytesReader read ->
                                 Http.bytesResolver (read >> Ok)
                         )
-                        (Send.withBudget plan left sent)
+                        (Plan.withBudget plan left sent)
                 )
 
 
@@ -514,7 +514,7 @@ retry policy's deadline when there is one.
 -}
 firstAttempt : Client codec -> Call codec req res -> Plan res -> Request -> Request
 firstAttempt (Client.Client cl) c plan sent =
-    Send.withBudget plan
+    Plan.withBudget plan
         (Rpc.Internal.Call.retryIn cl.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.startBudget policy 0))
         sent
 

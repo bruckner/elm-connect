@@ -1,4 +1,4 @@
-module Rpc.Internal.Send exposing (Plan, Reader(..), plan, refused, withBudget)
+module Rpc.Internal.Plan exposing (Plan, Reader(..), plan, refused, withBudget)
 
 {-| How a call goes over a client's protocol: the one place a call's method
 meets the protocol's functions. Not exposed; `Rpc` sends through it.

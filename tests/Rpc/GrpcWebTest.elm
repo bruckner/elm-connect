@@ -17,7 +17,7 @@ import Rpc.Body
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
-import Rpc.Internal.Send exposing (Reader(..))
+import Rpc.Internal.Plan exposing (Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol
 import Rpc.Trace
@@ -271,7 +271,7 @@ requests =
                         Rpc.Client.withTimeout 1000 grpcWeb
                 in
                 Rpc.request client c
-                    |> Rpc.Internal.Send.withBudget (Rpc.Internal.Send.plan client c) (Just 299.5)
+                    |> Rpc.Internal.Plan.withBudget (Rpc.Internal.Plan.plan client c) (Just 299.5)
                     |> Expect.all
                         [ headerNamed "grpc-timeout" >> Expect.equal [ ( "grpc-timeout", "300m" ) ]
                         , .timeout >> Expect.equal (Just 299.5)
@@ -411,7 +411,7 @@ limits =
         , test "write: the message is measured" <|
             \_ ->
                 [ 4, 3 ]
-                    |> List.map (\limit -> (Rpc.Internal.Send.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.grpcWeb)) (getNote { name = "hi" })).tooLarge ())
+                    |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.grpcWeb)) (getNote { name = "hi" })).tooLarge ())
                     |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 3, size = 4 }) ]
         ]
 
@@ -426,7 +426,7 @@ traces =
                     getNote { name = "x" }
 
                 plan =
-                    Rpc.Internal.Send.plan grpcWeb c
+                    Rpc.Internal.Plan.plan grpcWeb c
 
                 ( read, result ) =
                     case plan.reader of

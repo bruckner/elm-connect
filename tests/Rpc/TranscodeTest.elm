@@ -17,7 +17,7 @@ import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
-import Rpc.Internal.Send
+import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
 
@@ -109,7 +109,7 @@ over a client.
 -}
 invalidPathValue : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json Value String -> Maybe { field : String, template : String }
 invalidPathValue client c =
-    (Rpc.Internal.Send.plan client c).invalid
+    (Rpc.Internal.Plan.plan client c).invalid
 
 
 json : String -> Value
