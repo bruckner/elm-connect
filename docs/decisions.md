@@ -1066,6 +1066,30 @@ with it as without; naming it costs 689 B on the notes program and
 decoder that the notes program already carries. Where: design §5.1,
 §5.3 (gRPC-Web), §7.
 
+### Internal runtime modules by protocol
+
+*2026-10-29.*
+
+The runtime's internal modules are one protocol, one module:
+`Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
+`Rpc.Internal.GrpcWeb` each hold every function `Rpc.Protocol`
+installs for that protocol, builders and readers alike;
+`Rpc.Internal.Answer` holds what every reader shares (a failure's
+`Error`, the read limits); `Rpc.Internal.Http` what every builder
+shares and what elm/http accepts; and `Rpc.Internal.Plan`, which was
+`Rpc.Internal.Send`, is the one place a method's codecs meet the
+protocol's functions. The split was by phase, request builders in
+`Rpc.Internal.Wire` and answer readers in `Answer`, until gRPC-Web
+landed with its framing and reading in a module of its own and thin
+installed wrappers back in the other two: the tree then ran on two
+axes, and gRPC-Web had three homes. gRPC-Web's module set the shape,
+and the other protocols follow it, so a protocol's code is in one place
+and a new protocol adds a module rather than a section in two. The move
+changes no definition: an unoptimized build of the examples is the same
+text with the moved names renamed, and an `--optimize` build differs
+only in which short names the compiler gives record fields, which
+follows module names. Where: design §5.2.
+
 ## Input and versioning
 
 

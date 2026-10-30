@@ -113,12 +113,14 @@ that two public modules must build or match keeps its constructor in one
 `Rpc.Internal.Protocol` and `Rpc.Internal.Client`, built by
 `Rpc.Protocol` and `Rpc.Client` and read by `Rpc`), and
 implementation stays out of the public modules so that they read as API:
-`Rpc.Internal.Send` plans a call over its client's protocol, its
+`Rpc.Internal.Plan` plans a call over its client's protocol, its
 binding's route included,
-`Proto.Internal.Interpret` reads a binding written as data, `Wire` builds the
-request each protocol sends, `Answer` reads an answer into a result or
-an error, `GrpcWeb` frames gRPC-Web's request and reads its answer's
-frames and trailers, `Retry` runs the attempts, `Http` adapts elm/http (§5.2). They
+`Proto.Internal.Interpret` reads a binding written as data, `Connect`,
+`Transcode` and `GrpcWeb` each hold one protocol's request builders and
+answer readers (gRPC-Web's framing and trailers among them), `Answer`
+reads a failure into an error whatever the protocol, `Retry` runs the
+attempts, `Http` adapts elm/http and holds what the builders share
+(§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single
 module would form an import cycle.
 

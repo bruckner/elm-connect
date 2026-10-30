@@ -346,8 +346,9 @@ rpc shared call =
   `Proto.Method` indexes a method by and `Rpc.Protocol` and `Rpc`
   alias, a leaf so that no `Proto` module imports `Rpc` for them, §5.1),
   or implementation kept out of the public modules so that they read as
-  API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Send`,
-  `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2;
+  API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Plan`,
+  the protocols' `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
+  `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Answer`, §5.2;
   `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
   protocols share, under `Proto` so that the route helpers reach no
   `Rpc` module, rule 7). A type one
@@ -2563,19 +2564,27 @@ cycle (§3.1, rule 5); `Rpc` aliases both, so annotations name them
 `Rpc.Request` and `Rpc.Response`. `Rpc` itself holds
 the public API and the running of a call (sending, retrying, timing a
 trace); the work it runs is internal, a module per responsibility:
-`Rpc.Internal.Send` is the one place a call's method meets its
+`Rpc.Internal.Plan` is the one place a call's method meets its
 client's protocol, a `plan` made by one `case` on the wire kind (text
 or bytes) that holds the request to build, the route's invalid path
 value and `response_body` (the route itself built once, by the
 method's route function, §4), the write-limit check and the answer's
-reader, monomorphic from there on;
-`Rpc.Internal.Wire` holds the request builders the protocols install,
-`Rpc.Internal.Answer` the answer readers, reading an answer into a
-result or an `Error`, `Rpc.Internal.GrpcWeb` gRPC-Web's framing and
-trailers, which only `grpcWeb`'s builder and reader reach,
-`Rpc.Internal.Retry` holds the policy math and the attempt loop, and
-`Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
-whether a request can be sent. The data modules, which generated code
+reader, monomorphic from there on.
+The functions a protocol is built of are one module per protocol, each
+holding every function `Rpc.Protocol` installs for it:
+`Rpc.Internal.Connect` Connect's POST and GET builders, for either
+codec, and its readers; `Rpc.Internal.Transcode` the request over a
+route and its reader; `Rpc.Internal.GrpcWeb` gRPC-Web's builder,
+timeout format and reader, with the framing and trailers they share,
+which only the `grpcWeb` value reaches. `Rpc.Internal.Answer` holds what
+every reader shares, reading a failure into an `Error` whatever the
+protocol and checking the read limit; `Rpc.Internal.Protocol` holds the
+types alone. `Rpc.Internal.Retry` holds the policy math and the attempt
+loop, and `Rpc.Internal.Http` is the elm/http adapter, with the checks
+that decide whether a request can be sent and what more than one
+protocol's builder shares (the timeout header's milliseconds, the base
+URL's trailing slash, the binary protocols' `width` and `base64`, the
+write limits). The data modules, which generated code
 calls whatever the protocol, are the codecs (`Proto.Json`,
 `Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`,
 `Proto.Bytes`), the typed values
@@ -3079,9 +3088,9 @@ conformance suite's gRPC-Web client cases (§7).
   response itself through the pure halves has only its headers: the
   runtime has no public reader of a body's trailers.
 - **Its code is the protocol's.** Every gRPC-Web function, the builder
-  (`Rpc.Internal.Wire.grpcWeb`), the reader (`Answer.grpcWebMessage`)
-  and the timeout format, is a top-level function only the `grpcWeb`
-  value installs in its `Binary` wire, and `Send.plan` keeps its one
+  (`grpcWeb`), the reader (`grpcWebMessage`) and the timeout format, is
+  a top-level function of `Rpc.Internal.GrpcWeb` that only the `grpcWeb`
+  value installs in its `Binary` wire, and `Plan.plan` keeps its one
   `case` on the wire kind, with no gRPC-Web arm. A program that never
   names `grpcWeb` carries none of it: Eliza and the notes example over
   Connect, as JSON or as protobuf binary, compile to the same bytes with
