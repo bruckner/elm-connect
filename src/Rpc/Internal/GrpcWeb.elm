@@ -10,7 +10,7 @@ and a four-byte big-endian length before its bytes.
 Not exposed. `Rpc.Protocol.grpcWeb` installs `grpcWeb`, `grpcWebTimeout` and
 `grpcWebMessage`, and nothing else reaches this module, so a program that
 never names it carries none of it. A failure that is not a gRPC-Web answer is
-read as every protocol's is (`Rpc.Internal.Answer`).
+read as every protocol's is (`Rpc.Internal.Status`).
 
 -}
 
@@ -27,10 +27,10 @@ import Proto.Internal.Percent as Percent
 import Rpc.Body
 import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
-import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, Options, Settings)
+import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
 
@@ -74,7 +74,7 @@ grpcWebTimeout =
 -}
 grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
 grpcWebMessage overRead options procedure answer =
-    Answer.bytesMessage overRead options procedure (read Answer.otherFailure answer)
+    Internal.bytesMessage overRead options procedure (read Status.otherFailure answer)
 
 
 

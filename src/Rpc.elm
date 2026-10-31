@@ -104,12 +104,12 @@ import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code)
 import Rpc.Error
-import Rpc.Internal.Answer
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Plan as Plan exposing (Plan, Reader(..))
 import Rpc.Internal.Retry
+import Rpc.Internal.Status
 import Rpc.Internal.Trace
 import Rpc.Protocol exposing (Protocol)
 import Rpc.Request
@@ -403,7 +403,7 @@ response cl c answer =
         BytesReader _ ->
             -- Not reached: a protocol speaking JSON holds a text wire. Read
             -- as the failure it would be, so the branch adds no reader.
-            Err (Rpc.Internal.Answer.otherFailure answer)
+            Err (Rpc.Internal.Status.otherFailure answer)
 
 
 {-| What an answer read as bytes means, for a client speaking protobuf binary.
@@ -424,7 +424,7 @@ responseBytes cl c answer =
         TextReader _ ->
             -- Not reached: a protocol speaking protobuf binary holds a bytes
             -- wire. Read as the failure it would be, as `response` does.
-            Err (Rpc.Internal.Answer.bytesFailure answer)
+            Err (Rpc.Internal.Status.bytesFailure answer)
 
 
 {-| Split an answer's response headers as a Connect unary answer carries its

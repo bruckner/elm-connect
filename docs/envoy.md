@@ -292,7 +292,7 @@ matches, 400 for an unknown query parameter, 503 when the service is
 unreachable) the Connect error shape, `{"code": "not_found", "message":
 "…"}`, with a Lua filter. The runtime reads either shape, a Connect
 error body or a `google.rpc.Status` one, over every protocol
-(`src/Rpc/Internal/Answer.elm`), so such an answer arrives as an `RpcStatus`
+(`src/Rpc/Internal/Status.elm`), so such an answer arrives as an `RpcStatus`
 error with source `ConnectBody` and the text as its message. The cost:
 the filter replaces every error body that is neither gRPC's nor JSON,
 so a plain-text answer a deployment wants kept has to be excluded in the

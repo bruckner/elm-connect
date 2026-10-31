@@ -117,10 +117,10 @@ implementation stays out of the public modules so that they read as API:
 binding's route included,
 `Proto.Internal.Interpret` reads a binding written as data, `Connect`,
 `Transcode` and `GrpcWeb` each hold one protocol's request builders and
-answer readers (gRPC-Web's framing and trailers among them), `Answer`
-reads a failure into an error whatever the protocol, `Retry` runs the
-attempts, `Http` adapts elm/http and holds what the builders share
-(§5.2). They
+answer readers (gRPC-Web's framing and trailers among them), `Status`
+reads a failure's status into an error whatever the protocol, `Retry`
+runs the attempts, `Http` adapts elm/http and holds what the protocols
+share, the read and write limits among it (§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single
 module would form an import cycle.
 

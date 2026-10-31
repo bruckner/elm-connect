@@ -1074,9 +1074,9 @@ The runtime's internal modules are one protocol, one module:
 `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
 `Rpc.Internal.GrpcWeb` each hold every function `Rpc.Protocol`
 installs for that protocol, builders and readers alike;
-`Rpc.Internal.Answer` holds what every reader shares (a failure's
-`Error`, the read limits); `Rpc.Internal.Http` what every builder
-shares and what elm/http accepts; and `Rpc.Internal.Plan`, which was
+`Rpc.Internal.Status` reads a failure's status into an `Error`
+whatever the protocol; `Rpc.Internal.Http` what every builder shares,
+the read and write limits, and what elm/http accepts; and `Rpc.Internal.Plan`, which was
 `Rpc.Internal.Send`, is the one place a method's codecs meet the
 protocol's functions. The split was by phase, request builders in
 `Rpc.Internal.Wire` and answer readers in `Answer`, until gRPC-Web
@@ -1088,7 +1088,12 @@ and a new protocol adds a module rather than a section in two. The move
 changes no definition: an unoptimized build of the examples is the same
 text with the moved names renamed, and an `--optimize` build differs
 only in which short names the compiler gives record fields, which
-follows module names. Where: design §5.2.
+follows module names. A module named `Answer` held what every reader
+shared until the same pass dissolved it, so that each internal module's
+name says what it holds: the read limits and the checks applying them
+joined the write limits in `Http`, Connect's content-type reading went
+to `Connect`, and what remained, a failure's status read from any
+protocol's error shapes, is `Rpc.Internal.Status`. Where: design §5.2.
 
 ## Input and versioning
 

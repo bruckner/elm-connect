@@ -1,26 +1,11 @@
-module Rpc.Internal.Answer exposing
-    ( answerOf
-    , bytesAnswer
-    , bytesFailure
-    , bytesMessage
-    , bytesOverRead
-    , contentType
-    , failure
-    , otherFailure
-    , textOverRead
-    , withinText
-    )
+module Rpc.Internal.Status exposing (answerOf, bytesFailure, failure, header, otherFailure)
 
-{-| What every protocol's reading of an answer shares: the `Rpc.Error` a
-failure stands for, from a Connect error body, a `google.rpc.Status` body or
-gRPC status headers or trailers, whatever the protocol; the read limits; and
-the end of a successful answer's reading, text or bytes, against them. Not
-exposed. A protocol's own reading (which statuses succeed, where the status of
-a failure is, how a body is framed) is a top-level function in its module
-(`Rpc.Internal.Connect`, `Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`)
-that its constructor installs, and ends in these. `Rpc.response` and
-`Rpc.responseBytes` reach `otherFailure` and `bytesFailure` for the answer a
-call's codec rules out.
+{-| A failure's status as an `Rpc.Error`, from a Connect error body, a
+`google.rpc.Status` body, or gRPC status headers and trailers, whatever the
+protocol. Not exposed. Every protocol module (`Rpc.Internal.Connect`,
+`Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`) reaches it for an answer
+that is not its success, and `Rpc.response` and `Rpc.responseBytes` reach
+`otherFailure` and `bytesFailure` for the arm a call's codec rules out.
 -}
 
 import Bytes exposing (Bytes)
@@ -33,51 +18,9 @@ import Proto.Internal.Percent as Percent
 import Proto.Json
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Response exposing (Response)
-
-
-
--- SUCCESS
-
-
-{-| A successful text answer, unless it is over the read limit.
--}
-withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
-withinText overRead options good =
-    case overRead options good.raw of
-        Just reason ->
-            Err (Error.NoAnswer reason)
-
-        Nothing ->
-            Ok good
-
-
-{-| A successful binary answer's message, unless it is over the read limit.
--}
-bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
-bytesMessage overRead options procedure ( metadata, read ) =
-    ( metadata
-    , read
-        |> Result.andThen
-            (\good ->
-                case overRead options good.message of
-                    Just reason ->
-                        Err (Error.NoAnswer reason)
-
-                    Nothing ->
-                        Ok
-                            { bytes = good.message
-                            , bad = \() -> Error.BadResponse ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
-                            }
-            )
-    )
-
-
-
--- FAILURES
 
 
 {-| The error of a binary answer read as a failure: its body as UTF-8 text,
@@ -121,71 +64,6 @@ otherFailure answer =
 
         Http.NetworkError_ ->
             Error.NoAnswer Error.NetworkError
-
-
-{-| The answer's content type without its parameters, lowercased, whatever
-the header name's case.
--}
-contentType : Http.Metadata -> Maybe String
-contentType metadata =
-    header "content-type" metadata
-        |> Maybe.map
-            (\value ->
-                String.split ";" value
-                    |> List.head
-                    |> Maybe.withDefault ""
-                    |> String.trim
-                    |> String.toLower
-            )
-
-
-
--- LIMITS
-
-
-{-| Whether a successful text answer is over the read limit: its body as
-the browser decoded it, written back as UTF-8. Installed by
-`withReadMaxBytes`.
--}
-textOverRead : Options -> String -> Maybe Reason
-textOverRead options raw =
-    options.readMaxBytes
-        |> Maybe.andThen
-            (\limit ->
-                Internal.overLimit limit raw
-                    |> Maybe.map (\size -> Error.ResponseTooLarge { limit = limit, size = size })
-            )
-
-
-{-| Whether a successful binary answer's message is over the read limit.
--}
-bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
-bytesOverRead width options message =
-    options.readMaxBytes
-        |> Maybe.andThen
-            (\limit ->
-                let
-                    size =
-                        width message
-                in
-                if size > max 0 limit then
-                    Just (Error.ResponseTooLarge { limit = limit, size = size })
-
-                else
-                    Nothing
-            )
-
-
-{-| An answer of bytes as an error keeps it.
--}
-bytesAnswer : Http.Metadata -> Bytes -> Response
-bytesAnswer metadata raw =
-    { url = metadata.url
-    , statusCode = metadata.statusCode
-    , statusText = metadata.statusText
-    , headers = metadata.headers
-    , body = Rpc.Body.bytes raw
-    }
 
 
 {-| An answer as an error keeps it.

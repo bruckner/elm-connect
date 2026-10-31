@@ -4,7 +4,7 @@ module Rpc.Internal.Transcode exposing (transcode, transcodeMessage, transcodeTi
 implicit route, and its reading of an answer. Not exposed; `Rpc.Protocol.transcode`
 installs these functions (`Rpc.Internal.Protocol`), so a program that never
 names it carries none of its route code. A failure is read as every protocol's
-is (`Rpc.Internal.Answer`).
+is (`Rpc.Internal.Status`).
 -}
 
 import Http
@@ -13,10 +13,10 @@ import Proto.Internal.Percent as Percent
 import Proto.Route exposing (Route)
 import Rpc.Body as Body
 import Rpc.Error exposing (Error, Reason)
-import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (GoodText, Options, Settings)
+import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 
 
@@ -88,7 +88,7 @@ transcodeTimeout route =
 -}
 transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
 transcodeMessage overRead options responseBody answer =
-    transcodeRead responseBody answer |> Result.andThen (Answer.withinText overRead options)
+    transcodeRead responseBody answer |> Result.andThen (Internal.withinText overRead options)
 
 
 {-| Transcoding's: success is any 2xx, an empty body reading as `{}`, and the
@@ -106,7 +106,7 @@ transcodeRead responseBody answer =
                 }
 
         _ ->
-            Err (Answer.otherFailure answer)
+            Err (Status.otherFailure answer)
 
 
 orEmptyObject : String -> String

@@ -15,7 +15,7 @@ codec. Not exposed; `Rpc.Protocol.connect` and `connectProto` install these
 functions and `withConnectGet` the GET builders (`Rpc.Internal.Protocol`), so a
 program carries only the builders of the options it names: a POST-only program
 no percent-encoding, a JSON program no elm/bytes. A failure is read as every
-protocol's is (`Rpc.Internal.Answer`).
+protocol's is (`Rpc.Internal.Status`).
 -}
 
 import Bytes exposing (Bytes)
@@ -27,9 +27,9 @@ import Proto.Method exposing (Idempotency(..))
 import Proto.Route exposing (Route)
 import Rpc.Body as Body exposing (Body)
 import Rpc.Error as Error exposing (Error, Reason)
-import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings)
+import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 
 
@@ -186,14 +186,14 @@ connectTimeout _ =
 -}
 connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
 connectMessage overRead options _ answer =
-    connectRead answer |> Result.andThen (Answer.withinText overRead options)
+    connectRead answer |> Result.andThen (Internal.withinText overRead options)
 
 
 {-| Connect's message of a protobuf binary answer.
 -}
 connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
 connectProtoMessage overRead options procedure answer =
-    Answer.bytesMessage overRead options procedure (connectProtoRead answer)
+    Internal.bytesMessage overRead options procedure (connectProtoRead answer)
 
 
 {-| Connect's reading of a JSON answer: success is status 200.
@@ -203,13 +203,13 @@ connectRead answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             if metadata.statusCode /= 200 then
-                Err (Answer.failure metadata raw)
+                Err (Status.failure metadata raw)
 
             else
                 Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
 
         _ ->
-            Err (Answer.otherFailure answer)
+            Err (Status.otherFailure answer)
 
 
 {-| Connect's reading of a protobuf binary answer: a 200 must come as
@@ -222,20 +222,36 @@ connectProtoRead answer =
     , case answer of
         Http.GoodStatus_ metadata raw ->
             if metadata.statusCode /= 200 then
-                Err (Answer.bytesFailure answer)
+                Err (Status.bytesFailure answer)
 
             else
-                case Answer.contentType metadata of
+                case contentType metadata of
                     Just other ->
                         if other == "application/proto" then
                             Ok { metadata = metadata, raw = raw, message = raw }
 
                         else
-                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (Answer.bytesAnswer metadata raw))
+                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (Internal.bytesAnswer metadata raw))
 
                     Nothing ->
                         Ok { metadata = metadata, raw = raw, message = raw }
 
         _ ->
-            Err (Answer.bytesFailure answer)
+            Err (Status.bytesFailure answer)
     )
+
+
+{-| The answer's content type without its parameters, lowercased, whatever
+the header name's case.
+-}
+contentType : Http.Metadata -> Maybe String
+contentType metadata =
+    Status.header "content-type" metadata
+        |> Maybe.map
+            (\value ->
+                String.split ";" value
+                    |> List.head
+                    |> Maybe.withDefault ""
+                    |> String.trim
+                    |> String.toLower
+            )

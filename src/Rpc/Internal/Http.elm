@@ -1,6 +1,9 @@
 module Rpc.Internal.Http exposing
     ( badBaseUrl
     , base64
+    , bytesAnswer
+    , bytesMessage
+    , bytesOverRead
     , bytesText
     , bytesTooLarge
     , bytesUnlimited
@@ -11,6 +14,7 @@ module Rpc.Internal.Http exposing
     , send
     , splitTrailers
     , task
+    , textOverRead
     , textUnlimited
     , timeoutMs
     , trimSlash
@@ -19,6 +23,7 @@ module Rpc.Internal.Http exposing
     , validHeaderName
     , validHeaderValue
     , width
+    , withinText
     )
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
@@ -32,7 +37,9 @@ It also holds what more than one protocol's builder shares, each a top-level
 function a protocol module or `Rpc.Protocol` names (`Rpc.Internal.Protocol`),
 so a program carries only those its protocols and options reach: a timeout
 header's milliseconds, a base URL's trailing slash, the binary protocols'
-`width` and `base64`, and the write limits.
+`width` and `base64`, and both limit families: the write limits a request is
+checked against before it is sent, and the read limits a successful answer
+is checked against before it is decoded.
 
 -}
 
@@ -44,9 +51,10 @@ import Http
 import Json.Encode exposing (Value)
 import Proto.Bytes
 import Rpc.Body
-import Rpc.Error as Error exposing (Reason)
-import Rpc.Internal.Protocol exposing (Options)
+import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Request exposing (Request)
+import Rpc.Response exposing (Response)
 import Task exposing (Task)
 
 
@@ -424,3 +432,85 @@ each protocol's field has its own type.
 bytesUnlimited : a -> Options -> b -> Maybe Reason
 bytesUnlimited _ _ _ =
     Nothing
+
+
+
+-- READ LIMITS
+
+
+{-| A successful text answer, unless it is over the read limit.
+-}
+withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
+withinText overRead options good =
+    case overRead options good.raw of
+        Just reason ->
+            Err (Error.NoAnswer reason)
+
+        Nothing ->
+            Ok good
+
+
+{-| A successful binary answer's message, unless it is over the read limit.
+-}
+bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage overRead options procedure ( metadata, read ) =
+    ( metadata
+    , read
+        |> Result.andThen
+            (\good ->
+                case overRead options good.message of
+                    Just reason ->
+                        Err (Error.NoAnswer reason)
+
+                    Nothing ->
+                        Ok
+                            { bytes = good.message
+                            , bad = \() -> Error.BadResponse ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
+                            }
+            )
+    )
+
+
+{-| An answer of bytes as an error keeps it.
+-}
+bytesAnswer : Http.Metadata -> Bytes -> Response
+bytesAnswer metadata raw =
+    { url = metadata.url
+    , statusCode = metadata.statusCode
+    , statusText = metadata.statusText
+    , headers = metadata.headers
+    , body = Rpc.Body.bytes raw
+    }
+
+
+{-| Whether a successful text answer is over the read limit: its body as
+the browser decoded it, written back as UTF-8. Installed by
+`withReadMaxBytes`.
+-}
+textOverRead : Options -> String -> Maybe Reason
+textOverRead options raw =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                overLimit limit raw
+                    |> Maybe.map (\size -> Error.ResponseTooLarge { limit = limit, size = size })
+            )
+
+
+{-| Whether a successful binary answer's message is over the read limit.
+-}
+bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+bytesOverRead width_ options message =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                let
+                    size =
+                        width_ message
+                in
+                if size > max 0 limit then
+                    Just (Error.ResponseTooLarge { limit = limit, size = size })
+
+                else
+                    Nothing
+            )

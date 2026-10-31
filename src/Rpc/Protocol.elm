@@ -34,7 +34,6 @@ Protocols built alike are `==`.
 
 import Json.Encode exposing (Value)
 import Proto.Internal.Codec
-import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Http
@@ -253,10 +252,10 @@ withReadMaxBytes limit (Internal.Protocol p) =
             , wire =
                 case p.wire of
                     Text wire ->
-                        Text { wire | overRead = Answer.textOverRead }
+                        Text { wire | overRead = Http.textOverRead }
 
                     Binary wire ->
-                        Binary { wire | overRead = Answer.bytesOverRead }
+                        Binary { wire | overRead = Http.bytesOverRead }
         }
 
 

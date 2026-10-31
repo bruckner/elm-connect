@@ -348,7 +348,7 @@ rpc shared call =
   or implementation kept out of the public modules so that they read as
   API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Plan`,
   the protocols' `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
-  `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Answer`, §5.2;
+  `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Status`, §5.2;
   `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
   protocols share, under `Proto` so that the route helpers reach no
   `Rpc` module, rule 7). A type one
@@ -2576,15 +2576,17 @@ holding every function `Rpc.Protocol` installs for it:
 codec, and its readers; `Rpc.Internal.Transcode` the request over a
 route and its reader; `Rpc.Internal.GrpcWeb` gRPC-Web's builder,
 timeout format and reader, with the framing and trailers they share,
-which only the `grpcWeb` value reaches. `Rpc.Internal.Answer` holds what
-every reader shares, reading a failure into an `Error` whatever the
-protocol and checking the read limit; `Rpc.Internal.Protocol` holds the
-types alone. `Rpc.Internal.Retry` holds the policy math and the attempt
-loop, and `Rpc.Internal.Http` is the elm/http adapter, with the checks
-that decide whether a request can be sent and what more than one
-protocol's builder shares (the timeout header's milliseconds, the base
-URL's trailing slash, the binary protocols' `width` and `base64`, the
-write limits). The data modules, which generated code
+which only the `grpcWeb` value reaches. `Rpc.Internal.Status` reads a
+failure's status into an `Error` whatever the protocol (a Connect error
+body, a `google.rpc.Status` body, gRPC status headers or trailers);
+`Rpc.Internal.Protocol` holds the types alone. `Rpc.Internal.Retry`
+holds the policy math and the attempt loop, and `Rpc.Internal.Http` is
+the elm/http adapter, with the checks that decide whether a request can
+be sent and what more than one protocol shares (the timeout header's
+milliseconds, the base URL's trailing slash, the binary protocols'
+`width` and `base64`, and both limit families: the write limits checked
+before a request is sent, the read limits a successful answer is checked
+against before it is decoded). The data modules, which generated code
 calls whatever the protocol, are the codecs (`Proto.Json`,
 `Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`,
 `Proto.Bytes`), the typed values
