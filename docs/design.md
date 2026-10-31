@@ -342,9 +342,7 @@ rpc shared call =
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
   `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
   `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
-  `Proto.Message` holds, §5.5; `Proto.Internal.Codec`, the codec tags
-  `Proto.Method` indexes a method by and `Rpc.Protocol` and `Rpc`
-  alias, a leaf so that no `Proto` module imports `Rpc` for them, §5.1),
+  `Proto.Message` holds, §5.5),
   or implementation kept out of the public modules so that they read as
   API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Plan`,
   the protocols' `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
@@ -360,7 +358,12 @@ rpc shared call =
   of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
   functions that make them stay in `Rpc`, because they take a `Client`
   and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
-  reads an answer into the errors that keep a `Response`. (6) The JSON
+  reads an answer into the errors that keep a `Response`. The codec
+  tags are such a leaf too, `Proto.Codec`: `Proto.Method` indexes a
+  method by them and `Rpc.Protocol` and `Rpc` alias them, so they sit
+  under `Proto`, where `Proto.Method` reaches them without importing
+  `Rpc` (rule 7), and are public, so that `Proto.Method`'s signatures
+  name a module the package site documents (§5.1). (6) The JSON
   helpers (`Proto.Json`) are named by role: a decoder is a noun naming
   what it reads (`int64`, `timestamp`, `boolMap`, `any`), a value's
   encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`,
@@ -371,10 +374,9 @@ rpc shared call =
   noun, and no helper shares a name with an elm/json function of
   another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
-  module imports an `Rpc` one, and `Rpc` reads four internal modules of
-  the `Proto` side, `Proto.Internal.Any`, `Proto.Internal.Codec` (the
-  codec tags), `Proto.Internal.Method` (a method's codec halves, whose
-  types are therefore elm/core's, elm/json's and elm/bytes', §5.1) and
+  module imports an `Rpc` one, and `Rpc` reads three internal modules of
+  the `Proto` side, `Proto.Internal.Any`, `Proto.Internal.Method` (a
+  method's codec halves, whose types are therefore elm/core's, elm/json's and elm/bytes', §5.1) and
   `Proto.Internal.Percent`, and no others, so that the codecs could
   become a package of their own without changing
   ([decisions.md](decisions.md#no-package-split)).
@@ -2293,8 +2295,8 @@ the protocols belong in it too.
 
 ```elm
 -- Rpc.Protocol: opaque, indexed by codec
-type alias Json = Proto.Internal.Codec.Json      -- the codec tags; no values
-type alias Proto = Proto.Internal.Codec.Proto
+type alias Json = Proto.Codec.Json      -- the codec tags; no values
+type alias Proto = Proto.Codec.Proto
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
 connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule

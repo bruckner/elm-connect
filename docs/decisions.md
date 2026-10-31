@@ -40,7 +40,9 @@ layer, and a split would first force `Rpc.Transport` open. What is kept
 instead is a rule: no `Proto` module imports an `Rpc` one, and `Rpc`
 reads no `Proto.Internal` module beyond the few design §3.1 lists
 (since 2026-10-27 `Proto.Internal.Any`, `Codec`, `Method` and
-`Percent`), so a split stays possible. It would be a major (modules leave the package) and is
+`Percent`; since 2026-10-30 `Any`, `Method` and `Percent`, the codec
+tags having moved to the public `Proto.Codec`), so a split stays
+possible. It would be a major (modules leave the package) and is
 revisited only for a transport whose runtime is mostly its own. Where:
 design §3.1.
 
@@ -967,7 +969,10 @@ modules carry a function per binding. Where: design §4, §5.3.
 
 ### Protocol and client, indexed by codec
 
-*2026-10-27.*
+*2026-10-27; the codec tags moved to a public leaf, `Proto.Codec`, on
+2026-10-30, because the package site showed `Proto.Method`'s signatures
+naming `Proto.Internal.Codec.Json`, a module it does not document. The
+`Rpc` aliases stay, the names an application writes.*
 
 The config record and `Rpc.Transport` are replaced by two opaque
 types: `Rpc.Protocol codec` (`connect`, `connectProto`, `transcode`,

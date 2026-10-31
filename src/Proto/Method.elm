@@ -60,9 +60,9 @@ import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
+import Proto.Codec
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
-import Proto.Internal.Codec
 import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
 import Proto.Route exposing (Route)
@@ -96,7 +96,7 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-json : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Method Proto.Internal.Codec.Json req res
+json : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Method Proto.Codec.Json req res
 json serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
@@ -115,7 +115,7 @@ request's binary encoder and its response's binary decoder. Its calls go over a
 protocol speaking protobuf binary, which transcoding is not, so it takes no
 routes.
 -}
-proto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Internal.Codec.Proto req res
+proto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Codec.Proto req res
 proto serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName

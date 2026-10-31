@@ -33,7 +33,7 @@ Protocols built alike are `==`.
 -}
 
 import Json.Encode exposing (Value)
-import Proto.Internal.Codec
+import Proto.Codec
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Http
@@ -52,13 +52,13 @@ type alias Protocol codec =
 {-| The codec tag of proto3 JSON. It has no values: it is only ever a type.
 -}
 type alias Json =
-    Proto.Internal.Codec.Json
+    Proto.Codec.Json
 
 
 {-| The codec tag of protobuf binary.
 -}
 type alias Proto =
-    Proto.Internal.Codec.Proto
+    Proto.Codec.Proto
 
 
 
