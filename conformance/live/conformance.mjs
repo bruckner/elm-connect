@@ -10,8 +10,9 @@
 //     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE] [--elm PATH]
 //
 // A request for the proto codec is sent with the envelope's `codec: "proto"`,
-// which needs a program built against bindings with binary codecs
-// (`--elm build/elm-both.js`, which `just live-proto` builds).
+// and one over gRPC-Web with `transport: "grpcweb"` as well; both need a
+// program built against bindings with binary codecs (`--elm
+// build/elm-both.js`, which `just live-proto` builds).
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
 // Rpc.response), which give an application the answer's status and headers;
@@ -97,7 +98,7 @@ async function answer(runner, send, request) {
     service,
     method: request.method,
     request: toJson(types.request, message, { registry }),
-    transport: "connect",
+    transport: request.protocol === Protocol.GRPC_WEB ? "grpcweb" : "connect",
     config,
     send,
     cancelAfterMs,
@@ -154,7 +155,10 @@ async function answer(runner, send, request) {
 function refusal(request) {
   if (request.service !== service) return `no service ${request.service}`;
   if (!Object.hasOwn(methods, request.method ?? "")) return `no unary method ${request.method}`;
-  if (request.protocol !== Protocol.CONNECT) return `protocol ${Protocol[request.protocol]} is not supported`;
+  if (request.protocol !== Protocol.CONNECT && request.protocol !== Protocol.GRPC_WEB) {
+    return `protocol ${Protocol[request.protocol]} is not supported`;
+  }
+  if (request.protocol === Protocol.GRPC_WEB && request.codec !== Codec.PROTO) return "gRPC-Web is sent as protobuf binary alone";
   if (request.codec !== Codec.JSON && request.codec !== Codec.PROTO) return `codec ${Codec[request.codec]} is not supported`;
   if (request.compression !== Compression.IDENTITY && request.compression !== Compression.UNSPECIFIED) {
     return `compression ${Compression[request.compression]} is not supported`;

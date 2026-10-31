@@ -85,8 +85,8 @@ withHeaders extra (Internal.Client c) =
 
 
 {-| A timeout for every call, in milliseconds; a call's own
-([`Rpc.Call.withTimeout`](Rpc-Call#withTimeout)) takes its place. Connect also
-tells the server. One that is not a positive number means none.
+([`Rpc.Call.withTimeout`](Rpc-Call#withTimeout)) takes its place. Connect and
+gRPC-Web also tell the server. One that is not a positive number means none.
 -}
 withTimeout : Float -> Client codec -> Client codec
 withTimeout ms (Internal.Client c) =

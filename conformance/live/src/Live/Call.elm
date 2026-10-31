@@ -76,6 +76,7 @@ type Sending
 type Transport
     = Connect
     | Transcode
+    | GrpcWeb
 
 
 {-| The client an envelope's `config` describes, by the codec it names.

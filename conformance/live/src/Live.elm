@@ -229,7 +229,7 @@ with =
 
 transport : Decoder Transport
 transport =
-    oneOfNames "transport" [ ( "connect", Connect ), ( "transcode", Transcode ) ]
+    oneOfNames "transport" [ ( "connect", Connect ), ( "transcode", Transcode ), ( "grpcweb", GrpcWeb ) ]
 
 
 sending : Decoder Sending
@@ -295,6 +295,12 @@ config t =
 
                 ( Transcode, _ ) ->
                     Decode.succeed (JsonClient (over Rpc.Protocol.transcode))
+
+                ( GrpcWeb, "json" ) ->
+                    Decode.fail "gRPC-Web is sent as protobuf binary alone"
+
+                ( GrpcWeb, _ ) ->
+                    Decode.succeed (ProtoClient (over Rpc.Protocol.grpcWeb))
         )
         (Decode.field "baseUrl" Decode.string)
         (optional "headers" (Decode.list pair) [])

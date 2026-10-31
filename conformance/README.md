@@ -305,8 +305,8 @@ live/
                       where grpc-gateway and the fixtures part
   known-divergent-envoy.json
                       where Envoy and the fixtures part
-  envoy/envoy.yaml    Envoy's gRPC-JSON transcoder in front of the example
-                      server (docs/envoy.md)
+  envoy/envoy.yaml    Envoy's gRPC-JSON transcoder and gRPC-Web filter in
+                      front of the example server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
   json/Live/Codec.elm `entry` for this build: the JSON call function alone
@@ -319,6 +319,13 @@ live/
                       the suite's features with the proto codec
   known-failing-proto.txt
                       the suite's test cases the runtime fails under it
+  cases/grpcweb.json  every method over gRPC-Web
+  conformance-grpcweb.yaml
+                      the suite's features over gRPC-Web
+  known-failing-grpcweb.txt
+                      the suite's test cases the runtime fails over it
+  known-failing-grpcweb-halves.txt
+                      those it fails through the pure halves alone
   build/              the compiled program (gitignored)
 ```
 
@@ -374,18 +381,20 @@ An **envelope**, what the runner sends:
 }
 ```
 
-`request` is proto3 JSON (`{}` when absent); `transport` is `connect` or
-`transcode`; everything in `config` but `baseUrl` is optional, as are
+`request` is proto3 JSON (`{}` when absent); `transport` is `connect`,
+`transcode` or `grpcweb`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
 own, `Rpc.Call.withHeaders`, sent after the client's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `config` builds the client: `transport` and `codec`
 (`json`, the default, or `proto`) pick its protocol,
-`Rpc.Protocol.connect`, `connectProto` or `transcode` (`transcode`
-with `proto` is refused, since transcoding is JSON); `useGet` and
+`Rpc.Protocol.connect`, `connectProto`, `transcode` or `grpcWeb`
+(`transcode` with `proto` is refused, since transcoding is JSON, and
+`grpcweb` with anything but `proto`, since gRPC-Web is binary; a
+`grpcweb` envelope needs the build against `codec=both`); `useGet` and
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
 Connect; `readMaxBytes` and `writeMaxBytes` apply
-`Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to either
+`Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to any
 protocol; and the rest are the `Rpc.Client` settings. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
@@ -573,6 +582,37 @@ code, or with an unknown one, and a 200 of another content type), and
 the `sendTraced` run adds `known-failing-send.txt`. Transcoding is JSON
 alone, so the transcoding legs above cover it.
 
+### gRPC-Web, live
+
+`just live-grpcweb` (part of `just live`) runs gRPC-Web's legs on the
+same build: `cases/grpcweb.json` against the example server, whose
+gRPC-Web connect-go serves, and the Connect conformance suite with
+`conformance-grpcweb.yaml` (unary, protobuf binary, HTTP/1.1, no
+compression), through the halves and with `sendTraced`, each request
+over gRPC-Web sent as an envelope with `transport: "grpcweb"`.
+`live-envoy` runs `cases/grpcweb.json` again against Envoy's gRPC-Web
+filter (its `grpc_web` listener), with the canned answers reached at the
+server (`--origin`).
+
+`cases/grpcweb.json` is `cases/proto.json`'s calls over gRPC-Web, less
+the Connect GET cases, expecting the same codes, messages and detail
+bytes; an error's `source` may be `GrpcHeaders` (connect-go answers an
+error trailers-only) or `GrpcTrailers` (Envoy answers it in a trailers
+frame). Its own cases check the wire (`X-Grpc-Web`, `grpc-timeout`, the
+content type), a timeout, and the body's trailers in the trace.
+
+The suite selects 85 test cases. `known-failing-grpcweb.txt` lists the
+four the runtime fails whichever way it sends: a unary answer with
+status 0 and no message or two, which the suite wants `unimplemented`
+and the runtime reads as a `BadResponse` (`internal`), as over Connect,
+and a 200 of another content type with no status, which it wants
+`unknown`. The halves run adds `known-failing-grpcweb-halves.txt`: twelve
+cases asserting trailers, which a gRPC-Web answer carries in its body,
+where an application reading the elm/http response itself cannot see
+them and `sendTraced` gives them. The `sendTraced` run adds
+`known-failing-send.txt`. 69 of 85 pass through the halves and 79 with
+`sendTraced`.
+
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's
 protos exported from `buf.build/connectrpc/conformance` at the commit its
 v1.0.6 label names (`just protos-refresh` re-exports them), so generation
@@ -644,7 +684,9 @@ example's descriptor set with buf, starts the example server and Envoy
 them in `grpc-status` headers, Envoy's default. It runs the transcoding
 cases of `notes.json` and `transcode.json` (with `--origin`) and the
 route fixtures against the first, and `cases/envoy.json`, the errors in
-headers and Envoy's own answers, against the second. Envoy calls the
+headers and Envoy's own answers, against the second. A third listener,
+`grpc_web`, runs Envoy's gRPC-Web filter and no transcoder, and
+`cases/grpcweb.json` runs against it on the `codec=both` build. Envoy calls the
 server over gRPC and answers itself what no method matches
 (`reject_unknown_method`, `reject_unknown_query_parameters`), so the
 server's own transcoders never answer in its place.

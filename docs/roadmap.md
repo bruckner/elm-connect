@@ -44,15 +44,6 @@ generator adds to every message (or an opaque message type), which
 changes every generated record, so a major, or an option that adds the
 field, a minor. Two protobuf conformance cases need it.
 
-## gRPC-Web, unary
-
-The protocol elm-grpc speaks, for servers that serve gRPC-Web and not
-Connect. It is a transport of its own, `Rpc.Transport.grpcWeb`, over
-the binary codecs Connect's proto codec already sends
-([calling.md](calling.md#choosing-the-codec)), plus reading gRPC-Web's
-frames and trailers out of a whole response body. A minor; it is the
-next one planned.
-
 ## Editions and proto2
 
 Today a proto2 file is `input::not_proto3` and a file that declares an

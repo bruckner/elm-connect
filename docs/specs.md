@@ -80,7 +80,9 @@ beside each link says what the runtime or the generator does about it.
   headers a transcoder may answer with, which the runtime reads
   ([transcoding.md](transcoding.md)).
 - [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md):
-  not a protocol of the runtime ([roadmap.md](roadmap.md)).
+  `Rpc.Protocol.grpcWeb`, unary and in protobuf binary: the framing,
+  the trailers frame and `grpc-timeout`
+  ([calling.md](calling.md#choosing-the-codec)).
 
 ## HTTP and formats
 

@@ -20,12 +20,14 @@ the runtime sends over any transcoder.
 
 ## The config
 
-The file has two listeners in front of one cluster:
+The file has two transcoding listeners in front of one cluster, and a
+third for gRPC-Web ([gRPC-Web](#grpc-web)):
 
 | Port | Listener | Errors |
 |---|---|---|
 | 18081 | `status_body` | `convert_grpc_status: true`: a `google.rpc.Status` JSON body |
 | 18082 | `grpc_headers` | Envoy's default: `grpc-status` and `grpc-message` headers, no body |
+| 18083 | `grpc_web` | gRPC-Web's own: a trailers frame in the body |
 | 18080 | the cluster `notes` | the example server, called over gRPC |
 
 The transcoder's settings on the first listener:
@@ -396,14 +398,62 @@ other files answer: an unknown query parameter 400 (with
 `reject_unknown_method`), and `PATCH` without an update mask is passed
 on as sent, as Vanguard does.
 
+## gRPC-Web
+
+A client of `Rpc.Protocol.grpcWeb` needs no transcoder: Envoy's
+[gRPC-Web filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_web_filter)
+turns each gRPC-Web call into a gRPC call to the same cluster, and the
+answer back into gRPC-Web, its status in a trailers frame at the end of
+the body. The `grpc_web` listener runs it alone:
+
+```yaml conformance/live/envoy/envoy.yaml#grpc-web
+# A gRPC-Web request becomes a gRPC call to the cluster,
+# and its answer gRPC-Web again, trailers in the body.
+- name: envoy.filters.http.grpc_web
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
+```
+
+Its CORS policy is narrower than the transcoding listeners': gRPC-Web
+POSTs every call, and sends `x-grpc-web` and, with a timeout,
+`grpc-timeout`. A status in a trailers frame needs nothing; one that
+comes in the headers of an answer without a body (trailers-only)
+reaches the page only when they are exposed:
+
+```yaml conformance/live/envoy/envoy.yaml#grpc-web-cors
+# What a page on another origin needs to call over
+# gRPC-Web: the headers the runtime sends, and the
+# status headers of an answer without a body
+# (trailers-only) exposed to it. Trailers in a body
+# need nothing.
+typed_per_filter_config:
+  envoy.filters.http.cors:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+    allow_origin_string_match:
+      - exact: http://example.test
+    allow_methods: POST
+    allow_headers: content-type, x-grpc-web, grpc-timeout, authorization, x-request-id
+    expose_headers: grpc-status, grpc-message, grpc-status-details-bin
+```
+
+Checked by hand against Envoy 1.40.0: a preflight from
+`http://example.test` gets 200 with the four `access-control-` headers,
+a call with that `Origin` gets its answer marked for it, and a
+preflight from another origin reaches the server and comes back
+without them. Envoy answers a service error in a trailers frame where
+connect-go, serving gRPC-Web itself, answers it trailers-only: the
+runtime reads the same code, message and details from either, with
+`source` `GrpcTrailers` or `GrpcHeaders`.
+
 ## The live suite
 
 `just live` runs `just live-envoy` after the Vanguard and grpc-gateway
 runs: the transcode cases of `cases/notes.json` and `cases/transcode.json`
-and the route fixtures against `status_body`, and `cases/envoy.json`
-against `grpc_headers`. The ports are variables at the top of the
-Justfile's Envoy recipes (`envoy_origin_port`, `envoy_port`,
-`envoy_headers_port`, `envoy_admin_port`); the recipe writes a copy of
+and the route fixtures against `status_body`, `cases/envoy.json`
+against `grpc_headers`, and `cases/grpcweb.json` against `grpc_web`, on
+the runner built against `codec=both`. The ports are variables at the
+top of the Justfile's Envoy recipes (`envoy_origin_port`, `envoy_port`,
+`envoy_headers_port`, `envoy_grpcweb_port`, `envoy_admin_port`); the recipe writes a copy of
 the config with them into `target/live/envoy.yaml`. Against an Envoy
 you started yourself:
 
@@ -411,6 +461,7 @@ you started yourself:
 node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
 node conformance/live/routes.mjs --server http://127.0.0.1:18081 --known conformance/live/known-divergent-envoy.json
 node conformance/live/run.mjs --server http://127.0.0.1:18082 conformance/live/cases/envoy.json
+node conformance/live/run.mjs --server http://127.0.0.1:18083 --origin http://127.0.0.1:18080 --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
 ```
 
 `--origin` names the example server behind the proxy, for the cases'

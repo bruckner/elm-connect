@@ -8,6 +8,8 @@ module Rpc.Internal.Wire exposing
     , connectPostBinary
     , connectTimeout
     , connectTimeoutHeader
+    , grpcWeb
+    , grpcWebTimeout
     , jsonTooLarge
     , textUnlimited
     , transcode
@@ -18,11 +20,11 @@ module Rpc.Internal.Wire exposing
 
 {-| The requests the protocols send: Connect's POST, and its GET of a method
 without side effects, as JSON or protobuf binary; transcoding's request over
-a route. Not exposed; each is a top-level function a protocol constructor or
-modifier puts in a protocol (`Rpc.Internal.Protocol`), so a program carries
-only the builders of the protocols and options it names: a POST-only program
-no percent-encoding, a Connect program no route code, a JSON program no
-elm/bytes.
+a route; gRPC-Web's framed POST. Not exposed; each is a top-level function a
+protocol constructor or modifier puts in a protocol (`Rpc.Internal.Protocol`),
+so a program carries only the builders of the protocols and options it
+names: a POST-only program no percent-encoding, a Connect program no route
+code or framing, a JSON program no elm/bytes.
 -}
 
 import Bytes exposing (Bytes)
@@ -34,6 +36,7 @@ import Proto.Method exposing (Idempotency(..))
 import Proto.Route exposing (Route)
 import Rpc.Body as Body exposing (Body)
 import Rpc.Error as Error exposing (Reason)
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (Options, Settings)
 import Rpc.Request exposing (Request)
@@ -240,6 +243,34 @@ query pairs =
 
 
 
+-- GRPC-WEB
+
+
+{-| gRPC-Web's POST to the URL Connect uses: the request's binary in one
+framed message, sent as `application/grpc-web+proto` with `X-Grpc-Web`, and
+the timeout as `grpc-timeout`.
+-}
+grpcWeb : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+grpcWeb _ _ settings encoder =
+    { method = "POST"
+    , url = connectUrl settings
+    , headers =
+        settings.headers
+            ++ ( "X-Grpc-Web", "1" )
+            :: (case settings.timeout of
+                    Just ms ->
+                        [ ( "grpc-timeout", GrpcWeb.timeout ms ) ]
+
+                    Nothing ->
+                        []
+               )
+    , body = Body.bytesAs "application/grpc-web+proto" (GrpcWeb.frame encoder)
+    , timeout = settings.timeout
+    , withCredentials = settings.withCredentials
+    }
+
+
+
 -- LIMITS
 
 
@@ -313,6 +344,13 @@ transcodeTimeout route =
 
         Nothing ->
             Just ( "Connect-Timeout-Ms", timeoutMs )
+
+
+{-| gRPC-Web carries a timeout in `grpc-timeout`.
+-}
+grpcWebTimeout : Maybe ( String, Float -> String )
+grpcWebTimeout =
+    Just ( "grpc-timeout", GrpcWeb.timeout )
 
 
 {-| A positive whole number of milliseconds, at most ten digits, as the

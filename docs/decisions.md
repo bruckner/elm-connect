@@ -1060,6 +1060,38 @@ each path value to a local named for its field's JSON path (`name_`,
 registry's `binaryRegistry` and `Proto.Registry.withBinary` keep their
 names for now. Where: design §3.10, §6.
 
+### gRPC-Web as a protocol
+
+*2026-10-28.*
+
+Unary gRPC-Web is `Rpc.Protocol.grpcWeb : Protocol Proto`, a protocol
+of its own beside `connect`, `connectProto` and `transcode`, rather than
+an option of Connect. It shares only the URL with Connect: it has no
+GET, speaks protobuf binary alone, and carries its own timeout header
+(`grpc-timeout`) and its own error channel (a trailers frame in the
+body, or headers when there is no body). As an option of `connect`, a
+JSON codec and `withConnectGet` would be meaningless combinations; as a
+protocol, its type rules JSON out and the GET modifiers leave it as
+they leave `transcode`. Text mode (`application/grpc-web-text`) is not
+built: XHR sends and reads binary bodies.
+
+Its builder, reader and timeout format are top-level functions only the
+`grpcWeb` value installs in its `Binary` wire, and `Send.plan` keeps one
+`case` on the wire kind, so a program that never names `grpcWeb`
+carries none of it. The first prototype, on the 0.1 transport and
+config, made them closures of the method's bytes path: every program
+with binary codecs paid about 1.1 KB gzipped for gRPC-Web whether it
+used it or not, and a JSON-only one 197 B for the dispatch. Hung off
+the protocol value, the interface spike measured 0 gRPC-Web definitions
+in programs that do not name it and +560 B gzipped on the notes example
+over protobuf binary that does. Measured on the landed protocol against
+its base (`elm make --optimize`, terser, gzip -9): Eliza and a notes
+program over Connect, as JSON or as protobuf binary, are the same bytes
+with it as without; naming it costs 689 B on the notes program and
+1,476 B on Eliza's, 894 B of which is the `google.rpc.Status` details
+decoder that the notes program already carries. Where: design §5.1,
+§5.3 (gRPC-Web), §7.
+
 ## Input and versioning
 
 

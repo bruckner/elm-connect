@@ -129,15 +129,17 @@ type alias StatusError =
     number as sent is in the response's body.
   - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, when the
     browser exposes them; the message is percent-decoded, and the status text
-    stands in when there is none.
+    stands in when there is none. A gRPC-Web answer without a body
+    ("trailers-only") states its status so, with its details in
+    `grpc-status-details-bin`.
+  - `GrpcTrailers`: the `grpc-status`, `grpc-message` and
+    `grpc-status-details-bin` trailers that end a gRPC-Web answer's body.
 
 An answer with none of these is an `HttpStatus` error.
 
-Two more are reserved for streaming calls, which this release does not make,
-so it never gives them; a `case` on a `Source` covers them all the same:
+One more is reserved for streaming calls, which this release does not make,
+so it never gives it; a `case` on a `Source` covers it all the same:
 
-  - `GrpcTrailers`: the `grpc-status` and `grpc-message` trailers that end a
-    gRPC or gRPC-Web response.
   - `ConnectEndStream`: the error in the end-of-stream message of a Connect
     stream.
 

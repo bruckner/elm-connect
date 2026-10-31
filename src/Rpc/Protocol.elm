@@ -1,6 +1,6 @@
 module Rpc.Protocol exposing
     ( Protocol, Json, Proto
-    , connect, connectProto, transcode
+    , connect, connectProto, transcode, grpcWeb
     , withConnectGet, withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
     , name, codec, toJson
     )
@@ -18,7 +18,7 @@ and the compiler says so where it does not.
 Protocols built alike are `==`.
 
 @docs Protocol, Json, Proto
-@docs connect, connectProto, transcode
+@docs connect, connectProto, transcode, grpcWeb
 
 
 # Options
@@ -148,6 +148,41 @@ transcode =
         }
 
 
+{-| [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md),
+unary calls, as connect-go, Envoy's gRPC-Web filter and grpcwebproxy serve
+it: every call POSTed to `baseUrl/service/method` as
+`application/grpc-web+proto`, its request's protobuf binary in one framed
+message, a timeout as `grpc-timeout`. The answer's status comes from the
+`grpc-status` trailer in its body, or from its headers when the server sent
+no message; an error's details from `grpc-status-details-bin`.
+
+Messages travel as protobuf binary only, so it sends the calls of methods
+generated with `codec=proto` or `codec=both`. A browser reads `grpc-status`
+from the headers of a cross-origin answer only when the server exposes it
+(`Access-Control-Expose-Headers`); trailers in the body need nothing. A traced
+call ([`Rpc.sendTraced`](Rpc#sendTraced)) gives the body's trailers in
+[`Rpc.Trace.trailers`](Rpc-Trace#trailers).
+
+-}
+grpcWeb : Protocol Proto
+grpcWeb =
+    Internal.Protocol
+        { name = "grpc-web"
+        , codec = "proto"
+        , options = noOptions
+        , wire =
+            Binary
+                { build = Wire.grpcWeb
+                , message = Answer.grpcWebMessage
+                , tooLarge = Wire.bytesUnlimited
+                , overRead = Wire.bytesUnlimited
+                , timeoutHeader = Wire.grpcWebTimeout
+                , base64 = Wire.base64
+                , width = Wire.width
+                }
+        }
+
+
 {-| Over Connect, send a call of a method without side effects
 (`IdempotencyNoSideEffects`) as a GET with the request in the query, which
 caches can serve; any other call is POSTed. Other protocols are unchanged.
@@ -198,8 +233,9 @@ withMaxGetUrl limit (Internal.Protocol p) =
         Internal.Protocol p
 
 
-{-| Refuse a successful answer whose body is longer than this many bytes, before decoding it: the call fails with
-[`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code
+{-| Refuse a successful answer whose body (over gRPC-Web, its response
+message) is longer than this many bytes, before decoding it: the call fails
+with [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code
 is `ResourceExhausted`. A protocol starts with no limit.
 -}
 withReadMaxBytes : Int -> Protocol codec -> Protocol codec
@@ -245,7 +281,8 @@ withWriteMaxBytes limit (Internal.Protocol p) =
         }
 
 
-{-| The protocol's name, for traces and logs: `"connect"` or `"transcode"`.
+{-| The protocol's name, for traces and logs: `"connect"`, `"transcode"` or
+`"grpc-web"`.
 -}
 name : Protocol codec -> String
 name (Internal.Protocol p) =

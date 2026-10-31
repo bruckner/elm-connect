@@ -22,8 +22,8 @@ The Elm tools for protobuf, from the Elm package index and npm:
   codecs and a Twirp client.
 
 None of them speaks the Connect protocol or `google.api.http`
-transcoding. For a server that speaks binary gRPC-Web, protoc-gen-elm
-with elm-grpc is the tool to use; elm-connect does not speak it.
+transcoding. Both protoc-gen-elm with elm-grpc and elm-connect
+(`Rpc.Protocol.grpcWeb`) speak unary gRPC-Web in protobuf binary.
 
 ## Coming from protoc-gen-elm
 
@@ -38,6 +38,7 @@ that closes a cycle. What differs:
 | `bytes` is `Bytes.Bytes` | the base64 `String`; under `bytes=bytes`, `Bytes.Bytes` |
 | the well-known types come from elm-protoc-types (`Proto.Google.Protobuf.*`) | the runtime maps them: `Time.Posix`, `Proto.Duration.Duration`, `Maybe` for the wrappers, `Proto.Any.Any` ([generator.md](generator.md#what-a-proto-becomes)) |
 | `Grpc.new rpc req \|> Grpc.addHeader … \|> Grpc.toCmd` | `Rpc.send client toMsg call`, with headers, timeout and retry on the client or on the call ([calling.md](calling.md)) |
+| calls go over gRPC-Web, in protobuf binary | a client of `Rpc.Protocol.grpcWeb`, with code generated under `codec=proto` or `codec=both` ([calling.md](calling.md#choosing-the-codec)) |
 | modules under `Proto.` (`Proto.Notes.V1`) | the package's own name (`Notes.V1`); `module_prefix=Proto` gives `Proto.Notes.V1`, except where a package would take one of the runtime's own `Proto.*` modules, which is the diagnostic `naming::reserved_module` |
 
 protoc-gen-elm's `grpcDevTools` option feeds a browser extension;

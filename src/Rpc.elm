@@ -10,10 +10,11 @@ module Rpc exposing
 
 {-| Call RPCs: unary, over the
 [Connect protocol](https://connectrpc.com/docs/protocol/) as connect-go,
-connect-es, connect-python and Envoy's Connect-gRPC bridge serve it, or over
+connect-es, connect-python and Envoy's Connect-gRPC bridge serve it, over
 HTTP transcoding, the REST mapping `google.api.http` rules describe, as
-grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it. Messages
-travel as proto3 JSON, or over Connect as protobuf binary
+grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it, or over
+gRPC-Web ([`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb)). Messages travel
+as proto3 JSON, or over Connect and gRPC-Web as protobuf binary
 ([`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto)).
 
     client : Rpc.Client Rpc.Json
@@ -132,8 +133,8 @@ type alias Json =
 
 
 {-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
-A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) is a
-`Client Proto`, and sends calls of code generated with `codec=proto` or
+A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `codec=proto` or
 `codec=both`.
 -}
 type alias Proto =

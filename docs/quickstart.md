@@ -146,7 +146,7 @@ ConnectRPC's public demo server.
 
 ## 5. Read the result
 
-An error is one type for both protocols, `Rpc.Error`, of four kinds:
+An error is one type for every protocol, `Rpc.Error`, of four kinds:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#reading
 import Notes.V1

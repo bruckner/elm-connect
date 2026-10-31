@@ -32,8 +32,8 @@ client but loses proto3 JSON's rules and cannot switch to Connect.
 
 What elm-connect adds:
 
-- One generated client, switched between Connect and `google.api.http`
-  transcoding by the protocol it is sent over
+- One generated client, switched between Connect, `google.api.http`
+  transcoding and gRPC-Web by the protocol it is sent over
 - Generated codecs for proto3 canonical JSON mapping
 - The Connect conformance suite and live transcoders in CI, with the
   transcoders' differences published
@@ -48,8 +48,8 @@ users of protoc-gen-elm.
 ## Status
 
 Pre-release, version 0.1.0. The generator and the runtime work: unary
-methods over Connect and over `google.api.http` transcoding, proto3
-JSON and, over Connect, protobuf binary, Elm 0.19.0 to 0.19.2. The
+methods over Connect, over `google.api.http` transcoding and over
+gRPC-Web, proto3 JSON and, over Connect and gRPC-Web, protobuf binary, Elm 0.19.0 to 0.19.2. The
 runtime passes the unary JSON test cases of the official
 [Connect conformance suite](https://github.com/connectrpc/conformance)
 (v1.0.6), with the features declared in
@@ -58,17 +58,20 @@ HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
 calls and Connect GET; with the proto codec
 ([`conformance-proto.yaml`](conformance/live/conformance-proto.yaml))
 it passes all but four error-body cases that do not depend on the
-codec. A live suite runs every method over Connect
-against connect-go v2.0.1 and over transcoding against Vanguard v0.5.0
-and grpc-gateway v2.32.0, with the route fixtures under both
-transcoders.
+codec; over gRPC-Web
+([`conformance-grpcweb.yaml`](conformance/live/conformance-grpcweb.yaml))
+it passes 79 of 85 cases, the rest listed with their reasons. A live
+suite runs every method over Connect against connect-go v2.0.1, over
+transcoding against Vanguard v0.5.0 and grpc-gateway v2.32.0, with the
+route fixtures under both transcoders, and over gRPC-Web against
+connect-go and Envoy's gRPC-Web filter.
 
 Releases before 1.0 carry prebuilt binaries and put the crates on
 crates.io; the Elm package reaches the package index at 1.0.
-Messages travel as proto3 JSON, or over Connect as protobuf binary
-with the generator's `codec=both` or `codec=proto`
-([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming and
-gRPC-Web are out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
+Messages travel as proto3 JSON, or over Connect and gRPC-Web as
+protobuf binary with the generator's `codec=both` or `codec=proto`
+([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming is
+out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
 says what may come, and whether it would be a minor or a major
 release.
 
@@ -163,13 +166,12 @@ result, trying calls in `elm repl`, and testing without a server.
 
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
-- Calls in proto3 JSON, or over Connect in protobuf binary, with the
-  codecs the generator writes under `codec=both` or `codec=proto`
-  ([docs/generator.md](docs/generator.md#binary-codecs)). Transcoding is
-  JSON.
+- Calls in proto3 JSON, or over Connect and gRPC-Web in protobuf
+  binary, with the codecs the generator writes under `codec=both` or
+  `codec=proto` ([docs/generator.md](docs/generator.md#binary-codecs)).
+  Transcoding is JSON.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
   a file that declares an edition is `input::editions`.
-- No streaming, no gRPC-Web.
 - No interceptors: an application sends every call through one
   function of its own, which builds the client
   ([docs/calling.md](docs/calling.md#wrapping-the-sending-once)).
