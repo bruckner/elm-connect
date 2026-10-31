@@ -1,14 +1,16 @@
-module Rpc.Internal.GrpcWeb exposing (frame, read, timeout)
+module Rpc.Internal.GrpcWeb exposing (grpcWeb, grpcWebMessage, grpcWebTimeout)
 
-{-| gRPC-Web's unary framing, over the bytes a method's binary codecs write
-and read: a request as one framed message, and an answer read from its
-framed messages and its trailers frame, or from its headers when the server
-sent only a status. A frame is a flag byte (`0x80` for trailers, `0x01` for
-a compressed message) and a four-byte big-endian length before its bytes.
+{-| gRPC-Web, unary calls: the request, its timeout header and the reading of
+an answer, over the bytes a method's binary codecs write and read. A request
+is one framed message, and an answer is read from its framed messages and its
+trailers frame, or from its headers when the server sent only a status. A
+frame is a flag byte (`0x80` for trailers, `0x01` for a compressed message)
+and a four-byte big-endian length before its bytes.
 
-Not exposed. Only the `Rpc.Protocol.grpcWeb` value reaches this module,
-through the functions it installs, so a program that never names it carries
-none of it.
+Not exposed. `Rpc.Protocol.grpcWeb` installs `grpcWeb`, `grpcWebTimeout` and
+`grpcWebMessage`, and nothing else reaches this module, so a program that
+never names it carries none of it. A failure that is not a gRPC-Web answer is
+read as every protocol's is (`Rpc.Internal.Status`).
 
 -}
 
@@ -24,10 +26,59 @@ import Proto.Bytes
 import Proto.Internal.Percent as Percent
 import Rpc.Body
 import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error)
+import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (GoodBytes)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, Options, Settings)
+import Rpc.Internal.Status as Status
+import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
+
+
+
+-- INSTALLED
+
+
+{-| gRPC-Web's POST to the URL Connect uses: the request's binary in one
+framed message, sent as `application/grpc-web+proto` with `X-Grpc-Web`, and
+the timeout as `grpc-timeout`.
+-}
+grpcWeb : (Bytes -> String) -> Options -> Settings -> E.Encoder -> Request
+grpcWeb _ _ settings encoder =
+    { method = "POST"
+    , url = Connect.connectUrl settings
+    , headers =
+        settings.headers
+            ++ ( "X-Grpc-Web", "1" )
+            :: (case settings.timeout of
+                    Just ms ->
+                        [ ( "grpc-timeout", timeout ms ) ]
+
+                    Nothing ->
+                        []
+               )
+    , body = Rpc.Body.bytesAs "application/grpc-web+proto" (frame encoder)
+    , timeout = settings.timeout
+    , withCredentials = settings.withCredentials
+    }
+
+
+{-| gRPC-Web carries a timeout in `grpc-timeout`.
+-}
+grpcWebTimeout : Maybe ( String, Float -> String )
+grpcWebTimeout =
+    Just ( "grpc-timeout", timeout )
+
+
+{-| gRPC-Web's message: its framing and trailers (`read`).
+-}
+grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+grpcWebMessage overRead options procedure answer =
+    Internal.bytesMessage overRead options procedure (read Status.otherFailure answer)
+
+
+
+-- FRAMING
 
 
 {-| A request's binary in one uncompressed message frame.

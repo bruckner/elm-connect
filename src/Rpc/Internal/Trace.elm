@@ -13,9 +13,9 @@ import Rpc.Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call)
 import Rpc.Internal.Http as Internal
+import Rpc.Internal.Plan exposing (Plan)
 import Rpc.Internal.Protocol exposing (Protocol(..))
 import Rpc.Internal.Retry exposing (Outcome)
-import Rpc.Internal.Send exposing (Plan)
 import Rpc.Request exposing (Request)
 
 

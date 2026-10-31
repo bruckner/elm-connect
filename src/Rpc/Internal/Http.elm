@@ -1,19 +1,60 @@
-module Rpc.Internal.Http exposing (badBaseUrl, bytesText, invalidHeader, metadataOf, overLimit, send, splitTrailers, task, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing
+    ( badBaseUrl
+    , base64
+    , bytesAnswer
+    , bytesMessage
+    , bytesOverRead
+    , bytesText
+    , bytesTooLarge
+    , bytesUnlimited
+    , invalidHeader
+    , jsonTooLarge
+    , metadataOf
+    , overLimit
+    , send
+    , splitTrailers
+    , task
+    , textOverRead
+    , textUnlimited
+    , timeoutMs
+    , trimSlash
+    , usableTimeout
+    , utf8Length
+    , validHeaderName
+    , validHeaderValue
+    , width
+    , withinText
+    )
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
-(header names and values a browser accepts, a base URL without a query).
-Percent-encoding is `Proto.Internal.Percent`'s. Not exposed. It is kept out
-of `Rpc` so that the public module reads as API; `Rpc` re-exports what users
-need.
+(header names and values a browser accepts, a base URL without a query, a
+timeout XHR reads as the header says). Percent-encoding is
+`Proto.Internal.Percent`'s. Not exposed. It is kept out of `Rpc` so that the
+public module reads as API; `Rpc` re-exports what users need.
+
+It also holds what more than one protocol's builder shares, each a top-level
+function a protocol module or `Rpc.Protocol` names (`Rpc.Internal.Protocol`),
+so a program carries only those its protocols and options reach: a timeout
+header's milliseconds, a base URL's trailing slash, the binary protocols'
+`width` and `base64`, and both limit families: the write limits a request is
+checked against before it is sent, and the read limits a successful answer
+is checked against before it is decoded.
+
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Decode
+import Bytes.Encode
 import Dict exposing (Dict)
 import Http
+import Json.Encode exposing (Value)
+import Proto.Bytes
 import Rpc.Body
+import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Request exposing (Request)
+import Rpc.Response exposing (Response)
 import Task exposing (Task)
 
 
@@ -276,3 +317,200 @@ utf8Width code =
 
     else
         3
+
+
+
+-- TIMEOUTS
+
+
+{-| A timeout only when it is a positive number of milliseconds. elm/http hands
+the value to XHR, whose unsigned conversion turns a negative one into weeks and
+NaN or `0` into none, while the header would claim 1 ms or the maximum; read as
+no timeout instead, the header and the client agree.
+-}
+usableTimeout : Maybe Float -> Maybe Float
+usableTimeout timeout =
+    case timeout of
+        Just ms ->
+            if ms > 0 && not (isInfinite ms) then
+                Just ms
+
+            else
+                Nothing
+
+        Nothing ->
+            Nothing
+
+
+{-| A positive whole number of milliseconds, at most ten digits, as the
+protocol requires.
+-}
+timeoutMs : Float -> String
+timeoutMs ms =
+    String.fromInt (clamp 1 9999999999 (ceiling ms))
+
+
+
+-- URLS
+
+
+trimSlash : String -> String
+trimSlash url =
+    if String.endsWith "/" url then
+        String.dropRight 1 url
+
+    else
+        url
+
+
+
+-- BYTES
+
+
+{-| Bytes as standard base64, the binary protocols' writer for a GET's
+query and a trace.
+-}
+base64 : Bytes -> String
+base64 =
+    Proto.Bytes.toBase64
+
+
+{-| The size of bytes, the binary protocols' measure for their limits.
+-}
+width : Bytes -> Int
+width =
+    Bytes.width
+
+
+
+-- LIMITS
+
+
+{-| Whether a request's JSON, as UTF-8, is over the write limit. Installed by
+`withWriteMaxBytes`; the JSON is encoded again only then.
+-}
+jsonTooLarge : Options -> (() -> Value) -> Maybe Reason
+jsonTooLarge options json =
+    options.writeMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                overLimit limit (Json.Encode.encode 0 (json ()))
+                    |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
+            )
+
+
+{-| Whether a request's protobuf binary is over the write limit.
+-}
+bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
+bytesTooLarge width_ options binary =
+    options.writeMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                let
+                    size =
+                        width_ (Bytes.Encode.encode (binary ()))
+                in
+                if size > max 0 limit then
+                    Just (Error.RequestTooLarge { limit = limit, size = size })
+
+                else
+                    Nothing
+            )
+
+
+{-| No limit: what a protocol's `tooLarge` and `overRead` are until a
+modifier installs a limit.
+-}
+textUnlimited : Options -> a -> Maybe Reason
+textUnlimited _ _ =
+    Nothing
+
+
+{-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
+each protocol's field has its own type.
+-}
+bytesUnlimited : a -> Options -> b -> Maybe Reason
+bytesUnlimited _ _ _ =
+    Nothing
+
+
+
+-- READ LIMITS
+
+
+{-| A successful text answer, unless it is over the read limit.
+-}
+withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
+withinText overRead options good =
+    case overRead options good.raw of
+        Just reason ->
+            Err (Error.NoAnswer reason)
+
+        Nothing ->
+            Ok good
+
+
+{-| A successful binary answer's message, unless it is over the read limit.
+-}
+bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage overRead options procedure ( metadata, read ) =
+    ( metadata
+    , read
+        |> Result.andThen
+            (\good ->
+                case overRead options good.message of
+                    Just reason ->
+                        Err (Error.NoAnswer reason)
+
+                    Nothing ->
+                        Ok
+                            { bytes = good.message
+                            , bad = \() -> Error.BadResponse ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
+                            }
+            )
+    )
+
+
+{-| An answer of bytes as an error keeps it.
+-}
+bytesAnswer : Http.Metadata -> Bytes -> Response
+bytesAnswer metadata raw =
+    { url = metadata.url
+    , statusCode = metadata.statusCode
+    , statusText = metadata.statusText
+    , headers = metadata.headers
+    , body = Rpc.Body.bytes raw
+    }
+
+
+{-| Whether a successful text answer is over the read limit: its body as
+the browser decoded it, written back as UTF-8. Installed by
+`withReadMaxBytes`.
+-}
+textOverRead : Options -> String -> Maybe Reason
+textOverRead options raw =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                overLimit limit raw
+                    |> Maybe.map (\size -> Error.ResponseTooLarge { limit = limit, size = size })
+            )
+
+
+{-| Whether a successful binary answer's message is over the read limit.
+-}
+bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+bytesOverRead width_ options message =
+    options.readMaxBytes
+        |> Maybe.andThen
+            (\limit ->
+                let
+                    size =
+                        width_ message
+                in
+                if size > max 0 limit then
+                    Just (Error.ResponseTooLarge { limit = limit, size = size })
+
+                else
+                    Nothing
+            )

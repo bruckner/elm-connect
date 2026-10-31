@@ -22,8 +22,8 @@ import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
 import Rpc.Internal.Call
 import Rpc.Internal.Http
+import Rpc.Internal.Plan
 import Rpc.Internal.Retry as Retry
-import Rpc.Internal.Send
 import Rpc.Internal.Trace
 import Rpc.Protocol
 import Rpc.Retry
@@ -120,7 +120,7 @@ to go.
 -}
 withBudget : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json GetNote String -> Maybe Float -> Rpc.Request -> Rpc.Request
 withBudget client c =
-    Rpc.Internal.Send.withBudget (Rpc.Internal.Send.plan client c)
+    Rpc.Internal.Plan.withBudget (Rpc.Internal.Plan.plan client c)
 
 
 metadata : Int -> String -> Http.Metadata
@@ -1303,7 +1303,7 @@ sendLimits =
             Json.Encode.encode 0 (Rpc.Call.requestJson call)
 
         tooLarge protocol c =
-            (Rpc.Internal.Send.plan (over protocol) c).tooLarge ()
+            (Rpc.Internal.Plan.plan (over protocol) c).tooLarge ()
 
         refused protocol limit =
             tooLarge (Rpc.Protocol.withWriteMaxBytes limit protocol) call

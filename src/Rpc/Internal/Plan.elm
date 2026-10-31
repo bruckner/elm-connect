@@ -1,4 +1,4 @@
-module Rpc.Internal.Send exposing (Plan, Reader(..), plan, refused, withBudget)
+module Rpc.Internal.Plan exposing (Plan, Reader(..), plan, refused, withBudget)
 
 {-| How a call goes over a client's protocol: the one place a call's method
 meets the protocol's functions. Not exposed; `Rpc` sends through it.
@@ -18,17 +18,17 @@ its wire speaks without asking which halves are real.
 
 import Bytes exposing (Bytes)
 import Http
-import Json.Decode
+import Json.Decode exposing (Decoder)
+import Json.Encode
 import Proto.Internal.Method exposing (Method(..))
 import Proto.Route exposing (PathError)
 import Rpc.Error as Error exposing (Error, Reason)
-import Rpc.Internal.Answer as Answer
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (Protocol(..), Wire(..))
+import Rpc.Internal.Protocol exposing (GoodText, Protocol(..), Wire(..))
 import Rpc.Internal.Retry as Retry
-import Rpc.Internal.Wire as Wire
+import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 
 
@@ -85,12 +85,12 @@ plan (Client cl) (Call c) =
             , idempotency = m.idempotency
             , headers = cl.headers ++ c.headers
             , timeout =
-                case Wire.usableTimeout c.timeout of
+                case Internal.usableTimeout c.timeout of
                     Just ms ->
                         Just ms
 
                     Nothing ->
-                        Wire.usableTimeout cl.timeout
+                        Internal.usableTimeout cl.timeout
             , withCredentials = cl.withCredentials
             }
     in
@@ -120,8 +120,8 @@ plan (Client cl) (Call c) =
                         wire.message wire.overRead p.options responseBody answer
                             |> Result.andThen
                                 (\good ->
-                                    Json.Decode.decodeString (Answer.fieldDecoder good.field m.json.decoder) good.text
-                                        |> Result.mapError (Answer.badText good)
+                                    Json.Decode.decodeString (fieldDecoder good.field m.json.decoder) good.text
+                                        |> Result.mapError (badText good)
                                 )
                     )
             , binding = Maybe.map (\_ -> c.binding) route
@@ -165,6 +165,36 @@ plan (Client cl) (Call c) =
             }
 
 
+{-| The response decoder reading the answer as the field `responseBody` names,
+when it names one.
+-}
+fieldDecoder : Maybe String -> Decoder res -> Decoder res
+fieldDecoder responseBody decoder =
+    case responseBody of
+        Nothing ->
+            decoder
+
+        Just key ->
+            Json.Decode.value
+                |> Json.Decode.andThen
+                    (\value ->
+                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
+                            Ok decoded ->
+                                Json.Decode.succeed decoded
+
+                            Err error ->
+                                Json.Decode.fail (Json.Decode.errorToString error)
+                    )
+
+
+{-| The error a successful text answer stands for when the response's
+decoder does not read it, keeping the answer.
+-}
+badText : GoodText -> Json.Decode.Error -> Error
+badText good problem =
+    Error.BadResponse (Json.Decode.errorToString problem) (Status.answerOf good.metadata good.raw)
+
+
 {-| Why `sent`, the plan's request or one an application rewrote, must not
 reach elm/http: a base URL holding a query or a fragment; a path value its
 variable's template cannot match, which no server can route to the method; a
@@ -199,7 +229,7 @@ withBudget : Plan res -> Maybe Float -> Request -> Request
 withBudget p left sent =
     let
         timeout =
-            Wire.usableTimeout sent.timeout
+            Internal.usableTimeout sent.timeout
     in
     case Retry.attemptTimeout left timeout of
         Just ms ->

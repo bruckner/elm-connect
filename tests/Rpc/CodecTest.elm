@@ -17,7 +17,7 @@ import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
-import Rpc.Internal.Send
+import Rpc.Internal.Plan
 import Rpc.Internal.Trace
 import Rpc.Protocol
 import Rpc.Trace
@@ -292,12 +292,12 @@ limits =
         , test "write: the binary is measured, not the JSON" <|
             \_ ->
                 [ 3, 2 ]
-                    |> List.map (\limit -> (Rpc.Internal.Send.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" })).tooLarge ())
+                    |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" })).tooLarge ())
                     |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 2, size = 3 }) ]
         , test "write: a JSON protocol measures the JSON of the same call" <|
             \_ ->
                 [ 12, 11 ]
-                    |> List.map (\limit -> (Rpc.Internal.Send.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connect)) (both { name = "x" })).tooLarge ())
+                    |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connect)) (both { name = "x" })).tooLarge ())
                     |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 11, size = 12 }) ]
         ]
 
@@ -336,7 +336,7 @@ traces =
         traced client =
             let
                 plan =
-                    Rpc.Internal.Send.plan client (both { name = "x" })
+                    Rpc.Internal.Plan.plan client (both { name = "x" })
             in
             Rpc.Internal.Trace.init (Rpc.Client.protocol client) (both { name = "x" }) plan (plan.request ()) { attempts = 1, metadata = Nothing, result = Ok "hi" } 1
                 |> Rpc.Trace.toJson
