@@ -1,4 +1,5 @@
-- Calls are sent with a client, built from a protocol: `Rpc.client
+- Calls are sent with a client, built from a protocol (see
+  docs/migrating.md for upgrading a 0.1 application): `Rpc.client
   Rpc.Protocol.connect "https://api.example.com"` in place of
   `Rpc.config "https://api.example.com"`. `Rpc.Config`, `Rpc.config`
   and the record's fields are gone: `Rpc.Client.withHeaders`,

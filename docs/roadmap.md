@@ -8,7 +8,9 @@ major, the runtime's API only grows, and the same protos with the same
 options generate the same modules, types and values. The page promises
 no dates and no order. An entry is a direction, not a commitment; the
 reasons behind the settled questions are in
-[decisions.md](decisions.md).
+[decisions.md](decisions.md). A few entries are follow-ups of the 0.2
+interface, to be settled before 1.0, and say so. gRPC-Web, once an
+entry here, is a protocol now ([calling.md](calling.md#protocols)).
 
 ## Server streaming
 
@@ -27,9 +29,9 @@ streams newline-delimited JSON, a `{"result": …}` object per message
 and an `{"error": …}` object for a failure, and Envoy's transcoder a
 JSON array by default, newline-delimited JSON with
 `stream_newline_delimited`, or server-sent events with
-`stream_sse_style_delimited`. Which one a server uses is a setting on
-`Rpc.Transport`, so it is a minor too, and it comes with server
-streaming over Connect, not before.
+`stream_sse_style_delimited`. Which one a server uses would be a
+modifier of `Rpc.Protocol.transcode`, so it is a minor too, and it
+comes with server streaming over Connect, not before.
 
 ## Unknown fields
 
@@ -102,14 +104,15 @@ version always matches the generated code. It needs `check` to treat
 the emitted runtime as generated, and a way for an application to drop
 the copy when it installs the package. A minor.
 
-## Hooks: `Rpc.Client`
+## Hooks: the client
 
-`Rpc.Config` holds no functions, so it stays comparable and safe in a
-model, and every use of an interceptor maps onto data, the trace or
-the pure halves ([calling.md](calling.md)). If hooks turn out to be
-needed anyway, an opaque `Rpc.Client`, built from a `Config` plus
-hooks and sent through functions of its own, can be added beside
-`Rpc.task` without changing it. A minor.
+Hooks are the client. `Rpc.Client` holds functions already, its
+protocol's and those its modifiers install, and stays `==` because each
+modifier also sets a data field compared before any function. A hook,
+a function every call goes through, would be one more modifier that
+installs it. Every use of an interceptor met so far maps onto data,
+the trace or the pure halves ([calling.md](calling.md)), so none is
+built. A minor: a new modifier.
 
 ## One outcome for every call
 
@@ -120,17 +123,78 @@ runs the loop itself, with `Rpc.Retry.next` and `Rpc.Call.withoutRetry`.
 A model-held state machine (`Rpc.Pending`, stepped by an `update`) that
 owns the retry loop would make a retried call cancellable and have
 every call report exactly one outcome; a
-streaming transport would need the same machine, and would share it.
+streaming protocol would need the same machine, and would share it.
 An addition beside `Rpc.send` and `Rpc.task`: a minor.
 
-## A fake transport for tests
+## A fake protocol for tests
 
 Today a program's calls are tested through the pure halves:
 `Rpc.request` shows what a call would send and `Rpc.response` reads an
-answer, with no server. A transport that answers from data the test
+answer, with no server. A protocol that answers from data the test
 supplies would let `Rpc.task` and `Rpc.send` themselves run in a test.
-A minor: `Rpc.Transport` is opaque, so a transport is added without
-changing the others.
+The protocol's shape is the seam: it already holds the functions that
+build a call's request and read its answer, so a fake one answers the
+request it builds from the test's data in place of elm/http, and the
+client and the calls stay as they are. A minor: `Rpc.Protocol` is
+opaque, so a protocol is added without changing the others.
+
+## A table-driven binary merge
+
+A generated binary decoder, `merge*Bytes`, is one `case` arm per field,
+each with a helper call and a record-update lambda: about four times
+the source of the message's JSON decoder, and 64 % of a package module
+generated with `codec=proto`. That section is where compile time can
+be won. A table of fields
+(`[ ( 1, Proto.Binary.string (\v r -> { r | name = v }) ), … ]`) read by
+one runtime loop would roughly halve the source and the `codec=both`
+compile time, for a lookup where the `case` compiles to a switch. Not
+measured yet. A minor: the generated decoders keep their names and
+types, and the runtime gains the table's reader.
+
+## `Rpc.Client.problems` by construction
+
+`Rpc.Client.problems` reports a bad base URL, header or size limit at
+run time. Ruling them out by construction would put a `Result` where
+the client is built: either typed inputs checked once
+(`Rpc.baseUrl : String -> Result Problem BaseUrl`, after which
+`Rpc.client` cannot fail) or one builder that reports every problem at
+once. The `Result` form is the one favoured. A call's own headers, its
+path values and the answers stay run-time failures whichever is
+chosen. Revisited before 1.0, since either shape changes how every
+application builds its client.
+
+## A route table for Connect-only applications
+
+A generated method carries its route functions, so a program that only
+speaks Connect still carries the routes of every method with a
+`google.api.http` rule: 129 to 151 B gzipped per method in the
+measurement that kept them there. A table of routes given to
+`Rpc.Protocol.transcode` would move that cost to the programs that
+transcode. In the interpreter form measured it cost those programs
+1,112 B and 43 to 217 % more time per transcoded request, so it was not
+adopted. A table of generated functions, each a top-level `Value ->
+Route`, should be smaller and faster, and is the form to measure if an
+application full of rules that never transcodes asks for it. A minor:
+an addition beside the routes on the method.
+
+## A routes-off option
+
+A generator option to leave out the route functions, for an
+application that never transcodes. Deferred until requested: today such
+an application deletes the `google.api.http` annotations from the
+protos it generates from. A minor (a new option).
+
+## `Any` and the registry
+
+Three rough edges of `Proto.Any` under the binary codecs. The table
+that converts an `Any`'s JSON to binary has no mirror, so an `Any` read
+as binary and written as JSON falls back to Connect's `{type, value}`
+form rather than the message's own JSON. The generated
+`binaryRegistry` is the table that converts an `Any`'s JSON to binary,
+which its name does not say. And every `codec=both` package carries the
+conversion table as soon as one of its fields is an `Any`. A pass over
+them is a minor if it adds the mirror and keeps the name; renaming
+`binaryRegistry` is a break, so it is done before 1.0 or not at all.
 
 ## Validation
 
@@ -213,7 +277,7 @@ a minor. (`elm-connect guide`, printing the
 ## Small examples for learning from
 
 The notes example was meant to double as the implementation to
-consult, and serves verification well, but carrying both transports,
+consult, and serves verification well, but carrying two protocols,
 the error panel and the live suite's needs makes it too much to learn
 from first ([design §7](design.md#7-conformance)). Teaching wants a few short,
 well-documented examples that each show one thing, kept compiling the
@@ -234,12 +298,13 @@ version impact.
   Node could, as connect-node's clients do; that would be a Node-only
   addition, taken up if asked for. If browsers change, they would be
   additions like server streaming.
-- **Interceptors.** The config is data; the pattern that replaces them
-  (one function every call goes through, and the pure halves for
-  rewriting a request) is in [calling.md](calling.md).
+- **Interceptors.** The pattern that replaces them (one function every
+  call goes through, and the pure halves for rewriting a request) is
+  in [calling.md](calling.md); a hook, if one is needed, is a client
+  modifier ([Hooks](#hooks-the-client)).
 - **Server code generation.** elm-connect generates clients.
 - **Splitting the package.** One package holds the codecs and the
   calls. No `Proto` module imports an `Rpc` one, so a split stays
   possible, but it would move modules out of the package, which is a
-  major; it is revisited only for a transport whose runtime is mostly
+  major; it is revisited only for a protocol whose runtime is mostly
   its own ([decisions.md](decisions.md#no-package-split)).

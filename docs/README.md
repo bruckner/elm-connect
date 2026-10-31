@@ -13,6 +13,8 @@ The rest are reference pages, for when a question comes up.
 
 - [install.md](install.md): the binaries, the runtime in `elm.json`,
   googleapis, versions.
+- [migrating.md](migrating.md): upgrading an application from 0.1 to
+  0.2.
 - [quickstart.md](quickstart.md): from a proto to a call, in `elm repl`
   and in a test.
 - [trying.md](trying.md): a real call with no server of your own,
@@ -25,7 +27,7 @@ The rest are reference pages, for when a question comes up.
 
 - [generator.md](generator.md): what a proto becomes in Elm, the
   options, `check`, and running the plugin.
-- [calling.md](calling.md): configs, transports, retries, errors,
+- [calling.md](calling.md): clients, protocols, retries, errors,
   tracing, cancelling, and the pure halves.
 - [descriptors.md](descriptors.md): descriptors, the registry, `Any`,
   error details and update masks.

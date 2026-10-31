@@ -210,10 +210,7 @@ protocol sends:
 > import Notes.V1.NotesService as Notes
 > import Rpc
 > import Rpc.Protocol
-> client = Rpc.client Rpc.Protocol.connect "https://api.example.com"
-Client { baseUrl = "https://api.example.com", headers = [], protocol = Protocol { codec = "json", name = "connect", options = { get = False, maxGetUrl = Nothing, readMaxBytes = Nothing, writeMaxBytes = Nothing }, wire = Text { build = <function>, message = <function>, overRead = <function>, routed = False, timeoutHeader = <function>, tooLarge = <function> } }, retry = Nothing, timeout = Nothing, withCredentials = False }
-    : Rpc.Client Rpc.Protocol.Json
-> Rpc.request client (Notes.getNote { name = "notes/42" })
+> Rpc.request (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Notes.getNote { name = "notes/42" })
 { body = Text "{\"name\":\"notes/42\"}", headers = [("Connect-Protocol-Version","1")], method = "POST", timeout = Nothing, url = "https://api.example.com/notes.v1.NotesService/GetNote", withCredentials = False }
     : Rpc.Request
 > Rpc.request (Rpc.client Rpc.Protocol.transcode "https://api.example.com") (Notes.getNote { name = "notes/42" })
@@ -225,6 +222,17 @@ Over Connect the call is a POST to the method's path with the request as
 JSON; over transcoding it is the rule's `GET`, the name in the path. A
 body is sent as `application/json`, which elm/http adds, so the request's
 `headers` do not list `Content-Type`.
+
+A client holds functions, which the repl prints as `<function>`.
+`Rpc.Client.toJson` gives it as data:
+
+```text
+> import Json.Encode
+> import Rpc.Client
+> Rpc.client Rpc.Protocol.transcode "https://api.example.com" |> Rpc.Client.toJson |> Json.Encode.encode 0
+"{\"protocol\":{\"name\":\"transcode\",\"codec\":\"json\",\"get\":false,\"maxGetUrl\":null,\"readMaxBytes\":null,\"writeMaxBytes\":null},\"baseUrl\":\"https://api.example.com\",\"headers\":[],\"timeout\":null,\"withCredentials\":false,\"retry\":false}"
+    : String
+```
 
 ## 7. Test without a server
 

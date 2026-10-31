@@ -1,18 +1,16 @@
-- Connect's proto codec: `Rpc.Transport.withCodec Rpc.Transport.Proto`
-  sends a call's request as protobuf binary, `application/proto` (a GET
-  as `connect=v1&base64=1&encoding=proto&message=…`), and reads a
+- Connect's proto codec: `Rpc.Protocol.connectProto` sends a call's
+  request as protobuf binary, `application/proto` (a GET as
+  `connect=v1&base64=1&encoding=proto&message=…`), and reads a
   successful answer as binary; error answers stay JSON. It needs the
-  binary codecs of `codec=both` or `codec=binary`. `Rpc.Transport.codec`
-  reads the setting back. Transcoding ignores it and stays JSON. A
-  program whose methods have no binary codecs carries none of the binary
-  path; the setting costs it a few hundred bytes gzipped.
-- `Rpc.responseBytes` reads an answer elm/http read as bytes, for a call
-  sent through `Rpc.request` under the proto codec; `Rpc.response` keeps
-  reading text, and gives a `BadResponse` for a binary answer.
-- A new `Rpc.Error.Reason`, `MissingCodec { method, codec }`, code
-  `Internal`: a call of a method without binary codecs under the proto
-  codec, or of one with binary codecs alone under JSON or over
-  transcoding, is not sent, and is not retried.
+  binary codecs of `codec=both` or `codec=proto`. `Rpc.Protocol.codec`
+  gives `"proto"` for it. Transcoding stays JSON. A program whose
+  methods have no binary codecs carries none of the binary path.
+- `Rpc.responseBytes` reads an answer elm/http read as bytes, for a
+  binary call sent through `Rpc.request` with an `Rpc.Client Rpc.Proto`;
+  `Rpc.response` keeps reading text.
+- A call of a method without binary codecs over a binary protocol, or
+  of one with binary codecs alone over JSON, is a compile error where it
+  is sent: the call's type and the client's both carry the codec.
 - `Rpc.Body.bytes`, `bytesAs`, `toBytes` and `contentType`: a body of
   bytes, sent as `application/proto` or a type of its own. `toText` of a
   bytes body is `Nothing`.
@@ -32,4 +30,4 @@
   an `Any` read from proto3 JSON is sent as binary. `Proto.Binary.any`,
   without a registry, writes an `Any` holding JSON alone with its type
   URL alone and converts nothing, so a program generated with
-  `codec=binary` carries no `Proto.Json`.
+  `codec=proto` carries no `Proto.Json`.

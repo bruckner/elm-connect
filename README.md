@@ -96,7 +96,8 @@ or buf. The runtime is an Elm package, published to the package index from
 1.0.0; until then, it can be read from a clone's `src/` as a source directory.
 [docs/install.md](docs/install.md) has more details including verifying a
 download, a complete `elm.json`, googleapis for protoc and buf, and how the
-versions line up.
+versions line up. [docs/migrating.md](docs/migrating.md) says what an
+application changes when it upgrades from 0.1.
 
 ## Quick start
 

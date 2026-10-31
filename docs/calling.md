@@ -154,8 +154,8 @@ longer than `n` characters (2048 is a common safe value). Only Connect
 sends a GET, so both leave `transcode` and `grpcWeb` as they are.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#protocols
-connectGet : Rpc.Client Rpc.Json
-connectGet =
+getClient : Rpc.Client Rpc.Json
+getClient =
     -- GetNote, ListNotes and Ping, declared NO_SIDE_EFFECTS, become GETs;
     -- a GET whose URL would pass 2048 characters is POSTed instead.
     Rpc.client
