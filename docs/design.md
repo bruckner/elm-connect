@@ -2119,7 +2119,10 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   for `*`, the field's encoder (`{}` when unset) for one field. The query
   is the request message's query encoder in its package's module,
   `queryOfListNotesRequest : ListNotesRequest -> List ( String, String
-  )`, one per message a binding queries, writing every field any
+  )`, one per message a binding of a service generated in the same run
+  queries (so a service generated apart from the packages of its
+  requests can name a `queryOf` that module lacks, which the compiler
+  reports), writing every field any
   generated binding puts in its query, in declaration order, depth first,
   each by its `Proto.Query` helper (`string`, `int`, `int64`, `bool`,
   `float`, `enum`, `optional`, `repeated`, `unlessZero`), which leaves
