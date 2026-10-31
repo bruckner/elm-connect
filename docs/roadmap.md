@@ -138,19 +138,6 @@ request it builds from the test's data in place of elm/http, and the
 client and the calls stay as they are. A minor: `Rpc.Protocol` is
 opaque, so a protocol is added without changing the others.
 
-## A table-driven binary merge
-
-A generated binary decoder, `merge*Bytes`, is one `case` arm per field,
-each with a helper call and a record-update lambda: about four times
-the source of the message's JSON decoder, and 64 % of a package module
-generated with `codec=proto`. That section is where compile time can
-be won. A table of fields
-(`[ ( 1, Proto.Binary.string (\v r -> { r | name = v }) ), … ]`) read by
-one runtime loop would roughly halve the source and the `codec=both`
-compile time, for a lookup where the `case` compiles to a switch. Not
-measured yet. A minor: the generated decoders keep their names and
-types, and the runtime gains the table's reader.
-
 ## `Rpc.Client.problems` by construction
 
 `Rpc.Client.problems` reports a bad base URL, header or size limit at
